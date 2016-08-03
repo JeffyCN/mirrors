@@ -170,8 +170,12 @@ int get_src_data_from_file(char *buf)
     const char *yuvFilePath = "/data/fb1280x720.yuv";
     FILE *file = fopen(yuvFilePath, "rb");
     if (!file) {
-        fprintf(stderr, "Could not open %s\n", yuvFilePath);
-        return false;
+	const char *yuvFilePath = "/system/data/fb1280x720.yuv";
+	file = fopen(yuvFilePath, "rb");
+	if (!file) {
+        	fprintf(stderr, "Could not open %s\n", yuvFilePath);
+        	return false;
+	}
     }
     fread(buf, 2 * 1280 * 720, 1, file);
     fclose(file);
@@ -222,7 +226,7 @@ int crc_verify(char* buf, int size)
     }
     fread(buf, 2 * 1280 * 720, 1, file);
     fclose(file);
-#elif 1
+#elif 0
     const char *outFilePath = "/data/outBuffer.bin";
     FILE *file = fopen(outFilePath, "wb+");
     if (!file) {
@@ -337,10 +341,7 @@ int rgaNv12ScaleTest(bool prepare)
         ret = crc_verify(buf, size);
 
         ret = ret | mCtx.mAllocMod->unlock(mCtx.mAllocMod, dstHnd);
-	while (1) {
         printf("rga test exit\n");
-	usleep(50000);
-	}
         break;
     }
 unLockErr:
