@@ -559,7 +559,8 @@ int drmRgaOpen(const struct hw_module_t* module,
 		goto init;
 	}
 
-	fd = drmOpen(DRM_MODULE_NAME, NULL);
+	//fd = drmOpen(DRM_MODULE_NAME, NULL);
+	fd = open("/dev/dri/renderD128", O_RDWR);
 	if (fd < 0) {
 		ret = -ENODEV;
 		ALOGE("failed to open DRM:%s.",strerror(errno));

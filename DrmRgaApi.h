@@ -13,6 +13,10 @@
 #ifndef _rk_drm_drm_rga_api_
 #define _rk_drm_drm_rga_api_
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include "drmrga.h"
 #include <android/native_window.h>
 
