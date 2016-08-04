@@ -41,24 +41,24 @@ enum {
 */
 int getHandleAttributes(struct rgaContext * ctx, buffer_handle_t hnd, std::vector<int> *attrs)
 {
-    int ret = 0;
-    int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES;
+	int ret = 0;
+	int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES;
 
-    if (!ctx)
-        return -EINVAL;
+	if (!ctx)
+		return -EINVAL;
 
-    if(ctx->mAllocMod && ctx->mAllocMod->perform)
-        ret = ctx->mAllocMod->perform(ctx->mAllocMod,op, hnd, attrs);
-    else
-        ret = -EINVAL;
+	if(ctx->mAllocMod && ctx->mAllocMod->perform)
+		ret = ctx->mAllocMod->perform(ctx->mAllocMod,op, hnd, attrs);
+	else
+		ret = -EINVAL;
 
-    if(!ret) {
-        ALOGD("%d,%d,%d,%d,%d",attrs->at(0),attrs->at(1),attrs->at(2),attrs->at(3),attrs->at(4));
-        fprintf(stderr,"%d,%d,%d,%d,%d\n",
-                               attrs->at(0),attrs->at(1),attrs->at(2),attrs->at(3),attrs->at(4));
-    } else
-        ALOGE("getHandleAttributes fail %d for:%s",ret,strerror(ret));
-    return ret;
+	if(!ret) {
+		ALOGD("%d,%d,%d,%d,%d",attrs->at(0),attrs->at(1),attrs->at(2),attrs->at(3),attrs->at(4));
+		fprintf(stderr,"%d,%d,%d,%d,%d\n",
+			attrs->at(0),attrs->at(1),attrs->at(2),attrs->at(3),attrs->at(4));
+	} else
+		ALOGE("getHandleAttributes fail %d for:%s",ret,strerror(ret));
+	return ret;
 }
 
 /*
@@ -71,16 +71,16 @@ int getHandleAttributes(struct rgaContext * ctx, buffer_handle_t hnd, std::vecto
 */
 int getHandlePrimeFd(struct rgaContext * ctx, buffer_handle_t hnd, int *fd)
 {
-    int ret = 0;
-    int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD;
+	int ret = 0;
+	int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD;
 
-    if (!ctx)
-        return -EINVAL;
+	if (!ctx)
+		return -EINVAL;
 
-    if(ctx->mAllocMod && ctx->mAllocMod->perform)
-        ret = ctx->mAllocMod->perform(ctx->mAllocMod, op, hnd, fd);
-    else
-        ret = -EINVAL;
+	if(ctx->mAllocMod && ctx->mAllocMod->perform)
+		ret = ctx->mAllocMod->perform(ctx->mAllocMod, op, hnd, fd);
+	else
+		ret = -EINVAL;
 
-    return ret;
+	return ret;
 }
