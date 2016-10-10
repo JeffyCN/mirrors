@@ -19,13 +19,7 @@
 
 #include "DrmRgaApi.h"
 #include "DrmRgaContext.h"
-
-/*get it from drm_gralloc*/
-enum {
-	GRALLOC_MODULE_PERFORM_GET_DRM_FD                = 0x80000002,
-	GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD       = 0x81000002,
-	GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES     = 0x81000004,
-};
+#include "gralloc_drm.h"
 
 /*
 @func getHandleAttributes:get attributes from handle.Before call this api,As far as now,

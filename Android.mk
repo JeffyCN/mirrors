@@ -8,7 +8,8 @@ LOCAL_SRC_FILES += \
 
 LOCAL_MODULE := librga.$(TARGET_BOARD_HARDWARE)
 
-LOCAL_C_INCLUDES += external/libdrm/rockchip
+LOCAL_C_INCLUDES += external/libdrm/rockchip \
+		    hardware/rockchip/libgralloc
 
 LOCAL_SHARED_LIBRARIES := libdrm
 LOCAL_SHARED_LIBRARIES += \
