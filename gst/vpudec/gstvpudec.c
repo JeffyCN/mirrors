@@ -356,9 +356,9 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
   }
 
   g_return_val_if_fail (gst_structure_get_int (structure,
-          "width", &width) != 0, NULL);
+          "width", &width) != 0, FALSE);
   g_return_val_if_fail (gst_structure_get_int (structure,
-          "height", &height) != 0, NULL);
+          "height", &height) != 0, FALSE);
 
   codingtype = to_vpu_stream_format (structure);
   if (!codingtype)
