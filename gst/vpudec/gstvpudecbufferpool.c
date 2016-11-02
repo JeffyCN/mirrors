@@ -25,8 +25,8 @@
 
 #include "gstvpudecbufferpool.h"
 
-GST_DEBUG_CATEGORY_EXTERN (gst_vpudec_debug);
-#define GST_CAT_DEFAULT gst_vpudec_debug
+GST_DEBUG_CATEGORY_STATIC (vpubufferpool_debug);
+#define GST_CAT_DEFAULT vpubufferpool_debug
 
 
 GType
@@ -332,6 +332,8 @@ gst_vpudec_buffer_pool_class_init (GstVpuDecBufferPoolClass * klass)
   bufferpool_class->acquire_buffer = gst_vpudec_buffer_pool_acquire_buffer;
   bufferpool_class->release_buffer = gst_vpudec_buffer_pool_release_buffer;
   bufferpool_class->free_buffer = gst_vpudec_buffer_pool_free_buffer;
+
+  GST_DEBUG_CATEGORY_INIT (vpubufferpool_debug, "vpubufferpool", 0, "vpu bufferpool");
 }
 
 /**
