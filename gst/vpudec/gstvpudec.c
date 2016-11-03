@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Rockchip Electronics S.LSI Co. LTD
+ * Copyright 2016 Rockchip Electronics Co., Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@
 #include "gstvpudec.h"
 
 #include "vpu.h"
-#include "vpu_api_private.h"
+#include "vpu_api.h"
 
 GST_DEBUG_CATEGORY (gst_vpudec_debug);
 #define GST_CAT_DEFAULT gst_vpudec_debug
@@ -69,7 +69,7 @@ static GstStaticPadTemplate gst_vpudec_sink_template =
         "video/mpeg,"
         "mpegversion = (int) { 1, 2, 4 },"
         "systemstream = (boolean) false,"
-        "parsed = (boolean) true" ";" "video/x-vp8" ";")
+        "parsed = (boolean) true" ";" "video/x-vp8" ";" "video/x-h263" ";")
     );
 
 static GstStaticPadTemplate gst_vpudec_src_template =
@@ -178,15 +178,37 @@ gst_vpudec_start (GstVideoDecoder * decoder)
   return TRUE;
 }
 
+static gint
+gst_vpudec_sendeos (GstVideoDecoder * decoder)
+{
+  GstVpuDec *vpudec = GST_VPUDEC (decoder);
+  VpuCodecContext_t *ctx = vpudec->ctx;
+  VideoPacket_t pkt;
+  RK_S32 is_eos = 0;
+
+  pkt.size = 0;
+  pkt.data = NULL;
+  /* eos flag */
+  pkt.nFlags = VPU_API_DEC_OUTPUT_EOS;
+
+  ctx->decode_sendstream (ctx, &pkt);
+
+  do {
+    ctx->control (ctx, VPU_API_DEC_GET_EOS_STATUS, &is_eos);
+  } while (!is_eos);
+
+  return 0;
+}
+
 static gboolean
 gst_vpudec_stop (GstVideoDecoder * decoder)
 {
   GstVpuDec *vpudec = GST_VPUDEC (decoder);
-  VpuCodecContext_t *ctx = vpudec->ctx;
+  //VpuCodecContext_t *ctx = vpudec->ctx;
 
   GST_DEBUG_OBJECT (vpudec, "Stopping");
 
-  ctx->decode_sendEventEoS (ctx);
+  gst_vpudec_sendeos (decoder);
   GST_VPUDEC_SET_EOS (vpudec);
 
   if (vpudec->input_state)
@@ -228,6 +250,9 @@ to_vpu_stream_format (GstStructure * s)
   if (gst_structure_has_name (s, "video/x-h265"))
     return VPU_VIDEO_CodingHEVC;
 
+  if (gst_structure_has_name (s, "video/x-h263"))
+    return VPU_VIDEO_CodingH263;
+
   if (gst_structure_has_name (s, "video/mpeg")) {
     gint mpegversion = 0;
     if (gst_structure_get_int (s, "mpegversion", &mpegversion)) {
@@ -266,6 +291,8 @@ to_gst_pix_format (VPU_VIDEO_PIXEL_FMT pix_fmt)
 static gboolean
 gst_vpudec_open (GstVpuDec * vpudec, VPU_VIDEO_CODINGTYPE codingType)
 {
+  VPU_SYNC sync;
+
   if (vpu_open_context (&vpudec->ctx) || vpudec->ctx == NULL)
     goto ctx_error;
 
@@ -282,9 +309,14 @@ gst_vpudec_open (GstVpuDec * vpudec, VPU_VIDEO_CODINGTYPE codingType)
           vpudec->codec_data_size) != 0)
     goto init_error;
 
+  GST_DEBUG_OBJECT (vpudec, "after create vpu context");
+
   vpudec->vpu_mem_pool = open_vpu_memory_pool ();
   vpudec->ctx->control (vpudec->ctx, VPU_API_SET_VPUMEM_CONTEXT,
       (void *) vpudec->vpu_mem_pool);
+
+  sync.flag = 1;
+  vpudec->ctx->control (vpudec->ctx, VPU_API_SET_OUTPUT_BLOCK, (void *) &sync);
 
   return TRUE;
 
@@ -433,7 +465,7 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
       "Format found from vpu :pixelfmt:%s, aligned_width:%d, aligned_height:%d, stride:%d, sizeimage:%d",
       gst_video_format_to_string (to_gst_pix_format (fmt.format)),
       fmt.aligned_width, fmt.aligned_height, fmt.aligned_stride,
-      fmt.aligned_framesize);
+      fmt.aligned_frame_size);
 
   output_state =
       gst_video_decoder_set_output_state (GST_VIDEO_DECODER (vpudec),
@@ -453,7 +485,7 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
 #if 1
   /* construct a new buffer pool */
   vpudec->pool = gst_vpudec_buffer_pool_new (vpudec, NULL, NB_OUTPUT_BUFS,
-      fmt.aligned_framesize, &align);
+      fmt.aligned_frame_size, &align);
   if (vpudec->pool == NULL)
     goto error_new_pool;
 
@@ -507,6 +539,7 @@ gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   gst_buffer_map (frame->input_buffer, &mapinfo, GST_MAP_READ);
   access_unit.data = mapinfo.data;
   access_unit.size = mapinfo.size;
+  access_unit.nFlags = VPU_API_DEC_INPUT_SYNC;
 
   gst_buffer_unmap (frame->input_buffer, &mapinfo);
 

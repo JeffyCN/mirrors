@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Rockchip Electronics S.LSI Co. LTD
+ * Copyright 2016 Rockchip Electronics Co., Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@
 
 #include "gstvpudec.h"
 #include "vpu_api.h"
-#include "vpu_mem_pool.h"
 
 G_BEGIN_DECLS typedef struct _GstVpuDecBufferPool GstVpuDecBufferPool;
 typedef struct _GstVpuDecBufferPoolClass GstVpuDecBufferPoolClass;

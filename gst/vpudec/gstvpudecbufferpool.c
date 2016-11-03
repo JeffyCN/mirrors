@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Rockchip Electronics S.LSI Co. LTD
+ * Copyright 2016 Rockchip Electronics Co., Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,8 +77,8 @@ gst_vpudec_buffer_pool_free_buffer (GstBufferPool * bpool, GstBuffer * buffer)
   g_assert (meta != NULL);
 
   GST_DEBUG_OBJECT (pool,
-      "free buffer %p idx %d (data %p, len %u)", buffer,
-      meta->vpumem.index, meta->mem, meta->size);
+      "free buffer %p idx %d (data %p, len %u) offset %p", buffer,
+      meta->index, meta->mem, meta->size, meta->vpumem.offset);
 
   VPUFreeLinear (&meta->vpumem);
   meta->mem = NULL;
@@ -104,15 +104,16 @@ gst_vpudec_buffer_pool_alloc_buffer (GstBufferPool * bpool,
   memset (&meta->vpumem, 0, sizeof (VPUMemLinear_t));
 
   /* create vpumem from libvpu */
-  VPUMallocLinearOutside (&meta->vpumem, meta->size);   /* excludes mvc data */
-  meta->mem = (gpointer) meta->vpumem.phy_addr;
+  /* includes mvc data */
+  VPUMallocLinearOutside (&meta->vpumem, meta->size);
+  meta->mem = (gpointer) meta->vpumem.vir_addr;
   meta->vpumem.index = meta->index;
   meta->dmabuf_fd = VPUMemGetFD (&meta->vpumem);
 
   /* commit vpumem to libvpu  */
   vpool = (vpu_display_mem_pool *) dec->vpu_mem_pool;
-  if (vpool->commit_hdl (vpool, VPUMemGetFD (&meta->vpumem), meta->size,
-          meta->index) < 0)
+  if (vpool->commit_hdl (vpool, VPUMemGetFD (&meta->vpumem),
+          meta->vpumem.size, meta->vpumem.index) < 0)
     GST_WARNING_OBJECT (pool, "mempool commit error");
 
   gst_buffer_append_memory (newbuf,
@@ -195,19 +196,22 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   VPUMemLinear_t vpu_mem;
   GstVpuDecMeta *meta = NULL;
   VPU_API_ERR ret;
+  gint buf_index;
 
   memset (&dec_out, 0, sizeof (DecoderOut_t));
   dec_out.data = (guint8 *) g_malloc (sizeof (VPU_FRAME));
+  //memset(&dec_out.data, 0, sizeof(VPU_FRAME));
   ctx = (VpuCodecContext_t *) dec->ctx;
 
-  if ((ret = ctx->decode_getframe_sync (ctx, &dec_out)) < 0)
+  if ((ret = ctx->decode_getframe (ctx, &dec_out)) < 0)
     goto vpu_error;
 
   vpu_frame = (VPU_FRAME *) dec_out.data;
   vpu_mem = vpu_frame->vpumem;
 
   /* get from the pool the GstBuffer associated with the index */
-  outbuf = pool->buffers[vpu_mem.index];
+  buf_index = vpu_mem.index;
+  outbuf = pool->buffers[buf_index];
   if (outbuf == NULL)
     goto no_buffer;
 
@@ -215,14 +219,21 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
      encapsulated in VPU_FRAME, manually copy to release the buffer */
   meta = GST_VPUDEC_META_GET (outbuf);
   g_assert (meta != NULL);
-  meta->vpumem.offset = vpu_mem.offset;
 
-  pool->buffers[vpu_mem.index] = NULL;
+  meta->mem = vpu_mem.vir_addr;
+  meta->vpumem.offset = vpu_mem.offset;
+  if (meta->mem) {
+    gst_buffer_replace_all_memory (outbuf,
+        gst_memory_new_wrapped (GST_MEMORY_FLAG_NO_SHARE, meta->mem, meta->size,
+            0, meta->size, meta->mem, NULL));
+  }
+
+  pool->buffers[buf_index] = NULL;
   pool->nb_queued--;
 
   GST_DEBUG_OBJECT (pool,
-      "acquired buffer %p (%p) , index %d, queued %d", outbuf,
-      (gpointer) vpu_mem.phy_addr, vpu_mem.index, pool->nb_queued);
+      "acquired buffer %p (%p) , index %d, queued %d data %p", outbuf,
+      (gpointer) vpu_mem.vir_addr, buf_index, pool->nb_queued, vpu_mem.offset);
 
   *buffer = outbuf;
   g_free (dec_out.data);
@@ -234,7 +245,8 @@ vpu_error:
   {
     switch (ret) {
       case VPU_API_EOS_STREAM_REACHED:
-        GST_DEBUG_OBJECT (pool, "eos reached at libvpu");
+        GST_DEBUG_OBJECT (pool, "eos reached at libvpu size %d data %p",
+            dec_out.size, dec_out.data);
         return GST_FLOW_EOS;
       default:
         return GST_FLOW_ERROR;
@@ -243,7 +255,7 @@ vpu_error:
 no_buffer:
   {
     GST_ERROR_OBJECT (pool, "No free buffer found in the pool at index %d",
-        vpu_mem.index);
+        buf_index);
     return GST_FLOW_ERROR;
   }
 }
@@ -269,6 +281,7 @@ gst_vpudec_buffer_pool_release_buffer (GstBufferPool * bpool,
 
   /* put this in vpumem free list */
   VPUFreeLinear (&meta->vpumem);
+  meta->vpumem.offset = NULL;
 
   pool->buffers[meta->index] = buffer;
   pool->nb_queued++;
