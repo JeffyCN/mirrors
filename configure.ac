@@ -246,8 +246,6 @@ dnl Make sure you have a space before and after all plugins
 
 dnl these are all the gst plug-ins, compilable without additional libs
 AG_GST_CHECK_PLUGIN(vpudec)
-AG_GST_CHECK_PLUGIN(vpuenc)
-AG_GST_CHECK_PLUGIN(videorga)
 
 dnl of EXT plugins
 
@@ -320,8 +318,6 @@ AC_CONFIG_FILES(
 Makefile
 gst/Makefile
 gst/vpudec/Makefile
-gst/vpuenc/Makefile
-gst/videorga/Makefile
 po/Makefile.in
 common/Makefile
 common/m4/Makefile
