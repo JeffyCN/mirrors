@@ -312,6 +312,9 @@ AC_SUBST(GST_PLUGIN_LDFLAGS)
 
 dnl *** output files ***
 
+PKG_CHECK_MODULES([ROCKCHIP_MPP], [rockchip_mpp])
+PKG_CHECK_MODULES([ROCKCHIP_VPU], [rockchip_vpu])
+
 dnl keep this alphabetic per directory, please
 AC_CONFIG_FILES(
 Makefile
