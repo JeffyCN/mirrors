@@ -23,13 +23,14 @@
 #include <utils/Log.h>
 #include <cutils/atomic.h>
 
-#include "DrmRgaContext.h"
-#include "DrmHandle.h"
+#include "DrmmodeRgaContext.h"
+#include "../GraphicBuffer.h"
 
 static int dumpRgaRects(drm_rga_t tmpRects);
+static int isRectValid(rga_rect_t rect);
 static int getDrmFomatFromAndroidFormat(int format);
-static int getRgaRects(struct rgaContext * ctx, buffer_handle_t dst, drm_rga_t* tmpRects);
-static int getRgaRects(struct rgaContext * ctx, buffer_handle_t src, buffer_handle_t dst, drm_rga_t* tmpRects);
+static int getRgaRect(buffer_handle_t hnd, rga_rect_t *rect);
+static int getRgaRects(buffer_handle_t src, buffer_handle_t dst, drm_rga_t* tmpRects);
 static int getPixelWidthByDrmFormat(int format);
 static int getPixelWidthByAndroidFormat(int format);
 static int computeRgaStrideByDrmFormat(int stride, int format);

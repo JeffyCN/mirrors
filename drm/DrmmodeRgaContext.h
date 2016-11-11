@@ -45,10 +45,7 @@ extern "C" {
 #define UNUSED(...) (void)(__VA_ARGS__)
 
 struct rgaContext{
-    rga_device_t device;
-
     rga_context *ctx;
     struct rockchip_device *dev;
-    gralloc_module_t const *mAllocMod;
 };
 #endif
