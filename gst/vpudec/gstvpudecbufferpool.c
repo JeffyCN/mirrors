@@ -28,7 +28,6 @@
 GST_DEBUG_CATEGORY_STATIC (vpubufferpool_debug);
 #define GST_CAT_DEFAULT vpubufferpool_debug
 
-
 GType
 gst_vpudec_meta_api_get_type (void)
 {
@@ -42,6 +41,29 @@ gst_vpudec_meta_api_get_type (void)
   return type;
 }
 
+static gboolean
+gst_vpudec_meta_init (GstMeta * meta, gpointer params, GstBuffer * buffer)
+{
+  GstVpuDecMeta *emeta = (GstVpuDecMeta *) meta;
+
+  emeta->mem = NULL;
+  emeta->index = 0;
+  emeta->size = 0;
+  emeta->dmabuf_fd = -1;
+  memset (&emeta->vpumem, 0, sizeof (VPUMemLinear_t));
+
+  return TRUE;
+}
+
+static void
+gst_vpudec_meta_free (GstMeta * meta, GstBuffer * buffer)
+{
+  GstVpuDecMeta *emeta = (GstVpuDecMeta *) meta;
+
+  VPUFreeLinear (&emeta->vpumem);
+  emeta->mem = NULL;
+}
+
 const GstMetaInfo *
 gst_vpudec_meta_get_info (void)
 {
@@ -50,8 +72,9 @@ gst_vpudec_meta_get_info (void)
   if (g_once_init_enter (&meta_info)) {
     const GstMetaInfo *meta =
         gst_meta_register (gst_vpudec_meta_api_get_type (), "GstVpuDecMeta",
-        sizeof (GstVpuDecMeta), (GstMetaInitFunction) NULL,
-        (GstMetaFreeFunction) NULL, (GstMetaTransformFunction) NULL);
+        sizeof (GstVpuDecMeta), (GstMetaInitFunction) gst_vpudec_meta_init,
+        (GstMetaFreeFunction) gst_vpudec_meta_free,
+        (GstMetaTransformFunction) NULL);
     g_once_init_leave (&meta_info, meta);
   }
   return meta_info;
@@ -80,9 +103,6 @@ gst_vpudec_buffer_pool_free_buffer (GstBufferPool * bpool, GstBuffer * buffer)
       "free buffer %p idx %d (data %p, len %u) offset %p", buffer,
       meta->index, meta->mem, meta->size, meta->vpumem.offset);
 
-  VPUFreeLinear (&meta->vpumem);
-  meta->mem = NULL;
-
   gst_buffer_unref (buffer);
 }
 
@@ -97,11 +117,11 @@ gst_vpudec_buffer_pool_alloc_buffer (GstBufferPool * bpool,
   vpu_display_mem_pool *vpool;
 
   newbuf = gst_buffer_new ();
+
+  /* Attach meta data to the buffer */
   meta = GST_VPUDEC_META_ADD (newbuf);
   meta->index = pool->nb_buffers_alloc;
   meta->size = pool->buf_alloc_size;
-
-  memset (&meta->vpumem, 0, sizeof (VPUMemLinear_t));
 
   /* create vpumem from libvpu */
   /* includes mvc data */
@@ -333,7 +353,8 @@ gst_vpudec_buffer_pool_class_init (GstVpuDecBufferPoolClass * klass)
   bufferpool_class->release_buffer = gst_vpudec_buffer_pool_release_buffer;
   bufferpool_class->free_buffer = gst_vpudec_buffer_pool_free_buffer;
 
-  GST_DEBUG_CATEGORY_INIT (vpubufferpool_debug, "vpubufferpool", 0, "vpu bufferpool");
+  GST_DEBUG_CATEGORY_INIT (vpubufferpool_debug, "vpubufferpool", 0,
+      "vpu bufferpool");
 }
 
 /**
