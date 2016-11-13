@@ -5,15 +5,18 @@ dnl please read gstreamer/docs/random/autotools before changing this file
 dnl initialize autoconf
 dnl releases only do -Wall, git and prerelease does -Werror too
 dnl use a three digit version number for releases, and four for git/pre
-AC_INIT([GStreamer Plug-ins], [1.0.0])
+AC_INIT([GStreamer Plug-ins], [1.8.3], [https://github.com/hizukiayaka/gst-intel-rk], [gst-plugins-intel])
 
 AG_GST_INIT
 
 dnl initialize automake
-AM_INIT_AUTOMAKE([-Wno-portability 1.11 no-dist-gzip dist-xz tar-ustar])
+AM_INIT_AUTOMAKE([-Wno-portability 1.14 no-dist-gzip dist-xz tar-ustar subdir-objects])
 
 dnl define PACKAGE_VERSION_* variables
 AS_VERSION
+
+dnl check if this is a release version
+AS_NANO(GST_GIT="no", GST_GIT="yes")
 
 dnl define the output header for config
 AM_CONFIG_HEADER([config.h])
@@ -37,11 +40,11 @@ AC_DEFINE_UNQUOTED(GST_API_VERSION, "$GST_API_VERSION",
   [GStreamer API Version])
 
 AG_GST_LIBTOOL_PREPARE
-AS_LIBTOOL(GST, 5, 0, 5)
+AS_LIBTOOL(GST, 801, 0, 801)
 
 dnl *** required versions of GStreamer stuff ***
-GST_REQ=1.0.0
-GSTPB_REQ=1.0.0
+GST_REQ=1.8.0
+GSTPB_REQ=1.8.3
 
 dnl *** autotools stuff ****
 
@@ -55,7 +58,7 @@ dnl set up gettext
 dnl the version check needs to stay here because autopoint greps for it
 AM_GNU_GETTEXT_VERSION([0.17])
 AM_GNU_GETTEXT([external])
-AG_GST_GETTEXT([gst-plugins-$GST_API_VERSION])
+AG_GST_GETTEXT([gst-plugins-intel-$GST_API_VERSION])
 
 dnl *** check for arguments to configure ***
 
