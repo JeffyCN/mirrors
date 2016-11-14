@@ -23,62 +23,11 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
+#include "gstvpumeta.h"
 #include "gstvpudecbufferpool.h"
 
 GST_DEBUG_CATEGORY_STATIC (vpubufferpool_debug);
 #define GST_CAT_DEFAULT vpubufferpool_debug
-
-GType
-gst_vpudec_meta_api_get_type (void)
-{
-  static volatile GType type;
-  static const gchar *tags[] = { "memory", NULL };
-
-  if (g_once_init_enter (&type)) {
-    GType _type = gst_meta_api_type_register ("GstVpuDecMetaAPI", tags);
-    g_once_init_leave (&type, _type);
-  }
-  return type;
-}
-
-static gboolean
-gst_vpudec_meta_init (GstMeta * meta, gpointer params, GstBuffer * buffer)
-{
-  GstVpuDecMeta *emeta = (GstVpuDecMeta *) meta;
-
-  emeta->mem = NULL;
-  emeta->index = 0;
-  emeta->size = 0;
-  emeta->dmabuf_fd = -1;
-  memset (&emeta->vpumem, 0, sizeof (VPUMemLinear_t));
-
-  return TRUE;
-}
-
-static void
-gst_vpudec_meta_free (GstMeta * meta, GstBuffer * buffer)
-{
-  GstVpuDecMeta *emeta = (GstVpuDecMeta *) meta;
-
-  VPUFreeLinear (&emeta->vpumem);
-  emeta->mem = NULL;
-}
-
-const GstMetaInfo *
-gst_vpudec_meta_get_info (void)
-{
-  static const GstMetaInfo *meta_info = NULL;
-
-  if (g_once_init_enter (&meta_info)) {
-    const GstMetaInfo *meta =
-        gst_meta_register (gst_vpudec_meta_api_get_type (), "GstVpuDecMeta",
-        sizeof (GstVpuDecMeta), (GstMetaInitFunction) gst_vpudec_meta_init,
-        (GstMetaFreeFunction) gst_vpudec_meta_free,
-        (GstMetaTransformFunction) NULL);
-    g_once_init_leave (&meta_info, meta);
-  }
-  return meta_info;
-}
 
 /*
  * GstVpuDecBufferPool:
@@ -101,7 +50,8 @@ gst_vpudec_buffer_pool_free_buffer (GstBufferPool * bpool, GstBuffer * buffer)
 
   GST_DEBUG_OBJECT (pool,
       "free buffer %p idx %d (data %p, len %u) offset %p", buffer,
-      meta->index, meta->mem, meta->size, meta->vpumem.offset);
+      gst_vpudec_meta_get_index (meta), gst_vpudec_meta_get_mem (meta),
+      gst_vpudec_meta_get_size (meta), gst_vpudec_meta_get_offset (meta));
 
   gst_buffer_unref (buffer);
 }
@@ -119,33 +69,28 @@ gst_vpudec_buffer_pool_alloc_buffer (GstBufferPool * bpool,
   newbuf = gst_buffer_new ();
 
   /* Attach meta data to the buffer */
-  meta = GST_VPUDEC_META_ADD (newbuf);
-  meta->index = pool->nb_buffers_alloc;
-  meta->size = pool->buf_alloc_size;
-
-  /* create vpumem from libvpu */
-  /* includes mvc data */
-  VPUMallocLinearOutside (&meta->vpumem, meta->size);
-  meta->mem = (gpointer) meta->vpumem.vir_addr;
-  meta->vpumem.index = meta->index;
-  meta->dmabuf_fd = VPUMemGetFD (&meta->vpumem);
+  meta = GST_VPUDEC_META_ADD (newbuf, (gpointer) & pool->nb_buffers_alloc);
+  vpool = (vpu_display_mem_pool *) dec->vpu_mem_pool;
 
   /* commit vpumem to libvpu  */
-  vpool = (vpu_display_mem_pool *) dec->vpu_mem_pool;
-  if (vpool->commit_hdl (vpool, VPUMemGetFD (&meta->vpumem),
-          meta->vpumem.size, meta->vpumem.index) < 0)
+  if (!gst_vpudec_meta_alloc_mem (vpool, meta, pool->buf_alloc_size))
     GST_WARNING_OBJECT (pool, "mempool commit error");
 
   gst_buffer_append_memory (newbuf,
-      gst_memory_new_wrapped (GST_MEMORY_FLAG_NO_SHARE,
-          meta->mem, meta->size, 0, meta->size, meta->mem, NULL));
+      gst_memory_new_wrapped (GST_MEMORY_FLAG_READONLY,
+          gst_vpudec_meta_get_mem (meta), gst_vpudec_meta_get_size (meta), 0,
+          gst_vpudec_meta_get_size (meta), gst_vpudec_meta_get_mem (meta),
+          NULL));
 
   /* TODO: add dmabuf allocator when RGA can accept dmabuf fd */
 
   GST_DEBUG_OBJECT (pool, "created buffer %u of size %d, %p (%p) for pool %p",
-      meta->index, meta->size, newbuf, meta->mem, pool);
+      gst_vpudec_meta_get_index (meta),
+      gst_vpudec_meta_get_size (meta), newbuf,
+      gst_vpudec_meta_get_mem (meta), pool);
 
   *buffer = newbuf;
+  pool->buffers[pool->nb_buffers_alloc] = newbuf;
   pool->nb_buffers_alloc++;
 
   return GST_FLOW_OK;
@@ -214,13 +159,11 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   DecoderOut_t dec_out;
   VPU_FRAME *vpu_frame;
   VPUMemLinear_t vpu_mem;
-  GstVpuDecMeta *meta = NULL;
   VPU_API_ERR ret;
   gint buf_index;
 
   memset (&dec_out, 0, sizeof (DecoderOut_t));
   dec_out.data = (guint8 *) g_malloc (sizeof (VPU_FRAME));
-  //memset(&dec_out.data, 0, sizeof(VPU_FRAME));
   ctx = (VpuCodecContext_t *) dec->ctx;
 
   if ((ret = ctx->decode_getframe (ctx, &dec_out)) < 0)
@@ -234,19 +177,6 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   outbuf = pool->buffers[buf_index];
   if (outbuf == NULL)
     goto no_buffer;
-
-  /* FIX ME: libvpu, the offset set in alloc function is not the same
-     encapsulated in VPU_FRAME, manually copy to release the buffer */
-  meta = GST_VPUDEC_META_GET (outbuf);
-  g_assert (meta != NULL);
-
-  meta->mem = vpu_mem.vir_addr;
-  meta->vpumem.offset = vpu_mem.offset;
-  if (meta->mem) {
-    gst_buffer_replace_all_memory (outbuf,
-        gst_memory_new_wrapped (GST_MEMORY_FLAG_NO_SHARE, meta->mem, meta->size,
-            0, meta->size, meta->mem, NULL));
-  }
 
   pool->buffers[buf_index] = NULL;
   pool->nb_queued--;
@@ -285,30 +215,24 @@ gst_vpudec_buffer_pool_release_buffer (GstBufferPool * bpool,
     GstBuffer * buffer)
 {
   GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
-  GstVpuDecMeta *meta;
+  GstVpuDecMeta *meta = NULL;
+  guint buf_index = -1;
 
   meta = GST_VPUDEC_META_GET (buffer);
   g_assert (meta != NULL);
-  if (meta == NULL) {
-    GST_LOG_OBJECT (pool, "unref copied buffer %p", buffer);
-    /* no meta, it was a copied buffer that we can unref */
-    gst_buffer_unref (buffer);
-    return;
-  }
+  buf_index = gst_vpudec_meta_get_index (meta);
 
-  if (pool->buffers[meta->index] != NULL)
+  if (pool->buffers[buf_index] != NULL)
     goto already_queued;
 
-  /* put this in vpumem free list */
-  VPUFreeLinear (&meta->vpumem);
-  meta->vpumem.offset = NULL;
-
-  pool->buffers[meta->index] = buffer;
+  /* Release the internal refcount in mpp */
+  VPUFreeLinear (gst_vpudec_meta_get_vpumem (meta));
+  pool->buffers[buf_index] = buffer;
   pool->nb_queued++;
 
   GST_DEBUG_OBJECT (pool,
-      "released buffer %p (%p), index %d, queued %d", buffer, meta->mem,
-      meta->index, pool->nb_queued);
+      "released buffer %p (%p), index %d, queued %d", buffer,
+      gst_vpudec_meta_get_mem (meta), buf_index, pool->nb_queued);
 
   return;
 
@@ -327,7 +251,6 @@ gst_vpudec_buffer_pool_finalize (GObject * object)
 
   GST_DEBUG_OBJECT (pool, "finalize pool %p", pool);
 
-  //g_free (pool->buffers);
   gst_object_unref (pool->dec);
 
   G_OBJECT_CLASS (parent_class)->finalize (object);

@@ -23,7 +23,6 @@
 
 G_BEGIN_DECLS typedef struct _GstVpuDecBufferPool GstVpuDecBufferPool;
 typedef struct _GstVpuDecBufferPoolClass GstVpuDecBufferPoolClass;
-typedef struct _GstVpuDecMeta GstVpuDecMeta;
 
 #define GST_TYPE_VPUDEC_BUFFER_POOL      (gst_vpudec_buffer_pool_get_type())
 #define GST_IS_VPUDEC_BUFFER_POOL(obj)   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_VPUDEC_BUFFER_POOL))
@@ -47,21 +46,6 @@ struct _GstVpuDecBufferPoolClass
 {
   GstBufferPoolClass parent_class;
 };
-
-struct _GstVpuDecMeta
-{
-  GstMeta meta;
-  gpointer mem;
-  guint index;
-  gint size;
-  gint dmabuf_fd;
-  VPUMemLinear_t vpumem;
-};
-
-GType gst_vpudec_meta_api_get_type (void);
-const GstMetaInfo *gst_vpudec_meta_get_info (void);
-#define GST_VPUDEC_META_GET(buf) ((GstVpuDecMeta *)gst_buffer_get_meta(buf, gst_vpudec_meta_api_get_type()))
-#define GST_VPUDEC_META_ADD(buf) ((GstVpuDecMeta *)gst_buffer_add_meta(buf, gst_vpudec_meta_get_info(),NULL))
 
 GType gst_vpudec_buffer_pool_get_type (void);
 
