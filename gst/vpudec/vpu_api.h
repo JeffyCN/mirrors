@@ -384,6 +384,7 @@ extern "C"
  */
 #define vpu_display_mem_pool_FIELDS \
     RK_S32 (*commit_hdl)(vpu_display_mem_pool *p, RK_S32 hdl, RK_S32 size, RK_S32 index); \
+    RK_S32 (*commit_vpu)(vpu_display_mem_pool *p, VPUMemLinear_t *v); \
     void* (*get_free)(vpu_display_mem_pool *p); \
     RK_S32 (*inc_used)(vpu_display_mem_pool *p, void *hdl); \
     RK_S32 (*put_used)(vpu_display_mem_pool *p, void *hdl); \
