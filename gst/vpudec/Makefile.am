@@ -2,11 +2,13 @@ plugin_LTLIBRARIES = libgstvpudec.la
 
 libgstvpudec_la_SOURCES = \
 	gstvpudec.c \
-	gstvpudecbufferpool.c
+	gstvpudecbufferpool.c \
+	gstvpumeta.c
 
 noinst_HEADERS = \
 	gstvpudec.h \
-	gstvpudecbufferpool.h
+	gstvpudecbufferpool.h \
+	gstvpumeta.h
 
 libgstvpudec_la_CFLAGS = \
 	$(GST_PLUGINS_BASE_CFLAGS) \
