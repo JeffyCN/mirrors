@@ -145,8 +145,9 @@ gst_vpudec_meta_get_offset (GstVpuDecMeta * meta)
 }
 
 gboolean
-    gst_vpudec_meta_alloc_mem
-    (vpu_display_mem_pool * vpool, GstVpuDecMeta * meta, gint size) {
+gst_vpudec_meta_alloc_mem (vpu_display_mem_pool * vpool, GstVpuDecMeta * meta,
+    gint size)
+{
   gint ret;
   g_return_val_if_fail (GST_VPU_IS_DEC_META (meta), FALSE);
 
@@ -162,8 +163,10 @@ gboolean
   meta->mem = (gpointer) meta->vpumem.vir_addr;
   meta->dmabuf_fd = VPUMemGetFD (&meta->vpumem);
 
-  if (ret > 0)
+  if (ret > 0) {
+    vpool->inc_used (vpool, &meta->vpumem);
     return TRUE;
-  else
+  } else {
     return FALSE;
+  }
 }
