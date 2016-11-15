@@ -17,7 +17,7 @@
 #define __GST_VPU_META_H__
 
 #include <gst/gst.h>
-#include "vpu_api.h"
+#include <rockchip/vpu_api.h>
 
 G_BEGIN_DECLS
 
