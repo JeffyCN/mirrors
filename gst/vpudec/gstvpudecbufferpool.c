@@ -23,7 +23,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include "gstvpumeta.h"
+#include <gst/vpudec/gstvpumeta.h>
 #include "gstvpudecbufferpool.h"
 
 GST_DEBUG_CATEGORY_STATIC (vpubufferpool_debug);
@@ -90,7 +90,10 @@ gst_vpudec_buffer_pool_alloc_buffer (GstBufferPool * bpool,
       gst_vpudec_meta_get_mem (meta), pool);
 
   *buffer = newbuf;
+#if 0
   pool->buffers[pool->nb_buffers_alloc] = newbuf;
+  pool->nb_buffers++;
+#endif
   pool->nb_buffers_alloc++;
 
   return GST_FLOW_OK;
@@ -161,6 +164,7 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   VPUMemLinear_t vpu_mem;
   VPU_API_ERR ret;
   gint buf_index;
+  GstVpuDecMeta *meta;
 
   memset (&dec_out, 0, sizeof (DecoderOut_t));
   dec_out.data = (guint8 *) g_malloc (sizeof (VPU_FRAME));
@@ -181,9 +185,12 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   pool->buffers[buf_index] = NULL;
   pool->nb_queued--;
 
+  meta = GST_VPUDEC_META_GET (outbuf);
+
   GST_DEBUG_OBJECT (pool,
-      "acquired buffer %p (%p) , index %d, queued %d data %p", outbuf,
-      (gpointer) vpu_mem.vir_addr, buf_index, pool->nb_queued, vpu_mem.offset);
+      "acquired buffer %p (%p) , index %d: %d, queued %d data %p", outbuf,
+      (gpointer) vpu_mem.vir_addr, buf_index, gst_vpudec_meta_get_index (meta),
+      pool->nb_queued, vpu_mem.offset);
 
   *buffer = outbuf;
   g_free (dec_out.data);
@@ -221,27 +228,33 @@ gst_vpudec_buffer_pool_release_buffer (GstBufferPool * bpool,
   meta = GST_VPUDEC_META_GET (buffer);
   g_assert (meta != NULL);
   buf_index = gst_vpudec_meta_get_index (meta);
+  GST_DEBUG_OBJECT (pool,
+      "will release buffer %p (%p), index %d, queued %d", buffer,
+      gst_vpudec_meta_get_mem (meta), buf_index, pool->nb_queued);
 
-  if (pool->buffers[buf_index] != NULL)
+
+  if (pool->buffers[buf_index] != NULL) {
     goto already_queued;
-
-  /* Release the internal refcount in mpp */
-  VPUFreeLinear (gst_vpudec_meta_get_vpumem (meta));
-  pool->buffers[buf_index] = buffer;
-  pool->nb_queued++;
+  } else {
+    /* Release the internal refcount in mpp */
+    VPUFreeLinear (gst_vpudec_meta_get_vpumem (meta));
+    pool->buffers[buf_index] = buffer;
+    pool->nb_queued++;
+  }
 
   GST_DEBUG_OBJECT (pool,
       "released buffer %p (%p), index %d, queued %d", buffer,
       gst_vpudec_meta_get_mem (meta), buf_index, pool->nb_queued);
 
   return;
-
+#if 1
   /* ERRORS */
 already_queued:
   {
     GST_WARNING_OBJECT (pool, "the buffer was already released");
     return;
   }
+#endif
 }
 
 static void
