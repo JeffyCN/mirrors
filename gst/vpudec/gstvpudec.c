@@ -424,23 +424,26 @@ gst_vpudec_decode_loop (void *decoder)
     goto eos;
 
   frame = gst_video_decoder_get_oldest_frame (decoder);
-  if (frame == NULL)
-    goto out;
 
-  frame->output_buffer = output_buffer;
+  if (frame) {
+    frame->output_buffer = output_buffer;
+    GST_DEBUG_OBJECT (vpudec, "-->Frame pushed buffer %p", output_buffer);
 
-  GST_DEBUG_OBJECT (vpudec, "-->Frame pushed buffer %p", output_buffer);
-  gst_video_decoder_finish_frame (decoder, frame);
-
-  frame->output_buffer = NULL;
-  gst_video_codec_frame_unref (frame);
-
-out:
-  {
-    gst_buffer_pool_release_buffer (vpudec->pool, output_buffer);
-    return;
+    output_buffer = NULL;
+    ret = gst_video_decoder_finish_frame (decoder, frame);
+    if (ret != GST_FLOW_OK)
+      goto beach;
+  } else {
+    GST_WARNING_OBJECT (decoder, "Decoder is producing too many buffers");
+    gst_buffer_unref (output_buffer);
   }
 
+  return;
+
+beach:
+  GST_DEBUG_OBJECT (vpudec, "beach !");
+  gst_buffer_replace (&output_buffer, NULL);
+  gst_task_pause (vpudec->decode_task);
 eos:
   {
     GST_DEBUG_OBJECT (vpudec, "eos !");
