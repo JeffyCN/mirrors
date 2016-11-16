@@ -25,6 +25,9 @@
 
 #include "gstvpumeta.h"
 
+GST_DEBUG_CATEGORY_STATIC (gst_vpudec_meta_debug);
+#define GST_CAT_DEFAULT gst_vpudec_meta_debug
+
 #define GST_VPU_DEC_META(obj) \
   ((GstVpuDecMeta *) (obj))
 #define GST_VPU_IS_DEC_META(obj) \
@@ -43,14 +46,14 @@ struct _GstVpuDecMeta
 GType
 gst_vpudec_meta_api_get_type (void)
 {
-  static volatile GType type;
+  static GType g_type;
   static const gchar *tags[] = { "memory", NULL };
 
-  if (g_once_init_enter (&type)) {
-    GType _type = gst_meta_api_type_register ("GstVpuDecMetaAPI", tags);
-    g_once_init_leave (&type, _type);
+  if (g_once_init_enter (&g_type)) {
+    GType type = gst_meta_api_type_register ("GstVpuDecMetaAPI", tags);
+    g_once_init_leave (&g_type, type);
   }
-  return type;
+  return g_type;
 }
 
 static gboolean
@@ -72,6 +75,8 @@ gst_vpudec_meta_free (GstMeta * meta, GstBuffer * buffer)
 {
   GstVpuDecMeta *emeta = (GstVpuDecMeta *) meta;
 
+  g_print ("meta try free %d: %x\n", emeta->index, *emeta->vpumem.offset);
+
   VPUFreeLinear (&emeta->vpumem);
   emeta->mem = NULL;
   emeta->index = 0;
@@ -79,21 +84,21 @@ gst_vpudec_meta_free (GstMeta * meta, GstBuffer * buffer)
   emeta->dmabuf_fd = -1;
 }
 
-#define GST_VPUDEC_META_INFO gst_vpudec_meta_get_info()
 const GstMetaInfo *
 gst_vpudec_meta_get_info (void)
 {
-  static const GstMetaInfo *meta_info = NULL;
+  static gsize g_meta_info;
 
-  if (g_once_init_enter (&meta_info)) {
-    const GstMetaInfo *meta =
-        gst_meta_register (gst_vpudec_meta_api_get_type (), "GstVpuDecMeta",
-        sizeof (GstVpuDecMeta), (GstMetaInitFunction) gst_vpudec_meta_init,
-        (GstMetaFreeFunction) gst_vpudec_meta_free,
-        (GstMetaTransformFunction) NULL);
-    g_once_init_leave (&meta_info, meta);
+  if (g_once_init_enter (&g_meta_info)) {
+    gsize meta_info =
+        GPOINTER_TO_SIZE (gst_meta_register (gst_vpudec_meta_api_get_type (),
+            "GstVpuDecMeta",
+            sizeof (GstVpuDecMeta), (GstMetaInitFunction) gst_vpudec_meta_init,
+            (GstMetaFreeFunction) gst_vpudec_meta_free,
+            (GstMetaTransformFunction) NULL));
+    g_once_init_leave (&g_meta_info, meta_info);
   }
-  return meta_info;
+  return GSIZE_TO_POINTER (g_meta_info);
 }
 
 guint
@@ -169,4 +174,19 @@ gst_vpudec_meta_alloc_mem (vpu_display_mem_pool * vpool, GstVpuDecMeta * meta,
   } else {
     return FALSE;
   }
+}
+
+GstVpuDecMeta *
+gst_buffer_get_vpudec_meta (GstBuffer * buffer)
+{
+  GstVpuDecMeta *meta;
+  GstMeta *m;
+
+  m = gst_buffer_get_meta (buffer, GST_VPUDEC_META_INFO_API_TYPE);
+  if (!m)
+    return NULL;
+
+  meta = (GstVpuDecMeta *) m;
+
+  return meta;
 }

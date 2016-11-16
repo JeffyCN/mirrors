@@ -17,23 +17,30 @@
 #define __GST_VPU_META_H__
 
 #include <gst/gst.h>
+#if 0
 #include <rockchip/vpu_api.h>
+#else
+#include "vpu_api.h"
+#endif
 
 G_BEGIN_DECLS
 
 typedef struct _GstVpuDecMeta GstVpuDecMeta;
 
-#define GST_VPUDEC_META_GET(buf) \
-  ((GstVpuDecMeta *)gst_buffer_get_meta(buf, gst_vpudec_meta_api_get_type()))
-#define GST_VPUDEC_META_ADD(buf, index) \
-  ((GstVpuDecMeta *)gst_buffer_add_meta \
-    (buf, gst_vpudec_meta_get_info(), index))
-
 G_GNUC_INTERNAL
 GType gst_vpudec_meta_api_get_type (void);
 
+#define GST_VPUDEC_META_INFO_API_TYPE gst_vpudec_meta_api_get_type()
 G_GNUC_INTERNAL
 const GstMetaInfo *gst_vpudec_meta_get_info (void);
+
+#define GST_VPUDEC_META_INFO gst_vpudec_meta_get_info()
+
+#define GST_VPUDEC_META_GET(buf) \
+  ((GstVpuDecMeta *)gst_buffer_get_meta(buf, GST_VPUDEC_META_INFO_API_TYPE))
+#define GST_VPUDEC_META_ADD(buf, index) \
+  ((GstVpuDecMeta *)gst_buffer_add_meta \
+    (buf, GST_VPUDEC_META_INFO, index))
 
 G_GNUC_INTERNAL
 guint gst_vpudec_meta_get_index (GstVpuDecMeta *meta);
@@ -56,6 +63,10 @@ gpointer gst_vpudec_meta_get_offset (GstVpuDecMeta *meta);
 G_GNUC_INTERNAL
 gboolean gst_vpudec_meta_alloc_mem
 (vpu_display_mem_pool *vpool, GstVpuDecMeta *meta, gint size);
+
+G_GNUC_INTERNAL
+GstVpuDecMeta *
+gst_buffer_get_vpudec_meta (GstBuffer * buffer);
 
 G_END_DECLS
 #endif /*__GST_VPU_META_H__ */
