@@ -26,9 +26,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <gst/gst.h>
+#include <gst/vpudec/gstvpumeta.h>
 
 #include "gstvpudec.h"
-
 #include "vpu.h"
 #include "vpu_api.h"
 
@@ -51,7 +51,6 @@ static GstFlowReturn gst_vpudec_handle_frame (GstVideoDecoder * decoder,
     GstVideoCodecFrame * frame);
 static void gst_vpudec_finalize (GObject * object);
 static void gst_vpudec_decode_loop (void *decoder);
-gboolean plugin_init (GstPlugin * plugin);
 static gboolean gst_vpudec_close (GstVpuDec * vpudec);
 
 static GstStaticPadTemplate gst_vpudec_sink_template =
@@ -79,15 +78,6 @@ GST_STATIC_PAD_TEMPLATE ("src",
     GST_STATIC_CAPS ("video/x-raw, "
         "format = (string) NV12, "
         "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]"));
-
-gboolean
-plugin_init (GstPlugin * plugin)
-{
-  if (!gst_element_register (plugin, "vpudec", GST_RANK_PRIMARY + 1,
-          GST_TYPE_VPUDEC))
-    return FALSE;
-  return TRUE;
-}
 
 static void
 gst_vpudec_class_init (GstVpuDecClass * klass)
@@ -426,11 +416,21 @@ gst_vpudec_decode_loop (void *decoder)
   frame = gst_video_decoder_get_oldest_frame (decoder);
 
   if (frame) {
+    GstVpuDecMeta *meta;
+
     frame->output_buffer = output_buffer;
-    GST_DEBUG_OBJECT (vpudec, "-->Frame pushed buffer %p", output_buffer);
+    meta = GST_VPUDEC_META_GET (frame->output_buffer);
+    GST_DEBUG_OBJECT (vpudec, "-->Frame pushed buffer %d from pool %p",
+        gst_vpudec_meta_get_index (meta), output_buffer->pool);
 
     output_buffer = NULL;
     ret = gst_video_decoder_finish_frame (decoder, frame);
+
+    //GST_DEBUG_OBJECT (vpudec, "-->Frame pushed fd %d", gst_vpudec_meta_get_fd(meta));
+
+    /* FIXME gst_video_decoder_finish_frame() increase the refcount ! */
+    gst_buffer_unref (frame->output_buffer);
+
     if (ret != GST_FLOW_OK)
       goto beach;
   } else {
@@ -575,9 +575,3 @@ send_stream_error:
     return GST_FLOW_ERROR;
   }
 }
-
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
-    GST_VERSION_MINOR,
-    vpudec,
-    "VPU decoder",
-    plugin_init, VERSION, GST_LICENSE, GST_PACKAGE_NAME, GST_PACKAGE_ORIGIN);

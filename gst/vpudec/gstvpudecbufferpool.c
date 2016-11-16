@@ -45,7 +45,7 @@ gst_vpudec_buffer_pool_free_buffer (GstBufferPool * bpool, GstBuffer * buffer)
   GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
   GstVpuDecMeta *meta;
 
-  meta = GST_VPUDEC_META_GET (buffer);
+  meta = gst_buffer_get_vpudec_meta (buffer);
   g_assert (meta != NULL);
 
   GST_DEBUG_OBJECT (pool,
@@ -72,6 +72,8 @@ gst_vpudec_buffer_pool_alloc_buffer (GstBufferPool * bpool,
   meta = GST_VPUDEC_META_ADD (newbuf, (gpointer) & pool->nb_buffers_alloc);
   vpool = (vpu_display_mem_pool *) dec->vpu_mem_pool;
 
+  GST_META_FLAG_SET (meta, GST_META_FLAG_POOLED);
+  GST_META_FLAG_SET (meta, GST_META_FLAG_LOCKED);
   /* commit vpumem to libvpu  */
   if (!gst_vpudec_meta_alloc_mem (vpool, meta, pool->buf_alloc_size))
     GST_WARNING_OBJECT (pool, "mempool commit error");
@@ -90,10 +92,6 @@ gst_vpudec_buffer_pool_alloc_buffer (GstBufferPool * bpool,
       gst_vpudec_meta_get_mem (meta), pool);
 
   *buffer = newbuf;
-#if 0
-  pool->buffers[pool->nb_buffers_alloc] = newbuf;
-  pool->nb_buffers++;
-#endif
   pool->nb_buffers_alloc++;
 
   return GST_FLOW_OK;
@@ -185,7 +183,7 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   pool->buffers[buf_index] = NULL;
   pool->nb_queued--;
 
-  meta = GST_VPUDEC_META_GET (outbuf);
+  meta = gst_buffer_get_vpudec_meta (outbuf);
 
   GST_DEBUG_OBJECT (pool,
       "acquired buffer %p (%p) , index %d: %d, queued %d data %p", outbuf,
@@ -225,12 +223,12 @@ gst_vpudec_buffer_pool_release_buffer (GstBufferPool * bpool,
   GstVpuDecMeta *meta = NULL;
   guint buf_index = -1;
 
-  meta = GST_VPUDEC_META_GET (buffer);
+  meta = gst_buffer_get_vpudec_meta (buffer);
   g_assert (meta != NULL);
   buf_index = gst_vpudec_meta_get_index (meta);
   GST_DEBUG_OBJECT (pool,
-      "will release buffer %p (%p), index %d, queued %d", buffer,
-      gst_vpudec_meta_get_mem (meta), buf_index, pool->nb_queued);
+      "will release buffer %p (%d), index %d, queued %d", buffer,
+      GST_MINI_OBJECT_REFCOUNT (buffer), buf_index, pool->nb_queued);
 
 
   if (pool->buffers[buf_index] != NULL) {
@@ -243,18 +241,16 @@ gst_vpudec_buffer_pool_release_buffer (GstBufferPool * bpool,
   }
 
   GST_DEBUG_OBJECT (pool,
-      "released buffer %p (%p), index %d, queued %d", buffer,
-      gst_vpudec_meta_get_mem (meta), buf_index, pool->nb_queued);
+      "released buffer %p (%d), index %d, queued %d", buffer,
+      GST_MINI_OBJECT_REFCOUNT (buffer), buf_index, pool->nb_queued);
 
   return;
-#if 1
   /* ERRORS */
 already_queued:
   {
     GST_WARNING_OBJECT (pool, "the buffer was already released");
     return;
   }
-#endif
 }
 
 static void
