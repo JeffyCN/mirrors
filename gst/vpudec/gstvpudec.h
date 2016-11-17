@@ -22,7 +22,7 @@
 #include <gst/video/gstvideodecoder.h>
 #include <gst/video/gstvideopool.h>
 
-#include "vpu_api.h"
+#include <rockchip/vpu_api.h>
 
 /* Begin Declaration */
 G_BEGIN_DECLS

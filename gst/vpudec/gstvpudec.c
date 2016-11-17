@@ -29,8 +29,6 @@
 #include <gst/vpudec/gstvpumeta.h>
 
 #include "gstvpudec.h"
-#include "vpu.h"
-#include "vpu_api.h"
 
 GST_DEBUG_CATEGORY (gst_vpudec_debug);
 #define GST_CAT_DEFAULT gst_vpudec_debug

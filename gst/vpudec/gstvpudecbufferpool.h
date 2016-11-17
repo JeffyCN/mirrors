@@ -19,7 +19,6 @@
 #include <gst/gst.h>
 
 #include "gstvpudec.h"
-#include "vpu_api.h"
 
 G_BEGIN_DECLS typedef struct _GstVpuDecBufferPool GstVpuDecBufferPool;
 typedef struct _GstVpuDecBufferPoolClass GstVpuDecBufferPoolClass;
