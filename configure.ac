@@ -54,13 +54,14 @@ AS_AUTOTOOLS_ALTERNATE
 dnl Add parameters for aclocal
 AC_SUBST(ACLOCAL_AMFLAGS, "-I m4 -I common/m4")
 
+dnl PKG_CONFIG_SYSROOT_DIR is a valid environment variable
+m4_pattern_allow(PKG_CONFIG_SYSROOT_DIR)
+
 dnl set up gettext
 dnl the version check needs to stay here because autopoint greps for it
 AM_GNU_GETTEXT_VERSION([0.17])
 AM_GNU_GETTEXT([external])
 AG_GST_GETTEXT([gst-plugins-intel-$GST_API_VERSION])
-
-dnl *** check for arguments to configure ***
 
 AG_GST_ARG_DISABLE_FATAL_WARNINGS
 
@@ -312,13 +313,22 @@ GST_PLUGIN_LDFLAGS="-module -avoid-version -export-symbols-regex '^[_]*gst_plugi
 AC_SUBST(GST_PLUGIN_LDFLAGS)
 
 dnl *** output files ***
+PKG_CHECK_MODULES(GST_ALLOCATORS, gstreamer-allocators-1.0,
+	HAVE_GST_ALLOCATORS=yes, )
+PKG_CHECK_MODULES(GST_VIDEO, gstreamer-video-[$GST_API_VERSION], [$GST_REQ], yes)
 
 PKG_CHECK_MODULES([ROCKCHIP_MPP], [rockchip_mpp])
 PKG_CHECK_MODULES([ROCKCHIP_VPU], [rockchip_vpu])
+PKG_CHECK_MODULES([DRM], [libdrm], HAVE_KMS=yes, HAVE_KMS=no)
+
+
 
 dnl keep this alphabetic per directory, please
 AC_CONFIG_FILES(
 Makefile
+gst-libs/Makefile
+gst-libs/gst/Makefile
+gst-libs/gst/vpudec/Makefile
 gst/Makefile
 gst/vpudec/Makefile
 po/Makefile.in

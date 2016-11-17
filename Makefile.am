@@ -1,12 +1,4 @@
-ALWAYS_SUBDIRS =		\
-	gst			\
-	common			\
-	m4
-
-
-SUBDIRS = $(ALWAYS_SUBDIRS)
-
-DIST_SUBDIRS = $(ALWAYS_SUBDIRS)
+SUBDIRS = gst-libs gst common m4
 
 ACLOCAL_AMFLAGS = -I m4 -I common/m4
 
