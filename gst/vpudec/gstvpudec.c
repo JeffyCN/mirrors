@@ -40,7 +40,7 @@ G_DEFINE_TYPE (GstVpuDec, gst_vpudec, GST_TYPE_VIDEO_DECODER);
 
 
 #define NB_INPUT_BUFS 4
-#define NB_OUTPUT_BUFS 10       /* nb frames necessary for display pipeline */
+#define NB_OUTPUT_BUFS 22       /* nb frames necessary for display pipeline */
 
 /* GstVideoDecoder base class method */
 static gboolean gst_vpudec_start (GstVideoDecoder * decoder);
