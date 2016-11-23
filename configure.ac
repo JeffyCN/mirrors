@@ -5,7 +5,7 @@ dnl please read gstreamer/docs/random/autotools before changing this file
 dnl initialize autoconf
 dnl releases only do -Wall, git and prerelease does -Werror too
 dnl use a three digit version number for releases, and four for git/pre
-AC_INIT([GStreamer Plug-ins], [1.8.3], [https://github.com/hizukiayaka/gst-intel-rk], [gst-plugins-intel])
+AC_INIT([GStreamer Plug-ins], [1.8.3], [https://github.com/rockchip-linux/gstreamer-rockchip], [gstreamer-rockchip])
 
 AG_GST_INIT
 
@@ -61,7 +61,7 @@ dnl set up gettext
 dnl the version check needs to stay here because autopoint greps for it
 AM_GNU_GETTEXT_VERSION([0.17])
 AM_GNU_GETTEXT([external])
-AG_GST_GETTEXT([gst-plugins-intel-$GST_API_VERSION])
+AG_GST_GETTEXT([gstreamer-rockchip-$GST_API_VERSION])
 
 AG_GST_ARG_DISABLE_FATAL_WARNINGS
 

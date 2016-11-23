@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# gst-plugins-intel autogen.sh
+# gstreamer-rockchip autogen.sh
 #
 # Run this to generate all the initial makefiles, etc.
 #
@@ -13,8 +13,8 @@ test -n "$srcdir" || srcdir=.
 olddir=`pwd`
 cd "$srcdir"
 
-package=gst-plugins-intel
-srcfile=gst-plugins-intel.doap
+package=gstreamer-rockchip
+srcfile=gstreamer-rockchip.doap
 
 # Make sure we have common
 if test ! -f common/gst-autogen.sh;
@@ -47,7 +47,7 @@ fi
 # GNU gettext automake support doesn't get along with git.
 # https://bugzilla.gnome.org/show_bug.cgi?id=661128
 if test -d po ; then
-  touch -t 200001010000 po/gst-plugins-good-1.0.pot
+  touch -t 200001010000 po/gstreamer-rockchip-1.0.pot
 fi
 
 CONFIGURE_DEF_OPT='--enable-maintainer-mode --enable-gtk-doc'
