@@ -36,7 +36,6 @@ GST_DEBUG_CATEGORY (gst_vpudec_debug);
 #define parent_class gst_vpudec_parent_class
 G_DEFINE_TYPE (GstVpuDec, gst_vpudec, GST_TYPE_VIDEO_DECODER);
 
-
 #define NB_INPUT_BUFS 4
 #define NB_OUTPUT_BUFS 22       /* nb frames necessary for display pipeline */
 
@@ -405,8 +404,6 @@ gst_vpudec_decode_loop (void *decoder)
   GstVideoCodecFrame *frame;
   GstFlowReturn ret = GST_FLOW_OK;
 
-  GST_DEBUG_OBJECT (decoder, "entering decode loop !");
-
   ret = gst_buffer_pool_acquire_buffer (vpudec->pool, &output_buffer, NULL);
   if ((ret == GST_FLOW_EOS) || GST_VPUDEC_IS_EOS (vpudec))
     goto eos;
@@ -414,19 +411,16 @@ gst_vpudec_decode_loop (void *decoder)
   frame = gst_video_decoder_get_oldest_frame (decoder);
 
   if (frame) {
-    GstVpuDecMeta *meta;
+    GST_BUFFER_OFFSET (output_buffer) = GST_BUFFER_OFFSET_NONE;
 
     frame->output_buffer = output_buffer;
-    meta = GST_VPUDEC_META_GET (frame->output_buffer);
-    GST_DEBUG_OBJECT (vpudec, "-->Frame pushed buffer %d from pool %p",
-        gst_vpudec_meta_get_index (meta), output_buffer->pool);
 
     output_buffer = NULL;
     ret = gst_video_decoder_finish_frame (decoder, frame);
 
-    //GST_DEBUG_OBJECT (vpudec, "-->Frame pushed fd %d", gst_vpudec_meta_get_fd(meta));
-
     /* FIXME gst_video_decoder_finish_frame() increase the refcount ! */
+    GST_TRACE_OBJECT (decoder, "finish buffer ts=%", GST_TIME_FORMAT,
+        GST_TIME_ARGS (GST_BUFFER_TIMESTAMP (frame->output_buffer)));
     gst_buffer_unref (frame->output_buffer);
 
     if (ret != GST_FLOW_OK)
