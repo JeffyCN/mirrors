@@ -62,11 +62,15 @@ gst_vpudec_buffer_pool_alloc_buffer (GstBufferPool * bpool,
 {
   GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
   GstVpuDec *dec = pool->dec;
-  GstBuffer *newbuf;
+  GstBuffer *newbuf = NULL;
   GstVpuDecMeta *meta;
   vpu_display_mem_pool *vpool;
+  GstVideoInfo *info;
 
+  /* TODO: add dmabuf allocator when RGA can accept dmabuf fd */
   newbuf = gst_buffer_new ();
+
+  info = &dec->info;
 
   /* Attach meta data to the buffer */
   meta = GST_VPUDEC_META_ADD (newbuf, (gpointer) & pool->nb_buffers_alloc);
@@ -84,7 +88,10 @@ gst_vpudec_buffer_pool_alloc_buffer (GstBufferPool * bpool,
           gst_vpudec_meta_get_size (meta), gst_vpudec_meta_get_mem (meta),
           NULL));
 
-  /* TODO: add dmabuf allocator when RGA can accept dmabuf fd */
+  gst_buffer_add_video_meta_full (newbuf, GST_VIDEO_FRAME_FLAG_NONE,
+      GST_VIDEO_INFO_FORMAT (info), GST_VIDEO_INFO_WIDTH (info),
+      GST_VIDEO_INFO_HEIGHT (info), GST_VIDEO_INFO_N_PLANES (info),
+      info->offset, info->stride);
 
   GST_DEBUG_OBJECT (pool, "created buffer %u of size %d, %p (%p) for pool %p",
       gst_vpudec_meta_get_index (meta),
