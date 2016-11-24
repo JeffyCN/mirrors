@@ -773,6 +773,7 @@ gst_kms_sink_show_frame (GstVideoSink * vsink, GstBuffer * buf)
   GstVideoRectangle dst = { 0, };
   GstVideoRectangle result;
   GstFlowReturn res;
+  GstVideoMeta *video_info;
   GstVpuDecMeta *meta = NULL;
   guint32 gem_handle, w, h, fmt, bo_handles[4] = { 0, };
   guint32 offsets[4] = { 0, };
@@ -783,7 +784,8 @@ gst_kms_sink_show_frame (GstVideoSink * vsink, GstBuffer * buf)
   res = GST_FLOW_ERROR;
 
   meta = gst_buffer_get_vpudec_meta (buf);
-  if (meta)
+  video_info = gst_buffer_get_video_meta (buf);
+  if (meta && video_info)
     buffer = buf;
   else
     goto buffer_invalid;
@@ -802,11 +804,11 @@ gst_kms_sink_show_frame (GstVideoSink * vsink, GstBuffer * buf)
   h = GST_VIDEO_INFO_HEIGHT (&self->vinfo);
   fmt = gst_drm_format_from_video (GST_VIDEO_INFO_FORMAT (&self->vinfo));
 
-  pitches[0] = w;
-  offsets[0] = 0;
+  pitches[0] = video_info->stride[0];
+  offsets[0] = video_info->offset[0];
   bo_handles[0] = gem_handle;
-  pitches[1] = w;
-  offsets[1] = w * h;
+  pitches[1] = video_info->stride[1];
+  offsets[1] = video_info->offset[1];
   bo_handles[1] = gem_handle;
 
   ret = drmModeAddFB2 (self->fd, w, h, fmt, bo_handles, pitches,
