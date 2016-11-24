@@ -411,8 +411,6 @@ gst_vpudec_decode_loop (void *decoder)
   frame = gst_video_decoder_get_oldest_frame (decoder);
 
   if (frame) {
-    GST_BUFFER_OFFSET (output_buffer) = GST_BUFFER_OFFSET_NONE;
-
     frame->output_buffer = output_buffer;
 
     output_buffer = NULL;
@@ -448,46 +446,63 @@ static gboolean
 gst_vpudec_set_output (GstVpuDec * vpudec)
 {
   GstVideoCodecState *output_state;
-  GstVideoAlignment align;
+  GstVideoAlignment *align;
+  GstVideoInfo *info;
   DecoderFormat_t fmt;
   gboolean ret = TRUE;
 
   GST_DEBUG_OBJECT (vpudec, "Setting output");
 
   vpudec->ctx->control (vpudec->ctx, VPU_API_DEC_GETFORMAT, &fmt);
+  info = &vpudec->info;
 
-  GST_DEBUG_OBJECT (vpudec,
+  GST_INFO_OBJECT (vpudec,
       "Format found from vpu :pixelfmt:%s, aligned_width:%d, aligned_height:%d, stride:%d, sizeimage:%d",
       gst_video_format_to_string (to_gst_pix_format (fmt.format)),
-      fmt.aligned_width, fmt.aligned_height, fmt.aligned_stride,
+      fmt.aligned_width, fmt.aligned_height, fmt.stride,
       fmt.aligned_frame_size);
+
+  /* FIXME not complete video information */
+  gst_video_info_init (info);
+  info->finfo = gst_video_format_get_info (GST_VIDEO_FORMAT_NV12);
+  info->width = fmt.width;
+  info->height = fmt.height;
+  info->offset[0] = 0;
+  info->offset[1] = fmt.aligned_width * fmt.aligned_height;
+  info->stride[0] = fmt.aligned_stride;
+  info->stride[1] = fmt.aligned_stride;
+
+  GST_INFO_OBJECT (vpudec,
+      "video info stride %d, offset %d, stride %d, offset %d",
+      GST_VIDEO_INFO_PLANE_STRIDE (&vpudec->info, 0),
+      GST_VIDEO_INFO_PLANE_OFFSET (&vpudec->info, 0),
+      GST_VIDEO_INFO_PLANE_STRIDE (&vpudec->info, 1),
+      GST_VIDEO_INFO_PLANE_OFFSET (&vpudec->info, 1));
 
   output_state =
       gst_video_decoder_set_output_state (GST_VIDEO_DECODER (vpudec),
-      to_gst_pix_format (fmt.format), fmt.aligned_width, fmt.aligned_height,
+      to_gst_pix_format (fmt.format), fmt.width, fmt.height,
       vpudec->input_state);
 
   if (vpudec->output_state)
     gst_video_codec_state_unref (vpudec->output_state);
   vpudec->output_state = gst_video_codec_state_ref (output_state);
 
-  gst_video_alignment_reset (&align);
-
-  /* TODO get alignment info from libvpu */
+  align = &vpudec->align;
+  gst_video_alignment_reset (align);
   /* Compute padding and set buffer alignment */
+  align->padding_right = fmt.aligned_width - fmt.width;
+  align->padding_bottom = fmt.aligned_height - fmt.height;
 
-
-#if 1
   /* construct a new buffer pool */
   vpudec->pool = gst_vpudec_buffer_pool_new (vpudec, NULL, NB_OUTPUT_BUFS,
-      fmt.aligned_frame_size, &align);
+      fmt.aligned_frame_size, align);
   if (vpudec->pool == NULL)
     goto error_new_pool;
 
   /* activate the pool: the buffers are allocated */
   if (gst_buffer_pool_set_active (vpudec->pool, TRUE) == FALSE)
     goto error_activate_pool;
-#endif
 
   /* Everything is ready, start the thread */
   GST_DEBUG_OBJECT (vpudec, "Starting decoding thread");

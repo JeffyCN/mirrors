@@ -62,11 +62,13 @@ struct _GstVpuDec
   GstVideoCodecState *input_state;
   GstVideoCodecState *output_state;
 
+  /* the currently format */
+  GstVideoInfo info;
+  GstVideoAlignment align;
+
   /* for multi-threading */
   GstTask *decode_task;
   GRecMutex decode_task_mutex;
-
-  //pthread_t decode_thread;
 
   gboolean active;
   gboolean eos;
