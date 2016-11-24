@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <time.h>
 #include <unistd.h>
+#include <utils/Singleton.h>
 
 #include <sys/mman.h>
 #include <linux/stddef.h>
@@ -62,9 +63,11 @@ public:
     void        RkRgaSetAlwaysLogFlag(bool log) {mLogAlways = log;}
     void        RkRgaLogOutRgaReq(struct rga_req rgaReg);
 
+    inline bool RkRgaIsReady() { return mSupportRga; }
 
 /************************************private***********************************/
 private:
+    bool                            mSupportRga;
     int                             mLogOnce;
     int                             mLogAlways;
     void *                          mContext;

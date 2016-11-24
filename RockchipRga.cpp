@@ -54,6 +54,7 @@ ANDROID_SINGLETON_STATIC_INSTANCE(RockchipRga)
 Mutex RockchipRga::mMutex;
 
 RockchipRga::RockchipRga():
+    mSupportRga(false),
     mLogOnce(0),
     mLogAlways(0),
     mContext(NULL)
@@ -68,7 +69,14 @@ RockchipRga::~RockchipRga()
 
 int RockchipRga::RkRgaInit()
 {
-    RgaInit(&mContext);
+    int ret = 0;
+
+    ret = RgaInit(&mContext);
+    if(ret == 0)
+        mSupportRga = true;
+    else
+        mSupportRga = false;
+
     return 0;
 }
 

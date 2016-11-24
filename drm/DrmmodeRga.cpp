@@ -198,7 +198,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	rotation &= DRM_RGA_TRANSFORM_FLIP_MASK;
 
 	fprintf(stderr, "ctx=%p,ctx->ctx=%p\n",ctx,ctx->ctx);
-	ctx->ctx->log = 1;
+	ctx->ctx->log = 0;
 	rga_multiple_transform(ctx->ctx, &srcImage, &dstImage,
                                 relSrcRect.xoffset, relSrcRect.yoffset,
                                 relSrcRect.width,   relSrcRect.height,
