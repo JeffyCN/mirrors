@@ -58,6 +58,10 @@ LOCAL_CFLAGS += -DMALI_AFBC_GRALLOC=1
 endif
 endif #android 6.0 and later
 
+ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
+LOCAL_CFLAGS += -DRK3368
+endif
+
 LOCAL_MODULE:= librga
 include $(BUILD_SHARED_LIBRARY)
 endif

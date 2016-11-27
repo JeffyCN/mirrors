@@ -12,8 +12,12 @@
 
 #ifndef _rockchip_rga_drm_gralloc_h_
 #define _rockchip_rga_drm_gralloc_h_
+
+#ifndef RK3368
 #include <gralloc_priv.h>
-/*
+
+#else
+#include <hardware/img_gralloc_public.h>
 #ifndef GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD
 #define GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD 0x81000002
 #endif
@@ -29,7 +33,7 @@
 #ifndef GRALLOC_MODULE_PERFORM_GET_USAGE
 #define	GRALLOC_MODULE_PERFORM_GET_USAGE 0xffeeff03
 #endif
+#endif
 
-*/
 #endif
 
