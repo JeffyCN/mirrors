@@ -220,6 +220,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 
 int RgaCollorFill(rga_info *dst)
 {
+    if (!dst)
+	return -EINVAL;
+
     return 0;
 }
 
@@ -378,7 +381,7 @@ static int getRgaRect(buffer_handle_t hnd, rga_rect_t *rect)
 	}
 
     if (dstAttrs.size() <= 0) {
-        ALOGE("SIZE = %d", dstAttrs.size());
+        ALOGE("SIZE = %d", (int)dstAttrs.size());
         return -EINVAL;
     }
 

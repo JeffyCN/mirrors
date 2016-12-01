@@ -610,6 +610,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     clip.ymin = 0;
     clip.ymax = dstActH - 1;
 
+    scaleMode = 0;
     //scale up use bicubic
     if (srcActW / dstActW < 1 || srcActH / dstActH < 1)
         scaleMode = 2;
@@ -794,7 +795,7 @@ int RgaCollorFill(rga_info *dst)
     int dstFd = -1;
     int ret = 0;
     unsigned int color = 0x00000000;
-	rga_rect_t relDstRect,tmpDstRect;
+    rga_rect_t relDstRect,tmpDstRect;
     struct rga_req rgaReg;
     COLOR_FILL fillColor ;
     void *dstBuf = NULL;
@@ -863,6 +864,9 @@ int RgaCollorFill(rga_info *dst)
 
     if (dstFd == 0)
         dstFd = -1;
+
+    if (relDstRect.hstride == 0)
+	relDstRect.hstride = relDstRect.height;
 
     dstVirW = relDstRect.wstride;
     dstVirH = relDstRect.hstride;
@@ -1221,6 +1225,7 @@ int RgaBlit(buffer_handle_t src,
     clip.ymin = 0;
     clip.ymax = dstActH - 1;
 
+    scaleMode = 0;
     //scale up use bicubic
     if (srcActW / dstActW < 1 || srcActH / dstActH < 1)
         scaleMode = 2;
@@ -1578,6 +1583,7 @@ int RgaBlit(void *src,
     clip.ymin = 0;
     clip.ymax = dstActH - 1;
 
+    scaleMode = 0;
     //scale up use bicubic
     if (srcActW / dstActW < 1 || srcActH / dstActH < 1)
         scaleMode = 2;
@@ -1932,6 +1938,7 @@ int RgaBlit(buffer_handle_t src,
     clip.ymin = 0;
     clip.ymax = dstActH - 1;
 
+    scaleMode = 0;
     //scale up use bicubic
     if (srcActW / dstActW < 1 || srcActH / dstActH < 1)
         scaleMode = 2;
@@ -2278,6 +2285,7 @@ int RgaBlit(void *src, void *dst,
     clip.ymin = 0;
     clip.ymax = dstActH - 1;
 
+    scaleMode = 0;
     //scale up use bicubic
     if (srcActW / dstActW < 1 || srcActH / dstActH < 1)
         scaleMode = 2;
