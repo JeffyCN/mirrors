@@ -17,6 +17,7 @@
 #include <sys/types.h>
 
 #include <system/window.h>
+#include <system/graphics.h>
 
 #include <utils/Thread.h>
 

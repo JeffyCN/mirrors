@@ -33,11 +33,11 @@
 #include <ui/Region.h>
 #include <ui/DisplayInfo.h>
 #include <ui/GraphicBufferMapper.h>
+#include <RockchipRga.h>
 
 #include <gui/ISurfaceComposer.h>
 #include <gui/Surface.h>
 #include <gui/SurfaceComposerClient.h>
-#include <RockchipRga.h>
 
 #include <GLES/gl.h>
 #include <GLES/glext.h>
@@ -75,13 +75,13 @@ int main()
     int srcWidth,srcHeight,srcFormat;
     int dstWidth,dstHeight,dstFormat;
 
-    srcWidth = 2048;
-    srcHeight = 1536;
-    srcFormat = HAL_PIXEL_FORMAT_RGBA_8888;
+    srcWidth = 1920;
+    srcHeight = 1088;
+    srcFormat = HAL_PIXEL_FORMAT_YCrCb_NV12_10;
 
-    dstWidth = 2048;
-    dstHeight = 1536;
-    dstFormat = HAL_PIXEL_FORMAT_RGBA_8888;
+    dstWidth = 1920;
+    dstHeight = 1088;
+    dstFormat = HAL_PIXEL_FORMAT_YCrCb_NV12;
 
     RockchipRga& rkRga(RockchipRga::get());
 
@@ -121,13 +121,13 @@ int main()
         printf("lock buffer ok : %s\n","**************************************");
 
 #if 1
-    const char *yuvFilePath = "/data/inputRgbaBuffer.bin";
+    const char *yuvFilePath = "/data/inputBuffer2.bin";
     FILE *file = fopen(yuvFilePath, "rb");
     if (!file) {
         fprintf(stderr, "Could not open %s\n", yuvFilePath);
         return false;
     }
-    fread(buf, 4 * srcWidth * srcHeight, 1, file);
+    fread(buf, 2 * srcWidth * srcHeight, 1, file);
     #if 0
     {
         char *pbuf = (char*)malloc(2 * mHeight * 4864);
@@ -149,64 +149,49 @@ int main()
     memset(buf,0x55,4*1200*1920);
 #endif
     ret = gbs->unlock();
-
-    ret = gbd->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&buf);
-
-    if (ret) {
-        printf("lock buffer error : %s\n",strerror(errno));
-        return ret;
-    } else
-        printf("lock buffer ok : %s\n","**************************************");
-
-#if 1
-    {
-    const char *yuvFilePath = "/data/inputRgbaBuffer1.bin";
-    FILE *file = fopen(yuvFilePath, "rb");
-    if (!file) {
-        fprintf(stderr, "Could not open %s\n", yuvFilePath);
-        return false;
-    }
-    fread(buf, 4 * srcWidth * srcHeight, 1, file);
-    #if 0
-    {
-        char *pbuf = (char*)malloc(2 * mHeight * 4864);
-        for (int i = 0; i < 2160 * 1.6; i++)
-            memcpy(pbuf+i*4800,buf+i*6080,4800);
-        const char *outFilePath = "/data/fb3840x2160-2.yuv";
-        FILE *file = fopen(outFilePath, "wb+");
-        if (!file) {
-            fprintf(stderr, "Could not open %s\n", outFilePath);
-            return false;
-        }
-        fwrite(pbuf, 2 * 4864 * 2160, 1, file);
-        free(pbuf);
-        fclose(file);
-    }
-    #endif
-    fclose(file);
-#else
-    memset(buf,0x55,4*1200*1920);
-#endif
-    }
-    ret = gbd->unlock();
-
     ret = gbs->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&buf);
     if (ret) {
         printf("unlock buffer error : %s\n",strerror(errno));
         return ret;
     } else 
         printf("unlock buffer ok : %s\n","*************************************");
-
+#define USE_HANDLE 1
     while(1) {
     	rga_info_t src;
     	rga_info_t dst;
     	memset(&src, 0, sizeof(rga_info_t));
     	src.fd = -1;
-	src.blend = 0xFF0105;
+    	src.mmuFlag = 1;
     	memset(&dst, 0, sizeof(rga_info_t));
     	dst.fd = -1;
+    	dst.mmuFlag = 1;
+#if USE_HANDLE
     	src.hnd = gbs->handle;
     	dst.hnd = gbd->handle;
+    	/*just to try scal the target buffer: ok to support scale*/
+        //rga_set_rect(&dst.rect, 0,0,1280,720,1280/*stride*/,dstFormat);
+    	//ALOGD("%p,%p,%d,%d",src.hnd,gbs->handle,src.hnd->version,gbs->handle->version);
+#else //use fd
+    	ret = rkRga.RkRgaGetBufferFd(gbs->handle, &src.fd);
+        if (ret) {
+            printf("rgaFillColor error : %s,hnd=%p\n",
+                                            strerror(errno),(void*)(gbd->handle));
+            ALOGD("rgaFillColor error : %s,hnd=%p\n",
+                                            strerror(errno),(void*)(gbd->handle));
+        }
+    	ret = rkRga.RkRgaGetBufferFd(gbd->handle, &dst.fd);
+        if (ret) {
+            printf("rgaFillColor error : %s,hnd=%p\n",
+                                            strerror(errno),(void*)(gbd->handle));
+            ALOGD("rgaFillColor error : %s,hnd=%p\n",
+                                            strerror(errno),(void*)(gbd->handle));
+        }
+
+        //if use fd we need give the rect use handle rect is first else will get if
+        //from handle.handle has the info fo w h stride format and so on
+        rga_set_rect(&src.rect, 0,0,srcWidth,srcHeight,srcWidth/*stride*/,srcFormat);
+        rga_set_rect(&dst.rect, 0,0,dstWidth,dstHeight,dstWidth/*stride*/,dstFormat);
+#endif
         ret = rkRga.RkRgaBlit(&src, &dst, NULL);
 
         if (ret) {

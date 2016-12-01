@@ -495,6 +495,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     if (relSrcRect.hstride == 0)
 	    relSrcRect.hstride = relSrcRect.height;
 
+	if (relSrcRect.format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
+		relSrcRect.wstride = relSrcRect.wstride * 5 / 4;
+
     switch (rotation) {
         case HAL_TRANSFORM_FLIP_H:
             orientation = 0;
@@ -619,6 +622,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 
     ditherEn = (android::bytesPerPixel(relSrcRect.format) 
                         != android::bytesPerPixel(relSrcRect.format) ? 1 : 0);
+
 
     if (ctx->mVersion <= 1.003) {
         srcMmuFlag = dstMmuFlag = 1;
@@ -768,8 +772,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         NormalRgaMmuFlag(&rgaReg, srcMmuFlag, dstMmuFlag);
     }
 
-    //ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
-    //NormalRgaLogOutRgaReq(rgaReg);
+    ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
+    NormalRgaLogOutRgaReq(rgaReg);
 
     if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg)) {
         printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
@@ -816,6 +820,9 @@ int RgaCollorFill(rga_info *dst)
     }
 
     dstFd = -1;
+
+    if (relDstRect.hstride == 0)
+	    relDstRect.hstride = relDstRect.height;
 
     if (dst && dst->hnd) {
 	ret = RkRgaGetHandleFd(dst->hnd, &dstFd);

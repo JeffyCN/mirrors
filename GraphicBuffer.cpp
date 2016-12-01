@@ -132,11 +132,10 @@ int RkRgaGetRgaFormat(int format)
             return RK_FORMAT_YCbCr_420_SP;
     	case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
     	    return RK_FORMAT_YCbCr_420_SP;
-#ifdef HAL_PIXEL_FORMAT_YCrCb_NV12_10
         case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
-            return RK_FORMAT_YCbCr_420_SP_10B;
-#endif
+            return RK_FORMAT_YCbCr_420_SP_10B; //0x20
         default:
+	    ALOGE("Is unsupport format now,please fix");
             return -1;
     }
 }
@@ -160,11 +159,10 @@ int RkRgaGetRgaFormatFromAndroid(int format)
             return RK_FORMAT_YCbCr_420_SP;
     	case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
     	    return RK_FORMAT_YCbCr_420_SP;
-#ifdef HAL_PIXEL_FORMAT_YCrCb_NV12_10
         case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
-            return RK_FORMAT_YCbCr_420_SP_10B;
-#endif
+            return RK_FORMAT_YCbCr_420_SP_10B;//0x20
         default:
+	    ALOGE("Is unsupport format now,please fix");
             return -1;
     }
 }
