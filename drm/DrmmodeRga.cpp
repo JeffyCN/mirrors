@@ -145,6 +145,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	srcImage.buf_type = RGA_IMGBUF_GEM;
 	srcImage.width = relSrcRect.width;
 	srcImage.height = relSrcRect.height;
+	srcImage.hstride = relSrcRect.hstride;
 	srcImage.stride = computeRgaStrideByAndroidFormat(relSrcRect.wstride,
 	                                                  relSrcRect.format);
 	srcImage.color_mode = getDrmFomatFromAndroidFormat(relSrcRect.format);
@@ -157,6 +158,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	dstImage.buf_type = RGA_IMGBUF_GEM;
 	dstImage.width = relDstRect.width;
 	dstImage.height = relDstRect.height;
+	dstImage.hstride = relDstRect.hstride;
 	dstImage.stride = computeRgaStrideByAndroidFormat(relDstRect.wstride,
 	                                                  relDstRect.format);
 	dstImage.color_mode = getDrmFomatFromAndroidFormat(relDstRect.format);
@@ -170,6 +172,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     	src1Image.buf_type = RGA_IMGBUF_GEM;
     	src1Image.width = relSrc1Rect.width;
     	src1Image.height = relSrc1Rect.height;
+        src1Image.hstride = relSrcRect.hstride;
     	src1Image.stride = computeRgaStrideByAndroidFormat(relSrc1Rect.wstride,
     	                                                  relSrc1Rect.format);
     	src1Image.color_mode = getDrmFomatFromAndroidFormat(relSrc1Rect.format);
