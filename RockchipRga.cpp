@@ -93,6 +93,13 @@ int RockchipRga::RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     ret = RgaBlit(src, dst, src1);
     return ret;
 }
+
+int RockchipRga::RkRgaCollorFill(rga_info *dst)
+{
+    int ret = 0;
+    ret = RgaCollorFill(dst);
+    return ret;
+}
 // ---------------------------------------------------------------------------
 
 }

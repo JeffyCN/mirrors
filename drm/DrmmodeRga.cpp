@@ -218,6 +218,11 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	return 0;
 }
 
+int RgaCollorFill(rga_info *dst)
+{
+    return 0;
+}
+
 int drmRgaOpen(void **context)
 {
 

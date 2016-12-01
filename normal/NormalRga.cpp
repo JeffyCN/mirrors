@@ -492,6 +492,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
             break;
     }
 
+    if (relSrcRect.hstride == 0)
+	    relSrcRect.hstride = relSrcRect.height;
 
     switch (rotation) {
         case HAL_TRANSFORM_FLIP_H:
@@ -678,7 +680,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         }
         /*dst*/
         if (dstFd != -1) {
-                dstMmuFlag = srcType ? 1 : 0;
+                dstMmuFlag = dstType ? 1 : 0;
             if (dst && dstFd == dst->fd)
                 dstMmuFlag = dst->mmuFlag ? 1 : 0;
             NormalRgaSetDstVirtualInfo(&rgaReg, 0, 0, 0, dstVirW, dstVirH, &clip,
@@ -764,6 +766,194 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     if (srcMmuFlag || dstMmuFlag) {
         NormalRgaMmuInfo(&rgaReg, 1, 0, 0, 0, 0, 2);
         NormalRgaMmuFlag(&rgaReg, srcMmuFlag, dstMmuFlag);
+    }
+
+    //ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
+    //NormalRgaLogOutRgaReq(rgaReg);
+
+    if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg)) {
+        printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        ALOGE(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+    }
+
+    return 0;
+}
+
+int RgaCollorFill(rga_info *dst)
+{
+    //check rects
+    //check buffer_handle_t with rects
+    struct rgaContext *ctx = rgaCtx;
+    int dstVirW,dstVirH,dstActW,dstActH,dstXPos,dstYPos;
+    int scaleMode,ditherEn;
+    int dstType,dstMmuFlag;
+    int dstFd = -1;
+    int ret = 0;
+    unsigned int color = 0x00000000;
+	rga_rect_t relDstRect,tmpDstRect;
+    struct rga_req rgaReg;
+    COLOR_FILL fillColor ;
+    void *dstBuf = NULL;
+    RECT clip;
+
+    if (!ctx) {
+	    ALOGE("Try to use uninit rgaCtx=%p",ctx);
+	    return -ENODEV;
+    }
+
+    memset(&rgaReg, 0, sizeof(struct rga_req));
+
+    dstType = dstMmuFlag = 0;
+
+    if (!dst) {
+        ALOGE("src = %p, dst = %p", dst, dst);
+        return -EINVAL;
+    }
+
+    if (dst) {
+        color = dst->color;
+        memcpy(&relDstRect, &dst->rect, sizeof(rga_rect_t));
+    }
+
+    dstFd = -1;
+
+    if (dst && dst->hnd) {
+	ret = RkRgaGetHandleFd(dst->hnd, &dstFd);
+	if (ret) {
+		ALOGE("dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
+		printf("-dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
+		return ret;
+	}
+	if (!isRectValid(relDstRect)) {
+            ret = NormalRgaGetRect(dst->hnd, &tmpDstRect);
+	    if (ret)
+		    return ret;
+	    memcpy(&relDstRect, &tmpDstRect, sizeof(rga_rect_t));
+	}
+	NormalRgaGetMmuType(dst->hnd, &dstType);
+    }
+
+
+    if (dst && dstFd < 0)
+        dstFd = dst->fd;
+
+    if (dst && dst->phyAddr)
+        dstBuf = dst->phyAddr;
+    else if (dst && dst->virAddr)
+        dstBuf = dst->virAddr;
+    else if (dst && dst->hnd)
+        ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
+
+    if (dst && dstFd == -1 && !dstBuf) {
+        ALOGE("%d:dst has not fd and address for render", __LINE__);
+        return ret;
+    }
+
+    if (dst && dstFd == 0 && !dstBuf) {
+        ALOGE("dstFd is zero, now driver not support");
+        return -EINVAL;
+    }
+
+    if (dstFd == 0)
+        dstFd = -1;
+
+    dstVirW = relDstRect.wstride;
+    dstVirH = relDstRect.hstride;
+    dstXPos = relDstRect.xoffset;
+    dstYPos = relDstRect.yoffset;
+    dstActW = relDstRect.width;
+    dstActH = relDstRect.height;
+
+    clip.xmin = 0;
+    clip.xmax = dstActW - 1;
+    clip.ymin = 0;
+    clip.ymax = dstActH - 1;
+
+    if (ctx->mVersion <= 1.003) {
+#if defined(__arm64__) || defined(__aarch64__)
+        /*dst*/
+        NormalRgaSetDstVirtualInfo(&rgaReg, (unsigned long)dstBuf,
+                                        (unsigned long)dstBuf + dstVirW * dstVirH,
+                                        (unsigned long)dstBuf + dstVirW * dstVirH * 5/4,
+                                        dstVirW, dstVirH, &clip,
+                                        RkRgaGetRgaFormat(relDstRect.format),0);
+#else
+        /*dst*/
+        NormalRgaSetDstVirtualInfo(&rgaReg, (unsigned int)dstBuf,
+                                        (unsigned int)dstBuf + dstVirW * dstVirH,
+                                        (unsigned int)dstBuf + dstVirW * dstVirH * 5/4,
+                                        dstVirW, dstVirH, &clip,
+                                        RkRgaGetRgaFormat(relDstRect.format),0);
+#endif
+    } else if (ctx->mVersion < 2.0) {
+        /*dst*/
+        if (dstFd != -1) {
+                dstMmuFlag = dstType ? 1 : 0;
+            if (dst && dstFd == dst->fd)
+                dstMmuFlag = dst->mmuFlag ? 1 : 0;
+            NormalRgaSetDstVirtualInfo(&rgaReg, 0, 0, 0, dstVirW, dstVirH, &clip,
+                                        RkRgaGetRgaFormat(relDstRect.format),0);
+	    /*src dst fd*/
+            NormalRgaSetFdsOffsets(&rgaReg, 0, dstFd, 0, 0);
+        } else {
+            if (dst && dst->hnd)
+                dstMmuFlag = dstType ? 1 : 0;
+            if (dst && dstBuf == dst->virAddr)
+                dstMmuFlag = 1;
+            if (dst && dstBuf == dst->phyAddr)
+                dstMmuFlag = 0;
+#if defined(__arm64__) || defined(__aarch64__)
+            NormalRgaSetDstVirtualInfo(&rgaReg, (unsigned long)dstBuf,
+                                        (unsigned long)dstBuf + dstVirW * dstVirH,
+                                        (unsigned long)dstBuf + dstVirW * dstVirH * 5/4,
+                                        dstVirW, dstVirH, &clip,
+                                        RkRgaGetRgaFormat(relDstRect.format),0);
+#else
+            NormalRgaSetDstVirtualInfo(&rgaReg, (unsigned int)dstBuf,
+                                        (unsigned int)dstBuf + dstVirW * dstVirH,
+                                        (unsigned int)dstBuf + dstVirW * dstVirH * 5/4,
+                                        dstVirW, dstVirH, &clip,
+                                        RkRgaGetRgaFormat(relDstRect.format),0);
+#endif
+        }
+    } else {
+        if (dst && dst->hnd)
+            dstMmuFlag = dstType ? 1 : 0;
+        if (dst && dstBuf == dst->virAddr)
+            dstMmuFlag = 1;
+        if (dst && dstBuf == dst->phyAddr)
+            dstMmuFlag = 0;
+        if (dstFd != -1)
+            dstMmuFlag = dstType ? 1 : 0;
+        if (dst && dstFd == dst->fd)
+            dstMmuFlag = dst->mmuFlag ? 1 : 0;
+#if defined(__arm64__) || defined(__aarch64__)
+        /*dst*/
+        NormalRgaSetDstVirtualInfo(&rgaReg, dstFd != -1 ? dstFd : 0,
+                                        (unsigned long)dstBuf,
+                                        (unsigned long)dstBuf + dstVirW * dstVirH,
+                                        dstVirW, dstVirH, &clip,
+                                        RkRgaGetRgaFormat(relDstRect.format),0);
+#else
+        /*dst*/
+        NormalRgaSetDstVirtualInfo(&rgaReg, dstFd != -1 ? dstFd : 0,
+                                        (unsigned int)dstBuf,
+                                        (unsigned int)dstBuf + dstVirW * dstVirH,
+                                        dstVirW, dstVirH, &clip,
+                                        RkRgaGetRgaFormat(relDstRect.format),0);
+#endif
+    }
+
+    NormalRgaSetDstActiveInfo(&rgaReg, dstActW, dstActH, dstXPos, dstYPos);
+
+    memset(&fillColor , 0x0, sizeof(COLOR_FILL));
+
+    /*mode*/
+    NormalRgaSetColorFillMode(&rgaReg, &fillColor, 0, 0, color, 0, 0, 0, 0, 0);
+
+    if (dstMmuFlag) {
+        NormalRgaMmuInfo(&rgaReg, 1, 0, 0, 0, 0, 2);
+        NormalRgaMmuFlag(&rgaReg, dstMmuFlag, dstMmuFlag);
     }
 
     //ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);

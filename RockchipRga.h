@@ -58,6 +58,8 @@ public:
     int         RkRgaInit();
     int         RkRgaGetBufferFd(buffer_handle_t handle, int *fd);
     int         RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1);
+    int         RkRgaCollorFill(rga_info *dst);
+
 
     void        RkRgaSetLogOnceFlag(int log) {mLogOnce = log;}
     void        RkRgaSetAlwaysLogFlag(bool log) {mLogAlways = log;}

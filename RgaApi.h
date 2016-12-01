@@ -18,6 +18,8 @@ extern "C" {
 int         RgaInit(void **ctx);
 int         RgaDeInit(void *ctx);
 int         RgaBlit(rga_info *src, rga_info *dst, rga_info *src1);
+int         RgaCollorFill(rga_info *dst);
+
 #ifdef __cplusplus
 int         RgaBlit(buffer_handle_t src, buffer_handle_t dst,
                                   drm_rga_t *rects, int rotation, int blend);
