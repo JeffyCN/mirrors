@@ -72,6 +72,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     	        return ret;
             memcpy(&relSrcRect, &tmpSrcRect, sizeof(rga_rect_t));
     	}
+	if (relSrcRect.hstride == 0)
+		relSrcRect.hstride = relSrcRect.height;
     }
 
     if (dst && dst->hnd) {
@@ -87,6 +89,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     	        return ret;
             memcpy(&relDstRect, &tmpDstRect, sizeof(rga_rect_t));
     	}
+	if (relDstRect.hstride == 0)
+		relDstRect.hstride = relDstRect.height;
     }
 
     if (src1 && src1->hnd) {
@@ -102,6 +106,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     	        return ret;
             memcpy(&relSrc1Rect, &tmpSrc1Rect, sizeof(rga_rect_t));
     	}
+	if (relSrc1Rect.hstride == 0)
+		relSrc1Rect.hstride = relSrc1Rect.height;
     }
 
     if (src && srcFd < 0)
@@ -192,16 +198,27 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if ((rotation & DRM_RGA_TRANSFORM_ROT_MASK) == DRM_RGA_TRANSFORM_ROT_270)
 		degree = 270;
 
-	printf("[0x%x]src[%d,%d]+[%d,%d],dst[%d,%d]+[%d,%d]\n",rotation,
+#if 0
+	printf("[0x%x]src[%d,%d,%d,%d][%d,%d],dst[%d,%d,%d,%d][%d,%d]\n",rotation,
                                 relSrcRect.xoffset,relSrcRect.yoffset,
                                 relSrcRect.width,  relSrcRect.height,
+                                relSrcRect.wstride,relSrcRect.hstride,
                                 relDstRect.xoffset,relDstRect.yoffset,
-                                relDstRect.width,  relDstRect.height);
+                                relDstRect.width,  relDstRect.height,
+                                relDstRect.wstride,relDstRect.hstride);
+	ALOGD("[0x%x]src[%d,%d,%d,%d][%d,%d],dst[%d,%d,%d,%d][%d,%d]\n",rotation,
+                            relSrcRect.xoffset,relSrcRect.yoffset,
+                            relSrcRect.width,  relSrcRect.height,
+                            relSrcRect.wstride,relSrcRect.hstride,
+                            relDstRect.xoffset,relDstRect.yoffset,
+                            relDstRect.width,  relDstRect.height,
+                            relDstRect.wstride,relDstRect.hstride);
+	fprintf(stderr, "ctx=%p,ctx->ctx=%p\n",ctx,ctx->ctx);
+	ctx->ctx->log = 1;
+#endif
 
 	rotation &= DRM_RGA_TRANSFORM_FLIP_MASK;
 
-	fprintf(stderr, "ctx=%p,ctx->ctx=%p\n",ctx,ctx->ctx);
-	ctx->ctx->log = 0;
 	rga_multiple_transform(ctx->ctx, &srcImage, &dstImage,
                                 relSrcRect.xoffset, relSrcRect.yoffset,
                                 relSrcRect.width,   relSrcRect.height,
@@ -485,7 +502,7 @@ static int getDrmFomatFromAndroidFormat(int format)
 			break;
 
 		case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
-			//ret = DRM_FORMAT_RGBX8888;
+			ret = DRM_FORMAT_NV12_10;
 			break;
 
 		case HAL_PIXEL_FORMAT_YCbCr_422_SP_10:
@@ -498,6 +515,7 @@ static int getDrmFomatFromAndroidFormat(int format)
 			break;
 
 		default:
+			ALOGD("Unsuport format %d", format);
 			break;
 	}
 	return ret;
@@ -568,6 +586,9 @@ static int computeRgaStrideByAndroidFormat(int stride, int format)
 		return -EINVAL;
 
 	widthStride = stride * pixelWidth;
+
+	//if (format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
+	//    widthStride = widthStride * 5 / 4;
 
 	return widthStride;
 }
