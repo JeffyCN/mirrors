@@ -104,7 +104,8 @@ gst_vpudec_class_init (GstVpuDecClass * klass)
       "Multicodec (MPEG-2/4 / AVC / VP8 / HEVC) hardware decoder",
       "Sudip Jain <sudip.jain@@intel.com>, "
       "Jun Zhao <jung.zhao@rock-chips.com>, "
-      "Herman Chen <herman.chen@rock-chips.com>");
+      "Herman Chen <herman.chen@rock-chips.com>"
+      "Randy Li <randy.li@rock-chips.com>");
 }
 
 /* Init the vpudec structure */
@@ -191,7 +192,6 @@ static gboolean
 gst_vpudec_stop (GstVideoDecoder * decoder)
 {
   GstVpuDec *vpudec = GST_VPUDEC (decoder);
-  //VpuCodecContext_t *ctx = vpudec->ctx;
 
   GST_DEBUG_OBJECT (vpudec, "Stopping");
 
@@ -339,7 +339,8 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
     if (gst_caps_is_strictly_equal (vpudec->input_state->caps, state->caps))
       goto done;
     else
-      goto input_caps_changed_error;    /* Dynamic update of input caps unsupported... */
+      /* Dynamic update of input caps unsupported... */
+      goto input_caps_changed_error;
   }
 
   g_return_val_if_fail (gst_structure_get_int (structure,
@@ -565,7 +566,6 @@ gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
 
   GST_VIDEO_DECODER_STREAM_LOCK (decoder);
 
-  //g_usleep(1000 * 1000);
   return GST_FLOW_OK;
 
   /* ERRORS */
