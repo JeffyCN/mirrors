@@ -21,6 +21,11 @@
 #include "gstkmssink.h"
 #include "gstvpudec.h"
 
+#include "ximagesink.h"
+
+GST_DEBUG_CATEGORY (gst_debug_x_image_sink);
+GST_DEBUG_CATEGORY (CAT_PERFORMANCE);
+
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
@@ -31,6 +36,15 @@ plugin_init (GstPlugin * plugin)
   if (!gst_element_register (plugin, "kmssink", GST_RANK_SECONDARY,
           GST_TYPE_KMS_SINK))
     return FALSE;
+
+  if (!gst_element_register (plugin, "rkximagesink",
+          GST_RANK_SECONDARY, GST_TYPE_X_IMAGE_SINK))
+    return FALSE;
+
+  GST_DEBUG_CATEGORY_INIT (gst_debug_x_image_sink, "rkximagesink", 0,
+      "rkximagesink element");
+
+  GST_DEBUG_CATEGORY_GET (CAT_PERFORMANCE, "GST_PERFORMANCE");
 
   return TRUE;
 }

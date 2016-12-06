@@ -7,6 +7,7 @@ libgstvpudec_la_SOURCES = \
 	gstvpuallocator.c	\
 	gstkmssink.c		\
 	gstkmsutils.c                           \
+	ximagesink.c                           \
 	$(NULL)
 
 libgstvpudec_la_CFLAGS =			\
@@ -20,6 +21,7 @@ libgstvpudec_la_CFLAGS =			\
 	$(ROCKCHIP_MPP_CFLAGS)			\
 	$(ROCKCHIP_VPU_CFLAGS)			\
 	$(DRM_CFLAGS)                           \
+	$(X_CFLAGS)                             \
 	$(NULL)
 
 libgstvpudec_la_LIBADD =			\
@@ -32,6 +34,8 @@ libgstvpudec_la_LIBADD =			\
 	$(ROCKCHIP_MPP_LIBS)			\
 	$(ROCKCHIP_VPU_LIBS)			\
 	$(DRM_LIBS)                             \
+	$(X_LIBS)                             \
+	$(XSHM_LIBS)                             \
 	$(NULL)
 
 libgstvpudec_la_LDFLAGS =		\

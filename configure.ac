@@ -322,6 +322,32 @@ PKG_CHECK_MODULES([ROCKCHIP_VPU], [rockchip_vpu])
 PKG_CHECK_MODULES([DRM], [libdrm], HAVE_KMS=yes, HAVE_KMS=no)
 
 
+dnl *** X11 ***
+translit(dnm, m, l) AM_CONDITIONAL(USE_X, true)
+AG_GST_CHECK_FEATURE(X, [X libraries and plugins],
+                  [ximagesink], [
+  AG_GST_PKG_CHECK_MODULES(X, x11)
+])
+
+dnl check for X Shm
+translit(dnm, m, l) AM_CONDITIONAL(USE_XSHM, true)
+AG_GST_CHECK_FEATURE(XSHM, [X Shared Memory extension], [ ], [
+  if test x$HAVE_X = xyes; then
+    PKG_CHECK_MODULES(XSHM, xext, [
+      AC_CHECK_LIB(Xext, XShmAttach, [
+        HAVE_XSHM="yes"
+      ], [
+        HAVE_XSHM="no"
+        XSHM_LIBS=""
+      ], [ $X_LIBS ])
+    ], [
+      HAVE_XSHM="no"
+    ])
+  fi
+], , [
+  AC_SUBST(HAVE_XSHM)
+  AC_SUBST(XSHM_LIBS)
+])
 
 dnl keep this alphabetic per directory, please
 AC_CONFIG_FILES(
