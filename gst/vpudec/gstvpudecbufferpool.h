@@ -18,6 +18,7 @@
 
 #include <gst/gst.h>
 
+#include "gstvpuallocator.h"
 #include "gstvpudec.h"
 
 G_BEGIN_DECLS typedef struct _GstVpuDecBufferPool GstVpuDecBufferPool;
@@ -33,12 +34,14 @@ struct _GstVpuDecBufferPool
   GstBufferPool parent;
   GstVpuDec *dec;
 
-  guint nb_buffers;             /* number of buffers used */
-  guint nb_buffers_alloc;       /* number of buffers allocated by the vpu */
-  guint nb_queued;              /* number of buffers queued in the vpu */
+  guint num_queued;  /* number of buffers queued in the mpp/libvpu and gstvpudecbufferpool */
 
-  guint buf_alloc_size;         /* size of allocation */
-  GstBuffer **buffers;
+  guint size;
+  GstBuffer * buffers[VIDEO_MAX_FRAME];
+
+  GstVpuAllocator *vallocator;
+  GstAllocator *allocator;
+  GstAllocationParams params;
 };
 
 struct _GstVpuDecBufferPoolClass
@@ -48,8 +51,7 @@ struct _GstVpuDecBufferPoolClass
 
 GType gst_vpudec_buffer_pool_get_type (void);
 
-GstBufferPool *gst_vpudec_buffer_pool_new (GstVpuDec * dec, GstCaps * caps,
-    guint max, guint size, GstVideoAlignment * align);
+GstBufferPool *gst_vpudec_buffer_pool_new (GstVpuDec * dec, GstCaps * caps);
 
 G_END_DECLS
 #endif /*__GST_VPUDEC_BUFFER_POOL_H__ */

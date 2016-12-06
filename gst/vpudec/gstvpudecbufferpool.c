@@ -23,7 +23,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include <gst/vpudec/gstvpumeta.h>
+#include "gstvpuallocator.h"
 #include "gstvpudecbufferpool.h"
 
 GST_DEBUG_CATEGORY_STATIC (vpubufferpool_debug);
@@ -39,90 +39,82 @@ G_DEFINE_TYPE (GstVpuDecBufferPool, gst_vpudec_buffer_pool,
 static void gst_vpudec_buffer_pool_release_buffer (GstBufferPool * bpool,
     GstBuffer * buffer);
 
-static void
-gst_vpudec_buffer_pool_free_buffer (GstBufferPool * bpool, GstBuffer * buffer)
+static gboolean
+gst_vpudec_is_buffer_valid (GstBuffer * buffer, GstVpuMemory ** out_mem)
 {
-  GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
-  GstVpuDecMeta *meta;
+  GstMemory *mem = gst_buffer_peek_memory (buffer, 0);
+  gboolean valid = FALSE;
 
-  meta = gst_buffer_get_vpudec_meta (buffer);
-  g_assert (meta != NULL);
+  if (gst_is_dmabuf_memory (mem))
+    mem = gst_mini_object_get_qdata (GST_MINI_OBJECT (mem),
+        GST_VPU_MEMORY_QUARK);
+  else
+    goto done;
 
-  GST_DEBUG_OBJECT (pool,
-      "free buffer %p idx %d (data %p, len %u) offset %p", buffer,
-      gst_vpudec_meta_get_index (meta), gst_vpudec_meta_get_mem (meta),
-      gst_vpudec_meta_get_size (meta), gst_vpudec_meta_get_offset (meta));
+  if (mem && gst_is_vpu_memory (mem)) {
+    *out_mem = (GstVpuMemory *) mem;
+    valid = TRUE;
+  }
 
-  gst_buffer_unref (buffer);
-}
-
-static GstFlowReturn
-gst_vpudec_buffer_pool_alloc_buffer (GstBufferPool * bpool,
-    GstBuffer ** buffer, GstBufferPoolAcquireParams * params)
-{
-  GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
-  GstVpuDec *dec = pool->dec;
-  GstBuffer *newbuf = NULL;
-  GstVpuDecMeta *meta;
-  vpu_display_mem_pool *vpool;
-  GstVideoInfo *info;
-
-  /* TODO: add dmabuf allocator when RGA can accept dmabuf fd */
-  newbuf = gst_buffer_new ();
-
-  info = &dec->info;
-
-  /* Attach meta data to the buffer */
-  meta = GST_VPUDEC_META_ADD (newbuf, (gpointer) & pool->nb_buffers_alloc);
-  vpool = (vpu_display_mem_pool *) dec->vpu_mem_pool;
-
-  GST_META_FLAG_SET (meta, GST_META_FLAG_POOLED);
-  GST_META_FLAG_SET (meta, GST_META_FLAG_LOCKED);
-  /* commit vpumem to libvpu  */
-  if (!gst_vpudec_meta_alloc_mem (vpool, meta, pool->buf_alloc_size))
-    GST_WARNING_OBJECT (pool, "mempool commit error");
-
-  gst_buffer_append_memory (newbuf,
-      gst_memory_new_wrapped (GST_MEMORY_FLAG_READONLY,
-          gst_vpudec_meta_get_mem (meta), gst_vpudec_meta_get_size (meta), 0,
-          gst_vpudec_meta_get_size (meta), gst_vpudec_meta_get_mem (meta),
-          NULL));
-
-  gst_buffer_add_video_meta_full (newbuf, GST_VIDEO_FRAME_FLAG_NONE,
-      GST_VIDEO_INFO_FORMAT (info), GST_VIDEO_INFO_WIDTH (info),
-      GST_VIDEO_INFO_HEIGHT (info), GST_VIDEO_INFO_N_PLANES (info),
-      info->offset, info->stride);
-
-  GST_DEBUG_OBJECT (pool, "created buffer %u of size %d, %p (%p) for pool %p",
-      gst_vpudec_meta_get_index (meta),
-      gst_vpudec_meta_get_size (meta), newbuf,
-      gst_vpudec_meta_get_mem (meta), pool);
-
-  *buffer = newbuf;
-  pool->nb_buffers_alloc++;
-
-  return GST_FLOW_OK;
-
-  /* ERRORS */
+done:
+  return valid;
 }
 
 static gboolean
 gst_vpudec_buffer_pool_start (GstBufferPool * bpool)
 {
   GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
+  GstBufferPoolClass *pclass = GST_BUFFER_POOL_CLASS (parent_class);
+  GstStructure *config;
+  GstCaps *caps;
+  guint size, min_buffers, max_buffers, count;
+  VpuCodecContext_t *vpu_codec_ctx;
+  VPU_SYNC sync;
 
   GST_DEBUG_OBJECT (pool, "start pool %p", pool);
 
-  pool->buffers = g_new0 (GstBuffer *, pool->nb_buffers);
-  pool->nb_buffers_alloc = 0;
+  config = gst_buffer_pool_get_config (bpool);
+  if (!gst_buffer_pool_config_get_params (config, &caps, &size, &min_buffers,
+          &max_buffers))
+    goto wrong_config;
+
+  vpu_codec_ctx = pool->dec->vpu_codec_ctx;
+
+  count = gst_vpu_allocator_start (pool->vallocator, vpu_codec_ctx,
+      size, min_buffers);
+
+  if (count < min_buffers)
+    goto no_buffers;
+
+  pool->size = size;
+
+  if (max_buffers != 0 && max_buffers < min_buffers)
+    max_buffers = min_buffers;
+
+  gst_buffer_pool_config_set_params (config, caps, size, min_buffers,
+      max_buffers);
+  pclass->set_config (bpool, config);
+  gst_structure_free (config);
 
   /* allocate the buffers */
-  if (!GST_BUFFER_POOL_CLASS (parent_class)->start (bpool))
+  if (!pclass->start (bpool))
     goto start_failed;
 
   return TRUE;
 
   /* ERRORS */
+wrong_config:
+  {
+    GST_ERROR_OBJECT (pool, "invalid config %" GST_PTR_FORMAT, config);
+    return FALSE;
+  }
+no_buffers:
+  {
+    GST_ERROR_OBJECT (pool,
+        "we received %d buffer, we want at least %d", count, min_buffers);
+    gst_structure_free (config);
+    return FALSE;
+  }
 start_failed:
   {
     GST_ERROR_OBJECT (pool, "failed to start pool %p", pool);
@@ -135,29 +127,107 @@ gst_vpudec_buffer_pool_stop (GstBufferPool * bpool)
 {
   gboolean ret;
   GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
+  GstBufferPoolClass *pclass = GST_BUFFER_POOL_CLASS (parent_class);
   GstVpuDec *vpudec = pool->dec;
   guint n;
 
   GST_DEBUG_OBJECT (pool, "stop pool %p", pool);
 
-  /* free the buffers in the queue */
-  ret = GST_BUFFER_POOL_CLASS (parent_class)->stop (bpool);
-
   /* free the remaining buffers */
-  for (n = 0; n < pool->nb_buffers; n++) {
-    if (pool->buffers[n])
-      gst_vpudec_buffer_pool_free_buffer (bpool, pool->buffers[n]);
+  for (n = 0; n < VIDEO_MAX_FRAME; n++) {
+    if (pool->buffers[n]) {
+      GstBuffer *buffer = pool->buffers[n];
+
+      pool->buffers[n] = NULL;
+      gst_buffer_unref (buffer);
+
+      g_atomic_int_add (&pool->num_queued, -1);
+    }
   }
-  g_free (pool->buffers);
-  pool->buffers = NULL;
+  /* free the buffers in the queue */
+  ret = pclass->stop (bpool);
 
-  pool->nb_queued = 0;
-  pool->nb_buffers = 0;
+  if (ret && pool->vallocator) {
+    gint vret;
+    vret = gst_vpu_allocator_stop (pool->vallocator);
 
-  close_vpu_memory_pool (vpudec->vpu_mem_pool);
-  vpudec->vpu_mem_pool = NULL;
+    ret = (vret == 0);
+  }
 
   return ret;
+}
+
+static GstFlowReturn
+gst_vpudec_buffer_pool_alloc_buffer (GstBufferPool * bpool,
+    GstBuffer ** buffer, GstBufferPoolAcquireParams * params)
+{
+  GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
+  GstVpuDec *dec = pool->dec;
+  GstMemory *mem;
+  GstBuffer *newbuf = NULL;
+  GstVideoInfo *info;
+
+  info = &dec->info;
+
+  mem = gst_vpu_allocator_alloc_dmabuf (pool->vallocator, pool->allocator);
+  if (mem != NULL) {
+    newbuf = gst_buffer_new ();
+    gst_buffer_append_memory (newbuf, mem);
+  } else {
+    goto allocation_failed;
+  }
+
+  gst_buffer_add_video_meta_full (newbuf, GST_VIDEO_FRAME_FLAG_NONE,
+      GST_VIDEO_INFO_FORMAT (info), GST_VIDEO_INFO_WIDTH (info),
+      GST_VIDEO_INFO_HEIGHT (info), GST_VIDEO_INFO_N_PLANES (info),
+      info->offset, info->stride);
+
+  *buffer = newbuf;
+
+  return GST_FLOW_OK;
+
+  /* ERRORS */
+allocation_failed:
+  {
+    GST_ERROR_OBJECT (pool, "failed to allocate buffer");
+    return GST_FLOW_ERROR;
+  }
+}
+
+static void
+gst_vpudec_buffer_pool_release_buffer (GstBufferPool * bpool,
+    GstBuffer * buffer)
+{
+  GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
+  GstVpuMemory *mem;
+  gint index = -1;
+
+  if (!gst_vpudec_is_buffer_valid (buffer, &mem)) {
+    GST_ERROR_OBJECT (pool, "can't release an invalid buffer");
+  }
+
+  index = mem->vpu_mem->index;
+
+  if (pool->buffers[index] != NULL) {
+    goto already_queued;
+  } else {
+    /* Release the internal refcount in mpp */
+    VPUFreeLinear (mem->vpu_mem);
+    pool->buffers[index] = buffer;
+    g_atomic_int_add (&pool->num_queued, 1);
+  }
+
+  GST_DEBUG_OBJECT (pool,
+      "released buffer %p, index %d, queued %d", buffer, index,
+      g_atomic_int_get (&pool->num_queued));
+
+  return;
+  /* ERRORS */
+already_queued:
+  {
+    GST_WARNING_OBJECT (pool, "the buffer was already released");
+    return;
+  }
 }
 
 static GstFlowReturn
@@ -173,12 +243,11 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   VPUMemLinear_t vpu_mem;
   VPU_API_ERR ret;
   gint buf_index;
-  GstVpuDecMeta *meta;
 
   memset (&dec_out, 0, sizeof (DecoderOut_t));
   memset (&vpu_frame, 0, sizeof (VPU_FRAME));
   dec_out.data = &vpu_frame;
-  ctx = (VpuCodecContext_t *) dec->ctx;
+  ctx = (VpuCodecContext_t *) dec->vpu_codec_ctx;
 
   if ((ret = ctx->decode_getframe (ctx, &dec_out)) < 0)
     goto vpu_error;
@@ -191,14 +260,13 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
     goto no_buffer;
 
   pool->buffers[buf_index] = NULL;
-  pool->nb_queued--;
+  g_atomic_int_add (&pool->num_queued, -1);
 
-  meta = gst_buffer_get_vpudec_meta (outbuf);
 
   GST_DEBUG_OBJECT (pool,
-      "acquired buffer %p (%p) , index %d: %d, queued %d data %p", outbuf,
-      (gpointer) vpu_mem.vir_addr, buf_index, gst_vpudec_meta_get_index (meta),
-      pool->nb_queued, vpu_mem.offset);
+      "acquired buffer %p (%p) , index %d, queued %d data %p", outbuf,
+      (gpointer) vpu_mem.vir_addr, buf_index,
+      g_atomic_int_get (&pool->num_queued), vpu_mem.offset);
 
   *buffer = outbuf;
 
@@ -224,49 +292,70 @@ no_buffer:
   }
 }
 
-static void
-gst_vpudec_buffer_pool_release_buffer (GstBufferPool * bpool,
-    GstBuffer * buffer)
+static gboolean
+gst_vpudec_buffer_pool_set_config (GstBufferPool * bpool, GstStructure * config)
 {
   GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
-  GstVpuDecMeta *meta = NULL;
-  guint buf_index = -1;
+  GstCaps *caps;
+  guint size, min_buffers, max_buffers;
+  gboolean updated = FALSE;
+  gboolean ret;
 
-  meta = gst_buffer_get_vpudec_meta (buffer);
-  g_assert (meta != NULL);
-  buf_index = gst_vpudec_meta_get_index (meta);
-  GST_DEBUG_OBJECT (pool,
-      "will release buffer %p (%d), index %d, queued %d", buffer,
-      GST_MINI_OBJECT_REFCOUNT (buffer), buf_index, pool->nb_queued);
+  if (!gst_buffer_pool_config_get_params (config, &caps, &size, &min_buffers,
+          &max_buffers))
+    goto wrong_config;
 
+  GST_DEBUG_OBJECT (pool, "config %" GST_PTR_FORMAT, config);
 
-  if (pool->buffers[buf_index] != NULL) {
-    goto already_queued;
-  } else {
-    /* Release the internal refcount in mpp */
-    VPUFreeLinear (gst_vpudec_meta_get_vpumem (meta));
-    pool->buffers[buf_index] = buffer;
-    pool->nb_queued++;
+  if (pool->allocator)
+    gst_object_unref (pool->allocator);
+
+  pool->allocator = gst_dmabuf_allocator_new ();
+
+  if (max_buffers > VIDEO_MAX_FRAME || max_buffers == 0) {
+    updated = TRUE;
+    max_buffers = VIDEO_MAX_FRAME;
+    GST_INFO_OBJECT (pool, "reducing maximum buffers to %u", max_buffers);
   }
 
-  GST_DEBUG_OBJECT (pool,
-      "released buffer %p (%d), index %d, queued %d", buffer,
-      GST_MINI_OBJECT_REFCOUNT (buffer), buf_index, pool->nb_queued);
+  gst_buffer_pool_config_add_option (config, GST_BUFFER_POOL_OPTION_VIDEO_META);
 
-  return;
-  /* ERRORS */
-already_queued:
+  gst_buffer_pool_config_set_params (config, caps, size, min_buffers,
+      max_buffers);
+
+done:
+  ret = GST_BUFFER_POOL_CLASS (parent_class)->set_config (bpool, config);
+
+  return !updated && ret;
+
+  /* ERROR */
+wrong_config:
   {
-    GST_WARNING_OBJECT (pool, "the buffer was already released");
-    return;
+    GST_ERROR_OBJECT (pool, "invalid config %" GST_PTR_FORMAT, config);
+    return FALSE;
   }
+}
+
+static void
+gst_vpudec_buffer_pool_dispose (GObject * object)
+{
+  GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (object);
+
+  if (pool->vallocator)
+    gst_object_unref (pool->vallocator);
+  pool->vallocator = NULL;
+
+  if (pool->allocator)
+    gst_object_unref (pool->allocator);
+  pool->allocator = NULL;
+
+  G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
 static void
 gst_vpudec_buffer_pool_finalize (GObject * object)
 {
   GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (object);
-  GST_DEBUG_OBJECT (pool, "finalize pool %p", pool);
 
   gst_object_unref (pool->dec);
 
@@ -276,6 +365,8 @@ gst_vpudec_buffer_pool_finalize (GObject * object)
 static void
 gst_vpudec_buffer_pool_init (GstVpuDecBufferPool * pool)
 {
+  pool->dec = NULL;
+  pool->num_queued = 0;
 }
 
 static void
@@ -284,14 +375,16 @@ gst_vpudec_buffer_pool_class_init (GstVpuDecBufferPoolClass * klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GstBufferPoolClass *bufferpool_class = GST_BUFFER_POOL_CLASS (klass);
 
+  object_class->dispose = gst_vpudec_buffer_pool_dispose;
   object_class->finalize = gst_vpudec_buffer_pool_finalize;
 
   bufferpool_class->start = gst_vpudec_buffer_pool_start;
   bufferpool_class->stop = gst_vpudec_buffer_pool_stop;
+  bufferpool_class->set_config = gst_vpudec_buffer_pool_set_config;
   bufferpool_class->alloc_buffer = gst_vpudec_buffer_pool_alloc_buffer;
   bufferpool_class->acquire_buffer = gst_vpudec_buffer_pool_acquire_buffer;
   bufferpool_class->release_buffer = gst_vpudec_buffer_pool_release_buffer;
-  bufferpool_class->free_buffer = gst_vpudec_buffer_pool_free_buffer;
+
 
   GST_DEBUG_CATEGORY_INIT (vpubufferpool_debug, "vpubufferpool", 0,
       "vpu bufferpool");
@@ -308,29 +401,41 @@ gst_vpudec_buffer_pool_class_init (GstVpuDecBufferPoolClass * klass)
  * Returns: the new pool, use gst_object_unref() to free resources
  */
 GstBufferPool *
-gst_vpudec_buffer_pool_new (GstVpuDec * dec, GstCaps * caps, guint max,
-    guint size, GstVideoAlignment * align)
+gst_vpudec_buffer_pool_new (GstVpuDec * dec, GstCaps * caps)
 {
   GstVpuDecBufferPool *pool;
-  GstStructure *s;
+  GstStructure *config;
+  gchar *name, *parent_name;
 
-  GST_DEBUG_OBJECT (dec, "construct a new buffer pool (max buffers %u,"
-      "buffer size %u)", max, size);
+  /* setting a significant unique name */
+  parent_name = gst_object_get_name (GST_OBJECT (dec));
+  name = g_strconcat (parent_name, ":", "pool:", "src", NULL);
+  g_free (parent_name);
 
   pool =
-      (GstVpuDecBufferPool *) g_object_new (GST_TYPE_VPUDEC_BUFFER_POOL, NULL);
-  /* take a reference on vpudec to be sure that it will be released after the pool */
+      (GstVpuDecBufferPool *) g_object_new (GST_TYPE_VPUDEC_BUFFER_POOL,
+      "name", name, NULL);
+  g_free (name);
+  /* take a reference on vpudec to be sure that it will be released
+   * after the pool */
 
   pool->dec = gst_object_ref (dec);
-  pool->dec = dec;
-  pool->nb_buffers = max;
-  pool->buf_alloc_size = size;
+  pool->vallocator = gst_vpu_allocator_new (GST_OBJECT (pool));
+  if (!pool->vallocator)
+    goto allocator_failed;
 
-  s = gst_buffer_pool_get_config (GST_BUFFER_POOL_CAST (pool));
-  gst_buffer_pool_config_set_params (s, caps, size, max, max);
-  gst_buffer_pool_config_add_option (s, GST_BUFFER_POOL_OPTION_VIDEO_META);
-  gst_buffer_pool_config_set_video_alignment (s, align);
-  gst_buffer_pool_set_config (GST_BUFFER_POOL_CAST (pool), s);
+  config = gst_buffer_pool_get_config (GST_BUFFER_POOL_CAST (pool));
+  gst_buffer_pool_config_set_params (config, caps, dec->info.size, 0, 0);
+  /* This will simply set a default config, but will not configure the pool
+   * because min and max are not valid */
+  gst_buffer_pool_set_config (GST_BUFFER_POOL_CAST (pool), config);
 
   return GST_BUFFER_POOL (pool);
+  /* ERROR */
+allocator_failed:
+  {
+    GST_ERROR_OBJECT (pool, "Failed to create vpu allocator");
+    gst_object_unref (pool);
+    return NULL;
+  }
 }
