@@ -12,6 +12,7 @@
 #include "../normal/NormalRga.h"
 #include "../normal/NormalRgaContext.h"
 #include "../GraphicBuffer.h"
+#include "../RgaApi.h"
 
 #define RGA_BUF_GEM_TYPE_MASK      0xC0
 #define RGA_BUF_GEM_TYPE_DMA       0x80

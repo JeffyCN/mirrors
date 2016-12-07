@@ -12,6 +12,7 @@
 #include "NormalRga.h"
 #include "NormalRgaContext.h"
 #include "../GraphicBuffer.h"
+#include "../RgaApi.h"
 
 volatile int32_t refCount = 0;
 struct rgaContext *rgaCtx = NULL;
