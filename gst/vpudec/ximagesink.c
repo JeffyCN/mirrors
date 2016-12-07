@@ -633,6 +633,7 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
   GstVideoRectangle src = { 0, };
   GstVideoRectangle dst = { 0, };
   GstVideoRectangle result;
+  GstVideoMeta *video_info;
   gboolean draw_border = FALSE;
   guint32 gem_handle, w, h, fmt, bo_handles[4] = { 0, };
   guint32 offsets[4] = { 0, };
@@ -734,15 +735,16 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
     return GST_FLOW_ERROR;
   }
 
+  video_info = gst_buffer_get_video_meta (ximage);
   w = GST_VIDEO_INFO_WIDTH (&ximagesink->info);
   h = GST_VIDEO_INFO_HEIGHT (&ximagesink->info);
   fmt = gst_drm_format_from_video (GST_VIDEO_INFO_FORMAT (&ximagesink->info));
 
-  pitches[0] = w;
-  offsets[0] = 0;
+  pitches[0] = video_info->stride[0];
+  offsets[0] = video_info->offset[0];
   bo_handles[0] = gem_handle;
-  pitches[1] = w;
-  offsets[1] = w * h;
+  pitches[1] = video_info->stride[1];
+  offsets[1] = video_info->offset[1];
   bo_handles[1] = gem_handle;
 
   ret = drmModeAddFB2 (ximagesink->fd, w, h, fmt, bo_handles, pitches,
