@@ -70,12 +70,17 @@ static GstStaticPadTemplate gst_vpudec_sink_template =
     );
 
 static GstStaticPadTemplate gst_vpudec_src_template =
-GST_STATIC_PAD_TEMPLATE ("src",
+    GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw, "
         "format = (string) NV12, "
-        "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]"));
+        "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]"
+        ";"
+        "video/x-raw, "
+        "format = (string) P010_10LE, "
+        "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]" ";")
+    );
 
 static void
 gst_vpudec_class_init (GstVpuDecClass * klass)
@@ -272,6 +277,8 @@ to_gst_pix_format (VPU_VIDEO_PIXEL_FMT pix_fmt)
   switch (pix_fmt) {
     case VPU_VIDEO_PIXEL_FMT_NV12:
       return GST_VIDEO_FORMAT_NV12;
+    case VPU_VIDEO_PIXEL_FMT_P010LE:
+      return GST_VIDEO_FORMAT_P010_10LE;
     default:
       return GST_VIDEO_FORMAT_UNKNOWN;
   }
@@ -332,6 +339,7 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
   VPU_VIDEO_CODINGTYPE codingtype;
   GstBuffer *codec_data;
   GstMapInfo mapinfo;
+  gchar *codec_profile = NULL;
 
   GST_DEBUG_OBJECT (vpudec, "Setting format: %" GST_PTR_FORMAT, state->caps);
 
@@ -354,7 +362,15 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
   if (!codingtype)
     goto format_error;
 
-  vpudec->width = width;
+  codec_profile = gst_structure_get_string (structure, "profile");
+  g_return_val_if_fail (codec_profile, FALSE);
+
+  if (g_strrstr (codec_profile, "10"))
+    /* The mpp vpu api use this way to mark it as 10bit video */
+    vpudec->width = width | 0x80000000;
+  else
+    vpudec->width = width;
+
   vpudec->height = height;
 
   /* codec data */
@@ -451,8 +467,10 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
   GstVideoCodecState *output_state;
   GstVideoAlignment *align;
   GstVideoInfo *info;
+  GstStructure *structure;
   DecoderFormat_t fmt;
   gboolean ret = TRUE;
+  gint width;
 
   GST_DEBUG_OBJECT (vpudec, "Setting output");
 
@@ -462,16 +480,16 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
   GST_INFO_OBJECT (vpudec,
       "Format found from vpu :pixelfmt:%s, aligned_width:%d, aligned_height:%d, stride:%d, sizeimage:%d",
       gst_video_format_to_string (to_gst_pix_format (fmt.format)),
-      fmt.aligned_width, fmt.aligned_height, fmt.stride,
+      fmt.aligned_width, fmt.aligned_height, fmt.aligned_stride,
       fmt.aligned_frame_size);
 
   /* FIXME not complete video information */
   gst_video_info_init (info);
-  info->finfo = gst_video_format_get_info (GST_VIDEO_FORMAT_NV12);
+  info->finfo = gst_video_format_get_info (to_gst_pix_format (fmt.format));
   info->width = fmt.width;
   info->height = fmt.height;
   info->offset[0] = 0;
-  info->offset[1] = fmt.aligned_width * fmt.aligned_height;
+  info->offset[1] = fmt.aligned_stride * fmt.aligned_height;
   info->stride[0] = fmt.aligned_stride;
   info->stride[1] = fmt.aligned_stride;
 
@@ -494,7 +512,7 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
   align = &vpudec->align;
   gst_video_alignment_reset (align);
   /* Compute padding and set buffer alignment */
-  align->padding_right = fmt.aligned_width - fmt.width;
+  align->padding_right = fmt.aligned_stride - fmt.width;
   align->padding_bottom = fmt.aligned_height - fmt.height;
 
   /* construct a new buffer pool */

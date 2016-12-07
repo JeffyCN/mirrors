@@ -183,6 +183,10 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
 
   /* get from the pool the GstBuffer associated with the index */
   buf_index = vpu_mem.index;
+  if (buf_index < 0) {
+    ctx->control (ctx, VPU_API_SET_INFO_CHANGE, NULL);
+    GST_DEBUG_OBJECT (pool, "info change");
+  }
   outbuf = pool->buffers[buf_index];
   if (outbuf == NULL)
     goto no_buffer;
