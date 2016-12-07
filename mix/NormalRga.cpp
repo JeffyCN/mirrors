@@ -9,9 +9,12 @@
  * option) any later version.
  *
  */
-#include "NormalRga.h"
-#include "NormalRgaContext.h"
+#include "../normal/NormalRga.h"
+#include "../normal/NormalRgaContext.h"
 #include "../GraphicBuffer.h"
+
+#define RGA_BUF_GEM_TYPE_MASK      0xC0
+#define RGA_BUF_GEM_TYPE_DMA       0x80
 
 volatile int32_t refCount = 0;
 struct rgaContext *rgaCtx = NULL;
@@ -302,8 +305,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	rga_rect_t relSrcRect,tmpSrcRect,relDstRect,tmpDstRect;
 	rga_rect_t relSrc1Rect,tmpSrc1Rect;
     struct rga_req rgaReg;
-    unsigned int blend;
     unsigned int yuvToRgbMode;
+    unsigned int blend;
     bool perpixelAlpha;
     void *srcBuf = NULL;
     void *dstBuf = NULL;
@@ -319,9 +322,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 
     srcType = dstType = srcMmuFlag = dstMmuFlag = 0;
     src1Type = src1MmuFlag = 0;
+    yuvToRgbMode = 0;
     rotation = 0;
     blend = 0;
-    yuvToRgbMode = 0;
 
     if (!src && !dst && !src1) {
         ALOGE("src = %p, dst = %p, src1 = %p", src, dst, src1);
@@ -400,8 +403,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         srcBuf = src->phyAddr;
     else if (src && src->virAddr)
         srcBuf = src->virAddr;
-    else if (src && src->hnd)
-        ret = RkRgaGetHandleMapAddress(src->hnd, &srcBuf);
 
     if (srcFd == -1 && !srcBuf) {
         ALOGE("%d:src has not fd and address for render", __LINE__);
@@ -423,8 +424,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         dstBuf = dst->phyAddr;
     else if (dst && dst->virAddr)
         dstBuf = dst->virAddr;
-    else if (dst && dst->hnd)
-        ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
 
     if (dst && dstFd == -1 && !dstBuf) {
         ALOGE("%d:dst has not fd and address for render", __LINE__);
@@ -446,8 +445,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         src1Buf = src1->phyAddr;
     else if (src1 && src1->virAddr)
         src1Buf = src1->virAddr;
-    else if (src1 && src1->hnd)
-        ret = RkRgaGetHandleMapAddress(src1->hnd, &src1Buf);
 
     if (src1 && src1Fd == -1 && !src1Buf) {
         ALOGE("%d:dst has not fd and address for render", __LINE__);
@@ -499,7 +496,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 
 	if (relSrcRect.format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
 		relSrcRect.wstride = relSrcRect.wstride * 5 / 4;
-
 
     switch (rotation) {
         case HAL_TRANSFORM_FLIP_H:
@@ -768,6 +764,17 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     NormalRgaSetSrcActiveInfo(&rgaReg, srcActW, srcActH, srcXPos, srcYPos);
     NormalRgaSetDstActiveInfo(&rgaReg, dstActW, dstActH, dstXPos, dstYPos);
 
+    /*mode*/
+    NormalRgaSetBitbltMode(&rgaReg, scaleMode, rotateMode, orientation, ditherEn, 0, 0);
+
+    /*force to mmu flag to mask*/
+    srcMmuFlag = dstMmuFlag = 1;
+
+    if (srcMmuFlag || dstMmuFlag) {
+        NormalRgaMmuInfo(&rgaReg, 1, 0, 0, 0, 0, 2);
+        NormalRgaMmuFlag(&rgaReg, srcMmuFlag, dstMmuFlag);
+    }
+
     if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
                     NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relDstRect.format)))
         yuvToRgbMode |= 0x1 << 0;
@@ -776,21 +783,16 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
                     NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format)))
         yuvToRgbMode |= 0x1 << 4;
 
-    /*mode*/
-    NormalRgaSetBitbltMode(&rgaReg, scaleMode, rotateMode, orientation,
-                                                    ditherEn, 0, yuvToRgbMode);
+    rgaReg.render_mode |= RGA_BUF_GEM_TYPE_DMA;
 
-    if (srcMmuFlag || dstMmuFlag) {
-        NormalRgaMmuInfo(&rgaReg, 1, 0, 0, 0, 0, 2);
-        NormalRgaMmuFlag(&rgaReg, srcMmuFlag, dstMmuFlag);
-    }
-
-    ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
-    NormalRgaLogOutRgaReq(rgaReg);
+    //ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
+    //NormalRgaLogOutRgaReq(rgaReg);
 
     if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg)) {
         printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
         ALOGE(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        ALOGE("%d,%d,%d", srcMmuFlag, dstMmuFlag, rotateMode);
+        NormalRgaLogOutRgaReq(rgaReg);
     }
 
     return 0;
@@ -861,8 +863,6 @@ int RgaCollorFill(rga_info *dst)
         dstBuf = dst->phyAddr;
     else if (dst && dst->virAddr)
         dstBuf = dst->virAddr;
-    else if (dst && dst->hnd)
-        ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
 
     if (dst && dstFd == -1 && !dstBuf) {
         ALOGE("%d:dst has not fd and address for render", __LINE__);
@@ -979,12 +979,13 @@ int RgaCollorFill(rga_info *dst)
         NormalRgaMmuFlag(&rgaReg, dstMmuFlag, dstMmuFlag);
     }
 
-    //ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
+    //ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag, rotateMode);
     //NormalRgaLogOutRgaReq(rgaReg);
 
     if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg)) {
-        printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
-        ALOGE(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        printf("%s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        ALOGE("%s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        NormalRgaLogOutRgaReq(rgaReg);
     }
 
     return 0;

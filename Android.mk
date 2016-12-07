@@ -14,6 +14,9 @@ LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/normal
 
+LOCAL_CFLAGS := \
+        -DLOG_TAG=\"librga-normal\"
+
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
     liblog \
@@ -39,7 +42,8 @@ endif
 LOCAL_SRC_FILES:= \
     RockchipRga.cpp \
     GraphicBuffer.cpp \
-    normal/NormalRga.cpp
+    normal/NormalRga.cpp \
+    normal/NormalRgaApi.cpp
 
 ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.0)))
 ifeq ($(strip $(TARGET_BOARD_PLATFORM_GPU)), mali-t720)
@@ -71,6 +75,43 @@ ifeq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES += \
+	RockchipRga.cpp \
+	GraphicBuffer.cpp \
+	mix/NormalRga.cpp \
+	normal/NormalRgaApi.cpp
+
+LOCAL_MODULE := librga
+
+LOCAL_C_INCLUDES += external/libdrm/rockchip
+LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
+LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/drm
+
+LOCAL_SHARED_LIBRARIES := libdrm
+LOCAL_SHARED_LIBRARIES += \
+        libdrm_rockchip \
+        liblog \
+        libui \
+        libcutils \
+        libhardware
+
+LOCAL_CFLAGS := \
+        -DLOG_TAG=\"librga-mix\"
+
+LOCAL_MODULE_TAGS := optional
+#LOCAL_MODULE_RELATIVE_PATH := hw
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
+
+include $(BUILD_SHARED_LIBRARY)
+endif
+#===================================================================
+ifeq ($(strip $(BOARD_USE_DRM)), future)
+#############################################################################################
+ifeq ($(strip $(BOARD_USE_DRM)), true)
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES += \
         RockchipRga.cpp \
 	GraphicBuffer.cpp \
         drm/DrmmodeRga.cpp
@@ -91,7 +132,7 @@ LOCAL_SHARED_LIBRARIES += \
         libhardware
 
 LOCAL_CFLAGS := \
-        -DLOG_TAG=\"DrmRga\"
+        -DLOG_TAG=\"librga-drm\"
 
 LOCAL_MODULE_TAGS := optional
 #LOCAL_MODULE_RELATIVE_PATH := hw
@@ -101,3 +142,4 @@ LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
 include $(BUILD_SHARED_LIBRARY)
 endif
 #===================================================================
+endif #it will be used when upstrean in the future

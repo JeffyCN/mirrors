@@ -160,12 +160,6 @@ int         NormalRgaSetSrcTransModeInfo(struct rga_req *msg,
         	unsigned char g_en,unsigned char r_en,unsigned char color_key_min,
         	unsigned char color_key_max,unsigned char zero_mode_en);
 
-bool        NormalRgaIsBppFormat(int format);
-
-bool        NormalRgaIsYuvFormat(int format);
-
-bool        NormalRgaIsRgbFormat(int format);
-
 
 // 0/near  1/bilnear  2/bicubic  
 // 0/copy 1/rotate_scale 2/x_mirror 3/y_mirror 
@@ -265,5 +259,9 @@ int         NormalRgaMmuInfo(struct rga_req *msg,
 
 int         NormalRgaMmuFlag(struct rga_req *msg,
                                     int  src_mmu_en,   int  dst_mmu_en);
+
+int         sina_table[360];
+
+int         cosa_table[360];
 
 #endif
