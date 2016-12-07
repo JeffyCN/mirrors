@@ -75,11 +75,8 @@ typedef struct _GstXImageSinkClass GstXImageSinkClass;
  * @height: the height in pixels of Display @disp
  * @widthmm: the width in millimeters of Display @disp
  * @heightmm: the height in millimeters of Display @disp
- * @par: the pixel aspect ratio calculated from @width, @widthmm and @height, 
- * @heightmm ratio
  * @use_xshm: used to known wether of not XShm extension is usable or not even
  * if the Extension is present
- * @caps: the #GstCaps that Display @disp can accept
  *
  * Structure used to store various informations collected/calculated for a
  * Display.
@@ -148,8 +145,6 @@ struct _GstXWindow
  * allocation call
  * @synchronous: used to store if XSynchronous should be used or not (for 
  * debugging purpose only)
- * @keep_aspect: used to remember if reverse negotiation scaling should respect
- * aspect ratio
  * @handle_events: used to know if we should handle select XEvents or not
  *
  * The #GstXImageSink data structure.
@@ -187,6 +182,8 @@ struct _GstXImageSink
   /* Framerate numerator and denominator */
   gint fps_n;
   gint fps_d;
+  gint par_n;
+  gint par_d;
 
   GMutex x_lock;
   GMutex flow_lock;

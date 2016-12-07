@@ -524,6 +524,52 @@ ensure_allowed_caps (GstXImageSink * self, drmModePlane * plane,
   return TRUE;
 }
 
+
+static gboolean
+x_image_calculate_display_ratio (GstXImageSink * self, gint * video_width,
+    gint * video_height)
+{
+  guint dar_n, dar_d;
+  guint video_par_n, video_par_d;
+  guint dpy_par_n, dpy_par_d;
+
+  video_par_n = self->par_n;
+  video_par_d = self->par_d;
+
+  gst_video_calculate_device_ratio (self->hdisplay, self->vdisplay,
+      self->mm_width, self->mm_height, &dpy_par_n, &dpy_par_d);
+
+  if (!gst_video_calculate_display_ratio (&dar_n, &dar_d, *video_width,
+          *video_height, video_par_n, video_par_d, dpy_par_n, dpy_par_d))
+    return FALSE;
+
+  GST_DEBUG_OBJECT (self, "video calculated display ratio: %d/%d", dar_n,
+      dar_d);
+
+  /* now find a width x height that respects this display ratio.
+   * prefer those that have one of w/h the same as the incoming video
+   * using wd / hd = dar_n / dar_d */
+
+  /* start with same height, because of interlaced video */
+  /* check hd / dar_d is an integer scale factor, and scale wd with the PAR */
+  if (*video_height % dar_d == 0) {
+    GST_DEBUG_OBJECT (self, "keeping video height");
+    *video_width = (guint)
+        gst_util_uint64_scale_int (*video_height, dar_n, dar_d);
+  } else if (*video_width % dar_n == 0) {
+    GST_DEBUG_OBJECT (self, "keeping video width");
+    *video_height = (guint)
+        gst_util_uint64_scale_int (*video_width, dar_d, dar_n);
+  } else {
+    GST_DEBUG_OBJECT (self, "approximating while keeping video height");
+    *video_width = (guint)
+        gst_util_uint64_scale_int (*video_height, dar_n, dar_d);
+  }
+  GST_DEBUG_OBJECT (self, "scaling to %dx%d", *video_width, *video_height);
+
+  return TRUE;
+}
+
 /* X11 stuff */
 
 static void
@@ -711,6 +757,7 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
   }
 
   x_image_get_windows_position (ximagesink, &result.x, &result.y);
+  x_image_calculate_display_ratio (ximagesink, &result.w, &result.h);
 
   if (src.w / result.w <= 8 && src.h / result.h <= 8) {
     GST_TRACE_OBJECT (ximagesink, "displaying fb %d", fb_id);
@@ -1387,6 +1434,8 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
   GST_VIDEO_SINK_HEIGHT (ximagesink) = info.height;
   ximagesink->fps_n = info.fps_n;
   ximagesink->fps_d = info.fps_d;
+  ximagesink->par_n = info.par_n;
+  ximagesink->par_d = info.par_d;
 
   /* Notify application to set xwindow id now */
   g_mutex_lock (&ximagesink->flow_lock);
