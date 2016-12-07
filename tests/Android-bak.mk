@@ -1,7 +1,7 @@
 LOCAL_PATH:= $(call my-dir)
 #======================================================================
 #
-#rgastereo
+#rgargbatoyuv
 #
 #======================================================================
 include $(CLEAR_VARS)
@@ -15,7 +15,6 @@ LOCAL_CFLAGS += -Wall -Werror -Wunreachable-code
 LOCAL_C_INCLUDES += external/tinyalsa/include
 
 LOCAL_C_INCLUDES += hardware/rockchip/librga
-
 LOCAL_C_INCLUDES += hardware/rk29/librga
 
 LOCAL_SHARED_LIBRARIES := \
@@ -43,16 +42,15 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
-    RockchipRgaStereo.cpp
+    RockchipRgaCorvetRgbaToyuv.cpp
 
-LOCAL_MODULE:= rgastereo
+LOCAL_MODULE:= rgargbatoyuv
 
 ifdef TARGET_32_BIT_SURFACEFLINGER
 LOCAL_32_BIT_ONLY := true
 endif
 
 include $(BUILD_EXECUTABLE)
-
 
 #======================================================================
 #

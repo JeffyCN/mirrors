@@ -168,7 +168,20 @@ int main()
         //memset(&rects, 0, sizeof(drm_rga_t));
         //rga_set_rect(&rects.src, 0, 0, srcWidth, srcHeight, srcWidth, srcFormat);
         //rga_set_rect(&rects.dst, 0, 0, dstWidth, dstHeight, dstWidth, dstFormat);
-        //ret = rkRga.RkRgaBlit(src, dst, &rects, 0, 0xFF0105);
+	rga_info_t rgasrc;
+    	rga_info_t rgadst;
+    	memset(&rgasrc, 0, sizeof(rga_info_t));
+    	rgasrc.fd = -1;
+    	rgasrc.mmuFlag = 1;
+    	memset(&rgadst, 0, sizeof(rga_info_t));
+    	rgadst.fd = -1;
+    	rgadst.mmuFlag = 1;
+    	rgasrc.virAddr = src;
+    	rgadst.virAddr = dst;
+	rgasrc.blend = 0x880105;
+	rga_set_rect(&rgasrc.rect, 0,0,srcWidth,srcHeight,srcWidth/*stride*/,srcHeight,srcFormat);
+        rga_set_rect(&rgadst.rect, 0,0,dstWidth,dstHeight,dstWidth/*stride*/,dstHeight,dstFormat);
+        ret = rkRga.RkRgaBlit(&rgasrc, &rgadst, NULL);
         {
             char* dstbuf = (char *)dst;
             //for(int i =0; i < mHeight * 1.5; i++)
@@ -199,7 +212,7 @@ int main()
                 fprintf(stderr, "Could not open %s\n", outFilePath);
                 return false;
             } else
-        		fprintf(stderr, "open %s and write ok\n", outFilePath);
+		    fprintf(stderr, "open %s and write ok\n", outFilePath);
             fwrite(dstbuf, 4 * dstWidth * dstHeight, 1, file);
             fclose(file);
 #endif

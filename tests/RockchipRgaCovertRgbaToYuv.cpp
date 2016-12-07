@@ -72,17 +72,17 @@ using namespace android;
 int main()
 {
     int ret = 0;
-
     int srcWidth,srcHeight,srcFormat;
     int dstWidth,dstHeight,dstFormat;
 
-    srcWidth = 1920;
-    srcHeight = 1088;
-    srcFormat = HAL_PIXEL_FORMAT_YCrCb_NV12;
+    srcWidth = 2048;
+    srcHeight = 1536;
+    srcFormat = HAL_PIXEL_FORMAT_RGBA_8888;
 
-    dstWidth = 3840;
-    dstHeight = 1080;
-    dstFormat = HAL_PIXEL_FORMAT_RGBA_8888;
+    dstWidth = 2048;
+    dstHeight = 1536;
+    dstFormat = HAL_PIXEL_FORMAT_YCrCb_NV12;
+    //dstFormat = HAL_PIXEL_FORMAT_RGBA_8888;
 
     RockchipRga& rkRga(RockchipRga::get());
 
@@ -90,18 +90,18 @@ int main()
 
 
     char* buf = NULL;
-    sp<GraphicBuffer> gbs(new GraphicBuffer(srcWidth, srcHeight, srcFormat,
-                          GRALLOC_USAGE_PROTECTED | GRALLOC_USAGE_SW_WRITE_OFTEN));
+    sp<GraphicBuffer> gbs(new GraphicBuffer(srcWidth,srcHeight,srcFormat,
+                         	          GRALLOC_USAGE_SW_WRITE_OFTEN));
 
     if (gbs->initCheck()) {
         printf("GraphicBuffer error : %s\n",strerror(errno));
         return ret;
     } else
-        printf("GraphicBuffer ok : %s\n","**************************************");
+        printf("GraphicBuffer ok : %s\n","*************************************");
         
 
-    sp<GraphicBuffer> gbd(new GraphicBuffer(dstWidth, dstHeight, dstFormat,
-                          GRALLOC_USAGE_PROTECTED | GRALLOC_USAGE_SW_WRITE_OFTEN));
+    sp<GraphicBuffer> gbd(new GraphicBuffer(dstWidth,dstHeight,dstFormat,
+                         	          GRALLOC_USAGE_SW_WRITE_OFTEN));
 
     if (gbd->initCheck()) {
         printf("GraphicBuffer error : %s\n",strerror(errno));
@@ -122,15 +122,13 @@ int main()
         printf("lock buffer ok : %s\n","**************************************");
 
 #if 1
-    const char *yuvFilePath = "/data/inputBuffer.bin";
+    const char *yuvFilePath = "/data/inputRgbaBuffer.bin";
     FILE *file = fopen(yuvFilePath, "rb");
     if (!file) {
         fprintf(stderr, "Could not open %s\n", yuvFilePath);
         return false;
-    } else
-        fprintf(stderr, "open %s ok\n", yuvFilePath);
-
-    fread(buf, 1.5 * srcWidth * srcHeight, 1, file);
+    }
+    fread(buf, 4 * srcWidth * srcHeight, 1, file);
     #if 0
     {
         char *pbuf = (char*)malloc(2 * mHeight * 4864);
@@ -160,23 +158,12 @@ int main()
         printf("unlock buffer ok : %s\n","*************************************");
 
     while(1) {
-        
-        //rkRga.RkRgaSetLogOnceFlag(1);
+        static int count = 0;
         //drm_rga_t rects;
-        /*******************************left***********************************/
         //memset(&rects, 0, sizeof(drm_rga_t));
-        //rga_set_rect(&rects.src, 0, 0, srcWidth, srcHeight, srcWidth, srcFormat);
-        //rga_set_rect(&rects.dst, 0, 0, dstWidth / 2, dstHeight,
-        //                                                    dstWidth, dstFormat);
-        //ret = rkRga.RkRgaBlit(gbs->handle, gbd->handle, &rects, 0, 0);
-
-        /*******************************right**********************************/
-        //rkRga.RkRgaSetLogOnceFlag(1);
-        //rga_set_rect(&rects.src, 0, 0, srcWidth, srcHeight, srcWidth, srcFormat);
-        //rga_set_rect(&rects.dst, dstWidth / 2, 0, dstWidth / 2, 
-        //                                         dstHeight, dstWidth, dstFormat);
-        //ret = rkRga.RkRgaBlit(gbs->handle, gbd->handle, &rects, 0, 0);
-
+        //rga_set_rect(&rects.src, 0, 0, 1920, 1088, 1920, 21);
+        //rga_set_rect(&rects.dst, 200, 120, 1520, 800, 1920, 1);
+        //ret = rkRga.RkRgaBlit(gbs->handle, gbd->handle, 0, HAL_TRANSFORM_ROT_180, 0);
     	rga_info_t src;
     	rga_info_t dst;
     	memset(&src, 0, sizeof(rga_info_t));
@@ -187,12 +174,11 @@ int main()
     	dst.hnd = gbd->handle;
         ret = rkRga.RkRgaBlit(&src, &dst, NULL);
 
-
         if (ret) {
             printf("rgaFillColor error : %s,hnd=%p\n",
-                                          strerror(errno),(void*)(gbd->handle));
+                                            strerror(errno),(void*)(gbd->handle));
             ALOGD("rgaFillColor error : %s,hnd=%p\n",
-                                          strerror(errno),(void*)(gbd->handle));
+                                            strerror(errno),(void*)(gbd->handle));
         }
 
         {
@@ -220,21 +206,36 @@ int main()
             #endif
             fclose(file);
 #else
-            const char *outFilePath = "/data/outBuffer.yuv";
-            FILE *file = fopen(outFilePath, "wb+");
-            if (!file) {
-                fprintf(stderr, "Could not open %s\n", outFilePath);
-                return false;
-            } else
-	            fprintf(stderr, "open %s and write ok\n", outFilePath);
-            fwrite(dstbuf, 4 * dstWidth * dstHeight, 1, file);
-            fclose(file);
+            FILE *file = NULL;
+            if (count == 0) {
+                const char *outFilePath = "/data/outBuffer.yuv";
+                file = fopen(outFilePath, "wb+");
+                if (!file) {
+                    fprintf(stderr, "Could not open %s\n", outFilePath);
+                    return false;
+                } else
+		            fprintf(stderr, "open %s and write ok\n", outFilePath);
+                fwrite(dstbuf, 4 * dstWidth * dstHeight, 1, file);
+                fclose(file);
+            } else {
+                const char *outFilePath = "/data/outBuffer1.yuv";
+                file = fopen(outFilePath, "wb+");
+                if (!file) {
+                    fprintf(stderr, "Could not open %s\n", outFilePath);
+                    return false;
+                } else
+		            fprintf(stderr, "open %s and write ok\n", outFilePath);
+                fwrite(dstbuf, 4 * dstWidth * dstHeight, 1, file);
+                fclose(file);
+            }
 #endif
             ret = gbd->unlock();
         }
+        count ++;
         printf("threadloop\n");
         usleep(500000);
-	break;
+        if (count > 1)
+	        break;
     }
     return 0;
 }

@@ -1,0 +1,107 @@
+diff --git a/tests/RockchipRgaBlitUserSpace.cpp b/tests/RockchipRgaBlitUserSpace.cpp
+index 8b4092d..e3eafd5 100755
+--- a/tests/RockchipRgaBlitUserSpace.cpp
++++ b/tests/RockchipRgaBlitUserSpace.cpp
+@@ -69,11 +69,55 @@
+ 
+ using namespace android;
+ 
++int getBppFromAndroidFormat(int format)
++{
++	int pixelWidth = 0;
++	switch (format) {
++		case HAL_PIXEL_FORMAT_RGBA_8888:
++		case HAL_PIXEL_FORMAT_RGBX_8888:
++		case HAL_PIXEL_FORMAT_BGRA_8888:
++			pixelWidth = 4;
++			break;
++
++		case HAL_PIXEL_FORMAT_RGB_888:
++			pixelWidth = 3;
++			break;
++
++		case HAL_PIXEL_FORMAT_RGB_565:
++			pixelWidth = 2;
++			break;
++
++		case HAL_PIXEL_FORMAT_sRGB_A_8888:
++		case HAL_PIXEL_FORMAT_sRGB_X_8888:
++			ALOGE("format 0x%x not support",format);
++			break;
++
++		case HAL_PIXEL_FORMAT_YCbCr_422_SP:
++		case HAL_PIXEL_FORMAT_YCrCb_420_SP:
++		case HAL_PIXEL_FORMAT_YCbCr_422_I:
++		case HAL_PIXEL_FORMAT_YCrCb_NV12:
++		case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
++			pixelWidth = 1;
++			break;
++
++		case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
++		case HAL_PIXEL_FORMAT_YCbCr_422_SP_10:
++		case HAL_PIXEL_FORMAT_YCrCb_420_SP_10:
++			pixelWidth = 1;
++			break;
++
++		default:
++			ALOGE("format 0x%x not support",format);
++			break;
++	}
++	return pixelWidth;
++}
++
+ int main()
+ {
+     int ret = 0;
+-    int srcWidth,srcHeight,srcFormat;
+-    int dstWidth,dstHeight,dstFormat;
++    int srcWidth,srcHeight,srcFormat,srcBpp;
++    int dstWidth,dstHeight,dstFormat,dstBpp;
+ 
+     void *src = NULL;
+     void *dst = NULL;
+@@ -86,11 +130,15 @@ int main()
+     dstHeight = 1536;
+     dstFormat = HAL_PIXEL_FORMAT_RGBA_8888;
+ 
+-    src = malloc(srcWidth * srcHeight * 4);
++    srcBpp = getBppFromAndroidFormat(srcFormat);
++
++    src = malloc(srcWidth * srcHeight * srcBpp);
+     if (!src)
+         return -ENOMEM;
+     
+-    dst = malloc(dstWidth * dstHeight * 4);
++    dstBpp = getBppFromAndroidFormat(dstFormat);
++
++    dst = malloc(dstWidth * dstHeight * dstBpp);
+ 
+     if (!dst) {
+         free(src);
+@@ -108,7 +156,7 @@ int main()
+         fprintf(stderr, "Could not open %s\n", yuvFilePath);
+         return false;
+     }
+-    fread(buf, 4 * srcWidth * srcHeight, 1, file);
++    fread(buf, srcBpp * srcWidth * srcHeight, 1, file);
+     #if 0
+     {
+         char *pbuf = (char*)malloc(2 * mHeight * 4864);
+@@ -139,7 +187,7 @@ int main()
+             fprintf(stderr, "Could not open %s\n", yuvFilePath);
+             return false;
+         }
+-        fread(buf, 4 * srcWidth * srcHeight, 1, file);
++        fread(buf, dstBpp * srcWidth * srcHeight, 1, file);
+         #if 0
+         {
+             char *pbuf = (char*)malloc(2 * mHeight * 4864);
+@@ -200,7 +248,7 @@ int main()
+                 return false;
+             } else
+         		fprintf(stderr, "open %s and write ok\n", outFilePath);
+-            fwrite(dstbuf, 4 * dstWidth * dstHeight, 1, file);
++            fwrite(dstbuf, dstBpp * dstWidth * dstHeight, 1, file);
+             fclose(file);
+ #endif
+         }

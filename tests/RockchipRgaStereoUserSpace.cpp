@@ -148,7 +148,7 @@ int main()
         //rga_set_rect(&rects.src, 0, 0, srcWidth, srcHeight, srcWidth, srcFormat);
         //rga_set_rect(&rects.dst, dstWidth / 2, 0, dstWidth / 2, 
         //                                         dstHeight, dstWidth, dstFormat);
-        //ret = rkRga.RkRgaBlit(src, dst, &rects, 0, 0);
+        ret = rkRga.RkRgaBlit(NULL, NULL, NULL);
 
 
         if (ret) {
