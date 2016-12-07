@@ -37,7 +37,7 @@ struct _GstVpuDecMeta
 {
   GstMeta meta;
   gpointer mem;
-  guint index;
+  gint index;
   gint size;
   gint dmabuf_fd;
   VPUMemLinear_t vpumem;
@@ -101,7 +101,7 @@ gst_vpudec_meta_get_info (void)
   return GSIZE_TO_POINTER (g_meta_info);
 }
 
-guint
+gint
 gst_vpudec_meta_get_index (GstVpuDecMeta * meta)
 {
   g_return_val_if_fail (GST_VPU_IS_DEC_META (meta), 0);

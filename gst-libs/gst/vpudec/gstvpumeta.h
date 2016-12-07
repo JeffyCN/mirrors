@@ -39,7 +39,7 @@ const GstMetaInfo *gst_vpudec_meta_get_info (void);
     (buf, GST_VPUDEC_META_INFO, index))
 
 G_GNUC_INTERNAL
-guint gst_vpudec_meta_get_index (GstVpuDecMeta *meta);
+gint gst_vpudec_meta_get_index (GstVpuDecMeta *meta);
 
 G_GNUC_INTERNAL
 gint gst_vpudec_meta_get_fd (GstVpuDecMeta *meta);
