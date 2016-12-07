@@ -165,8 +165,6 @@ enum
   PROP_0,
   PROP_DISPLAY,
   PROP_SYNCHRONOUS,
-  PROP_PIXEL_ASPECT_RATIO,
-  PROP_FORCE_ASPECT_RATIO,
   PROP_HANDLE_EVENTS,
   PROP_HANDLE_EXPOSE,
   PROP_WINDOW_WIDTH,
@@ -532,7 +530,6 @@ static void
 x_image_get_windows_position (GstXImageSink * ximagesink, int *x, int *y)
 {
   XWindowAttributes attr;
-  XGCValues values;
   Window child;
 
   XGetWindowAttributes (ximagesink->xcontext->disp,
@@ -543,8 +540,6 @@ x_image_get_windows_position (GstXImageSink * ximagesink, int *x, int *y)
 
   // *x = *x + attr.x;
   // *y = *y + attr.y;
-  GST_ERROR_OBJECT (ximagesink, "width %d %d %d", attr.border_width, attr.x,
-      attr.y);
 }
 
 /* We are called with the x_lock taken */
@@ -745,7 +740,6 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
       result.w, result.h);
   XSync (ximagesink->xcontext->disp, FALSE);
 #endif
-
   drm_sync (ximagesink);
 
   if (ximagesink->last_fb_id) {
@@ -1212,65 +1206,6 @@ gst_x_image_sink_manage_event_thread (GstXImageSink * ximagesink)
 
 }
 
-
-/* This function calculates the pixel aspect ratio based on the properties
- * in the xcontext structure and stores it there. */
-static void
-gst_x_image_sink_calculate_pixel_aspect_ratio (GstXContext * xcontext)
-{
-  static const gint par[][2] = {
-    {1, 1},                     /* regular screen */
-    {16, 15},                   /* PAL TV */
-    {11, 10},                   /* 525 line Rec.601 video */
-    {54, 59},                   /* 625 line Rec.601 video */
-    {64, 45},                   /* 1280x1024 on 16:9 display */
-    {5, 3},                     /* 1280x1024 on 4:3 display */
-    {4, 3}                      /*  800x600 on 16:9 display */
-  };
-  gint i;
-  gint index;
-  gdouble ratio;
-  gdouble delta;
-
-#define DELTA(idx) (ABS (ratio - ((gdouble) par[idx][0] / par[idx][1])))
-
-  /* first calculate the "real" ratio based on the X values;
-   * which is the "physical" w/h divided by the w/h in pixels of the display */
-  ratio = (gdouble) (xcontext->widthmm * xcontext->height)
-      / (xcontext->heightmm * xcontext->width);
-
-  /* DirectFB's X in 720x576 reports the physical dimensions wrong, so
-   * override here */
-  if (xcontext->width == 720 && xcontext->height == 576) {
-    ratio = 4.0 * 576 / (3.0 * 720);
-  }
-  GST_DEBUG ("calculated pixel aspect ratio: %f", ratio);
-
-  /* now find the one from par[][2] with the lowest delta to the real one */
-  delta = DELTA (0);
-  index = 0;
-
-  for (i = 1; i < sizeof (par) / (sizeof (gint) * 2); ++i) {
-    gdouble this_delta = DELTA (i);
-
-    if (this_delta < delta) {
-      index = i;
-      delta = this_delta;
-    }
-  }
-
-  GST_DEBUG ("Decided on index %d (%d/%d)", index,
-      par[index][0], par[index][1]);
-
-  g_free (xcontext->par);
-  xcontext->par = g_new0 (GValue, 1);
-  g_value_init (xcontext->par, GST_TYPE_FRACTION);
-  gst_value_set_fraction (xcontext->par, par[index][0], par[index][1]);
-  GST_DEBUG ("set xcontext PAR to %d/%d",
-      gst_value_get_fraction_numerator (xcontext->par),
-      gst_value_get_fraction_denominator (xcontext->par));
-}
-
 /* This function gets the X Display and global info about it. Everything is
    stored in our object and will be cleaned when the object is disposed. Note
    here that caps for supported format are generated without any window or
@@ -1317,15 +1252,12 @@ gst_x_image_sink_xcontext_get (GstXImageSink * ximagesink)
   GST_DEBUG_OBJECT (ximagesink, "X reports %dx%d pixels and %d mm x %d mm",
       xcontext->width, xcontext->height, xcontext->widthmm, xcontext->heightmm);
 
-  gst_x_image_sink_calculate_pixel_aspect_ratio (xcontext);
-
   /* We get supported pixmap formats at supported depth */
   px_formats = XListPixmapFormats (xcontext->disp, &nb_formats);
 
   if (!px_formats) {
     XCloseDisplay (xcontext->disp);
     g_mutex_unlock (&ximagesink->x_lock);
-    g_free (xcontext->par);
     g_free (xcontext);
     GST_ELEMENT_ERROR (ximagesink, RESOURCE, SETTINGS,
         ("Could not get supported pixmap formats"), (NULL));
@@ -1362,25 +1294,6 @@ gst_x_image_sink_xcontext_get (GstXImageSink * ximagesink)
   if (vformat == GST_VIDEO_FORMAT_UNKNOWN)
     goto unknown_format;
 
-  /* update object's par with calculated one if not set yet */
-  if (!ximagesink->par) {
-    ximagesink->par = g_new0 (GValue, 1);
-    gst_value_init_and_copy (ximagesink->par, xcontext->par);
-    GST_DEBUG_OBJECT (ximagesink, "set calculated PAR on object's PAR");
-  }
-  xcontext->caps = gst_caps_new_simple ("video/x-raw", "format", G_TYPE_STRING, "NV12", //gst_video_format_to_string (vformat),
-      "width", GST_TYPE_INT_RANGE, 1, G_MAXINT,
-      "height", GST_TYPE_INT_RANGE, 1, G_MAXINT,
-      "framerate", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT, 1, NULL);
-  if (ximagesink->par) {
-    int nom, den;
-
-    nom = gst_value_get_fraction_numerator (ximagesink->par);
-    den = gst_value_get_fraction_denominator (ximagesink->par);
-    gst_caps_set_simple (xcontext->caps, "pixel-aspect-ratio",
-        GST_TYPE_FRACTION, nom, den, NULL);
-  }
-
   g_mutex_unlock (&ximagesink->x_lock);
 
   return xcontext;
@@ -1416,14 +1329,6 @@ gst_x_image_sink_xcontext_clear (GstXImageSink * ximagesink)
 
   GST_OBJECT_UNLOCK (ximagesink);
 
-  gst_caps_unref (xcontext->caps);
-  g_free (xcontext->par);
-  g_free (ximagesink->par);
-  ximagesink->par = NULL;
-
-  if (xcontext->last_caps)
-    gst_caps_replace (&xcontext->last_caps, NULL);
-
   g_mutex_lock (&ximagesink->x_lock);
 
   XCloseDisplay (xcontext->disp);
@@ -1436,132 +1341,47 @@ gst_x_image_sink_xcontext_clear (GstXImageSink * ximagesink)
 /* Element stuff */
 
 static GstCaps *
+gst_x_image_sink_get_allowed_caps (GstXImageSink * self)
+{
+  if (!self->allowed_caps)
+    return NULL;                /* base class will return the template caps */
+  return gst_caps_ref (self->allowed_caps);
+}
+
+static GstCaps *
 gst_x_image_sink_getcaps (GstBaseSink * bsink, GstCaps * filter)
 {
   GstXImageSink *ximagesink;
-  GstCaps *caps;
-  int i;
+  GstCaps *caps, *out_caps;
 
   ximagesink = GST_X_IMAGE_SINK (bsink);
 
-  g_mutex_lock (&ximagesink->x_lock);
-  if (ximagesink->xcontext) {
-    GstCaps *caps;
-
-    caps = gst_caps_ref (ximagesink->xcontext->caps);
-
-    if (filter) {
-      GstCaps *intersection;
-
-      intersection =
-          gst_caps_intersect_full (filter, caps, GST_CAPS_INTERSECT_FIRST);
-      gst_caps_unref (caps);
-      caps = intersection;
-    }
-
-    if (gst_caps_is_empty (caps)) {
-      g_mutex_unlock (&ximagesink->x_lock);
-      return caps;
-    }
-
-    if (ximagesink->xwindow && ximagesink->xwindow->width) {
-      GstStructure *s0, *s1;
-
-      caps = gst_caps_make_writable (caps);
-
-      /* There can only be a single structure because the xcontext
-       * caps only have a single structure */
-      s0 = gst_caps_get_structure (caps, 0);
-      s1 = gst_structure_copy (gst_caps_get_structure (caps, 0));
-
-      gst_structure_set (s0, "width", G_TYPE_INT, ximagesink->xwindow->width,
-          "height", G_TYPE_INT, ximagesink->xwindow->height, NULL);
-      gst_caps_append_structure (caps, s1);
-
-      /* This will not change the order but will remove the
-       * fixed width/height caps again if not possible
-       * upstream */
-      if (filter) {
-        GstCaps *intersection;
-
-        intersection =
-            gst_caps_intersect_full (caps, filter, GST_CAPS_INTERSECT_FIRST);
-        gst_caps_unref (caps);
-        caps = intersection;
-      }
-    }
-
-    g_mutex_unlock (&ximagesink->x_lock);
-    return caps;
-  }
-  g_mutex_unlock (&ximagesink->x_lock);
-
-  /* get a template copy and add the pixel aspect ratio */
-  caps = gst_pad_get_pad_template_caps (GST_BASE_SINK (ximagesink)->sinkpad);
-  if (ximagesink->par) {
-    caps = gst_caps_make_writable (caps);
-    for (i = 0; i < gst_caps_get_size (caps); ++i) {
-      GstStructure *structure = gst_caps_get_structure (caps, i);
-      int nom, den;
-
-      nom = gst_value_get_fraction_numerator (ximagesink->par);
-      den = gst_value_get_fraction_denominator (ximagesink->par);
-      gst_structure_set (structure, "pixel-aspect-ratio",
-          GST_TYPE_FRACTION, nom, den, NULL);
-    }
-  }
-
-  if (filter) {
-    GstCaps *intersection;
-
-    intersection =
-        gst_caps_intersect_full (filter, caps, GST_CAPS_INTERSECT_FIRST);
+  caps = gst_x_image_sink_get_allowed_caps (ximagesink);
+  if (caps && filter) {
+    out_caps = gst_caps_intersect_full (caps, filter, GST_CAPS_INTERSECT_FIRST);
     gst_caps_unref (caps);
-    caps = intersection;
+  } else {
+    out_caps = caps;
   }
 
-  return caps;
+  return out_caps;
 }
 
 static gboolean
 gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
 {
   GstXImageSink *ximagesink;
-  GstStructure *structure;
   GstVideoInfo info;
-  const GValue *par;
 
   ximagesink = GST_X_IMAGE_SINK (bsink);
 
   if (!ximagesink->xcontext)
     return FALSE;
 
-  GST_DEBUG_OBJECT (ximagesink,
-      "sinkconnect possible caps %" GST_PTR_FORMAT " with given caps %"
-      GST_PTR_FORMAT, ximagesink->xcontext->caps, caps);
-
-  /* We intersect those caps with our template to make sure they are correct */
-  if (!gst_caps_can_intersect (ximagesink->xcontext->caps, caps))
-    goto incompatible_caps;
+  GST_DEBUG_OBJECT (ximagesink, "given caps %" GST_PTR_FORMAT, caps);
 
   if (!gst_video_info_from_caps (&info, caps))
     goto invalid_format;
-
-  structure = gst_caps_get_structure (caps, 0);
-  /* if the caps contain pixel-aspect-ratio, they have to match ours,
-   * otherwise linking should fail */
-  par = gst_structure_get_value (structure, "pixel-aspect-ratio");
-  if (par) {
-    if (ximagesink->par) {
-      if (gst_value_compare (par, ximagesink->par) != GST_VALUE_EQUAL) {
-        goto wrong_aspect;
-      }
-    } else if (ximagesink->xcontext->par) {
-      if (gst_value_compare (par, ximagesink->xcontext->par) != GST_VALUE_EQUAL) {
-        goto wrong_aspect;
-      }
-    }
-  }
 
   GST_VIDEO_SINK_WIDTH (ximagesink) = info.width;
   GST_VIDEO_SINK_HEIGHT (ximagesink) = info.height;
@@ -1598,19 +1418,9 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
   return TRUE;
 
   /* ERRORS */
-incompatible_caps:
-  {
-    GST_ERROR_OBJECT (ximagesink, "caps incompatible");
-    return FALSE;
-  }
 invalid_format:
   {
     GST_ERROR_OBJECT (ximagesink, "caps invalid");
-    return FALSE;
-  }
-wrong_aspect:
-  {
-    GST_INFO_OBJECT (ximagesink, "pixel aspect ratio does not match");
     return FALSE;
   }
 invalid_size:
@@ -2005,29 +1815,6 @@ gst_x_image_sink_set_property (GObject * object, guint prop_id,
         g_mutex_unlock (&ximagesink->x_lock);
       }
       break;
-    case PROP_FORCE_ASPECT_RATIO:
-      ximagesink->keep_aspect = g_value_get_boolean (value);
-      break;
-    case PROP_PIXEL_ASPECT_RATIO:
-    {
-      GValue *tmp;
-
-      tmp = g_new0 (GValue, 1);
-      g_value_init (tmp, GST_TYPE_FRACTION);
-
-      if (!g_value_transform (value, tmp)) {
-        GST_WARNING_OBJECT (ximagesink,
-            "Could not transform string to aspect ratio");
-        g_free (tmp);
-      } else {
-        GST_DEBUG_OBJECT (ximagesink, "set PAR to %d/%d",
-            gst_value_get_fraction_numerator (tmp),
-            gst_value_get_fraction_denominator (tmp));
-        g_free (ximagesink->par);
-        ximagesink->par = tmp;
-      }
-    }
-      break;
     case PROP_HANDLE_EVENTS:
       gst_x_image_sink_set_event_handling (GST_VIDEO_OVERLAY (ximagesink),
           g_value_get_boolean (value));
@@ -2068,13 +1855,6 @@ gst_x_image_sink_get_property (GObject * object, guint prop_id,
       break;
     case PROP_SYNCHRONOUS:
       g_value_set_boolean (value, ximagesink->synchronous);
-      break;
-    case PROP_FORCE_ASPECT_RATIO:
-      g_value_set_boolean (value, ximagesink->keep_aspect);
-      break;
-    case PROP_PIXEL_ASPECT_RATIO:
-      if (ximagesink->par)
-        g_value_transform (ximagesink->par, value);
       break;
     case PROP_HANDLE_EVENTS:
       g_value_set_boolean (value, ximagesink->handle_events);
@@ -2155,10 +1935,6 @@ gst_x_image_sink_finalize (GObject * object)
     g_free (ximagesink->display_name);
     ximagesink->display_name = NULL;
   }
-  if (ximagesink->par) {
-    g_free (ximagesink->par);
-    ximagesink->par = NULL;
-  }
   g_mutex_clear (&ximagesink->x_lock);
   g_mutex_clear (&ximagesink->flow_lock);
 
@@ -2186,10 +1962,7 @@ gst_x_image_sink_init (GstXImageSink * ximagesink)
   g_mutex_init (&ximagesink->x_lock);
   g_mutex_init (&ximagesink->flow_lock);
 
-  ximagesink->par = NULL;
-
   ximagesink->synchronous = FALSE;
-  ximagesink->keep_aspect = TRUE;
   ximagesink->handle_events = TRUE;
   ximagesink->handle_expose = TRUE;
 
@@ -2413,15 +2186,6 @@ gst_x_image_sink_class_init (GstXImageSinkClass * klass)
       g_param_spec_boolean ("synchronous", "Synchronous",
           "When enabled, runs the X display in synchronous mode. "
           "(unrelated to A/V sync, used only for debugging)", FALSE,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-  g_object_class_install_property (gobject_class, PROP_FORCE_ASPECT_RATIO,
-      g_param_spec_boolean ("force-aspect-ratio", "Force aspect ratio",
-          "When enabled, reverse caps negotiation (scaling) will respect "
-          "original aspect ratio", TRUE,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-  g_object_class_install_property (gobject_class, PROP_PIXEL_ASPECT_RATIO,
-      g_param_spec_string ("pixel-aspect-ratio", "Pixel Aspect Ratio",
-          "The pixel aspect ratio of the device", "1/1",
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_HANDLE_EVENTS,
       g_param_spec_boolean ("handle-events", "Handle XEvents",

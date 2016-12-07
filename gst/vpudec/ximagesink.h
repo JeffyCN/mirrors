@@ -102,13 +102,8 @@ struct _GstXContext
 
   gint width, height;
   gint widthmm, heightmm;
-  GValue *par;                  /* calculated pixel aspect ratio */
 
   gboolean use_xshm;
-
-  GstCaps *caps;
-  GstCaps *last_caps;
-
 };
 
 /*
@@ -196,11 +191,7 @@ struct _GstXImageSink
   GMutex x_lock;
   GMutex flow_lock;
 
-  /* object-set pixel aspect ratio */
-  GValue *par;
-
   gboolean synchronous;
-  gboolean keep_aspect;
   gboolean handle_events;
   gboolean handle_expose;
   gboolean draw_border;
