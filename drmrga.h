@@ -20,6 +20,7 @@
 
 #include <hardware/gralloc.h>
 #include <hardware/hardware.h>
+#include <system/graphics.h>
 #include <cutils/native_handle.h>
 
 
@@ -32,13 +33,13 @@
 
 #define DRM_RGA_TRANSFORM_ROT_MASK      0x0000000F
 #define DRM_RGA_TRANSFORM_ROT_0         0x00000000
-#define DRM_RGA_TRANSFORM_ROT_90        0x00000001
-#define DRM_RGA_TRANSFORM_ROT_180       0x00000002
-#define DRM_RGA_TRANSFORM_ROT_270       0x00000004
+#define DRM_RGA_TRANSFORM_ROT_90        HAL_TRANSFORM_ROT_90
+#define DRM_RGA_TRANSFORM_ROT_180       HAL_TRANSFORM_ROT_180
+#define DRM_RGA_TRANSFORM_ROT_270       HAL_TRANSFORM_ROT_270
 
-#define DRM_RGA_TRANSFORM_FLIP_MASK     0x000000F0
-#define DRM_RGA_TRANSFORM_FLIP_H        0x00000020
-#define DRM_RGA_TRANSFORM_FLIP_V        0x00000010
+#define DRM_RGA_TRANSFORM_FLIP_MASK     0x00000003
+#define DRM_RGA_TRANSFORM_FLIP_H        HAL_TRANSFORM_FLIP_H
+#define DRM_RGA_TRANSFORM_FLIP_V        HAL_TRANSFORM_FLIP_V
 
 enum {
 	AWIDTH                      = 0,

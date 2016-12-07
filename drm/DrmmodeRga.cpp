@@ -189,14 +189,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     	}
 	}
 
-	if ((rotation & DRM_RGA_TRANSFORM_ROT_MASK) == DRM_RGA_TRANSFORM_ROT_90)
+	if ((rotation & DRM_RGA_TRANSFORM_ROT_90)
 		degree = 90;
-
-	if ((rotation & DRM_RGA_TRANSFORM_ROT_MASK) == DRM_RGA_TRANSFORM_ROT_180)
-		degree = 180;
-
-	if ((rotation & DRM_RGA_TRANSFORM_ROT_MASK) == DRM_RGA_TRANSFORM_ROT_270)
-		degree = 270;
 
 #if 0
 	printf("[0x%x]src[%d,%d,%d,%d][%d,%d],dst[%d,%d,%d,%d][%d,%d]\n",rotation,
@@ -216,8 +210,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	fprintf(stderr, "ctx=%p,ctx->ctx=%p\n",ctx,ctx->ctx);
 	ctx->ctx->log = 1;
 #endif
-
-	rotation &= DRM_RGA_TRANSFORM_FLIP_MASK;
 
 	rga_multiple_transform(ctx->ctx, &srcImage, &dstImage,
                                 relSrcRect.xoffset, relSrcRect.yoffset,
