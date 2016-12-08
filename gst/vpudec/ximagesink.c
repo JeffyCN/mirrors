@@ -572,12 +572,11 @@ x_image_calculate_display_ratio (GstXImageSink * self, gint * video_width,
 
 /* X11 stuff */
 
-static int
+static void
 x_image_get_windows_position (GstXImageSink * ximagesink, int *x, int *y)
 {
   XWindowAttributes attr;
   Window child;
-  static int last_x = 0, last_y = 0;
 
   XGetWindowAttributes (ximagesink->xcontext->disp,
       ximagesink->xwindow->win, &attr);
@@ -585,13 +584,59 @@ x_image_get_windows_position (GstXImageSink * ximagesink, int *x, int *y)
   XTranslateCoordinates (ximagesink->xcontext->disp, ximagesink->xwindow->win,
       ximagesink->xcontext->root, 0, 0, x, y, &child);
 
-  if (last_x != *x || last_y != *y) {
-    last_x = *x;
-    last_y = *y;
-    return 1;
+  // GST_DEBUG_OBJECT (ximagesink, "root!! %d %d  %d %d %d %d", *x, *y, attr.x, attr.y, ximagesink->xcontext->root, ret);
+
+  // {
+  //   XWindowAttributes attr2;
+  //  XGetWindowAttributes (ximagesink->xcontext->disp,
+  //       child, &attr2);
+  //     GST_DEBUG_OBJECT (ximagesink, "root2 %d %d ", attr2.x, attr2.y);
+  // }
+}
+
+static gboolean
+x_image_get_windows_moving (GstXImageSink * ximagesink, gboolean read)
+{
+  XWindowAttributes attr;
+  Window child;
+  int x, y;
+  static int last_x = 0, last_y = 0;
+  static int timer_count = 0;
+
+  XGetWindowAttributes (ximagesink->xcontext->disp,
+      ximagesink->xwindow->win, &attr);
+
+  XTranslateCoordinates (ximagesink->xcontext->disp, ximagesink->xwindow->win,
+      ximagesink->xcontext->root, 0, 0, &x, &y, &child);
+
+  if (last_x != x || last_y != y) {
+    last_x = x;
+    last_y = y;
+    /* start timer */
+    timer_count = 1;
   }
 
-  return 0;
+  if (read) {
+    if (!timer_count)
+      /* return unmoving */
+      return FALSE;
+    else
+      /* return moving */
+      return TRUE;
+  }
+
+  /* increase timer */
+  if (timer_count) {
+    timer_count++;
+  }
+
+  if (timer_count > 10) {
+    /* stop timer */
+    timer_count = 0;
+    /* return moving end */
+    return FALSE;
+  }
+  return TRUE;
 }
 
 /* We are called with the x_lock taken */
@@ -754,7 +799,9 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
   x_image_get_windows_position (ximagesink, &result.x, &result.y);
   x_image_calculate_display_ratio (ximagesink, &result.w, &result.h);
 
-  if (src.w / result.w <= 8 && src.h / result.h <= 8) {
+  if (!x_image_get_windows_moving (ximagesink, TRUE) && src.w / result.w <= 8
+      && src.h / result.h <= 8) {
+
     GST_TRACE_OBJECT (ximagesink, "displaying fb %d", fb_id);
 
     GST_TRACE_OBJECT (ximagesink,
@@ -1043,7 +1090,6 @@ gst_x_image_sink_handle_xevents (GstXImageSink * ximagesink)
   guint pointer_x = 0, pointer_y = 0;
   gboolean pointer_moved = FALSE;
   gboolean exposed = FALSE, configured = FALSE;
-  gint drm_x, drm_y;
 
   g_return_if_fail (GST_IS_X_IMAGE_SINK (ximagesink));
 
@@ -1152,6 +1198,7 @@ gst_x_image_sink_handle_xevents (GstXImageSink * ximagesink)
       default:
         break;
     }
+
   }
 
   if (ximagesink->handle_expose && (exposed || configured)) {
@@ -1192,15 +1239,17 @@ gst_x_image_sink_handle_xevents (GstXImageSink * ximagesink)
   }
 
   /* Handle DRM display */
-  if (x_image_get_windows_position (ximagesink, &drm_x, &drm_y)) {
-
-    /* redraw display */
-    g_mutex_unlock (&ximagesink->x_lock);
-    g_mutex_unlock (&ximagesink->flow_lock);
-    gst_x_image_sink_expose (GST_VIDEO_OVERLAY (ximagesink));
-    g_mutex_lock (&ximagesink->flow_lock);
-    g_mutex_lock (&ximagesink->x_lock);
+  {
+    if (!x_image_get_windows_moving (ximagesink, FALSE)) {
+      /* if window stop moving, redraw display */
+      g_mutex_unlock (&ximagesink->x_lock);
+      g_mutex_unlock (&ximagesink->flow_lock);
+      gst_x_image_sink_expose (GST_VIDEO_OVERLAY (ximagesink));
+      g_mutex_lock (&ximagesink->flow_lock);
+      g_mutex_lock (&ximagesink->x_lock);
+    }
   }
+  while (0);
 
   g_mutex_unlock (&ximagesink->x_lock);
   g_mutex_unlock (&ximagesink->flow_lock);
@@ -1632,6 +1681,7 @@ gst_x_image_sink_event (GstBaseSink * sink, GstEvent * event)
     default:
       break;
   }
+
   return GST_BASE_SINK_CLASS (parent_class)->event (sink, event);
 }
 
