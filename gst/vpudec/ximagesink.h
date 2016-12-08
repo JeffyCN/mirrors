@@ -209,7 +209,6 @@ struct _GstXImageSink
   GstPollFD pollfd;
 
   guint32 last_fb_id;
-  gboolean hide_plane;
 };
 
 struct _GstXImageSinkClass

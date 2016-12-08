@@ -572,11 +572,12 @@ x_image_calculate_display_ratio (GstXImageSink * self, gint * video_width,
 
 /* X11 stuff */
 
-static void
+static int
 x_image_get_windows_position (GstXImageSink * ximagesink, int *x, int *y)
 {
   XWindowAttributes attr;
   Window child;
+  static int last_x = 0, last_y = 0;
 
   XGetWindowAttributes (ximagesink->xcontext->disp,
       ximagesink->xwindow->win, &attr);
@@ -584,8 +585,13 @@ x_image_get_windows_position (GstXImageSink * ximagesink, int *x, int *y)
   XTranslateCoordinates (ximagesink->xcontext->disp, ximagesink->xwindow->win,
       ximagesink->xcontext->root, 0, 0, x, y, &child);
 
-  // *x = *x + attr.x;
-  // *y = *y + attr.y;
+  if (last_x != *x || last_y != *y) {
+    last_x = *x;
+    last_y = *y;
+    return 1;
+  }
+
+  return 0;
 }
 
 /* We are called with the x_lock taken */
@@ -707,19 +713,6 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
     gst_x_image_sink_xwindow_draw_borders (ximagesink, ximagesink->xwindow,
         result);
     ximagesink->draw_border = FALSE;
-  }
-
-  if (ximagesink->hide_plane) {
-
-    /* clean screen */
-    if (ximagesink->last_fb_id) {
-      drmModeRmFB (ximagesink->fd, ximagesink->last_fb_id);
-      ximagesink->last_fb_id = 0;
-    }
-
-    g_mutex_unlock (&ximagesink->x_lock);
-
-    return TRUE;
   }
 
   gst_buffer_ref (ximage);
@@ -1031,6 +1024,12 @@ gst_x_image_sink_xwindow_clear (GstXImageSink * ximagesink,
 
   XSync (ximagesink->xcontext->disp, FALSE);
 
+  /* clean screen */
+  if (ximagesink->last_fb_id) {
+    drmModeRmFB (ximagesink->fd, ximagesink->last_fb_id);
+    ximagesink->last_fb_id = 0;
+  }
+
   g_mutex_unlock (&ximagesink->x_lock);
 }
 
@@ -1044,6 +1043,7 @@ gst_x_image_sink_handle_xevents (GstXImageSink * ximagesink)
   guint pointer_x = 0, pointer_y = 0;
   gboolean pointer_moved = FALSE;
   gboolean exposed = FALSE, configured = FALSE;
+  gint drm_x, drm_y;
 
   g_return_if_fail (GST_IS_X_IMAGE_SINK (ximagesink));
 
@@ -1189,6 +1189,17 @@ gst_x_image_sink_handle_xevents (GstXImageSink * ximagesink)
       default:
         break;
     }
+  }
+
+  /* Handle DRM display */
+  if (x_image_get_windows_position (ximagesink, &drm_x, &drm_y)) {
+
+    /* redraw display */
+    g_mutex_unlock (&ximagesink->x_lock);
+    g_mutex_unlock (&ximagesink->flow_lock);
+    gst_x_image_sink_expose (GST_VIDEO_OVERLAY (ximagesink));
+    g_mutex_lock (&ximagesink->flow_lock);
+    g_mutex_lock (&ximagesink->x_lock);
   }
 
   g_mutex_unlock (&ximagesink->x_lock);
@@ -2023,8 +2034,6 @@ gst_x_image_sink_init (GstXImageSink * ximagesink)
   gst_poll_fd_init (&ximagesink->pollfd);
   ximagesink->poll = gst_poll_new (TRUE);
   gst_video_info_init (&ximagesink->vinfo);
-
-  ximagesink->hide_plane = FALSE;
 }
 
 static gboolean
