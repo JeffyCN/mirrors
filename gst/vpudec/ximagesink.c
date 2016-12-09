@@ -203,7 +203,7 @@ G_DEFINE_TYPE_WITH_CODE (GstXImageSink, gst_x_image_sink, GST_TYPE_VIDEO_SINK,
 /*drm*/
 
 static drmModePlane *
-find_plane_for_crtc (int fd, drmModeRes * res, drmModePlaneRes * pres,
+drm_find_plane_for_crtc (int fd, drmModeRes * res, drmModePlaneRes * pres,
     int crtc_id)
 {
   drmModePlane *plane;
@@ -232,7 +232,7 @@ find_plane_for_crtc (int fd, drmModeRes * res, drmModePlaneRes * pres,
 }
 
 static drmModeCrtc *
-find_crtc_for_connector (int fd, drmModeRes * res, drmModeConnector * conn,
+drm_find_crtc_for_connector (int fd, drmModeRes * res, drmModeConnector * conn,
     guint * pipe)
 {
   int i;
@@ -272,13 +272,13 @@ find_crtc_for_connector (int fd, drmModeRes * res, drmModeConnector * conn,
 }
 
 static gboolean
-connector_is_used (int fd, drmModeRes * res, drmModeConnector * conn)
+drm_connector_is_used (int fd, drmModeRes * res, drmModeConnector * conn)
 {
   gboolean result;
   drmModeCrtc *crtc;
 
   result = FALSE;
-  crtc = find_crtc_for_connector (fd, res, conn, NULL);
+  crtc = drm_find_crtc_for_connector (fd, res, conn, NULL);
   if (crtc) {
     result = crtc->buffer_id != 0;
     drmModeFreeCrtc (crtc);
@@ -288,7 +288,7 @@ connector_is_used (int fd, drmModeRes * res, drmModeConnector * conn)
 }
 
 static drmModeConnector *
-find_used_connector_by_type (int fd, drmModeRes * res, int type)
+drm_find_used_connector_by_type (int fd, drmModeRes * res, int type)
 {
   int i;
   drmModeConnector *conn;
@@ -297,7 +297,8 @@ find_used_connector_by_type (int fd, drmModeRes * res, int type)
   for (i = 0; i < res->count_connectors; i++) {
     conn = drmModeGetConnector (fd, res->connectors[i]);
     if (conn) {
-      if ((conn->connector_type == type) && connector_is_used (fd, res, conn))
+      if ((conn->connector_type == type)
+          && drm_connector_is_used (fd, res, conn))
         return conn;
       drmModeFreeConnector (conn);
     }
@@ -307,7 +308,7 @@ find_used_connector_by_type (int fd, drmModeRes * res, int type)
 }
 
 static drmModeConnector *
-find_first_used_connector (int fd, drmModeRes * res)
+drm_find_first_used_connector (int fd, drmModeRes * res)
 {
   int i;
   drmModeConnector *conn;
@@ -316,7 +317,7 @@ find_first_used_connector (int fd, drmModeRes * res)
   for (i = 0; i < res->count_connectors; i++) {
     conn = drmModeGetConnector (fd, res->connectors[i]);
     if (conn) {
-      if (connector_is_used (fd, res, conn))
+      if (drm_connector_is_used (fd, res, conn))
         return conn;
       drmModeFreeConnector (conn);
     }
@@ -326,7 +327,7 @@ find_first_used_connector (int fd, drmModeRes * res)
 }
 
 static drmModeConnector *
-find_main_monitor (int fd, drmModeRes * res)
+drm_find_main_monitor (int fd, drmModeRes * res)
 {
   /* Find the LVDS and eDP connectors: those are the main screens. */
   static const int priority[] = { DRM_MODE_CONNECTOR_LVDS,
@@ -337,17 +338,17 @@ find_main_monitor (int fd, drmModeRes * res)
 
   conn = NULL;
   for (i = 0; !conn && i < G_N_ELEMENTS (priority); i++)
-    conn = find_used_connector_by_type (fd, res, priority[i]);
+    conn = drm_find_used_connector_by_type (fd, res, priority[i]);
 
   /* if we didn't find a connector, grab the first one in use */
   if (!conn)
-    conn = find_first_used_connector (fd, res);
+    conn = drm_find_first_used_connector (fd, res);
 
   return conn;
 }
 
 static void
-log_drm_version (GstXImageSink * self)
+drm_log_version (GstXImageSink * self)
 {
 #ifndef GST_DISABLE_GST_DEBUG
   drmVersion *v;
@@ -367,7 +368,7 @@ log_drm_version (GstXImageSink * self)
 }
 
 static gboolean
-get_drm_caps (GstXImageSink * self)
+drm_get_caps (GstXImageSink * self)
 {
   gint ret;
   guint64 has_dumb_buffer;
@@ -405,7 +406,7 @@ get_drm_caps (GstXImageSink * self)
 }
 
 static void
-sync_handler (gint fd, guint frame, guint sec, guint usec, gpointer data)
+drm_sync_handler (gint fd, guint frame, guint sec, guint usec, gpointer data)
 {
   gboolean *waiting;
 
@@ -420,8 +421,8 @@ drm_sync (GstXImageSink * self)
   gboolean waiting;
   drmEventContext evctxt = {
     .version = DRM_EVENT_CONTEXT_VERSION,
-    .page_flip_handler = sync_handler,
-    .vblank_handler = sync_handler,
+    .page_flip_handler = drm_sync_handler,
+    .vblank_handler = drm_sync_handler,
   };
   drmVBlank vbl = {
     .request = {
@@ -482,7 +483,7 @@ event_failed:
 }
 
 static gboolean
-ensure_allowed_caps (GstXImageSink * self, drmModePlane * plane,
+drm_ensure_allowed_caps (GstXImageSink * self, drmModePlane * plane,
     drmModeRes * res)
 {
   GstCaps *out_caps, *caps;
@@ -526,12 +527,16 @@ ensure_allowed_caps (GstXImageSink * self, drmModePlane * plane,
 
 
 static gboolean
-x_image_calculate_display_ratio (GstXImageSink * self, gint * video_width,
-    gint * video_height)
+xwindow_calculate_display_ratio (GstXImageSink * self, int *x, int *y,
+    gint * window_width, gint * window_height)
 {
   guint dar_n, dar_d;
   guint video_par_n, video_par_d;
   guint dpy_par_n, dpy_par_d;
+  gint video_width, video_height;
+
+  video_width = GST_VIDEO_INFO_WIDTH (&self->info);
+  video_height = GST_VIDEO_INFO_HEIGHT (&self->info);
 
   video_par_n = self->par_n;
   video_par_d = self->par_d;
@@ -539,8 +544,8 @@ x_image_calculate_display_ratio (GstXImageSink * self, gint * video_width,
   gst_video_calculate_device_ratio (self->hdisplay, self->vdisplay,
       self->mm_width, self->mm_height, &dpy_par_n, &dpy_par_d);
 
-  if (!gst_video_calculate_display_ratio (&dar_n, &dar_d, *video_width,
-          *video_height, video_par_n, video_par_d, dpy_par_n, dpy_par_d))
+  if (!gst_video_calculate_display_ratio (&dar_n, &dar_d, video_width,
+          video_height, video_par_n, video_par_d, dpy_par_n, dpy_par_d))
     return FALSE;
 
   GST_DEBUG_OBJECT (self, "video calculated display ratio: %d/%d", dar_n,
@@ -552,20 +557,17 @@ x_image_calculate_display_ratio (GstXImageSink * self, gint * video_width,
 
   /* start with same height, because of interlaced video */
   /* check hd / dar_d is an integer scale factor, and scale wd with the PAR */
-  if (*video_height % dar_d == 0) {
-    GST_DEBUG_OBJECT (self, "keeping video height");
-    *video_width = (guint)
-        gst_util_uint64_scale_int (*video_height, dar_n, dar_d);
-  } else if (*video_width % dar_n == 0) {
-    GST_DEBUG_OBJECT (self, "keeping video width");
-    *video_height = (guint)
-        gst_util_uint64_scale_int (*video_width, dar_d, dar_n);
+  video_width = gst_util_uint64_scale_int (*window_height, dar_n, dar_d);
+  video_height = gst_util_uint64_scale_int (*window_width, dar_d, dar_n);
+  if (video_width < *window_width) {
+    *x += (*window_width - video_width) / 2;
+    *window_width = video_width;
   } else {
-    GST_DEBUG_OBJECT (self, "approximating while keeping video height");
-    *video_width = (guint)
-        gst_util_uint64_scale_int (*video_height, dar_n, dar_d);
+    *y += (*window_height - video_height) / 2;
+    *window_height = video_height;
   }
-  GST_DEBUG_OBJECT (self, "scaling to %dx%d", *video_width, *video_height);
+
+  GST_DEBUG_OBJECT (self, "scaling to %dx%d", *window_width, *window_height);
 
   return TRUE;
 }
@@ -573,7 +575,7 @@ x_image_calculate_display_ratio (GstXImageSink * self, gint * video_width,
 /* X11 stuff */
 
 static void
-x_image_get_windows_position (GstXImageSink * ximagesink, int *x, int *y)
+xwindow_get_window_position (GstXImageSink * ximagesink, int *x, int *y)
 {
   XWindowAttributes attr;
   Window child;
@@ -583,31 +585,16 @@ x_image_get_windows_position (GstXImageSink * ximagesink, int *x, int *y)
 
   XTranslateCoordinates (ximagesink->xcontext->disp, ximagesink->xwindow->win,
       ximagesink->xcontext->root, 0, 0, x, y, &child);
-
-  // GST_DEBUG_OBJECT (ximagesink, "root!! %d %d  %d %d %d %d", *x, *y, attr.x, attr.y, ximagesink->xcontext->root, ret);
-
-  // {
-  //   XWindowAttributes attr2;
-  //  XGetWindowAttributes (ximagesink->xcontext->disp,
-  //       child, &attr2);
-  //     GST_DEBUG_OBJECT (ximagesink, "root2 %d %d ", attr2.x, attr2.y);
-  // }
 }
 
 static gboolean
-x_image_get_windows_moving (GstXImageSink * ximagesink, gboolean read)
+xwindow_get_window_moving (GstXImageSink * ximagesink, gboolean read)
 {
-  XWindowAttributes attr;
-  Window child;
   int x, y;
   static int last_x = 0, last_y = 0;
   static int timer_count = 0;
 
-  XGetWindowAttributes (ximagesink->xcontext->disp,
-      ximagesink->xwindow->win, &attr);
-
-  XTranslateCoordinates (ximagesink->xcontext->disp, ximagesink->xwindow->win,
-      ximagesink->xcontext->root, 0, 0, &x, &y, &child);
+  xwindow_get_window_position (ximagesink, &x, &y);
 
   if (last_x != x || last_y != y) {
     last_x = x;
@@ -637,6 +624,18 @@ x_image_get_windows_moving (GstXImageSink * ximagesink, gboolean read)
     return FALSE;
   }
   return TRUE;
+}
+
+static void
+xwindow_get_render_rectangle (GstXImageSink * ximagesink,
+    gint * x, gint * y, gint * width, gint * height)
+{
+  if (ximagesink->save_rect.w != 0 && ximagesink->save_rect.h != 0) {
+    *width = ximagesink->save_rect.w;
+    *height = ximagesink->save_rect.h;
+    *x += ximagesink->save_rect.x;
+    *y += ximagesink->save_rect.y;
+  }
 }
 
 /* We are called with the x_lock taken */
@@ -796,11 +795,14 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
     return GST_FLOW_ERROR;
   }
 
-  x_image_get_windows_position (ximagesink, &result.x, &result.y);
-  x_image_calculate_display_ratio (ximagesink, &result.w, &result.h);
+  xwindow_get_window_position (ximagesink, &result.x, &result.y);
+  xwindow_get_render_rectangle (ximagesink, &result.x, &result.y, &result.w,
+      &result.h);
+  xwindow_calculate_display_ratio (ximagesink, &result.x, &result.y, &result.w,
+      &result.h);
 
-  if (!x_image_get_windows_moving (ximagesink, TRUE) && src.w / result.w <= 8
-      && src.h / result.h <= 8) {
+  if (!xwindow_get_window_moving (ximagesink, TRUE)
+      && src.w / result.w <= 8 && src.h / result.h <= 8) {
 
     GST_TRACE_OBJECT (ximagesink, "displaying fb %d", fb_id);
 
@@ -827,8 +829,9 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
   XPutImage (ximagesink->xcontext->disp, ximagesink->xwindow->win,
       ximagesink->xwindow->gc, mem->ximage, src.x, src.y, result.x, result.y,
       result.w, result.h);
-  XSync (ximagesink->xcontext->disp, FALSE);
+
 #endif
+  XSync (ximagesink->xcontext->disp, FALSE);
   drm_sync (ximagesink);
 
   if (ximagesink->last_fb_id) {
@@ -1240,7 +1243,7 @@ gst_x_image_sink_handle_xevents (GstXImageSink * ximagesink)
 
   /* Handle DRM display */
   {
-    if (!x_image_get_windows_moving (ximagesink, FALSE)) {
+    if (!xwindow_get_window_moving (ximagesink, FALSE)) {
       /* if window stop moving, redraw display */
       g_mutex_unlock (&ximagesink->x_lock);
       g_mutex_unlock (&ximagesink->flow_lock);
@@ -1890,10 +1893,27 @@ gst_x_image_sink_set_event_handling (GstVideoOverlay * overlay,
 }
 
 static void
+gst_x_image_sink_set_render_rectangle (GstVideoOverlay * overlay,
+    gint x, gint y, gint width, gint height)
+{
+  GstXImageSink *ximagesink = GST_X_IMAGE_SINK (overlay);
+  GST_DEBUG_OBJECT (ximagesink, "Set Render Rectangle"
+      "x %d y %d width %d height %d", x, y, width, height);
+
+  ximagesink->save_rect.w = width;
+  ximagesink->save_rect.h = height;
+  ximagesink->save_rect.x = x;
+  ximagesink->save_rect.y = y;
+
+  gst_x_image_sink_expose (GST_VIDEO_OVERLAY (ximagesink));
+}
+
+static void
 gst_x_image_sink_video_overlay_init (GstVideoOverlayInterface * iface)
 {
   iface->set_window_handle = gst_x_image_sink_set_window_handle;
   iface->expose = gst_x_image_sink_expose;
+  iface->set_render_rectangle = gst_x_image_sink_set_render_rectangle;
   iface->handle_events = gst_x_image_sink_set_event_handling;
 }
 
@@ -2084,6 +2104,11 @@ gst_x_image_sink_init (GstXImageSink * ximagesink)
   gst_poll_fd_init (&ximagesink->pollfd);
   ximagesink->poll = gst_poll_new (TRUE);
   gst_video_info_init (&ximagesink->vinfo);
+
+  ximagesink->save_rect.x = 0;
+  ximagesink->save_rect.y = 0;
+  ximagesink->save_rect.w = 0;
+  ximagesink->save_rect.h = 0;
 }
 
 static gboolean
@@ -2114,8 +2139,8 @@ gst_x_image_sink_start (GstBaseSink * bsink)
   if (self->fd < 0 || self->ctrl_fd < 0)
     goto open_failed;
 
-  log_drm_version (self);
-  if (!get_drm_caps (self))
+  drm_log_version (self);
+  if (!drm_get_caps (self))
     goto bail;
 
   res = drmModeGetResources (self->fd);
@@ -2123,13 +2148,13 @@ gst_x_image_sink_start (GstBaseSink * bsink)
     goto resources_failed;
 
   if (self->conn_id == -1)
-    conn = find_main_monitor (self->fd, res);
+    conn = drm_find_main_monitor (self->fd, res);
   else
     conn = drmModeGetConnector (self->fd, self->conn_id);
   if (!conn)
     goto connector_failed;
 
-  crtc = find_crtc_for_connector (self->fd, res, conn, &self->pipe);
+  crtc = drm_find_crtc_for_connector (self->fd, res, conn, &self->pipe);
   if (!crtc)
     goto crtc_failed;
 
@@ -2143,14 +2168,14 @@ retry_find_plane:
     goto plane_resources_failed;
 
   if (self->plane_id == -1)
-    plane = find_plane_for_crtc (self->fd, res, pres, crtc->crtc_id);
+    plane = drm_find_plane_for_crtc (self->fd, res, pres, crtc->crtc_id);
   else
     plane = drmModeGetPlane (self->fd, self->plane_id);
   if (!plane)
     goto plane_failed;
 
   /* let's get the available color formats in plane */
-  if (!ensure_allowed_caps (self, plane, res))
+  if (!drm_ensure_allowed_caps (self, plane, res))
     goto bail;
 
   self->conn_id = conn->connector_id;

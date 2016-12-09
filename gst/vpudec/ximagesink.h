@@ -209,6 +209,7 @@ struct _GstXImageSink
   GstPollFD pollfd;
 
   guint32 last_fb_id;
+  GstVideoRectangle save_rect;
 };
 
 struct _GstXImageSinkClass
