@@ -5,7 +5,7 @@ dnl please read gstreamer/docs/random/autotools before changing this file
 dnl initialize autoconf
 dnl releases only do -Wall, git and prerelease does -Werror too
 dnl use a three digit version number for releases, and four for git/pre
-AC_INIT([GStreamer Plug-ins], [1.8.3], [https://github.com/rockchip-linux/gstreamer-rockchip], [gstreamer-rockchip])
+AC_INIT([GStreamer Plug-ins], [1.8.2], [https://github.com/rockchip-linux/gstreamer-rockchip], [gstreamer-rockchip])
 
 AG_GST_INIT
 
@@ -44,7 +44,7 @@ AS_LIBTOOL(GST, 801, 0, 801)
 
 dnl *** required versions of GStreamer stuff ***
 GST_REQ=1.8.0
-GSTPB_REQ=1.8.3
+GSTPB_REQ=1.8.2
 
 dnl *** autotools stuff ****
 
@@ -287,7 +287,7 @@ AC_SUBST(GST_OPTION_CXXFLAGS)
 AC_SUBST(GST_OPTION_OBJCFLAGS)
 
 dnl our libraries need to be versioned correctly
-AC_SUBST(GST_LT_LDFLAGS)
+AC_SUBST(GST_LT_LDFaLAGS)
 
 dnl FIXME: do we want to rename to GST_ALL_* ?
 dnl prefer internal headers to already installed ones
@@ -323,30 +323,16 @@ PKG_CHECK_MODULES([DRM], [libdrm], HAVE_KMS=yes, HAVE_KMS=no)
 
 
 dnl *** X11 ***
-translit(dnm, m, l) AM_CONDITIONAL(USE_X, true)
 AG_GST_CHECK_FEATURE(X, [X libraries and plugins],
                   [ximagesink], [
   AG_GST_PKG_CHECK_MODULES(X, x11)
 ])
 
-dnl check for X Shm
-translit(dnm, m, l) AM_CONDITIONAL(USE_XSHM, true)
-AG_GST_CHECK_FEATURE(XSHM, [X Shared Memory extension], [ ], [
-  if test x$HAVE_X = xyes; then
-    PKG_CHECK_MODULES(XSHM, xext, [
-      AC_CHECK_LIB(Xext, XShmAttach, [
-        HAVE_XSHM="yes"
-      ], [
-        HAVE_XSHM="no"
-        XSHM_LIBS=""
-      ], [ $X_LIBS ])
-    ], [
-      HAVE_XSHM="no"
-    ])
-  fi
-], , [
-  AC_SUBST(HAVE_XSHM)
-  AC_SUBST(XSHM_LIBS)
+dnl *** eglgles ***
+AC_DEFINE(USE_EGL_X11, [1], [Use X11 EGL window system])
+AG_GST_CHECK_FEATURE(X, [GLES and EGL],
+                  [eglglessink], [
+  AG_GST_PKG_CHECK_MODULES(EGLGLES, egl glesv2)
 ])
 
 dnl keep this alphabetic per directory, please

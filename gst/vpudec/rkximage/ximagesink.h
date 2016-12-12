@@ -1,22 +1,3 @@
-/* GStreamer
- * Copyright (C) <2005> Julien Moutte <julien@moutte.net>
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
- *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
- * Boston, MA 02110-1301, USA.
- */
-
 #ifndef __GST_X_IMAGE_SINK_H__
 #define __GST_X_IMAGE_SINK_H__
 
@@ -30,10 +11,6 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-
-#ifdef HAVE_XSHM
-#include <X11/extensions/XShm.h>
-#endif /* HAVE_XSHM */
 
 #include <string.h>
 #include <math.h>
@@ -75,8 +52,6 @@ typedef struct _GstXImageSinkClass GstXImageSinkClass;
  * @height: the height in pixels of Display @disp
  * @widthmm: the width in millimeters of Display @disp
  * @heightmm: the height in millimeters of Display @disp
- * @use_xshm: used to known wether of not XShm extension is usable or not even
- * if the Extension is present
  *
  * Structure used to store various informations collected/calculated for a
  * Display.
@@ -99,8 +74,6 @@ struct _GstXContext
 
   gint width, height;
   gint widthmm, heightmm;
-
-  gboolean use_xshm;
 };
 
 /*
