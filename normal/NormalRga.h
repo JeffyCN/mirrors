@@ -68,6 +68,7 @@ int         NormalRgaGetRects(buffer_handle_t src, buffer_handle_t dst,
     NormalRgaSetRects(rects.src,0,0,1920,1080,1920,NV12);
     mean to set the src rect to the value.
 */
+int         checkRectForRga(rga_rect_t rect);
 int         isRectValid(rga_rect_t rect);
 int         NormalRgaGetRect(buffer_handle_t hnd, rga_rect_t *rect);
 int         NormalRgaGetMmuType(buffer_handle_t hnd, int *mmuType);

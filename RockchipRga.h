@@ -64,7 +64,7 @@ public:
     void        RkRgaSetLogOnceFlag(int log) {mLogOnce = log;}
     void        RkRgaSetAlwaysLogFlag(bool log) {mLogAlways = log;}
     void        RkRgaLogOutRgaReq(struct rga_req rgaReg);
-
+    int         RkRgaLogOutUserPara(rga_info *rgaInfo);
     inline bool RkRgaIsReady() { return mSupportRga; }
 
 /************************************private***********************************/

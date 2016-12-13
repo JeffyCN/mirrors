@@ -90,7 +90,15 @@ int RockchipRga::RkRgaGetBufferFd(buffer_handle_t handle, int *fd)
 int RockchipRga::RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 {
     int ret = 0;
+    RkRgaLogOutUserPara(src);
+    RkRgaLogOutUserPara(dst);
     ret = RgaBlit(src, dst, src1);
+    if (ret) {
+        RkRgaLogOutUserPara(src);
+        RkRgaLogOutUserPara(dst);
+        RkRgaLogOutUserPara(src1);
+        ALOGE("This output the user patamaters when rga call blit fail");
+    }
     return ret;
 }
 
@@ -100,6 +108,24 @@ int RockchipRga::RkRgaCollorFill(rga_info *dst)
     ret = RgaCollorFill(dst);
     return ret;
 }
+
+int RockchipRga::RkRgaLogOutUserPara(rga_info *rgaInfo)
+{
+    if (!rgaInfo)
+        return -EINVAL;
+
+    ALOGD("fd-vir-phy-hnd-format[%d, %p, %p, %p]",
+        rgaInfo->fd, rgaInfo->virAddr, rgaInfo->phyAddr, (void*)rgaInfo->hnd);
+    ALOGD("rect[%d, %d, %d, %d, %d, %d, %d, %d]",
+        rgaInfo->rect.xoffset, rgaInfo->rect.yoffset,
+        rgaInfo->rect.width,   rgaInfo->rect.height, rgaInfo->rect.wstride,
+        rgaInfo->rect.hstride, rgaInfo->rect.format, rgaInfo->rect.size);
+    ALOGD("f-blend-size-rotation-col-log-mmu[%d, %x, %d, %d, %d, %d, %d]",
+        rgaInfo->format, rgaInfo->blend, rgaInfo->bufferSize,
+        rgaInfo->rotation, rgaInfo->color, rgaInfo->testLog, rgaInfo->mmuFlag);
+    return 0;
+}
+
 // ---------------------------------------------------------------------------
 
 }

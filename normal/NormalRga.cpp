@@ -501,6 +501,43 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (relSrcRect.format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
 		relSrcRect.wstride = relSrcRect.wstride * 5 / 4;
 
+    if (src) {
+        ret = checkRectForRga(relSrcRect);
+        if (ret) {
+            ALOGE("[%s,%d]Error src rect for rga blit", __func__, __LINE__);
+            return ret;
+        }
+    }
+
+    if (dst) {
+        ret = checkRectForRga(relDstRect);
+        if (ret) {
+            ALOGE("[%s,%d]Error dst rect for rga blit", __func__, __LINE__);
+            return ret;
+        }
+    }
+
+    if (src1) {
+        ret = checkRectForRga(relSrc1Rect);
+        if (ret) {
+            ALOGE("[%s,%d]Error src1 rect for rga blit", __func__, __LINE__);
+            return ret;
+        }
+    }
+
+    if (src && dst) {
+        float hScale = (float)relSrcRect.width / relDstRect.width;
+        float vScale = (float)relSrcRect.height / relDstRect.height;
+        if (hScale <= 1/8 || hScale >= 8 || vScale <= 1/8 || vScale >= 8) {
+            ALOGE("Error scale[%d,%d] line %d", hScale, vScale, __LINE__);
+            return -EINVAL;
+        }
+
+        if (ctx->mVersion <= 1.003 && (hScale < 2 || vScale < 2)) {
+            ALOGE("e scale[%d,%d] ver[%f]", hScale, vScale, ctx->mVersion);
+            return -EINVAL;
+        }
+    }
 
     switch (rotation) {
         case HAL_TRANSFORM_FLIP_H:

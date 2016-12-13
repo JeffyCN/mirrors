@@ -19,6 +19,37 @@ int         cosa_table[360];
 /**********************************************************************
 =======================================================================
 **********************************************************************/
+int checkRectForRga(rga_rect_t rect)
+{
+    if (rect.xoffset < 0 || rect.yoffset < 0) {
+        ALOGE("err offset[%d,%d]", rect.xoffset, rect.yoffset);
+        return -EINVAL;
+    }
+
+    if (rect.width < 2 || rect.height < 2) {
+        ALOGE("err act[%d,%d]", rect.width, rect.height);
+        return -EINVAL;
+    }
+
+    if (rect.xoffset + rect.width > rect.wstride) {
+        ALOGE("err ws[%d,%d,%d]", rect.xoffset, rect.width, rect.wstride);
+        return -EINVAL;
+    }
+
+    if (rect.yoffset + rect.height > rect.hstride) {
+        ALOGE("err hs[%d,%d,%d]", rect.yoffset, rect.height, rect.hstride);
+        return -EINVAL;
+    }
+
+    if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(rect.format)) &&
+                                                      (rect.wstride % 8)) {
+        ALOGE("err wstride[%d] is not align to 8", rect.wstride);
+        return -EINVAL;
+    }
+
+    return 0;
+}
+
 int isRectValid(rga_rect_t rect)
 {
     return rect.width > 0 && rect.height > 0;
@@ -389,9 +420,6 @@ int NormalRgaSetBitbltMode(struct rga_req *msg,
 {
     unsigned int alpha_mode;
     msg->render_mode = bitblt_mode;
-
-    if(((msg->src.act_w >> 1) > msg->dst.act_w) || ((msg->src.act_h >> 1) > msg->dst.act_h))
-        return -1;
     
     msg->scale_mode = scale_mode;
     msg->rotate_mode = rotate_mode;

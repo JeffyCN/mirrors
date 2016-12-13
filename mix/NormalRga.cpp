@@ -498,6 +498,44 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (relSrcRect.format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
 		relSrcRect.wstride = relSrcRect.wstride * 5 / 4;
 
+    if (src) {
+        ret = checkRectForRga(relSrcRect);
+        if (ret) {
+            ALOGE("[%s,%d]Error src rect for rga blit", __func__, __LINE__);
+            return ret;
+        }
+    }
+
+    if (dst) {
+        ret = checkRectForRga(relDstRect);
+        if (ret) {
+            ALOGE("[%s,%d]Error dst rect for rga blit", __func__, __LINE__);
+            return ret;
+        }
+    }
+
+    if (src1) {
+        ret = checkRectForRga(relSrc1Rect);
+        if (ret) {
+            ALOGE("[%s,%d]Error src1 rect for rga blit", __func__, __LINE__);
+            return ret;
+        }
+    }
+
+    if (src && dst) {
+        float hScale = (float)relSrcRect.width / relDstRect.width;
+        float vScale = (float)relSrcRect.height / relDstRect.height;
+        if (hScale <= 1/8 || hScale >= 8 || vScale <= 1/8 || vScale >= 8) {
+            ALOGE("Error scale[%d,%d] line %d", hScale, vScale, __LINE__);
+            return -EINVAL;
+        }
+
+        if (ctx->mVersion <= 1.003 && (hScale < 2 || vScale < 2)) {
+            ALOGE("e scale[%d,%d] ver[%f]", hScale, vScale, ctx->mVersion);
+            return -EINVAL;
+        }
+    }
+
     switch (rotation) {
         case HAL_TRANSFORM_FLIP_H:
             orientation = 0;
@@ -765,8 +803,17 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     NormalRgaSetSrcActiveInfo(&rgaReg, srcActW, srcActH, srcXPos, srcYPos);
     NormalRgaSetDstActiveInfo(&rgaReg, dstActW, dstActH, dstXPos, dstYPos);
 
+    if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
+                    NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relDstRect.format)))
+        yuvToRgbMode |= 0x1 << 0;
+
+    if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
+                    NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format)))
+        yuvToRgbMode |= 0x1 << 4;
+
     /*mode*/
-    NormalRgaSetBitbltMode(&rgaReg, scaleMode, rotateMode, orientation, ditherEn, 0, 0);
+    NormalRgaSetBitbltMode(&rgaReg, scaleMode, rotateMode,
+					orientation, ditherEn, 0, yuvToRgbMode);
 
     /*force to mmu flag to mask*/
     srcMmuFlag = dstMmuFlag = 1;
@@ -776,18 +823,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         NormalRgaMmuFlag(&rgaReg, srcMmuFlag, dstMmuFlag);
     }
 
-    if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
-                    NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relDstRect.format)))
-        yuvToRgbMode |= 0x1 << 0;
-
-    if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
-                    NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format)))
-        yuvToRgbMode |= 0x1 << 4;
-
     rgaReg.render_mode |= RGA_BUF_GEM_TYPE_DMA;
 
-    //ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
-    //NormalRgaLogOutRgaReq(rgaReg);
+    ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
+    NormalRgaLogOutRgaReq(rgaReg);
 
     if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg)) {
         printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
