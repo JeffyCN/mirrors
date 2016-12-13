@@ -128,6 +128,8 @@ int RkRgaGetRgaFormat(int format)
             return RK_FORMAT_RGBX_8888;
         case HAL_PIXEL_FORMAT_BGRA_8888:
             return RK_FORMAT_BGRA_8888;
+	case HAL_PIXEL_FORMAT_YCrCb_420_SP:
+            return RK_FORMAT_YCrCb_420_SP;
         case HAL_PIXEL_FORMAT_YCrCb_NV12:
             return RK_FORMAT_YCbCr_420_SP;
     	case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
@@ -155,6 +157,8 @@ int RkRgaGetRgaFormatFromAndroid(int format)
             return RK_FORMAT_RGBX_8888;
         case HAL_PIXEL_FORMAT_BGRA_8888:
             return RK_FORMAT_BGRA_8888;
+	case HAL_PIXEL_FORMAT_YCrCb_420_SP:
+            return RK_FORMAT_YCrCb_420_SP;
         case HAL_PIXEL_FORMAT_YCrCb_NV12:
             return RK_FORMAT_YCbCr_420_SP;
     	case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
