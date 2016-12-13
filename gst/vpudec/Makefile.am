@@ -4,6 +4,7 @@ libgstvpudec_la_SOURCES = \
 	gstvpu.c		\
 	gstvpudec.c		\
 	gstvpudecbufferpool.c	\
+	gstvpuallocator.c	\
 	gstkmssink.c		\
 	gstkmsutils.c                           \
 	$(NULL)
@@ -42,8 +43,9 @@ libgstvpudec_la_LIBTOOLFLAGS =		\
 	$(NULL)
 
 noinst_HEADERS = \
-	gstvpudec.h \
-	gstvpudecbufferpool.h \
+	gstvpuallocator.h			\
+	gstvpudec.h 				\
+	gstvpudecbufferpool.h 			\
 	gstkmssink.h                            \
 	gstkmsutils.h                           \
 	$(NULL)
