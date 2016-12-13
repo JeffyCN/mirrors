@@ -90,8 +90,6 @@ int RockchipRga::RkRgaGetBufferFd(buffer_handle_t handle, int *fd)
 int RockchipRga::RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 {
     int ret = 0;
-    RkRgaLogOutUserPara(src);
-    RkRgaLogOutUserPara(dst);
     ret = RgaBlit(src, dst, src1);
     if (ret) {
         RkRgaLogOutUserPara(src);

@@ -17,8 +17,8 @@ extern "C" {
 #endif
 int         RgaInit(void **ctx);
 int         RgaDeInit(void *ctx);
-int         RgaBlit(rga_info *src, rga_info *dst, rga_info *src1);
-int         RgaCollorFill(rga_info *dst);
+int         RgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
+int         RgaCollorFill(rga_info_t *dst);
 #ifdef __cplusplus
 }
 #endif

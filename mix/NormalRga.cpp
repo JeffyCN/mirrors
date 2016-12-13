@@ -825,8 +825,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 
     rgaReg.render_mode |= RGA_BUF_GEM_TYPE_DMA;
 
-    ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
-    NormalRgaLogOutRgaReq(rgaReg);
+    //ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
+    //NormalRgaLogOutRgaReq(rgaReg);
 
     if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg)) {
         printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
