@@ -40,18 +40,6 @@ G_DEFINE_TYPE (GstVpuDec, gst_vpudec, GST_TYPE_VIDEO_DECODER);
 #define NB_OUTPUT_BUFS 22       /* nb frames necessary for display pipeline */
 
 /* GstVideoDecoder base class method */
-static gboolean gst_vpudec_start (GstVideoDecoder * decoder);
-static gboolean gst_vpudec_stop (GstVideoDecoder * decoder);
-static gboolean gst_vpudec_set_format (GstVideoDecoder * decoder,
-    GstVideoCodecState * state);
-static GstFlowReturn gst_vpudec_handle_frame (GstVideoDecoder * decoder,
-    GstVideoCodecFrame * frame);
-static void gst_vpudec_finalize (GObject * object);
-static void gst_vpudec_dec_loop (GstVideoDecoder * decoder);
-static void gst_vpudec_dec_loop_stopped (GstVpuDec * decoder);
-static gboolean gst_vpudec_close (GstVpuDec * vpudec);
-static gboolean gst_vpudec_flush (GstVideoDecoder * decoder);
-
 static GstStaticPadTemplate gst_vpudec_sink_template =
     GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
@@ -82,59 +70,6 @@ static GstStaticPadTemplate gst_vpudec_src_template =
         "format = (string) P010_10LE, "
         "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]" ";")
     );
-
-static void
-gst_vpudec_class_init (GstVpuDecClass * klass)
-{
-  GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
-  GstVideoDecoderClass *video_decoder_class = GST_VIDEO_DECODER_CLASS (klass);
-  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-
-  gobject_class->finalize = gst_vpudec_finalize;
-
-  gst_element_class_add_pad_template (element_class,
-      gst_static_pad_template_get (&gst_vpudec_src_template));
-
-  gst_element_class_add_pad_template (element_class,
-      gst_static_pad_template_get (&gst_vpudec_sink_template));
-
-  video_decoder_class->start = GST_DEBUG_FUNCPTR (gst_vpudec_start);
-  video_decoder_class->stop = GST_DEBUG_FUNCPTR (gst_vpudec_stop);
-  video_decoder_class->set_format = GST_DEBUG_FUNCPTR (gst_vpudec_set_format);
-  video_decoder_class->handle_frame =
-      GST_DEBUG_FUNCPTR (gst_vpudec_handle_frame);
-  video_decoder_class->flush = GST_DEBUG_FUNCPTR (gst_vpudec_flush);
-
-  GST_DEBUG_CATEGORY_INIT (gst_vpudec_debug, "vpudec", 0, "vpu video decoder");
-
-  gst_element_class_set_static_metadata (element_class,
-      "Rockchip's VPU video decoder", "Decoder/Video",
-      "Multicodec (MPEG-2/4 / AVC / VP8 / HEVC) hardware decoder",
-      "Sudip Jain <sudip.jain@@intel.com>, "
-      "Jun Zhao <jung.zhao@rock-chips.com>, "
-      "Herman Chen <herman.chen@rock-chips.com>"
-      "Randy Li <randy.li@rock-chips.com>");
-}
-
-/* Init the vpudec structure */
-static void
-gst_vpudec_init (GstVpuDec * vpudec)
-{
-  GstVideoDecoder *decoder = (GstVideoDecoder *) vpudec;
-
-  gst_video_decoder_set_packetized (decoder, TRUE);
-
-  vpudec->ctx = NULL;
-
-  vpudec->active = FALSE;
-  vpudec->eos = FALSE;
-
-  vpudec->input_state = NULL;
-  vpudec->output_state = NULL;
-
-  vpudec->vpu_mem_pool = NULL;
-
-}
 
 static void
 gst_vpudec_finalize (GObject * object)
@@ -657,4 +592,72 @@ gst_vpudec_flush (GstVideoDecoder * decoder)
 
   ctx = vpudec->ctx;
   return !ctx->flush (ctx);
+}
+
+static GstStateChangeReturn
+gst_vpudec_change_state (GstElement * element, GstStateChange transition)
+{
+  GstVpuDec *self = GST_VPUDEC (element);
+  GstVideoDecoder *decoder = GST_VIDEO_DECODER (element);
+
+  if (transition == GST_STATE_CHANGE_PAUSED_TO_READY) {
+    g_atomic_int_set (&self->active, FALSE);
+    gst_pad_stop_task (decoder->srcpad);
+  }
+  return GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
+}
+
+static void
+gst_vpudec_class_init (GstVpuDecClass * klass)
+{
+  GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
+  GstVideoDecoderClass *video_decoder_class = GST_VIDEO_DECODER_CLASS (klass);
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+
+  gobject_class->finalize = gst_vpudec_finalize;
+
+  gst_element_class_add_pad_template (element_class,
+      gst_static_pad_template_get (&gst_vpudec_src_template));
+
+  gst_element_class_add_pad_template (element_class,
+      gst_static_pad_template_get (&gst_vpudec_sink_template));
+
+  video_decoder_class->start = GST_DEBUG_FUNCPTR (gst_vpudec_start);
+  video_decoder_class->stop = GST_DEBUG_FUNCPTR (gst_vpudec_stop);
+  video_decoder_class->set_format = GST_DEBUG_FUNCPTR (gst_vpudec_set_format);
+  video_decoder_class->handle_frame =
+      GST_DEBUG_FUNCPTR (gst_vpudec_handle_frame);
+  video_decoder_class->flush = GST_DEBUG_FUNCPTR (gst_vpudec_flush);
+
+  element_class->change_state = GST_DEBUG_FUNCPTR (gst_vpudec_change_state);
+
+  GST_DEBUG_CATEGORY_INIT (gst_vpudec_debug, "vpudec", 0, "vpu video decoder");
+
+  gst_element_class_set_static_metadata (element_class,
+      "Rockchip's VPU video decoder", "Decoder/Video",
+      "Multicodec (MPEG-2/4 / AVC / VP8 / HEVC) hardware decoder",
+      "Sudip Jain <sudip.jain@@intel.com>, "
+      "Jun Zhao <jung.zhao@rock-chips.com>, "
+      "Herman Chen <herman.chen@rock-chips.com>"
+      "Randy Li <randy.li@rock-chips.com>");
+}
+
+/* Init the vpudec structure */
+static void
+gst_vpudec_init (GstVpuDec * vpudec)
+{
+  GstVideoDecoder *decoder = (GstVideoDecoder *) vpudec;
+
+  gst_video_decoder_set_packetized (decoder, TRUE);
+
+  vpudec->ctx = NULL;
+
+  vpudec->active = FALSE;
+  vpudec->eos = FALSE;
+
+  vpudec->input_state = NULL;
+  vpudec->output_state = NULL;
+
+  vpudec->vpu_mem_pool = NULL;
+
 }
