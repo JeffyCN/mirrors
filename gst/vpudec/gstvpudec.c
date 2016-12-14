@@ -211,8 +211,12 @@ gst_vpudec_stop (GstVideoDecoder * decoder)
   if (vpudec->output_state)
     gst_video_codec_state_unref (vpudec->output_state);
 
-  if (vpudec->decode_task)
+  if (vpudec->decode_task) {
+    gst_task_stop (vpudec->decode_task);
+    g_rec_mutex_lock (&vpudec->decode_task_mutex);
+    g_rec_mutex_unlock (&vpudec->decode_task_mutex);
     gst_task_join (vpudec->decode_task);
+  }
 
   gst_object_unref (vpudec->decode_task);
   vpudec->decode_task = NULL;
@@ -420,8 +424,8 @@ gst_vpudec_decode_loop (void *decoder)
   GstFlowReturn ret = GST_FLOW_OK;
 
   ret = gst_buffer_pool_acquire_buffer (vpudec->pool, &output_buffer, NULL);
-  if (ret != GST_FLOW_OK)
-    goto beach;
+  if ((ret == GST_FLOW_EOS) || GST_VPUDEC_IS_EOS (vpudec))
+    goto eos;
 
   frame = gst_video_decoder_get_oldest_frame (decoder);
 
@@ -448,6 +452,13 @@ gst_vpudec_decode_loop (void *decoder)
 beach:
   GST_DEBUG_OBJECT (vpudec, "beach !");
   gst_buffer_replace (&output_buffer, NULL);
+  gst_task_pause (vpudec->decode_task);
+eos:
+  {
+    GST_DEBUG_OBJECT (vpudec, "eos !");
+    gst_task_pause (vpudec->decode_task);
+    return;
+  }
 }
 
 static gboolean
