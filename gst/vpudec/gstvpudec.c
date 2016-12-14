@@ -49,6 +49,7 @@ static GstFlowReturn gst_vpudec_handle_frame (GstVideoDecoder * decoder,
 static void gst_vpudec_finalize (GObject * object);
 static void gst_vpudec_decode_loop (void *decoder);
 static gboolean gst_vpudec_close (GstVpuDec * vpudec);
+static gboolean gst_vpudec_flush (GstVideoDecoder * decoder);
 
 static GstStaticPadTemplate gst_vpudec_sink_template =
     GST_STATIC_PAD_TEMPLATE ("sink",
@@ -96,6 +97,7 @@ gst_vpudec_class_init (GstVpuDecClass * klass)
   video_decoder_class->set_format = GST_DEBUG_FUNCPTR (gst_vpudec_set_format);
   video_decoder_class->handle_frame =
       GST_DEBUG_FUNCPTR (gst_vpudec_handle_frame);
+  video_decoder_class->flush = GST_DEBUG_FUNCPTR (gst_vpudec_flush);
 
   GST_DEBUG_CATEGORY_INIT (gst_vpudec_debug, "vpudec", 0, "vpu video decoder");
 
@@ -581,4 +583,14 @@ send_stream_error:
     GST_ERROR_OBJECT (vpudec, "send packet failed");
     return GST_FLOW_ERROR;
   }
+}
+
+static gboolean
+gst_vpudec_flush (GstVideoDecoder * decoder)
+{
+  GstVpuDec *vpudec = GST_VPUDEC (decoder);
+  VpuCodecContext_t *ctx;
+
+  ctx = vpudec->ctx;
+  return !ctx->flush (ctx);
 }
