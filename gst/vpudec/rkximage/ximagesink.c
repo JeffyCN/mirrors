@@ -474,56 +474,33 @@ xwindow_calculate_display_ratio (GstXImageSink * self, int *x, int *y,
 
 /* X11 stuff */
 
-static void
+static gboolean
 xwindow_get_window_position (GstXImageSink * ximagesink, int *x, int *y)
 {
   XWindowAttributes attr;
   Window child;
+  int tmp_x, tmp_y;
+  static int last_x = 0, last_y = 0;
+
+  if (x == NULL || y == NULL) {
+    x = &tmp_x;
+    y = &tmp_y;
+  }
 
   XGetWindowAttributes (ximagesink->xcontext->disp,
       ximagesink->xwindow->win, &attr);
 
   XTranslateCoordinates (ximagesink->xcontext->disp, ximagesink->xwindow->win,
       ximagesink->xcontext->root, 0, 0, x, y, &child);
-}
 
-static gboolean
-xwindow_get_window_moving (GstXImageSink * ximagesink, gboolean read)
-{
-  int x, y;
-  static int last_x = 0, last_y = 0;
-  static int timer_count = 0;
-
-  xwindow_get_window_position (ximagesink, &x, &y);
-  GST_DEBUG_OBJECT (ximagesink, "xwindow_get_window_moving %d %d", x, y);
   if (last_x != x || last_y != y) {
     last_x = x;
     last_y = y;
-    /* start timer */
-    timer_count = 1;
+    /* moved */
+    return TRUE;
   }
 
-  if (read) {
-    if (!timer_count)
-      /* return unmoving */
-      return FALSE;
-    else
-      /* return moving */
-      return TRUE;
-  }
-
-  /* increase timer */
-  if (timer_count) {
-    timer_count++;
-  }
-
-  if (timer_count > 10) {
-    /* stop timer */
-    timer_count = 0;
-    /* return moving end */
-    return FALSE;
-  }
-  return TRUE;
+  return FALSE;
 }
 
 static void
@@ -701,8 +678,7 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
   xwindow_calculate_display_ratio (ximagesink, &result.x, &result.y, &result.w,
       &result.h);
 
-  if (!xwindow_get_window_moving (ximagesink, TRUE)
-      && src.w / result.w <= 8 && src.h / result.h <= 8) {
+  if (src.w / result.w <= 8 && src.h / result.h <= 8) {
 
     GST_TRACE_OBJECT (ximagesink, "displaying fb %d", fb_id);
 
@@ -856,7 +832,7 @@ gst_x_image_sink_xwindow_new (GstXImageSink * ximagesink, gint width,
       ximagesink->xcontext->root,
       0, 0, width, height, 0, 0, ximagesink->xcontext->black);
 
-  /* We have to do that to prevent X from redrawing the background on 
+  /* We have to do that to prevent X from redrawing the background on
      ConfigureNotify. This takes away flickering of video when resizing. */
   XSetWindowBackgroundPixmap (ximagesink->xcontext->disp, xwindow->win, None);
 
@@ -1142,17 +1118,15 @@ gst_x_image_sink_handle_xevents (GstXImageSink * ximagesink)
   }
 
   /* Handle DRM display */
-  {
-    if (!xwindow_get_window_moving (ximagesink, FALSE)) {
-      /* if window stop moving, redraw display */
-      g_mutex_unlock (&ximagesink->x_lock);
-      g_mutex_unlock (&ximagesink->flow_lock);
-      gst_x_image_sink_expose (GST_VIDEO_OVERLAY (ximagesink));
-      g_mutex_lock (&ximagesink->flow_lock);
-      g_mutex_lock (&ximagesink->x_lock);
-    }
+  if (ximagesink->paused
+      && xwindow_get_window_position (ximagesink, NULL, NULL)) {
+    /* if window stop moving, redraw display */
+    g_mutex_unlock (&ximagesink->x_lock);
+    g_mutex_unlock (&ximagesink->flow_lock);
+    gst_x_image_sink_expose (GST_VIDEO_OVERLAY (ximagesink));
+    g_mutex_lock (&ximagesink->flow_lock);
+    g_mutex_lock (&ximagesink->x_lock);
   }
-  while (0);
 
   g_mutex_unlock (&ximagesink->x_lock);
   g_mutex_unlock (&ximagesink->flow_lock);
@@ -1331,7 +1305,7 @@ gst_x_image_sink_xcontext_clear (GstXImageSink * ximagesink)
   }
 
   /* Take the xcontext reference and NULL it while we
-   * clean it up, so that any buffer-alloced buffers 
+   * clean it up, so that any buffer-alloced buffers
    * arriving after this will be freed correctly */
   xcontext = ximagesink->xcontext;
   ximagesink->xcontext = NULL;
@@ -1475,12 +1449,14 @@ gst_x_image_sink_change_state (GstElement * element, GstStateChange transition)
       gst_x_image_sink_manage_event_thread (ximagesink);
       break;
     case GST_STATE_CHANGE_READY_TO_PAUSED:
+      ximagesink->paused = TRUE;
       g_mutex_lock (&ximagesink->flow_lock);
       if (ximagesink->xwindow)
         gst_x_image_sink_xwindow_clear (ximagesink, ximagesink->xwindow);
       g_mutex_unlock (&ximagesink->flow_lock);
       break;
     case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
+      ximagesink->paused = FALSE;
       break;
     default:
       break;
@@ -1490,8 +1466,10 @@ gst_x_image_sink_change_state (GstElement * element, GstStateChange transition)
 
   switch (transition) {
     case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
+      ximagesink->paused = TRUE;
       break;
     case GST_STATE_CHANGE_PAUSED_TO_READY:
+      ximagesink->paused = FALSE;
       ximagesink->fps_n = 0;
       ximagesink->fps_d = 1;
       GST_VIDEO_SINK_WIDTH (ximagesink) = 0;
@@ -2006,6 +1984,8 @@ gst_x_image_sink_init (GstXImageSink * ximagesink)
   ximagesink->save_rect.y = 0;
   ximagesink->save_rect.w = 0;
   ximagesink->save_rect.h = 0;
+
+  ximagesink->paused = FALSE;
 }
 
 static gboolean

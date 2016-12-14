@@ -116,7 +116,7 @@ struct _GstXWindow
  * @pool_lock: used to protect the buffer pool
  * @buffer_pool: a list of #GstXImageBuffer that could be reused at next buffer
  * allocation call
- * @synchronous: used to store if XSynchronous should be used or not (for 
+ * @synchronous: used to store if XSynchronous should be used or not (for
  * debugging purpose only)
  * @handle_events: used to know if we should handle select XEvents or not
  *
@@ -183,6 +183,7 @@ struct _GstXImageSink
 
   guint32 last_fb_id;
   GstVideoRectangle save_rect;
+  gboolean paused;
 };
 
 struct _GstXImageSinkClass
