@@ -35,10 +35,7 @@ G_BEGIN_DECLS
 	(G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_VPUDEC))
 #define GST_IS_VPUDEC_CLASS(obj) \
 	(G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_VPUDEC))
-/* check whether the device is 'active' */
-#define GST_VPUDEC_IS_ACTIVE(o)    ((o)->active)
-#define GST_VPUDEC_SET_ACTIVE(o)   ((o)->active = TRUE)
-#define GST_VPUDEC_SET_INACTIVE(o) ((o)->active = FALSE)
+
 #define GST_VPUDEC_IS_EOS(o)    ((o)->eos)
 #define GST_VPUDEC_SET_EOS(o)   ((o)->eos = TRUE)
 typedef struct _GstVpuDec GstVpuDec;
@@ -55,7 +52,6 @@ struct _GstVpuDec
   gint height;
   gint framesize;
 
-  GstBuffer *codec_data;
   guint8 *codec_data_ptr;
   gsize codec_data_size;
 
@@ -66,12 +62,11 @@ struct _GstVpuDec
   GstVideoInfo info;
   GstVideoAlignment align;
 
-  /* for multi-threading */
-  GstTask *decode_task;
-  GRecMutex decode_task_mutex;
-
+  /* State */
+  gboolean processing;
   gboolean active;
   gboolean eos;
+  GstFlowReturn output_flow;
 
   /* VPU definitions */
   VpuCodecContext_t *ctx;

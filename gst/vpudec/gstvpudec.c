@@ -47,7 +47,8 @@ static gboolean gst_vpudec_set_format (GstVideoDecoder * decoder,
 static GstFlowReturn gst_vpudec_handle_frame (GstVideoDecoder * decoder,
     GstVideoCodecFrame * frame);
 static void gst_vpudec_finalize (GObject * object);
-static void gst_vpudec_decode_loop (void *decoder);
+static void gst_vpudec_dec_loop (GstVideoDecoder * decoder);
+static void gst_vpudec_dec_loop_stopped (GstVpuDec * decoder);
 static gboolean gst_vpudec_close (GstVpuDec * vpudec);
 static gboolean gst_vpudec_flush (GstVideoDecoder * decoder);
 
@@ -133,10 +134,6 @@ gst_vpudec_init (GstVpuDec * vpudec)
 
   vpudec->vpu_mem_pool = NULL;
 
-  vpudec->decode_task = gst_task_new (gst_vpudec_decode_loop, decoder, NULL);
-  g_rec_mutex_init (&vpudec->decode_task_mutex);
-  gst_task_set_lock (vpudec->decode_task, &vpudec->decode_task_mutex);
-
 }
 
 static void
@@ -169,6 +166,7 @@ gst_vpudec_start (GstVideoDecoder * decoder)
   GstVpuDec *vpudec = GST_VPUDEC (decoder);
 
   GST_DEBUG_OBJECT (vpudec, "Starting");
+  vpudec->output_flow = GST_FLOW_OK;
 
   return TRUE;
 }
@@ -202,25 +200,25 @@ gst_vpudec_stop (GstVideoDecoder * decoder)
 
   GST_DEBUG_OBJECT (vpudec, "Stopping");
 
+  /* Wait for mpp/libvpu output thread to stop */
+  gst_pad_stop_task (decoder->srcpad);
+
+  GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+  vpudec->output_flow = GST_FLOW_OK;
+  GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
+
   gst_vpudec_sendeos (decoder);
-  GST_VPUDEC_SET_EOS (vpudec);
+  vpudec->eos = TRUE;
+
+  /* Should have been flushed already */
+  g_assert (g_atomic_int_get (&vpudec->active) == FALSE);
+  g_assert (g_atomic_int_get (&vpudec->processing) == FALSE);
 
   if (vpudec->input_state)
     gst_video_codec_state_unref (vpudec->input_state);
 
   if (vpudec->output_state)
     gst_video_codec_state_unref (vpudec->output_state);
-
-  if (vpudec->decode_task) {
-    gst_task_stop (vpudec->decode_task);
-    g_rec_mutex_lock (&vpudec->decode_task_mutex);
-    g_rec_mutex_unlock (&vpudec->decode_task_mutex);
-    gst_task_join (vpudec->decode_task);
-  }
-
-  gst_object_unref (vpudec->decode_task);
-  vpudec->decode_task = NULL;
-  g_rec_mutex_clear (&vpudec->decode_task_mutex);
 
   if (vpudec->pool) {
     gst_buffer_pool_set_active (vpudec->pool, FALSE);
@@ -230,7 +228,7 @@ gst_vpudec_stop (GstVideoDecoder * decoder)
 
   gst_vpudec_close (vpudec);
 
-  GST_INFO_OBJECT (vpudec, "decoder stopped");
+  GST_DEBUG_OBJECT (vpudec, "Stopped");
 
   return TRUE;
 }
@@ -376,14 +374,10 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
   /* codec data */
   codec_data = state->codec_data;
   if (codec_data) {
-
     gst_buffer_map (codec_data, &mapinfo, GST_MAP_READ);
     vpudec->codec_data_ptr = mapinfo.data;
     vpudec->codec_data_size = mapinfo.size;
     gst_buffer_unmap (codec_data, &mapinfo);
-
-    GST_DEBUG_OBJECT (vpudec, "codec info: data %p, size %d",
-        vpudec->codec_data_ptr, vpudec->codec_data_size);
   }
 
   if (!gst_vpudec_open (vpudec, codingtype))
@@ -416,7 +410,7 @@ device_error:
 }
 
 static void
-gst_vpudec_decode_loop (void *decoder)
+gst_vpudec_dec_loop (GstVideoDecoder * decoder)
 {
   GstVpuDec *vpudec = GST_VPUDEC (decoder);
   GstBuffer *output_buffer;
@@ -424,8 +418,6 @@ gst_vpudec_decode_loop (void *decoder)
   GstFlowReturn ret = GST_FLOW_OK;
 
   ret = gst_buffer_pool_acquire_buffer (vpudec->pool, &output_buffer, NULL);
-  if ((ret == GST_FLOW_EOS) || GST_VPUDEC_IS_EOS (vpudec))
-    goto eos;
 
   frame = gst_video_decoder_get_oldest_frame (decoder);
 
@@ -435,10 +427,8 @@ gst_vpudec_decode_loop (void *decoder)
     output_buffer = NULL;
     ret = gst_video_decoder_finish_frame (decoder, frame);
 
-    /* FIXME gst_video_decoder_finish_frame() increase the refcount ! */
     GST_TRACE_OBJECT (decoder, "finish buffer ts=%", GST_TIME_FORMAT,
         GST_TIME_ARGS (GST_BUFFER_TIMESTAMP (frame->output_buffer)));
-    gst_buffer_unref (frame->output_buffer);
 
     if (ret != GST_FLOW_OK)
       goto beach;
@@ -450,15 +440,26 @@ gst_vpudec_decode_loop (void *decoder)
   return;
 
 beach:
-  GST_DEBUG_OBJECT (vpudec, "beach !");
+  GST_DEBUG_OBJECT (vpudec, "Leaving output thread: %s",
+      gst_flow_get_name (ret));
+
   gst_buffer_replace (&output_buffer, NULL);
-  gst_task_pause (vpudec->decode_task);
-eos:
-  {
-    GST_DEBUG_OBJECT (vpudec, "eos !");
-    gst_task_pause (vpudec->decode_task);
-    return;
+  vpudec->output_flow = ret;
+  g_atomic_int_set (&vpudec->processing, FALSE);
+  gst_pad_pause_task (decoder->srcpad);
+}
+
+static void
+gst_vpudec_dec_loop_stopped (GstVpuDec * self)
+{
+  if (g_atomic_int_get (&self->processing)) {
+    GST_DEBUG_OBJECT (self, "Early stop of decoding thread");
+    self->output_flow = GST_FLOW_FLUSHING;
+    g_atomic_int_set (&self->processing, FALSE);
   }
+
+  GST_DEBUG_OBJECT (self, "Decoding task destroyed: %s",
+      gst_flow_get_name (self->output_flow));
 }
 
 static gboolean
@@ -525,11 +526,7 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
   if (gst_buffer_pool_set_active (vpudec->pool, TRUE) == FALSE)
     goto error_activate_pool;
 
-  /* Everything is ready, start the thread */
-  GST_DEBUG_OBJECT (vpudec, "Starting decoding thread");
-  ret = gst_task_start (vpudec->decode_task);
-
-  GST_VPUDEC_SET_ACTIVE (vpudec);
+  g_atomic_int_set (&vpudec->active, TRUE);
 
   return ret;
 
@@ -552,54 +549,93 @@ gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
 {
   GstVpuDec *vpudec = GST_VPUDEC (decoder);
   GstMapInfo mapinfo = { 0, };
+  GstFlowReturn ret = GST_FLOW_OK;
   VpuCodecContext_t *ctx;
   VideoPacket_t access_unit;
 
   GST_DEBUG_OBJECT (vpudec, "Handling frame %d", frame->system_frame_number);
 
-  if (!GST_VPUDEC_IS_ACTIVE (vpudec)) {
+  if (!g_atomic_int_get (&vpudec->active)) {
     if (!vpudec->input_state)
       goto not_negotiated;
     if (!gst_vpudec_set_output (vpudec))
       goto not_negotiated;
   }
 
-  /* send access unit to VPU */
-  ctx = vpudec->ctx;
-  memset (&access_unit, 0, sizeof (VideoPacket_t));
-  gst_buffer_map (frame->input_buffer, &mapinfo, GST_MAP_READ);
-  access_unit.data = mapinfo.data;
-  access_unit.size = mapinfo.size;
-  access_unit.nFlags = VPU_API_DEC_INPUT_SYNC;
+  /* Start the output thread if it is not started before */
+  if (g_atomic_int_get (&vpudec->processing) == FALSE) {
+    /* It's possible that the processing thread stopped due to an error */
+    if (vpudec->output_flow != GST_FLOW_OK &&
+        vpudec->output_flow != GST_FLOW_FLUSHING) {
+      GST_DEBUG_OBJECT (vpudec, "Processing loop stopped with error, leaving");
+      ret = vpudec->output_flow;
+      goto drop;
+    }
 
-  gst_buffer_unmap (frame->input_buffer, &mapinfo);
+    GST_DEBUG_OBJECT (vpudec, "Starting decoding thread");
 
-  /* Unlock decoder before decode_sendstream call:
-   * decode_sendstream must  block till frames
-   * recycled, so decode_task must execute lock free..
-   */
+    g_atomic_int_set (&vpudec->processing, TRUE);
+    if (!gst_pad_start_task (decoder->srcpad,
+            (GstTaskFunction) gst_vpudec_dec_loop, vpudec,
+            (GDestroyNotify) gst_vpudec_dec_loop_stopped))
+      goto start_task_failed;
+  }
 
-  GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
+  if (frame->input_buffer) {
+    /* send access unit to VPU */
+    ctx = vpudec->ctx;
+    memset (&access_unit, 0, sizeof (VideoPacket_t));
+    gst_buffer_map (frame->input_buffer, &mapinfo, GST_MAP_READ);
+    access_unit.data = mapinfo.data;
+    access_unit.size = mapinfo.size;
+    access_unit.nFlags = VPU_API_DEC_INPUT_SYNC;
 
-  if (ctx->decode_sendstream (ctx, &access_unit) != 0)
-    goto send_stream_error;
+    gst_buffer_unmap (frame->input_buffer, &mapinfo);
 
-  GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+    /* Unlock decoder before decode_sendstream call:
+     * decode_sendstream must  block till frames
+     * recycled, so decode_task must execute lock free..
+     */
 
-  return GST_FLOW_OK;
+    GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
+
+    if (ctx->decode_sendstream (ctx, &access_unit) != 0)
+      goto send_stream_error;
+
+    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+
+    /* No need to keep input arround */
+    gst_buffer_replace (&frame->input_buffer, NULL);
+  }
+
+  gst_video_codec_frame_unref (frame);
+
+  return ret;
 
   /* ERRORS */
+start_task_failed:
+  {
+    GST_ELEMENT_ERROR (vpudec, RESOURCE, FAILED,
+        ("Failed to start decoding thread."), (NULL));
+    g_atomic_int_set (&vpudec->processing, FALSE);
+    ret = GST_FLOW_ERROR;
+    goto drop;
+  }
 not_negotiated:
   {
     GST_ERROR_OBJECT (vpudec, "not negotiated");
     gst_video_decoder_drop_frame (decoder, frame);
     return GST_FLOW_NOT_NEGOTIATED;
   }
-
 send_stream_error:
   {
     GST_ERROR_OBJECT (vpudec, "send packet failed");
     return GST_FLOW_ERROR;
+  }
+drop:
+  {
+    gst_video_decoder_drop_frame (decoder, frame);
+    return ret;
   }
 }
 
@@ -608,6 +644,16 @@ gst_vpudec_flush (GstVideoDecoder * decoder)
 {
   GstVpuDec *vpudec = GST_VPUDEC (decoder);
   VpuCodecContext_t *ctx;
+
+  /* Ensure the processing thread has stopped for the reverse playback
+   * discount case */
+  if (g_atomic_int_get (&vpudec->processing)) {
+    GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
+    gst_pad_stop_task (decoder->srcpad);
+    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+  }
+
+  vpudec->output_flow = GST_FLOW_OK;
 
   ctx = vpudec->ctx;
   return !ctx->flush (ctx);
