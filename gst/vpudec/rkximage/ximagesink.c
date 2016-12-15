@@ -493,9 +493,9 @@ xwindow_get_window_position (GstXImageSink * ximagesink, int *x, int *y)
   XTranslateCoordinates (ximagesink->xcontext->disp, ximagesink->xwindow->win,
       ximagesink->xcontext->root, 0, 0, x, y, &child);
 
-  if (last_x != x || last_y != y) {
-    last_x = x;
-    last_y = y;
+  if (last_x != *x || last_y != *y) {
+    last_x = *x;
+    last_y = *y;
     /* moved */
     return TRUE;
   }
@@ -605,6 +605,7 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
         GST_ERROR_OBJECT (ximagesink, "meta is not valid");
         return GST_FLOW_ERROR;
       }
+      gst_buffer_ref (ximage);
     } else {
       g_mutex_unlock (&ximagesink->flow_lock);
       return TRUE;
@@ -636,6 +637,7 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
     ximagesink->draw_border = FALSE;
   }
 
+  /* drm stuff */
   gst_buffer_ref (ximage);
 
   ret = drmPrimeFDToHandle
@@ -643,10 +645,7 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
   if (ret < 0) {
     GST_ERROR_OBJECT (ximagesink, "drmPrimeFDToHandle failed: %s (%d)",
         strerror (-ret), ret);
-    gst_buffer_unref (ximage);
-    g_mutex_unlock (&ximagesink->x_lock);
-    g_mutex_unlock (&ximagesink->flow_lock);
-    return GST_FLOW_ERROR;
+    goto error;
   }
 
   video_info = gst_buffer_get_video_meta (ximage);
@@ -666,20 +665,17 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
   if (ret < 0) {
     GST_ERROR_OBJECT (ximagesink, "drmModeAddFB2 failed: %s (%d)",
         strerror (-ret), ret);
-    gst_buffer_unref (ximage);
-    g_mutex_unlock (&ximagesink->x_lock);
-    g_mutex_unlock (&ximagesink->flow_lock);
-    return GST_FLOW_ERROR;
+    goto error;
   }
 
   xwindow_get_window_position (ximagesink, &result.x, &result.y);
+
   xwindow_get_render_rectangle (ximagesink, &result.x, &result.y, &result.w,
       &result.h);
   xwindow_calculate_display_ratio (ximagesink, &result.x, &result.y, &result.w,
       &result.h);
 
   if (src.w / result.w <= 8 && src.h / result.h <= 8) {
-
     GST_TRACE_OBJECT (ximagesink, "displaying fb %d", fb_id);
 
     GST_TRACE_OBJECT (ximagesink,
@@ -694,10 +690,7 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
 
     if (ret) {
       GST_ERROR_OBJECT (ximagesink, "drmModesetplane failed: %d", ret);
-      gst_buffer_unref (ximage);
-      g_mutex_unlock (&ximagesink->x_lock);
-      g_mutex_unlock (&ximagesink->flow_lock);
-      return GST_FLOW_ERROR;
+      goto error;
     }
   }
 #if 0
@@ -707,7 +700,6 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
       result.w, result.h);
 
 #endif
-  XSync (ximagesink->xcontext->disp, FALSE);
   drm_sync (ximagesink);
 
   if (ximagesink->last_fb_id) {
@@ -722,6 +714,12 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
   g_mutex_unlock (&ximagesink->x_lock);
 
   return TRUE;
+
+error:
+  gst_buffer_unref (ximage);
+  g_mutex_unlock (&ximagesink->x_lock);
+  g_mutex_unlock (&ximagesink->flow_lock);
+  return GST_FLOW_ERROR;
 }
 
 static gboolean
