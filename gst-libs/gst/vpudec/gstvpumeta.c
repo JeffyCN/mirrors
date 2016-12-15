@@ -75,9 +75,8 @@ gst_vpudec_meta_free (GstMeta * meta, GstBuffer * buffer)
 {
   GstVpuDecMeta *emeta = (GstVpuDecMeta *) meta;
 
-  g_print ("meta try free %d: %x\n", emeta->index, *emeta->vpumem.offset);
-
-  VPUFreeLinear (&emeta->vpumem);
+  /* It seems that we don't need to free VPUMem here, which has been released
+   * in bufferpool release() method */
   emeta->mem = NULL;
   emeta->index = 0;
   emeta->size = 0;
@@ -153,18 +152,23 @@ gboolean
 gst_vpudec_meta_alloc_mem (vpu_display_mem_pool * vpool, GstVpuDecMeta * meta,
     gint size)
 {
+  VPUMemLinear_t vpu_mem;
   gint ret;
   g_return_val_if_fail (GST_VPU_IS_DEC_META (meta), FALSE);
 
   meta->size = size;
   /*
-   * create vpumem from libvpu
+   * create vpumem from mpp/libvpu
    * includes mvc data
    */
-  VPUMallocLinearOutside (&meta->vpumem, meta->size);
+  VPUMallocLinearOutside (&vpu_mem, meta->size);
+  meta->vpumem = vpu_mem;
   meta->vpumem.index = meta->index;
 
   ret = vpool->commit_vpu (vpool, &meta->vpumem);
+  /* Free the VPUMem from the default mpp internal allocator group,
+   * the commit_vpu() duplicate them into the other mpp internal group. */
+  VPUFreeLinear (&vpu_mem);
   meta->mem = (gpointer) meta->vpumem.vir_addr;
   meta->dmabuf_fd = VPUMemGetFD (&meta->vpumem);
 
