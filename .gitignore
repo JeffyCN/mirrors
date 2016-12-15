@@ -8,8 +8,10 @@ config.status
 config.guess
 config.sub
 config.rpath
+config.guess.dh-orig
+config.sub.dh-orig
 configure
-gst-plugins-good.spec
+gstreamer-rockchip.spec
 libtool
 stamp-h
 stamp-h.in

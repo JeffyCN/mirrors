@@ -1,0 +1,6 @@
+gstreamer-rockchip for Debian
+------------------------------
+
+gstreamer rockchip is a gstreamer plugin to work with rockchip mpp.
+
+ -- Randy Li <randy.li@rock-chips.com>  Thu, 17 Nov 2016 07:59:00 +0000

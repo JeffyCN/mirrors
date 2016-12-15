@@ -1,3 +1,19 @@
+gstreamer1.0-rockchip (1.10-2) testing; urgency=medium
+
+  * vpudec: add missing copyright information in a files
+  * vpudec: support flush() method in decoder
+  * vpudec: kmssink: support P010_10LE
+  * vpumeta: change the type of index field for invalid index
+  * vpudec: support 10 bits video color depth and P010_10LE output
+  * vpudec: not block the stop operation
+  * Revert "vpudec: not block the stop operation"
+  * vpudec: put the decoder getting output frame task to pad
+  * vpudec: add new method to handle statechange
+  * vpumeta: free vpumem from the mpp allocator
+  * vpudec: fix the bug in exit and cleanup
+
+ -- Randy Li <randy.li@rock-chips.com>  Thu, 15 Dec 2016 03:17:28 +0000
+
 gstreamer1.0-rockchip (1.10-1) testing; urgency=medium
 
   * build: update the package name
