@@ -568,7 +568,6 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
   gint ret;
   guint32 fb_id;
 
-
   /* We take the flow_lock. If expose is in there we don't want to run
      concurrently from the data flow thread */
   g_mutex_lock (&ximagesink->flow_lock);
@@ -946,8 +945,6 @@ gst_x_image_sink_xwindow_clear (GstXImageSink * ximagesink,
   XFillRectangle (ximagesink->xcontext->disp, xwindow->win, xwindow->gc,
       0, 0, xwindow->width, xwindow->height);
 
-  XSync (ximagesink->xcontext->disp, FALSE);
-
   /* clean screen */
   if (ximagesink->last_fb_id) {
     drmModeRmFB (ximagesink->fd, ximagesink->last_fb_id);
@@ -1121,6 +1118,7 @@ gst_x_image_sink_handle_xevents (GstXImageSink * ximagesink)
     /* if window stop moving, redraw display */
     g_mutex_unlock (&ximagesink->x_lock);
     g_mutex_unlock (&ximagesink->flow_lock);
+
     gst_x_image_sink_expose (GST_VIDEO_OVERLAY (ximagesink));
     g_mutex_lock (&ximagesink->flow_lock);
     g_mutex_lock (&ximagesink->x_lock);
@@ -1726,6 +1724,7 @@ gst_x_image_sink_expose (GstVideoOverlay * overlay)
   GstXImageSink *ximagesink = GST_X_IMAGE_SINK (overlay);
 
   gst_x_image_sink_xwindow_update_geometry (ximagesink);
+  gst_x_image_sink_xwindow_clear (ximagesink, ximagesink->xwindow);
   gst_x_image_sink_ximage_put (ximagesink, NULL, NULL);
 }
 
