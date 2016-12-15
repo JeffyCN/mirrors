@@ -81,9 +81,6 @@ static gboolean
 gst_vpudec_close (GstVpuDec * vpudec)
 {
 
-  if (vpudec->pool)
-    close_vpu_memory_pool (vpudec->vpu_mem_pool);
-
   if (vpudec->ctx != NULL) {
     vpu_close_context (&vpudec->ctx);
     vpudec->ctx = NULL;
@@ -121,9 +118,7 @@ gst_vpudec_sendeos (GstVideoDecoder * decoder)
 
   ctx->decode_sendstream (ctx, &pkt);
 
-  do {
-    ctx->control (ctx, VPU_API_DEC_GET_EOS_STATUS, &is_eos);
-  } while (!is_eos);
+  ctx->control (ctx, VPU_API_DEC_GET_EOS_STATUS, &is_eos);
 
   return 0;
 }
@@ -155,13 +150,11 @@ gst_vpudec_stop (GstVideoDecoder * decoder)
   if (vpudec->output_state)
     gst_video_codec_state_unref (vpudec->output_state);
 
+  gst_vpudec_close (vpudec);
   if (vpudec->pool) {
-    gst_buffer_pool_set_active (vpudec->pool, FALSE);
     gst_object_unref (vpudec->pool);
     vpudec->pool = NULL;
   }
-
-  gst_vpudec_close (vpudec);
 
   GST_DEBUG_OBJECT (vpudec, "Stopped");
 

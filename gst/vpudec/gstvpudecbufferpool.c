@@ -135,6 +135,7 @@ gst_vpudec_buffer_pool_stop (GstBufferPool * bpool)
 {
   gboolean ret;
   GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
+  GstVpuDec *vpudec = pool->dec;
   guint n;
 
   GST_DEBUG_OBJECT (pool, "stop pool %p", pool);
@@ -152,6 +153,9 @@ gst_vpudec_buffer_pool_stop (GstBufferPool * bpool)
 
   pool->nb_queued = 0;
   pool->nb_buffers = 0;
+
+  close_vpu_memory_pool (vpudec->vpu_mem_pool);
+  vpudec->vpu_mem_pool = NULL;
 
   return ret;
 }
@@ -268,7 +272,6 @@ static void
 gst_vpudec_buffer_pool_finalize (GObject * object)
 {
   GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (object);
-
   GST_DEBUG_OBJECT (pool, "finalize pool %p", pool);
 
   gst_object_unref (pool->dec);
