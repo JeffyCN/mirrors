@@ -52,9 +52,6 @@ struct _GstVpuDec
   gint height;
   gint framesize;
 
-  guint8 *codec_data_ptr;
-  gsize codec_data_size;
-
   GstVideoCodecState *input_state;
   GstVideoCodecState *output_state;
 

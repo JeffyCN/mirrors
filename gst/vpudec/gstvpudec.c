@@ -227,8 +227,7 @@ gst_vpudec_open (GstVpuDec * vpudec, VPU_VIDEO_CODINGTYPE codingType)
   vpudec->ctx->no_thread = 0;
   vpudec->ctx->enableparsing = 1;
 
-  if (vpudec->ctx->init (vpudec->ctx, vpudec->codec_data_ptr,
-          vpudec->codec_data_size) != 0)
+  if (vpudec->ctx->init (vpudec->ctx, NULL, 0) != 0)
     goto init_error;
 
   GST_DEBUG_OBJECT (vpudec, "after create vpu context");
@@ -263,8 +262,6 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
   GstStructure *structure;
   gint width, height;
   VPU_VIDEO_CODINGTYPE codingtype;
-  GstBuffer *codec_data;
-  GstMapInfo mapinfo;
   gchar *codec_profile = NULL;
 
   GST_DEBUG_OBJECT (vpudec, "Setting format: %" GST_PTR_FORMAT, state->caps);
@@ -298,15 +295,6 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
     vpudec->width = width;
 
   vpudec->height = height;
-
-  /* codec data */
-  codec_data = state->codec_data;
-  if (codec_data) {
-    gst_buffer_map (codec_data, &mapinfo, GST_MAP_READ);
-    vpudec->codec_data_ptr = mapinfo.data;
-    vpudec->codec_data_size = mapinfo.size;
-    gst_buffer_unmap (codec_data, &mapinfo);
-  }
 
   if (!gst_vpudec_open (vpudec, codingtype))
     goto device_error;
