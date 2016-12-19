@@ -169,28 +169,23 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   VpuCodecContext_t *ctx;
   GstBuffer *outbuf;
   DecoderOut_t dec_out;
-  VPU_FRAME *vpu_frame;
+  VPU_FRAME vpu_frame;
   VPUMemLinear_t vpu_mem;
   VPU_API_ERR ret;
   gint buf_index;
   GstVpuDecMeta *meta;
 
   memset (&dec_out, 0, sizeof (DecoderOut_t));
-  dec_out.data = (guint8 *) g_malloc (sizeof (VPU_FRAME));
+  memset (&vpu_frame, 0, sizeof (VPU_FRAME));
+  dec_out.data = &vpu_frame;
   ctx = (VpuCodecContext_t *) dec->ctx;
 
   if ((ret = ctx->decode_getframe (ctx, &dec_out)) < 0)
     goto vpu_error;
 
-  vpu_frame = (VPU_FRAME *) dec_out.data;
-  vpu_mem = vpu_frame->vpumem;
-
+  vpu_mem = vpu_frame.vpumem;
   /* get from the pool the GstBuffer associated with the index */
   buf_index = vpu_mem.index;
-  if (buf_index < 0) {
-    ctx->control (ctx, VPU_API_SET_INFO_CHANGE, NULL);
-    GST_DEBUG_OBJECT (pool, "info change");
-  }
   outbuf = pool->buffers[buf_index];
   if (outbuf == NULL)
     goto no_buffer;
@@ -206,7 +201,6 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
       pool->nb_queued, vpu_mem.offset);
 
   *buffer = outbuf;
-  g_free (dec_out.data);
 
   return GST_FLOW_OK;
 
