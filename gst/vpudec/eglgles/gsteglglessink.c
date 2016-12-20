@@ -123,6 +123,8 @@
 #include <gst/video/gstvideometa.h>
 #include <gst/video/gstvideopool.h>
 #include <gst/video/videooverlay.h>
+#include <gst/vpudec/gstvpumeta.h>
+#include <drm_fourcc.h>
 
 #include "gstegladaptation.h"
 
@@ -1439,7 +1441,64 @@ gst_eglglessink_fill_texture (GstEglGlesSink * eglglessink, GstBuffer * buf)
           GST_VIDEO_FRAME_COMP_DATA (&vframe, 2));
       break;
     }
-    case GST_VIDEO_FORMAT_NV12:
+    case GST_VIDEO_FORMAT_NV12:{
+      /* zero-copy texture */
+      GstVpuDecMeta *meta = NULL;
+      EGLImageKHR egl_image;
+      EGLint attrs[] = {
+        EGL_WIDTH, 0, EGL_HEIGHT, 0,
+        EGL_LINUX_DRM_FOURCC_EXT, 0,
+        EGL_DMA_BUF_PLANE0_FD_EXT, 0,
+        EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+        EGL_DMA_BUF_PLANE0_PITCH_EXT, 0,
+        EGL_DMA_BUF_PLANE1_FD_EXT, 0,
+        EGL_DMA_BUF_PLANE1_OFFSET_EXT, 0,
+        EGL_DMA_BUF_PLANE1_PITCH_EXT, 0,
+        EGL_YUV_COLOR_SPACE_HINT_EXT, 0,
+        EGL_SAMPLE_RANGE_HINT_EXT, 0,
+        EGL_NONE,
+      };
+
+      meta = gst_buffer_get_vpudec_meta (buf);  //FIXME
+      if (meta) {
+        GST_DEBUG_OBJECT (eglglessink, "get meta");
+      } else {
+        GST_ERROR_OBJECT (eglglessink, "buffer is not valid");
+        return GST_FLOW_ERROR;
+      }
+
+      attrs[1] = GST_VIDEO_FRAME_COMP_WIDTH (&vframe, 0);
+      attrs[3] = GST_VIDEO_FRAME_COMP_HEIGHT (&vframe, 0);
+      attrs[5] = DRM_FORMAT_NV12;
+      attrs[7] = gst_vpudec_meta_get_fd (meta);
+      attrs[9] = gst_buffer_get_video_meta (buf)->offset[0];
+      attrs[11] = gst_buffer_get_video_meta (buf)->stride[0];
+
+      attrs[13] = gst_vpudec_meta_get_fd (meta);
+      attrs[15] = gst_buffer_get_video_meta (buf)->offset[1];
+      attrs[17] = gst_buffer_get_video_meta (buf)->stride[1];
+      attrs[19] = EGL_ITU_REC601_EXT;
+      attrs[21] = EGL_YUV_NARROW_RANGE_EXT;
+
+      egl_image =
+          eglCreateImageKHR (gst_egl_display_get (eglglessink->egl_context->
+              display), EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attrs);
+
+      if (egl_image == EGL_NO_IMAGE_KHR) {
+        GST_ERROR_OBJECT (eglglessink, "Failed to get egl image");
+        goto HANDLE_ERROR;
+      }
+
+      glActiveTexture (GL_TEXTURE0);
+      glBindTexture (GL_TEXTURE_EXTERNAL_OES,
+          eglglessink->egl_context->texture[0]);
+      glEGLImageTargetTexture2DOES (GL_TEXTURE_EXTERNAL_OES, egl_image);
+
+      eglDestroyImageKHR (gst_egl_display_get (eglglessink->egl_context->
+              display), egl_image);
+
+      break;
+    }
     case GST_VIDEO_FORMAT_NV21:{
       gint stride;
       gint stride_width;

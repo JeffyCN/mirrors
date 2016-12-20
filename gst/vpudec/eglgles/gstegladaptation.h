@@ -137,7 +137,7 @@ struct _GstEglAdaptationContext
   GLuint texpos_loc[1]; /* frame */
   GLuint tex_scale_loc[1][3]; /* [frame] RGB/Y, U/UV, V */
   GLuint tex_loc[1][3]; /* [frame] RGB/Y, U/UV, V */
-  coord5 position_array[16];    /* 4 x Frame x-normal,y-normal, 4x Frame x-normal,y-flip, 4 x Border1, 4 x Border2 */
+  coord5 position_array[20];    /* 4 x Frame x-normal,y-normal, 4x Frame x-normal,y-flip, 4 x Border1, 4 x Border2, 4 x*/
   unsigned short index_array[4];
   unsigned int position_buffer, index_buffer;
   gint n_textures;

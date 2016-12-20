@@ -72,6 +72,18 @@ static const char *vert_COPY_prog = {
       "}"
 };
 
+/* zero copy */
+static const char *vert_OES_prog = {
+      "attribute vec3 position;"
+      "attribute vec2 texpos;"
+      "varying vec2 opos;"
+      "void main(void)"
+      "{"
+      " opos = vec2(texpos.x, texpos.y);"
+      " gl_Position = vec4(position, 1.0);"
+      "}"
+};
+
 static const char *vert_COPY_prog_no_tex = {
       "attribute vec3 position;"
       "void main(void)"
@@ -196,6 +208,19 @@ static const char *frag_NV12_NV21_prog = {
       "  b = dot(yuv, bcoeff);"
       "  gl_FragColor=vec4(r,g,b,1.0);"
       "}"
+};
+
+/** NV12 OES */
+static const char *OES_prog  = {
+	/* OES_EGL */
+	"#extension GL_OES_EGL_image_external : enable\n"
+	"precision mediump float;"
+	"varying vec2 opos;"
+	"uniform samplerExternalOES tex_external;"
+	"void main() {"
+	"  vec4 color = texture2D(tex_external, opos);"
+	"  gl_FragColor = color;"
+	"}"
 };
 /* *INDENT-ON* */
 
@@ -454,6 +479,7 @@ gst_egl_adaptation_init_surface (GstEglAdaptationContext * ctx,
   gchar *frag_prog = NULL;
   gboolean free_frag_prog = FALSE;
   gint i;
+  const char *vert = vert_COPY_prog;
 
   GST_DEBUG_OBJECT (ctx->element, "Enter EGL surface setup");
 
@@ -518,11 +544,11 @@ gst_egl_adaptation_init_surface (GstEglAdaptationContext * ctx,
       texnames[2] = "Vtex";
       break;
     case GST_VIDEO_FORMAT_NV12:
-      frag_prog = g_strdup_printf (frag_NV12_NV21_prog, 'r', 'a');
+      frag_prog = g_strdup_printf (OES_prog, 'r', 'a');
       free_frag_prog = TRUE;
-      ctx->n_textures = 2;
-      texnames[0] = "Ytex";
-      texnames[1] = "UVtex";
+      ctx->n_textures = 1;
+      texnames[0] = "tex_external";
+      vert = vert_OES_prog;
       break;
     case GST_VIDEO_FORMAT_NV21:
       frag_prog = g_strdup_printf (frag_NV12_NV21_prog, 'a', 'r');
@@ -569,13 +595,13 @@ gst_egl_adaptation_init_surface (GstEglAdaptationContext * ctx,
 
   if (!create_shader_program (ctx,
           &ctx->glslprogram[0],
-          &ctx->vertshader[0],
-          &ctx->fragshader[0], vert_COPY_prog, frag_prog)) {
+          &ctx->vertshader[0], &ctx->fragshader[0], vert, frag_prog)) {
     if (free_frag_prog)
       g_free (frag_prog);
     frag_prog = NULL;
     goto HANDLE_ERROR;
   }
+
   if (free_frag_prog)
     g_free (frag_prog);
   frag_prog = NULL;
@@ -610,26 +636,47 @@ gst_egl_adaptation_init_surface (GstEglAdaptationContext * ctx,
   if (!ctx->have_texture) {
     GST_INFO_OBJECT (ctx->element, "Performing initial texture setup");
 
-    glGenTextures (ctx->n_textures, ctx->texture);
-    if (got_gl_error ("glGenTextures"))
-      goto HANDLE_ERROR_LOCKED;
+    if (format == GST_VIDEO_FORMAT_NV12) {
+      glGenTextures (1, ctx->texture);
+      if (got_gl_error ("glGenTextures"))
+        goto HANDLE_ERROR;
 
-    for (i = 0; i < ctx->n_textures; i++) {
-      glBindTexture (GL_TEXTURE_2D, ctx->texture[i]);
+      glBindTexture (GL_TEXTURE_EXTERNAL_OES, ctx->texture[0]);
       if (got_gl_error ("glBindTexture"))
         goto HANDLE_ERROR;
 
-      /* Set 2D resizing params */
-      glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      /* If these are not set the texture image unit will return
-       * (R, G, B, A) = black on glTexImage2D for non-POT width/height
-       * frames. For a deeper explanation take a look at the OpenGL ES
-       * documentation for glTexParameter */
-      glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER,
+          GL_LINEAR);
+      glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER,
+          GL_LINEAR);
+      glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S,
+          GL_CLAMP_TO_EDGE);
+      glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T,
+          GL_CLAMP_TO_EDGE);
       if (got_gl_error ("glTexParameteri"))
         goto HANDLE_ERROR_LOCKED;
+    } else {
+      glGenTextures (ctx->n_textures, ctx->texture);
+      if (got_gl_error ("glGenTextures"))
+        goto HANDLE_ERROR_LOCKED;
+
+      for (i = 0; i < ctx->n_textures; i++) {
+        glBindTexture (GL_TEXTURE_2D, ctx->texture[i]);
+        if (got_gl_error ("glBindTexture"))
+          goto HANDLE_ERROR;
+
+        /* Set 2D resizing params */
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        /* If these are not set the texture image unit will return
+         * (R, G, B, A) = black on glTexImage2D for non-POT width/height
+         * frames. For a deeper explanation take a look at the OpenGL ES
+         * documentation for glTexParameter */
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        if (got_gl_error ("glTexParameteri"))
+          goto HANDLE_ERROR_LOCKED;
+      }
     }
 
     ctx->have_texture = TRUE;
