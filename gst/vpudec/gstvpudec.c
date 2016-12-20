@@ -81,12 +81,12 @@ static gboolean
 gst_vpudec_close (GstVpuDec * vpudec)
 {
 
-  if (vpudec->ctx != NULL) {
-    vpu_close_context (&vpudec->ctx);
-    vpudec->ctx = NULL;
+  if (vpudec->vpu_codec_ctx != NULL) {
+    vpu_close_context (&vpudec->vpu_codec_ctx);
+    vpudec->vpu_codec_ctx = NULL;
   }
 
-  GST_DEBUG_OBJECT (vpudec, "vpu ctx closed");
+  GST_DEBUG_OBJECT (vpudec, "vpu codec context closed");
 
   return TRUE;
 }
@@ -107,7 +107,7 @@ static gint
 gst_vpudec_sendeos (GstVideoDecoder * decoder)
 {
   GstVpuDec *vpudec = GST_VPUDEC (decoder);
-  VpuCodecContext_t *ctx = vpudec->ctx;
+  VpuCodecContext_t *vpu_codec_ctx = vpudec->vpu_codec_ctx;
   VideoPacket_t pkt;
   RK_S32 is_eos = 0;
 
@@ -116,9 +116,9 @@ gst_vpudec_sendeos (GstVideoDecoder * decoder)
   /* eos flag */
   pkt.nFlags = VPU_API_DEC_OUTPUT_EOS;
 
-  ctx->decode_sendstream (ctx, &pkt);
+  vpu_codec_ctx->decode_sendstream (vpu_codec_ctx, &pkt);
 
-  ctx->control (ctx, VPU_API_DEC_GET_EOS_STATUS, &is_eos);
+  vpu_codec_ctx->control (vpu_codec_ctx, VPU_API_DEC_GET_EOS_STATUS, &is_eos);
 
   return 0;
 }
@@ -215,33 +215,35 @@ gst_vpudec_open (GstVpuDec * vpudec, VPU_VIDEO_CODINGTYPE codingType)
 {
   VPU_SYNC sync;
 
-  if (vpu_open_context (&vpudec->ctx) || vpudec->ctx == NULL)
-    goto ctx_error;
+  if (vpu_open_context (&vpudec->vpu_codec_ctx)
+      || vpudec->vpu_codec_ctx == NULL)
+    goto vpu_codec_ctx_error;
 
-  GST_DEBUG_OBJECT (vpudec, "created vpu context %p", vpudec->ctx);
+  GST_DEBUG_OBJECT (vpudec, "created vpu context %p", vpudec->vpu_codec_ctx);
 
-  vpudec->ctx->codecType = CODEC_DECODER;
-  vpudec->ctx->videoCoding = codingType;
-  vpudec->ctx->width = vpudec->width;
-  vpudec->ctx->height = vpudec->height;
-  vpudec->ctx->no_thread = 0;
-  vpudec->ctx->enableparsing = 1;
+  vpudec->vpu_codec_ctx->codecType = CODEC_DECODER;
+  vpudec->vpu_codec_ctx->videoCoding = codingType;
+  vpudec->vpu_codec_ctx->width = vpudec->width;
+  vpudec->vpu_codec_ctx->height = vpudec->height;
+  vpudec->vpu_codec_ctx->no_thread = 0;
+  vpudec->vpu_codec_ctx->enableparsing = 1;
 
-  if (vpudec->ctx->init (vpudec->ctx, NULL, 0) != 0)
+  if (vpudec->vpu_codec_ctx->init (vpudec->vpu_codec_ctx, NULL, 0) != 0)
     goto init_error;
 
   GST_DEBUG_OBJECT (vpudec, "after create vpu context");
 
   vpudec->vpu_mem_pool = open_vpu_memory_pool ();
-  vpudec->ctx->control (vpudec->ctx, VPU_API_SET_VPUMEM_CONTEXT,
-      (void *) vpudec->vpu_mem_pool);
+  vpudec->vpu_codec_ctx->control (vpudec->vpu_codec_ctx,
+      VPU_API_SET_VPUMEM_CONTEXT, (void *) vpudec->vpu_mem_pool);
 
   sync.flag = 1;
-  vpudec->ctx->control (vpudec->ctx, VPU_API_SET_OUTPUT_BLOCK, (void *) &sync);
+  vpudec->vpu_codec_ctx->control (vpudec->vpu_codec_ctx,
+      VPU_API_SET_OUTPUT_BLOCK, (void *) &sync);
 
   return TRUE;
 
-ctx_error:
+vpu_codec_ctx_error:
   {
     GST_ERROR_OBJECT (vpudec, "libvpu open context failed");
     return FALSE;
@@ -249,8 +251,8 @@ ctx_error:
 init_error:
   {
     GST_ERROR_OBJECT (vpudec, "libvpu init failed");
-    if (!vpudec->ctx)
-      vpu_close_context (&vpudec->ctx);
+    if (!vpudec->vpu_codec_ctx)
+      vpu_close_context (&vpudec->vpu_codec_ctx);
     return FALSE;
   }
 }
@@ -391,7 +393,8 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
 
   GST_DEBUG_OBJECT (vpudec, "Setting output");
 
-  vpudec->ctx->control (vpudec->ctx, VPU_API_DEC_GETFORMAT, &fmt);
+  vpudec->vpu_codec_ctx->control (vpudec->vpu_codec_ctx, VPU_API_DEC_GETFORMAT,
+      &fmt);
   info = &vpudec->info;
 
   GST_INFO_OBJECT (vpudec,
@@ -466,7 +469,7 @@ gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   GstVpuDec *vpudec = GST_VPUDEC (decoder);
   GstMapInfo mapinfo = { 0, };
   GstFlowReturn ret = GST_FLOW_OK;
-  VpuCodecContext_t *ctx;
+  VpuCodecContext_t *vpu_codec_ctx;
   VideoPacket_t access_unit;
 
   GST_DEBUG_OBJECT (vpudec, "Handling frame %d", frame->system_frame_number);
@@ -499,7 +502,7 @@ gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
 
   if (frame->input_buffer) {
     /* send access unit to VPU */
-    ctx = vpudec->ctx;
+    vpu_codec_ctx = vpudec->vpu_codec_ctx;
     memset (&access_unit, 0, sizeof (VideoPacket_t));
     gst_buffer_map (frame->input_buffer, &mapinfo, GST_MAP_READ);
     access_unit.data = mapinfo.data;
@@ -515,7 +518,7 @@ gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
 
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
 
-    if (ctx->decode_sendstream (ctx, &access_unit) != 0)
+    if (vpu_codec_ctx->decode_sendstream (vpu_codec_ctx, &access_unit) != 0)
       goto send_stream_error;
 
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
@@ -559,7 +562,7 @@ static gboolean
 gst_vpudec_flush (GstVideoDecoder * decoder)
 {
   GstVpuDec *vpudec = GST_VPUDEC (decoder);
-  VpuCodecContext_t *ctx;
+  VpuCodecContext_t *vpu_codec_ctx;
 
   /* Ensure the processing thread has stopped for the reverse playback
    * discount case */
@@ -571,8 +574,8 @@ gst_vpudec_flush (GstVideoDecoder * decoder)
 
   vpudec->output_flow = GST_FLOW_OK;
 
-  ctx = vpudec->ctx;
-  return !ctx->flush (ctx);
+  vpu_codec_ctx = vpudec->vpu_codec_ctx;
+  return !vpu_codec_ctx->flush (vpu_codec_ctx);
 }
 
 static GstStateChangeReturn
@@ -631,7 +634,7 @@ gst_vpudec_init (GstVpuDec * vpudec)
 
   gst_video_decoder_set_packetized (decoder, TRUE);
 
-  vpudec->ctx = NULL;
+  vpudec->vpu_codec_ctx = NULL;
 
   vpudec->active = FALSE;
   vpudec->eos = FALSE;

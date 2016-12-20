@@ -66,7 +66,7 @@ struct _GstVpuDec
   GstFlowReturn output_flow;
 
   /* VPU definitions */
-  VpuCodecContext_t *ctx;
+  VpuCodecContext_t *vpu_codec_ctx;
   VPUMemLinear_t front_vpumem;
   VideoPacket_t access_unit;
 
