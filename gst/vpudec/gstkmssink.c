@@ -53,7 +53,6 @@
 
 #include <string.h>
 
-#include <gst/vpudec/gstvpumeta.h>
 #include "gstkmssink.h"
 #include "gstkmsutils.h"
 
@@ -774,7 +773,7 @@ gst_kms_sink_show_frame (GstVideoSink * vsink, GstBuffer * buf)
   GstVideoRectangle result;
   GstFlowReturn res;
   GstVideoMeta *video_info;
-  GstVpuDecMeta *meta = NULL;
+  GstMemory *mem;
   guint32 gem_handle, w, h, fmt, bo_handles[4] = { 0, };
   guint32 offsets[4] = { 0, };
   guint32 pitches[4] = { 0, };
@@ -783,9 +782,9 @@ gst_kms_sink_show_frame (GstVideoSink * vsink, GstBuffer * buf)
 
   res = GST_FLOW_ERROR;
 
-  meta = gst_buffer_get_vpudec_meta (buf);
+  mem = gst_buffer_peek_memory (buf, 0);
   video_info = gst_buffer_get_video_meta (buf);
-  if (meta && video_info)
+  if (gst_is_dmabuf_memory (mem) && video_info)
     buffer = buf;
   else
     goto buffer_invalid;
@@ -793,7 +792,7 @@ gst_kms_sink_show_frame (GstVideoSink * vsink, GstBuffer * buf)
   gst_buffer_ref (buffer);
 
   ret = drmPrimeFDToHandle
-      (self->fd, gst_vpudec_meta_get_fd (meta), &gem_handle);
+      (self->fd, gst_dmabuf_memory_get_fd (mem), &gem_handle);
   if (ret < 0) {
     GST_ERROR_OBJECT (self, "drmPrimeFDToHandle failed: %s (%d)",
         strerror (-ret), ret);
