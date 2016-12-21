@@ -1,3 +1,16 @@
+gstreamer1.0-rockchip (1.10-3) testing; urgency=medium
+
+  * vpudec: remove codec_data
+  * vpudec: bufferpool: remove allocate vpu_frame every times
+  * vpudec: add an allocator for buffers from vpu_display_pool
+  * vpudec: use GstVpuAllocator in GstVpuBufferpool
+  * vpudec: build: add gstvpuallocator
+  * vpudec: rename the vpu codec context field
+  * vpudec: adapt new buffer operating procedures
+  * vpumeta: stop using the vpumeta data
+
+ -- Randy Li <randy.li@rock-chips.com>  Wed, 21 Dec 2016 07:31:44 +0000
+
 gstreamer1.0-rockchip (1.10-2) testing; urgency=medium
 
   * vpudec: add missing copyright information in a files
