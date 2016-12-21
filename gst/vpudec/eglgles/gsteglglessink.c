@@ -139,9 +139,6 @@ GST_DEBUG_CATEGORY_EXTERN (gst_eglglessink_debug);
 
 GST_DEBUG_CATEGORY_EXTERN (GST_CAT_PERFORMANCE);
 
-#undef GST_VIDEO_SIZE_RANGE
-#define GST_VIDEO_SIZE_RANGE "(int) [ 1, 2048 ]"
-
 /* Input capabilities. */
 static GstStaticPadTemplate gst_eglglessink_sink_template_factory =
     GST_STATIC_PAD_TEMPLATE ("sink",
