@@ -681,6 +681,16 @@ gst_x_image_sink_ximage_put (GstXImageSink * ximagesink, GstBuffer * ximage,
         "drmModeSetPlane at (%i,%i) %ix%i sourcing at (%i,%i) %ix%i",
         result.x, result.y, result.w, result.h, src.x, src.y, src.w, src.h);
 
+    /* Adjust for fake 4k */
+    if (ximagesink->hdisplay * ximagesink->vdisplay > 3800 * 2000 &&
+        XWidthOfScreen (ximagesink->xcontext->screen) *
+        XHeightOfScreen (ximagesink->xcontext->screen) < 3800 * 2000) {
+      result.x *= 2;
+      result.y *= 2;
+      result.w *= 2;
+      result.h *= 2;
+    }
+
     ret =
         drmModeSetPlane (ximagesink->ctrl_fd, ximagesink->plane_id,
         ximagesink->crtc_id, fb_id, 0, result.x, result.y, result.w, result.h,
