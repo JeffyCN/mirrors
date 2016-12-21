@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <gst/gst.h>
-#include <gst/vpudec/gstvpumeta.h>
 
 #include "gstvpudec.h"
 
@@ -213,8 +212,6 @@ to_gst_pix_format (VPU_VIDEO_PIXEL_FMT pix_fmt)
 static gboolean
 gst_vpudec_open (GstVpuDec * vpudec, VPU_VIDEO_CODINGTYPE codingType)
 {
-  VPU_SYNC sync;
-
   if (vpu_open_context (&vpudec->vpu_codec_ctx)
       || vpudec->vpu_codec_ctx == NULL)
     goto vpu_codec_ctx_error;
@@ -230,16 +227,6 @@ gst_vpudec_open (GstVpuDec * vpudec, VPU_VIDEO_CODINGTYPE codingType)
 
   if (vpudec->vpu_codec_ctx->init (vpudec->vpu_codec_ctx, NULL, 0) != 0)
     goto init_error;
-
-  GST_DEBUG_OBJECT (vpudec, "after create vpu context");
-
-  vpudec->vpu_mem_pool = open_vpu_memory_pool ();
-  vpudec->vpu_codec_ctx->control (vpudec->vpu_codec_ctx,
-      VPU_API_SET_VPUMEM_CONTEXT, (void *) vpudec->vpu_mem_pool);
-
-  sync.flag = 1;
-  vpudec->vpu_codec_ctx->control (vpudec->vpu_codec_ctx,
-      VPU_API_SET_OUTPUT_BLOCK, (void *) &sync);
 
   return TRUE;
 
@@ -389,7 +376,6 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
   GstStructure *structure;
   DecoderFormat_t fmt;
   gboolean ret = TRUE;
-  gint width;
 
   GST_DEBUG_OBJECT (vpudec, "Setting output");
 
@@ -408,6 +394,7 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
   info->finfo = gst_video_format_get_info (to_gst_pix_format (fmt.format));
   info->width = fmt.width;
   info->height = fmt.height;
+  info->size = fmt.aligned_frame_size;
   info->offset[0] = 0;
   info->offset[1] = fmt.aligned_stride * fmt.aligned_height;
   info->stride[0] = fmt.aligned_stride;
@@ -436,14 +423,9 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
   align->padding_bottom = fmt.aligned_height - fmt.height;
 
   /* construct a new buffer pool */
-  vpudec->pool = gst_vpudec_buffer_pool_new (vpudec, NULL, NB_OUTPUT_BUFS,
-      fmt.aligned_frame_size, align);
+  vpudec->pool = gst_vpudec_buffer_pool_new (vpudec, NULL);
   if (vpudec->pool == NULL)
     goto error_new_pool;
-
-  /* activate the pool: the buffers are allocated */
-  if (gst_buffer_pool_set_active (vpudec->pool, TRUE) == FALSE)
-    goto error_activate_pool;
 
   g_atomic_int_set (&vpudec->active, TRUE);
 
@@ -455,18 +437,13 @@ error_new_pool:
     GST_ERROR_OBJECT (vpudec, "Unable to construct a new buffer pool");
     return FALSE;
   }
-error_activate_pool:
-  {
-    GST_ERROR_OBJECT (vpudec, "Unable to activate the pool");
-    gst_object_unref (vpudec->pool);
-    return FALSE;
-  }
 }
 
 static GstFlowReturn
 gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
 {
   GstVpuDec *vpudec = GST_VPUDEC (decoder);
+  GstBufferPool *pool = NULL;
   GstMapInfo mapinfo = { 0, };
   GstFlowReturn ret = GST_FLOW_OK;
   VpuCodecContext_t *vpu_codec_ctx;
@@ -479,6 +456,19 @@ gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
       goto not_negotiated;
     if (!gst_vpudec_set_output (vpudec))
       goto not_negotiated;
+  }
+
+  pool = GST_BUFFER_POOL (vpudec->pool);
+  if (!gst_buffer_pool_is_active (pool)) {
+    GstStructure *config = gst_buffer_pool_get_config (pool);
+    gst_buffer_pool_config_set_params (config, vpudec->output_state->caps,
+        vpudec->info.size, 22, 22);
+
+    if (!gst_buffer_pool_set_config (pool, config))
+      goto error_activate_pool;
+    /* activate the pool: the buffers are allocated */
+    if (gst_buffer_pool_set_active (vpudec->pool, TRUE) == FALSE)
+      goto error_activate_pool;
   }
 
   /* Start the output thread if it is not started before */
@@ -532,6 +522,12 @@ gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   return ret;
 
   /* ERRORS */
+error_activate_pool:
+  {
+    GST_ERROR_OBJECT (vpudec, "Unable to activate the pool");
+    ret = GST_FLOW_ERROR;
+    goto drop;
+  }
 start_task_failed:
   {
     GST_ELEMENT_ERROR (vpudec, RESOURCE, FAILED,
@@ -641,7 +637,4 @@ gst_vpudec_init (GstVpuDec * vpudec)
 
   vpudec->input_state = NULL;
   vpudec->output_state = NULL;
-
-  vpudec->vpu_mem_pool = NULL;
-
 }

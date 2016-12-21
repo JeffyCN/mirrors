@@ -71,7 +71,6 @@ struct _GstVpuDec
   VideoPacket_t access_unit;
 
   GstBufferPool *pool;          /* Pool of output frames */
-  vpu_display_mem_pool *vpu_mem_pool;   /* vpu pool */
 };
 
 struct _GstVpuDecClass
