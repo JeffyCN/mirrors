@@ -3,7 +3,6 @@ noinst_LTLIBRARIES =				\
 	$(NULL)
 
 nodist_libgstvpu_base_la_SOURCES = \
-	gstvpumeta.c		\
 	$(NULL)
 
 libgstvpu_base_la_CFLAGS =			\
