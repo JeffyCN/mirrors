@@ -528,13 +528,21 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     if (src && dst) {
         float hScale = (float)relSrcRect.width / relDstRect.width;
         float vScale = (float)relSrcRect.height / relDstRect.height;
-        if (hScale <= 1/8 || hScale >= 8 || vScale <= 1/8 || vScale >= 8) {
-            ALOGE("Error scale[%d,%d] line %d", hScale, vScale, __LINE__);
+        if (rotation & HAL_TRANSFORM_ROT_90) {
+            hScale = (float)relSrcRect.width / relDstRect.height;
+            vScale = (float)relSrcRect.height / relDstRect.width;
+        }
+        if (hScale < 1/16 || hScale > 16 || vScale < 1/16 || vScale > 16) {
+            ALOGE("Error scale[%f,%f] line %d", hScale, vScale, __LINE__);
             return -EINVAL;
         }
-
-        if (ctx->mVersion <= 1.003 && (hScale < 2 || vScale < 2)) {
-            ALOGE("e scale[%d,%d] ver[%f]", hScale, vScale, ctx->mVersion);
+        if (ctx->mVersion <= 2.0 && (hScale < 1/8 ||
+                                hScale > 8 || vScale < 1/8 || vScale > 8)) {
+            ALOGE("Error scale[%f,%f] line %d", hScale, vScale, __LINE__);
+            return -EINVAL;
+        }
+        if (ctx->mVersion <= 1.003 && (hScale < 1/2 || vScale < 1/2)) {
+            ALOGE("e scale[%f,%f] ver[%f]", hScale, vScale, ctx->mVersion);
             return -EINVAL;
         }
     }
