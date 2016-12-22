@@ -3,6 +3,8 @@ LOCAL_PATH:= $(call my-dir)
 ifneq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
+$(info $(shell $(LOCAL_PATH)/version.sh))
+
 LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
 
 LOCAL_CFLAGS += -DROCKCHIP_GPU_LIB_ENABLE
@@ -74,6 +76,8 @@ endif
 ifeq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
+$(info $(shell $(LOCAL_PATH)/version.sh))
+
 LOCAL_SRC_FILES += \
 	RockchipRga.cpp \
 	GraphicBuffer.cpp \
@@ -110,6 +114,8 @@ ifeq ($(strip $(BOARD_USE_DRM)), future)
 #############################################################################################
 ifeq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
+
+$(info $(shell $(LOCAL_PATH)/version.sh))
 
 LOCAL_SRC_FILES += \
         RockchipRga.cpp \
