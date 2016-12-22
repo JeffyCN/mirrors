@@ -112,8 +112,8 @@ int RockchipRga::RkRgaLogOutUserPara(rga_info *rgaInfo)
     if (!rgaInfo)
         return -EINVAL;
 
-    ALOGD("fd-vir-phy-hnd-format[%d, %p, %p, %p]",
-        rgaInfo->fd, rgaInfo->virAddr, rgaInfo->phyAddr, (void*)rgaInfo->hnd);
+    ALOGD("fd-vir-phy-hnd-format[%d, %p, %p, %p, %d]", rgaInfo->fd,
+	rgaInfo->virAddr, rgaInfo->phyAddr, (void*)rgaInfo->hnd, rgaInfo->format);
     ALOGD("rect[%d, %d, %d, %d, %d, %d, %d, %d]",
         rgaInfo->rect.xoffset, rgaInfo->rect.yoffset,
         rgaInfo->rect.width,   rgaInfo->rect.height, rgaInfo->rect.wstride,
