@@ -45,6 +45,7 @@
 
 #include "RockchipRga.h"
 #include "RgaApi.h"
+#include "version.h"
 
 namespace android {
 
@@ -60,6 +61,7 @@ RockchipRga::RockchipRga():
     mContext(NULL)
 {
     RkRgaInit();
+    ALOGI("Rga built version:%s", RK_GRAPHICS_VER);
 }
 
 RockchipRga::~RockchipRga()
