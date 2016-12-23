@@ -18,16 +18,37 @@
 #include "config.h"
 #endif
 
-#include "gstvpudec.h"
+#include "gstkmssink.h"
+#include "eglgles/gstegladaptation.h"
+#include "eglgles/gsteglglessink.h"
+#include "rkximage/ximagesink.h"
 
+GST_DEBUG_CATEGORY (gst_debug_x_image_sink);
+GST_DEBUG_CATEGORY (gst_eglglessink_debug);
 GST_DEBUG_CATEGORY (CAT_PERFORMANCE);
 
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
-  if (!gst_element_register (plugin, "vpudec", GST_RANK_PRIMARY + 1,
-          GST_TYPE_VPUDEC))
+  if (!gst_element_register (plugin, "kmssink", GST_RANK_SECONDARY,
+          GST_TYPE_KMS_SINK))
     return FALSE;
+
+  if (!gst_element_register (plugin, "rkximagesink",
+          GST_RANK_SECONDARY, GST_TYPE_X_IMAGE_SINK))
+    return FALSE;
+
+  if (!gst_element_register (plugin, "eglglessink",
+          GST_RANK_SECONDARY, GST_TYPE_EGLGLESSINK))
+    return FALSE;
+
+  GST_DEBUG_CATEGORY_INIT (gst_debug_x_image_sink, "rkximagesink", 0,
+      "rkximagesink element");
+
+  GST_DEBUG_CATEGORY_INIT (gst_eglglessink_debug, "eglglessink",
+      0, "Simple EGL/GLES Sink");
+
+  gst_egl_adaption_init ();
 
   GST_DEBUG_CATEGORY_GET (CAT_PERFORMANCE, "GST_PERFORMANCE");
 
@@ -37,6 +58,6 @@ plugin_init (GstPlugin * plugin)
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
-    vpu,
-    "VPU decoder",
+    rksink,
+    "Rockchip Video Sink",
     plugin_init, VERSION, GST_LICENSE, GST_PACKAGE_NAME, GST_PACKAGE_ORIGIN);

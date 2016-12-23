@@ -5,8 +5,6 @@ libgstvpudec_la_SOURCES = \
 	gstvpudec.c		\
 	gstvpudecbufferpool.c	\
 	gstvpuallocator.c	\
-	gstkmssink.c		\
-	gstkmsutils.c                           \
 	$(NULL)
 
 libgstvpudec_la_CFLAGS =			\
@@ -19,7 +17,6 @@ libgstvpudec_la_CFLAGS =			\
 	$(GST_CFLAGS)				\
 	$(ROCKCHIP_MPP_CFLAGS)			\
 	$(ROCKCHIP_VPU_CFLAGS)			\
-	$(DRM_CFLAGS)                           \
 	$(NULL)
 
 libgstvpudec_la_LIBADD =			\
@@ -31,7 +28,6 @@ libgstvpudec_la_LIBADD =			\
 	$(GST_LIBS)				\
 	$(ROCKCHIP_MPP_LIBS)			\
 	$(ROCKCHIP_VPU_LIBS)			\
-	$(DRM_LIBS)                             \
 	$(NULL)
 
 libgstvpudec_la_LDFLAGS =		\
@@ -46,6 +42,4 @@ noinst_HEADERS = \
 	gstvpuallocator.h			\
 	gstvpudec.h 				\
 	gstvpudecbufferpool.h 			\
-	gstkmssink.h                            \
-	gstkmsutils.h                           \
 	$(NULL)
