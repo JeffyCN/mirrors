@@ -1,7 +1,7 @@
-plugin_LTLIBRARIES = libgstrksink.la
+plugin_LTLIBRARIES = libgstrkvideo.la
 
-libgstrksink_la_SOURCES = \
-	gstrksink.c					\
+libgstrkvideo_la_SOURCES = \
+	gstrkvideo.c					\
 	gstkmssink.c            			\
 	gstkmsutils.c					\
 	rkximage/ximagesink.c                           \
@@ -12,7 +12,7 @@ libgstrksink_la_SOURCES = \
 	eglgles/egl.c					\
 	$(NULL)
 
-libgstrksink_la_CFLAGS =			\
+libgstrkvideo_la_CFLAGS =			\
 	-I$(top_srcdir)/gst-libs                \
 	-I$(top_builddir)/gst-libs              \
 	$(GST_PLUGINS_BASE_CFLAGS)		\
@@ -25,7 +25,7 @@ libgstrksink_la_CFLAGS =			\
 	$(EGLGLES_CFLAGS)			\
 	$(NULL)
 
-libgstrksink_la_LIBADD =			\
+libgstrkvideo_la_LIBADD =			\
 	$(top_builddir)/gst-libs/gst/vpudec/libgstvpu-base.la \
 	$(GST_PLUGINS_BASE_LIBS)		\
 	$(GST_BASE_LIBS)			\
@@ -37,11 +37,11 @@ libgstrksink_la_LIBADD =			\
 	$(EGLGLES_LIBS)				\
 	$(NULL)
 
-libgstrksink_la_LDFLAGS =		\
+libgstrkvideo_la_LDFLAGS =		\
 	$(GST_PLUGIN_LDFLAGS)		\
 	$(NULL)
 
-libgstrksink_la_LIBTOOLFLAGS =		\
+libgstrkvideo_la_LIBTOOLFLAGS =		\
 	$(GST_PLUGIN_LIBTOOLFLAGS)	\
 	$(NULL)
 
