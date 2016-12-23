@@ -7,12 +7,6 @@ libgstvpudec_la_SOURCES = \
 	gstvpuallocator.c	\
 	gstkmssink.c		\
 	gstkmsutils.c                           \
-	rkximage/ximagesink.c                           \
-	eglgles/gsteglglessink.c               \
-	eglgles/gstegladaptation.c		   	   \
-	eglgles/gstegladaptation_egl.c		   \
-	eglgles/video_platform_wrapper.c       \
-	eglgles/egl.c               \
 	$(NULL)
 
 libgstvpudec_la_CFLAGS =			\
@@ -26,8 +20,6 @@ libgstvpudec_la_CFLAGS =			\
 	$(ROCKCHIP_MPP_CFLAGS)			\
 	$(ROCKCHIP_VPU_CFLAGS)			\
 	$(DRM_CFLAGS)                           \
-	$(X_CFLAGS)                             \
-	$(EGLGLES_CFLAGS)				\
 	$(NULL)
 
 libgstvpudec_la_LIBADD =			\
@@ -40,8 +32,6 @@ libgstvpudec_la_LIBADD =			\
 	$(ROCKCHIP_MPP_LIBS)			\
 	$(ROCKCHIP_VPU_LIBS)			\
 	$(DRM_LIBS)                             \
-	$(X_LIBS)                             \
-	$(EGLGLES_LIBS)							\
 	$(NULL)
 
 libgstvpudec_la_LDFLAGS =		\
