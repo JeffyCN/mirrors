@@ -498,8 +498,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     if (relSrcRect.hstride == 0)
 	    relSrcRect.hstride = relSrcRect.height;
 
-	if (relSrcRect.format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
-		relSrcRect.wstride = relSrcRect.wstride * 5 / 4;
+    //if (relSrcRect.format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
+    //	    relSrcRect.wstride = relSrcRect.wstride * 5 / 4;
 
     if (src) {
         ret = checkRectForRga(relSrcRect);
