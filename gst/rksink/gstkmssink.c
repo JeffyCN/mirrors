@@ -79,6 +79,18 @@ enum
 
 static GParamSpec *g_properties[PROP_N] = { NULL, };
 
+static gboolean
+print_frame_num (gpointer data)
+{
+  GstKMSSink *self;
+  self = GST_KMS_SINK (data);
+
+  GST_INFO_OBJECT (self, "frame num %d", self->frame_num);
+  self->frame_num = 0;
+
+  return TRUE;
+}
+
 static int
 kms_open (gchar ** driver)
 {
@@ -430,6 +442,8 @@ retry_find_plane:
   self->pollfd.fd = self->fd;
   gst_poll_add_fd (self->poll, &self->pollfd);
   gst_poll_fd_ctl_read (self->poll, &self->pollfd, TRUE);
+
+  g_timeout_add_seconds (1, print_frame_num, (gpointer) self);
 
   ret = TRUE;
 
@@ -790,6 +804,7 @@ gst_kms_sink_show_frame (GstVideoSink * vsink, GstBuffer * buf)
     goto buffer_invalid;
 
   gst_buffer_ref (buffer);
+  self->frame_num++;
 
   ret = drmPrimeFDToHandle
       (self->fd, gst_dmabuf_memory_get_fd (mem), &gem_handle);
