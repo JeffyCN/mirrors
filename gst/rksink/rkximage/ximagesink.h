@@ -22,9 +22,9 @@ G_BEGIN_DECLS
 #define GST_TYPE_X_IMAGE_SINK \
   (gst_x_image_sink_get_type())
 #define GST_X_IMAGE_SINK(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_X_IMAGE_SINK, GstXImageSink))
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_X_IMAGE_SINK, GstRkXImageSink))
 #define GST_X_IMAGE_SINK_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass), GST_TYPE_X_IMAGE_SINK, GstXImageSinkClass))
+  (G_TYPE_CHECK_CLASS_CAST((klass), GST_TYPE_X_IMAGE_SINK, GstRkXImageSinkClass))
 #define GST_IS_X_IMAGE_SINK(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_X_IMAGE_SINK))
 #define GST_IS_X_IMAGE_SINK_CLASS(klass) \
@@ -33,8 +33,8 @@ G_BEGIN_DECLS
 typedef struct _GstXContext GstXContext;
 typedef struct _GstXWindow GstXWindow;
 
-typedef struct _GstXImageSink GstXImageSink;
-typedef struct _GstXImageSinkClass GstXImageSinkClass;
+typedef struct _GstRkXImageSink GstRkXImageSink;
+typedef struct _GstRkXImageSinkClass GstRkXImageSinkClass;
 
 /*
  * GstXContext:
@@ -96,7 +96,7 @@ struct _GstXWindow
 };
 
 /**
- * GstXImageSink:
+ * GstRkXImageSink:
  * @display_name: the name of the Display we want to render to
  * @xcontext: our instance's #GstXContext
  * @xwindow: the #GstXWindow we are rendering to
@@ -120,9 +120,9 @@ struct _GstXWindow
  * debugging purpose only)
  * @handle_events: used to know if we should handle select XEvents or not
  *
- * The #GstXImageSink data structure.
+ * The #GstRkXImageSink data structure.
  */
-struct _GstXImageSink
+struct _GstRkXImageSink
 {
   /* Our element stuff */
   GstVideoSink videosink;
@@ -186,7 +186,7 @@ struct _GstXImageSink
   gboolean paused;
 };
 
-struct _GstXImageSinkClass
+struct _GstRkXImageSinkClass
 {
   GstVideoSinkClass parent_class;
 };
