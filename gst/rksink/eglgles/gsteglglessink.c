@@ -1076,7 +1076,8 @@ gst_eglglessink_queue_object (GstEglGlesSink * eglglessink, GstMiniObject * obj)
   GST_DEBUG_OBJECT (eglglessink, "Queueing object %" GST_PTR_FORMAT, obj);
 
   g_mutex_lock (&eglglessink->render_lock);
-  if (!gst_data_queue_push (eglglessink->queue, item)) {
+
+  if (!gst_data_queue_push_force (eglglessink->queue, item)) {
     item->destroy (item);
     g_mutex_unlock (&eglglessink->render_lock);
     GST_DEBUG_OBJECT (eglglessink, "Flushing");
