@@ -75,6 +75,7 @@ struct _GstKMSSink {
 
   GstPoll *poll;
   GstPollFD pollfd;
+  guint32 frame_num;
 };
 
 struct _GstKMSSinkClass {
