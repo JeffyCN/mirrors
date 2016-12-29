@@ -70,6 +70,8 @@ static GstStaticPadTemplate gst_vpudec_src_template =
         "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]" ";")
     );
 
+static gboolean gst_vpudec_flush (GstVideoDecoder * decoder);
+
 static void
 gst_vpudec_finalize (GObject * object)
 {
@@ -117,9 +119,10 @@ gst_vpudec_sendeos (GstVideoDecoder * decoder)
 
   vpu_codec_ctx->decode_sendstream (vpu_codec_ctx, &pkt);
 
+  /* Not need to wait flag here, dec_loop() may have exited */
   vpu_codec_ctx->control (vpu_codec_ctx, VPU_API_DEC_GET_EOS_STATUS, &is_eos);
 
-  return 0;
+  return is_eos;
 }
 
 static gboolean
@@ -258,11 +261,34 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
   structure = gst_caps_get_structure (state->caps, 0);
 
   if (vpudec->input_state) {
+    GstQuery *query = gst_query_new_drain ();
+
     if (gst_caps_is_strictly_equal (vpudec->input_state->caps, state->caps))
       goto done;
-    else
-      /* Dynamic update of input caps unsupported... */
-      goto input_caps_changed_error;
+
+    gst_video_codec_state_unref (vpudec->input_state);
+    vpudec->input_state = NULL;
+
+    GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
+    gst_vpudec_sendeos (decoder);
+    do {
+      /* Wait all the reminded buffers are pushed to downstream */
+    } while (g_atomic_int_get (&vpudec->processing));
+
+    gst_vpudec_flush (decoder);
+    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+
+    /* Query the downstream to release buffers from buffer pool */
+    if (!gst_pad_peer_query (GST_VIDEO_DECODER_SRC_PAD (vpudec), query))
+      GST_DEBUG_OBJECT (vpudec, "drain query failed");
+    gst_query_unref (query);
+
+    if (vpudec->pool)
+      gst_object_unref (vpudec->pool);
+
+    vpudec->output_flow = GST_FLOW_OK;
+
+    g_atomic_int_set (&vpudec->active, FALSE);
   }
 
   g_return_val_if_fail (gst_structure_get_int (structure,
@@ -285,11 +311,20 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
 
   vpudec->height = height;
 
-  if (!gst_vpudec_open (vpudec, codingtype))
-    goto device_error;
+  if (vpudec->vpu_codec_ctx) {
+    VPU_GENERIC vpug;
 
-  if (vpudec->input_state)
-    gst_video_codec_state_unref (vpudec->input_state);
+    vpug.CodecType = codingtype;
+    vpug.ImgWidth = width;
+    vpug.ImgHeight = height;
+
+    vpudec->vpu_codec_ctx->control
+        (vpudec->vpu_codec_ctx, VPU_API_SET_DEFAULT_WIDTH_HEIGH, &vpug);
+  } else {
+    if (!gst_vpudec_open (vpudec, codingtype))
+      goto device_error;
+  }
+
   vpudec->input_state = gst_video_codec_state_ref (state);
 
 done:
@@ -323,6 +358,8 @@ gst_vpudec_dec_loop (GstVideoDecoder * decoder)
   GstFlowReturn ret = GST_FLOW_OK;
 
   ret = gst_buffer_pool_acquire_buffer (vpudec->pool, &output_buffer, NULL);
+  if (ret != GST_FLOW_OK)
+    goto beach;
 
   frame = gst_video_decoder_get_oldest_frame (decoder);
 
@@ -332,13 +369,13 @@ gst_vpudec_dec_loop (GstVideoDecoder * decoder)
     output_buffer = NULL;
     ret = gst_video_decoder_finish_frame (decoder, frame);
 
-    GST_TRACE_OBJECT (decoder, "finish buffer ts=%", GST_TIME_FORMAT,
+    GST_TRACE_OBJECT (vpudec, "finish buffer ts=%", GST_TIME_FORMAT,
         GST_TIME_ARGS (GST_BUFFER_TIMESTAMP (frame->output_buffer)));
 
     if (ret != GST_FLOW_OK)
       goto beach;
   } else {
-    GST_WARNING_OBJECT (decoder, "Decoder is producing too many buffers");
+    GST_WARNING_OBJECT (vpudec, "Decoder is producing too many buffers");
     gst_buffer_unref (output_buffer);
   }
 
@@ -461,6 +498,8 @@ gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   pool = GST_BUFFER_POOL (vpudec->pool);
   if (!gst_buffer_pool_is_active (pool)) {
     GstStructure *config = gst_buffer_pool_get_config (pool);
+    /* FIXME if you suffer from the reconstruction of buffer pool which slows
+     * down the decoding, then don't allocate more than 10 buffers here */
     gst_buffer_pool_config_set_params (config, vpudec->output_state->caps,
         vpudec->info.size, 22, 22);
 
