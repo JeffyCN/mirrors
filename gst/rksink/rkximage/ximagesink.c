@@ -424,7 +424,6 @@ drm_ensure_allowed_caps (GstRkXImageSink * self, drmModePlane * plane,
   return TRUE;
 }
 
-
 static gboolean
 xwindow_calculate_display_ratio (GstRkXImageSink * self, int *x, int *y,
     gint * window_width, gint * window_height)
@@ -456,8 +455,8 @@ xwindow_calculate_display_ratio (GstRkXImageSink * self, int *x, int *y,
 
   /* start with same height, because of interlaced video */
   /* check hd / dar_d is an integer scale factor, and scale wd with the PAR */
-  video_width = gst_util_uint64_scale_int (*window_height, dar_n, dar_d);
-  video_height = gst_util_uint64_scale_int (*window_width, dar_d, dar_n);
+  video_width = gst_util_uint64_scale_int (self->xwindow->height, dar_n, dar_d);
+  video_height = gst_util_uint64_scale_int (self->xwindow->width, dar_d, dar_n);
   if (video_width < *window_width) {
     *x += (*window_width - video_width) / 2;
     *window_width = video_width;
