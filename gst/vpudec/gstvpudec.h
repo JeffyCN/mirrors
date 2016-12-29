@@ -36,8 +36,6 @@ G_BEGIN_DECLS
 #define GST_IS_VPUDEC_CLASS(obj) \
 	(G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_VPUDEC))
 
-#define GST_VPUDEC_IS_EOS(o)    ((o)->eos)
-#define GST_VPUDEC_SET_EOS(o)   ((o)->eos = TRUE)
 typedef struct _GstVpuDec GstVpuDec;
 typedef struct _GstVpuDecClass GstVpuDecClass;
 
@@ -62,7 +60,6 @@ struct _GstVpuDec
   /* State */
   gboolean processing;
   gboolean active;
-  gboolean eos;
   GstFlowReturn output_flow;
 
   /* VPU definitions */

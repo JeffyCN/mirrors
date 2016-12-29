@@ -140,7 +140,6 @@ gst_vpudec_stop (GstVideoDecoder * decoder)
   GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
 
   gst_vpudec_sendeos (decoder);
-  vpudec->eos = TRUE;
 
   /* Should have been flushed already */
   g_assert (g_atomic_int_get (&vpudec->active) == FALSE);
@@ -672,7 +671,6 @@ gst_vpudec_init (GstVpuDec * vpudec)
   vpudec->vpu_codec_ctx = NULL;
 
   vpudec->active = FALSE;
-  vpudec->eos = FALSE;
 
   vpudec->input_state = NULL;
   vpudec->output_state = NULL;
