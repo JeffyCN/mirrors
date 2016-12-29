@@ -12,11 +12,3 @@ Package: gstreamer1.0-rockchip1
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: The Gstreamer plugins for Rockchip RK3xxx platform.
-
-Package: gstreamer1.0-rockchip-dbg
-Architecture: any
-Multi-Arch: same
-Pre-Depends: ${misc:Pre-Depends}
-Depends: gstreamer1.0-rockchip1, ${shlibs:Depends}
-Description: The Gstreamer plugins for Rockchip RK3xxx platform.
- This packages contains debug information.
