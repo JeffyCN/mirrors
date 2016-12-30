@@ -282,8 +282,10 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
       GST_DEBUG_OBJECT (vpudec, "drain query failed");
     gst_query_unref (query);
 
-    if (vpudec->pool)
+    if (vpudec->pool) {
       gst_object_unref (vpudec->pool);
+      vpudec->pool = NULL;
+    }
 
     vpudec->output_flow = GST_FLOW_OK;
 
@@ -404,7 +406,7 @@ gst_vpudec_dec_loop_stopped (GstVpuDec * self)
 }
 
 static gboolean
-gst_vpudec_set_output (GstVpuDec * vpudec)
+gst_vpudec_default_output_info (GstVpuDec * vpudec)
 {
   GstVideoCodecState *output_state;
   GstVideoAlignment *align;
@@ -443,6 +445,7 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
       GST_VIDEO_INFO_PLANE_STRIDE (&vpudec->info, 1),
       GST_VIDEO_INFO_PLANE_OFFSET (&vpudec->info, 1));
 
+#if 1
   output_state =
       gst_video_decoder_set_output_state (GST_VIDEO_DECODER (vpudec),
       to_gst_pix_format (fmt.format), fmt.width, fmt.height,
@@ -457,6 +460,7 @@ gst_vpudec_set_output (GstVpuDec * vpudec)
   /* Compute padding and set buffer alignment */
   align->padding_right = fmt.aligned_stride - fmt.width;
   align->padding_bottom = fmt.aligned_height - fmt.height;
+#endif
 
   /* construct a new buffer pool */
   vpudec->pool = gst_vpudec_buffer_pool_new (vpudec, NULL);
@@ -490,12 +494,18 @@ gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   if (!g_atomic_int_get (&vpudec->active)) {
     if (!vpudec->input_state)
       goto not_negotiated;
-    if (!gst_vpudec_set_output (vpudec))
+  }
+
+  if (!vpudec->pool) {
+    if (!gst_vpudec_default_output_info (vpudec))
       goto not_negotiated;
   }
 
   pool = GST_BUFFER_POOL (vpudec->pool);
+  vpu_codec_ctx = vpudec->vpu_codec_ctx;
   if (!gst_buffer_pool_is_active (pool)) {
+    GstBuffer *codec_data;
+
     GstStructure *config = gst_buffer_pool_get_config (pool);
     /* FIXME if you suffer from the reconstruction of buffer pool which slows
      * down the decoding, then don't allocate more than 10 buffers here */
@@ -507,6 +517,30 @@ gst_vpudec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
     /* activate the pool: the buffers are allocated */
     if (gst_buffer_pool_set_active (vpudec->pool, TRUE) == FALSE)
       goto error_activate_pool;
+
+    codec_data = vpudec->input_state->codec_data;
+    if (codec_data) {
+      gst_buffer_ref (codec_data);
+    } else {
+      codec_data = frame->input_buffer;
+      frame->input_buffer = NULL;
+    }
+
+    memset (&access_unit, 0, sizeof (VideoPacket_t));
+    gst_buffer_map (codec_data, &mapinfo, GST_MAP_READ);
+    access_unit.data = mapinfo.data;
+    access_unit.size = mapinfo.size;
+    access_unit.nFlags = VPU_API_DEC_INPUT_SYNC;
+
+    gst_buffer_unmap (codec_data, &mapinfo);
+
+    GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
+
+    if (vpu_codec_ctx->decode_sendstream (vpu_codec_ctx, &access_unit) != 0)
+      goto send_stream_error;
+    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+
+    gst_buffer_unref (codec_data);
   }
 
   /* Start the output thread if it is not started before */
