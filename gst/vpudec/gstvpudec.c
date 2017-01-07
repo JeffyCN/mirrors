@@ -302,9 +302,8 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
     goto format_error;
 
   codec_profile = gst_structure_get_string (structure, "profile");
-  g_return_val_if_fail (codec_profile, FALSE);
 
-  if (g_strrstr (codec_profile, "10"))
+  if (codec_profile && g_strrstr (codec_profile, "10"))
     /* The mpp vpu api use this way to mark it as 10bit video */
     vpudec->width = width | 0x80000000;
   else
