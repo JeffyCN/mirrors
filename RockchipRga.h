@@ -21,8 +21,10 @@
 
 #include <utils/Thread.h>
 
+#ifndef UN_NEED_GL
 #include <EGL/egl.h>
 #include <GLES/gl.h>
+#endif
 
 //////////////////////////////////////////////////////////////////////////////////
 #include <hardware/hardware.h>
@@ -41,7 +43,9 @@
 #include "stdio.h"
 
 #include "drmrga.h"
+#ifndef UN_NEED_GL
 #include "GraphicBuffer.h"
+#endif
 //////////////////////////////////////////////////////////////////////////////////
 
 namespace android {
