@@ -65,6 +65,7 @@
 
 #include <sys/mman.h>
 #include <linux/stddef.h>
+#include "RockchipFileOps.h"
 ///////////////////////////////////////////////////////
 
 using namespace android;
@@ -122,30 +123,7 @@ int main()
         printf("lock buffer ok : %s\n","**************************************");
 
 #if 1
-    const char *yuvFilePath = "/data/inputRgbaBuffer.bin";
-    FILE *file = fopen(yuvFilePath, "rb");
-    if (!file) {
-        fprintf(stderr, "Could not open %s\n", yuvFilePath);
-        return false;
-    }
-    fread(buf, 2 * srcWidth * srcHeight, 1, file);
-    #if 0
-    {
-        char *pbuf = (char*)malloc(2 * mHeight * 4864);
-        for (int i = 0; i < 2160 * 1.6; i++)
-            memcpy(pbuf+i*4800,buf+i*6080,4800);
-        const char *outFilePath = "/data/fb3840x2160-2.yuv";
-        FILE *file = fopen(outFilePath, "wb+");
-        if (!file) {
-            fprintf(stderr, "Could not open %s\n", outFilePath);
-            return false;
-        }
-        fwrite(pbuf, 2 * 4864 * 2160, 1, file);
-        free(pbuf);
-        fclose(file);
-    }
-    #endif
-    fclose(file);
+    get_buf_from_file(buf, srcFormat, srcWidth, srcHeight, 0);
 #else
     memset(buf,0x55,4*1200*1920);
 #endif
@@ -186,49 +164,7 @@ int main()
             ret = gbd->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&dstbuf);
             //for(int i =0; i < mHeight * 1.5; i++)
             //    memcpy(dstbuf + i * 2400,buf + i * 3000,2400);
-#if 0
-            const char *yuvFilePath = "/data/fb1920x1088.yuv";
-            FILE *file = fopen(yuvFilePath, "rb");
-            if (!file) {
-                fprintf(stderr, "Could not open %s\n", yuvFilePath);
-                return false;
-            }
-            #if 0
-            {
-                char *pbuf = (char*)malloc(2 * mHeight * 4864);
-                fread(pbuf, 2 * 4864 * 2160, 1, file);
-                for (int i = 0; i < 2160; i++)
-                    memcpy(buf+i*4800,pbuf+i*6080,4800);
-                memset(buf+2160*4800,0x80,4800 * 2160);
-            }
-            #else
-            fread(dstbuf, 2 * 1920 * 1088, 1, file);
-            #endif
-            fclose(file);
-#else
-            FILE *file = NULL;
-            if (count == 0) {
-                const char *outFilePath = "/data/outBuffer.yuv";
-                file = fopen(outFilePath, "wb+");
-                if (!file) {
-                    fprintf(stderr, "Could not open %s\n", outFilePath);
-                    return false;
-                } else
-		            fprintf(stderr, "open %s and write ok\n", outFilePath);
-                fwrite(dstbuf, 4 * dstWidth * dstHeight, 1, file);
-                fclose(file);
-            } else {
-                const char *outFilePath = "/data/outBuffer1.yuv";
-                file = fopen(outFilePath, "wb+");
-                if (!file) {
-                    fprintf(stderr, "Could not open %s\n", outFilePath);
-                    return false;
-                } else
-		            fprintf(stderr, "open %s and write ok\n", outFilePath);
-                fwrite(dstbuf, 4 * dstWidth * dstHeight, 1, file);
-                fclose(file);
-            }
-#endif
+            output_buf_data_to_file(dstbuf, dstFormat, dstWidth, dstHeight, 0);
             ret = gbd->unlock();
         }
         count ++;

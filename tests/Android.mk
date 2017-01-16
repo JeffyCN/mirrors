@@ -41,6 +41,7 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
+	RockchipFileOps.cpp \
 	RockchipRgaCovertRgb565ToYuv.cpp
 
 LOCAL_MODULE:= rgargb565toyuv
@@ -93,6 +94,7 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
+	RockchipFileOps.cpp \
 	RockchipRgaCovertRgbaToYuv.cpp
 
 LOCAL_MODULE:= rgargbatoyuv
@@ -145,6 +147,7 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
+	RockchipFileOps.cpp \
     RockchipRgaCopy.cpp
 
 LOCAL_MODULE:= rgacopy
@@ -198,6 +201,7 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
+	RockchipFileOps.cpp \
     RockchipRgaCopyRgba.cpp
 
 LOCAL_MODULE:= rgacopyrgba
@@ -251,6 +255,7 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
+	RockchipFileOps.cpp \
     RockchipRgaCovertYuvToRgba.cpp
 
 LOCAL_MODULE:= rgacoveryuvtorgba
@@ -304,6 +309,7 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
+	RockchipFileOps.cpp \
     RockchipRgaRgbaMirror.cpp
 
 LOCAL_MODULE:= rgargbamirror
@@ -357,6 +363,7 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
+	RockchipFileOps.cpp \
     RockchipRgaBlit.cpp
 
 LOCAL_MODULE:= rgablit
@@ -409,6 +416,7 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
+	RockchipFileOps.cpp \
     RockchipRgaStereoUserSpace.cpp
 
 LOCAL_MODULE:= rgauserstereo
@@ -462,6 +470,7 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
+	RockchipFileOps.cpp \
     RockchipRgaBlitUserSpace.cpp
 
 LOCAL_MODULE:= rgauserblit
@@ -515,6 +524,7 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
+	RockchipFileOps.cpp \
     RockchipRgaPattenBuff.cpp
 
 LOCAL_MODULE:= rgapattenbuff
