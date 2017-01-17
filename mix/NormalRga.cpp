@@ -24,29 +24,29 @@ void NormalRgaSetLogOnceFlag(int log)
 {
 	struct rgaContext *ctx = NULL;
 
-    ctx->mLogOnce = log;
-    return;
+	ctx->mLogOnce = log;
+	return;
 }
 
 void NormalRgaSetAlwaysLogFlag(int log)
 {
 	struct rgaContext *ctx = NULL;
 
-    ctx->mLogAlways = log;
-    return;
+	ctx->mLogAlways = log;
+	return;
 }
 
 int NormalRgaOpen(void **context)
 {
 	struct rgaContext *ctx = NULL;
-    char buf[30];
+	char buf[30];
 	int fd = -1;
 	int ret = 0;
 
-    if (!context) {
-        ret = -EINVAL;
-        goto mallocErr;
-    }
+	if (!context) {
+		ret = -EINVAL;
+		goto mallocErr;
+	}
 
 	if (!rgaCtx) {
 		ctx = (struct rgaContext *)malloc(sizeof(struct rgaContext));
@@ -67,13 +67,13 @@ int NormalRgaOpen(void **context)
 		ALOGE("failed to open DRM:%s.",strerror(errno));
 		goto drmOpenErr;
 	}
-    ctx->rgaFd = fd;
+	ctx->rgaFd = fd;
 
-    ret = ioctl(fd, RGA_GET_VERSION, buf);
-    ctx->mVersion = atof(buf);
-    fprintf(stderr, "librga:RGA_GET_VERSION:%s,%f\n", buf, ctx->mVersion);
+	ret = ioctl(fd, RGA_GET_VERSION, buf);
+	ctx->mVersion = atof(buf);
+	fprintf(stderr, "librga:RGA_GET_VERSION:%s,%f\n", buf, ctx->mVersion);
 
-    NormalRgaInitTables();
+	NormalRgaInitTables();
 
 	fprintf(stderr, "ctx=%p,ctx->rgaFd=%d\n",ctx, ctx->rgaFd );
 	rgaCtx = ctx;
@@ -102,10 +102,10 @@ int NormalRgaClose(void *context)
 		return -ENODEV;
 	}
 
-    if (context) {
-        ALOGE("Try to uninit rgaCtx=%p", context);
+	if (!context) {
+		ALOGE("Try to uninit rgaCtx=%p", context);
 		return -ENODEV;
-    }
+	}
     
 	if (context != ctx) {
 		ALOGE("Try to exit wrong ctx=%p",ctx);
@@ -131,23 +131,23 @@ int NormalRgaClose(void *context)
 
 int RgaInit(void **ctx)
 {
-    int ret = 0;
-    ret = NormalRgaOpen(ctx);
-    return ret;
+	int ret = 0;
+	ret = NormalRgaOpen(ctx);
+	return ret;
 }
 
 int RgaDeInit(void *ctx)
 {
-    int ret = 0;
-    ret = NormalRgaClose(ctx);
-    return ret;
+	int ret = 0;
+	ret = NormalRgaClose(ctx);
+	return ret;
 }
 
 int NormalRgaPaletteTable(buffer_handle_t dst, 
                                               unsigned int v, drm_rga_t *rects)
 {
-    //check rects
-    //check buffer_handle_t with rects
+	//check rects
+	//check buffer_handle_t with rects
     struct rgaContext *ctx = rgaCtx;
     int srcVirW,srcVirH,srcActW,srcActH,srcXPos,srcYPos;
     int dstVirW,dstVirH,dstActW,dstActH,dstXPos,dstYPos;
