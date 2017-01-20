@@ -19,9 +19,12 @@
 #endif
 
 #include "gstkmssink.h"
+
+#ifdef HAVE_X11
 #include "eglgles/gstegladaptation.h"
 #include "eglgles/gsteglglessink.h"
 #include "rkximage/ximagesink.h"
+#endif
 
 GST_DEBUG_CATEGORY (gst_debug_x_image_sink);
 GST_DEBUG_CATEGORY (gst_eglglessink_debug);
@@ -34,6 +37,7 @@ plugin_init (GstPlugin * plugin)
           GST_TYPE_KMS_SINK))
     return FALSE;
 
+#ifdef HAVE_X11
   if (!gst_element_register (plugin, "rkximagesink",
           GST_RANK_SECONDARY, GST_TYPE_X_IMAGE_SINK))
     return FALSE;
@@ -41,7 +45,9 @@ plugin_init (GstPlugin * plugin)
   if (!gst_element_register (plugin, "eglglessink",
           GST_RANK_SECONDARY, GST_TYPE_EGLGLESSINK))
     return FALSE;
+#endif
 
+#ifdef HAVE_X11
   GST_DEBUG_CATEGORY_INIT (gst_debug_x_image_sink, "rkximagesink", 0,
       "rkximagesink element");
 
@@ -49,6 +55,7 @@ plugin_init (GstPlugin * plugin)
       0, "Simple EGL/GLES Sink");
 
   gst_egl_adaption_init ();
+#endif
 
   GST_DEBUG_CATEGORY_GET (CAT_PERFORMANCE, "GST_PERFORMANCE");
 

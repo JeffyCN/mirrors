@@ -321,7 +321,13 @@ PKG_CHECK_MODULES(GST_VIDEO, gstreamer-video-[$GST_API_VERSION], [$GST_REQ], yes
 PKG_CHECK_MODULES([ROCKCHIP_MPP], [rockchip_mpp])
 PKG_CHECK_MODULES([ROCKCHIP_VPU], [rockchip_vpu])
 PKG_CHECK_MODULES([DRM], [libdrm], HAVE_KMS=yes, HAVE_KMS=no)
+PKG_CHECK_MODULES([X11], [x11], HAVE_X11=yes, HAVE_X11=no)
+AM_CONDITIONAL(HAVE_X11, test "x$HAVE_X11" = "xyes")
 
+if test "x$HAVE_X11" = xyes; then
+  AC_DEFINE(USE_X11, [1], [Use X11 window system])
+  AC_DEFINE(USE_EGL_X11, [1], [Use X11 EGL window system])
+fi
 
 dnl *** X11 ***
 AG_GST_CHECK_FEATURE(X, [X libraries and plugins],
@@ -330,10 +336,9 @@ AG_GST_CHECK_FEATURE(X, [X libraries and plugins],
 ])
 
 dnl *** eglgles ***
-AC_DEFINE(USE_EGL_X11, [1], [Use X11 EGL window system])
 AG_GST_CHECK_FEATURE(X, [GLES and EGL],
                   [eglglessink], [
-  AG_GST_PKG_CHECK_MODULES(EGLGLES, egl glesv2)
+  AG_GST_PKG_CHECK_MODULES(X, x11)
 ])
 
 dnl keep this alphabetic per directory, please

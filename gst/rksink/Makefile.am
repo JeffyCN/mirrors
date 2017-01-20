@@ -4,12 +4,6 @@ libgstrkvideo_la_SOURCES = \
 	gstrkvideo.c					\
 	gstkmssink.c            			\
 	gstkmsutils.c					\
-	rkximage/ximagesink.c                           \
-	eglgles/gsteglglessink.c               		\
-	eglgles/gstegladaptation.c			\
-	eglgles/gstegladaptation_egl.c			\
-	eglgles/video_platform_wrapper.c		\
-	eglgles/egl.c					\
 	$(NULL)
 
 libgstrkvideo_la_CFLAGS =			\
@@ -21,8 +15,6 @@ libgstrkvideo_la_CFLAGS =			\
 	$(GST_ALLOCATORS_CFLAGS)                \
 	$(GST_CFLAGS)				\
 	$(DRM_CFLAGS)                           \
-	$(X_CFLAGS)                             \
-	$(EGLGLES_CFLAGS)			\
 	$(NULL)
 
 libgstrkvideo_la_LIBADD =			\
@@ -33,8 +25,6 @@ libgstrkvideo_la_LIBADD =			\
 	$(GST_ALLOCATORS_LIBS)                  \
 	$(GST_LIBS)				\
 	$(DRM_LIBS)                             \
-	$(X_LIBS)				\
-	$(EGLGLES_LIBS)				\
 	$(NULL)
 
 libgstrkvideo_la_LDFLAGS =		\
@@ -49,3 +39,26 @@ noinst_HEADERS = \
 	gstkmssink.h                            \
 	gstkmsutils.h                           \
 	$(NULL)
+
+if HAVE_X11
+
+libgstrkvideo_la_SOURCES +=			\
+	rkximage/ximagesink.c                           \
+	eglgles/gsteglglessink.c               		\
+	eglgles/gstegladaptation.c			\
+	eglgles/gstegladaptation_egl.c			\
+	eglgles/video_platform_wrapper.c		\
+	eglgles/egl.c					\
+	$(NULL)	
+
+libgstrkvideo_la_CFLAGS +=			\
+	$(X_CFLAGS)                             \
+	$(EGLGLES_CFLAGS)			\
+	$(NULL)
+
+libgstrkvideo_la_LIBADD +=			\
+	$(X_LIBS)				\
+	$(EGLGLES_LIBS)				\
+	$(NULL)
+
+endif
