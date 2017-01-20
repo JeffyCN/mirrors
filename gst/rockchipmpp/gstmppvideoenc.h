@@ -62,7 +62,6 @@ struct _GstMppVideoEnc
   MppBuffer input_buffer[MPP_MAX_BUFFERS];
   MppBuffer output_buffer[MPP_MAX_BUFFERS];
   MppFrame mpp_frame;
-  MppTask last_input_task;
   GstCaps * outcaps;
 
   /* pads */

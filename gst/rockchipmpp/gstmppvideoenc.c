@@ -94,6 +94,20 @@ gst_mpp_video_enc_start (GstVideoEncoder * encoder)
   return TRUE;
 }
 
+static void
+gst_mpp_video_enc_process_buffer_stopped (GstMppVideoEnc * self)
+{
+  if (g_atomic_int_get (&self->processing)) {
+    GST_DEBUG_OBJECT (self, "Early stop of encoding thread");
+    self->output_flow = GST_FLOW_FLUSHING;
+    g_atomic_int_set (&self->processing, FALSE);
+  }
+
+  GST_DEBUG_OBJECT (self, "Encoding task destroyed: %s",
+      gst_flow_get_name (self->output_flow));
+}
+
+
 static gboolean
 gst_mpp_video_enc_stop (GstVideoEncoder * encoder)
 {
@@ -102,7 +116,7 @@ gst_mpp_video_enc_stop (GstVideoEncoder * encoder)
 
   GST_DEBUG_OBJECT (self, "Stopping");
 
-  gst_pad_stop_task (GST_VIDEO_ENCODER_SRC_PAD (encoder));
+  gst_mpp_video_enc_process_buffer_stopped (encoder);
 
   GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
   self->output_flow = GST_FLOW_OK;
@@ -208,7 +222,7 @@ gst_mpp_video_enc_flush (GstVideoEncoder * encoder)
     GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
     self->mpi->reset (self->mpp_ctx);
 
-    gst_pad_stop_task GST_VIDEO_ENCODER_SRC_PAD ((encoder));
+    gst_mpp_video_enc_process_buffer_stopped (encoder);
 
     GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
   }
@@ -217,47 +231,6 @@ gst_mpp_video_enc_flush (GstVideoEncoder * encoder)
   self->mpi->reset (self->mpp_ctx);
 
   return TRUE;
-}
-
-static GstFlowReturn
-gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
-{
-  static gint8 current_index = 0;
-  gpointer ptr = NULL;
-  MppFrame frame = self->mpp_frame;
-  MppTask task = NULL;
-  MppBuffer frame_in = self->input_buffer[current_index];
-
-  /* Eos buffer */
-  if (0 == gst_buffer_get_size (buffer)) {
-    mpp_frame_set_buffer (frame, NULL);
-    mpp_frame_set_eos (frame, 1);
-  } else {
-    ptr = mpp_buffer_get_ptr (frame_in);
-    gst_buffer_extract (buffer, 0, ptr, gst_buffer_get_size (buffer));
-    mpp_frame_set_buffer (frame, frame_in);
-    mpp_frame_set_eos (frame, 0);
-  }
-
-  do {
-    if (self->mpi->dequeue (self->mpp_ctx, MPP_PORT_INPUT, &task)) {
-      GST_ERROR_OBJECT (self, "mpp task input dequeue failed");
-      return GST_FLOW_ERROR;
-    }
-    if (NULL == task) {
-      g_usleep (1000);
-    } else {
-      break;
-    }
-  } while (1);
-  mpp_task_meta_set_frame (task, MPP_META_KEY_INPUT_FRM, frame);
-  self->last_input_task = task;
-
-  if (self->mpi->enqueue (self->mpp_ctx, MPP_PORT_INPUT, task)) {
-    GST_ERROR_OBJECT (self, "mpp task input enqueu failed");
-  }
-
-  return GST_FLOW_OK;
 }
 
 static GstVideoCodecFrame *
@@ -290,33 +263,64 @@ gst_mpp_video_enc_get_oldest_frame (GstVideoEncoder * encoder)
   return frame;
 }
 
-static void
-gst_mpp_video_enc_loop (GstVideoEncoder * encoder)
+static GstFlowReturn
+gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
 {
-  GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
+  GstBuffer *new_buffer = NULL;
   static gint8 current_index = 0;
   GstVideoCodecFrame *frame;
-  GstBuffer *buffer = NULL;
+  gpointer ptr = NULL;
+  MppFrame mpp_frame = self->mpp_frame;
   MppTask task = NULL;
+  MppBuffer frame_in = self->input_buffer[current_index];
   MppBuffer pkt_buf_out = self->output_buffer[current_index];
   MppPacket packet = NULL;
   GstFlowReturn ret;
 
-  GST_LOG_OBJECT (encoder, "Allocate output buffer");
+  GList *l = NULL;
+  GstBuffer *hdrs;
+  static sps_flag = 0;
+  MppPacket sps_packet = NULL;
 
-  buffer = gst_video_encoder_allocate_output_buffer (encoder, MAX_CODEC_FRAME);
+  /* Eos buffer */
+  if (0 == gst_buffer_get_size (buffer)) {
+    mpp_frame_set_buffer (mpp_frame, NULL);
+    mpp_frame_set_eos (mpp_frame, 1);
+  } else {
+    ptr = mpp_buffer_get_ptr (frame_in);
+    gst_buffer_extract (buffer, 0, ptr, gst_buffer_get_size (buffer));
+    mpp_frame_set_buffer (mpp_frame, frame_in);
+    mpp_frame_set_eos (mpp_frame, 0);
+  }
 
-  if (NULL == buffer) {
+  do {
+    if (self->mpi->dequeue (self->mpp_ctx, MPP_PORT_INPUT, &task)) {
+      GST_ERROR_OBJECT (self, "mpp task input dequeue failed");
+      return GST_FLOW_ERROR;
+    }
+    if (NULL == task) {
+      g_usleep (1000);
+    } else {
+      break;
+    }
+  } while (1);
+  mpp_task_meta_set_frame (task, MPP_META_KEY_INPUT_FRM, mpp_frame);
+
+  mpp_packet_init_with_buffer (&packet, pkt_buf_out);
+  mpp_task_meta_set_packet (task, MPP_META_KEY_OUTPUT_PKT, packet);
+
+  if (self->mpi->enqueue (self->mpp_ctx, MPP_PORT_INPUT, task)) {
+    GST_ERROR_OBJECT (self, "mpp task input enqueu failed");
+  }
+
+  GST_LOG_OBJECT (self, "Allocate output buffer");
+  new_buffer = gst_video_encoder_allocate_output_buffer (self, MAX_CODEC_FRAME);
+  if (NULL == new_buffer) {
     ret = GST_FLOW_FLUSHING;
     goto beach;
   }
 
-  mpp_packet_init_with_buffer (&packet, pkt_buf_out);
-
-  GST_LOG_OBJECT (encoder, "Process output buffer");
-
-  mpp_task_meta_set_packet (self->last_input_task, MPP_META_KEY_OUTPUT_PKT,
-      packet);
+  GST_LOG_OBJECT (self, "Process output buffer");
 
   do {
     MppFrame packet_out = NULL;
@@ -336,7 +340,24 @@ gst_mpp_video_enc_loop (GstVideoEncoder * encoder)
         gconstpointer *ptr = mpp_packet_get_pos (packet);
         gsize len = mpp_packet_get_length (packet);
         /* Fill the buffer */
-        gst_buffer_fill (buffer, 0, ptr, len);
+        if (sps_flag) {
+          gst_buffer_fill (new_buffer, 0, ptr, len);
+        } else {
+          if (self->mpi->control (self->mpp_ctx, MPP_ENC_GET_EXTRA_INFO,
+                  &sps_packet)) {
+            GST_ERROR_OBJECT (self, "Get Mpp extra data failed\n");
+          }
+          if (sps_packet) {
+            const gpointer *sps_ptr = mpp_packet_get_pos (sps_packet);
+            gsize sps_len = mpp_packet_get_length (sps_packet);
+
+            gst_buffer_fill (new_buffer, 0, sps_ptr, sps_len);
+            gst_video_encoder_set_headers (self, l);
+
+            gst_buffer_fill (new_buffer, sps_len, ptr, len);
+            sps_flag = 1;
+          }
+        }
 
         mpp_packet_deinit (&packet);
       }
@@ -345,55 +366,39 @@ gst_mpp_video_enc_loop (GstVideoEncoder * encoder)
         GST_ERROR_OBJECT (self, "mpp task output enqueue failed");
         ret = GST_FLOW_ERROR;
       }
-
       current_index++;
       if (current_index >= MPP_MAX_BUFFERS)
         current_index = 0;
-
       break;
     }
   } while (1);
   if (ret != GST_FLOW_OK)
     goto beach;
 
-  frame = gst_mpp_video_enc_get_oldest_frame (encoder);
+  frame = gst_mpp_video_enc_get_oldest_frame (self);
   if (frame) {
-    frame->output_buffer = buffer;
-    buffer = NULL;
-    ret = gst_video_encoder_finish_frame (encoder, frame);
+    frame->output_buffer = new_buffer;
+    new_buffer = NULL;
+    ret = gst_video_encoder_finish_frame (self, frame);
 
     if (ret != GST_FLOW_OK)
       goto beach;
   } else {
-    GST_WARNING_OBJECT (encoder, "Encoder is producing too many buffers");
-    gst_buffer_unref (buffer);
+    GST_WARNING_OBJECT (self, "Encoder is producing too many buffers");
+    gst_buffer_unref (new_buffer);
   }
-
-  return;
+  return GST_FLOW_OK;
 
 beach:
-  GST_DEBUG_OBJECT (encoder, "Leaving output thread");
+  GST_DEBUG_OBJECT (self, "Leaving output thread");
 
   gst_buffer_replace (&buffer, NULL);
   self->output_flow = ret;
   g_atomic_int_set (&self->processing, FALSE);
   /* FIXME maybe I need to inform the rockchip mpp */
-  gst_pad_pause_task (GST_VIDEO_ENCODER_SRC_PAD (encoder));
-
+  return ret;
 }
 
-static void
-gst_mpp_video_enc_loop_stopped (GstMppVideoEnc * self)
-{
-  if (g_atomic_int_get (&self->processing)) {
-    GST_DEBUG_OBJECT (self, "Early stop of encoding thread");
-    self->output_flow = GST_FLOW_FLUSHING;
-    g_atomic_int_set (&self->processing, FALSE);
-  }
-
-  GST_DEBUG_OBJECT (self, "Encoding task destroyed: %s",
-      gst_flow_get_name (self->output_flow));
-}
 
 static GstFlowReturn
 gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
@@ -470,18 +475,7 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
 
   }
   if (g_atomic_int_get (&self->processing) == FALSE) {
-    if (self->output_flow != GST_FLOW_OK &&
-        self->output_flow != GST_FLOW_FLUSHING) {
-      GST_DEBUG_OBJECT (self, "Processing loop stopped with error, leaving");
-      ret = self->output_flow;
-      goto drop;
-    }
-    GST_DEBUG_OBJECT (self, "Starting encoding thread");
     g_atomic_int_set (&self->processing, TRUE);
-    if (!gst_pad_start_task (encoder->srcpad,
-            (GstTaskFunction) gst_mpp_video_enc_loop, self,
-            (GDestroyNotify) gst_mpp_video_enc_loop_stopped))
-      goto start_task_failed;
   }
 
   if (frame->input_buffer) {
@@ -520,14 +514,6 @@ flushing:
     ret = GST_FLOW_FLUSHING;
     goto drop;
   }
-start_task_failed:
-  {
-    GST_ELEMENT_ERROR (self, RESOURCE, FAILED,
-        ("Failed to start encoding thread."), (NULL));
-    g_atomic_int_set (&self->processing, FALSE);
-    ret = GST_FLOW_ERROR;
-    goto drop;
-  }
 process_failed:
   {
     GST_ELEMENT_ERROR (self, RESOURCE, FAILED,
@@ -564,7 +550,7 @@ gst_mpp_video_enc_finish (GstVideoEncoder * encoder)
   /* Wait the task in srcpad get eos package */
   while (g_atomic_int_get (&self->processing));
 
-  gst_pad_stop_task (GST_VIDEO_ENCODER_SRC_PAD (encoder));
+  gst_mpp_video_enc_process_buffer_stopped (encoder);
   GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
 
   GST_DEBUG_OBJECT (encoder, "Done draning buffers");
