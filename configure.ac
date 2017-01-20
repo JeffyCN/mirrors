@@ -251,6 +251,7 @@ dnl Make sure you have a space before and after all plugins
 dnl these are all the gst plug-ins, compilable without additional libs
 AG_GST_CHECK_PLUGIN(vpudec)
 AG_GST_CHECK_PLUGIN(rksink)
+AG_GST_CHECK_PLUGIN(rockchipmpp)
 
 dnl of EXT plugins
 
@@ -349,6 +350,7 @@ gst-libs/gst/Makefile
 gst-libs/gst/vpudec/Makefile
 gst/Makefile
 gst/vpudec/Makefile
+gst/rockchipmpp/Makefile
 gst/rksink/Makefile
 po/Makefile.in
 common/Makefile
