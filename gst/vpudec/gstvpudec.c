@@ -253,7 +253,7 @@ gst_vpudec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
   GstStructure *structure;
   gint width, height;
   VPU_VIDEO_CODINGTYPE codingtype;
-  gchar *codec_profile = NULL;
+  const gchar *codec_profile;
 
   GST_DEBUG_OBJECT (vpudec, "Setting format: %" GST_PTR_FORMAT, state->caps);
 
@@ -331,11 +331,6 @@ done:
   return TRUE;
 
   /* Errors */
-input_caps_changed_error:
-  {
-    GST_ERROR_OBJECT (vpudec, "Dynamic change of input caps unsupported");
-    return FALSE;
-  }
 format_error:
   {
     GST_ERROR_OBJECT (vpudec, "Unsupported format in caps: %" GST_PTR_FORMAT,
@@ -369,7 +364,7 @@ gst_vpudec_dec_loop (GstVideoDecoder * decoder)
     output_buffer = NULL;
     ret = gst_video_decoder_finish_frame (decoder, frame);
 
-    GST_TRACE_OBJECT (vpudec, "finish buffer ts=%", GST_TIME_FORMAT,
+    GST_TRACE_OBJECT (vpudec, "finish buffer ts=%" GST_TIME_FORMAT,
         GST_TIME_ARGS (GST_BUFFER_TIMESTAMP (frame->output_buffer)));
 
     if (ret != GST_FLOW_OK)
@@ -410,7 +405,6 @@ gst_vpudec_default_output_info (GstVpuDec * vpudec)
   GstVideoCodecState *output_state;
   GstVideoAlignment *align;
   GstVideoInfo *info;
-  GstStructure *structure;
   DecoderFormat_t fmt;
   gboolean ret = TRUE;
 
@@ -689,7 +683,7 @@ gst_vpudec_class_init (GstVpuDecClass * klass)
       "Multicodec (MPEG-2/4 / AVC / VP8 / HEVC) hardware decoder",
       "Sudip Jain <sudip.jain@@intel.com>, "
       "Jun Zhao <jung.zhao@rock-chips.com>, "
-      "Herman Chen <herman.chen@rock-chips.com>"
+      "Herman Chen <herman.chen@rock-chips.com>, "
       "Randy Li <randy.li@rock-chips.com>");
 }
 

@@ -69,7 +69,6 @@ gst_vpudec_buffer_pool_start (GstBufferPool * bpool)
   GstCaps *caps;
   guint size, min_buffers, max_buffers, count;
   VpuCodecContext_t *vpu_codec_ctx;
-  VPU_SYNC sync;
 
   GST_DEBUG_OBJECT (pool, "start pool %p", pool);
 
@@ -128,7 +127,6 @@ gst_vpudec_buffer_pool_stop (GstBufferPool * bpool)
   gboolean ret;
   GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
   GstBufferPoolClass *pclass = GST_BUFFER_POOL_CLASS (parent_class);
-  GstVpuDec *vpudec = pool->dec;
   guint n;
 
   GST_DEBUG_OBJECT (pool, "stop pool %p", pool);
@@ -199,7 +197,7 @@ gst_vpudec_buffer_pool_release_buffer (GstBufferPool * bpool,
     GstBuffer * buffer)
 {
   GstVpuDecBufferPool *pool = GST_VPUDEC_BUFFER_POOL (bpool);
-  GstVpuMemory *mem;
+  GstVpuMemory *mem = NULL;
   gint index = -1;
 
   if (!gst_vpudec_is_buffer_valid (buffer, &mem)) {
@@ -246,7 +244,7 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
 
   memset (&dec_out, 0, sizeof (DecoderOut_t));
   memset (&vpu_frame, 0, sizeof (VPU_FRAME));
-  dec_out.data = &vpu_frame;
+  dec_out.data = (guint8 *) & vpu_frame;
   ctx = (VpuCodecContext_t *) dec->vpu_codec_ctx;
 
   if ((ret = ctx->decode_getframe (ctx, &dec_out)) < 0)
@@ -323,7 +321,6 @@ gst_vpudec_buffer_pool_set_config (GstBufferPool * bpool, GstStructure * config)
   gst_buffer_pool_config_set_params (config, caps, size, min_buffers,
       max_buffers);
 
-done:
   ret = GST_BUFFER_POOL_CLASS (parent_class)->set_config (bpool, config);
 
   return !updated && ret;

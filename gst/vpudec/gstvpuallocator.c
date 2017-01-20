@@ -128,9 +128,6 @@ _vpumem_is_span (GstVpuMemory * mem1, GstVpuMemory * mem2, gsize * offset)
 static void
 gst_vpu_allocator_dispose (GObject * obj)
 {
-  GstVpuAllocator *allocator = (GstVpuAllocator *) obj;
-  guint i;
-
   GST_LOG_OBJECT (obj, "called");
   /* Don't need cleanup buffers from allocator again,
    * the free() method have done that */
@@ -251,7 +248,6 @@ gst_vpu_allocator_start (GstVpuAllocator * allocator,
 {
   VpuCodecContext_t *vpu_codec_ctx = (VpuCodecContext_t *) vpu;
   vpu_display_mem_pool *vpu_display_pool;
-  GstMemory *dma_mem;
   gint i, ret;
   VPU_SYNC sync;
 
@@ -294,7 +290,7 @@ gst_vpu_allocator_start (GstVpuAllocator * allocator,
         vpu_mem->size, 0, 0, vpu_mem->size, NULL, VPUMemGetFD (vpu_mem),
         vpu_mem);
 
-    if (gst_is_vpu_memory (allocator->mems[i])) {
+    if (gst_is_vpu_memory ((GstMemory *) allocator->mems[i])) {
       gst_atomic_queue_push (allocator->free_queue, allocator->mems[i]);
       allocator->count++;
     } else {

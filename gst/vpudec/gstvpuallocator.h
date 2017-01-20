@@ -65,6 +65,9 @@ gboolean gst_is_vpu_memory (GstMemory * mem);
 
 GQuark gst_vpu_memory_quark (void);
 
+GstVpuAllocator *
+gst_vpu_allocator_new (GstObject * parent);
+
 guint
 gst_vpu_allocator_start (GstVpuAllocator * allocator,
     gpointer vpool, gsize size, guint32 count);
