@@ -419,7 +419,7 @@ gst_egl_image_allocator_alloc_eglimage (GstAllocator * allocator,
   gint stride[3];
   gsize offset[3];
   GstMemory *mem[3] = { NULL, NULL, NULL };
-  guint n_mem;
+  guint n_mem = 0;
   GstMemoryFlags flags = 0;
 
   memset (stride, 0, sizeof (stride));
