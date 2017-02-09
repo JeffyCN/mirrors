@@ -1,7 +1,10 @@
 plugin_LTLIBRARIES = libgstrockchipmpp.la
 
-libgstrockchipmpp_la_SOURCES = \
-	gstmppvideoenc.c
+libgstrockchipmpp_la_SOURCES =			\
+	gstmppvideoenc.c			\
+	gstmpph264enc.c				\
+	gstmpp.c				\
+        $(NULL)
 
 libgstrockchipmpp_la_CFLAGS =			\
         -I$(top_srcdir)/gst-libs                \
@@ -36,4 +39,5 @@ libgstrockchipmpp_la_LIBTOOLFLAGS =	\
 
 noinst_HEADERS =			\
 	gstmppvideoenc.h		\
+	gstmpph264enc.h			\
 	$(NULL)
