@@ -25,12 +25,12 @@
 
 #include "gstmppvideoenc.h"
 
-GST_DEBUG_CATEGORY_STATIC (gst_mpp_video_enc_debug);
-#define GST_CAT_DEFAULT gst_mpp_video_enc_debug
+GST_DEBUG_CATEGORY (mppvideoenc_debug);
+#define GST_CAT_DEFAULT mppvideoenc_debug
 
-#define parent_class gst_mpp_video_enc_parent_class;
-G_DEFINE_TYPE (GstMppVideoEnc, gst_mpp_video_enc, GST_TYPE_VIDEO_ENCODER);
-
+#define parent_class gst_mpp_video_enc_parent_class
+G_DEFINE_ABSTRACT_TYPE (GstMppVideoEnc, gst_mpp_video_enc,
+    GST_TYPE_VIDEO_ENCODER);
 
 static GstStaticPadTemplate gst_mpp_video_enc_sink_template =
     GST_STATIC_PAD_TEMPLATE ("sink",
@@ -39,19 +39,8 @@ static GstStaticPadTemplate gst_mpp_video_enc_sink_template =
     GST_STATIC_CAPS ("video/x-raw, "
         "format = (string) NV12, "
         "width  = (int) [ 32, 1920 ], "
-        "height = (int) [ 32, 1920 ], " "framerate = (fraction) [0/1, MAX]; "));
-
-static GstStaticPadTemplate gst_mpp_video_enc_src_template =
-GST_STATIC_PAD_TEMPLATE ("src",
-    GST_PAD_SRC,
-    GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("video/x-h264, "
-        "width  = (int) [ 32, 1920 ], "
-        "height = (int) [ 32, 1920 ], "
-        "framerate = (fraction) [0/1, MAX], "
-        "stream-format = (string) { byte-stream }, "
-        "alignment = (string) { au }, " "profile = (string) { high }")
-    );
+        "height = (int) [ 32, 1080 ], "
+        "framerate = (fraction) [0/1, 30/1]; "));
 
 static gboolean
 gst_mpp_video_enc_open (GstVideoEncoder * encoder)
@@ -116,7 +105,7 @@ gst_mpp_video_enc_stop (GstVideoEncoder * encoder)
 
   GST_DEBUG_OBJECT (self, "Stopping");
 
-  gst_mpp_video_enc_process_buffer_stopped (encoder);
+  gst_mpp_video_enc_process_buffer_stopped (self);
 
   GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
   self->output_flow = GST_FLOW_OK;
@@ -162,10 +151,9 @@ gst_mpp_video_enc_stop (GstVideoEncoder * encoder)
 
 static gboolean
 gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
-    GstVideoCodecState * state)
+    GstVideoCodecState * state, MppEncConfig * mpp_cfg)
 {
   GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
-  MppEncConfig mpp_cfg;
 
   GST_DEBUG_OBJECT (self, "Setting format: %" GST_PTR_FORMAT, state->caps);
 
@@ -179,28 +167,20 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
     return FALSE;
   }
 
-  memset (&mpp_cfg, 0, sizeof (mpp_cfg));
-
-  mpp_cfg.size = sizeof (mpp_cfg);
-  mpp_cfg.width = GST_VIDEO_INFO_WIDTH (&state->info);
-  mpp_cfg.height = GST_VIDEO_INFO_HEIGHT (&state->info);
-  mpp_cfg.rc_mode = 1;
-  mpp_cfg.skip_cnt = 0;
-  mpp_cfg.fps_in = GST_VIDEO_INFO_FPS_N (&state->info) /
+  mpp_cfg->size = sizeof (mpp_cfg);
+  mpp_cfg->width = GST_VIDEO_INFO_WIDTH (&state->info);
+  mpp_cfg->height = GST_VIDEO_INFO_HEIGHT (&state->info);
+  mpp_cfg->rc_mode = 1;
+  mpp_cfg->skip_cnt = 0;
+  mpp_cfg->fps_in = GST_VIDEO_INFO_FPS_N (&state->info) /
       GST_VIDEO_INFO_FPS_D (&state->info);
-  mpp_cfg.fps_out = GST_VIDEO_INFO_FPS_N (&state->info) /
+  mpp_cfg->fps_out = GST_VIDEO_INFO_FPS_N (&state->info) /
       GST_VIDEO_INFO_FPS_D (&state->info);
-  mpp_cfg.gop = GST_VIDEO_INFO_FPS_N (&state->info) /
+  mpp_cfg->gop = GST_VIDEO_INFO_FPS_N (&state->info) /
       GST_VIDEO_INFO_FPS_D (&state->info);
-  mpp_cfg.bps = mpp_cfg.width * mpp_cfg.height * 2 * mpp_cfg.fps_in;
+  mpp_cfg->bps = mpp_cfg->width * mpp_cfg->height * 2 * mpp_cfg->fps_in;
 
-  mpp_cfg.format = MPP_FMT_YUV420SP;
-  mpp_cfg.qp = 24;
-  mpp_cfg.profile = 100;
-  mpp_cfg.level = 41;
-  mpp_cfg.cabac_en = 0;
-
-  if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_CFG, &mpp_cfg)) {
+  if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_CFG, mpp_cfg)) {
     GST_DEBUG_OBJECT (self, "Setting format for rockcip mpp failed");
     return FALSE;
   }
@@ -222,7 +202,7 @@ gst_mpp_video_enc_flush (GstVideoEncoder * encoder)
     GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
     self->mpi->reset (self->mpp_ctx);
 
-    gst_mpp_video_enc_process_buffer_stopped (encoder);
+    gst_mpp_video_enc_process_buffer_stopped (self);
 
     GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
   }
@@ -266,6 +246,7 @@ gst_mpp_video_enc_get_oldest_frame (GstVideoEncoder * encoder)
 static GstFlowReturn
 gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
 {
+  GstVideoEncoder *encoder = GST_VIDEO_ENCODER (self);
   GstBuffer *new_buffer = NULL;
   static gint8 current_index = 0;
   GstVideoCodecFrame *frame;
@@ -279,7 +260,7 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
 
   GList *l = NULL;
   GstBuffer *hdrs;
-  static sps_flag = 0;
+  static gint sps_flag = 0;
   MppPacket sps_packet = NULL;
 
   /* Eos buffer */
@@ -314,7 +295,8 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
   }
 
   GST_LOG_OBJECT (self, "Allocate output buffer");
-  new_buffer = gst_video_encoder_allocate_output_buffer (self, MAX_CODEC_FRAME);
+  new_buffer = gst_video_encoder_allocate_output_buffer (encoder,
+      MAX_CODEC_FRAME);
   if (NULL == new_buffer) {
     ret = GST_FLOW_FLUSHING;
     goto beach;
@@ -352,7 +334,7 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
             gsize sps_len = mpp_packet_get_length (sps_packet);
 
             gst_buffer_fill (new_buffer, 0, sps_ptr, sps_len);
-            gst_video_encoder_set_headers (self, l);
+            gst_video_encoder_set_headers (encoder, l);
 
             gst_buffer_fill (new_buffer, sps_len, ptr, len);
             sps_flag = 1;
@@ -375,11 +357,11 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
   if (ret != GST_FLOW_OK)
     goto beach;
 
-  frame = gst_mpp_video_enc_get_oldest_frame (self);
+  frame = gst_mpp_video_enc_get_oldest_frame (encoder);
   if (frame) {
     frame->output_buffer = new_buffer;
     new_buffer = NULL;
-    ret = gst_video_encoder_finish_frame (self, frame);
+    ret = gst_video_encoder_finish_frame (encoder, frame);
 
     if (ret != GST_FLOW_OK)
       goto beach;
@@ -402,7 +384,7 @@ beach:
 
 static GstFlowReturn
 gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
-    GstVideoCodecFrame * frame)
+    GstVideoCodecFrame * frame, GstCaps * outcaps)
 {
 
   GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
@@ -413,27 +395,25 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
   if (G_UNLIKELY (!g_atomic_int_get (&self->active)))
     goto flushing;
 
+  /* FIXME don't use this as a flag */
   if (self->outcaps == NULL) {
     gint i = 0;
     gint32 hor_stride, ver_stride;
     gsize frame_size, packet_size;
-    GstStructure *structure;
-    GstCaps *outcaps;
 
     hor_stride = MPP_ALIGN (self->input_state->info.width, 16);
     ver_stride = MPP_ALIGN (self->input_state->info.height, 16);
 
     GST_DEBUG_OBJECT (self, "Filling src caps with output dimensions %ux%u",
         hor_stride, ver_stride);
+    /* FIXME only work for NV12 */
     frame_size = hor_stride * ver_stride * 3 / 2;
     packet_size =
         self->input_state->info.width * self->input_state->info.height;
 
-    outcaps = gst_caps_new_empty_simple ("video/x-h264");
-    structure = gst_caps_get_structure (outcaps, 0);
-    gst_structure_set (structure, "stream-format",
-        G_TYPE_STRING, "byte-stream", NULL);
-    gst_structure_set (structure, "alignment", G_TYPE_STRING, "au", NULL);
+    if (outcaps)
+      goto not_negotiated;
+
     gst_caps_set_simple (outcaps,
         "width", G_TYPE_INT, hor_stride,
         "height", G_TYPE_INT, ver_stride, NULL);
@@ -550,7 +530,7 @@ gst_mpp_video_enc_finish (GstVideoEncoder * encoder)
   /* Wait the task in srcpad get eos package */
   while (g_atomic_int_get (&self->processing));
 
-  gst_mpp_video_enc_process_buffer_stopped (encoder);
+  gst_mpp_video_enc_process_buffer_stopped (self);
   GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
 
   GST_DEBUG_OBJECT (encoder, "Done draning buffers");
@@ -573,45 +553,19 @@ gst_mpp_video_enc_class_init (GstMppVideoEncClass * klass)
   element_class = (GstElementClass *) klass;
   video_encoder_class = (GstVideoEncoderClass *) klass;
 
-  GST_DEBUG_CATEGORY_INIT (gst_mpp_video_enc_debug, "mppvideoenc", 0,
-      "Rockchip Mpp Video Encoder");
-
-  gst_element_class_set_static_metadata (element_class,
-      "Rockchip Mpp Video Encoder",
-      "Codec/Encoder/Video",
-      "Encode video streams via Rockchip Mpp",
-      "Randy Li <randy.li@rock-chips.com>");
+  GST_DEBUG_CATEGORY_INIT (mppvideoenc_debug, "mppvideoenc", 0,
+      "Rockchip MPP Video Encoder");
 
   video_encoder_class->open = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_open);
   video_encoder_class->close = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_close);
   video_encoder_class->start = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_start);
   video_encoder_class->stop = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_stop);
-  video_encoder_class->set_format =
-      GST_DEBUG_FUNCPTR (gst_mpp_video_enc_set_format);
   video_encoder_class->flush = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_flush);
   video_encoder_class->finish = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_finish);
-  video_encoder_class->handle_frame =
-      GST_DEBUG_FUNCPTR (gst_mpp_video_enc_handle_frame);
-
-  gst_element_class_add_pad_template (element_class,
-      gst_static_pad_template_get (&gst_mpp_video_enc_src_template));
+  klass->handle_frame = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_handle_frame);
+  klass->set_format = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_set_format);
 
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_mpp_video_enc_sink_template));
 
 }
-
-static gboolean
-plugin_init (GstPlugin * plugin)
-{
-  if (!gst_element_register (plugin, "mppvideoenc", GST_RANK_PRIMARY + 1,
-          gst_mpp_video_enc_get_type ()))
-    return FALSE;
-  return TRUE;
-}
-
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
-    GST_VERSION_MINOR,
-    mppvideoenc,
-    "Rockchip Mpp Video Encoder",
-    plugin_init, VERSION, GST_LICENSE, GST_PACKAGE_NAME, GST_PACKAGE_ORIGIN);

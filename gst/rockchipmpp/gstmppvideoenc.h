@@ -30,9 +30,11 @@
 
 #include <rockchip/rk_mpi.h>
 
+GST_DEBUG_CATEGORY_EXTERN (mppvideoenc_debug);
+
 /* Begin Declaration */
 G_BEGIN_DECLS
-#define GST_TYPE_MPP_VIDEO_ENC	(gst_mppenc_get_type())
+#define GST_TYPE_MPP_VIDEO_ENC	(gst_mpp_video_enc_get_type())
 #define GST_MPP_VIDEO_ENC(obj) \
 	(G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_MPP_VIDEO_ENC, GstMppVideoEnc))
 #define GST_MPP_VIDEO_ENC_CLASS(klass) \
@@ -41,7 +43,6 @@ G_BEGIN_DECLS
 	(G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_MPP_VIDEO_ENC))
 #define GST_IS_MPP_VIDEO_ENC_CLASS(obj) \
 	(G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_MPP_VIDEO_ENC))
-
 typedef struct _GstMppVideoEnc GstMppVideoEnc;
 typedef struct _GstMppVideoEncClass GstMppVideoEncClass;
 
@@ -62,7 +63,7 @@ struct _GstMppVideoEnc
   MppBuffer input_buffer[MPP_MAX_BUFFERS];
   MppBuffer output_buffer[MPP_MAX_BUFFERS];
   MppFrame mpp_frame;
-  GstCaps * outcaps;
+  GstCaps *outcaps;
 
   /* pads */
   GstCaps *probed_srccaps;
@@ -78,6 +79,10 @@ struct _GstMppVideoEnc
 struct _GstMppVideoEncClass
 {
   GstVideoEncoderClass parent_class;
+  gboolean (*set_format) (GstVideoEncoder * encoder,
+    GstVideoCodecState * state, MppEncConfig * mpp_cfg);
+  GstFlowReturn (*handle_frame) (GstVideoEncoder * encoder,
+    GstVideoCodecFrame * frame, GstCaps * outcaps);
 };
 
 GType gst_mpp_video_enc_get_type (void);
