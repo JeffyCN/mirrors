@@ -22,20 +22,25 @@
 #include "config.h"
 #endif
 #include <string.h>
-
 #include "gstmpph264enc.h"
+#include "gstmppvideodec.h"
 
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
+  if (!gst_element_register (plugin, "mppvideodec", GST_RANK_PRIMARY + 1,
+          gst_mpp_video_dec_get_type ()))
+    return FALSE;
+
   if (!gst_element_register (plugin, "mpph264enc", GST_RANK_PRIMARY + 1,
           gst_mpp_h264_enc_get_type ()))
     return FALSE;
+
   return TRUE;
 }
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
-    mppvideoenc,
-    "Rockchip Mpp Video Encoder",
+    mppvideo,
+    "Rockchip Mpp Video Plugin",
     plugin_init, VERSION, GST_LICENSE, GST_PACKAGE_NAME, GST_PACKAGE_ORIGIN);
