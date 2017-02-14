@@ -3,6 +3,9 @@ plugin_LTLIBRARIES = libgstrockchipmpp.la
 libgstrockchipmpp_la_SOURCES =			\
 	gstmppvideoenc.c			\
 	gstmpph264enc.c				\
+	gstmppdecbufferpool.c			\
+	gstmppallocator.c			\
+	gstmppvideodec.c			\
 	gstmpp.c				\
         $(NULL)
 
@@ -19,7 +22,6 @@ libgstrockchipmpp_la_CFLAGS =			\
         $(NULL)
 
 libgstrockchipmpp_la_LIBADD =			\
-	$(top_builddir)/gst-libs/gst/vpudec/libgstvpu-base.la \
 	$(GST_PLUGINS_BASE_LIBS)		\
 	$(GST_BASE_LIBS)			\
 	$(GST_VIDEO_LIBS)                       \
@@ -40,4 +42,7 @@ libgstrockchipmpp_la_LIBTOOLFLAGS =	\
 noinst_HEADERS =			\
 	gstmppvideoenc.h		\
 	gstmpph264enc.h			\
+	gstmppdecbufferpool.h			\
+	gstmppallocator.h			\
+	gstmppvideodec.h			\
 	$(NULL)
