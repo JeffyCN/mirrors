@@ -1,3 +1,64 @@
+gstreamer1.0-rockchip (1.10-4) stable; urgency=medium
+
+  [ Randy Li ]
+  * videorga: vpuenc: remove stub class
+
+  [ Jacob Chen ]
+  * vpudec: add rkximagesink
+  * vpudec: ximagesink: clean code
+  * vpudec: ximagesink: add display ratio
+  * vpudec: ximagesink: correct stride
+  * vpudec: ximagesink:  check display position in event thread
+  * vpudec: ximagesink: use a timer to throttle and redraw when paused
+  * vpudec: ximagesink: add render rectangle support
+  * vpudec: eglglesink/ximagesink: move to child folder
+  * vpudec: eglglessink: only use it in 1080p
+  * vpudec: ximagesink: remove throttle
+  * vpudec: ximagesinl: fix buffer count
+  * vpudec: ximagesinl: clear window first when expose
+  * vpudec: eglglessink: add zero-copy texture support for NV12
+  * Revert "vpudec: eglglessink: only use it in 1080p"
+  * vpudec: rkximagesink: adjust for fake 4k ui
+
+  [ Randy Li ]
+  * vpudec: remove EGL invoked video sink from this directory
+  * kms: move to the rksink
+  * rkvideo: move all the video sink to this plugin package
+  * build: debian: build and install new rkvideo plugin
+
+  [ Jacob Chen ]
+  * rkvideo: rename GstXImageSink to GstRkXImageSink
+
+  [ Randy Li ]
+  * debian: install new rkvideo plugin
+  * TEST: kmssink: print frame count
+
+  [ Jacob Chen ]
+  * rkvideo: eglglessink: use gst_data_queue_push_force
+  * rkvideo: rkximagesink: fix display_ratio
+
+  [ Randy Li ]
+  * vpudec: support dynamic update input caps
+  * build: debian: remove stub dbg package
+  * vpudec: remove unused eos filed
+  * vpudec: adjust the buffer pool lifetime
+  * vpudec: disable force check for profile
+
+  [ Jacob Chen ]
+  * rkvideo: rkximagesink: fix display bug in fake 4k
+
+  [ Randy Li ]
+  * vpudec: clean up the code
+  * rksink: clean up the code
+
+  [ Jacob Chen ]
+  * build: don't build eglsink and rkximagesink without x11
+
+  [ Randy Li ]
+  * vpudec: force the rockchip mpp to exit at the last packet
+
+ -- Randy Li <randy.li@rock-chips.com>  Wed, 15 Feb 2017 01:45:42 +0000
+
 gstreamer1.0-rockchip (1.10-3) testing; urgency=medium
 
   * vpudec: remove codec_data
