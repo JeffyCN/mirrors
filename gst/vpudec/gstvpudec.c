@@ -647,6 +647,7 @@ gst_vpudec_change_state (GstElement * element, GstStateChange transition)
 
   if (transition == GST_STATE_CHANGE_PAUSED_TO_READY) {
     g_atomic_int_set (&self->active, FALSE);
+    gst_vpudec_sendeos (self);
     gst_pad_stop_task (decoder->srcpad);
   }
   return GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
