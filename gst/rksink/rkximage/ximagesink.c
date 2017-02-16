@@ -685,6 +685,9 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
       result.y *= 2;
       result.w *= 2;
       result.h *= 2;
+
+      if (src.w >= 4090)
+        src.w = 3840;
     }
 
     ret =
