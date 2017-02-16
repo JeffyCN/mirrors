@@ -338,7 +338,7 @@ AG_GST_CHECK_FEATURE(X, [X libraries and plugins],
 dnl *** eglgles ***
 AG_GST_CHECK_FEATURE(X, [GLES and EGL],
                   [eglglessink], [
-  AG_GST_PKG_CHECK_MODULES(X, x11)
+  AG_GST_PKG_CHECK_MODULES(EGLGLES, egl glesv2)
 ])
 
 dnl keep this alphabetic per directory, please
