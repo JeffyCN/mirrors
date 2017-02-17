@@ -249,8 +249,13 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
 
   if ((ret = ctx->decode_getframe (ctx, &dec_out)) < 0)
     goto vpu_error;
-
   vpu_mem = vpu_frame.vpumem;
+  /* Drop the invalid buffer */
+  if (vpu_frame.ErrorInfo) {
+    VPUFreeLinear (&vpu_mem);
+    return GST_FLOW_CUSTOM_ERROR_1;
+  }
+
   /* get from the pool the GstBuffer associated with the index */
   buf_index = vpu_mem.index;
   outbuf = pool->buffers[buf_index];
@@ -259,7 +264,6 @@ gst_vpudec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
 
   pool->buffers[buf_index] = NULL;
   g_atomic_int_add (&pool->num_queued, -1);
-
 
   GST_DEBUG_OBJECT (pool,
       "acquired buffer %p (%p) , index %d, queued %d data %p", outbuf,
