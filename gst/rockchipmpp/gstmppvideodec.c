@@ -405,11 +405,15 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
   GstFlowReturn ret = GST_FLOW_OK;
 
   ret = gst_buffer_pool_acquire_buffer (self->pool, &output_buffer, NULL);
-  if (ret != GST_FLOW_OK)
+  if (ret != GST_FLOW_OK && ret != GST_FLOW_CUSTOM_ERROR_1)
     goto beach;
 
   frame = gst_video_decoder_get_oldest_frame (decoder);
   if (frame) {
+    if (ret == GST_FLOW_CUSTOM_ERROR_1) {
+      gst_video_decoder_drop_frame (decoder, frame);
+      return;
+    }
     frame->output_buffer = output_buffer;
 
     output_buffer = NULL;

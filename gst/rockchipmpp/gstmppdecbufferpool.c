@@ -244,6 +244,8 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   if (ret || NULL == mframe)
     goto mpp_error;
 
+  if (mpp_frame_get_errinfo (mframe))
+    goto drop_frame;
   /* get from the pool the GstBuffer associated with the index */
   mpp_buf = mpp_frame_get_buffer (mframe);
   if (NULL == mpp_buf)
@@ -288,6 +290,11 @@ no_buffer:
     GST_ERROR_OBJECT (pool, "No free buffer found in the pool at index %d",
         buf_index);
     return GST_FLOW_ERROR;
+  }
+drop_frame:
+  {
+    mpp_frame_deinit (&mframe);
+    return GST_FLOW_CUSTOM_ERROR_1;
   }
 }
 
