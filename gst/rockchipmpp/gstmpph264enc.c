@@ -43,42 +43,115 @@ GST_STATIC_PAD_TEMPLATE ("src",
     );
 
 static gboolean
+gst_mpp_h264_enc_open (GstVideoEncoder * encoder)
+{
+  GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
+
+  GST_DEBUG_OBJECT (self, "Opening");
+
+  if (mpp_create (&self->mpp_ctx, &self->mpi))
+    goto failure;
+  if (mpp_init (self->mpp_ctx, MPP_CTX_ENC, MPP_VIDEO_CodingAVC))
+    goto failure;
+
+  return TRUE;
+
+failure:
+  return FALSE;
+}
+
+static gboolean
 gst_mpp_h264_enc_set_format (GstVideoEncoder * encoder,
     GstVideoCodecState * state)
 {
   GstMppH264Enc *self = GST_MPP_H264_ENC (encoder);
-  MppEncConfig mpp_cfg;
+  GstMppVideoEnc *mpp_video_enc = GST_MPP_VIDEO_ENC (encoder);
+  MppEncCodecCfg codec_cfg;
+  MppEncRcCfg rc_cfg;
 
-  memset (&mpp_cfg, 0, sizeof (mpp_cfg));
+  memset (&rc_cfg, 0, sizeof (rc_cfg));
+  memset (&codec_cfg, 0, sizeof (codec_cfg));
 
-  mpp_cfg.size = sizeof (mpp_cfg);
-  mpp_cfg.width = GST_VIDEO_INFO_WIDTH (&state->info);
-  mpp_cfg.height = GST_VIDEO_INFO_HEIGHT (&state->info);
-  mpp_cfg.rc_mode = 1;
-  mpp_cfg.skip_cnt = 0;
-  mpp_cfg.fps_in = GST_VIDEO_INFO_FPS_N (&state->info) /
-      GST_VIDEO_INFO_FPS_D (&state->info);
-  mpp_cfg.fps_out = GST_VIDEO_INFO_FPS_N (&state->info) /
-      GST_VIDEO_INFO_FPS_D (&state->info);
-  mpp_cfg.gop = GST_VIDEO_INFO_FPS_N (&state->info) /
-      GST_VIDEO_INFO_FPS_D (&state->info);
-  mpp_cfg.bps = mpp_cfg.width * mpp_cfg.height * 2 * mpp_cfg.fps_in;
+  rc_cfg.change = MPP_ENC_RC_CFG_CHANGE_ALL;
+  rc_cfg.rc_mode = MPP_ENC_RC_MODE_CBR;
+  rc_cfg.quality = MPP_ENC_RC_QUALITY_MEDIUM;
 
-  mpp_cfg.format = MPP_FMT_YUV420SP;
-  mpp_cfg.qp = 24;
-  mpp_cfg.profile = 100;
-  mpp_cfg.level = 41;
-  mpp_cfg.cabac_en = 0;
+  rc_cfg.fps_in_flex = 0;
+  rc_cfg.fps_in_num = GST_VIDEO_INFO_FPS_N (&state->info)
+      / GST_VIDEO_INFO_FPS_D (&state->info);
+  rc_cfg.fps_in_denorm = 1;
+  rc_cfg.fps_out_flex = 0;
+  rc_cfg.fps_out_num = GST_VIDEO_INFO_FPS_N (&state->info)
+      / GST_VIDEO_INFO_FPS_D (&state->info);
+  rc_cfg.fps_out_denorm = 1;
+  rc_cfg.gop = GST_VIDEO_INFO_FPS_N (&state->info)
+      / GST_VIDEO_INFO_FPS_D (&state->info);
+  rc_cfg.skip_cnt = 0;
 
-  return GST_MPP_VIDEO_ENC_CLASS (parent_class)->set_format (encoder, state,
-      &mpp_cfg);
+  if (mpp_video_enc->mpi->control (mpp_video_enc->mpp_ctx, MPP_ENC_SET_RC_CFG,
+          &rc_cfg)) {
+    GST_DEBUG_OBJECT (self, "Setting rate control for rockchip mpp failed");
+    return FALSE;
+  }
+
+  if (rc_cfg.rc_mode == MPP_ENC_RC_MODE_CBR) {
+    codec_cfg.h264.qp_max = 48;
+    codec_cfg.h264.qp_min = 4;
+    codec_cfg.h264.qp_max_step = 16;
+    codec_cfg.h264.qp_init = 0;
+
+    rc_cfg.bps_target = GST_VIDEO_INFO_WIDTH (&state->info)
+        * GST_VIDEO_INFO_HEIGHT (&state->info)
+        / 8 * GST_VIDEO_INFO_FPS_N (&state->info)
+        / GST_VIDEO_INFO_FPS_D (&state->info);
+    rc_cfg.bps_max = rc_cfg.bps_target * 17 / 16;
+    rc_cfg.bps_min = rc_cfg.bps_target * 15 / 16;
+  } else if (rc_cfg.rc_mode == MPP_ENC_RC_MODE_VBR) {
+    if (rc_cfg.quality == MPP_ENC_RC_QUALITY_CQP) {
+      codec_cfg.h264.qp_max = 26;
+      codec_cfg.h264.qp_min = 26;
+      codec_cfg.h264.qp_max_step = 0;
+      codec_cfg.h264.qp_init = 26;
+
+      rc_cfg.bps_target = -1;
+      rc_cfg.bps_max = -1;
+      rc_cfg.bps_min = -1;
+
+    } else {
+      codec_cfg.h264.qp_max = 40;
+      codec_cfg.h264.qp_min = 12;
+      codec_cfg.h264.qp_max_step = 0;
+      codec_cfg.h264.qp_init = 0;
+
+      rc_cfg.bps_target = 0;
+      rc_cfg.bps_max = rc_cfg.bps_target * 17 / 16;
+      rc_cfg.bps_min = rc_cfg.bps_target * 1 / 16;
+    }
+  }
+
+  codec_cfg.coding = MPP_VIDEO_CodingAVC;
+  codec_cfg.h264.change = MPP_ENC_H264_CFG_CHANGE_PROFILE |
+      MPP_ENC_H264_CFG_CHANGE_ENTROPY |
+      MPP_ENC_H264_CFG_CHANGE_TRANS_8x8 | MPP_ENC_H264_CFG_CHANGE_QP_LIMIT;
+  codec_cfg.h264.profile = 100;
+  codec_cfg.h264.level = 40;
+  codec_cfg.h264.entropy_coding_mode = 1;
+  codec_cfg.h264.cabac_init_idc = 0;
+  codec_cfg.h264.transform8x8_mode = 1;
+
+  if (mpp_video_enc->mpi->control (mpp_video_enc->mpp_ctx,
+          MPP_ENC_SET_CODEC_CFG, &codec_cfg)) {
+    GST_DEBUG_OBJECT (self, "Setting codec info for rockchip mpp failed");
+    return FALSE;
+  }
+
+  return GST_MPP_VIDEO_ENC_CLASS (parent_class)->set_format (encoder, state);
 }
 
 static GstFlowReturn
 gst_mpp_h264_enc_handle_frame (GstVideoEncoder * encoder,
     GstVideoCodecFrame * frame)
 {
-  GstMppH264Enc *self = GST_MPP_H264_ENC (encoder);
   GstCaps *outcaps;
   GstStructure *structure;
 
@@ -112,6 +185,7 @@ gst_mpp_h264_enc_class_init (GstMppH264EncClass * klass)
       "Encode video streams via Rockchip Mpp",
       "Randy Li <randy.li@rock-chips.com>");
 
+  video_encoder_class->open = GST_DEBUG_FUNCPTR (gst_mpp_h264_enc_open);
   video_encoder_class->set_format =
       GST_DEBUG_FUNCPTR (gst_mpp_h264_enc_set_format);
   video_encoder_class->handle_frame =
