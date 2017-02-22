@@ -5,7 +5,7 @@ dnl please read gstreamer/docs/random/autotools before changing this file
 dnl initialize autoconf
 dnl releases only do -Wall, git and prerelease does -Werror too
 dnl use a three digit version number for releases, and four for git/pre
-AC_INIT([GStreamer Plug-ins], [1.8.2], [https://github.com/rockchip-linux/gstreamer-rockchip], [gstreamer-rockchip])
+AC_INIT([GStreamer Plug-ins], [1.10.0], [https://github.com/rockchip-linux/gstreamer-rockchip], [gstreamer-rockchip])
 
 AG_GST_INIT
 
@@ -31,6 +31,9 @@ dnl use pretty build output with automake >= 1.11
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],
   [AM_DEFAULT_VERBOSITY=1
    AC_SUBST(AM_DEFAULT_VERBOSITY)])
+
+dnl PKG_CONFIG_SYSROOT_DIR is a valid environment variable
+m4_pattern_allow(PKG_CONFIG_SYSROOT_DIR)
 
 dnl our libraries and install dirs use GST_API_VERSION in the filename
 dnl to allow side-by-side installation of different API versions
@@ -208,7 +211,7 @@ GTK_REQ=3.0.0
 dnl *** set variables based on configure arguments ***
 
 dnl set license and copyright notice
-GST_LICENSE="LGPL"
+GST_LICENSE="GPL"
 AC_DEFINE_UNQUOTED(GST_LICENSE, "$GST_LICENSE", [GStreamer license])
 AC_SUBST(GST_LICENSE)
 
@@ -249,11 +252,11 @@ dnl Non ported plugins (non-dependant, then dependant)
 dnl Make sure you have a space before and after all plugins
 
 dnl these are all the gst plug-ins, compilable without additional libs
-AG_GST_CHECK_PLUGIN(vpudec)
 AG_GST_CHECK_PLUGIN(rksink)
-AG_GST_CHECK_PLUGIN(rockchipmpp)
 
 dnl of EXT plugins
+AM_CONDITIONAL(USE_ROCKCHIPMPP, false)
+AM_CONDITIONAL(USE_VPUDEC, false)
 
 dnl *** finalize CFLAGS, LDFLAGS, LIBS
 
@@ -319,8 +322,20 @@ PKG_CHECK_MODULES(GST_ALLOCATORS, gstreamer-allocators-1.0,
 	HAVE_GST_ALLOCATORS=yes, )
 PKG_CHECK_MODULES(GST_VIDEO, gstreamer-video-[$GST_API_VERSION], [$GST_REQ], yes)
 
-PKG_CHECK_MODULES([ROCKCHIP_MPP], [rockchip_mpp])
-PKG_CHECK_MODULES([ROCKCHIP_VPU], [rockchip_vpu])
+dnl *** rockchip mpp ***
+translit(dnm, m, l) AM_CONDITIONAL(USE_ROCKCHIPMPP, true)
+AG_GST_CHECK_FEATURE(ROCKCHIPMPP, [rockchip mpp libraries], rockchipmpp, [
+  PKG_CHECK_MODULES([ROCKCHIP_MPP], [rockchip_mpp >= 1.3.0],
+    HAVE_ROCKCHIPMPP=yes, HAVE_ROCKCHIPMPP=no)
+])
+
+dnl *** rockchip vpu dec ***
+translit(dnm, m, l) AM_CONDITIONAL(USE_VPUDEC, true)
+AG_GST_CHECK_FEATURE(VPUDEC, [rockchip vpu legacy libraries], vpudec, [
+  PKG_CHECK_MODULES([ROCKCHIP_VPU], [rockchip_vpu < 0.3.0],
+    HAVE_VPUDEC=yes, HAVE_VPUDEC=no)
+])
+
 PKG_CHECK_MODULES([DRM], [libdrm], HAVE_KMS=yes, HAVE_KMS=no)
 PKG_CHECK_MODULES([X11], [x11], HAVE_X11=yes, HAVE_X11=no)
 AM_CONDITIONAL(HAVE_X11, test "x$HAVE_X11" = "xyes")
@@ -352,7 +367,6 @@ gst/Makefile
 gst/vpudec/Makefile
 gst/rockchipmpp/Makefile
 gst/rksink/Makefile
-po/Makefile.in
 common/Makefile
 common/m4/Makefile
 m4/Makefile

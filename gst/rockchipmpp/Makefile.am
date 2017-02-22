@@ -18,7 +18,6 @@ libgstrockchipmpp_la_CFLAGS =			\
         $(GST_ALLOCATORS_CFLAGS)                \
         $(GST_CFLAGS)                           \
 	$(ROCKCHIP_MPP_CFLAGS)                  \
-        $(ROCKCHIP_VPU_CFLAGS)                  \
         $(NULL)
 
 libgstrockchipmpp_la_LIBADD =			\
@@ -28,7 +27,6 @@ libgstrockchipmpp_la_LIBADD =			\
 	$(GST_ALLOCATORS_LIBS)                  \
 	$(GST_LIBS)				\
 	$(ROCKCHIP_MPP_LIBS)			\
-	$(ROCKCHIP_VPU_LIBS)			\
 	$(NULL)
 
 libgstrockchipmpp_la_LDFLAGS =		\
