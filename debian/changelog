@@ -1,3 +1,29 @@
+gstreamer1.0-rockchip (1.10-5) testing; urgency=medium
+
+  [ Jacob Chen ]
+  * build: fix egl lib link missing
+  * rksink: HACK: drop pixel when display 4096 vdieo
+
+  [ Randy Li ]
+  * vpudec: drop the invalid buffer to avoid the screen mess
+  * [WIP]: mppvideoenc: a multiple thread version
+  * [WIP]: mppvideoenc: the first ugly version
+  * rockchipmpp: add build rules
+  * rockchipmpp: add to top build rule
+  * rockchipmpp: make the mppvideoenc as the abstract class
+  * rockchipmpp: add H.264 encoder class
+  * rockchipmpp: add build rules for H.264 encoder
+  * [WIP]: rockchipmpp: encoder: update API
+  * rockchipmpp: add mpp buffer allocator
+  * rockchipmpp: decoder: add a buffer pool
+  * rockchipmpp: add video decoder
+  * rockchipmpp: decoder: drop those invalid decoded result
+  * rockchipmpp: register video decoder in plugin
+  * rockchipmpp: add video decoder in build rules
+  * build: update rules to build properly decoder plugin
+
+ -- Randy Li <randy.li@rock-chips.com>  Thu, 23 Feb 2017 07:00:56 +0000
+
 gstreamer1.0-rockchip (1.10-4) stable; urgency=medium
 
   [ Randy Li ]
