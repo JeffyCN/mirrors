@@ -10,11 +10,7 @@ else
 VPUDEC_DIR=
 endif
 
-if USE_RKSINK
 RKSINK_DIR=rksink
-else
-RKSINK_DIR=
-endif
 
 SUBDIRS = $(ROCKCHIPMPP_DIR) $(VPUDEC_DIR) $(RKSINK_DIR)
 

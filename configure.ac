@@ -309,7 +309,7 @@ AC_SUBST(GST_LIBS)
 
 dnl LDFLAGS really should only contain flags, not libs - they get added before
 dnl whatevertarget_LIBS and -L flags here affect the rest of the linking
-GST_ALL_LDFLAGS="-no-undefined"
+GST_ALL_LDFLAGS="-Wl,-no-undefined"
 AC_SUBST(GST_ALL_LDFLAGS)
 
 dnl this really should only contain flags, not libs - they get added before
