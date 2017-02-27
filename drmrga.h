@@ -52,69 +52,69 @@ enum {
 /*****************************************************************************/
 
 /*
-@value size:     user not need care about.For avoid read/write out of memory
-*/
+   @value size:     user not need care about.For avoid read/write out of memory
+ */
 typedef struct rga_rect {
-    int xoffset;
-    int yoffset;
-    int width;
-    int height;
-    int wstride;
-    int hstride;
-    int format;
-    int size;
+	int xoffset;
+	int yoffset;
+	int width;
+	int height;
+	int wstride;
+	int hstride;
+	int format;
+	int size;
 } rga_rect_t;
 
 /*
-@value fd:     use fd to share memory, it can be ion shard fd,and dma fd.
-@value virAddr:userspace address
-@value phyAddr:use phy address
-@value hnd:    use buffer_handle_t
-*/
+   @value fd:     use fd to share memory, it can be ion shard fd,and dma fd.
+   @value virAddr:userspace address
+   @value phyAddr:use phy address
+   @value hnd:    use buffer_handle_t
+ */
 typedef struct rga_info {
-    int fd;
-    void *virAddr;
-    void *phyAddr;
-    buffer_handle_t hnd;
-    int format;
-    rga_rect_t rect;
-    unsigned int blend;
-    int bufferSize;
-    int rotation;
-    int color;
-    int testLog;
-    int mmuFlag;
-    int reserve[128];
+	int fd;
+	void *virAddr;
+	void *phyAddr;
+	buffer_handle_t hnd;
+	int format;
+	rga_rect_t rect;
+	unsigned int blend;
+	int bufferSize;
+	int rotation;
+	int color;
+	int testLog;
+	int mmuFlag;
+	int reserve[128];
 } rga_info_t;
 
 typedef struct drm_rga {
-    rga_rect_t src;
-    rga_rect_t dst;
+	rga_rect_t src;
+	rga_rect_t dst;
 } drm_rga_t;
 
 /*
-@fun rga_set_rect:For use to set the rects esayly
+   @fun rga_set_rect:For use to set the rects esayly
 
-@param rect:The rect user want to set,like setting the src rect:
-    drm_rga_t rects;
-    rga_set_rect(rects.src,0,0,1920,1080,1920,NV12);
-    mean to set the src rect to the value.
-*/
+   @param rect:The rect user want to set,like setting the src rect:
+   drm_rga_t rects;
+   rga_set_rect(rects.src,0,0,1920,1080,1920,NV12);
+   mean to set the src rect to the value.
+ */
 static inline int rga_set_rect(rga_rect_t *rect,
-                                 int x, int y, int w, int h, int sw, int sh, int f)
+		int x, int y, int w, int h, int sw, int sh, int f)
 {
-    if (!rect)
-        return -EINVAL;
+	if (!rect)
+		return -EINVAL;
 
-    rect->xoffset = x;
-    rect->yoffset = y;
-    rect->width = w;
-    rect->height = h;
-    rect->wstride = sw;
-    rect->hstride = sh;
-    rect->format = f;
+	rect->xoffset = x;
+	rect->yoffset = y;
+	rect->width = w;
+	rect->height = h;
+	rect->wstride = sw;
+	rect->hstride = sh;
+	rect->format = f;
 
-    return 0;
+	return 0;
 }
 /*****************************************************************************/
 

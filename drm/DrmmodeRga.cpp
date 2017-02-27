@@ -28,111 +28,111 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	int planeAlpha;
 	int rotation = 0;
 	unsigned int blend;
-    bool perpixelAlpha;
-    drm_rga_t *pRects = NULL;
-    drm_rga_t rects;
+	bool perpixelAlpha;
+	drm_rga_t *pRects = NULL;
+	drm_rga_t rects;
 
 	if (!ctx) {
 		ALOGE("Try to use uninit rgaCtx=%p",ctx);
 		return -ENODEV;
 	}
 
-    if (!src && !dst && !src1) {
-        ALOGE("src = %p, dst = %p, src1 = %p", src, dst, src1);
-        return -EINVAL;
-    }
+	if (!src && !dst && !src1) {
+		ALOGE("src = %p, dst = %p, src1 = %p", src, dst, src1);
+		return -EINVAL;
+	}
 
-    if (!src && !dst) {
-        ALOGE("src = %p, dst = %p", src, dst);
-        return -EINVAL;
-    }
+	if (!src && !dst) {
+		ALOGE("src = %p, dst = %p", src, dst);
+		return -EINVAL;
+	}
 
-    if (src) {
-        rotation = src->rotation;
-        blend = src->blend;
-        memcpy(&relSrcRect, &src->rect, sizeof(rga_rect_t));
-    }
-    if (dst)
-        memcpy(&relDstRect, &dst->rect, sizeof(rga_rect_t));
-    if (src1)
-        memcpy(&relSrc1Rect, &src1->rect, sizeof(rga_rect_t));
+	if (src) {
+		rotation = src->rotation;
+		blend = src->blend;
+		memcpy(&relSrcRect, &src->rect, sizeof(rga_rect_t));
+	}
+	if (dst)
+		memcpy(&relDstRect, &dst->rect, sizeof(rga_rect_t));
+	if (src1)
+		memcpy(&relSrc1Rect, &src1->rect, sizeof(rga_rect_t));
 
-    srcFd = dstFd = src1Fd = -1;
-    if (src && src->hnd) {
-    	ret = RkRgaGetHandleFd(src->hnd, &srcFd);
-    	if (ret) {
-    		ALOGE("dst handle get fd fail ret = %d,hnd=%p", ret, src->hnd);
-    		printf("-dst handle get fd fail ret = %d,hnd=%p", ret, src->hnd);
-    		return ret;
-    	} else if (srcFd < 0)
-		ALOGE("dst handle get srcFd = %d,hnd=%p", srcFd, src->hnd);
-    	if (!isRectValid(relSrcRect)) {
-    	    ret = getRgaRect(src->hnd, &tmpSrcRect);
-    	    if (ret)
-    	        return ret;
-            memcpy(&relSrcRect, &tmpSrcRect, sizeof(rga_rect_t));
-    	}
-	if (relSrcRect.hstride == 0)
-		relSrcRect.hstride = relSrcRect.height;
-    }
+	srcFd = dstFd = src1Fd = -1;
+	if (src && src->hnd) {
+		ret = RkRgaGetHandleFd(src->hnd, &srcFd);
+		if (ret) {
+			ALOGE("dst handle get fd fail ret = %d,hnd=%p", ret, src->hnd);
+			printf("-dst handle get fd fail ret = %d,hnd=%p", ret, src->hnd);
+			return ret;
+		} else if (srcFd < 0)
+			ALOGE("dst handle get srcFd = %d,hnd=%p", srcFd, src->hnd);
+		if (!isRectValid(relSrcRect)) {
+			ret = getRgaRect(src->hnd, &tmpSrcRect);
+			if (ret)
+				return ret;
+			memcpy(&relSrcRect, &tmpSrcRect, sizeof(rga_rect_t));
+		}
+		if (relSrcRect.hstride == 0)
+			relSrcRect.hstride = relSrcRect.height;
+	}
 
-    if (dst && dst->hnd) {
-    	ret = RkRgaGetHandleFd(dst->hnd, &dstFd);
-    	if (ret) {
-    		ALOGE("dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
-    		printf("-dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
-    		return ret;
-    	}
-    	if (!isRectValid(relDstRect)) {
-    	    ret = getRgaRect(dst->hnd, &tmpDstRect);
-    	    if (ret)
-    	        return ret;
-            memcpy(&relDstRect, &tmpDstRect, sizeof(rga_rect_t));
-    	}
-	if (relDstRect.hstride == 0)
-		relDstRect.hstride = relDstRect.height;
-    }
+	if (dst && dst->hnd) {
+		ret = RkRgaGetHandleFd(dst->hnd, &dstFd);
+		if (ret) {
+			ALOGE("dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
+			printf("-dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
+			return ret;
+		}
+		if (!isRectValid(relDstRect)) {
+			ret = getRgaRect(dst->hnd, &tmpDstRect);
+			if (ret)
+				return ret;
+			memcpy(&relDstRect, &tmpDstRect, sizeof(rga_rect_t));
+		}
+		if (relDstRect.hstride == 0)
+			relDstRect.hstride = relDstRect.height;
+	}
 
-    if (src1 && src1->hnd) {
-    	ret = RkRgaGetHandleFd(src1->hnd, &src1Fd);
-    	if (ret) {
-    		ALOGE("dst handle get fd fail ret = %d,hnd=%p", ret, &src1->hnd);
-    		printf("-dst handle get fd fail ret = %d,hnd=%p", ret, &src1->hnd);
-    		return ret;
-    	}
-    	if (!isRectValid(relSrcRect)) {
-    	    ret = getRgaRect(src1->hnd, &tmpSrc1Rect);
-    	    if (ret)
-    	        return ret;
-            memcpy(&relSrc1Rect, &tmpSrc1Rect, sizeof(rga_rect_t));
-    	}
-	if (relSrc1Rect.hstride == 0)
-		relSrc1Rect.hstride = relSrc1Rect.height;
-    }
+	if (src1 && src1->hnd) {
+		ret = RkRgaGetHandleFd(src1->hnd, &src1Fd);
+		if (ret) {
+			ALOGE("dst handle get fd fail ret = %d,hnd=%p", ret, &src1->hnd);
+			printf("-dst handle get fd fail ret = %d,hnd=%p", ret, &src1->hnd);
+			return ret;
+		}
+		if (!isRectValid(relSrcRect)) {
+			ret = getRgaRect(src1->hnd, &tmpSrc1Rect);
+			if (ret)
+				return ret;
+			memcpy(&relSrc1Rect, &tmpSrc1Rect, sizeof(rga_rect_t));
+		}
+		if (relSrc1Rect.hstride == 0)
+			relSrc1Rect.hstride = relSrc1Rect.height;
+	}
 
-    if (src && srcFd < 0)
-        srcFd = src->fd;
+	if (src && srcFd < 0)
+		srcFd = src->fd;
 
-    if (dst && dstFd < 0)
-        dstFd = dst->fd;
+	if (dst && dstFd < 0)
+		dstFd = dst->fd;
 
-    if (src1 && src1Fd < 0)
-         src1Fd = src1->fd;
-    
-    if (src && srcFd < 0) {
-        ALOGE("Has not support without src fd now");
-        return -EINVAL;
-    }
+	if (src1 && src1Fd < 0)
+		src1Fd = src1->fd;
 
-    if (dst && dstFd < 0) {
-        ALOGE("Has not support without dst fd now");
-        return -EINVAL;
-    }
+	if (src && srcFd < 0) {
+		ALOGE("Has not support without src fd now");
+		return -EINVAL;
+	}
 
-    if (src1 && src1Fd < 0) {
-        ALOGE("Has not support without src fd now");
-        return -EINVAL;
-    }
+	if (dst && dstFd < 0) {
+		ALOGE("Has not support without dst fd now");
+		return -EINVAL;
+	}
+
+	if (src1 && src1Fd < 0) {
+		ALOGE("Has not support without src fd now");
+		return -EINVAL;
+	}
 	//check rects
 	//check buffer_handle_t with rects
 
@@ -140,9 +140,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	memset(&dstImage, 0, sizeof(struct rga_image));
 	memset(&src1Image, 0, sizeof(struct rga_image));
 
-    planeAlpha = (blend & 0xFF0000) >> 16;
-    perpixelAlpha = relSrcRect.format == HAL_PIXEL_FORMAT_RGBA_8888 ||
-                        relSrcRect.format == HAL_PIXEL_FORMAT_BGRA_8888;
+	planeAlpha = (blend & 0xFF0000) >> 16;
+	perpixelAlpha = relSrcRect.format == HAL_PIXEL_FORMAT_RGBA_8888 ||
+		relSrcRect.format == HAL_PIXEL_FORMAT_BGRA_8888;
 
 	dstImage.bo[0] = dstFd;
 	srcImage.bo[0] = srcFd;
@@ -153,7 +153,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	srcImage.height = relSrcRect.height;
 	srcImage.hstride = relSrcRect.hstride;
 	srcImage.stride = computeRgaStrideByAndroidFormat(relSrcRect.wstride,
-	                                                  relSrcRect.format);
+			relSrcRect.format);
 	srcImage.color_mode = getDrmFomatFromAndroidFormat(relSrcRect.format);
 
 	if (!srcImage.color_mode) {
@@ -166,7 +166,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	dstImage.height = relDstRect.height;
 	dstImage.hstride = relDstRect.hstride;
 	dstImage.stride = computeRgaStrideByAndroidFormat(relDstRect.wstride,
-	                                                  relDstRect.format);
+			relDstRect.format);
 	dstImage.color_mode = getDrmFomatFromAndroidFormat(relDstRect.format);
 
 	if (!dstImage.color_mode) {
@@ -174,65 +174,65 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		return -EINVAL;
 	}
 
-    if (src1) {
-    	src1Image.buf_type = RGA_IMGBUF_GEM;
-    	src1Image.width = relSrc1Rect.width;
-    	src1Image.height = relSrc1Rect.height;
-        src1Image.hstride = relSrcRect.hstride;
-    	src1Image.stride = computeRgaStrideByAndroidFormat(relSrc1Rect.wstride,
-    	                                                  relSrc1Rect.format);
-    	src1Image.color_mode = getDrmFomatFromAndroidFormat(relSrc1Rect.format);
+	if (src1) {
+		src1Image.buf_type = RGA_IMGBUF_GEM;
+		src1Image.width = relSrc1Rect.width;
+		src1Image.height = relSrc1Rect.height;
+		src1Image.hstride = relSrcRect.hstride;
+		src1Image.stride = computeRgaStrideByAndroidFormat(relSrc1Rect.wstride,
+				relSrc1Rect.format);
+		src1Image.color_mode = getDrmFomatFromAndroidFormat(relSrc1Rect.format);
 
-    	if (!src1Image.color_mode) {
-    		ALOGE("bad format : %d",src1Image.color_mode);
-    		return -EINVAL;
-    	}
+		if (!src1Image.color_mode) {
+			ALOGE("bad format : %d",src1Image.color_mode);
+			return -EINVAL;
+		}
 	}
 
 	if ((rotation & DRM_RGA_TRANSFORM_ROT_90)
-		degree = 90;
+			degree = 90;
 
 #if 0
-	printf("[0x%x]src[%d,%d,%d,%d][%d,%d],dst[%d,%d,%d,%d][%d,%d]\n",rotation,
-                                relSrcRect.xoffset,relSrcRect.yoffset,
-                                relSrcRect.width,  relSrcRect.height,
-                                relSrcRect.wstride,relSrcRect.hstride,
-                                relDstRect.xoffset,relDstRect.yoffset,
-                                relDstRect.width,  relDstRect.height,
-                                relDstRect.wstride,relDstRect.hstride);
-	ALOGD("[0x%x]src[%d,%d,%d,%d][%d,%d],dst[%d,%d,%d,%d][%d,%d]\n",rotation,
-                            relSrcRect.xoffset,relSrcRect.yoffset,
-                            relSrcRect.width,  relSrcRect.height,
-                            relSrcRect.wstride,relSrcRect.hstride,
-                            relDstRect.xoffset,relDstRect.yoffset,
-                            relDstRect.width,  relDstRect.height,
-                            relDstRect.wstride,relDstRect.hstride);
-	fprintf(stderr, "ctx=%p,ctx->ctx=%p\n",ctx,ctx->ctx);
-	ctx->ctx->log = 1;
+			printf("[0x%x]src[%d,%d,%d,%d][%d,%d],dst[%d,%d,%d,%d][%d,%d]\n",rotation,
+				relSrcRect.xoffset,relSrcRect.yoffset,
+				relSrcRect.width,  relSrcRect.height,
+				relSrcRect.wstride,relSrcRect.hstride,
+				relDstRect.xoffset,relDstRect.yoffset,
+				relDstRect.width,  relDstRect.height,
+				relDstRect.wstride,relDstRect.hstride);
+			ALOGD("[0x%x]src[%d,%d,%d,%d][%d,%d],dst[%d,%d,%d,%d][%d,%d]\n",rotation,
+				relSrcRect.xoffset,relSrcRect.yoffset,
+				relSrcRect.width,  relSrcRect.height,
+				relSrcRect.wstride,relSrcRect.hstride,
+				relDstRect.xoffset,relDstRect.yoffset,
+				relDstRect.width,  relDstRect.height,
+				relDstRect.wstride,relDstRect.hstride);
+			fprintf(stderr, "ctx=%p,ctx->ctx=%p\n",ctx,ctx->ctx);
+			ctx->ctx->log = 1;
 #endif
 
-	rga_multiple_transform(ctx->ctx, &srcImage, &dstImage,
-                                relSrcRect.xoffset, relSrcRect.yoffset,
-                                relSrcRect.width,   relSrcRect.height,
-                                relDstRect.xoffset, relDstRect.yoffset,
-                                relDstRect.width,   relDstRect.height,
-                                degree, rotation & DRM_RGA_TRANSFORM_FLIP_H,
-                                        rotation & DRM_RGA_TRANSFORM_FLIP_V);
+			rga_multiple_transform(ctx->ctx, &srcImage, &dstImage,
+					relSrcRect.xoffset, relSrcRect.yoffset,
+					relSrcRect.width,   relSrcRect.height,
+					relDstRect.xoffset, relDstRect.yoffset,
+					relDstRect.width,   relDstRect.height,
+					degree, rotation & DRM_RGA_TRANSFORM_FLIP_H,
+					rotation & DRM_RGA_TRANSFORM_FLIP_V);
 
-	ret = rga_exec(ctx->ctx);
-	if (ret < 0) {
-		ALOGE("Handle by rga error");
-		return ret;
-	}
-	return 0;
+			ret = rga_exec(ctx->ctx);
+			if (ret < 0) {
+				ALOGE("Handle by rga error");
+				return ret;
+			}
+			return 0;
 }
 
 int RgaCollorFill(rga_info *dst)
 {
-    if (!dst)
-	return -EINVAL;
+	if (!dst)
+		return -EINVAL;
 
-    return 0;
+	return 0;
 }
 
 int drmRgaOpen(void **context)
@@ -243,10 +243,10 @@ int drmRgaOpen(void **context)
 	int fd = -1;
 	int ret = 0;
 
-    if (!context) {
-        ret = -EINVAL;
-        goto mallocErr;
-    }
+	if (!context) {
+		ret = -EINVAL;
+		goto mallocErr;
+	}
 
 	if (!rgaCtx) {
 		ctx = (struct rgaContext *)malloc(sizeof(struct rgaContext));
@@ -311,11 +311,11 @@ int drmRgaClose(void *context)
 		return -ENODEV;
 	}
 
-    if (context) {
-        ALOGE("Try to uninit rgaCtx=%p", context);
+	if (context) {
+		ALOGE("Try to uninit rgaCtx=%p", context);
 		return -ENODEV;
-    }
-    
+	}
+
 	if (context != ctx) {
 		ALOGE("Try to exit wrong ctx=%p",ctx);
 		return -ENODEV;
@@ -343,16 +343,16 @@ int drmRgaClose(void *context)
 
 int RgaInit(void **ctx)
 {
-    int ret = 0;
-    ret = drmRgaOpen(ctx);
-    return ret;
+	int ret = 0;
+	ret = drmRgaOpen(ctx);
+	return ret;
 }
 
 int RgaDeInit(void *ctx)
 {
-    int ret = 0;
-    ret = drmRgaClose(ctx);
-    return ret;
+	int ret = 0;
+	ret = drmRgaClose(ctx);
+	return ret;
 }
 
 static int dumpRgaRects(drm_rga_t tmpRects)
@@ -369,7 +369,7 @@ static int dumpRgaRects(drm_rga_t tmpRects)
 
 static int isRectValid(rga_rect_t rect)
 {
-    return rect.width > 0 && rect.height > 0;
+	return rect.width > 0 && rect.height > 0;
 }
 
 static int getRgaRect(buffer_handle_t hnd, rga_rect_t *rect)
@@ -377,10 +377,10 @@ static int getRgaRect(buffer_handle_t hnd, rga_rect_t *rect)
 	int ret = 0;
 	std::vector<int> dstAttrs;
 
-    if (!rect) {
+	if (!rect) {
 		ALOGE("Get rect but rect[%p] is null point", rect);
-        return -EINVAL;
-    }
+		return -EINVAL;
+	}
 
 	ret = RkRgaGetHandleAttributes(hnd, &dstAttrs);
 	if (ret) {
@@ -389,10 +389,10 @@ static int getRgaRect(buffer_handle_t hnd, rga_rect_t *rect)
 		return ret;
 	}
 
-    if (dstAttrs.size() <= 0) {
-        ALOGE("SIZE = %d", (int)dstAttrs.size());
-        return -EINVAL;
-    }
+	if (dstAttrs.size() <= 0) {
+		ALOGE("SIZE = %d", (int)dstAttrs.size());
+		return -EINVAL;
+	}
 
 	memset(rect, 0, sizeof(rga_rect_t));
 
@@ -406,7 +406,7 @@ static int getRgaRect(buffer_handle_t hnd, rga_rect_t *rect)
 }
 
 static int getRgaRects(buffer_handle_t src,
-                                buffer_handle_t dst, drm_rga_t* tmpRects)
+		buffer_handle_t dst, drm_rga_t* tmpRects)
 {
 	int ret = 0;
 	std::vector<int> srcAttrs,dstAttrs;

@@ -47,9 +47,9 @@
 // -------------------------------------------------------------------------------
 int         RkRgaGetHandleFd(buffer_handle_t handle, int *fd);
 int         RkRgaGetHandleAttributes(buffer_handle_t handle,
-                                                    std::vector<int> *attrs);
+							std::vector<int> *attrs);
 int         RkRgaGetHandleMapAddress(buffer_handle_t handle,
-                                                                 void **buf);
+									void **buf);
 
 int         RkRgaGetRgaFormat(int format);
 #endif
