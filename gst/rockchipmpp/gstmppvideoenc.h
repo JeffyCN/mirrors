@@ -65,6 +65,10 @@ struct _GstMppVideoEnc
   MppFrame mpp_frame;
   GstCaps *outcaps;
 
+  /* the currently format */
+  GstVideoInfo info;
+  GstVideoAlignment align;
+
   /* pads */
   GstCaps *probed_srccaps;
   GstCaps *probed_sinkcaps;
