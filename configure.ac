@@ -252,11 +252,11 @@ dnl Non ported plugins (non-dependant, then dependant)
 dnl Make sure you have a space before and after all plugins
 
 dnl these are all the gst plug-ins, compilable without additional libs
-AG_GST_CHECK_PLUGIN(rksink)
 
 dnl of EXT plugins
 AM_CONDITIONAL(USE_ROCKCHIPMPP, false)
 AM_CONDITIONAL(USE_VPUDEC, false)
+AM_CONDITIONAL(USE_KMS, false)
 
 dnl *** finalize CFLAGS, LDFLAGS, LIBS
 
@@ -336,25 +336,11 @@ AG_GST_CHECK_FEATURE(VPUDEC, [rockchip vpu legacy libraries], vpudec, [
     HAVE_VPUDEC=yes, HAVE_VPUDEC=no)
 ])
 
-PKG_CHECK_MODULES([DRM], [libdrm], HAVE_KMS=yes, HAVE_KMS=no)
-PKG_CHECK_MODULES([X11], [x11], HAVE_X11=yes, HAVE_X11=no)
-AM_CONDITIONAL(HAVE_X11, test "x$HAVE_X11" = "xyes")
-
-if test "x$HAVE_X11" = xyes; then
-  AC_DEFINE(USE_X11, [1], [Use X11 window system])
-  AC_DEFINE(USE_EGL_X11, [1], [Use X11 EGL window system])
-fi
-
-dnl *** X11 ***
-AG_GST_CHECK_FEATURE(X, [X libraries and plugins],
-                  [ximagesink], [
-  AG_GST_PKG_CHECK_MODULES(X, x11)
-])
-
-dnl *** eglgles ***
-AG_GST_CHECK_FEATURE(X, [GLES and EGL],
-                  [eglglessink], [
-  AG_GST_PKG_CHECK_MODULES(EGLGLES, egl glesv2)
+dnl *** kms ***
+translit(dnm, m, l) AM_CONDITIONAL(USE_KMS, true)
+AG_GST_CHECK_FEATURE(KMS, [drm/kms libraries], kms, [
+  AG_GST_PKG_CHECK_MODULES(GST_ALLOCATORS, gstreamer-allocators-1.0)
+  PKG_CHECK_MODULES([KMS_DRM], [libdrm >= 2.4.55], HAVE_KMS=yes, HAVE_KMS=no)
 ])
 
 dnl keep this alphabetic per directory, please
@@ -366,7 +352,7 @@ gst-libs/gst/vpudec/Makefile
 gst/Makefile
 gst/vpudec/Makefile
 gst/rockchipmpp/Makefile
-gst/rksink/Makefile
+gst/kms/Makefile
 common/Makefile
 common/m4/Makefile
 m4/Makefile

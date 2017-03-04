@@ -10,8 +10,12 @@ else
 VPUDEC_DIR=
 endif
 
-RKSINK_DIR=rksink
+if USE_KMS
+KMS_DIR=kms
+else
+KMS_DIR=
+endif
 
-SUBDIRS = $(ROCKCHIPMPP_DIR) $(VPUDEC_DIR) $(RKSINK_DIR)
+SUBDIRS = $(ROCKCHIPMPP_DIR) $(VPUDEC_DIR) $(KMS_DIR)
 
-DIST_SUBDIRS = rockchipmpp vpudec rksink
+DIST_SUBDIRS = rockchipmpp vpudec kms
