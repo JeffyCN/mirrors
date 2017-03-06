@@ -77,7 +77,72 @@ static GstStaticPadTemplate gst_mpp_video_dec_src_template =
         "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]" ";")
     );
 
-static gboolean gst_mpp_video_dec_flush (GstVideoDecoder * decoder);
+static MppCodingType
+to_mpp_codec (GstStructure * s)
+{
+  if (gst_structure_has_name (s, "video/x-h264"))
+    return MPP_VIDEO_CodingAVC;
+
+  if (gst_structure_has_name (s, "video/x-h265"))
+    return MPP_VIDEO_CodingHEVC;
+
+  if (gst_structure_has_name (s, "video/x-h263"))
+    return MPP_VIDEO_CodingH263;
+
+  if (gst_structure_has_name (s, "video/mpeg")) {
+    gint mpegversion = 0;
+    if (gst_structure_get_int (s, "mpegversion", &mpegversion)) {
+      switch (mpegversion) {
+        case 2:
+          return MPP_VIDEO_CodingMPEG2;
+          break;
+        case 4:
+          return MPP_VIDEO_CodingMPEG4;
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  if (gst_structure_has_name (s, "video/x-vp8"))
+    return MPP_VIDEO_CodingVP8;
+
+  /* add more type here */
+  return MPP_VIDEO_CodingUnused;
+}
+
+static GstVideoFormat
+mpp_frame_type_to_gst_video_format (MppFrameFormat fmt)
+{
+  switch (fmt) {
+    case MPP_FMT_YUV420SP:
+      return GST_VIDEO_FORMAT_NV12;
+      break;
+    case MPP_FMT_YUV420SP_10BIT:
+      /* FIXME it is platform special pixel format */
+      return GST_VIDEO_FORMAT_P010_10LE;
+      break;
+    default:
+      return GST_VIDEO_FORMAT_UNKNOWN;
+      break;
+  }
+  return GST_VIDEO_FORMAT_UNKNOWN;
+}
+
+static GstVideoInterlaceMode
+mpp_frame_mode_to_gst_interlace_mode (RK_U32 mode)
+{
+  switch (mode) {
+    case MPP_FRAME_FLAG_DEINTERLACED:
+      return GST_VIDEO_INTERLACE_MODE_MIXED;
+    case MPP_FRAME_FLAG_BOT_FIRST:
+    case MPP_FRAME_FLAG_TOP_FIRST:
+      return GST_VIDEO_INTERLACE_MODE_INTERLEAVED;
+    default:
+      return GST_VIDEO_INTERLACE_MODE_PROGRESSIVE;
+  }
+}
 
 static void
 gst_mpp_video_dec_unlock (GstMppVideoDec * self)
@@ -134,39 +199,58 @@ gst_mpp_video_dec_sendeos (GstVideoDecoder * decoder)
   return TRUE;
 }
 
-static MppCodingType
-to_mpp_codec (GstStructure * s)
+static gboolean
+gst_mpp_video_to_frame_format (MppFrame mframe, GstVideoInfo * info,
+    GstVideoAlignment * align)
 {
-  if (gst_structure_has_name (s, "video/x-h264"))
-    return MPP_VIDEO_CodingAVC;
+  gint hor_stride, ver_stride, mv_size;
+  GstVideoFormat format;
+  GstVideoInterlaceMode mode;
 
-  if (gst_structure_has_name (s, "video/x-h265"))
-    return MPP_VIDEO_CodingHEVC;
+  if (NULL == mframe || NULL == info || NULL == align)
+    return FALSE;
+  gst_video_info_init (info);
+  gst_video_alignment_reset (align);
 
-  if (gst_structure_has_name (s, "video/x-h263"))
-    return MPP_VIDEO_CodingH263;
+  format = mpp_frame_type_to_gst_video_format (mpp_frame_get_fmt (mframe));
+  if (format == GST_VIDEO_FORMAT_UNKNOWN)
+    return FALSE;
+  mode = mpp_frame_get_mode (mframe);
 
-  if (gst_structure_has_name (s, "video/mpeg")) {
-    gint mpegversion = 0;
-    if (gst_structure_get_int (s, "mpegversion", &mpegversion)) {
-      switch (mpegversion) {
-        case 2:
-          return MPP_VIDEO_CodingMPEG2;
-          break;
-        case 4:
-          return MPP_VIDEO_CodingMPEG4;
-          break;
-        default:
-          break;
-      }
-    }
+  info->finfo = gst_video_format_get_info (format);
+  info->width = mpp_frame_get_width (mframe);
+  info->height = mpp_frame_get_height (mframe);
+  info->interlace_mode = mpp_frame_mode_to_gst_interlace_mode (mode);
+  /* FIXME only work for the buffer with only two planes */
+  hor_stride = mpp_frame_get_hor_stride (mframe);
+  info->stride[0] = hor_stride;
+  info->stride[1] = hor_stride;
+  ver_stride = mpp_frame_get_ver_stride (mframe);
+  info->offset[0] = 0;
+  info->offset[1] = info->stride[0] * ver_stride;
+  /* FIXME only work for YUV 4:2:0 */
+  info->size = (info->stride[0] * ver_stride) * 3 / 2;
+  mv_size = info->size * 2 / 6;
+  info->size += mv_size;
+
+  align->padding_right = hor_stride - info->width;
+  align->padding_bottom = ver_stride - info->height;
+
+  return TRUE;
+}
+
+static gboolean
+gst_mpp_video_acquire_frame_format (GstMppVideoDec * self)
+{
+  MPP_RET mret;
+  MppFrame mframe = NULL;
+  mret = self->mpi->decode_get_frame (self->mpp_ctx, &mframe);
+  if (mret || NULL == mframe) {
+    GST_ERROR_OBJECT (self, "can't get valid info %d", mret);
+    return FALSE;
   }
 
-  if (gst_structure_has_name (s, "video/x-vp8"))
-    return MPP_VIDEO_CodingVP8;
-
-  /* add more type here */
-  return MPP_VIDEO_CodingUnused;
+  return gst_mpp_video_to_frame_format (mframe, &self->info, &self->align);
 }
 
 static gboolean
@@ -253,13 +337,7 @@ gst_mpp_video_dec_set_format (GstVideoDecoder * decoder,
 {
   GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
   GstStructure *structure;
-  GstVideoInfo *info;
-  GstVideoAlignment *align;
-  GstVideoCodecState *output_state;
-  gint width, height, hor_stride, ver_stride, mv_size;
-  MppFrame mframe = NULL;
   MppCodingType codingtype;
-  const gchar *codec_profile;
 
   GST_DEBUG_OBJECT (self, "Setting format: %" GST_PTR_FORMAT, state->caps);
 
@@ -306,78 +384,6 @@ gst_mpp_video_dec_set_format (GstVideoDecoder * decoder,
     goto device_error;
 
   self->input_state = gst_video_codec_state_ref (state);
-
-  g_return_val_if_fail (gst_structure_get_int (structure,
-          "width", &width) != 0, FALSE);
-  g_return_val_if_fail (gst_structure_get_int (structure,
-          "height", &height) != 0, FALSE);
-  hor_stride = width;
-  ver_stride = height;
-
-  info = &self->info;
-  gst_video_info_init (info);
-
-  mpp_frame_init (&mframe);
-
-  codec_profile = gst_structure_get_string (structure, "profile");
-  if (codec_profile && g_strrstr (codec_profile, "10")) {
-    /* FIXME the correct format is not P010 but a private format */
-    info->finfo = gst_video_format_get_info (GST_VIDEO_FORMAT_P010_10LE);
-    hor_stride = (hor_stride * 10) >> 3;
-    mpp_frame_set_fmt (mframe, MPP_FMT_YUV420SP_10BIT);
-  } else {
-    info->finfo = gst_video_format_get_info (GST_VIDEO_FORMAT_NV12);
-    mpp_frame_set_fmt (mframe, MPP_FMT_YUV420SP);
-  }
-  if (gst_structure_has_name (structure, "video/x-h265")) {
-    hor_stride = MPP_ALIGN (hor_stride, 256) | 256;
-    ver_stride = MPP_ALIGN (ver_stride, 8);
-  } else {
-    hor_stride = MPP_ALIGN (hor_stride, 16);
-    ver_stride = MPP_ALIGN (ver_stride, 16);
-  }
-
-  mpp_frame_set_width (mframe, width);
-  mpp_frame_set_height (mframe, height);
-  mpp_frame_set_hor_stride (mframe, hor_stride);
-  mpp_frame_set_ver_stride (mframe, ver_stride);
-
-  if (self->mpi->control
-      (self->mpp_ctx, MPP_DEC_SET_FRAME_INFO, (MppParam) mframe))
-    goto device_error;
-
-  mpp_frame_deinit (&mframe);
-
-  info->width = width;
-  info->height = height;
-  info->offset[0] = 0;
-  info->offset[1] = hor_stride * ver_stride;
-  info->stride[0] = hor_stride;
-  info->stride[1] = hor_stride;
-  info->size = (hor_stride * ver_stride) * 3 / 2;
-  mv_size = info->size * 2 / 6;
-  info->size += mv_size;
-
-  GST_INFO_OBJECT (self,
-      "video info stride %d, offset %d, stride %d, offset %d",
-      GST_VIDEO_INFO_PLANE_STRIDE (&self->info, 0),
-      GST_VIDEO_INFO_PLANE_OFFSET (&self->info, 0),
-      GST_VIDEO_INFO_PLANE_STRIDE (&self->info, 1),
-      GST_VIDEO_INFO_PLANE_OFFSET (&self->info, 1));
-
-  output_state =
-      gst_video_decoder_set_output_state (GST_VIDEO_DECODER (self),
-      info->finfo->format, info->width, info->height, self->input_state);
-
-  if (self->output_state)
-    gst_video_codec_state_unref (self->output_state);
-  self->output_state = gst_video_codec_state_ref (output_state);
-
-  align = &self->align;
-  gst_video_alignment_reset (align);
-  /* Compute padding and set buffer alignment */
-  align->padding_right = hor_stride - width;
-  align->padding_bottom = ver_stride - height;
 
 done:
   return TRUE;
@@ -481,19 +487,7 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
 
   if (!gst_buffer_pool_is_active (pool)) {
     GstBuffer *codec_data;
-
-    GstStructure *config = gst_buffer_pool_get_config (pool);
-    /* FIXME if you suffer from the reconstruction of buffer pool which slows
-     * down the decoding, then don't allocate more than 10 buffers here */
-    gst_buffer_pool_config_set_params (config, self->output_state->caps,
-        self->info.size, 22, 22);
-    gst_buffer_pool_config_set_video_alignment (config, &self->align);
-
-    if (!gst_buffer_pool_set_config (pool, config))
-      goto error_activate_pool;
-    /* activate the pool: the buffers are allocated */
-    if (gst_buffer_pool_set_active (self->pool, TRUE) == FALSE)
-      goto error_activate_pool;
+    gint block_flag = MPP_POLL_BLOCK;
 
     codec_data = self->input_state->codec_data;
     if (codec_data) {
@@ -518,9 +512,41 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
 
     mpp_packet_deinit (&mpkt);
 
+    self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK,
+        (gpointer) & block_flag);
+
+    if (gst_mpp_video_acquire_frame_format (self)) {
+      GstVideoCodecState *output_state;
+      GstVideoInfo *info = &self->info;
+      GstStructure *config = gst_buffer_pool_get_config (pool);
+
+      output_state =
+          gst_video_decoder_set_output_state (decoder,
+          info->finfo->format, info->width, info->height, self->input_state);
+      output_state->info.interlace_mode = info->interlace_mode;
+      gst_video_codec_state_unref (output_state);
+
+      /* NOTE: if you suffer from the reconstruction of buffer pool which slows
+       * down the decoding, then don't allocate more than 10 buffers here */
+      gst_buffer_pool_config_set_params (config, output_state->caps,
+          self->info.size, NB_OUTPUT_BUFS, NB_OUTPUT_BUFS);
+      gst_buffer_pool_config_set_video_alignment (config, &self->align);
+
+      if (!gst_buffer_pool_set_config (pool, config))
+        goto error_activate_pool;
+      /* activate the pool: the buffers are allocated */
+      if (gst_buffer_pool_set_active (self->pool, TRUE) == FALSE)
+        goto error_activate_pool;
+
+      self->mpi->control (self->mpp_ctx, MPP_DEC_SET_INFO_CHANGE_READY, NULL);
+    } else {
+      goto not_negotiated;
+    }
+
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
 
     gst_buffer_unref (codec_data);
+
   }
 
   /* Start the output thread if it is not started before */
@@ -630,7 +656,6 @@ gst_mpp_video_dec_class_init (GstMppVideoDecClass * klass)
 {
   GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
   GstVideoDecoderClass *video_decoder_class = GST_VIDEO_DECODER_CLASS (klass);
-  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_mpp_video_dec_src_template));

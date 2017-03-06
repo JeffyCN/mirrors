@@ -69,7 +69,6 @@ gst_mpp_dec_buffer_pool_start (GstBufferPool * bpool)
   GstStructure *config;
   GstCaps *caps;
   guint size, min_buffers, max_buffers, count;
-  gint block_flag = MPP_POLL_BLOCK;
 
   GST_DEBUG_OBJECT (pool, "start pool %p", pool);
 
@@ -82,8 +81,6 @@ gst_mpp_dec_buffer_pool_start (GstBufferPool * bpool)
   if (count < min_buffers)
     goto no_buffers;
 
-  pool->dec->mpi->control (pool->dec->mpp_ctx, MPP_SET_OUTPUT_BLOCK,
-      (gpointer) & block_flag);
   pool->dec->mpi->control (pool->dec->mpp_ctx, MPP_DEC_SET_EXT_BUF_GROUP,
       (gpointer) pool->vallocator->mpp_mem_pool);
 

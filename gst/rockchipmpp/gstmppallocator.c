@@ -317,6 +317,7 @@ mpp_mem_pool_error:
 error:
   {
     allocator->count = 0;
+    return 0;
   }
 }
 
