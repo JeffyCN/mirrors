@@ -9,10 +9,10 @@
 #include <gst/video/videooverlay.h>
 
 #include <gst/video/gstvideometa.h>
-#include <gst/rksink/gstkmsutils.h>
 
 /* Object header */
 #include "ximagesink.h"
+#include "rkx_kmsutils.h"
 
 /* Debugging category */
 #include <gst/gstinfo.h>
@@ -398,7 +398,7 @@ drm_ensure_allowed_caps (GstRkXImageSink * self, drmModePlane * plane,
     return FALSE;
 
   for (i = 0; i < plane->count_formats; i++) {
-    fmt = gst_video_format_from_drm (plane->formats[i]);
+    fmt = rkx_video_format_from_drm (plane->formats[i]);
     if (fmt == GST_VIDEO_FORMAT_UNKNOWN) {
       GST_INFO_OBJECT (self, "ignoring format %" GST_FOURCC_FORMAT,
           GST_FOURCC_ARGS (plane->formats[i]));
@@ -439,7 +439,7 @@ xwindow_calculate_display_ratio (GstRkXImageSink * self, int *x, int *y,
   video_par_n = self->par_n;
   video_par_d = self->par_d;
 
-  gst_video_calculate_device_ratio (self->hdisplay, self->vdisplay,
+  rkx_video_calculate_device_ratio (self->hdisplay, self->vdisplay,
       self->mm_width, self->mm_height, &dpy_par_n, &dpy_par_d);
 
   if (!gst_video_calculate_display_ratio (&dar_n, &dar_d, video_width,
@@ -646,7 +646,7 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
   video_info = gst_buffer_get_video_meta (ximage);
   w = GST_VIDEO_INFO_WIDTH (&ximagesink->info);
   h = GST_VIDEO_INFO_HEIGHT (&ximagesink->info);
-  fmt = gst_drm_format_from_video (GST_VIDEO_INFO_FORMAT (&ximagesink->info));
+  fmt = rkx_drm_format_from_video (GST_VIDEO_INFO_FORMAT (&ximagesink->info));
 
   pitches[0] = video_info->stride[0];
   offsets[0] = video_info->offset[0];

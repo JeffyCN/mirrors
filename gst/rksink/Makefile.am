@@ -44,6 +44,7 @@ if HAVE_X11
 
 libgstrkvideo_la_SOURCES +=			\
 	rkximage/ximagesink.c                           \
+	rkximage/rkx_kmsutils.c                         \
 	eglgles/gsteglglessink.c               		\
 	eglgles/gstegladaptation.c			\
 	eglgles/gstegladaptation_egl.c			\
