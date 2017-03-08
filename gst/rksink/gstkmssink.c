@@ -875,8 +875,8 @@ gst_kms_sink_show_frame (GstVideoSink * vsink, GstBuffer * buf)
     goto set_plane_failed;
 
   /* Wait for the previous frame to complete redraw */
-  if (!gst_kms_sink_sync (self))
-    goto bail;
+  // if (!gst_kms_sink_sync (self))
+  //   goto bail;
 
   if (last_fb_id) {
     drmModeRmFB (self->fd, last_fb_id);
