@@ -18,8 +18,6 @@
 #include "config.h"
 #endif
 
-#include "gstkmssink.h"
-
 #ifdef USE_X11
 #include "eglgles/gstegladaptation.h"
 #include "eglgles/gsteglglessink.h"
@@ -33,10 +31,6 @@ GST_DEBUG_CATEGORY (CAT_PERFORMANCE);
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
-  if (!gst_element_register (plugin, "kmssink", GST_RANK_SECONDARY,
-          GST_TYPE_KMS_SINK))
-    return FALSE;
-
 #ifdef USE_X11
   if (!gst_element_register (plugin, "rkximagesink",
           GST_RANK_SECONDARY, GST_TYPE_X_IMAGE_SINK))
