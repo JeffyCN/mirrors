@@ -74,10 +74,27 @@ int RkRgaGetHandleAttributes(buffer_handle_t handle,
 	if (ret)
 		return ret;
 
-	if (mAllocMod->perform)
-		mAllocMod->perform(mAllocMod, op, handle, attrs);
-	else
-		return -ENODEV;
+    if(mAllocMod->perform)
+        return -ENODEV;
+
+#if RK3368_DRM
+    int w,h,pixel_stride,format,size;
+
+    mAllocMod->perform(mAllocMod, GRALLOC_MODULE_PERFORM_GET_HADNLE_WIDTH, handle, &w);
+    mAllocMod->perform(mAllocMod, GRALLOC_MODULE_PERFORM_GET_HADNLE_HEIGHT, handle, &h);
+    mAllocMod->perform(mAllocMod, GRALLOC_MODULE_PERFORM_GET_HADNLE_STRIDE, handle, &pixel_stride);
+    mAllocMod->perform(mAllocMod, GRALLOC_MODULE_PERFORM_GET_HADNLE_FORMAT, handle, &format);
+    mAllocMod->perform(mAllocMod, GRALLOC_MODULE_PERFORM_GET_HADNLE_SIZE, handle, &size);
+
+    //add to attrs.
+    attrs->emplace_back(w);
+    attrs->emplace_back(h);
+    attrs->emplace_back(pixel_stride);
+    attrs->emplace_back(format);
+    attrs->emplace_back(size);
+
+#else
+    mAllocMod->perform(mAllocMod, op, handle, attrs);
 
 	if (ret)
 		ALOGE("GraphicBufferGetHandldAttributes fail %d for:%s",ret,strerror(ret));
@@ -88,6 +105,8 @@ int RkRgaGetHandleAttributes(buffer_handle_t handle,
 				attrs->at(0),attrs->at(1),attrs->at(2),
 				attrs->at(3),attrs->at(4),attrs->at(5));
 	}
+#endif
+
 	return ret;
 }
 

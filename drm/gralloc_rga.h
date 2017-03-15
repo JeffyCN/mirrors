@@ -12,6 +12,6 @@
 
 #ifndef _rockchip_rga_drm_gralloc_h_
 #define _rockchip_rga_drm_gralloc_h_
-#include <gralloc_drm.h>
+#include <drmhwcgralloc.h>
 
 #endif
