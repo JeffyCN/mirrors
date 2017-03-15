@@ -88,7 +88,6 @@ LOCAL_MODULE := librga
 
 LOCAL_C_INCLUDES += external/libdrm/rockchip
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
-LOCAL_C_INCLUDES += hardware/rockchip/hwcomposer
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/drm
 
@@ -131,7 +130,6 @@ LOCAL_MODULE := librga
 
 LOCAL_C_INCLUDES += external/libdrm/rockchip
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
-LOCAL_C_INCLUDES += hardware/rockchip/hwcomposer
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/drm
 
