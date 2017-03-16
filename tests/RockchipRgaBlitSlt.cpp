@@ -76,13 +76,13 @@ int main()
     int srcWidth,srcHeight,srcFormat;
     int dstWidth,dstHeight,dstFormat;
 
-    srcWidth = 1920;
-    srcHeight = 1080;
+    srcWidth = 1536;
+    srcHeight = 2048;
     srcFormat = HAL_PIXEL_FORMAT_RGBA_8888;
 
-    dstWidth = 1920;
-    dstHeight = 1080;
-    dstFormat = HAL_PIXEL_FORMAT_RGBA_8888;
+    dstWidth = 1536;
+    dstHeight = 2048;
+    dstFormat = HAL_PIXEL_FORMAT_RGBX_8888;
 
     RockchipRga& rkRga(RockchipRga::get());
 
@@ -127,6 +127,25 @@ int main()
     memset(buf,0x55,4*1200*1920);
 #endif
     ret = gbs->unlock();
+
+    ret = gbd->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&buf);
+
+    if (ret) {
+        printf("lock buffer error : %s\n",strerror(errno));
+        return ret;
+    } else
+        printf("lock buffer ok : %s\n","**************************************");
+
+
+    {
+#if 1
+        get_buf_from_file(buf, srcFormat, srcWidth, srcHeight, 1);
+#else
+        memset(buf,0x55,4*1200*1920);
+#endif
+    }
+    ret = gbd->unlock();
+
     ret = gbs->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&buf);
     if (ret) {
         printf("unlock buffer error : %s\n",strerror(errno));
@@ -135,12 +154,11 @@ int main()
         printf("unlock buffer ok : %s\n","*************************************");
 
     while(1) {
-        
-        //ret = rkRga.RkRgaBlit(gbs->handle, gbd->handle, NULL, 0, 0);
     	rga_info_t src;
     	rga_info_t dst;
     	memset(&src, 0, sizeof(rga_info_t));
     	src.fd = -1;
+    	src.blend = 0xFF0105;
     	memset(&dst, 0, sizeof(rga_info_t));
     	dst.fd = -1;
     	src.hnd = gbs->handle;
@@ -157,13 +175,45 @@ int main()
         {
             char* dstbuf = NULL;
             ret = gbd->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&dstbuf);
+            output_buf_data_to_file(dstbuf, dstFormat, dstWidth, dstHeight, 0);
+	    ret = gbd->unlock();
+	    ret = gbd->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&dstbuf);
+	    
+	    get_buf_from_file(buf, srcFormat, srcWidth, srcHeight, 2);
+	    ret = gbs->unlock();
+	    ret = gbs->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&buf); 
+	    
+	    int size = dstWidth * dstHeight * 4;
             //for(int i =0; i < mHeight * 1.5; i++)
             //    memcpy(dstbuf + i * 2400,buf + i * 3000,2400);
-            output_buf_data_to_file(dstbuf, dstFormat, dstWidth, dstHeight, 0);
+            //output_buf_data_to_file(dstbuf, dstFormat, dstWidth, dstHeight, 0);
+            //ret = gbd->unlock();
+            //ret = gbd->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&dstbuf);
+	    unsigned int *pstd = (unsigned int *)buf;
+	    unsigned int *pnow = (unsigned int *)dstbuf;
+	    int errCount = 0;
+	    int rightCount = 0;
+            for (int i = 0; i < size / 4; i++) {
+		if (*pstd != *pnow) {
+			printf("i = %8d,[0x%x,0x%x];", i, *pstd ,*pnow);
+			if (i % 16 == 0)
+				printf("\n");
+			errCount ++;
+
+		} else {
+			if (i % (640*1024) == 0)
+				printf("pass i=%8d[0x%x,0x%x]\n",i,*pstd,*pnow);
+			rightCount++;	
+		}
+		pstd++;
+		pnow++;
+		if (errCount > 64)
+			break;
+	    }
+	    ret = gbs->unlock();
             ret = gbd->unlock();
+	    printf("errCount=%d,rightCount=%d\n", errCount, rightCount);
         }
-        printf("threadloop\n");
-        usleep(500000);
 	break;
     }
     return 0;

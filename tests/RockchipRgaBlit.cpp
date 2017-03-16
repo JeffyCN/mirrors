@@ -72,9 +72,6 @@ using namespace android;
 
 int main()
 {
-    const char *inputFilePath = "/data/in%dw%d-h%d-f%d.yuv";
-    const char *outputFilePath = "/data/out%dw%d-h%d-f%d.yuv";
-    char filePath[100];
     int ret = 0;
     int srcWidth,srcHeight,srcFormat;
     int dstWidth,dstHeight,dstFormat;
@@ -142,7 +139,7 @@ int main()
 
     {
 #if 1
-        get_buf_from_file(buf, srcFormat, srcWidth, srcHeight, 0);
+        get_buf_from_file(buf, srcFormat, srcWidth, srcHeight, 1);
 #else
         memset(buf,0x55,4*1200*1920);
 #endif
