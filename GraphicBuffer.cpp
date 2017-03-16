@@ -74,27 +74,32 @@ int RkRgaGetHandleAttributes(buffer_handle_t handle,
 	if (ret)
 		return ret;
 
-    if(mAllocMod->perform)
-        return -ENODEV;
+	if(!mAllocMod->perform)
+		return -ENODEV;
 
 #if RK3368_DRM
-    int w,h,pixel_stride,format,size;
+	int w,h,pixel_stride,format,size;
 
-    mAllocMod->perform(mAllocMod, GRALLOC_MODULE_PERFORM_GET_HADNLE_WIDTH, handle, &w);
-    mAllocMod->perform(mAllocMod, GRALLOC_MODULE_PERFORM_GET_HADNLE_HEIGHT, handle, &h);
-    mAllocMod->perform(mAllocMod, GRALLOC_MODULE_PERFORM_GET_HADNLE_STRIDE, handle, &pixel_stride);
-    mAllocMod->perform(mAllocMod, GRALLOC_MODULE_PERFORM_GET_HADNLE_FORMAT, handle, &format);
-    mAllocMod->perform(mAllocMod, GRALLOC_MODULE_PERFORM_GET_HADNLE_SIZE, handle, &size);
+	op = GRALLOC_MODULE_PERFORM_GET_HADNLE_WIDTH;
+	mAllocMod->perform(mAllocMod, op, handle, &w);
+	op = GRALLOC_MODULE_PERFORM_GET_HADNLE_HEIGHT;
+	mAllocMod->perform(mAllocMod, op, handle, &h);
+	op = GRALLOC_MODULE_PERFORM_GET_HADNLE_STRIDE;
+	mAllocMod->perform(mAllocMod, op, handle, &pixel_stride);
+	op = GRALLOC_MODULE_PERFORM_GET_HADNLE_FORMAT;
+	mAllocMod->perform(mAllocMod, op, handle, &format);
+	op = GRALLOC_MODULE_PERFORM_GET_HADNLE_SIZE;
+	mAllocMod->perform(mAllocMod, op, handle, &size);
 
-    //add to attrs.
-    attrs->emplace_back(w);
-    attrs->emplace_back(h);
-    attrs->emplace_back(pixel_stride);
-    attrs->emplace_back(format);
-    attrs->emplace_back(size);
+	//add to attrs.
+	attrs->emplace_back(w);
+	attrs->emplace_back(h);
+	attrs->emplace_back(pixel_stride);
+	attrs->emplace_back(format);
+	attrs->emplace_back(size);
 
 #else
-    mAllocMod->perform(mAllocMod, op, handle, attrs);
+	mAllocMod->perform(mAllocMod, op, handle, attrs);
 
 	if (ret)
 		ALOGE("GraphicBufferGetHandldAttributes fail %d for:%s",ret,strerror(ret));
