@@ -143,7 +143,7 @@ int get_string_by_format(char *value, int format)
 
 int get_buf_from_file(void *buf, int f, int sw, int sh, int index)
 {
-    const char *inputFilePath = "/data/in%dw%d-h%d-%s.yuv";
+    const char *inputFilePath = "/data/in%dw%d-h%d-%s.bin";
     char filePath[100];
     char fstring[30];
     int ret = 0;
@@ -180,7 +180,7 @@ int get_buf_from_file(void *buf, int f, int sw, int sh, int index)
 
 int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index)
 {
-    const char *outputFilePath = "/data/out%dw%d-h%d-%s.yuv";
+    const char *outputFilePath = "/data/out%dw%d-h%d-%s.bin";
     char filePath[100];
     char fstring[30];
     int ret = 0;
