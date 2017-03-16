@@ -2,8 +2,6 @@ plugin_LTLIBRARIES = libgstrkvideo.la
 
 libgstrkvideo_la_SOURCES = \
 	gstrkvideo.c					\
-	gstkmssink.c            			\
-	gstkmsutils.c					\
 	$(NULL)
 
 libgstrkvideo_la_CFLAGS =			\
@@ -35,12 +33,7 @@ libgstrkvideo_la_LIBTOOLFLAGS =		\
 	$(GST_PLUGIN_LIBTOOLFLAGS)	\
 	$(NULL)
 
-noinst_HEADERS = \
-	gstkmssink.h                            \
-	gstkmsutils.h                           \
-	$(NULL)
-
-if HAVE_X11
+if USE_X11
 
 libgstrkvideo_la_SOURCES +=			\
 	rkximage/ximagesink.c                           \
@@ -60,6 +53,18 @@ libgstrkvideo_la_CFLAGS +=			\
 libgstrkvideo_la_LIBADD +=			\
 	$(X_LIBS)				\
 	$(EGLGLES_LIBS)				\
+	$(NULL)
+
+endif
+
+if USE_RGA
+
+libgstrkvideo_la_CFLAGS +=			\
+	$(DRMROCKCHIP_CFLAGS)	\
+	$(NULL)
+
+libgstrkvideo_la_LIBADD +=			\
+	$(DRMROCKCHIP_LIBS)				\
 	$(NULL)
 
 endif

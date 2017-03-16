@@ -16,6 +16,8 @@ else
 KMS_DIR=
 endif
 
-SUBDIRS = $(ROCKCHIPMPP_DIR) $(VPUDEC_DIR) $(KMS_DIR)
+RKSINK_DIR=rksink
 
-DIST_SUBDIRS = rockchipmpp vpudec kms
+SUBDIRS = $(ROCKCHIPMPP_DIR) $(VPUDEC_DIR) $(KMS_DIR) $(RKSINK_DIR)
+
+DIST_SUBDIRS = rockchipmpp vpudec kms rksink
