@@ -28,8 +28,7 @@
 #include <string.h>
 #include <unistd.h>
 
-GST_DEBUG_CATEGORY_EXTERN (gst_debug_x_image_sink);
-GST_DEBUG_CATEGORY_EXTERN (CAT_PERFORMANCE);
+GST_DEBUG_CATEGORY (gst_debug_x_image_sink);
 #define GST_CAT_DEFAULT gst_debug_x_image_sink
 
 typedef struct
@@ -2281,3 +2280,23 @@ gst_x_image_sink_class_init (GstRkXImageSinkClass * klass)
 
   videosink_class->show_frame = GST_DEBUG_FUNCPTR (gst_x_image_sink_show_frame);
 }
+
+static gboolean
+plugin_init (GstPlugin * plugin)
+{
+  if (!gst_element_register (plugin, "rkximagesink",
+          GST_RANK_SECONDARY, GST_TYPE_X_IMAGE_SINK))
+    return FALSE;
+
+  GST_DEBUG_CATEGORY_INIT (gst_debug_x_image_sink, "rkximagesink", 0,
+      "rkximagesink element");
+
+  return TRUE;
+}
+
+
+GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
+    GST_VERSION_MINOR,
+    rkximage,
+    "Rockchip X/DRM Video Sink",
+    plugin_init, VERSION, GST_LICENSE, GST_PACKAGE_NAME, GST_PACKAGE_ORIGIN);

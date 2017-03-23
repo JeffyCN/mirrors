@@ -124,20 +124,15 @@
 #include <gst/video/gstvideopool.h>
 #include <gst/video/videooverlay.h>
 #include <gst/allocators/gstdmabuf.h>
-#include <drm_fourcc.h>
-
-#include "gstegladaptation.h"
-
 #ifdef USE_EGL_RPI
 #include <bcm_host.h>
 #endif
 
+#include "gstegladaptation.h"
 #include "gsteglglessink.h"
 
-GST_DEBUG_CATEGORY_EXTERN (gst_eglglessink_debug);
+GST_DEBUG_CATEGORY (gst_eglglessink_debug);
 #define GST_CAT_DEFAULT gst_eglglessink_debug
-
-GST_DEBUG_CATEGORY_EXTERN (GST_CAT_PERFORMANCE);
 
 /* Input capabilities. */
 static GstStaticPadTemplate gst_eglglessink_sink_template_factory =
@@ -1465,7 +1460,7 @@ gst_eglglessink_fill_texture (GstEglGlesSink * eglglessink, GstBuffer * buf)
 
       attrs[1] = GST_VIDEO_FRAME_COMP_WIDTH (&vframe, 0);
       attrs[3] = GST_VIDEO_FRAME_COMP_HEIGHT (&vframe, 0);
-      attrs[5] = DRM_FORMAT_NV12;
+      attrs[5] = gst_video_format_to_fourcc(GST_VIDEO_FORMAT_NV12);
       attrs[7] = gst_dmabuf_memory_get_fd (mem);
       attrs[9] = gst_buffer_get_video_meta (buf)->offset[0];
       attrs[11] = gst_buffer_get_video_meta (buf)->stride[0];
@@ -2544,3 +2539,25 @@ gst_egl_image_buffer_pool_new (GstEGLImageBufferPoolSendBlockingAllocate
   return (GstBufferPool *) pool;
 }
 #endif
+
+static gboolean
+plugin_init (GstPlugin * plugin)
+{
+  if (!gst_element_register (plugin, "eglglessink",
+          GST_RANK_SECONDARY, GST_TYPE_EGLGLESSINK))
+    return FALSE;
+
+  GST_DEBUG_CATEGORY_INIT (gst_eglglessink_debug, "eglglessink",
+      0, "Simple EGL/GLES Sink");
+
+  gst_egl_adaption_init ();
+
+  return TRUE;
+}
+
+
+GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
+    GST_VERSION_MINOR,
+    egl,
+    "Rockchip ARM MALI EGL Video Sink",
+    plugin_init, VERSION, GST_LICENSE, GST_PACKAGE_NAME, GST_PACKAGE_ORIGIN);

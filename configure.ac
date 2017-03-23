@@ -259,8 +259,8 @@ AM_CONDITIONAL(USE_ROCKCHIPMPP, false)
 AM_CONDITIONAL(USE_VPUDEC, false)
 AM_CONDITIONAL(USE_KMS, false)
 AM_CONDITIONAL(USE_X11, false)
-AM_CONDITIONAL(USE_RGA, false)
-AM_CONDITIONAL(USE_EGL, false)
+AM_CONDITIONAL(USE_ROCKCHIPDRM, false)
+AM_CONDITIONAL(USE_ARMMALI, false)
 
 dnl *** finalize CFLAGS, LDFLAGS, LIBS
 
@@ -347,23 +347,18 @@ AG_GST_CHECK_FEATURE(KMS, [drm/kms libraries], kms, [
   PKG_CHECK_MODULES([KMS_DRM], [libdrm >= 2.4.55], HAVE_KMS=yes, HAVE_KMS=no)
 ])
 
-PKG_CHECK_MODULES([DRMROCKCHIP], [libdrm_rockchip], HAVE_RGA=yes, HAVE_RGA=no)
-PKG_CHECK_MODULES([X11], [x11], HAVE_X11=yes, HAVE_X11=no)
-PKG_CHECK_MODULES([EGLGLES], [egl], HAVE_EGL=yes, HAVE_EGL=no)
+translit(dnm, m, l) AM_CONDITIONAL(USE_ROCKCHIPDRM, true)
+AG_GST_CHECK_FEATURE(DRMROCKCHIP, [rockchip drm/kms libraries], rkximage, [
+  PKG_CHECK_MODULES([X11], [x11], HAVE_X11=yes, HAVE_X11=no)
+  PKG_CHECK_MODULES([DRMROCKCHIP], [libdrm_rockchip],
+    HAVE_DRMROCKCHIP=yes, HAVE_DRMROCKCHIP=no)
+])
 
-if test "x$HAVE_X11" = "xyes"; then
-  AM_CONDITIONAL(USE_X11, true)
-  AC_DEFINE(USE_X11, [1], [Use X11 window system])
-  if test "x$HAVE_EGL" = "xyes"; then
-    AM_CONDITIONAL(USE_EGL_X11, true)
-    AC_DEFINE(USE_EGL_X11, [1], [Use X11 EGL window system])
-  fi
-fi
-
-if test "x$HAVE_RGA" = "xyes"; then
-  AM_CONDITIONAL(USE_RGA, true)
-  AC_DEFINE(USE_RGA, [1], [Rockchip RGA])
-fi
+translit(dnm, m, l) AM_CONDITIONAL(USE_ARMMALI, true)
+  AG_GST_CHECK_FEATURE(ARMMALI, [rockchip arm mali libraries], eglgles, [
+  PKG_CHECK_MODULES([X11], [x11], HAVE_X11=yes, HAVE_X11=no)
+  PKG_CHECK_MODULES([ARMMALI], [mali], HAVE_ARMMALI=yes, HAVE_ARMMALI=no)
+])
 
 dnl keep this alphabetic per directory, please
 AC_CONFIG_FILES(
@@ -374,7 +369,8 @@ gst-libs/gst/vpudec/Makefile
 gst/Makefile
 gst/vpudec/Makefile
 gst/rockchipmpp/Makefile
-gst/rksink/Makefile
+gst/rkximage/Makefile
+gst/eglgles/Makefile
 gst/kms/Makefile
 common/Makefile
 common/m4/Makefile

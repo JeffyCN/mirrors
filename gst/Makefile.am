@@ -16,8 +16,19 @@ else
 KMS_DIR=
 endif
 
-RKSINK_DIR=rksink
+if USE_ROCKCHIPDRM
+RKXIMAGE_DIR=rkximage
+else
+RKXIMAGE_DIR=
+endif
 
-SUBDIRS = $(ROCKCHIPMPP_DIR) $(VPUDEC_DIR) $(KMS_DIR) $(RKSINK_DIR)
+if USE_ARMMALI
+EGLGLES_DIR=eglgles
+else
+EGLGLES_DIR=
+endif
 
-DIST_SUBDIRS = rockchipmpp vpudec kms rksink
+SUBDIRS = $(ROCKCHIPMPP_DIR) $(VPUDEC_DIR) $(KMS_DIR) $(RKXIMAGE_DIR) \
+          $(EGLGLES_DIR)
+
+DIST_SUBDIRS = rockchipmpp vpudec kms rkximage eglgles
