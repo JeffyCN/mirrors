@@ -19,9 +19,11 @@
 #endif
 
 #ifdef USE_X11
+#include "rkximage/ximagesink.h"
+#ifdef USE_EGL_X11
 #include "eglgles/gstegladaptation.h"
 #include "eglgles/gsteglglessink.h"
-#include "rkximage/ximagesink.h"
+#endif
 #endif
 
 GST_DEBUG_CATEGORY (gst_debug_x_image_sink);
@@ -44,9 +46,10 @@ plugin_init (GstPlugin * plugin)
 #ifdef USE_X11
   GST_DEBUG_CATEGORY_INIT (gst_debug_x_image_sink, "rkximagesink", 0,
       "rkximagesink element");
-
+#ifdef USE_EGL_X11
   GST_DEBUG_CATEGORY_INIT (gst_eglglessink_debug, "eglglessink",
       0, "Simple EGL/GLES Sink");
+#endif
 
   gst_egl_adaption_init ();
 #endif
