@@ -260,14 +260,11 @@ gst_mpp_video_dec_stop (GstVideoDecoder * decoder)
 
   GST_DEBUG_OBJECT (self, "Stopping");
 
-  /* Wait for mpp output thread to stop */
-  gst_pad_stop_task (decoder->srcpad);
-
   GST_VIDEO_DECODER_STREAM_LOCK (decoder);
   self->output_flow = GST_FLOW_OK;
   GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
 
-  gst_mpp_video_dec_sendeos (decoder);
+  self->mpi->reset (self->mpp_ctx);
 
   /* Should have been flushed already */
   g_assert (g_atomic_int_get (&self->active) == FALSE);
@@ -279,11 +276,11 @@ gst_mpp_video_dec_stop (GstVideoDecoder * decoder)
   if (self->output_state)
     gst_video_codec_state_unref (self->output_state);
 
-  gst_mpp_video_dec_close (self);
   if (self->pool) {
     gst_object_unref (self->pool);
     self->pool = NULL;
   }
+  gst_mpp_video_dec_close (self);
 
   GST_DEBUG_OBJECT (self, "Stopped");
 
@@ -641,11 +638,10 @@ gst_mpp_video_dec_change_state (GstElement * element, GstStateChange transition)
   GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
 
   if (transition == GST_STATE_CHANGE_PAUSED_TO_READY) {
-    g_atomic_int_set (&self->active, FALSE);
     gst_mpp_video_dec_unlock (self);
-    self->mpi->reset (self->mpp_ctx);
     gst_mpp_video_dec_sendeos (decoder);
     gst_pad_stop_task (decoder->srcpad);
+    self->mpi->reset (self->mpp_ctx);
   }
 
   return GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
