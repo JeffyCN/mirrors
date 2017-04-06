@@ -260,11 +260,13 @@ gst_mpp_video_dec_stop (GstVideoDecoder * decoder)
 
   GST_DEBUG_OBJECT (self, "Stopping");
 
+  gst_mpp_video_dec_sendeos (decoder);
+  /* Wait for mpp output thread to stop */
+  gst_pad_stop_task (decoder->srcpad);
+
   GST_VIDEO_DECODER_STREAM_LOCK (decoder);
   self->output_flow = GST_FLOW_OK;
   GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
-
-  self->mpi->reset (self->mpp_ctx);
 
   /* Should have been flushed already */
   g_assert (g_atomic_int_get (&self->active) == FALSE);
@@ -276,6 +278,8 @@ gst_mpp_video_dec_stop (GstVideoDecoder * decoder)
   if (self->output_state)
     gst_video_codec_state_unref (self->output_state);
 
+  /* Release all the internal references of the buffer */
+  self->mpi->reset (self->mpp_ctx);
   if (self->pool) {
     gst_object_unref (self->pool);
     self->pool = NULL;
