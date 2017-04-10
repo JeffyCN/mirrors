@@ -457,11 +457,13 @@ xwindow_calculate_display_ratio (GstRkXImageSink * self, int *x, int *y,
   video_width = gst_util_uint64_scale_int (self->xwindow->height, dar_n, dar_d);
   video_height = gst_util_uint64_scale_int (self->xwindow->width, dar_d, dar_n);
   if (video_width < *window_width) {
-    *x += (*window_width - video_width) / 2;
+    *x += (self->xwindow->width - video_width) / 2;
     *window_width = video_width;
+    *window_height = self->xwindow->height;
   } else {
-    *y += (*window_height - video_height) / 2;
+    *y += (self->xwindow->height - video_height) / 2;
     *window_height = video_height;
+    *window_width = self->xwindow->width;
   }
 
   GST_DEBUG_OBJECT (self, "scaling to %dx%d", *window_width, *window_height);
@@ -707,7 +709,6 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
       result.w, result.h);
 
 #endif
-  drm_sync (ximagesink);
 
   if (ximagesink->last_fb_id) {
     drmModeRmFB (ximagesink->fd, ximagesink->last_fb_id);
