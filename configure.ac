@@ -252,7 +252,6 @@ dnl Non ported plugins (non-dependant, then dependant)
 dnl Make sure you have a space before and after all plugins
 
 dnl these are all the gst plug-ins, compilable without additional libs
-AG_GST_CHECK_PLUGIN(rksink)
 
 dnl of EXT plugins
 AM_CONDITIONAL(USE_ROCKCHIPMPP, false)
@@ -348,7 +347,7 @@ AG_GST_CHECK_FEATURE(KMS, [drm/kms libraries], kms, [
 ])
 
 translit(dnm, m, l) AM_CONDITIONAL(USE_ROCKCHIPDRM, true)
-AG_GST_CHECK_FEATURE(DRMROCKCHIP, [rockchip drm/kms libraries], rkximage, [
+AG_GST_CHECK_FEATURE(DRMROCKCHIP, [rockchip drm/kms libraries], drmrockchip, [
   PKG_CHECK_MODULES([X11], [x11], HAVE_X11=yes, HAVE_X11=no)
   PKG_CHECK_MODULES([DRMROCKCHIP], [libdrm_rockchip],
     HAVE_DRMROCKCHIP=yes, HAVE_DRMROCKCHIP=no)
