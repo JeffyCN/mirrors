@@ -43,8 +43,6 @@ G_DEFINE_TYPE (GstMppVideoDec, gst_mpp_video_dec, GST_TYPE_VIDEO_DECODER);
 
 #define NB_OUTPUT_BUFS 22       /* nb frames necessary for display pipeline */
 
-#define MPP_ALIGN(x, a)         (((x)+(a)-1)&~((a)-1))
-
 /* GstVideoDecoder base class method */
 static GstStaticPadTemplate gst_mpp_video_dec_sink_template =
     GST_STATIC_PAD_TEMPLATE ("sink",
@@ -61,7 +59,8 @@ static GstStaticPadTemplate gst_mpp_video_dec_sink_template =
         "video/mpeg,"
         "mpegversion = (int) { 1, 2, 4 },"
         "systemstream = (boolean) false,"
-        "parsed = (boolean) true" ";" "video/x-vp8" ";" "video/x-h263" ";")
+        "parsed = (boolean) true" ";"
+        "video/x-vp8" ";" "video/x-vp9" ";" "video/x-h263" ";")
     );
 
 static GstStaticPadTemplate gst_mpp_video_dec_src_template =
@@ -107,6 +106,8 @@ to_mpp_codec (GstStructure * s)
 
   if (gst_structure_has_name (s, "video/x-vp8"))
     return MPP_VIDEO_CodingVP8;
+  if (gst_structure_has_name (s, "video/x-vp9"))
+    return MPP_VIDEO_CodingVP9;
 
   /* add more type here */
   return MPP_VIDEO_CodingUnused;
