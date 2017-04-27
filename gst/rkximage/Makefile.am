@@ -1,13 +1,14 @@
-plugin_LTLIBRARIES = librkximage.la
+plugin_LTLIBRARIES = libgstrkximage.la
 
-librkximage_la_SOURCES =			\
+libgstrkximage_la_SOURCES =			\
 	ximagesink.c				\
 	rkx_kmsutils.c				\
 	$(NULL)
 
-librkximage_la_CFLAGS =				\
+libgstrkximage_la_CFLAGS =				\
 	$(X11_CFLAGS)				\
 	$(DRMROCKCHIP_CFLAGS)			\
+	$(KMS_DRM_CFLAGS) 			\
 	$(GST_PLUGINS_BASE_CFLAGS)		\
 	$(GST_BASE_CFLAGS)			\
 	$(GST_VIDEO_CFLAGS)			\
@@ -15,9 +16,10 @@ librkximage_la_CFLAGS =				\
 	$(GST_CFLAGS)				\
 	$(NULL)
 
-librkximage_la_LIBADD =				\
+libgstrkximage_la_LIBADD =				\
 	$(X11_LIBS)				\
 	$(DRMROCKCHIP_LIBS)			\
+	$(KMS_DRM_LIBS) 			\
 	$(GST_PLUGINS_BASE_LIBS)		\
 	$(GST_BASE_LIBS)			\
 	$(GST_VIDEO_LIBS)                       \
@@ -25,10 +27,10 @@ librkximage_la_LIBADD =				\
 	$(GST_LIBS)				\
 	$(NULL)
 
-librkximage_la_LDFLAGS =			\
+libgstrkximage_la_LDFLAGS =			\
 	$(GST_PLUGIN_LDFLAGS)			\
 	$(NULL)
 
-librkximage_la_LIBTOOLFLAGS =			\
+libgstrkximage_la_LIBTOOLFLAGS =			\
 	$(GST_PLUGIN_LIBTOOLFLAGS)		\
 	$(NULL)

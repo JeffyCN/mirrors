@@ -16,7 +16,7 @@ else
 KMS_DIR=
 endif
 
-if USE_ROCKCHIPDRM
+if USE_DRMROCKCHIP
 RKXIMAGE_DIR=rkximage
 else
 RKXIMAGE_DIR=

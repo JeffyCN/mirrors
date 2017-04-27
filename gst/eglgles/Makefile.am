@@ -1,6 +1,6 @@
-plugin_LTLIBRARIES = libeglgles.la
+plugin_LTLIBRARIES = libgsteglgles.la
 
-libeglgles_la_SOURCES =				\
+libgsteglgles_la_SOURCES =				\
 	gsteglglessink.c			\
 	gstegladaptation.c			\
 	gstegladaptation_egl.c			\
@@ -8,7 +8,7 @@ libeglgles_la_SOURCES =				\
 	egl.c					\
 	$(NULL)
 
-libeglgles_la_CFLAGS =				\
+libgsteglgles_la_CFLAGS =				\
 	$(X11_CFLAGS)				\
 	$(ARMMALI_CFLAGS)			\
 	$(GST_PLUGINS_BASE_CFLAGS)		\
@@ -18,7 +18,7 @@ libeglgles_la_CFLAGS =				\
 	$(GST_CFLAGS)				\
 	$(NULL)
 
-libeglgles_la_LIBADD =				\
+libgsteglgles_la_LIBADD =				\
 	$(X11_LIBS)				\
 	$(ARMMALI_LIBS)				\
 	$(GST_PLUGINS_BASE_LIBS)		\
@@ -28,6 +28,6 @@ libeglgles_la_LIBADD =				\
 	$(GST_LIBS)				\
 	$(NULL)
 
-libeglgles_la_LDFLAGS =				\
+libgsteglgles_la_LDFLAGS =				\
 	$(GST_PLUGIN_LDFLAGS)			\
 	$(NULL)
