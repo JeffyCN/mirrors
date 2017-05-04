@@ -561,11 +561,11 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
   GstVideoMeta *video_info;
   GstMemory *mem;
   gboolean draw_border = FALSE;
-  guint32 gem_handle, w, h, fmt, bo_handles[4] = { 0, };
+  guint32 fb_id, gem_handle, w, h, fmt, bo_handles[4] = { 0, };
   guint32 offsets[4] = { 0, };
   guint32 pitches[4] = { 0, };
   gint ret;
-  guint32 fb_id;
+  float scl_w, scl_h;
 
   /* We take the flow_lock. If expose is in there we don't want to run
      concurrently from the data flow thread */
@@ -649,12 +649,48 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
   h = GST_VIDEO_INFO_HEIGHT (&ximagesink->info);
   fmt = rkx_drm_format_from_video (GST_VIDEO_INFO_FORMAT (&ximagesink->info));
 
+  xwindow_get_window_position (ximagesink, &result.x, &result.y);
+
+  xwindow_get_render_rectangle (ximagesink, &result.x, &result.y, &result.w,
+      &result.h);
+  xwindow_calculate_display_ratio (ximagesink, &result.x, &result.y, &result.w,
+      &result.h);
+
+  /* Adjust for fake 4k */
+  if (ximagesink->hdisplay * ximagesink->vdisplay > 3800 * 2000 &&
+      XWidthOfScreen (ximagesink->xcontext->screen) *
+      XHeightOfScreen (ximagesink->xcontext->screen) < 3800 * 2000) {
+    result.x *= 2;
+    result.y *= 2;
+    result.w *= 2;
+    result.h *= 2;
+  }
+
   pitches[0] = video_info->stride[0];
   offsets[0] = video_info->offset[0];
   bo_handles[0] = gem_handle;
   pitches[1] = video_info->stride[1];
   offsets[1] = video_info->offset[1];
   bo_handles[1] = gem_handle;
+
+  /* handle hardware limition */
+  scl_w = src.w / result.w;
+  scl_h = src.h / result.h;
+  if (scl_w > 8 || scl_w < 1 / 8 || scl_h > 8 || scl_w < 1 / 8) {
+    /* VOP can't scale up/down more than 8 */
+    goto out;
+  }
+
+  if (scl_w >= 2 && scl_h >= 4) {
+    /* Skip Line */
+    src.h /= 2;
+    pitches[0] *= 2;
+    pitches[1] *= 2;
+  }
+  if (src.w >= 4090) {
+    /* drop pixel */
+    src.w = 3840;
+  }
 
   ret = drmModeAddFB2 (ximagesink->fd, w, h, fmt, bo_handles, pitches,
       offsets, &fb_id, 0);
@@ -664,57 +700,30 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
     goto error;
   }
 
-  xwindow_get_window_position (ximagesink, &result.x, &result.y);
+  GST_TRACE_OBJECT (ximagesink, "displaying fb %d", fb_id);
 
-  xwindow_get_render_rectangle (ximagesink, &result.x, &result.y, &result.w,
-      &result.h);
-  xwindow_calculate_display_ratio (ximagesink, &result.x, &result.y, &result.w,
-      &result.h);
+  GST_TRACE_OBJECT (ximagesink,
+      "drmModeSetPlane at (%i,%i) %ix%i sourcing at (%i,%i) %ix%i",
+      result.x, result.y, result.w, result.h, src.x, src.y, src.w, src.h);
 
-  if (src.w / result.w <= 8 && src.h / result.h <= 8) {
-    GST_TRACE_OBJECT (ximagesink, "displaying fb %d", fb_id);
+  ret =
+      drmModeSetPlane (ximagesink->ctrl_fd, ximagesink->plane_id,
+      ximagesink->crtc_id, fb_id, 0, result.x, result.y, result.w, result.h,
+      /* source/cropping coordinates are given in Q16 */
+      src.x << 16, src.y << 16, src.w << 16, src.h << 16);
 
-    GST_TRACE_OBJECT (ximagesink,
-        "drmModeSetPlane at (%i,%i) %ix%i sourcing at (%i,%i) %ix%i",
-        result.x, result.y, result.w, result.h, src.x, src.y, src.w, src.h);
-
-    /* Adjust for fake 4k */
-    if (ximagesink->hdisplay * ximagesink->vdisplay > 3800 * 2000 &&
-        XWidthOfScreen (ximagesink->xcontext->screen) *
-        XHeightOfScreen (ximagesink->xcontext->screen) < 3800 * 2000) {
-      result.x *= 2;
-      result.y *= 2;
-      result.w *= 2;
-      result.h *= 2;
-
-      if (src.w >= 4090)
-        src.w = 3840;
-    }
-
-    ret =
-        drmModeSetPlane (ximagesink->ctrl_fd, ximagesink->plane_id,
-        ximagesink->crtc_id, fb_id, 0, result.x, result.y, result.w, result.h,
-        /* source/cropping coordinates are given in Q16 */
-        src.x << 16, src.y << 16, src.w << 16, src.h << 16);
-
-    if (ret) {
-      GST_ERROR_OBJECT (ximagesink, "drmModesetplane failed: %d", ret);
-      goto error;
-    }
+  if (ret) {
+    GST_ERROR_OBJECT (ximagesink, "drmModesetplane failed: %d", ret);
+    goto error;
   }
-#if 0
-  /* xserver put image interface */
-  XPutImage (ximagesink->xcontext->disp, ximagesink->xwindow->win,
-      ximagesink->xwindow->gc, mem->ximage, src.x, src.y, result.x, result.y,
-      result.w, result.h);
-
-#endif
 
   if (ximagesink->last_fb_id) {
     drmModeRmFB (ximagesink->fd, ximagesink->last_fb_id);
   }
 
   ximagesink->last_fb_id = fb_id;
+
+out:
 
   g_mutex_unlock (&ximagesink->flow_lock);
 
