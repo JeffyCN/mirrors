@@ -22,13 +22,6 @@ else
 RKXIMAGE_DIR=
 endif
 
-if USE_ARMMALI
-EGLGLES_DIR=eglgles
-else
-EGLGLES_DIR=
-endif
+SUBDIRS = $(ROCKCHIPMPP_DIR) $(VPUDEC_DIR) $(KMS_DIR) $(RKXIMAGE_DIR)
 
-SUBDIRS = $(ROCKCHIPMPP_DIR) $(VPUDEC_DIR) $(KMS_DIR) $(RKXIMAGE_DIR) \
-          $(EGLGLES_DIR)
-
-DIST_SUBDIRS = rockchipmpp vpudec kms rkximage eglgles
+DIST_SUBDIRS = rockchipmpp vpudec kms rkximage

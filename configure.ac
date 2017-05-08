@@ -353,12 +353,6 @@ AG_GST_CHECK_FEATURE(DRMROCKCHIP, [rockchip drm/kms libraries], drmrockchip, [
     HAVE_DRMROCKCHIP=yes, HAVE_DRMROCKCHIP=no)
 ])
 
-translit(dnm, m, l) AM_CONDITIONAL(USE_ARMMALI, true)
-  AG_GST_CHECK_FEATURE(ARMMALI, [rockchip arm mali libraries], eglgles, [
-  PKG_CHECK_MODULES([X11], [x11], HAVE_X11=yes, HAVE_X11=no)
-  PKG_CHECK_MODULES([ARMMALI], [mali], HAVE_ARMMALI=yes, HAVE_ARMMALI=no)
-])
-
 dnl keep this alphabetic per directory, please
 AC_CONFIG_FILES(
 Makefile
@@ -369,7 +363,6 @@ gst/Makefile
 gst/vpudec/Makefile
 gst/rockchipmpp/Makefile
 gst/rkximage/Makefile
-gst/eglgles/Makefile
 gst/kms/Makefile
 common/Makefile
 common/m4/Makefile
