@@ -241,7 +241,7 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   if (ret || NULL == mframe)
     goto mpp_error;
 
-  if (mpp_frame_get_errinfo (mframe))
+  if (mpp_frame_get_discard (mframe) || mpp_frame_get_errinfo (mframe))
     goto drop_frame;
   /* get from the pool the GstBuffer associated with the index */
   mpp_buf = mpp_frame_get_buffer (mframe);
