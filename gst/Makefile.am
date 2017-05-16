@@ -25,3 +25,5 @@ endif
 SUBDIRS = $(ROCKCHIPMPP_DIR) $(VPUDEC_DIR) $(KMS_DIR) $(RKXIMAGE_DIR)
 
 DIST_SUBDIRS = rockchipmpp vpudec kms rkximage
+
+include $(top_srcdir)/common/parallel-subdirs.mak

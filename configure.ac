@@ -127,6 +127,9 @@ dnl check for libm, for sin()
 LT_LIB_M
 AC_SUBST(LIBM)
 
+dnl check for pthreads
+AX_PTHREAD
+
 dnl *** checks for header files ***
 
 dnl check if we have ANSI C header files
@@ -187,6 +190,13 @@ AG_GST_CHECK_GST($GST_API_VERSION, [$GST_REQ], yes)
 AG_GST_CHECK_GST_BASE($GST_API_VERSION, [$GST_REQ], yes)
 AG_GST_CHECK_GST_PLUGINS_BASE($GST_API_VERSION, [$GSTPB_REQ], yes)
 
+dnl gst_dmabuf_memory_get_fd (gstreamer-allocators)
+AG_GST_CHECK_MODULES([GST_ALLOCATORS],
+  [gstreamer-allocators-$GST_API_VERSION], [$GSTPB_REQ], [yes])
+
+AG_GST_CHECK_MODULES([GST_VIDEO],
+  [gstreamer-video-$GST_API_VERSION], [$GSTPB_REQ], yes)
+
 GST_TOOLS_DIR=`$PKG_CONFIG --variable=toolsdir gstreamer-$GST_API_VERSION`
 if test -z $GST_TOOLS_DIR; then
   AC_MSG_ERROR([no tools dir defined in GStreamer pkg-config file; core upgrade needed.])
@@ -207,6 +217,31 @@ AC_SUBST(GSTPB_PREFIX)
 dnl GTK is optional and used in examples
 HAVE_GTK=no
 GTK_REQ=3.0.0
+if test "x$BUILD_EXAMPLES" = "xyes"; then
+  PKG_CHECK_MODULES(GTK, gtk+-3.0 >= $GTK_REQ, HAVE_GTK=yes, HAVE_GTK=no)
+  dnl some examples need gtk+-x11
+  PKG_CHECK_MODULES(GTK_X11, gtk+-x11-3.0 >= $GTK_REQ, HAVE_GTK_X11=yes, HAVE_GTK_X11=no)
+  AC_SUBST(GTK_LIBS)
+  AC_SUBST(GTK_CFLAGS)
+fi
+AM_CONDITIONAL(HAVE_GTK, test "x$HAVE_GTK" = "xyes")
+AM_CONDITIONAL(HAVE_GTK_X11, test "x$HAVE_GTK_X11" = "xyes")
+
+dnl Check for -Bsymbolic-functions linker flag used to avoid
+dnl intra-library PLT jumps, if available.
+AC_ARG_ENABLE(Bsymbolic,
+              [AS_HELP_STRING([--disable-Bsymbolic],[avoid linking with -Bsymbolic])],,
+              [SAVED_LDFLAGS="${LDFLAGS}" SAVED_LIBS="${LIBS}"
+               AC_MSG_CHECKING([for -Bsymbolic-functions linker flag])
+               LDFLAGS=-Wl,-Bsymbolic-functions
+               LIBS=
+               AC_TRY_LINK([], [return 0],
+                           AC_MSG_RESULT(yes)
+                           enable_Bsymbolic=yes,
+                           AC_MSG_RESULT(no)
+                           enable_Bsymbolic=no)
+               LDFLAGS="${SAVED_LDFLAGS}" LIBS="${SAVED_LIBS}"])
+
 
 dnl *** set variables based on configure arguments ***
 
@@ -217,6 +252,35 @@ AC_SUBST(GST_LICENSE)
 
 dnl set location of plugin directory
 AG_GST_SET_PLUGINDIR
+
+dnl set release date/time
+
+dnl build static plugins or not
+AC_MSG_CHECKING([whether to build static plugins or not])
+AC_ARG_ENABLE(
+  static-plugins,
+  AC_HELP_STRING(
+    [--enable-static-plugins],
+    [build static plugins @<:@default=no@:>@]),
+  [AS_CASE(
+    [$enableval], [no], [], [yes], [],
+    [AC_MSG_ERROR([bad value "$enableval" for --enable-static-plugins])])],
+  [enable_static_plugins=no])
+AC_MSG_RESULT([$enable_static_plugins])
+if test "x$enable_static_plugins" = xyes; then
+  AC_DEFINE(GST_PLUGIN_BUILD_STATIC, 1,
+    [Define if static plugins should be built])
+  GST_PLUGIN_LIBTOOLFLAGS=""
+else
+  GST_PLUGIN_LIBTOOLFLAGS="--tag=disable-static"
+fi
+AC_SUBST(GST_PLUGIN_LIBTOOLFLAGS)
+AM_CONDITIONAL(GST_PLUGIN_BUILD_STATIC, test "x$enable_static_plugins" = "xyes")
+
+# set by AG_GST_PARSE_SUBSYSTEM_DISABLES above
+dnl make sure it doesn't complain about unused variables if debugging is disabled
+NO_WARNINGS=""
+AG_GST_CHECK_GST_DEBUG_DISABLED([NO_WARNINGS="-Wno-unused"], [NO_WARNINGS=""])
 
 dnl define an ERROR_CFLAGS Makefile variable
 dnl -Wundef: too many broken headers
@@ -248,11 +312,7 @@ AG_GST_DEFAULT_ELEMENTS
 
 dnl *** plug-ins to include ***
 
-dnl Non ported plugins (non-dependant, then dependant)
-dnl Make sure you have a space before and after all plugins
-
 dnl these are all the gst plug-ins, compilable without additional libs
-
 dnl of EXT plugins
 AM_CONDITIONAL(USE_ROCKCHIPMPP, false)
 AM_CONDITIONAL(USE_VPUDEC, false)
@@ -295,16 +355,16 @@ AC_SUBST(GST_OPTION_CXXFLAGS)
 AC_SUBST(GST_OPTION_OBJCFLAGS)
 
 dnl our libraries need to be versioned correctly
-AC_SUBST(GST_LT_LDFaLAGS)
+AC_SUBST(GST_LT_LDFLAGS)
 
 dnl FIXME: do we want to rename to GST_ALL_* ?
 dnl prefer internal headers to already installed ones
 dnl also add builddir include for enumtypes and marshal
 dnl add ERROR_CFLAGS, but overridable
 GST_CFLAGS="$GST_CFLAGS -DGST_USE_UNSTABLE_API"
-GST_CXXFLAGS="$GST_CFLAGS $GLIB_EXTRA_CFLAGS \$(GST_OPTION_CXXFLAGS)"
-GST_OBJCFLAGS="$GST_CFLAGS $GLIB_EXTRA_CFLAGS \$(GST_OPTION_OBJCFLAGS)"
-GST_CFLAGS="$GST_CFLAGS $GLIB_EXTRA_CFLAGS \$(GST_OPTION_CFLAGS)"
+GST_CXXFLAGS="-I\$(top_srcdir)/gst-libs $GST_CFLAGS $GLIB_EXTRA_CFLAGS \$(GST_OPTION_CXXFLAGS)"
+GST_OBJCFLAGS="-I\$(top_srcdir)/gst-libs $GST_CFLAGS $GLIB_EXTRA_CFLAGS \$(GST_OPTION_OBJCFLAGS)"
+GST_CFLAGS="-I\$(top_srcdir)/gst-libs $GST_CFLAGS $GLIB_EXTRA_CFLAGS \$(GST_OPTION_CFLAGS)"
 AC_SUBST(GST_CFLAGS)
 AC_SUBST(GST_CXXFLAGS)
 AC_SUBST(GST_OBJCFLAGS)
@@ -312,18 +372,18 @@ AC_SUBST(GST_LIBS)
 
 dnl LDFLAGS really should only contain flags, not libs - they get added before
 dnl whatevertarget_LIBS and -L flags here affect the rest of the linking
-GST_ALL_LDFLAGS="-Wl,-no-undefined"
+GST_ALL_LDFLAGS="-Wl,--no-undefined"
+if test "x${enable_Bsymbolic}" = "xyes"; then
+  GST_ALL_LDFLAGS="$GST_ALL_LDFLAGS -Wl,-Bsymbolic-functions"
+fi
 AC_SUBST(GST_ALL_LDFLAGS)
 
 dnl this really should only contain flags, not libs - they get added before
 dnl whatevertarget_LIBS and -L flags here affect the rest of the linking
-GST_PLUGIN_LDFLAGS="-module -avoid-version -export-symbols-regex '^[_]*gst_plugin_desc.*' $GST_ALL_LDFLAGS"
+GST_PLUGIN_LDFLAGS="-module -avoid-version -export-symbols-regex '^[_]*gst_plugin_.*' $GST_ALL_LDFLAGS"
 AC_SUBST(GST_PLUGIN_LDFLAGS)
 
 dnl *** output files ***
-PKG_CHECK_MODULES(GST_ALLOCATORS, gstreamer-allocators-1.0,
-	HAVE_GST_ALLOCATORS=yes, )
-PKG_CHECK_MODULES(GST_VIDEO, gstreamer-video-[$GST_API_VERSION], [$GST_REQ], yes)
 
 dnl *** rockchip mpp ***
 translit(dnm, m, l) AM_CONDITIONAL(USE_ROCKCHIPMPP, true)
@@ -369,46 +429,7 @@ common/m4/Makefile
 m4/Makefile
 )
 
-dnl Create the config.h file for Visual Studio builds
-dnl Beware of spaces and /'s in some of the shell variable contents.
-sed \
-    -e 's/.*config.h.in.*autoheader.*/\/* Autogenerated config.h created for win32 Visual Studio builds *\/\n\n\/* PREFIX -- specifically added for Windows for easier moving *\/\n#define PREFIX "C:\\\\gstreamer"\n\n#define GST_INSTALL_PLUGINS_HELPER PREFIX "\\\\libexec\\\\gst-install-plugins-helper.exe"/' \
-    -e 's/.* GETTEXT_PACKAGE$/#define GETTEXT_PACKAGE "'$GETTEXT_PACKAGE'"/' \
-    -e 's/.* GST_DATADIR$/#define GST_DATADIR PREFIX "\\\\share"/' \
-    -e 's/.* GST_LEVEL_DEFAULT$/#define GST_LEVEL_DEFAULT GST_LEVEL_ERROR/' \
-    -e 's/.* GST_LICENSE$/#define GST_LICENSE "'$GST_LICENSE'"/' \
-    -e 's/.* GST_API_VERSION$/#define GST_API_VERSION "'$GST_API_VERSION'"/' \
-    -e "s,.* GST_PACKAGE_NAME$,#define GST_PACKAGE_NAME \"${GST_PACKAGE_NAME}\"," \
-    -e 's/.* GST_PACKAGE_ORIGIN$/#define GST_PACKAGE_ORIGIN "Unknown package origin"/' \
-    -e "s,.* GST_PACKAGE_RELEASE_DATETIME$,#define GST_PACKAGE_RELEASE_DATETIME \"${GST_PACKAGE_RELEASE_DATETIME}\"," \
-    -e 's/.* HAVE_CPU_I386$/#define HAVE_CPU_I386 1/' \
-    -e 's/.* HAVE_FGETPOS$/#define HAVE_FGETPOS 1/' \
-    -e 's/.* HAVE_FSETPOS$/#define HAVE_FSETPOS 1/' \
-    -e 's/.* HAVE_LIBXML2$/#define HAVE_LIBXML2 1/' \
-    -e 's/.* HAVE_PROCESS_H$/#define HAVE_PROCESS_H 1/' \
-    -e 's/.* HAVE_STDLIB_H$/#define HAVE_STDLIB_H 1/' \
-    -e 's/.* HAVE_STRING_H$/#define HAVE_STRING_H 1/' \
-    -e 's/.* HAVE_SYS_STAT_H$/#define HAVE_SYS_STAT_H 1/' \
-    -e 's/.* HAVE_SYS_TYPES_H$/#define HAVE_SYS_TYPES_H 1/' \
-    -e 's/.* HAVE_WIN32$/#define HAVE_WIN32 1/' \
-    -e 's/.* HOST_CPU$/#define HOST_CPU "i686"/' \
-    -e 's/.* LIBDIR$/#ifdef _DEBUG\n#  define LIBDIR PREFIX "\\\\debug\\\\lib"\n#else\n#  define LIBDIR PREFIX "\\\\lib"\n#endif/' \
-    -e 's/.* LOCALEDIR$/#define LOCALEDIR PREFIX "\\\\share\\\\locale"/' \
-    -e "s/.* PACKAGE$/#define PACKAGE \"$PACKAGE\"/" \
-    -e 's/.* PACKAGE_BUGREPORT$/#define PACKAGE_BUGREPORT "http:\/\/bugzilla.gnome.org\/enter_bug.cgi?product=GStreamer"/' \
-    -e "s/.* PACKAGE_NAME$/#define PACKAGE_NAME \"$PACKAGE_NAME\"/" \
-    -e "s/.* PACKAGE_STRING$/#define PACKAGE_STRING \"$PACKAGE_STRING\"/" \
-    -e 's/.* PACKAGE_TARNAME$/#define PACKAGE_TARNAME "'$PACKAGE_TARNAME'"/' \
-    -e 's/.* PACKAGE_VERSION$/#define PACKAGE_VERSION "'$PACKAGE_VERSION'"/' \
-    -e 's/.* PLUGINDIR$/#ifdef _DEBUG\n#  define PLUGINDIR PREFIX "\\\\debug\\\\lib\\\\gstreamer-0.11"\n#else\n#  define PLUGINDIR PREFIX "\\\\lib\\\\gstreamer-0.11"\n#endif/' \
-    -e 's/.* USE_BINARY_REGISTRY$/#define USE_BINARY_REGISTRY/' \
-    -e 's/.* VERSION$/#define VERSION "'$VERSION'"/' \
-    -e "s/.* DEFAULT_AUDIOSINK$/#define DEFAULT_AUDIOSINK \"directsoundsink\"/" \
-    -e "s/.* DEFAULT_AUDIOSRC$/#define DEFAULT_AUDIOSRC \"audiotestsrc\"/" \
-    -e "s/.* DEFAULT_VIDEOSRC$/#define DEFAULT_VIDEOSRC \"videotestsrc\"/" \
-    -e "s/.* DEFAULT_VISUALIZER$/#define DEFAULT_VISUALIZER \"goom\"/" \
-    config.h.in >win32/common/config.h-new
-
 AC_OUTPUT
+
 AG_GST_OUTPUT_PLUGINS
 ORC_OUTPUT
