@@ -317,14 +317,6 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
     GST_ERROR_OBJECT (self, "mpp task input enqueu failed");
   }
 
-  GST_LOG_OBJECT (self, "Allocate output buffer");
-  new_buffer = gst_video_encoder_allocate_output_buffer (encoder,
-      MAX_CODEC_FRAME);
-  if (NULL == new_buffer) {
-    ret = GST_FLOW_FLUSHING;
-    goto beach;
-  }
-
   GST_LOG_OBJECT (self, "Process output buffer");
 
   do {
@@ -347,6 +339,14 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
 
         if (mpp_packet_get_eos (packet))
           ret = GST_FLOW_EOS;
+
+        GST_LOG_OBJECT (self, "Allocate output buffer");
+        new_buffer = gst_video_encoder_allocate_output_buffer (encoder,
+            MAX_CODEC_FRAME + len);
+        if (NULL == new_buffer) {
+          ret = GST_FLOW_FLUSHING;
+          goto beach;
+        }
 
         /* Fill the buffer */
         if (sps_flag) {

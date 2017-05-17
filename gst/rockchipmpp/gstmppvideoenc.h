@@ -47,7 +47,7 @@ typedef struct _GstMppVideoEnc GstMppVideoEnc;
 typedef struct _GstMppVideoEncClass GstMppVideoEncClass;
 
 #define MPP_MAX_BUFFERS 4
-#define MAX_CODEC_FRAME (1<<15) /* 2^15 == 32768 */
+#define MAX_CODEC_FRAME (1<<16)
 #define MPP_ALIGN(x, a)         (((x)+(a)-1)&~((a)-1))
 
 struct _GstMppVideoEnc
