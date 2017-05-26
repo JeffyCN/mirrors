@@ -23,13 +23,6 @@
 #include "config.h"
 #endif
 
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <fcntl.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <gst/gst.h>
 
 #include "gstmppdecbufferpool.h"
@@ -180,6 +173,7 @@ gst_mpp_video_dec_start (GstVideoDecoder * decoder)
 
   GST_DEBUG_OBJECT (self, "Starting");
   gst_mpp_video_dec_unlock (self);
+  g_atomic_int_set (&self->active, TRUE);
   self->output_flow = GST_FLOW_OK;
 
   return TRUE;
@@ -255,14 +249,47 @@ gst_mpp_video_acquire_frame_format (GstMppVideoDec * self)
 }
 
 static gboolean
+gst_mpp_video_dec_finish (GstVideoDecoder * decoder)
+{
+  GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
+  GstFlowReturn ret = GST_FLOW_OK;
+
+  if (gst_pad_get_task_state (decoder->srcpad) != GST_TASK_STARTED)
+    goto done;
+
+  GST_DEBUG_OBJECT (self, "Finishing decoding");
+
+  GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
+  if (gst_mpp_video_dec_sendeos (decoder)) {
+    /* Wait for mpp output thread to stop */
+    GstTask *task = decoder->srcpad->task;
+    GST_OBJECT_LOCK (task);
+    while (GST_TASK_STATE (task) == GST_TASK_STARTED)
+      GST_TASK_WAIT (task);
+    GST_OBJECT_UNLOCK (task);
+    ret = GST_FLOW_FLUSHING;
+  }
+  GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+
+  gst_mpp_video_dec_sendeos (decoder);
+  if (ret == GST_FLOW_FLUSHING)
+    ret = self->output_flow;
+
+  GST_DEBUG_OBJECT (decoder, "Done draining buffers");
+
+done:
+  return ret;
+}
+
+static gboolean
 gst_mpp_video_dec_stop (GstVideoDecoder * decoder)
 {
   GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
 
   GST_DEBUG_OBJECT (self, "Stopping");
 
-  gst_mpp_video_dec_sendeos (decoder);
-  /* Wait for mpp output thread to stop */
+  /* Kill mpp output thread to stop */
+  gst_mpp_video_dec_unlock (self);
   gst_pad_stop_task (decoder->srcpad);
 
   GST_VIDEO_DECODER_STREAM_LOCK (decoder);
@@ -271,13 +298,9 @@ gst_mpp_video_dec_stop (GstVideoDecoder * decoder)
 
   /* Should have been flushed already */
   g_assert (g_atomic_int_get (&self->active) == FALSE);
-  g_assert (g_atomic_int_get (&self->processing) == FALSE);
 
   if (self->input_state)
     gst_video_codec_state_unref (self->input_state);
-
-  if (self->output_state)
-    gst_video_codec_state_unref (self->output_state);
 
   /* Release all the internal references of the buffer */
   self->mpi->reset (self->mpp_ctx);
@@ -320,13 +343,12 @@ gst_mpp_video_dec_flush (GstVideoDecoder * decoder)
 
   /* Ensure the processing thread has stopped for the reverse playback
    * discount case */
-  if (g_atomic_int_get (&self->processing)) {
+  if (gst_pad_get_task_state (decoder->srcpad) == GST_TASK_STARTED) {
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
     gst_mpp_video_dec_unlock (self);
     gst_pad_stop_task (decoder->srcpad);
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
   }
-
   self->output_flow = GST_FLOW_OK;
 
   gst_mpp_video_dec_unlock_stop (self);
@@ -339,7 +361,6 @@ gst_mpp_video_dec_set_format (GstVideoDecoder * decoder,
 {
   GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
   GstStructure *structure;
-  MppCodingType codingtype;
 
   GST_DEBUG_OBJECT (self, "Setting format: %" GST_PTR_FORMAT, state->caps);
 
@@ -355,35 +376,38 @@ gst_mpp_video_dec_set_format (GstVideoDecoder * decoder,
     self->input_state = NULL;
 
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
-    gst_mpp_video_dec_sendeos (decoder);
-    do {
-      /* Wait all the reminded buffers are pushed to downstream */
-    } while (g_atomic_int_get (&self->processing));
-
-    gst_mpp_video_dec_flush (decoder);
+    if (gst_mpp_video_dec_sendeos (decoder)) {
+      /* Wait for mpp output thread to stop */
+      GstTask *task = decoder->srcpad->task;
+      GST_OBJECT_LOCK (task);
+      while (GST_TASK_STATE (task) == GST_TASK_STARTED)
+        GST_TASK_WAIT (task);
+      GST_OBJECT_UNLOCK (task);
+    }
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+    gst_pad_stop_task (decoder->srcpad);
 
     /* Query the downstream to release buffers from buffer pool */
     if (!gst_pad_peer_query (GST_VIDEO_DECODER_SRC_PAD (self), query))
       GST_DEBUG_OBJECT (self, "drain query failed");
     gst_query_unref (query);
 
+    self->mpi->reset (self->mpp_ctx);
     if (self->pool) {
       gst_object_unref (self->pool);
       self->pool = NULL;
     }
 
     self->output_flow = GST_FLOW_OK;
+  } else {
+    MppCodingType codingtype;
+    codingtype = to_mpp_codec (structure);
+    if (MPP_VIDEO_CodingUnused == codingtype)
+      goto format_error;
 
-    g_atomic_int_set (&self->active, FALSE);
+    if (!gst_mpp_video_dec_open (self, codingtype))
+      goto device_error;
   }
-
-  codingtype = to_mpp_codec (structure);
-  if (MPP_VIDEO_CodingUnused == codingtype)
-    goto format_error;
-
-  if (!gst_mpp_video_dec_open (self, codingtype))
-    goto device_error;
 
   self->input_state = gst_video_codec_state_ref (state);
 
@@ -408,11 +432,11 @@ static void
 gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
 {
   GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
-  GstBuffer *output_buffer;
+  GstBuffer *buffer;
   GstVideoCodecFrame *frame;
   GstFlowReturn ret = GST_FLOW_OK;
 
-  ret = gst_buffer_pool_acquire_buffer (self->pool, &output_buffer, NULL);
+  ret = gst_buffer_pool_acquire_buffer (self->pool, &buffer, NULL);
   if (ret != GST_FLOW_OK && ret != GST_FLOW_CUSTOM_ERROR_1)
     goto beach;
 
@@ -422,9 +446,9 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
       gst_video_decoder_drop_frame (decoder, frame);
       return;
     }
-    frame->output_buffer = output_buffer;
+    frame->output_buffer = buffer;
 
-    output_buffer = NULL;
+    buffer = NULL;
     ret = gst_video_decoder_finish_frame (decoder, frame);
 
     GST_TRACE_OBJECT (self, "finish buffer ts=%" GST_TIME_FORMAT,
@@ -434,7 +458,7 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
       goto beach;
   } else {
     GST_WARNING_OBJECT (self, "Decoder is producing too many buffers");
-    gst_buffer_unref (output_buffer);
+    gst_buffer_unref (buffer);
   }
 
   return;
@@ -442,23 +466,10 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
 beach:
   GST_DEBUG_OBJECT (self, "Leaving output thread: %s", gst_flow_get_name (ret));
 
-  gst_buffer_replace (&output_buffer, NULL);
+  if (buffer)
+    gst_buffer_replace (&buffer, NULL);
   self->output_flow = ret;
-  g_atomic_int_set (&self->processing, FALSE);
   gst_pad_pause_task (decoder->srcpad);
-}
-
-static void
-gst_mpp_video_dec_loop_stopped (GstMppVideoDec * self)
-{
-  if (g_atomic_int_get (&self->processing)) {
-    GST_DEBUG_OBJECT (self, "Early stop of decoding thread");
-    self->output_flow = GST_FLOW_FLUSHING;
-    g_atomic_int_set (&self->processing, FALSE);
-  }
-
-  GST_DEBUG_OBJECT (self, "Decoding task destroyed: %s",
-      gst_flow_get_name (self->output_flow));
 }
 
 static GstFlowReturn
@@ -470,23 +481,24 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
   GstMapInfo mapinfo = { 0, };
   GstFlowReturn ret = GST_FLOW_OK;
   MppPacket mpkt = NULL;
+  gboolean processed = FALSE;
   MPP_RET mret = 0;
 
   GST_DEBUG_OBJECT (self, "Handling frame %d", frame->system_frame_number);
 
-  if (!g_atomic_int_get (&self->active)) {
+  if (G_UNLIKELY (!g_atomic_int_get (&self->active)))
+    goto flushing;
+
+  if (self->pool == NULL) {
     if (!self->input_state)
       goto not_negotiated;
-    self->pool = gst_mpp_dec_buffer_pool_new (self, NULL);
-    g_atomic_int_set (&self->active, TRUE);
-  }
 
-  if (!self->pool) {
-    goto not_negotiated;
+    self->pool = gst_mpp_dec_buffer_pool_new (self, NULL);
+    if (!self->pool)
+      goto not_negotiated;
   }
 
   pool = GST_BUFFER_POOL (self->pool);
-
   if (!gst_buffer_pool_is_active (pool)) {
     GstBuffer *codec_data;
     gint block_flag = MPP_POLL_BLOCK;
@@ -495,17 +507,16 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
     if (codec_data) {
       gst_buffer_ref (codec_data);
     } else {
-      codec_data = frame->input_buffer;
-      frame->input_buffer = NULL;
+      codec_data = gst_buffer_ref (frame->input_buffer);
+      processed = TRUE;
     }
 
     gst_buffer_map (codec_data, &mapinfo, GST_MAP_READ);
     mpp_packet_init (&mpkt, mapinfo.data, mapinfo.size);
-
+    /* For those DMA buffers, the mapping would be destroy at once */
     gst_buffer_unmap (codec_data, &mapinfo);
 
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
-
     do {
       mret = self->mpi->decode_put_packet (self->mpp_ctx, mpkt);
     } while (MPP_ERR_BUFFER_FULL == mret);
@@ -513,6 +524,7 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
       goto send_stream_error;
 
     mpp_packet_deinit (&mpkt);
+    gst_buffer_unref (codec_data);
 
     self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK,
         (gpointer) & block_flag);
@@ -544,15 +556,12 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
     } else {
       goto not_negotiated;
     }
-
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
-
-    gst_buffer_unref (codec_data);
-
   }
 
   /* Start the output thread if it is not started before */
-  if (g_atomic_int_get (&self->processing) == FALSE) {
+  if (gst_pad_get_task_state (GST_VIDEO_DECODER_SRC_PAD (self)) ==
+      GST_TASK_STOPPED) {
     /* It's possible that the processing thread stopped due to an error */
     if (self->output_flow != GST_FLOW_OK &&
         self->output_flow != GST_FLOW_FLUSHING) {
@@ -563,27 +572,18 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
 
     GST_DEBUG_OBJECT (self, "Starting decoding thread");
 
-    g_atomic_int_set (&self->processing, TRUE);
+    self->output_flow = GST_FLOW_FLUSHING;
     if (!gst_pad_start_task (decoder->srcpad,
-            (GstTaskFunction) gst_mpp_video_dec_loop, self,
-            (GDestroyNotify) gst_mpp_video_dec_loop_stopped))
+            (GstTaskFunction) gst_mpp_video_dec_loop, self, NULL))
       goto start_task_failed;
   }
 
-  if (frame->input_buffer) {
+  if (!processed) {
     gst_buffer_map (frame->input_buffer, &mapinfo, GST_MAP_READ);
-
     mpp_packet_init (&mpkt, mapinfo.data, mapinfo.size);
-
     gst_buffer_unmap (frame->input_buffer, &mapinfo);
 
-    /* Unlock decoder before decode_sendstream call:
-     * decode_sendstream must  block till frames
-     * recycled, so decode_task must execute lock free..
-     */
-
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
-
     do {
       mret = self->mpi->decode_put_packet (self->mpp_ctx, mpkt);
     } while (MPP_ERR_BUFFER_FULL == mret);
@@ -591,11 +591,9 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
       goto send_stream_error;
 
     mpp_packet_deinit (&mpkt);
-
-    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
-
     /* No need to keep input arround */
     gst_buffer_replace (&frame->input_buffer, NULL);
+    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
   }
 
   gst_video_codec_frame_unref (frame);
@@ -609,11 +607,15 @@ error_activate_pool:
     ret = GST_FLOW_ERROR;
     goto drop;
   }
+flushing:
+  {
+    ret = GST_FLOW_FLUSHING;
+    goto drop;
+  }
 start_task_failed:
   {
     GST_ELEMENT_ERROR (self, RESOURCE, FAILED,
         ("Failed to start decoding thread."), (NULL));
-    g_atomic_int_set (&self->processing, FALSE);
     ret = GST_FLOW_ERROR;
     goto drop;
   }
@@ -636,6 +638,35 @@ drop:
   }
 }
 
+static gboolean
+gst_mpp_video_dec_sink_event (GstVideoDecoder * decoder, GstEvent * event)
+{
+  GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
+  gboolean ret;
+
+  switch (GST_EVENT_TYPE (event)) {
+    case GST_EVENT_FLUSH_START:
+      GST_DEBUG_OBJECT (self, "flush start");
+      gst_mpp_video_dec_unlock (self);
+      break;
+    default:
+      break;
+  }
+
+  ret = GST_VIDEO_DECODER_CLASS (parent_class)->sink_event (decoder, event);
+
+  switch (GST_EVENT_TYPE (event)) {
+    case GST_EVENT_FLUSH_START:
+      gst_pad_stop_task (decoder->srcpad);
+      GST_DEBUG_OBJECT (self, "flush done");
+      break;
+    default:
+      break;
+  }
+
+  return ret;
+}
+
 static GstStateChangeReturn
 gst_mpp_video_dec_change_state (GstElement * element, GstStateChange transition)
 {
@@ -643,6 +674,7 @@ gst_mpp_video_dec_change_state (GstElement * element, GstStateChange transition)
   GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
 
   if (transition == GST_STATE_CHANGE_PAUSED_TO_READY) {
+    g_atomic_int_set (&self->active, FALSE);
     gst_mpp_video_dec_unlock (self);
     gst_mpp_video_dec_sendeos (decoder);
     gst_pad_stop_task (decoder->srcpad);
@@ -666,11 +698,14 @@ gst_mpp_video_dec_class_init (GstMppVideoDecClass * klass)
 
   video_decoder_class->start = GST_DEBUG_FUNCPTR (gst_mpp_video_dec_start);
   video_decoder_class->stop = GST_DEBUG_FUNCPTR (gst_mpp_video_dec_stop);
+  video_decoder_class->finish = GST_DEBUG_FUNCPTR (gst_mpp_video_dec_finish);
   video_decoder_class->set_format = GST_DEBUG_FUNCPTR
       (gst_mpp_video_dec_set_format);
   video_decoder_class->handle_frame =
       GST_DEBUG_FUNCPTR (gst_mpp_video_dec_handle_frame);
   video_decoder_class->flush = GST_DEBUG_FUNCPTR (gst_mpp_video_dec_flush);
+  video_decoder_class->sink_event =
+      GST_DEBUG_FUNCPTR (gst_mpp_video_dec_sink_event);
 
   element_class->change_state = GST_DEBUG_FUNCPTR
       (gst_mpp_video_dec_change_state);
@@ -694,5 +729,4 @@ gst_mpp_video_dec_init (GstMppVideoDec * self)
   self->active = FALSE;
 
   self->input_state = NULL;
-  self->output_state = NULL;
 }

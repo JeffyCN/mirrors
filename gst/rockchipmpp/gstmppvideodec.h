@@ -54,14 +54,12 @@ struct _GstMppVideoDec
   gint framesize;
 
   GstVideoCodecState *input_state;
-  GstVideoCodecState *output_state;
 
   /* the currently format */
   GstVideoInfo info;
   GstVideoAlignment align;
 
   /* State */
-  gboolean processing;
   gboolean active;
   GstFlowReturn output_flow;
 

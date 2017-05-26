@@ -274,7 +274,7 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   /* ERRORS */
 mpp_eos:
   {
-    GST_ERROR_OBJECT (pool, "got eos or %d", ret);
+    GST_INFO_OBJECT (pool, "got eos or %d", ret);
     return GST_FLOW_EOS;
   }
 mpp_error:
