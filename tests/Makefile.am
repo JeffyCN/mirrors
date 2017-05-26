@@ -1,0 +1,10 @@
+if BUILD_EXAMPLES
+SUBDIR_EXAMPLES = examples
+else
+SUBDIR_EXAMPLES =
+endif
+
+SUBDIRS = $(SUBDIR_EXAMPLES)
+
+DIST_SUBDIRS = examples
+

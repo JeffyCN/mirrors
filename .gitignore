@@ -27,8 +27,9 @@ autoregen.sh
 ABOUT-NLS
 /INSTALL
 _stdint.h
-gst-plugins-good-*.tar.*
+gstreamer-rockchip-*.tar.*
 .dirstamp
+/*-libtool
 
 /m4
 
@@ -45,14 +46,11 @@ Makefile
 
 /m4
 
-/ext/dv/smpte_test
-/gst/multifile/test-splitmux-part-reader
-/gst/deinterlace/tvtime.h
-
 tmp-orc.c
 *orc.h
 
-/tests/examples/jack/jack_client
+/tests/examples/player/ayamero-player
+/tests/examples/camera/camera-demo
 
 Build
 *.user

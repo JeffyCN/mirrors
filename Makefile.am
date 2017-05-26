@@ -1,4 +1,4 @@
-SUBDIRS = gst-libs gst common m4
+SUBDIRS = gst-libs gst common m4 tests
 
 ACLOCAL_AMFLAGS = -I m4 -I common/m4
 
