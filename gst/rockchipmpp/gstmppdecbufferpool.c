@@ -418,10 +418,11 @@ gst_mpp_dec_buffer_pool_new (GstMppVideoDec * dec, GstCaps * caps)
   pool =
       (GstMppDecBufferPool *) g_object_new (GST_TYPE_MPP_DEC_BUFFER_POOL,
       "name", name, NULL);
+  g_object_ref_sink (pool);
   g_free (name);
-  /* take a reference on vpudec to be sure that it will be released
-   * after the pool */
 
+  /* take a reference on decoder to be sure that it will be released
+   * after the pool */
   pool->dec = gst_object_ref (dec);
   pool->vallocator = gst_mpp_allocator_new (GST_OBJECT (pool));
   if (!pool->vallocator)

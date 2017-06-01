@@ -168,7 +168,6 @@ gst_mpp_allocator_stop (GstMppAllocator * allocator)
 
   if (!g_atomic_int_get (&allocator->active))
     goto done;
-
   if (gst_atomic_queue_length (allocator->free_queue) != allocator->count) {
     GST_DEBUG_OBJECT (allocator, "allocator is still in use");
     ret = -EBUSY;
@@ -201,9 +200,10 @@ done:
 static void
 gst_mpp_allocator_free (GstAllocator * gallocator, GstMemory * gmem)
 {
+  GstMppAllocator *allocator = GST_MPP_ALLOCATOR (gallocator);
   GstMppMemory *mem = (GstMppMemory *) gmem;
 
-  g_slice_free (GstMppMemory, mem);
+  gst_atomic_queue_push (allocator->free_queue, mem);
 }
 
 GstMemory *
