@@ -30,6 +30,24 @@ typedef struct _PlayerData
   GList *playlist;
 } PlayerData;
 
+static gboolean
+exit_the_current_video (PlayerData * data)
+{
+  GList *list = NULL;
+  list = g_list_previous (data->playlist);
+  if (list) {
+    gchar *uri = list->data;
+    data->playlist = list;
+    gst_element_set_state (data->pipeline, GST_STATE_NULL);
+    g_object_set (G_OBJECT (data->pipeline), "uri", uri, NULL);
+    gst_element_set_state (data->pipeline, GST_STATE_PLAYING);
+  } else {
+    g_main_loop_quit (data->main_loop);
+  }
+
+  return FALSE;
+}
+
 /* Process messages from GStreamer */
 static gboolean
 handle_message (GstBus * bus, GstMessage * msg, PlayerData * data)
@@ -49,18 +67,8 @@ handle_message (GstBus * bus, GstMessage * msg, PlayerData * data)
       g_main_loop_quit (data->main_loop);
       break;
     case GST_MESSAGE_EOS:{
-      GList *list = NULL;
       g_print ("End-Of-Stream reached.\n");
-      list = g_list_previous (data->playlist);
-      if (list) {
-        gchar *uri = list->data;
-        data->playlist = list;
-        gst_element_set_state (data->pipeline, GST_STATE_NULL);
-        g_object_set (G_OBJECT (data->pipeline), "uri", uri, NULL);
-        gst_element_set_state (data->pipeline, GST_STATE_PLAYING);
-      } else {
-        g_main_loop_quit (data->main_loop);
-      }
+      exit_the_current_video (data);
     }
       break;
     case GST_MESSAGE_STATE_CHANGED:{
@@ -87,6 +95,8 @@ keypress (GIOChannel * source, GIOCondition condition, PlayerData * data)
     gchar c = str[0];
     switch (c) {
       case 'x':
+        g_idle_add ((GSourceFunc) exit_the_current_video, (gpointer) data);
+        break;
       case 'q':
         g_main_loop_quit (data->main_loop);
         break;
