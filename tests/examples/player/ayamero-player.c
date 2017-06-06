@@ -229,11 +229,12 @@ main (gint argc, gchar * argv[])
   /* Looping */
   g_main_loop_run (data.main_loop);
 
-  g_main_loop_unref (data.main_loop);
-  g_io_channel_unref (io_stdin);
-  gst_object_unref (bus);
   gst_element_set_state (data.pipeline, GST_STATE_NULL);
   gst_object_unref (GST_OBJECT (data.pipeline));
+
+  g_io_channel_unref (io_stdin);
+  gst_object_unref (bus);
+  g_main_loop_unref (data.main_loop);
   g_list_free_full (data.playlist, g_free);
 
   return 0;
