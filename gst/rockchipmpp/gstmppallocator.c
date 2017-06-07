@@ -42,6 +42,7 @@ GST_DEBUG_CATEGORY_STATIC (mppallocator_debug);
 gboolean
 gst_is_mpp_memory (GstMemory * mem)
 {
+
   return gst_memory_is_type (mem, GST_MPP_MEMORY_TYPE);
 }
 
@@ -133,8 +134,6 @@ static void
 gst_mpp_allocator_dispose (GObject * obj)
 {
   GST_LOG_OBJECT (obj, "called");
-  /* Don't need cleanup buffers from allocator again,
-   * the free() method have done that */
 
   G_OBJECT_CLASS (parent_class)->dispose (obj);
 }
@@ -168,6 +167,12 @@ gst_mpp_allocator_stop (GstMppAllocator * allocator)
 
   if (!g_atomic_int_get (&allocator->active))
     goto done;
+
+  if (allocator->mpp_mem_pool) {
+    mpp_buffer_group_put (allocator->mpp_mem_pool);
+    allocator->mpp_mem_pool = NULL;
+  }
+
   if (gst_atomic_queue_length (allocator->free_queue) != allocator->count) {
     GST_DEBUG_OBJECT (allocator, "allocator is still in use");
     ret = -EBUSY;
@@ -186,11 +191,6 @@ gst_mpp_allocator_stop (GstMppAllocator * allocator)
 
   allocator->count = 0;
 
-  if (allocator->mpp_mem_pool) {
-    mpp_buffer_group_put (allocator->mpp_mem_pool);
-    allocator->mpp_mem_pool = NULL;
-  }
-
   g_atomic_int_set (&allocator->active, FALSE);
 done:
   GST_OBJECT_UNLOCK (allocator);
@@ -200,10 +200,9 @@ done:
 static void
 gst_mpp_allocator_free (GstAllocator * gallocator, GstMemory * gmem)
 {
-  GstMppAllocator *allocator = GST_MPP_ALLOCATOR (gallocator);
   GstMppMemory *mem = (GstMppMemory *) gmem;
 
-  gst_atomic_queue_push (allocator->free_queue, mem);
+  _mppmem_free (mem);
 }
 
 GstMemory *
