@@ -440,7 +440,7 @@ gst_mpp_dec_buffer_pool_new (GstMppVideoDec * dec, GstCaps * caps)
   /* ERROR */
 allocator_failed:
   {
-    GST_ERROR_OBJECT (pool, "Failed to create vpu allocator");
+    GST_ERROR_OBJECT (pool, "Failed to create mpp allocator");
     gst_object_unref (pool);
     return NULL;
   }

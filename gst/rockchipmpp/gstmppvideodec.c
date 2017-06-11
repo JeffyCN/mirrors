@@ -153,8 +153,9 @@ gst_mpp_video_dec_unlock_stop (GstMppVideoDec * self)
 }
 
 static gboolean
-gst_mpp_video_dec_close (GstMppVideoDec * self)
+gst_mpp_video_dec_close (GstVideoDecoder * decoder)
 {
+  GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
   if (self->mpp_ctx != NULL) {
     mpp_destroy (self->mpp_ctx);
     self->mpp_ctx = NULL;
@@ -166,6 +167,17 @@ gst_mpp_video_dec_close (GstMppVideoDec * self)
 }
 
 /* Open the device */
+static gboolean
+gst_mpp_video_dec_open (GstVideoDecoder * decoder)
+{
+  GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
+  if (mpp_create (&self->mpp_ctx, &self->mpi))
+    return FALSE;
+
+  GST_DEBUG_OBJECT (self, "created mpp context %p", self->mpp_ctx);
+  return TRUE;
+}
+
 static gboolean
 gst_mpp_video_dec_start (GstVideoDecoder * decoder)
 {
@@ -249,6 +261,15 @@ gst_mpp_video_acquire_frame_format (GstMppVideoDec * self)
 }
 
 static gboolean
+gst_mpp_video_set_format (GstMppVideoDec * self, MppCodingType codec_format)
+{
+  if (mpp_init (self->mpp_ctx, MPP_CTX_DEC, codec_format))
+    return FALSE;
+
+  return TRUE;
+}
+
+static gboolean
 gst_mpp_video_dec_finish (GstVideoDecoder * decoder)
 {
   GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
@@ -305,7 +326,6 @@ gst_mpp_video_dec_stop (GstVideoDecoder * decoder)
     gst_object_unref (self->pool);
     self->pool = NULL;
   }
-  gst_mpp_video_dec_close (self);
 
   if (self->input_state)
     gst_video_codec_state_unref (self->input_state);
@@ -313,27 +333,6 @@ gst_mpp_video_dec_stop (GstVideoDecoder * decoder)
   GST_DEBUG_OBJECT (self, "Stopped");
 
   return TRUE;
-}
-
-static gboolean
-gst_mpp_video_dec_open (GstMppVideoDec * self, MppCodingType codec_format)
-{
-  mpp_create (&self->mpp_ctx, &self->mpi);
-
-  GST_DEBUG_OBJECT (self, "created mpp context %p", self->mpp_ctx);
-
-  if (mpp_init (self->mpp_ctx, MPP_CTX_DEC, codec_format))
-    goto mpp_init_error;
-
-  return TRUE;
-
-mpp_init_error:
-  {
-    GST_ERROR_OBJECT (self, "rockchip context init failed");
-    if (!self->mpp_ctx)
-      mpp_destroy (self->mpp_ctx);
-    return FALSE;
-  }
 }
 
 static gboolean
@@ -407,7 +406,7 @@ gst_mpp_video_dec_set_format (GstVideoDecoder * decoder,
     if (MPP_VIDEO_CodingUnused == codingtype)
       goto format_error;
 
-    if (!gst_mpp_video_dec_open (self, codingtype))
+    if (!gst_mpp_video_set_format (self, codingtype))
       goto device_error;
   }
 
@@ -657,7 +656,7 @@ gst_mpp_video_dec_sink_event (GstVideoDecoder * decoder, GstEvent * event)
   ret = GST_VIDEO_DECODER_CLASS (parent_class)->sink_event (decoder, event);
 
   switch (GST_EVENT_TYPE (event)) {
-    case GST_EVENT_FLUSH_START:
+    case GST_EVENT_FLUSH_STOP:
       gst_pad_stop_task (decoder->srcpad);
       GST_DEBUG_OBJECT (self, "flush done");
       break;
@@ -696,6 +695,8 @@ gst_mpp_video_dec_class_init (GstMppVideoDecClass * klass)
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_mpp_video_dec_sink_template));
 
+  video_decoder_class->open = GST_DEBUG_FUNCPTR (gst_mpp_video_dec_open);
+  video_decoder_class->close = GST_DEBUG_FUNCPTR (gst_mpp_video_dec_close);
   video_decoder_class->start = GST_DEBUG_FUNCPTR (gst_mpp_video_dec_start);
   video_decoder_class->stop = GST_DEBUG_FUNCPTR (gst_mpp_video_dec_stop);
   video_decoder_class->finish = GST_DEBUG_FUNCPTR (gst_mpp_video_dec_finish);
