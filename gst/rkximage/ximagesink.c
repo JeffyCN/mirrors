@@ -568,8 +568,8 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
   }
 
   video_info = gst_buffer_get_video_meta (ximage);
-  w = GST_VIDEO_INFO_WIDTH (&ximagesink->info);
-  h = GST_VIDEO_INFO_HEIGHT (&ximagesink->info);
+  w = (GST_VIDEO_INFO_WIDTH (&ximagesink->info) + 1) & 0xfffffffe;
+  h = (GST_VIDEO_INFO_HEIGHT (&ximagesink->info) + 1) & 0xfffffffe;
   fmt = rkx_drm_format_from_video (GST_VIDEO_INFO_FORMAT (&ximagesink->info));
 
   xwindow_get_window_position (ximagesink, &result.x, &result.y);
