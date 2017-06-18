@@ -520,7 +520,7 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
     do {
       mret = self->mpi->decode_put_packet (self->mpp_ctx, mpkt);
     } while (MPP_ERR_BUFFER_FULL == mret);
-    if (mret != 0)
+    if (mret)
       goto send_stream_error;
 
     mpp_packet_deinit (&mpkt);
@@ -583,17 +583,24 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
     mpp_packet_init (&mpkt, mapinfo.data, mapinfo.size);
     gst_buffer_unmap (frame->input_buffer, &mapinfo);
 
+  retry:
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
-    do {
-      mret = self->mpi->decode_put_packet (self->mpp_ctx, mpkt);
-    } while (MPP_ERR_BUFFER_FULL == mret);
-    if (mret != 0)
+    mret = self->mpi->decode_put_packet (self->mpp_ctx, mpkt);
+    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+
+    if (MPP_ERR_BUFFER_FULL == mret) {
+      if (gst_pad_get_task_state (GST_VIDEO_DECODER_SRC_PAD (self)) !=
+          GST_TASK_STARTED) {
+        ret = self->output_flow;
+        goto drop;
+      }
+      goto retry;
+    } else if (mret)
       goto send_stream_error;
 
     mpp_packet_deinit (&mpkt);
     /* No need to keep input arround */
     gst_buffer_replace (&frame->input_buffer, NULL);
-    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
   }
 
   gst_video_codec_frame_unref (frame);
@@ -633,6 +640,7 @@ send_stream_error:
   }
 drop:
   {
+    GST_ERROR_OBJECT (self, "can't process this frame");
     gst_video_decoder_drop_frame (decoder, frame);
     return ret;
   }
