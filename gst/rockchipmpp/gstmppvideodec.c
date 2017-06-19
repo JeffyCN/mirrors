@@ -482,8 +482,9 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
   GstBufferPool *pool = NULL;
   GstMapInfo mapinfo = { 0, };
   GstFlowReturn ret = GST_FLOW_OK;
-  MppPacket mpkt = NULL;
   gboolean processed = FALSE;
+  GstBuffer *tmp;
+  MppPacket mpkt = NULL;
   MPP_RET mret = 0;
 
   GST_DEBUG_OBJECT (self, "Handling frame %d", frame->system_frame_number);
@@ -601,12 +602,17 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
       goto send_stream_error;
 
     mpp_packet_deinit (&mpkt);
-    /* No need to keep input arround */
-    gst_buffer_replace (&frame->input_buffer, NULL);
   }
 
-  gst_video_codec_frame_unref (frame);
+  /* No need to keep input arround */
+  tmp = frame->input_buffer;
+  frame->input_buffer = gst_buffer_new ();
+  gst_buffer_copy_into (frame->input_buffer, tmp,
+      GST_BUFFER_COPY_FLAGS | GST_BUFFER_COPY_TIMESTAMPS |
+      GST_BUFFER_COPY_META, 0, 0);
+  gst_buffer_unref (tmp);
 
+  gst_video_codec_frame_unref (frame);
   return ret;
 
   /* ERRORS */
