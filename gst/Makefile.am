@@ -10,7 +10,7 @@ else
 VPUDEC_DIR=
 endif
 
-if USE_DRMROCKCHIP
+if USE_RKXIMAGE
 RKXIMAGE_DIR=rkximage
 else
 RKXIMAGE_DIR=

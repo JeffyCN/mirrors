@@ -317,7 +317,7 @@ dnl of EXT plugins
 AM_CONDITIONAL(USE_ROCKCHIPMPP, false)
 AM_CONDITIONAL(USE_VPUDEC, false)
 AM_CONDITIONAL(USE_KMS, false)
-AM_CONDITIONAL(USE_DRMROCKCHIP, false)
+AM_CONDITIONAL(USE_RKXIMAGE, false)
 
 dnl *** finalize CFLAGS, LDFLAGS, LIBS
 
@@ -397,11 +397,9 @@ AG_GST_CHECK_FEATURE(VPUDEC, [rockchip vpu legacy libraries], vpudec, [
     HAVE_VPUDEC=yes, HAVE_VPUDEC=no)
 ])
 
-translit(dnm, m, l) AM_CONDITIONAL(USE_DRMROCKCHIP, true)
-AG_GST_CHECK_FEATURE(DRMROCKCHIP, [rockchip drm/kms libraries], drmrockchip, [
-  PKG_CHECK_MODULES([X11], [x11], HAVE_X11=yes, HAVE_X11=no)
-  PKG_CHECK_MODULES([DRMROCKCHIP], [libdrm_rockchip],
-    HAVE_DRMROCKCHIP=yes, HAVE_DRMROCKCHIP=no)
+translit(dnm, m, l) AM_CONDITIONAL(USE_RKXIMAGE, true)
+AG_GST_CHECK_FEATURE(RKXIMAGE, [drm/kms and x11 libraries], rkximage, [
+  PKG_CHECK_MODULES([RKXIMAGE], [x11 libdrm], HAVE_RKXIMAGE=yes, HAVE_RKXIMAGE=no)
 ])
 
 dnl keep this alphabetic per directory, please
