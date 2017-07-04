@@ -6,9 +6,7 @@ libgstrkximage_la_SOURCES =			\
 	$(NULL)
 
 libgstrkximage_la_CFLAGS =				\
-	$(X11_CFLAGS)				\
-	$(DRMROCKCHIP_CFLAGS)			\
-	$(KMS_DRM_CFLAGS) 			\
+	$(RKXIMAGE_CFLAGS)				\
 	$(GST_PLUGINS_BASE_CFLAGS)		\
 	$(GST_BASE_CFLAGS)			\
 	$(GST_VIDEO_CFLAGS)			\
@@ -17,9 +15,7 @@ libgstrkximage_la_CFLAGS =				\
 	$(NULL)
 
 libgstrkximage_la_LIBADD =				\
-	$(X11_LIBS)				\
-	$(DRMROCKCHIP_LIBS)			\
-	$(KMS_DRM_LIBS) 			\
+	$(RKXIMAGE_LIBS)				\
 	$(GST_PLUGINS_BASE_LIBS)		\
 	$(GST_BASE_LIBS)			\
 	$(GST_VIDEO_LIBS)                       \
