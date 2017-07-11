@@ -88,12 +88,6 @@ gst_mpp_h264_enc_set_format (GstVideoEncoder * encoder,
       / GST_VIDEO_INFO_FPS_D (&state->info);
   rc_cfg.skip_cnt = 0;
 
-  if (mpp_video_enc->mpi->control (mpp_video_enc->mpp_ctx, MPP_ENC_SET_RC_CFG,
-          &rc_cfg)) {
-    GST_DEBUG_OBJECT (self, "Setting rate control for rockchip mpp failed");
-    return FALSE;
-  }
-
   if (rc_cfg.rc_mode == MPP_ENC_RC_MODE_CBR) {
     codec_cfg.h264.qp_max = 48;
     codec_cfg.h264.qp_min = 4;
@@ -127,6 +121,12 @@ gst_mpp_h264_enc_set_format (GstVideoEncoder * encoder,
       rc_cfg.bps_max = rc_cfg.bps_target * 17 / 16;
       rc_cfg.bps_min = rc_cfg.bps_target * 1 / 16;
     }
+  }
+
+  if (mpp_video_enc->mpi->control (mpp_video_enc->mpp_ctx, MPP_ENC_SET_RC_CFG,
+          &rc_cfg)) {
+    GST_DEBUG_OBJECT (self, "Setting rate control for rockchip mpp failed");
+    return FALSE;
   }
 
   codec_cfg.coding = MPP_VIDEO_CodingAVC;
