@@ -47,13 +47,7 @@ static GstStaticPadTemplate gst_mpp_video_dec_sink_template =
         ";"
         "video/x-h265,"
         "stream-format = (string) { byte-stream },"
-        "alignment = (string) { au }"
-        ";"
-        "video/mpeg,"
-        "mpegversion = (int) { 1, 2, 4 },"
-        "systemstream = (boolean) false,"
-        "parsed = (boolean) true" ";"
-        "video/x-vp8" ";" "video/x-vp9" ";" "video/x-h263" ";")
+        "alignment = (string) { au }" ";" "video/x-vp8" ";" "video/x-vp9" ";")
     );
 
 static GstStaticPadTemplate gst_mpp_video_dec_src_template =
@@ -62,6 +56,10 @@ static GstStaticPadTemplate gst_mpp_video_dec_src_template =
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw, "
         "format = (string) NV12, "
+        "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]"
+        ";"
+        "video/x-raw, "
+        "format = (string) NV16, "
         "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]"
         ";"
         "video/x-raw, "
@@ -85,6 +83,7 @@ to_mpp_codec (GstStructure * s)
     gint mpegversion = 0;
     if (gst_structure_get_int (s, "mpegversion", &mpegversion)) {
       switch (mpegversion) {
+        case 1:
         case 2:
           return MPP_VIDEO_CodingMPEG2;
           break;
@@ -116,6 +115,9 @@ mpp_frame_type_to_gst_video_format (MppFrameFormat fmt)
     case MPP_FMT_YUV420SP_10BIT:
       /* FIXME it is platform special pixel format */
       return GST_VIDEO_FORMAT_P010_10LE;
+      break;
+    case MPP_FMT_YUV422SP:
+      return GST_VIDEO_FORMAT_NV16;
       break;
     default:
       return GST_VIDEO_FORMAT_UNKNOWN;
@@ -724,7 +726,7 @@ gst_mpp_video_dec_class_init (GstMppVideoDecClass * klass)
 
   gst_element_class_set_static_metadata (element_class,
       "Rockchip's MPP video decoder", "Decoder/Video",
-      "Multicodec (MPEG-2/4 / AVC / VP8 / HEVC) hardware decoder",
+      "Multicodec (HEVC / AVC / VP8 / VP9) hardware decoder",
       "Randy Li <randy.li@rock-chips.com>");
 }
 
