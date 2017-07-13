@@ -43,11 +43,19 @@ static GstStaticPadTemplate gst_mpp_video_dec_sink_template =
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-h264,"
         "stream-format = (string) { byte-stream },"
-        "alignment = (string) { au }"
+        "alignment = (string) { au },"
+        "parsed = (boolean) true"
         ";"
         "video/x-h265,"
         "stream-format = (string) { byte-stream },"
-        "alignment = (string) { au }" ";" "video/x-vp8" ";" "video/x-vp9" ";")
+        "alignment = (string) { au },"
+        "parsed = (boolean) true"
+        ";"
+        "video/mpeg,"
+        "mpegversion = (int) { 1, 2, 4 },"
+        "parsed = (boolean) true,"
+        "systemstream = (boolean) false"
+        ";" "video/x-vp8" ";" "video/x-vp9" ";")
     );
 
 static GstStaticPadTemplate gst_mpp_video_dec_src_template =
@@ -516,24 +524,39 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
     codec_data = self->input_state->codec_data;
     if (codec_data) {
       gst_buffer_ref (codec_data);
-    } else {
-      codec_data = gst_buffer_ref (frame->input_buffer);
-      processed = TRUE;
+      gst_buffer_map (codec_data, &mapinfo, GST_MAP_READ);
+      mpp_packet_init (&mpkt, mapinfo.data, mapinfo.size);
+      mpp_packet_set_extra_data (mpkt);
+
+      GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
+      if (self->mpi->decode_put_packet (self->mpp_ctx, mpkt)) {
+        gst_buffer_unmap (codec_data, &mapinfo);
+        goto send_stream_error;
+      }
+      GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+
+      mpp_packet_deinit (&mpkt);
+      gst_buffer_unmap (codec_data, &mapinfo);
+      gst_buffer_unref (codec_data);
     }
+    codec_data = gst_buffer_ref (frame->input_buffer);
+    processed = TRUE;
 
     gst_buffer_map (codec_data, &mapinfo, GST_MAP_READ);
     mpp_packet_init (&mpkt, mapinfo.data, mapinfo.size);
-    /* For those DMA buffers, the mapping would be destroy at once */
-    gst_buffer_unmap (codec_data, &mapinfo);
 
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
     do {
       mret = self->mpi->decode_put_packet (self->mpp_ctx, mpkt);
     } while (MPP_ERR_BUFFER_FULL == mret);
-    if (mret)
+    if (mret) {
+      gst_buffer_unmap (codec_data, &mapinfo);
+      gst_buffer_unref (codec_data);
       goto send_stream_error;
+    }
 
     mpp_packet_deinit (&mpkt);
+    gst_buffer_unmap (codec_data, &mapinfo);
     gst_buffer_unref (codec_data);
 
     self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK,
@@ -591,7 +614,6 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
   if (!processed) {
     gst_buffer_map (frame->input_buffer, &mapinfo, GST_MAP_READ);
     mpp_packet_init (&mpkt, mapinfo.data, mapinfo.size);
-    gst_buffer_unmap (frame->input_buffer, &mapinfo);
 
   retry:
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
@@ -602,13 +624,17 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
       if (gst_pad_get_task_state (GST_VIDEO_DECODER_SRC_PAD (self)) !=
           GST_TASK_STARTED) {
         ret = self->output_flow;
+        gst_buffer_unmap (frame->input_buffer, &mapinfo);
         goto drop;
       }
       goto retry;
-    } else if (mret)
+    } else if (mret) {
+      gst_buffer_unmap (frame->input_buffer, &mapinfo);
       goto send_stream_error;
+    }
 
     mpp_packet_deinit (&mpkt);
+    gst_buffer_unmap (frame->input_buffer, &mapinfo);
   }
 
   /* No need to keep input arround */
