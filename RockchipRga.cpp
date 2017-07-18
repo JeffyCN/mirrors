@@ -26,7 +26,7 @@
 
 #include <cutils/properties.h>
 
-#include <binder/IPCThreadState.h>
+//#include <binder/IPCThreadState.h>
 #include <utils/Atomic.h>
 #include <utils/Errors.h>
 #include <utils/Log.h>
@@ -40,8 +40,8 @@
 #include <ui/GraphicBufferMapper.h>
 
 #include <gui/ISurfaceComposer.h>
-#include <gui/Surface.h>
-#include <gui/SurfaceComposerClient.h>
+//#include <gui/Surface.h>
+//#include <gui/SurfaceComposerClient.h>
 
 #include "RockchipRga.h"
 #include "RgaApi.h"
