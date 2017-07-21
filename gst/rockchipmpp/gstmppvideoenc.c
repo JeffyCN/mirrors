@@ -46,6 +46,18 @@ static GstStaticPadTemplate gst_mpp_video_enc_sink_template =
         "format = (string) I420, "
         "width  = (int) [ 32, 1920 ], "
         "height = (int) [ 32, 1088 ], "
+        "framerate = (fraction) [0/1, 60/1]"
+        ";"
+        "video/x-raw,"
+        "format = (string) YUY2, "
+        "width  = (int) [ 32, 1920 ], "
+        "height = (int) [ 32, 1088 ], "
+        "framerate = (fraction) [0/1, 60/1]"
+        ";"
+        "video/x-raw,"
+        "format = (string) UYVY, "
+        "width  = (int) [ 32, 1920 ], "
+        "height = (int) [ 32, 1088 ], "
         "framerate = (fraction) [0/1, 60/1]" ";"));
 
 static gboolean
@@ -154,6 +166,12 @@ to_mpp_pixel (GstCaps * caps, GstVideoInfo * info)
       case GST_VIDEO_FORMAT_NV12:
         return MPP_FMT_YUV420SP;
         break;
+      case GST_VIDEO_FORMAT_YUY2:
+        return MPP_FMT_YUV422P;
+        break;
+      case GST_VIDEO_FORMAT_UYVY:
+        return MPP_FMT_YUV422_UYVY;
+        break;
       default:
         break;
     }
@@ -203,7 +221,12 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
   info->offset[1] = prep_cfg.hor_stride * prep_cfg.ver_stride;
   info->stride[0] = prep_cfg.hor_stride;
   info->stride[1] = prep_cfg.hor_stride;
-  info->size = (info->stride[0] * info->stride[1]) * 3 / 2;
+
+  for (guint i = 0; i < GST_VIDEO_INFO_N_COMPONENTS (info); i++)
+    info->size +=
+        GST_VIDEO_FORMAT_INFO_SCALE_WIDTH (info->finfo, i, prep_cfg.hor_stride)
+        * GST_VIDEO_FORMAT_INFO_SCALE_HEIGHT (info->finfo, i,
+        prep_cfg.ver_stride);
 
   align = &self->align;
   gst_video_alignment_reset (align);
