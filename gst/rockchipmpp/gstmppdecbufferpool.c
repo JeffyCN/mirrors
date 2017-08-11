@@ -235,7 +235,7 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   GstBuffer *outbuf;
   MppFrame mframe = NULL;
   MppBuffer mpp_buf;
-  gint buf_index, ret;
+  gint buf_index, ret, mode;
 
   ret = dec->mpi->decode_get_frame (dec->mpp_ctx, &mframe);
   if (ret || NULL == mframe)
@@ -252,6 +252,22 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   if (outbuf == NULL)
     goto no_buffer;
 
+  mode = mpp_frame_get_mode (mframe);
+  switch (mode & MPP_FRAME_FLAG_FIELD_ORDER_MASK) {
+    case MPP_FRAME_FLAG_BOT_FIRST:
+      GST_BUFFER_FLAG_SET (outbuf, GST_VIDEO_BUFFER_FLAG_INTERLACED);
+      GST_BUFFER_FLAG_UNSET (outbuf, GST_VIDEO_BUFFER_FLAG_TFF);
+      break;
+    case MPP_FRAME_FLAG_TOP_FIRST:
+      GST_BUFFER_FLAG_SET (outbuf, GST_VIDEO_BUFFER_FLAG_INTERLACED);
+      GST_BUFFER_FLAG_SET (outbuf, GST_VIDEO_BUFFER_FLAG_TFF);
+      break;
+    case MPP_FRAME_FLAG_DEINTERLACED:
+    default:
+      GST_BUFFER_FLAG_UNSET (outbuf, GST_VIDEO_BUFFER_FLAG_INTERLACED);
+      GST_BUFFER_FLAG_UNSET (outbuf, GST_VIDEO_BUFFER_FLAG_TFF);
+      break;
+  }
   /*
    * Increase the reference of the buffer or the destroy the mpp frame
    * would decrease the reference and put it back to unused status

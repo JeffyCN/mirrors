@@ -137,7 +137,7 @@ mpp_frame_type_to_gst_video_format (MppFrameFormat fmt)
 static GstVideoInterlaceMode
 mpp_frame_mode_to_gst_interlace_mode (RK_U32 mode)
 {
-  switch (mode) {
+  switch (mode & MPP_FRAME_FLAG_FIELD_ORDER_MASK) {
     case MPP_FRAME_FLAG_DEINTERLACED:
       return GST_VIDEO_INTERLACE_MODE_MIXED;
     case MPP_FRAME_FLAG_BOT_FIRST:
@@ -217,47 +217,55 @@ gst_mpp_video_dec_sendeos (GstVideoDecoder * decoder)
 }
 
 static gboolean
-gst_mpp_video_to_frame_format (MppFrame mframe, GstVideoInfo * info,
-    GstVideoAlignment * align)
+gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
 {
-  gint hor_stride, ver_stride, mv_size;
+  gsize hor_stride, ver_stride, mv_size, cr_h;
   GstVideoFormat format;
   GstVideoInterlaceMode mode;
 
-  if (NULL == mframe || NULL == info || NULL == align)
+  if (NULL == mframe || NULL == info)
     return FALSE;
-  gst_video_info_init (info);
-  gst_video_alignment_reset (align);
 
   format = mpp_frame_type_to_gst_video_format (mpp_frame_get_fmt (mframe));
   if (format == GST_VIDEO_FORMAT_UNKNOWN)
     return FALSE;
   mode = mpp_frame_get_mode (mframe);
 
-  info->finfo = gst_video_format_get_info (format);
-  info->width = mpp_frame_get_width (mframe);
-  info->height = mpp_frame_get_height (mframe);
+  gst_video_info_init (info);
+  gst_video_info_set_format (info, format, mpp_frame_get_width (mframe),
+      mpp_frame_get_height (mframe));
+
   info->interlace_mode = mpp_frame_mode_to_gst_interlace_mode (mode);
 
   hor_stride = mpp_frame_get_hor_stride (mframe);
   ver_stride = mpp_frame_get_ver_stride (mframe);
-  for (guint i = 0; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
-    info->stride[i] = hor_stride;
-    /* FIXME only work for two planes */
-    if (i == 0)
+
+  switch (info->finfo->format) {
+    case GST_VIDEO_FORMAT_NV12:
+    case GST_VIDEO_FORMAT_NV21:
+    case GST_VIDEO_FORMAT_P010_10LEC:
+      info->stride[0] = hor_stride;
+      info->stride[1] = hor_stride;
       info->offset[0] = 0;
-    else
-      info->offset[i] = info->offset[i - 1] + hor_stride * ver_stride;
+      info->offset[1] = hor_stride * ver_stride;
+      cr_h = GST_ROUND_UP_2 (ver_stride) / 2;
+      info->size = info->offset[1] + info->stride[0] * cr_h;
+      mv_size = info->size / 3;
+      info->size += mv_size;
+      break;
+    case GST_VIDEO_FORMAT_NV16:
+      info->stride[0] = hor_stride;
+      info->stride[1] = hor_stride;
+      info->offset[0] = 0;
+      info->offset[1] = hor_stride * ver_stride;
+      cr_h = GST_ROUND_UP_2 (ver_stride);
+      info->size = info->offset[1] + info->stride[0] * cr_h;
+      mv_size = info->size / 3;
+      info->size += mv_size;
+    default:
+      g_assert_not_reached ();
+      break;
   }
-
-  for (guint i = 0; i < GST_VIDEO_INFO_N_COMPONENTS (info); i++)
-    info->size += GST_VIDEO_FORMAT_INFO_SCALE_WIDTH (info->finfo, i, hor_stride)
-        * GST_VIDEO_FORMAT_INFO_SCALE_HEIGHT (info->finfo, i, ver_stride);
-  mv_size = info->size * 2 / 6;
-  info->size += mv_size;
-
-  align->padding_right = hor_stride - info->width;
-  align->padding_bottom = ver_stride - info->height;
 
   return TRUE;
 }
@@ -273,7 +281,7 @@ gst_mpp_video_acquire_frame_format (GstMppVideoDec * self)
     return FALSE;
   }
 
-  return gst_mpp_video_to_frame_format (mframe, &self->info, &self->align);
+  return gst_mpp_video_frame_to_info (mframe, &self->info);
 }
 
 static gboolean
@@ -578,7 +586,6 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
        * down the decoding, then don't allocate more than 10 buffers here */
       gst_buffer_pool_config_set_params (config, output_state->caps,
           self->info.size, NB_OUTPUT_BUFS, NB_OUTPUT_BUFS);
-      gst_buffer_pool_config_set_video_alignment (config, &self->align);
 
       if (!gst_buffer_pool_set_config (pool, config))
         goto error_activate_pool;

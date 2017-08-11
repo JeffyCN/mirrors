@@ -57,7 +57,6 @@ struct _GstMppVideoDec
 
   /* the currently format */
   GstVideoInfo info;
-  GstVideoAlignment align;
 
   /* State */
   gboolean active;
