@@ -230,15 +230,21 @@ gst_mpp_video_to_frame_format (MppFrame mframe, GstVideoInfo * info,
   info->width = mpp_frame_get_width (mframe);
   info->height = mpp_frame_get_height (mframe);
   info->interlace_mode = mpp_frame_mode_to_gst_interlace_mode (mode);
-  /* FIXME only work for the buffer with only two planes */
+
   hor_stride = mpp_frame_get_hor_stride (mframe);
-  info->stride[0] = hor_stride;
-  info->stride[1] = hor_stride;
   ver_stride = mpp_frame_get_ver_stride (mframe);
-  info->offset[0] = 0;
-  info->offset[1] = info->stride[0] * ver_stride;
-  /* FIXME only work for YUV 4:2:0 */
-  info->size = (info->stride[0] * ver_stride) * 3 / 2;
+  for (guint i = 0; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
+    info->stride[i] = hor_stride;
+    /* FIXME only work for two planes */
+    if (i == 0)
+      info->offset[0] = 0;
+    else
+      info->offset[i] = info->offset[i - 1] + hor_stride * ver_stride;
+  }
+
+  for (guint i = 0; i < GST_VIDEO_INFO_N_COMPONENTS (info); i++)
+    info->size += GST_VIDEO_FORMAT_INFO_SCALE_WIDTH (info->finfo, i, hor_stride)
+        * GST_VIDEO_FORMAT_INFO_SCALE_HEIGHT (info->finfo, i, ver_stride);
   mv_size = info->size * 2 / 6;
   info->size += mv_size;
 
