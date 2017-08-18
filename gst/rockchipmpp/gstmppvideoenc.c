@@ -167,7 +167,7 @@ to_mpp_pixel (GstCaps * caps, GstVideoInfo * info)
         return MPP_FMT_YUV420SP;
         break;
       case GST_VIDEO_FORMAT_YUY2:
-        return MPP_FMT_YUV422P;
+        return MPP_FMT_YUV422_YUYV;
         break;
       case GST_VIDEO_FORMAT_UYVY:
         return MPP_FMT_YUV422_UYVY;
@@ -197,36 +197,44 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
     }
   }
 
+  info = &self->info;
+  gst_video_info_init (info);
+  info->finfo = state->info.finfo;
+  info->width = GST_VIDEO_INFO_WIDTH (&state->info);
+  info->height = GST_VIDEO_INFO_HEIGHT (&state->info);
+
+  for (guint i = 0; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
+    info->stride[i] = GST_VIDEO_INFO_COMP_PSTRIDE (info, i) * info->width;
+    /* FIXME only work for two planes */
+    if (i == 0)
+      info->offset[0] = 0;
+    else
+      info->offset[i] =
+          info->offset[i - 1] + GST_VIDEO_FORMAT_INFO_SCALE_WIDTH (info->finfo,
+          i - 1, info->width)
+          * GST_VIDEO_FORMAT_INFO_SCALE_HEIGHT (info->finfo, i - 1,
+          info->height);
+  }
+
+  for (guint i = 0; i < GST_VIDEO_INFO_N_COMPONENTS (info); i++)
+    info->size +=
+        GST_VIDEO_FORMAT_INFO_SCALE_WIDTH (info->finfo, i, info->stride[i])
+        * GST_VIDEO_FORMAT_INFO_SCALE_HEIGHT (info->finfo, i, info->height);
+  info->size = info->size * 3 / 2;
+
   memset (&prep_cfg, 0, sizeof (prep_cfg));
   prep_cfg.change = MPP_ENC_PREP_CFG_CHANGE_INPUT |
       MPP_ENC_PREP_CFG_CHANGE_FORMAT;
   prep_cfg.width = GST_VIDEO_INFO_WIDTH (&state->info);
   prep_cfg.height = GST_VIDEO_INFO_HEIGHT (&state->info);
   prep_cfg.format = to_mpp_pixel (state->caps, &state->info);
-  prep_cfg.hor_stride = MPP_ALIGN (prep_cfg.width, 8);
+  prep_cfg.hor_stride = info->stride[0];
   prep_cfg.ver_stride = MPP_ALIGN (prep_cfg.height, 8);
 
   if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_PREP_CFG, &prep_cfg)) {
     GST_DEBUG_OBJECT (self, "Setting input format for rockchip mpp failed");
     return FALSE;
   }
-
-  info = &self->info;
-  gst_video_info_init (info);
-  info->finfo = state->info.finfo;
-  info->width = prep_cfg.width;
-  info->height = prep_cfg.height;
-  /* FIXME only work for NV12 */
-  info->offset[0] = 0;
-  info->offset[1] = prep_cfg.hor_stride * prep_cfg.ver_stride;
-  info->stride[0] = prep_cfg.hor_stride;
-  info->stride[1] = prep_cfg.hor_stride;
-
-  for (guint i = 0; i < GST_VIDEO_INFO_N_COMPONENTS (info); i++)
-    info->size +=
-        GST_VIDEO_FORMAT_INFO_SCALE_WIDTH (info->finfo, i, prep_cfg.hor_stride)
-        * GST_VIDEO_FORMAT_INFO_SCALE_HEIGHT (info->finfo, i,
-        prep_cfg.ver_stride);
 
   align = &self->align;
   gst_video_alignment_reset (align);
@@ -306,16 +314,20 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
   MppPacket packet = NULL;
   GstFlowReturn ret;
 
-  static gint sps_flag = 0;
+  static gboolean sps_flag = FALSE;
   MppPacket sps_packet = NULL;
 
-  /* Eos buffer */
   mpp_frame_set_buffer (mpp_frame, frame_in);
+  /* Eos buffer */
   if (0 == gst_buffer_get_size (buffer)) {
     mpp_frame_set_eos (mpp_frame, 1);
   } else {
     ptr = mpp_buffer_get_ptr (frame_in);
+
+    gst_buffer_ref (buffer);
     gst_buffer_extract (buffer, 0, ptr, gst_buffer_get_size (buffer));
+    gst_buffer_unref (buffer);
+
     mpp_frame_set_eos (mpp_frame, 0);
   }
 
@@ -326,7 +338,7 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
     }
     if (NULL == task) {
       GST_LOG_OBJECT (self, "mpp input failed, try again");
-      g_usleep (1000);
+      g_usleep (2);
     } else {
       break;
     }
@@ -347,7 +359,7 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
     ret = GST_FLOW_OK;
 
     if (self->mpi->dequeue (self->mpp_ctx, MPP_PORT_OUTPUT, &task)) {
-      g_usleep (1000);
+      g_usleep (2);
       continue;
     }
 
@@ -364,8 +376,11 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
           ret = GST_FLOW_EOS;
 
         GST_LOG_OBJECT (self, "Allocate output buffer");
-        new_buffer = gst_video_encoder_allocate_output_buffer (encoder,
-            MAX_CODEC_FRAME + len);
+        if (sps_flag)
+          new_buffer = gst_video_encoder_allocate_output_buffer (encoder, len);
+        else
+          new_buffer = gst_video_encoder_allocate_output_buffer (encoder,
+              MAX_CODEC_FRAME + len);
         if (NULL == new_buffer) {
           ret = GST_FLOW_FLUSHING;
           goto beach;
@@ -383,8 +398,7 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
             gst_buffer_fill (new_buffer, 0, sps_ptr, sps_len);
 
             gst_buffer_fill (new_buffer, sps_len, ptr, len);
-            sps_flag = 1;
-
+            sps_flag = TRUE;
           } else {
             GST_ERROR_OBJECT (self, "Get Mpp extra data failed\n");
             return GST_FLOW_ERROR;
