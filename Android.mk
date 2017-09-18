@@ -81,8 +81,8 @@ $(info $(shell $(LOCAL_PATH)/version.sh))
 LOCAL_SRC_FILES += \
 	RockchipRga.cpp \
 	GraphicBuffer.cpp \
-	mix/NormalRga.cpp \
-	normal/NormalRgaApi.cpp
+        normal/NormalRga.cpp \
+        normal/NormalRgaApi.cpp
 
 LOCAL_MODULE := librga
 
@@ -100,7 +100,7 @@ LOCAL_SHARED_LIBRARIES += \
         libhardware
 
 LOCAL_CFLAGS := \
-        -DLOG_TAG=\"librga-mix\"
+        -DLOG_TAG=\"librga-normal\"
 
 ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
 LOCAL_CFLAGS += -DRK3368_DRM=1
@@ -124,7 +124,6 @@ $(info $(shell $(LOCAL_PATH)/version.sh))
 LOCAL_SRC_FILES += \
         RockchipRga.cpp \
 	GraphicBuffer.cpp \
-        drm/DrmmodeRga.cpp
 
 LOCAL_MODULE := librga
 
