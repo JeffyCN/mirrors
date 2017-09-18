@@ -148,7 +148,7 @@ int NormalRgaGetMmuType(buffer_handle_t hnd, int *mmuType)
 	}
 
 	if (mmuType && dstAttrs.size() >= 5)
-		*mmuType = dstAttrs.at(ATYPE);
+		*mmuType = dstAttrs.at(ASIZE);
 
 	return ret;
 }
