@@ -14,7 +14,7 @@
 #define _rockchip_rga_drm_gralloc_h_
 
 #ifndef RK3368
-#include <gralloc_priv.h>
+#include <hardware/gralloc.h>
 
 #else
 #include <hardware/img_gralloc_public.h>

@@ -10,7 +10,7 @@
  *
  */
 #include "GraphicBuffer.h"
-#include <gralloc_rga.h>
+#include <normal/gralloc_rga.h>
 gralloc_module_t const *mAllocMod = NULL;
 
 enum {
