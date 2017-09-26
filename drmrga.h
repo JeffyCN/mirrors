@@ -85,7 +85,11 @@ typedef struct rga_info {
 	int testLog;
 	int mmuFlag;
 	int reserve[128];
+	int colorkey_en;
+	int colorkey_max;
+	int colorkey_min;
 } rga_info_t;
+
 
 typedef struct drm_rga {
 	rga_rect_t src;

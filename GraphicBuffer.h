@@ -44,6 +44,14 @@
 #include <utils/Log.h>
 
 #include "drmrga.h"
+
+#ifndef RK_FORMAT_YCbCr_420_SP_10B
+#define RK_FORMAT_YCbCr_420_SP_10B  0x20
+#endif
+
+#ifndef RK_FORMAT_YCrCb_420_SP_10B
+#define RK_FORMAT_YCrCb_420_SP_10B  0x21
+#endif
 // -------------------------------------------------------------------------------
 int         RkRgaGetHandleFd(buffer_handle_t handle, int *fd);
 int         RkRgaGetHandleAttributes(buffer_handle_t handle,
