@@ -26,7 +26,14 @@
 
 #include <cutils/properties.h>
 
-//#include <binder/IPCThreadState.h>
+#ifndef RK3368_ANDROID_8
+
+#include <binder/IPCThreadState.h>
+#include <gui/Surface.h>
+#include <gui/SurfaceComposerClient.h>
+
+#endif
+
 #include <utils/Atomic.h>
 #include <utils/Errors.h>
 #include <utils/Log.h>
@@ -40,12 +47,12 @@
 #include <ui/GraphicBufferMapper.h>
 
 #include <gui/ISurfaceComposer.h>
-//#include <gui/Surface.h>
-//#include <gui/SurfaceComposerClient.h>
+
 
 #include "RockchipRga.h"
 #include "RgaApi.h"
 #include "version.h"
+#include "normal/NormalRga.h"
 
 namespace android {
 
@@ -101,6 +108,7 @@ int RockchipRga::RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     }
     return ret;
 }
+
 
 int RockchipRga::RkRgaCollorFill(rga_info *dst)
 {

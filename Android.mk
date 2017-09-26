@@ -14,6 +14,7 @@ LOCAL_CFLAGS += -DROCKCHIP_GPU_LIB_ENABLE
 LOCAL_C_INCLUDES += external/tinyalsa/include
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
+LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/normal
 
 LOCAL_CFLAGS := \
@@ -68,6 +69,10 @@ ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
 LOCAL_CFLAGS += -DRK3368
 endif
 
+ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3188)
+LOCAL_CFLAGS += -DRK3188
+endif
+
 LOCAL_MODULE:= librga
 include $(BUILD_SHARED_LIBRARY)
 endif
@@ -81,14 +86,15 @@ $(info $(shell $(LOCAL_PATH)/version.sh))
 LOCAL_SRC_FILES += \
 	RockchipRga.cpp \
 	GraphicBuffer.cpp \
-        normal/NormalRga.cpp \
-        normal/NormalRgaApi.cpp
+	normal/NormalRga.cpp \
+	normal/NormalRgaApi.cpp
 
 LOCAL_MODULE := librga
 
 LOCAL_C_INCLUDES += external/libdrm/rockchip
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
+LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/drm
 
 LOCAL_SHARED_LIBRARIES := libdrm
@@ -103,7 +109,18 @@ LOCAL_CFLAGS := \
         -DLOG_TAG=\"librga-normal\"
 
 ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
+LOCAL_CFLAGS += -DRK3368
+endif
+
+ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
 LOCAL_CFLAGS += -DRK3368_DRM=1
+endif
+
+ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
+LOCAL_CFLAGS += -DRK3368
+ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 8.0)))
+LOCAL_CFLAGS += -DRK3368_ANDROID_8
+endif
 endif
 
 LOCAL_MODULE_TAGS := optional
@@ -124,6 +141,7 @@ $(info $(shell $(LOCAL_PATH)/version.sh))
 LOCAL_SRC_FILES += \
         RockchipRga.cpp \
 	GraphicBuffer.cpp \
+        drm/DrmmodeRga.cpp
 
 LOCAL_MODULE := librga
 

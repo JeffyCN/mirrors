@@ -148,7 +148,13 @@ int NormalRgaGetMmuType(buffer_handle_t hnd, int *mmuType)
 	}
 
 	if (mmuType && dstAttrs.size() >= 5)
+	{
+#ifdef RK3368_ANDROID_8
 		*mmuType = dstAttrs.at(ASIZE);
+#else
+		*mmuType = dstAttrs.at(ATYPE);
+#endif
+	}
 
 	return ret;
 }
@@ -254,6 +260,47 @@ int NormalRgaSetDstVirtualInfo(struct rga_req *msg,
 
 	return 1;
 }
+int NormalRgaSetPatActiveInfo(struct rga_req *req,
+		unsigned int width, unsigned int height,
+		unsigned int x_off, unsigned int y_off)
+{
+	req->pat.act_w = width;
+	req->pat.act_h = height;
+	req->pat.x_offset = x_off;
+	req->pat.y_offset = y_off;
+
+	return 1;
+}
+
+#if defined(__arm64__) || defined(__aarch64__)
+int NormalRgaSetPatVirtualInfo(struct rga_req *msg,
+		unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr, 
+		unsigned int  vir_w,    unsigned int vir_h,
+		RECT          *clip,    unsigned char format, unsigned char a_swap_en)
+#else
+int NormalRgaSetPatVirtualInfo(struct rga_req *msg,
+		unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr,
+		unsigned int vir_w,    unsigned int vir_h,
+		RECT           *clip,  unsigned char  format, unsigned char a_swap_en)
+#endif
+{
+	msg->pat.yrgb_addr = yrgb_addr;
+	msg->pat.uv_addr  = uv_addr;
+	msg->pat.v_addr   = v_addr;
+    ALOGD("yrgb_addr=%x,uv_addr=%x,v_addr=%x",yrgb_addr,uv_addr,v_addr);
+	msg->pat.vir_w = vir_w;
+	msg->pat.vir_h = vir_h;
+	msg->pat.format = format;
+
+	msg->clip.xmin = clip->xmin;
+	msg->clip.xmax = clip->xmax;
+	msg->clip.ymin = clip->ymin;
+	msg->clip.ymax = clip->ymax;
+
+	msg->pat.alpha_swap |= (a_swap_en & 1);
+
+	return 1;
+}
 
 int NormalRgaSetPatInfo(struct rga_req *msg,
 		unsigned int width,unsigned int height,unsigned int x_off,
@@ -335,8 +382,8 @@ int NormalRgaSetFadingEnInfo(struct rga_req *msg,
 
 int NormalRgaSetSrcTransModeInfo(struct rga_req *msg,
 		unsigned char trans_mode,unsigned char a_en,unsigned char b_en,
-		unsigned char g_en,unsigned char r_en,unsigned char color_key_min,
-		unsigned char color_key_max,unsigned char zero_mode_en
+		unsigned char g_en,unsigned char r_en,unsigned int color_key_min,
+		unsigned int color_key_max,unsigned char zero_mode_en
 		)
 {
 	msg->src_trans_mode = ((a_en & 1) << 4) | ((b_en & 1) << 3) | 
@@ -802,8 +849,8 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg)
 			rgaReg.mmu_info.base_addr, rgaReg.mmu_info.mmu_flag);
 
 
-	ALOGD("mode[%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
-			rgaReg.endian_mode, rgaReg.src_trans_mode);
+	ALOGD("mode[%d,%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
+			rgaReg.endian_mode, rgaReg.src_trans_mode,rgaReg.scale_mode);
 #endif
 	return;
 }

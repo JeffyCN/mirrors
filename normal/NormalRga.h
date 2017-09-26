@@ -78,6 +78,9 @@ int         NormalRgaSetRect(rga_rect_t *rect, int x, int y,
 void        NormalRgaSetLogOnceFlag(int log);
 void        NormalRgaSetAlwaysLogFlag(bool log);
 void        NormalRgaLogOutRgaReq(struct rga_req rgaReg);
+void        is_debug_log(void);
+int         is_out_log(void);
+int         hwc_get_int_property(const char* pcProperty, const char* default_value);
 
 int         NormalRgaSetFdsOffsets(struct rga_req *req,
                                 uint16_t src_fd,     uint16_t dst_fd,
@@ -123,6 +126,21 @@ int         NormalRgaSetPatInfo(struct rga_req *msg,
             unsigned int width,unsigned int height,unsigned int x_off,
                                unsigned int y_off, unsigned int pat_format);
 
+int         NormalRgaSetPatActiveInfo(struct rga_req *req,
+                                    unsigned int width, unsigned int height,
+                                    unsigned int x_off, unsigned int y_off);
+
+#if defined(__arm64__) || defined(__aarch64__)
+int         NormalRgaSetPatVirtualInfo(struct rga_req *msg,
+        	unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,
+        	unsigned int  vir_w,    unsigned int vir_h,
+        	RECT          *clip,    unsigned char format, unsigned char a_swap_en);
+#else
+int         NormalRgaSetPatVirtualInfo(struct rga_req *msg,
+        	unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr,
+        	unsigned int vir_w,    unsigned int vir_h,
+        	RECT           *clip,  unsigned char  format, unsigned char a_swap_en);
+#endif
 
 #if defined(__arm64__) || defined(__aarch64__)
 int         NormalRgaSetRopMaskInfo(struct rga_req *msg,
@@ -158,8 +176,8 @@ int         NormalRgaSetFadingEnInfo(struct rga_req *msg,
 
 int         NormalRgaSetSrcTransModeInfo(struct rga_req *msg,
         	unsigned char trans_mode,unsigned char a_en,unsigned char b_en,
-        	unsigned char g_en,unsigned char r_en,unsigned char color_key_min,
-        	unsigned char color_key_max,unsigned char zero_mode_en);
+        	unsigned char g_en,unsigned char r_en,unsigned int color_key_min,
+        	unsigned int color_key_max,unsigned char zero_mode_en);
 
 bool        NormalRgaIsBppFormat(int format);
 
@@ -186,7 +204,6 @@ int         NormalRgaSetBitbltMode(struct rga_req *msg,
 int         NormalRgaSetColorPaletteMode(struct rga_req *msg,
             		unsigned char  palette_mode,unsigned char  endian_mode, 
             		unsigned int  bpp1_0_color, unsigned int  bpp1_1_color);
-
 
 /* gradient color part         */
  /* saturation mode             */
