@@ -444,8 +444,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		srcBuf = src->phyAddr;
 	else if (src && src->virAddr)
 		srcBuf = src->virAddr;
-	else if (src && src->hnd)
-		ret = RkRgaGetHandleMapAddress(src->hnd, &srcBuf);
+	//else if (src && src->hnd)
+		//ret = RkRgaGetHandleMapAddress(src->hnd, &srcBuf);
 
 	if (srcFd == -1 && !srcBuf) {
 		ALOGE("%d:src has not fd and address for render", __LINE__);
@@ -470,8 +470,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		dstBuf = dst->phyAddr;
 	else if (dst && dst->virAddr)
 		dstBuf = dst->virAddr;
-	else if (dst && dst->hnd)
-		ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
+	//else if (dst && dst->hnd)
+		//ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
 
     if(is_out_log())
         ALOGD("srcBuf = %x , dstBuf = %x\n",srcBuf,dstBuf);
@@ -949,8 +949,8 @@ int RgaCollorFill(rga_info *dst)
 		dstBuf = dst->phyAddr;
 	else if (dst && dst->virAddr)
 		dstBuf = dst->virAddr;
-	else if (dst && dst->hnd)
-		ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
+	//else if (dst && dst->hnd)
+		//ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
 
 	if (dst && dstFd == -1 && !dstBuf) {
 		ALOGE("%d:dst has not fd and address for render", __LINE__);
