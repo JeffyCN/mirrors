@@ -17,8 +17,8 @@
 #include <gralloc_priv.h>
 
 #else
-#include <hardware/img_gralloc_public.h>
 #include <hardware/gralloc.h>
+#include <hardware/img_gralloc_public.h>
 
 #ifndef GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD
 #define GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD 0x08100002
