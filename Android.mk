@@ -3,6 +3,7 @@ LOCAL_PATH:= $(call my-dir)
 ifneq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
+$(info $(shell chmod 777 $(LOCAL_PATH)/version.sh))
 $(info $(shell $(LOCAL_PATH)/version.sh))
 
 LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
@@ -81,6 +82,7 @@ endif
 ifeq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
+$(info $(shell chmod 777 $(LOCAL_PATH)/version.sh))
 $(info $(shell $(LOCAL_PATH)/version.sh))
 
 LOCAL_SRC_FILES += \
