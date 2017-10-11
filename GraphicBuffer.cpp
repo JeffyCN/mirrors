@@ -13,12 +13,16 @@
 #include <gralloc_rga.h>
 gralloc_module_t const *mAllocMod = NULL;
 
-enum {
-	GET_HANDLE_FD           = GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD,
-	GET_HADNLE_ATTRIBUTES   = GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES,
+#ifdef RK3368
+#define private_handle_t IMG_native_handle_t
+#endif
+
+//enum {
+//	GET_HANDLE_FD           = GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD,
+//	GET_HADNLE_ATTRIBUTES   = GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES,
 	//GET_INTERNAL_FORMAT     = GRALLOC_MODULE_PERFORM_GET_INTERNAL_FORMAT,
 	//GET_HADNLE_USAGE        = GRALLOC_MODULE_PERFORM_GET_USAGE,
-};
+//};
 // ---------------------------------------------------------------------------
 int RkInitAllocModle()
 {
@@ -36,21 +40,82 @@ int RkInitAllocModle()
 	return ret;
 }
 
+#ifndef ANDROID_7_DRM
+
+int gralloc_backend_get_fd(private_handle_t* hnd, int *fd)
+{
+	*fd = hnd->share_fd;
+	return 0;
+}
+
+int gralloc_backend_get_attrs(private_handle_t* hnd, void *attrs)
+{
+	std::vector<int> *attributes = (std::vector<int> *)attrs;
+	attributes->clear();
+	attributes->push_back(hnd->width);
+	attributes->push_back(hnd->height);
+	attributes->push_back(hnd->stride);
+	attributes->push_back(hnd->format);
+	attributes->push_back(hnd->size);
+	attributes->push_back(hnd->type);
+	return 0;
+}
+
+#else
+
+#ifdef RK3368
+
+int gralloc_backend_get_fd(private_handle_t* hnd, int *fd)
+{
+	*fd = hnd->share_fd;
+	return 0;
+}
+
+int gralloc_backend_get_attrs(private_handle_t* hnd, void *attrs)
+{
+	std::vector<int> *attributes = (std::vector<int> *)attrs;
+	attributes->clear();
+	attributes->push_back(hnd->width);
+	attributes->push_back(hnd->height);
+	attributes->push_back(hnd->stride);
+	attributes->push_back(hnd->format);
+	attributes->push_back(hnd->size);
+	attributes->push_back(hnd->type);
+	return 0;
+}
+
+#endif		//RK3368
+
+#endif		//ANDROID_7_DRM
+
 int RkRgaGetHandleFd(buffer_handle_t handle, int *fd)
 {
-	int op = GET_HANDLE_FD;
+	//int op = GET_HANDLE_FD;
 	int ret = 0;
-
+    //ALOGD("op = %x",op);
 	if (!mAllocMod)
 		ret = RkInitAllocModle();
 
 	if (ret)
 		return ret;
+    //ALOGD("perform \n");
+	//if (mAllocMod->perform)
+	//	mAllocMod->perform(mAllocMod, op, handle, fd);
+	//else
+		//return -ENODEV;
+#ifdef ANDROID_7_DRM
 
-	if (mAllocMod->perform)
-		mAllocMod->perform(mAllocMod, op, handle, fd);
-	else
-		return -ENODEV;
+#ifndef RK3368
+	ret = gralloc_drm_handle_get_prime_fd(handle,fd);
+#else
+private_handle_t* hnd = (private_handle_t*)handle;
+ret = gralloc_backend_get_fd(hnd,fd);
+#endif		//RK3368
+
+#else
+	private_handle_t* hnd = (private_handle_t*)handle;
+	ret = gralloc_backend_get_fd(hnd,fd);
+#endif		//ANDROID_7_DRM
 
 	if (ret)
 		ALOGE("GraphicBufferGetHandldFd fail %d for:%s",ret,strerror(ret));
@@ -65,7 +130,7 @@ int RkRgaGetHandleFd(buffer_handle_t handle, int *fd)
 int RkRgaGetHandleAttributes(buffer_handle_t handle,
 		std::vector<int> *attrs)
 {
-	int op = GET_HADNLE_ATTRIBUTES;
+	//int op = GET_HADNLE_ATTRIBUTES;
 	int ret = 0;
 
 	if (!mAllocMod)
@@ -74,8 +139,8 @@ int RkRgaGetHandleAttributes(buffer_handle_t handle,
 	if (ret)
 		return ret;
 
-	if(!mAllocMod->perform)
-		return -ENODEV;
+	//if(!mAllocMod->perform)
+		//return -ENODEV;
 
 #if RK3368_DRM
 	int w,h,pixel_stride,format,size;
@@ -99,7 +164,23 @@ int RkRgaGetHandleAttributes(buffer_handle_t handle,
 	attrs->emplace_back(size);
 
 #else
-	mAllocMod->perform(mAllocMod, op, handle, attrs);
+
+#ifdef ANDROID_7_DRM
+
+#ifndef RK3368
+	ret = gralloc_drm_handle_get_attributes(handle, (void*)attrs);
+#else
+	//mAllocMod->perform(mAllocMod, op, handle, attrs);
+	private_handle_t* hnd = (private_handle_t*)handle;
+	ret = gralloc_backend_get_attrs(hnd, (void*)attrs);
+#endif		//RK3368
+
+#else
+	//mAllocMod->perform(mAllocMod, op, handle, attrs);
+	private_handle_t* hnd = (private_handle_t*)handle;
+	ret = gralloc_backend_get_attrs(hnd, (void*)attrs);
+#endif		//ANDROID_7_DRM
+
 
 	if (ret)
 		ALOGE("GraphicBufferGetHandldAttributes fail %d for:%s",ret,strerror(ret));
@@ -119,6 +200,9 @@ int RkRgaGetHandleMapAddress(buffer_handle_t handle,
 		void **buf)
 {
 	int usage = GRALLOC_USAGE_SW_READ_MASK | GRALLOC_USAGE_SW_WRITE_MASK;
+#ifdef ANDROID_7_DRM
+	usage |= GRALLOC_USAGE_HW_FB;
+#endif
 	int ret = 0;
 
 	if (!mAllocMod)

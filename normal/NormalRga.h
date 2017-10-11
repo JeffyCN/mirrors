@@ -12,6 +12,12 @@
 
 #ifndef _rockchip_normal_rga_h_
 #define _rockchip_normal_rga_h_
+
+#ifdef ANDROID_7_DRM
+#define RGA_BUF_GEM_TYPE_MASK      0xC0
+#define RGA_BUF_GEM_TYPE_DMA       0x80
+#endif
+
 #include <stdint.h>
 #include <vector>
 #include <sys/types.h>
@@ -111,13 +117,13 @@ int         NormalRgaSetDstActiveInfo(struct rga_req *req,
 
 #if defined(__arm64__) || defined(__aarch64__)
 int         NormalRgaSetDstVirtualInfo(struct rga_req *msg,
-        	unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,    
-        	unsigned int  vir_w,    unsigned int vir_h,      
+        	unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,
+        	unsigned int  vir_w,    unsigned int vir_h,
         	RECT          *clip,    unsigned char format, unsigned char a_swap_en);
 #else
 int         NormalRgaSetDstVirtualInfo(struct rga_req *msg,
-        	unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr,     
-        	unsigned int vir_w,    unsigned int vir_h,      
+        	unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr,
+        	unsigned int vir_w,    unsigned int vir_h,
         	RECT           *clip,  unsigned char  format, unsigned char a_swap_en);
 #endif
 

@@ -1,20 +1,30 @@
-1、解压文档到hardware/rockchip/librga或者hardware/rk29/librga
+版本说明：
+此版本为RGA1v2,相对于原来的RGA兼容性更好，并且解决了很多bug。目前检测过以下平台，已确认运行OK
 
-2、编译librga目录，推相应的库
+Rockchip rk3188  4.4 / 5.1 / 7.1
+Rockchip rk3128  4.4 / 7.1
+Rockchip rk3228H 4.4 / 7.1
+Rockchip rk3288  4.4 / 5.1 / 6.0 / 7.1
+Rockchip rk3368  5.1 / 6.0 / 7.1 / 8.0
+Rockchip rk3399  6.0 / 7.1
 
-3、test目录提供几个测试代码，拷贝，旋转，合成等
+RGA使用帮助：
 
-4、data目录是二进制源数据,数据太大存放到服务器，自行下载
+1、解压文件到hardware/rockchip/librga或者hardware/rk29/librga
 
-5、drm目录是用于drm框架的源码
+2、在/librga目录下编译，在~/out/target/product/rk312x（sdk版本）/system/lib/生成librga.so链接库，
+push librga.so到设备system/lib 目录 （64位系统对应lib64）
 
-6、normal目录是用于早期rga框架的，兼容rga各个代。
+3、librga/demo/目录提供若干demo代码，包含拷贝，旋转，合成，格式转换，颜色填充等功能，
+到对应librga/demo/rgaXXXXX目录 mm -B -j4 即可编译。生成可执行文件在~/out/target/product/rk312x（sdk版本）/system/bin 目录
 
-7、因为产品需要，出现了mix方案，所以驱动是normal的代码，安卓是drm版本的，因此重新整理了一套mix用于过度阶段。
+4、librga/image目录是测试用的二进制源数据，可作为前期熟悉RGA的测试src_data，按需使用。可用7YUV应用打开。
 
-8、按照一定规则命名二进制文件
+5、librga/normal目录RGA接口实现源代码，兼容rga各个版本，请按需阅读
+
+6、按照一定规则命名二进制文件
 /**********************************************************************************************************
-   in%dw%d-h%d-%s.yuv解释如下：
+   in%dw%d-h%d-%s.bin解释如下：
 --->第一个%d是文件的索引，一般为0，防止所有格式一样，导致无法使用，比如合成的时候，可能两个文件完全一样的属性
 --->第二个%d是宽的意思，这里的宽一般指虚宽
 --->第三个%d是宽的意思，这里的高一般指虚高
@@ -31,6 +41,3 @@
 *HAL_PIXEL_FORMAT_YCrCb_NV12_10:                 "nv12_10";     *
 *****************************************************************
 */
-
-9、本模块有rga相关说明文件，如有需要可联系图形部门索要
-

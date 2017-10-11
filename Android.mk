@@ -3,7 +3,6 @@ LOCAL_PATH:= $(call my-dir)
 ifneq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
-$(info $(shell chmod 777 $(LOCAL_PATH)/version.sh))
 $(info $(shell $(LOCAL_PATH)/version.sh))
 
 LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
@@ -19,7 +18,7 @@ LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/normal
 
 LOCAL_CFLAGS := \
-        -DLOG_TAG=\"librga-normal\"
+        -DLOG_TAG=\"librga\"
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
@@ -74,8 +73,11 @@ ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3188)
 LOCAL_CFLAGS += -DRK3188
 endif
 
+ifeq ($(strip $(GRAPHIC_MEMORY_PROVIDER)),dma_buf)
+LOCAL_CFLAGS += -DUSE_DMA_BUF
+endif
+
 LOCAL_MODULE:= librga
-LOCAL_PROPRIETARY_MODULE := true
 include $(BUILD_SHARED_LIBRARY)
 endif
 #############################################################################################
@@ -83,7 +85,6 @@ endif
 ifeq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
-$(info $(shell chmod 777 $(LOCAL_PATH)/version.sh))
 $(info $(shell $(LOCAL_PATH)/version.sh))
 
 LOCAL_SRC_FILES += \
@@ -93,12 +94,11 @@ LOCAL_SRC_FILES += \
 	normal/NormalRgaApi.cpp
 
 LOCAL_MODULE := librga
-LOCAL_PROPRIETARY_MODULE := true
+
 LOCAL_C_INCLUDES += external/libdrm/rockchip
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
 LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/drm
 
 LOCAL_SHARED_LIBRARIES := libdrm
 LOCAL_SHARED_LIBRARIES += \
@@ -109,14 +109,15 @@ LOCAL_SHARED_LIBRARIES += \
         libhardware
 
 LOCAL_CFLAGS := \
-        -DLOG_TAG=\"librga-normal\"
+        -DLOG_TAG=\"librga\"
 
-ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
-LOCAL_CFLAGS += -DRK3368
+ifneq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
+LOCAL_SHARED_LIBRARIES += libgralloc_drm 
 endif
 
-ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
-LOCAL_CFLAGS += -DRK3368_DRM=1
+ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.9)))
+LOCAL_CFLAGS += -DANDROID_7_DRM
+LOCAL_CFLAGS += -DRK_DRM_GRALLOC=1
 endif
 
 ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)

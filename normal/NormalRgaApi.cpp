@@ -204,8 +204,8 @@ int NormalRgaSetSrcVirtualInfo(struct rga_req *req,
 		unsigned char a_swap_en)
 #else
 int NormalRgaSetSrcVirtualInfo(struct rga_req *req,
-		unsigned int yrgb_addr, unsigned int uv_addr,unsigned int v_addr,          
-		unsigned int vir_w, unsigned int vir_h, unsigned char format, 
+		unsigned int yrgb_addr, unsigned int uv_addr,unsigned int v_addr,
+		unsigned int vir_w, unsigned int vir_h, unsigned char format,
 		unsigned char a_swap_en)
 #endif
 {
@@ -234,12 +234,12 @@ int NormalRgaSetDstActiveInfo(struct rga_req *req,
 
 #if defined(__arm64__) || defined(__aarch64__)
 int NormalRgaSetDstVirtualInfo(struct rga_req *msg,
-		unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,    
+		unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,
 		unsigned int  vir_w,    unsigned int vir_h,
 		RECT          *clip,    unsigned char format, unsigned char a_swap_en)
 #else
 int NormalRgaSetDstVirtualInfo(struct rga_req *msg,
-		unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr, 
+		unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr,
 		unsigned int vir_w,    unsigned int vir_h,
 		RECT           *clip,  unsigned char  format, unsigned char a_swap_en)
 #endif
@@ -274,7 +274,7 @@ int NormalRgaSetPatActiveInfo(struct rga_req *req,
 
 #if defined(__arm64__) || defined(__aarch64__)
 int NormalRgaSetPatVirtualInfo(struct rga_req *msg,
-		unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr, 
+		unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,
 		unsigned int  vir_w,    unsigned int vir_h,
 		RECT          *clip,    unsigned char format, unsigned char a_swap_en)
 #else
@@ -337,16 +337,16 @@ int NormalRgaSetRopMaskInfo(struct rga_req *msg,
 /* use dst alpha  */
 
 int NormalRgaSetAlphaEnInfo(struct rga_req *msg,
-		unsigned int alpha_cal_mode, unsigned int alpha_mode,        
-		unsigned int global_a_value, unsigned int PD_en,             
-		unsigned int PD_mode,        unsigned int dst_alpha_en )     
+		unsigned int alpha_cal_mode, unsigned int alpha_mode,
+		unsigned int global_a_value, unsigned int PD_en,
+		unsigned int PD_mode,        unsigned int dst_alpha_en )
 {
 	msg->alpha_rop_flag |= 1;
 	msg->alpha_rop_flag |= ((PD_en & 1) << 3);
 	msg->alpha_rop_flag |= ((alpha_cal_mode & 1) << 4);
 
 	msg->alpha_global_value = global_a_value;
-	msg->alpha_rop_mode |= (alpha_mode & 3);    
+	msg->alpha_rop_mode |= (alpha_mode & 3);
 	msg->alpha_rop_mode |= (dst_alpha_en << 5);
 
 	msg->PD_mode = PD_mode;
