@@ -94,7 +94,7 @@ LOCAL_SRC_FILES += \
 	normal/NormalRgaApi.cpp
 
 LOCAL_MODULE := librga
-
+LOCAL_PROPRIETARY_MODULE := true
 LOCAL_C_INCLUDES += external/libdrm/rockchip
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
