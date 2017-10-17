@@ -47,10 +47,11 @@ endif
 endif
 
 ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
-LOCAL_CFLAGS += -DRK3368
-ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 8.0)))
-LOCAL_CFLAGS += -DRK3368_ANDROID_8
+LOCAL_CFLAGS += -DRK336
 endif
+
+ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 8.0)))
+LOCAL_CFLAGS += -DANDROID_8
 endif
 
 ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3188)

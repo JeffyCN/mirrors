@@ -23,7 +23,7 @@
 
 #include <cutils/properties.h>
 
-#ifndef RK3368_ANDROID_8
+#ifndef ANDROID_8
 
 #include <binder/IPCThreadState.h>
 
@@ -150,7 +150,7 @@ int main()
     /******************************
      * Map Buffer_address To Userspace:
      ******************************/
-#ifdef RK3368_ANDROID_8
+#ifdef ANDROID_8
     buffer_handle_t importedHandle_src;
     buffer_handle_t importedHandle_dst;
     mgbMapper.importBuffer(gbs->handle, &importedHandle_src);

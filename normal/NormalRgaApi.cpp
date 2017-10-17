@@ -149,7 +149,7 @@ int NormalRgaGetMmuType(buffer_handle_t hnd, int *mmuType)
 
 	if (mmuType && dstAttrs.size() >= 5)
 	{
-#ifdef RK3368_ANDROID_8
+#ifdef ANDROID_8
 		*mmuType = dstAttrs.at(ASIZE);
 #else
 		*mmuType = dstAttrs.at(ATYPE);

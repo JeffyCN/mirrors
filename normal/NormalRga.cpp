@@ -459,11 +459,11 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		srcBuf = src->phyAddr;
 	else if (src && src->virAddr)
 		srcBuf = src->virAddr;
-#ifndef RK3368_ANDROID_8
+#ifndef ANDROID_8
 	else if (src && src->hnd)
 		//Get virtual addresss by lock action(on libgralloc)
 		ret = RkRgaGetHandleMapAddress(src->hnd, &srcBuf);
-#endif		//RK3368_ANDROID_8
+#endif		//ANDROID_8
 
 	if (srcFd == -1 && !srcBuf) {
 		ALOGE("%d:src has not fd and address for render", __LINE__);
@@ -493,10 +493,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		dstBuf = dst->phyAddr;
 	else if (dst && dst->virAddr)
 		dstBuf = dst->virAddr;
-#ifndef RK3368_ANDROID_8
+#ifndef ANDROID_8
 	else if (dst && dst->hnd)
 		ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
-#endif		//RK3368_ANDROID_8
+#endif		//ANDROID_8
 
     if(is_out_log())
         ALOGD("srcBuf = %x , dstBuf = %x\n",srcBuf,dstBuf);

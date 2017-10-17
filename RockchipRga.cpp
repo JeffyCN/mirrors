@@ -26,7 +26,7 @@
 
 #include <cutils/properties.h>
 
-#ifndef RK3368_ANDROID_8
+#ifndef ANDROID_8
 
 #include <binder/IPCThreadState.h>
 #include <gui/Surface.h>
