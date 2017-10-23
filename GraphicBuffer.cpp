@@ -67,7 +67,7 @@ int gralloc_backend_get_attrs(private_handle_t* hnd, void *attrs)
 
 int gralloc_backend_get_fd(private_handle_t* hnd, int *fd)
 {
-	*fd = hnd->share_fd;
+	*fd = hnd->fd[0];
 	return 0;
 }
 
@@ -108,8 +108,8 @@ int RkRgaGetHandleFd(buffer_handle_t handle, int *fd)
 #ifndef RK3368
 	ret = gralloc_drm_handle_get_prime_fd(handle,fd);
 #else
-private_handle_t* hnd = (private_handle_t*)handle;
-ret = gralloc_backend_get_fd(hnd,fd);
+	private_handle_t* hnd = (private_handle_t*)handle;
+	ret = gralloc_backend_get_fd(hnd,fd);
 #endif		//RK3368
 
 #else
