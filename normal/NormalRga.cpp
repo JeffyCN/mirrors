@@ -445,8 +445,11 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		NormalRgaGetMmuType(dst->hnd, &dstType);
 	}
 
-	if (src && srcFd < 0)
+	if (src && srcFd < 0) {
 		srcFd = src->fd;
+		src->mmuFlag = 1;
+		dst->mmuFlag = 1;
+	}
 
     if(is_out_log())
         ALOGD("srcFd = %.2d , phyAddr = %x , virAddr = %x\n",srcFd,src->phyAddr,src->virAddr);
@@ -479,8 +482,11 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (srcFd == 0)
 		srcFd = -1;
 
-	if (dst && dstFd < 0)
+	if (dst && dstFd < 0) {
 		dstFd = dst->fd;
+		dst->mmuFlag = 1;
+		src->mmuFlag = 1;
+	}
 
     if(is_out_log())
         ALOGD("dstFd = %.2d , phyAddr = %x , virAddr = %x\n",dstFd,dst->phyAddr,dst->virAddr);
