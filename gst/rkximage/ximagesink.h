@@ -128,7 +128,6 @@ struct _GstRkXImageSink
   GstVideoSink videosink;
 
   gint fd;
-  gint ctrl_fd;
   gint conn_id;
   gint crtc_id;
   gint plane_id;

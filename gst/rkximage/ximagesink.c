@@ -630,7 +630,7 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
       result.x, result.y, result.w, result.h, src.x, src.y, src.w, src.h);
 
   ret =
-      drmModeSetPlane (ximagesink->ctrl_fd, ximagesink->plane_id,
+      drmModeSetPlane (ximagesink->fd, ximagesink->plane_id,
       ximagesink->crtc_id, fb_id, 0, result.x, result.y, result.w, result.h,
       /* source/cropping coordinates are given in Q16 */
       src.x << 16, src.y << 16, src.w << 16, src.h << 16);
@@ -1940,9 +1940,7 @@ gst_x_image_sink_start (GstBaseSink * bsink)
 
   self->fd = open ("/dev/dri/card0", O_RDWR);
 
-  self->ctrl_fd = open ("/dev/dri/controlD64", O_RDWR);
-
-  if (self->fd < 0 || self->ctrl_fd < 0)
+  if (self->fd < 0)
     goto open_failed;
 
   drm_log_version (self);
@@ -2094,9 +2092,7 @@ gst_x_image_sink_stop (GstBaseSink * bsink)
 
   if (self->fd >= 0) {
     close (self->fd);
-    close (self->ctrl_fd);
     self->fd = -1;
-    self->ctrl_fd = -1;
   }
 
   return TRUE;
