@@ -414,6 +414,7 @@ gst-libs/gst/Makefile
 gst-libs/gst/vpudec/Makefile
 tests/Makefile
 tests/examples/Makefile
+tests/examples/app-interface/Makefile
 tests/examples/camera/Makefile
 tests/examples/player/Makefile
 )
