@@ -84,6 +84,9 @@ _mppmem_free (GstMppMemory * mem)
 static gpointer
 _mppmem_map (GstMppMemory * mem, gsize maxsize, GstMapFlags flags)
 {
+  if (!mem->data)
+    mem->data = mpp_buffer_get_ptr (mem->mpp_buf);
+
   return mem->data;
 }
 

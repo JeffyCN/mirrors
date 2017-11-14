@@ -263,8 +263,7 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   g_atomic_int_add (&pool->num_queued, -1);
 
   GST_DEBUG_OBJECT (pool,
-      "acquired buffer %p (%p) , index %d, queued %d", outbuf,
-      (gpointer) mpp_buffer_get_ptr (mpp_buf), buf_index,
+      "acquired buffer %p, index %d, queued %d", outbuf, buf_index,
       g_atomic_int_get (&pool->num_queued));
 
   *buffer = outbuf;
