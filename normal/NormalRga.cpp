@@ -907,7 +907,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	/* special config for rgb to yuv */
 	if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
 			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format)))
-		yuvToRgbMode |= 0x1 << 4;
+		yuvToRgbMode |= 0x2 << 4;
 
 	/* mode
 	 * scaleMode:set different algorithm to scale.
