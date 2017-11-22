@@ -79,6 +79,7 @@ gst_mpp_video_enc_start (GstVideoEncoder * encoder)
   GST_DEBUG_OBJECT (self, "Starting");
   g_atomic_int_set (&self->active, TRUE);
   self->output_flow = GST_FLOW_OK;
+  self->outcaps = NULL;
 
   return TRUE;
 }
@@ -113,6 +114,9 @@ gst_mpp_video_enc_stop (GstVideoEncoder * encoder)
 
   g_assert (g_atomic_int_get (&self->active) == FALSE);
   g_assert (g_atomic_int_get (&self->processing) == FALSE);
+
+  if (self->outcaps)
+    gst_caps_unref (self->outcaps);
 
   if (self->input_state) {
     gst_video_codec_state_unref (self->input_state);
@@ -506,7 +510,7 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
       GST_ERROR_OBJECT (self, "mpp input poll failed");
 
     gst_video_encoder_set_output_state (encoder, outcaps, self->input_state);
-    self->outcaps = outcaps;
+    self->outcaps = gst_caps_ref (outcaps);
 
     if (!gst_video_encoder_negotiate (encoder)) {
       if (GST_PAD_IS_FLUSHING (GST_VIDEO_ENCODER_SRC_PAD (encoder)))
@@ -529,10 +533,12 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
       if (g_atomic_int_get (&self->processing) == FALSE)
         ret = self->output_flow;
       goto drop;
+    } else if (ret == GST_FLOW_EOS) {
+      ret = GST_FLOW_EOS;
+      return ret;
     } else if (ret != GST_FLOW_OK) {
       goto process_failed;
     }
-    gst_buffer_replace (&frame->input_buffer, NULL);
   }
   gst_video_codec_frame_unref (frame);
 
