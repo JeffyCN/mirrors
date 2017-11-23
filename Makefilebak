@@ -1,0 +1,38 @@
+# 1、准备工作，编译方式、目标文件名、依赖库路径的定义。
+CC = g++
+CFLAGS  := -Wall -O3 -std=c++0x 
+
+# opencv 头文件和lib路径 
+RGA_INC_ROOT = /usr/include/libdrm/
+RGA_LIB_ROOT = /usr/lib64
+
+OBJS = RockchipRga.o NormalRga.o NormalRgaApi.o#.o文件与.cpp文件同名
+LIB = librga.so # 目标文件名 
+
+RGA_INC= -I $(RGA_INC_ROOT)
+
+INCLUDE_PATH = $(RGA_INC)
+
+LIB_PATH = -L $(RGA_LIB_ROOT)
+
+# 依赖的lib名称
+OPENCV_LIB = -ldrm
+
+all : $(LIB)
+
+# 2. 生成.o文件 
+%.o : %.cpp
+	$(CC) $(CFLAGS) -fpic -c $< -o $@ $(INCLUDE_PATH) $(LIB_PATH) $(RGA_LIB) 
+
+# 3. 生成动态库文件
+$(LIB) : $(OBJS)
+	rm -f $@
+	g++ -shared -o $@ $(OBJS)
+	rm -f $(OBJS)
+
+tags :
+	ctags -R *
+
+# 4. 删除中间过程生成的文件 
+clean:
+	rm -f $(OBJS) $(TARGET) $(LIB)
