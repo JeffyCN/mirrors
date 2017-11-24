@@ -209,7 +209,6 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
 
   for (guint i = 0; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
     info->stride[i] = GST_VIDEO_INFO_COMP_PSTRIDE (info, i) * info->width;
-    /* FIXME only work for two planes */
     if (i == 0)
       info->offset[0] = 0;
     else
@@ -223,8 +222,8 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
   for (guint i = 0; i < GST_VIDEO_INFO_N_COMPONENTS (info); i++)
     info->size +=
         GST_VIDEO_FORMAT_INFO_SCALE_WIDTH (info->finfo, i, info->stride[i])
-        * GST_VIDEO_FORMAT_INFO_SCALE_HEIGHT (info->finfo, i, info->height);
-  info->size = info->size * 3 / 2;
+        * GST_ROUND_UP_16 (GST_VIDEO_FORMAT_INFO_SCALE_HEIGHT
+        (info->finfo, i, info->height));
 
   memset (&prep_cfg, 0, sizeof (prep_cfg));
   prep_cfg.change = MPP_ENC_PREP_CFG_CHANGE_INPUT |
@@ -233,12 +232,16 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
   prep_cfg.height = GST_VIDEO_INFO_HEIGHT (&state->info);
   prep_cfg.format = to_mpp_pixel (state->caps, &state->info);
   prep_cfg.hor_stride = info->stride[0];
-  prep_cfg.ver_stride = MPP_ALIGN (prep_cfg.height, 8);
+  prep_cfg.ver_stride = GST_ROUND_UP_8 (prep_cfg.height);
 
   if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_PREP_CFG, &prep_cfg)) {
     GST_DEBUG_OBJECT (self, "Setting input format for rockchip mpp failed");
     return FALSE;
   }
+
+  if (self->mpi->control
+      (self->mpp_ctx, MPP_ENC_GET_EXTRA_INFO, &self->sps_packet))
+    self->sps_packet = NULL;
 
   align = &self->align;
   gst_video_alignment_reset (align);
@@ -318,9 +321,6 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
   MppPacket packet = NULL;
   GstFlowReturn ret;
 
-  static gboolean sps_flag = FALSE;
-  MppPacket sps_packet = NULL;
-
   mpp_frame_set_buffer (mpp_frame, frame_in);
   /* Eos buffer */
   if (0 == gst_buffer_get_size (buffer)) {
@@ -375,38 +375,34 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
       if (packet) {
         gconstpointer *ptr = mpp_packet_get_pos (packet);
         gsize len = mpp_packet_get_length (packet);
+        gint intra_flag = 0;
 
         if (mpp_packet_get_eos (packet))
           ret = GST_FLOW_EOS;
 
+        mpp_task_meta_get_s32 (task, KEY_OUTPUT_INTRA, &intra_flag, 0);
+
         GST_LOG_OBJECT (self, "Allocate output buffer");
-        if (sps_flag)
-          new_buffer = gst_video_encoder_allocate_output_buffer (encoder, len);
-        else
+        if (intra_flag)
           new_buffer = gst_video_encoder_allocate_output_buffer (encoder,
-              MAX_CODEC_FRAME + len);
+              MAX_EXTRA_DATA + len);
+        else
+          new_buffer = gst_video_encoder_allocate_output_buffer (encoder, len);
         if (NULL == new_buffer) {
           ret = GST_FLOW_FLUSHING;
           goto beach;
         }
 
         /* Fill the buffer */
-        if (sps_flag) {
-          gst_buffer_fill (new_buffer, 0, ptr, len);
+        if (intra_flag) {
+          const gpointer *sps_ptr = mpp_packet_get_pos (self->sps_packet);
+          gsize sps_len = mpp_packet_get_length (self->sps_packet);
+
+          gst_buffer_fill (new_buffer, 0, sps_ptr, sps_len);
+
+          gst_buffer_fill (new_buffer, sps_len, ptr, len);
         } else {
-          if (!self->mpi->control (self->mpp_ctx, MPP_ENC_GET_EXTRA_INFO,
-                  &sps_packet)) {
-            const gpointer *sps_ptr = mpp_packet_get_pos (sps_packet);
-            gsize sps_len = mpp_packet_get_length (sps_packet);
-
-            gst_buffer_fill (new_buffer, 0, sps_ptr, sps_len);
-
-            gst_buffer_fill (new_buffer, sps_len, ptr, len);
-            sps_flag = TRUE;
-          } else {
-            GST_ERROR_OBJECT (self, "Get Mpp extra data failed\n");
-            return GST_FLOW_ERROR;
-          }
+          gst_buffer_fill (new_buffer, 0, ptr, len);
         }
 
         mpp_packet_deinit (&packet);
@@ -448,7 +444,6 @@ beach:
   /* FIXME maybe I need to inform the rockchip mpp */
   return ret;
 }
-
 
 static GstFlowReturn
 gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
@@ -532,7 +527,6 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
     if (ret == GST_FLOW_FLUSHING) {
       if (g_atomic_int_get (&self->processing) == FALSE)
         ret = self->output_flow;
-      goto drop;
     } else if (ret == GST_FLOW_EOS) {
       ret = GST_FLOW_EOS;
       return ret;
@@ -669,5 +663,4 @@ gst_mpp_video_enc_class_init (GstMppVideoEncClass * klass)
 
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_mpp_video_enc_sink_template));
-
 }

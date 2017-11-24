@@ -46,9 +46,9 @@ G_BEGIN_DECLS
 typedef struct _GstMppVideoEnc GstMppVideoEnc;
 typedef struct _GstMppVideoEncClass GstMppVideoEncClass;
 
-#define MPP_MAX_BUFFERS 4
-#define MAX_CODEC_FRAME (1<<16)
-#define MPP_ALIGN(x, a)         (((x)+(a)-1)&~((a)-1))
+#define MPP_MAX_BUFFERS                 4
+#define MAX_CODEC_FRAME                 (1<<16)
+#define MAX_EXTRA_DATA                  (1<<9)
 
 struct _GstMppVideoEnc
 {
@@ -63,6 +63,7 @@ struct _GstMppVideoEnc
   MppBuffer input_buffer[MPP_MAX_BUFFERS];
   MppBuffer output_buffer[MPP_MAX_BUFFERS];
   MppFrame mpp_frame;
+  MppPacket sps_packet;
   GstCaps *outcaps;
 
   /* the currently format */
