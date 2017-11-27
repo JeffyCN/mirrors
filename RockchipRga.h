@@ -58,6 +58,7 @@ public:
     int         RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp);
     int         RkRgaGetMmap(bo_t *bo_info);
     int         RkRgaUnmap(bo_t *bo_info);
+    int         RkRgaFree(bo_t *bo_info);
     int         RkRgaGetBufferFd(bo_t *bo_info, int *fd);
     int         RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1);
     int         RkRgaCollorFill(rga_info *dst);

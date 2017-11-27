@@ -42,7 +42,7 @@ int RkRgaGetRgaFormat(int format)
 		case RK_FORMAT_YCbCr_420_SP_10B:
 			return RK_FORMAT_YCbCr_420_SP_10B; //0x20
 		default:
-			printf("Is unsupport format now,please fix \n");
+			DEBUG("Is unsupport format now,please fix \n");
 			return -1;
 	}
 }
@@ -69,29 +69,29 @@ uint32_t bytesPerPixel(int format)
 int checkRectForRga(rga_rect_t rect)
 {
 	if (rect.xoffset < 0 || rect.yoffset < 0) {
-		printf("err offset[%d,%d] \n", rect.xoffset, rect.yoffset);
+		DEBUG("err offset[%d,%d] \n", rect.xoffset, rect.yoffset);
 		return -EINVAL;
 	}
 
 	if (rect.width < 2 || rect.height < 2) {
-		printf("err act[%d,%d] \n", rect.width, rect.height);
+		DEBUG("err act[%d,%d] \n", rect.width, rect.height);
 		return -EINVAL;
 	}
 
 	if (rect.xoffset + rect.width > rect.wstride) {
-		printf("err ws[%d,%d,%d] \n", rect.xoffset, rect.width, rect.wstride);
+		DEBUG("err ws[%d,%d,%d] \n", rect.xoffset, rect.width, rect.wstride);
 		return -EINVAL;
 	}
 
 	if (rect.yoffset + rect.height > rect.hstride) {
-		printf("err hs[%d,%d,%d] \n", rect.yoffset, rect.height, rect.hstride);
+		DEBUG("err hs[%d,%d,%d] \n", rect.yoffset, rect.height, rect.hstride);
 		return -EINVAL;
 	}
 
 	if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(rect.format)) &&
 		((rect.wstride % 8) || (rect.xoffset % 2) || (rect.width % 2) ||
 		(rect.yoffset % 2) || (rect.height % 2) || (rect.hstride % 2))) {
-		printf("err wstride is not align to 8 or yuv not align to 2 \n");
+		DEBUG("err wstride is not align to 8 or yuv not align to 2 \n");
 		return -EINVAL;
 	}
 
@@ -111,14 +111,14 @@ int NormalRgaGetRects(unsigned src,
 	//if (src)
 		//ret = RkRgaGetHandleAttributes(src, &srcAttrs);
 	//if (ret) {
-	//	printf("dst handle get Attributes fail ret = %d,hnd=%p",ret,&src);
+	//	DEBUG("dst handle get Attributes fail ret = %d,hnd=%p",ret,&src);
 	//	return ret;
 	//}
 
 	//if (dst)
 	//	ret = RkRgaGetHandleAttributes(dst, &dstAttrs);
 	//if (ret) {
-	//	printf("dst handle get Attributes fail ret = %d,hnd=%p",ret,&dst);
+	//	DEBUG("dst handle get Attributes fail ret = %d,hnd=%p",ret,&dst);
 	//	return ret;
 	//}
 
@@ -153,13 +153,13 @@ int NormalRgaGetRect(unsigned hnd, rga_rect_t *rect)
 	std::vector<int> dstAttrs;
 
 	if (!rect) {
-		printf("Get rect but rect[%p] is null point", rect);
+		DEBUG("Get rect but rect[%p] is null point", rect);
 		return -EINVAL;
 	}
 
 	//ret = RkRgaGetHandleAttributes(hnd, &dstAttrs);
 	//if (ret) {
-	//	printf("dst handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
+	//	DEBUG("dst handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
 	//	return ret;
 	//}
 
@@ -180,13 +180,13 @@ int NormalRgaGetMmuType(unsigned hnd, int *mmuType)
 	std::vector<int> dstAttrs;
 
 	if (!mmuType) {
-		printf("Get rect but mmuType[%p] is null point", mmuType);
+		DEBUG("Get rect but mmuType[%p] is null point", mmuType);
 		return -EINVAL;
 	}
 
 	//ret = RkRgaGetHandleAttributes(hnd, &dstAttrs);
 	//if (ret) {
-	//	printf("dst handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
+	//	DEBUG("dst handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
 	//	return ret;
 	//}
 
@@ -326,7 +326,7 @@ int NormalRgaSetPatVirtualInfo(struct rga_req *msg,
 	msg->pat.yrgb_addr = yrgb_addr;
 	msg->pat.uv_addr  = uv_addr;
 	msg->pat.v_addr   = v_addr;
-    printf("yrgb_addr=%x,uv_addr=%x,v_addr=%x \n",yrgb_addr,uv_addr,v_addr);
+    DEBUG("yrgb_addr=%x,uv_addr=%x,v_addr=%x \n",yrgb_addr,uv_addr,v_addr);
 	msg->pat.vir_w = vir_w;
 	msg->pat.vir_h = vir_h;
 	msg->pat.format = format;
@@ -831,64 +831,64 @@ int NormalRgaInitTables()
 void NormalRgaLogOutRgaReq(struct rga_req rgaReg)
 {
 #if defined(__arm64__) || defined(__aarch64__)
-	printf("render_mode=%d rotate_mode=%d \n",
+	DEBUG("render_mode=%d rotate_mode=%d \n",
 			rgaReg.render_mode, rgaReg.rotate_mode);
-	printf("src:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n",
+	DEBUG("src:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n",
 			rgaReg.src.yrgb_addr, rgaReg.src.uv_addr, rgaReg.src.v_addr,
 			rgaReg.src.x_offset, rgaReg.src.y_offset,
 			rgaReg.src.act_w, rgaReg.src.act_h,
 			rgaReg.src.vir_w, rgaReg.src.vir_h, rgaReg.src.format);
-	printf("dst:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n",
+	DEBUG("dst:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n",
 			rgaReg.dst.yrgb_addr, rgaReg.dst.uv_addr, rgaReg.dst.v_addr,
 			rgaReg.dst.x_offset, rgaReg.dst.y_offset,
 			rgaReg.dst.act_w, rgaReg.dst.act_h,
 			rgaReg.dst.vir_w, rgaReg.dst.vir_h, rgaReg.dst.format);
-	printf("pat:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n",
+	DEBUG("pat:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n",
 			rgaReg.pat.yrgb_addr, rgaReg.pat.uv_addr, rgaReg.pat.v_addr,
 			rgaReg.pat.x_offset, rgaReg.pat.y_offset,
 			rgaReg.pat.act_w, rgaReg.pat.act_h,
 			rgaReg.pat.vir_w, rgaReg.pat.vir_h, rgaReg.pat.format);
-	printf("ROP:[%lx,%x,%x],LUT[%lx] \n", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
+	DEBUG("ROP:[%lx,%x,%x],LUT[%lx] \n", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
 			rgaReg.rop_code, rgaReg.LUT_addr);
 
-	printf("color:[%x,%x,%x,%x,%x] \n", rgaReg.color_key_max, rgaReg.color_key_min,
+	DEBUG("color:[%x,%x,%x,%x,%x] \n", rgaReg.color_key_max, rgaReg.color_key_min,
 			rgaReg.fg_color, rgaReg.bg_color, rgaReg.color_fill_mode);
 
-	printf("MMU:[%d,%lx,%x] \n", rgaReg.mmu_info.mmu_en,
+	DEBUG("MMU:[%d,%lx,%x] \n", rgaReg.mmu_info.mmu_en,
 			rgaReg.mmu_info.base_addr, rgaReg.mmu_info.mmu_flag);
 
 
-	printf("mode[%d,%d,%d,%d] \n", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
+	DEBUG("mode[%d,%d,%d,%d] \n", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
 			rgaReg.endian_mode, rgaReg.src_trans_mode);
 #else
-	printf("render_mode=%d rotate_mode=%d\n",
+	DEBUG("render_mode=%d rotate_mode=%d\n",
 			rgaReg.render_mode, rgaReg.rotate_mode);
-	printf("src:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n",
+	DEBUG("src:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n",
 			rgaReg.src.yrgb_addr, rgaReg.src.uv_addr, rgaReg.src.v_addr,
 			rgaReg.src.x_offset, rgaReg.src.y_offset,
 			rgaReg.src.act_w, rgaReg.src.act_h,
 			rgaReg.src.vir_w, rgaReg.src.vir_h, rgaReg.src.format);
-	printf("dst:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n ",
+	DEBUG("dst:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n ",
 			rgaReg.dst.yrgb_addr, rgaReg.dst.uv_addr, rgaReg.dst.v_addr,
 			rgaReg.dst.x_offset, rgaReg.dst.y_offset,
 			rgaReg.dst.act_w, rgaReg.dst.act_h,
 			rgaReg.dst.vir_w, rgaReg.dst.vir_h, rgaReg.dst.format);
-	printf("pat:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n",
+	DEBUG("pat:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d \n",
 			rgaReg.pat.yrgb_addr, rgaReg.pat.uv_addr, rgaReg.pat.v_addr,
 			rgaReg.pat.x_offset, rgaReg.pat.y_offset,
 			rgaReg.pat.act_w, rgaReg.pat.act_h,
 			rgaReg.pat.vir_w, rgaReg.pat.vir_h, rgaReg.pat.format);
-	printf("ROP:[%x,%x,%x],LUT[%x] \n", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
+	DEBUG("ROP:[%x,%x,%x],LUT[%x] \n", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
 			rgaReg.rop_code, rgaReg.LUT_addr);
 
-	printf("color:[%x,%x,%x,%x,%x] \n", rgaReg.color_key_max, rgaReg.color_key_min,
+	DEBUG("color:[%x,%x,%x,%x,%x] \n", rgaReg.color_key_max, rgaReg.color_key_min,
 			rgaReg.fg_color, rgaReg.bg_color, rgaReg.color_fill_mode);
 
-	printf("MMU:[%d,%x,%x] \n", rgaReg.mmu_info.mmu_en,
+	DEBUG("MMU:[%d,%x,%x] \n", rgaReg.mmu_info.mmu_en,
 			rgaReg.mmu_info.base_addr, rgaReg.mmu_info.mmu_flag);
 
 
-	printf("mode[%d,%d,%d,%d,%d] \n", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
+	DEBUG("mode[%d,%d,%d,%d,%d] \n", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
 			rgaReg.endian_mode, rgaReg.src_trans_mode,rgaReg.scale_mode);
 #endif
 	return;

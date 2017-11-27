@@ -51,19 +51,19 @@ int NormalRgaOpen(void **context)
 		ctx = (struct rgaContext *)malloc(sizeof(struct rgaContext));
 		if(!ctx) {
 			ret = -ENOMEM;
-			printf("malloc fail:%s. \n",strerror(errno));
+			DEBUG("malloc fail:%s. \n",strerror(errno));
 			goto mallocErr;
 		}
 	} else {
 		ctx = rgaCtx;
-		printf("Had init the rga dev ctx = %p \n",ctx);
+		DEBUG("Had init the rga dev ctx = %p \n",ctx);
 		goto init;
 	}
 
 	fd = open("/dev/rga", O_RDWR, 0);
 	if (fd < 0) {
 		ret = -ENODEV;
-		printf("failed to open device or no device point:%s. \n",strerror(errno));
+		DEBUG("failed to open device or no device point:%s. \n",strerror(errno));
 		goto drmOpenErr;
 	}
 	ctx->rgaFd = fd;
@@ -93,22 +93,22 @@ int NormalRgaClose(void *context)
 	struct rgaContext *ctx = rgaCtx;
 
 	if (!ctx) {
-		printf("Try to exit uninit rgaCtx=%p \n", ctx);
+		DEBUG("Try to exit uninit rgaCtx=%p \n", ctx);
 		return -ENODEV;
 	}
 
 	if (!context) {
-		printf("Try to uninit rgaCtx=%p \n", context);
+		DEBUG("Try to uninit rgaCtx=%p \n", context);
 		return -ENODEV;
 	}
 
 	if (context != ctx) {
-		printf("Try to exit wrong ctx=%p \n",ctx);
+		DEBUG("Try to exit wrong ctx=%p \n",ctx);
 		return -ENODEV;
 	}
 
 	if (refCount <= 0) {
-		printf("This can not be happened \n");
+		DEBUG("This can not be happened \n");
 		return 0;
 	}
 
@@ -170,7 +170,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	RECT clip;
 
 	if (!ctx) {
-		printf("Try to use uninit rgaCtx=%p \n",ctx);
+		DEBUG("Try to use uninit rgaCtx=%p \n",ctx);
 		return -ENODEV;
 	}
 
@@ -183,12 +183,12 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	yuvToRgbMode = 0;
     
 	if (!src && !dst && !src1) {
-		printf("src = %p, dst = %p, src1 = %p \n", src, dst, src1);
+		DEBUG("src = %p, dst = %p, src1 = %p \n", src, dst, src1);
 		return -EINVAL;
 	}
 
 	if (!src && !dst) {
-		printf("src = %p, dst = %p \n", src, dst);
+		DEBUG("src = %p, dst = %p \n", src, dst);
 		return -EINVAL;
 	}
 
@@ -209,14 +209,14 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         if(src->fd <= 0 ){
     		//ret = RkRgaGetHandleFd(src->hnd, &srcFd);
     		if (ret) {
-    			printf("dst handle get fd fail ret = %d,hnd=%p", ret, &src->hnd);
+    			DEBUG("dst handle get fd fail ret = %d,hnd=%p", ret, &src->hnd);
     			return ret;
     		}
         }
 		if (!isRectValid(relSrcRect)) {
 			ret = NormalRgaGetRect(src->hnd, &tmpSrcRect);
 			if (ret){
-			    printf("src handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);   
+			    DEBUG("src handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);   
 				return ret;
 			}
 			memcpy(&relSrcRect, &tmpSrcRect, sizeof(rga_rect_t));
@@ -228,14 +228,14 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         if(src->fd <= 0 ){
     		//ret = RkRgaGetHandleFd(dst->hnd, &dstFd);
     		if (ret) {
-    			printf("dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
+    			DEBUG("dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
     			return ret;
     		}
         }
 		if (!isRectValid(relDstRect)) {
 			ret = NormalRgaGetRect(dst->hnd, &tmpDstRect);
 			if (ret){
-			    printf("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &dst->hnd);   
+			    DEBUG("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &dst->hnd);   
 				return ret;
 			}
 			memcpy(&relDstRect, &tmpDstRect, sizeof(rga_rect_t));
@@ -254,12 +254,12 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		//ret = RkRgaGetHandleMapAddress(src->hnd, &srcBuf);
 
 	if (srcFd == -1 && !srcBuf) {
-		printf("%d:src has not fd and address for render \n", __LINE__);
+		DEBUG("%d:src has not fd and address for render \n", __LINE__);
 		return ret;
 	}
 
 	if (srcFd == 0 && !srcBuf) {
-		printf("srcFd is zero, now driver not support \n");
+		DEBUG("srcFd is zero, now driver not support \n");
 		return -EINVAL;
 	}
 
@@ -269,7 +269,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (dst && dstFd < 0)
 		dstFd = dst->fd;
     
-    printf("dstFd = %.2d , phyAddr = %x , virAddr = %x \n",dstFd,dst->phyAddr,dst->virAddr);
+    DEBUG("dstFd = %.2d , phyAddr = %x , virAddr = %x \n",dstFd,dst->phyAddr,dst->virAddr);
 
 	if (dst && dst->phyAddr)
 		dstBuf = dst->phyAddr;
@@ -279,12 +279,12 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		//ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
     
 	if (dst && dstFd == -1 && !dstBuf) {
-		printf("%d:dst has not fd and address for render \n", __LINE__);
+		DEBUG("%d:dst has not fd and address for render \n", __LINE__);
 		return ret;
 	}
 
 	if (dst && dstFd == 0 && !dstBuf) {
-		printf("dstFd is zero, now driver not support \n");
+		DEBUG("dstFd is zero, now driver not support \n");
 		return -EINVAL;
 	}
 
@@ -298,7 +298,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	perpixelAlpha = relSrcRect.format == RK_FORMAT_RGBA_8888 ||
 		relSrcRect.format == RK_FORMAT_BGRA_8888;
 
-    printf("blend = %x , perpixelAlpha = %d \n",blend ,perpixelAlpha);
+    DEBUG("blend = %x , perpixelAlpha = %d \n",blend ,perpixelAlpha);
 
 	switch ((blend & 0xFFFF)) {
 		case 0x0105:
@@ -340,7 +340,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (src) {
 		ret = checkRectForRga(relSrcRect);
 		if (ret) {
-			printf("[%s,%d]Error srcRect \n", __func__, __LINE__);
+			DEBUG("[%s,%d]Error srcRect \n", __func__, __LINE__);
 			return ret;
 		}
 	}
@@ -348,7 +348,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (dst) {
 		ret = checkRectForRga(relDstRect);
 		if (ret) {
-			printf("[%s,%d]Error dstRect \n", __func__, __LINE__);
+			DEBUG("[%s,%d]Error dstRect \n", __func__, __LINE__);
 			return ret;
 		}
 	}
@@ -361,16 +361,16 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			vScale = (float)relSrcRect.height / relDstRect.width;
 		}
 		if (hScale < 1/16 || hScale > 16 || vScale < 1/16 || vScale > 16) {
-			printf("Error scale[%f,%f] line %d \n", hScale, vScale, __LINE__);
+			DEBUG("Error scale[%f,%f] line %d \n", hScale, vScale, __LINE__);
 			return -EINVAL;
 		}
 		if (ctx->mVersion <= 2.0 && (hScale < 1/8 ||
 					hScale > 8 || vScale < 1/8 || vScale > 8)) {
-			printf("Error scale[%f,%f] line %d \n", hScale, vScale, __LINE__);
+			DEBUG("Error scale[%f,%f] line %d \n", hScale, vScale, __LINE__);
 			return -EINVAL;
 		}
 		if (ctx->mVersion <= 1.003 && (hScale < 1/2 || vScale < 1/2)) {
-			printf("e scale[%f,%f] ver[%f] \n", hScale, vScale, ctx->mVersion);
+			DEBUG("e scale[%f,%f] ver[%f] \n", hScale, vScale, ctx->mVersion);
 			return -EINVAL;
 		}
 	}
@@ -385,7 +385,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         }
 	}
 
-    printf("scaleMode = %d , stretch = %d; \n",scaleMode,stretch);
+    DEBUG("scaleMode = %d , stretch = %d; \n",scaleMode,stretch);
 
 	switch (rotation) {
 		case HAL_TRANSFORM_FLIP_H:
@@ -503,7 +503,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	ditherEn = (bytesPerPixel(relSrcRect.format) 
 			!= bytesPerPixel(relSrcRect.format) ? 1 : 0);
 
-    printf("rgaVersion = %lf  , ditherEn =%d \n",ctx->mVersion,ditherEn);
+    DEBUG("rgaVersion = %lf  , ditherEn =%d \n",ctx->mVersion,ditherEn);
     
     if (ctx->mVersion <= (float)1.003) {
         srcMmuFlag = dstMmuFlag = 1;
@@ -668,12 +668,12 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		NormalRgaMmuFlag(&rgaReg, srcMmuFlag, dstMmuFlag);
 	}
 
-	printf("srcMmuFlag = %d , dstMmuFlag = %d , rotateMode = %d \n", srcMmuFlag, dstMmuFlag,rotateMode);
-    printf("<<<<-------- rgaReg -------->>>>\n");
+	DEBUG("srcMmuFlag = %d , dstMmuFlag = %d , rotateMode = %d \n", srcMmuFlag, dstMmuFlag,rotateMode);
+    DEBUG("<<<<-------- rgaReg -------->>>>\n");
 	NormalRgaLogOutRgaReq(rgaReg);
 
 	if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg)) {
-		printf(" %s(%d) RGA_BLIT fail: %s \n",__FUNCTION__, __LINE__,strerror(errno));
+		DEBUG(" %s(%d) RGA_BLIT fail: %s \n",__FUNCTION__, __LINE__,strerror(errno));
 	}
 	return 0;
 }
@@ -696,7 +696,7 @@ int RgaCollorFill(rga_info *dst)
 	RECT clip;
 
 	if (!ctx) {
-		printf("Try to use uninit rgaCtx=%p \n",ctx);
+		DEBUG("Try to use uninit rgaCtx=%p \n",ctx);
 		return -ENODEV;
 	}
 
@@ -705,7 +705,7 @@ int RgaCollorFill(rga_info *dst)
 	dstType = dstMmuFlag = 0;
 
 	if (!dst) {
-		printf("src = %p, dst = %p \n", dst, dst);
+		DEBUG("src = %p, dst = %p \n", dst, dst);
 		return -EINVAL;
 	}
 
@@ -722,8 +722,8 @@ int RgaCollorFill(rga_info *dst)
 	if (dst && dst->hnd) {
 		//ret = RkRgaGetHandleFd(dst->hnd, &dstFd);
 		if (ret) {
-			printf("dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
-			printf("-dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
+			DEBUG("dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
+			DEBUG("-dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
 			return ret;
 		}
 		if (!isRectValid(relDstRect)) {
@@ -747,12 +747,12 @@ int RgaCollorFill(rga_info *dst)
 		//ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
 
 	if (dst && dstFd == -1 && !dstBuf) {
-		printf("%d:dst has not fd and address for render \n", __LINE__);
+		DEBUG("%d:dst has not fd and address for render \n", __LINE__);
 		return ret;
 	}
 
 	if (dst && dstFd == 0 && !dstBuf) {
-		printf("dstFd is zero, now driver not support \n");
+		DEBUG("dstFd is zero, now driver not support \n");
 		return -EINVAL;
 	}
 
@@ -861,7 +861,7 @@ int RgaCollorFill(rga_info *dst)
 		NormalRgaMmuFlag(&rgaReg, dstMmuFlag, dstMmuFlag);
 	}
 
-	//printf("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
+	//DEBUG("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
 	//NormalRgaLogOutRgaReq(rgaReg);
 
 #ifndef RK3368	
@@ -871,7 +871,7 @@ int RgaCollorFill(rga_info *dst)
 #endif
 
 	if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg)) {
-		printf(" %s(%d) RGA_BLIT fail: %s \n",__FUNCTION__, __LINE__,strerror(errno));
+		DEBUG(" %s(%d) RGA_BLIT fail: %s \n",__FUNCTION__, __LINE__,strerror(errno));
 	}
 
 	return 0;

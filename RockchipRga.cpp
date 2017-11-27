@@ -82,6 +82,7 @@ int RockchipRga::RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int b
     bo_info->handle = arg.handle;
     bo_info->size = arg.size;
     bo_info->pitch = arg.pitch;
+    return 0;
 }
 
 int RockchipRga::RkRgaGetMmap(bo_t *bo_info)
@@ -99,6 +100,7 @@ int RockchipRga::RkRgaGetMmap(bo_t *bo_info)
     if (map == MAP_FAILED)
        return -EINVAL;
     bo_info->ptr = map;
+    return 0;
 }
 
 int RockchipRga::RkRgaUnmap(bo_t *bo_info)
@@ -115,8 +117,11 @@ int RockchipRga::RkRgaFree(bo_t *bo_info)
     memset(&arg, 0, sizeof(arg));
     arg.handle = bo_info->handle;
     ret = drmIoctl(bo_info->fd, DRM_IOCTL_MODE_DESTROY_DUMB, &arg);
-    if (ret)
+    if (ret){
         fprintf(stderr, "failed to destroy dumb buffer: %s\n", strerror(errno));
+        return -EINVAL;
+    }
+    return 0;
 }
 
 int RockchipRga::RkRgaGetBufferFd(bo_t *bo_info, int *fd)
