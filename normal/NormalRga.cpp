@@ -486,7 +486,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			srcActH = relSrcRect.height;
 
 			dstVirW = relDstRect.wstride;
-			dstVirH = relDstRect.height;
+			dstVirH = relDstRect.hstride;
 			dstXPos = relDstRect.xoffset;
 			dstYPos = relDstRect.yoffset;
 			dstActW = relDstRect.width;
@@ -657,7 +657,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 
 	if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
 			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format)))
-		yuvToRgbMode |= 0x1 << 4;
+		yuvToRgbMode |= 0x2 << 4;
 
 	/*mode*/
 	NormalRgaSetBitbltMode(&rgaReg, scaleMode, rotateMode, orientation,
