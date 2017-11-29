@@ -106,7 +106,13 @@ int RkRgaGetHandleFd(buffer_handle_t handle, int *fd)
 #ifdef ANDROID_7_DRM
 
 #ifndef RK3368
-	ret = gralloc_drm_handle_get_prime_fd(handle,fd);
+	//ret = gralloc_drm_handle_get_prime_fd(handle,fd);
+
+	int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD;
+	if (mAllocMod->perform)
+		mAllocMod->perform(mAllocMod, op, handle, fd);
+	else
+		return -ENODEV;
 #else
 	private_handle_t* hnd = (private_handle_t*)handle;
 	ret = gralloc_backend_get_fd(hnd,fd);
@@ -168,7 +174,12 @@ int RkRgaGetHandleAttributes(buffer_handle_t handle,
 #ifdef ANDROID_7_DRM
 
 #ifndef RK3368
-	ret = gralloc_drm_handle_get_attributes(handle, (void*)attrs);
+	//ret = gralloc_drm_handle_get_attributes(handle, (void*)attrs);
+	int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES;
+	if(!mAllocMod->perform)
+		return -ENODEV;
+
+	mAllocMod->perform(mAllocMod, op, handle, attrs);
 #else
 	//mAllocMod->perform(mAllocMod, op, handle, attrs);
 	private_handle_t* hnd = (private_handle_t*)handle;
