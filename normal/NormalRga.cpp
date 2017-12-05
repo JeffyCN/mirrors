@@ -947,6 +947,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg)) {
 		printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
 		ALOGE(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+		return -errno;
 	}
 	return 0;
 }
