@@ -14,7 +14,7 @@
 #define _rockchip_normal_rga_context_h_
 #define UNUSED(...) (void)(__VA_ARGS__)
 
-#define __DEBUG 1
+#define __DEBUG 0
 #if __DEBUG
 #define DEBUG(format, ...)  printf(format, ##__VA_ARGS__)
 #else

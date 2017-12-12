@@ -25,7 +25,7 @@ EXCUTE_BIN		:=
 DYNAMIC_LIBS 	:= librga.so
 
 # Environment settings. The value of PROJECT_DIR shoule be set in the *nix system as the the absolute dir path of your project.
- PROJECT_DIR	:= /opt/librga_linux
+PROJECT_DIR	:= /opt/librga_linux
 #CURDIR    		:= $(PROJECT_DIR)/src/pbl
 CURDIR     		:= $(shell pwd)
 PRG_BIN_DIR		:= $(PROJECT_DIR)/bin
