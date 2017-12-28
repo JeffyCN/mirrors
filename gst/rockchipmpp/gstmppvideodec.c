@@ -501,6 +501,7 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
   GstBuffer *tmp;
   MppPacket mpkt = NULL;
   MPP_RET mret = 0;
+  GstTaskState task_state;
 
   GST_DEBUG_OBJECT (self, "Handling frame %d", frame->system_frame_number);
 
@@ -593,8 +594,8 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
   }
 
   /* Start the output thread if it is not started before */
-  if (gst_pad_get_task_state (GST_VIDEO_DECODER_SRC_PAD (self)) ==
-      GST_TASK_STOPPED) {
+  task_state = gst_pad_get_task_state (GST_VIDEO_DECODER_SRC_PAD (self));
+  if (task_state == GST_TASK_STOPPED || task_state == GST_TASK_PAUSED) {
     /* It's possible that the processing thread stopped due to an error */
     if (self->output_flow != GST_FLOW_OK &&
         self->output_flow != GST_FLOW_FLUSHING) {
@@ -705,7 +706,7 @@ gst_mpp_video_dec_sink_event (GstVideoDecoder * decoder, GstEvent * event)
   ret = GST_VIDEO_DECODER_CLASS (parent_class)->sink_event (decoder, event);
 
   switch (GST_EVENT_TYPE (event)) {
-    case GST_EVENT_FLUSH_STOP:
+    case GST_EVENT_FLUSH_START:
       gst_pad_stop_task (decoder->srcpad);
       GST_DEBUG_OBJECT (self, "flush done");
       break;
