@@ -523,6 +523,19 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (src1Fd == 0)
 		src1Fd = -1;
 
+#ifdef RK3126C
+	if ( (relSrcRect.width == relDstRect.width) && (relSrcRect.height == relDstRect.height ) &&
+		 (relSrcRect.width + 2*relSrcRect.xoffset == relSrcRect.wstride) &&
+		 (relSrcRect.height + 2*relSrcRect.yoffset == relSrcRect.hstride) && 
+		 (relSrcRect.format == HAL_PIXEL_FORMAT_YCrCb_NV12) && (relSrcRect.xoffset > 0 && relSrcRect.yoffset > 0)
+	)
+	{
+		relSrcRect.width += 4;
+		//relSrcRect.height += 4;
+		relSrcRect.xoffset = (relSrcRect.wstride - relSrcRect.width) / 2;
+	}
+#endif
+
 	/* blend bit[16:23] is to set global alpha. */
 	planeAlpha = (blend & 0xFF0000) >> 16;
 
