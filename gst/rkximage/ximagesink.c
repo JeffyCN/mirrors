@@ -958,8 +958,7 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
 {
   GstVideoCropMeta *crop;
   GstVideoRectangle src = { 0, };
-  GstVideoRectangle dst = { 0, };
-  GstVideoRectangle result;
+  GstVideoRectangle result = { 0, };
   GstBuffer *buffer = NULL;
   gboolean draw_border = FALSE;
   gboolean res = FALSE;
@@ -1010,10 +1009,8 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
     src.w = GST_VIDEO_SINK_WIDTH (ximagesink);
     src.h = GST_VIDEO_SINK_HEIGHT (ximagesink);
   }
-  dst.w = ximagesink->xwindow->width;
-  dst.h = ximagesink->xwindow->height;
-
-  gst_video_sink_center_rect (src, dst, &result, FALSE);
+  result.w = ximagesink->xwindow->width;
+  result.h = ximagesink->xwindow->height;
 
   g_mutex_lock (&ximagesink->x_lock);
 
