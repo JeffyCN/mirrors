@@ -68,7 +68,6 @@ struct _GstMppVideoEnc
 
   /* the currently format */
   GstVideoInfo info;
-  GstVideoAlignment align;
 
   /* pads */
   GstCaps *probed_srccaps;

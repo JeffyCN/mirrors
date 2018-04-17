@@ -189,7 +189,8 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
 {
   GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
   GstVideoInfo *info;
-  GstVideoAlignment *align;
+  gsize ver_stride, cr_h;
+  GstVideoFormat format;
   MppEncPrepCfg prep_cfg;
 
   GST_DEBUG_OBJECT (self, "Setting format: %" GST_PTR_FORMAT, state->caps);
@@ -201,29 +202,32 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
     }
   }
 
+  format = state->info.finfo->format;
+
   info = &self->info;
   gst_video_info_init (info);
-  info->finfo = state->info.finfo;
-  info->width = GST_VIDEO_INFO_WIDTH (&state->info);
-  info->height = GST_VIDEO_INFO_HEIGHT (&state->info);
+  gst_video_info_set_format (info, format, GST_VIDEO_INFO_WIDTH (&state->info),
+      GST_VIDEO_INFO_HEIGHT (&state->info));
 
-  for (guint i = 0; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
-    info->stride[i] = GST_VIDEO_INFO_COMP_PSTRIDE (info, i) * info->width;
-    if (i == 0)
+  switch (info->finfo->format) {
+    case GST_VIDEO_FORMAT_NV12:
+    case GST_VIDEO_FORMAT_I420:
+      ver_stride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
       info->offset[0] = 0;
-    else
-      info->offset[i] =
-          info->offset[i - 1] + GST_VIDEO_FORMAT_INFO_SCALE_WIDTH (info->finfo,
-          i - 1, info->width)
-          * GST_VIDEO_FORMAT_INFO_SCALE_HEIGHT (info->finfo, i - 1,
-          info->height);
+      info->offset[1] = info->stride[0] * ver_stride;
+      cr_h = GST_ROUND_UP_2 (ver_stride) / 2;
+      info->size = info->offset[1] + info->stride[0] * cr_h;
+      break;
+    case GST_VIDEO_FORMAT_YUY2:
+    case GST_VIDEO_FORMAT_UYVY:
+      ver_stride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
+      cr_h = GST_ROUND_UP_2 (ver_stride);
+      info->size = info->stride[0] * cr_h;
+      break;
+    default:
+      g_assert_not_reached ();
+      return FALSE;
   }
-
-  for (guint i = 0; i < GST_VIDEO_INFO_N_COMPONENTS (info); i++)
-    info->size +=
-        GST_VIDEO_FORMAT_INFO_SCALE_WIDTH (info->finfo, i, info->stride[i])
-        * GST_ROUND_UP_16 (GST_VIDEO_FORMAT_INFO_SCALE_HEIGHT
-        (info->finfo, i, info->height));
 
   memset (&prep_cfg, 0, sizeof (prep_cfg));
   prep_cfg.change = MPP_ENC_PREP_CFG_CHANGE_INPUT |
@@ -232,7 +236,7 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
   prep_cfg.height = GST_VIDEO_INFO_HEIGHT (&state->info);
   prep_cfg.format = to_mpp_pixel (state->caps, &state->info);
   prep_cfg.hor_stride = info->stride[0];
-  prep_cfg.ver_stride = GST_ROUND_UP_8 (prep_cfg.height);
+  prep_cfg.ver_stride = ver_stride;
 
   if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_PREP_CFG, &prep_cfg)) {
     GST_DEBUG_OBJECT (self, "Setting input format for rockchip mpp failed");
@@ -242,11 +246,6 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
   if (self->mpi->control
       (self->mpp_ctx, MPP_ENC_GET_EXTRA_INFO, &self->sps_packet))
     self->sps_packet = NULL;
-
-  align = &self->align;
-  gst_video_alignment_reset (align);
-  align->padding_right = prep_cfg.hor_stride - prep_cfg.width;
-  align->padding_bottom = prep_cfg.ver_stride - prep_cfg.height;
 
   self->input_state = gst_video_codec_state_ref (state);
 
@@ -394,7 +393,7 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
         }
 
         /* Fill the buffer */
-        if (intra_flag) {
+        if (intra_flag && self->sps_packet) {
           const gpointer *sps_ptr = mpp_packet_get_pos (self->sps_packet);
           gsize sps_len = mpp_packet_get_length (self->sps_packet);
 
@@ -495,11 +494,12 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
       goto activate_failed;
     }
 
-    mpp_frame_set_width (self->mpp_frame, self->info.width);
-    mpp_frame_set_height (self->mpp_frame, self->info.height);
-    mpp_frame_set_hor_stride (self->mpp_frame, self->info.stride[0]);
+    mpp_frame_set_width (self->mpp_frame, GST_VIDEO_INFO_WIDTH (&self->info));
+    mpp_frame_set_height (self->mpp_frame, GST_VIDEO_INFO_HEIGHT (&self->info));
+    mpp_frame_set_hor_stride (self->mpp_frame,
+        GST_VIDEO_INFO_PLANE_STRIDE (&self->info, 0));
     mpp_frame_set_ver_stride (self->mpp_frame,
-        self->info.height + self->align.padding_bottom);
+        GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (&self->info)));
 
     if (self->mpi->poll (self->mpp_ctx, MPP_PORT_INPUT, MPP_POLL_BLOCK))
       GST_ERROR_OBJECT (self, "mpp input poll failed");
@@ -595,7 +595,6 @@ gst_mpp_video_enc_propose_allocation (GstVideoEncoder * encoder,
   gst_query_add_allocation_pool (query, pool, size, 0, 0);
   config = gst_buffer_pool_get_config (pool);
   gst_buffer_pool_config_set_params (config, caps, size, 1, 0);
-  gst_buffer_pool_config_set_video_alignment (config, &self->align);
   gst_buffer_pool_set_config (pool, config);
 
   gst_object_unref (pool);
