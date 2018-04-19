@@ -1,0 +1,10 @@
+.deps
+.libs
+*.lo
+*.la
+*.o
+*.so
+*.d
+*~
+*.swp
+*.gc??
