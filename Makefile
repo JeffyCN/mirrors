@@ -25,7 +25,7 @@ EXCUTE_BIN		:=
 DYNAMIC_LIBS 	:= librga.so
 
 # Environment settings. The value of PROJECT_DIR shoule be set in the *nix system as the the absolute dir path of your project.
-PROJECT_DIR	:= /opt/librga_linux
+PROJECT_DIR	?= /opt/librga_linux
 #CURDIR    		:= $(PROJECT_DIR)/src/pbl
 CURDIR     		:= $(shell pwd)
 PRG_BIN_DIR		:= $(PROJECT_DIR)/bin
@@ -33,18 +33,18 @@ PRG_LIB_DIR		:= $(PROJECT_DIR)/lib
 PRG_INC_DIR		:= $(PROJECT_DIR)/include /usr/include/libdrm
 
 # Cross compile tools defined. You needn't modify these vars below generally.
-AS    	:= as
-LD    	:= ld
-CC    	:= gcc
-CXX   	:= g++
-CPP   	:= $(CC) -E
-AR      := ar rcs
-NM      := nm
-STRIP   := strip
-RANLIB 	:= ranlib
-STD_OPT	:= -D_GNU_SOURCE
-CC    	+= -std=c99 $(STD_OPT)
-CXX    	+= $(STD_OPT)
+AS    	?= as
+LD    	?= ld
+CC    	?= gcc
+CXX   	?= g++
+CPP   	?= $(CC) -E
+AR      ?= ar rcs
+NM      ?= nm
+STRIP   ?= strip
+RANLIB 	?= ranlib
+STD_OPT	?= -D_GNU_SOURCE
+CC    	?= -std=c99 $(STD_OPT)
+CXX    	?= $(STD_OPT)
 
 # *nix system tools defined. You needn't modify these vars below generally.
 BLACK = "\e[33;0m"
