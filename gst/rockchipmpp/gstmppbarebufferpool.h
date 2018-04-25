@@ -61,5 +61,8 @@ GType gst_mpp_bare_buffer_pool_get_type (void);
 GstBufferPool *gst_mpp_bare_buffer_pool_new (GstMppJpegDec * dec,
     GstCaps * caps);
 
+GstFlowReturn
+gst_mpp_bare_buffer_pool_fill_frame (MppFrame mframe, GstBuffer * buffer);
+
 G_END_DECLS
 #endif /*__GST_MPP_BARE_BUFFER_POOL_H__ */

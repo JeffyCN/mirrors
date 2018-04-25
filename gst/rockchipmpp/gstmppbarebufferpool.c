@@ -386,3 +386,18 @@ allocator_failed:
     return NULL;
   }
 }
+
+GstFlowReturn
+gst_mpp_bare_buffer_pool_fill_frame (MppFrame mframe, GstBuffer * buffer)
+{
+  GstMppMemory *mem = NULL;
+
+  if (!gst_mpp_bare_is_buffer_valid (buffer, &mem)) {
+    GST_ERROR_OBJECT (buffer, "can't fill frame with an invalid buffer");
+    return GST_FLOW_ERROR;
+  }
+
+  mpp_frame_set_buffer (mframe, mem->mpp_buf);
+
+  return GST_FLOW_OK;
+}
