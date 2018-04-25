@@ -19,28 +19,29 @@
  *
  */
 
-#ifndef __GST_MPP_DEC_BUFFER_POOL_H__
-#define __GST_MPP_DEC_BUFFER_POOL_H__
+#ifndef __GST_MPP_BARE_BUFFER_POOL_H__
+#define __GST_MPP_BARE_BUFFER_POOL_H__
 
 #include <gst/gst.h>
 
 #include "gstmppallocator.h"
-#include "gstmppvideodec.h"
+#include "gstmppjpegdec.h"
 
-G_BEGIN_DECLS typedef struct _GstMppDecBufferPool GstMppDecBufferPool;
-typedef struct _GstMppDecBufferPoolClass GstMppDecBufferPoolClass;
+G_BEGIN_DECLS typedef struct _GstMppBareBufferPool GstMppBareBufferPool;
+typedef struct _GstMppBareBufferPoolClass GstMppBareBufferPoolClass;
 
-#define GST_TYPE_MPP_DEC_BUFFER_POOL      (gst_mpp_dec_buffer_pool_get_type())
-#define GST_IS_MPP_DEC_BUFFER_POOL(obj)   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_MPP_DEC_BUFFER_POOL))
-#define GST_MPP_DEC_BUFFER_POOL(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_MPP_DEC_BUFFER_POOL, GstMppDecBufferPool))
-#define GST_MPP_DEC_BUFFER_POOL_CAST(obj) ((GstMppDecBufferPool *)(obj))
+#define GST_TYPE_MPP_BARE_BUFFER_POOL      (gst_mpp_bare_buffer_pool_get_type())
+#define GST_IS_MPP_BARE_BUFFER_POOL(obj)   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_MPP_BARE_BUFFER_POOL))
+#define GST_MPP_BARE_BUFFER_POOL(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_MPP_BARE_BUFFER_POOL, GstMppBareBufferPool))
+#define GST_MPP_BARE_BUFFER_POOL_CAST(obj) ((GstMppBareBufferPool *)(obj))
 
-struct _GstMppDecBufferPool
+struct _GstMppBareBufferPool
 {
   GstBufferPool parent;
-  GstMppVideoDec *dec;
+  GstMppJpegDec *dec;
 
-  guint num_queued;             /* number of buffers queued in the mpp/libvpu and gstvpudecbufferpool */
+  guint num_queued;
+  guint count;
 
   guint size;
   GstBuffer *buffers[VIDEO_MAX_FRAME];
@@ -50,15 +51,15 @@ struct _GstMppDecBufferPool
   GstAllocationParams params;
 };
 
-struct _GstMppDecBufferPoolClass
+struct _GstMppBareBufferPoolClass
 {
   GstBufferPoolClass parent_class;
 };
 
-GType gst_mpp_dec_buffer_pool_get_type (void);
+GType gst_mpp_bare_buffer_pool_get_type (void);
 
-GstBufferPool *gst_mpp_dec_buffer_pool_new (GstMppVideoDec * dec,
+GstBufferPool *gst_mpp_bare_buffer_pool_new (GstMppJpegDec * dec,
     GstCaps * caps);
 
 G_END_DECLS
-#endif /*__GST_MPP_DEC_BUFFER_POOL_H__ */
+#endif /*__GST_MPP_BARE_BUFFER_POOL_H__ */

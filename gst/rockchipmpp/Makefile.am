@@ -4,6 +4,7 @@ libgstrockchipmpp_la_SOURCES =			\
 	gstmppvideoenc.c			\
 	gstmpph264enc.c				\
 	gstmppjpegenc.c				\
+	gstmppbarebufferpool.c			\
 	gstmppdecbufferpool.c			\
 	gstmppallocator.c			\
 	gstmppvideodec.c			\
@@ -40,6 +41,7 @@ noinst_HEADERS =				\
 	gstmppvideoenc.h			\
 	gstmpph264enc.h				\
 	gstmppjpegenc.h				\
+	gstmppbarebufferpool.h			\
 	gstmppdecbufferpool.h			\
 	gstmppallocator.h			\
 	gstmppvideodec.h			\
