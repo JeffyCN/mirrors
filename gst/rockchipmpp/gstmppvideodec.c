@@ -243,7 +243,8 @@ gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
   switch (info->finfo->format) {
     case GST_VIDEO_FORMAT_NV12:
     case GST_VIDEO_FORMAT_NV21:
-    case GST_VIDEO_FORMAT_P010_10LEC:
+      /* FIXME: use NV12_10LE40 since 1.16 */
+    case GST_VIDEO_FORMAT_P010_10LE:
       info->stride[0] = hor_stride;
       info->stride[1] = hor_stride;
       info->offset[0] = 0;
