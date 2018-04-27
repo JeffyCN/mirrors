@@ -1,3 +1,145 @@
+gstreamer1.0-rockchip (1.14-1) testing; urgency=medium
+
+  [ Randy Li ]
+  * rockchipmpp: add H.264 encoder class
+  * rockchipmpp: add build rules for H.264 encoder
+  * rockchipmpp: add mpp buffer allocator
+  * rockchipmpp: decoder: add a buffer pool
+  * rockchipmpp: add video decoder
+  * rockchipmpp: decoder: drop those invalid decoded result
+  * rockchipmpp: register video decoder in plugin
+  * rockchipmpp: add video decoder in build rules
+  * build: update rules to build properly decoder plugin
+  * debian: build: update debian version and changelog
+  * build: fix a error in build rules for rksink
+  * rockchipmpp: update the encoder API
+  * rockchipmpp: fix the alignment problem with smaller base
+  * rockchipmpp: allocating buffers using the frame info from mpp
+
+  [ Jacob Chen ]
+  * rksink: copy kmsutils to rkimagesink
+  * rksink: kmssink: comment gst_kms_sink_sync
+
+  [ Randy Li ]
+  * rksink: remove kmssink
+  * kms: kms from gst-plugins-bad
+  * kmssink: support 10 bit color depth pixel format
+
+  [ Jacob Chen ]
+  * build: add rksink
+
+  [ ayaka ]
+  * rksink: fix the error in build rules
+  * rkvideo: split the two elements into different plugins
+
+  [ Randy Li ]
+  * rockchipmpp: terminate future decoding when state change
+  * rockchipmpp: update the license of a missing header file
+
+  [ ayaka ]
+  * Revert "rockchipmpp: terminate future decoding when state change"
+
+  [ Randy Li ]
+  * rockchipmpp: decoder: drop more frames
+  * rockchipmpp: allow VP9 codec format
+
+  [ ayaka ]
+  * rockchipmpp: fix a critical issue with pad from upstream
+  * build: update configure script and remove m4 files
+  * add some i18n header and place for glib-compat
+
+  [ Jacob Chen ]
+  * build: update rules for rkximagesink/eglglessink
+  * eglgles: remove this plugins
+
+  [ Randy Li ]
+  * build: update some searching rules with upstream
+
+  [ Jacob Chen ]
+  * rkximage: fix wrong display size
+  * rkximage: workaround for vop scale limition
+
+  [ Randy Li ]
+  * rkximage: remove unused function
+
+  [ ayaka ]
+  * tests: add examples files
+
+  [ Randy Li ]
+  * rockchipmpp: allocate more size for encoder
+
+  [ ayaka ]
+  * rockchipmpp: remove duplicate and typo in the previous commit
+  * tests: examples: add a fast exit method
+
+  [ Randy Li ]
+  * tests: examples: fix the steps of the exit
+
+  [ ayaka ]
+  * rockchipmpp: release the buffer meta data
+  * tests: examples: allow setting the video and audio sink in player
+  * Revert "tests: examples: allow setting the video and audio sink in player"
+  * rockchipmpp: support more GstStateChange
+
+  [ Jacob Chen ]
+  * rkximagesink: use even for framebuffer width/height
+
+  [ ayaka ]
+  * rockchipmpp: drop frame when the mpp can't process it
+
+  [ Randy Li ]
+  * kms: remove it from src
+
+  [ Jacob Chen ]
+  * build: rename drmrockchip to rkximage
+
+  [ Randy Li ]
+  * rockchipmpp: fixup for the rate control of encoder
+  * rockchipmpp: remove the support of MPEG-2/MPEG-4
+
+  [ Jacob Chen ]
+  * rkximagesink: stop using ctrl_fd
+
+  [ ayaka ]
+  * rockchipmpp: keep input metadata for decoder
+
+  [ Randy Li ]
+  * rockchipmpp: allocate the correct buffer size for NV16
+  * rockchipmpp: support more formats for encoder
+  * build: fix some error in build rules
+
+  [ ayaka ]
+  * rockchipmpp: keep input metadata for decoder
+  * tests: examples: add more features to ayamero
+
+  [ Randy Li ]
+  * tests: move the playing operation
+  * rockchipmpp: increase the default quality settings
+  * rockchipmpp: add support for MPEG-1/2/4
+  * rockchipmpp: place the caps of the src port in a safe way
+  * rockchipmpp: only mapping the buffer when it is needed
+  * rockchipmpp: write extra info for echo I frame
+
+  [ ayaka ]
+  * rockchipmpp: add simple jpeg encoder
+  * rockchipmpp: add bare buffer pool
+  * rockchipmpp: add jpeg decoder
+  * rockchipmpp: deattach decoder output group on destroy
+
+  [ Randy Li ]
+  * rockchipmpp: a better way to stop the thread
+  * rockchipmpp: fixup for the interlace mode
+  * TEST: add appsink sample program
+  * TEST: build the appsink test program
+
+  [ ayaka ]
+  * [WIP]: rockchipmpp: fix color output format
+
+  [ Randy Li ]
+  * app sink
+
+ -- Randy Li <randy.li@rock-chips.com>  Fri, 27 Apr 2018 02:09:47 +0000
+
 gstreamer1.0-rockchip (1.10-5) testing; urgency=medium
 
   [ Jacob Chen ]
