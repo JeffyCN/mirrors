@@ -50,11 +50,11 @@ static GstStaticPadTemplate gst_mpp_jpeg_dec_src_template =
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw, "
         "format = (string) NV12, "
-        "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]"
+        "width  = (int) [ 48, 8176 ], " "height =  (int) [ 48, 8176 ]"
         ";"
         "video/x-raw, "
         "format = (string) NV16, "
-        "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]" ";")
+        "width  = (int) [ 48, 8176 ], " "height =  (int) [ 48, 8176 ]" ";")
     );
 
 static MppCodingType
@@ -177,11 +177,9 @@ gst_mpp_jpeg_dec_stop (GstVideoDecoder * decoder)
 
   gst_mpp_jpeg_dec_unlock (self);
 
-#if 1
   GST_VIDEO_DECODER_STREAM_LOCK (decoder);
   self->output_flow = GST_FLOW_OK;
   GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
-#endif
 
   /* Should have been flushed already */
   g_assert (g_atomic_int_get (&self->active) == FALSE);
@@ -253,7 +251,22 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
     if (!gst_mpp_video_set_format (self, codingtype))
       goto device_error;
   }
+
   format = gst_mpp_get_jpeg_color (structure);
+  switch (format) {
+    case GST_VIDEO_FORMAT_NV12:
+    case GST_VIDEO_FORMAT_I420:
+    case GST_VIDEO_FORMAT_YV12:
+      format = GST_VIDEO_FORMAT_NV12;
+      break;
+    case GST_VIDEO_FORMAT_UYVY:
+    case GST_VIDEO_FORMAT_NV16:
+      format = GST_VIDEO_FORMAT_NV16;
+      break;
+    default:
+      g_assert_not_reached ();
+      return FALSE;
+  }
 
   info = &self->info;
   gst_video_info_init (info);
@@ -262,8 +275,6 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
 
   switch (format) {
     case GST_VIDEO_FORMAT_NV12:
-    case GST_VIDEO_FORMAT_I420:
-    case GST_VIDEO_FORMAT_YV12:
       info->stride[0] = GST_ROUND_UP_16 (info->stride[0]);
       ver_stride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
       info->offset[0] = 0;
@@ -272,15 +283,6 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
       info->size = info->offset[1] + info->stride[0] * cr_h;
       mv_size = info->size / 3;
       info->size += mv_size;
-      break;
-    case GST_VIDEO_FORMAT_UYVY:
-      ver_stride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
-      info->stride[0] = GST_ROUND_UP_16 (GST_VIDEO_INFO_WIDTH (info));
-      info->stride[1] = GST_ROUND_UP_16 (GST_VIDEO_INFO_WIDTH (info));
-      info->offset[0] = 0;
-      info->offset[1] = info->stride[0] * ver_stride;
-      cr_h = GST_ROUND_UP_2 (ver_stride);
-      info->size = info->stride[0] * cr_h * 2;
       break;
     case GST_VIDEO_FORMAT_NV16:
       info->stride[0] = GST_ROUND_UP_16 (info->stride[0]);
@@ -389,6 +391,7 @@ gst_mpp_jpeg_dec_handle_frame (GstVideoDecoder * decoder,
   if (ret != GST_FLOW_OK)
     goto drop;
 #else
+  /* FIXME: performance bad */
   gst_buffer_extract (frame->input_buffer, 0,
       mpp_buffer_get_ptr (self->input_buffer[0]),
       gst_buffer_get_size (frame->input_buffer));
