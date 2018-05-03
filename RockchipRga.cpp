@@ -109,6 +109,15 @@ int RockchipRga::RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     return ret;
 }
 
+int RockchipRga::RkRgaFlush()
+{
+    int ret = 0;
+    ret = RgaFlush();
+    if (ret) {
+        ALOGE("RgaFlush Failed");
+    }
+    return ret;
+}
 
 int RockchipRga::RkRgaCollorFill(rga_info *dst)
 {
