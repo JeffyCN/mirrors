@@ -14,6 +14,6 @@
 *.rej
 *~
 *.pyc
-mkupdate.sh
-package-file
-config.cfg
+linux/Linux_Pack_Firmware/rockdev/mkupdate.sh
+linux/Linux_Pack_Firmware/rockdev/package-file
+windows/AndroidTool/AndroidTool_Release/config.cfg
