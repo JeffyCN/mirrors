@@ -1,3 +1,4 @@
+mklink /J Image ..\..\..\..\rockdev
 Afptool -pack ./ Image\update.img
 
 RKImageMaker.exe -RK312A Image\MiniLoaderAll.bin  Image\update.img update.img -os_type:androidos
