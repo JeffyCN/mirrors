@@ -1,0 +1,40 @@
+diff --git a/configs/evb-rk3308_defconfig b/configs/evb-rk3308_defconfig
+index 956d838..e81cfe0 100644
+--- a/configs/evb-rk3308_defconfig
++++ b/configs/evb-rk3308_defconfig
+@@ -16,6 +16,11 @@ CONFIG_FIT_VERBOSE=y
+ CONFIG_BOOTDELAY=0
+ # CONFIG_DISPLAY_CPUINFO is not set
+ # CONFIG_FASTBOOT is not set
++CONFIG_FASTBOOT=y
++CONFIG_FASTBOOT_BUF_ADDR=0x800800
++CONFIG_FASTBOOT_BUF_SIZE=0x04000000
++CONFIG_FASTBOOT_FLASH=y
++CONFIG_FASTBOOT_FLASH_MMC_DEV=0
+ # CONFIG_CMD_IMLS is not set
+ CONFIG_CMD_GPT=y
+ CONFIG_CMD_BOOT_ANDROID=y
+@@ -60,3 +65,11 @@ CONFIG_G_DNL_PRODUCT_NUM=0x330d
+ CONFIG_USE_TINY_PRINTF=y
+ CONFIG_SPL_TINY_MEMSET=y
+ CONFIG_ERRNO_STR=y
++CONFIG_OPTEE_CLIENT=y
++CONFIG_OPTEE_V2=y
++CONFIG_AVB_LIBAVB=y
++CONFIG_AVB_LIBAVB_AB=y
++CONFIG_AVB_LIBAVB_ATX=y
++CONFIG_AVB_LIBAVB_USER=y
++CONFIG_RK_AVB_LIBAVB_USER=y
++CONFIG_ANDROID_AVB=y
+diff --git a/lib/avb/libavb_user/avb_ops_user.c b/lib/avb/libavb_user/avb_ops_user.c
+index 9dd8a8b..2ce20fd 100755
+--- a/lib/avb/libavb_user/avb_ops_user.c
++++ b/lib/avb/libavb_user/avb_ops_user.c
+@@ -158,6 +158,7 @@ static AvbIOResult validate_vbmeta_public_key(
+ 	size_t public_key_metadata_length,
+ 	bool *out_is_trusted)
+ {
++#define AVB_VBMETA_PUBLIC_KEY_VALIDATE
+ #ifdef AVB_VBMETA_PUBLIC_KEY_VALIDATE
+ 	if (out_is_trusted != NULL) {
+ 		avb_atx_validate_vbmeta_public_key(ops,
