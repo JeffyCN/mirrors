@@ -33,6 +33,10 @@
 #define N_HCI	15
 #endif
 
+#ifndef CONFIG_BT_HCIUART_H4
+#define CONFIG_BT_HCIUART_H4
+#endif
+
 #define BTCOEX
 
 /* Ioctls */
@@ -79,16 +83,15 @@ struct hci_uart {
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
 	struct work_struct	write_work;
+	struct workqueue_struct *hci_uart_wq;
 #endif
 
 	struct hci_uart_proto	*proto;
+	rwlock_t		proto_lock;	/* Stop work for proto close */
 	void			*priv;
 
 	struct sk_buff		*tx_skb;
 	unsigned long		tx_state;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
-	spinlock_t		rx_lock;
-#endif
 };
 
 /* HCI_UART proto flag bits */

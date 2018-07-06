@@ -56,18 +56,32 @@
 
 #include "hciattach.h"
 
-#define RTK_VERSION "3.1"
+#define RTK_VERSION "4.1"
 
 /* #define RTL_8703A_SUPPORT */
 
+#define USE_CUSTOMER_ADDRESS
+
 #define BAUDRATE_4BYTES
-//#define USE_CUSTUMER_ADDRESS
 #define FIRMWARE_DIRECTORY  "/lib/firmware/rtlbt/"
 #define BT_CONFIG_DIRECTORY "/lib/firmware/rtlbt/"
 
-#ifdef USE_CUSTUMER_ADDRESS
-#define BT_ADDR_DIR         "/data/bt_mac/"
-#define BT_ADDR_FILE        "/data/bt_mac/btmac.txt"
+#ifdef USE_CUSTOMER_ADDRESS
+#define BT_ADDR_FILE        "/opt/bdaddr"
+static uint8_t customer_bdaddr = 0;
+#endif
+
+#define CONFIG_TXPOWER	(1 << 0)
+#define CONFIG_XTAL	(1 << 1)
+#define CONFIG_BTMAC	(1 << 2)
+
+#define EXTRA_CONFIG_OPTION
+#ifdef EXTRA_CONFIG_OPTION
+#define EXTRA_CONFIG_FILE	"/opt/rtk_btconfig.txt"
+static uint32_t config_flags;
+static uint8_t txpower_cfg[4];
+static uint8_t txpower_len;
+static uint8_t xtal_cfg;
 #endif
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -132,6 +146,7 @@ const RT_U8 Extension_Section_SIGNATURE[4] = { 0x51, 0x04, 0xFD, 0x77 };
 #define ROM_LMP_8723b           0x8723
 #define ROM_LMP_8821a           0x8821
 #define ROM_LMP_8761a           0x8761
+#define ROM_LMP_8761btc		0x8763
 
 #define ROM_LMP_8703a           0x87b3
 #define ROM_LMP_8763a           0x8763
@@ -148,6 +163,17 @@ const RT_U8 Extension_Section_SIGNATURE[4] = { 0x51, 0x04, 0xFD, 0x77 };
 #define CHIP_8723CS_VF 4
 #define CHIP_RTL8723CS_XX 5
 #define CHIP_8703BS   7
+
+/* software id */
+#define CHIP_UNKNOWN	0x00
+#define CHIP_8761AT	0x1F
+#define CHIP_8761ATF	0x2F
+#define CHIP_8761BTC	0x3F
+#define CHIP_8761B	0x4F
+#define CHIP_BEFORE	0x6F
+#define CHIP_8822BS	0x70
+#define CHIP_8723DS	0x71
+#define CHIP_8821CS	0x72
 
 /* HCI data types */
 #define H5_ACK_PKT              0x00
@@ -295,18 +321,43 @@ struct patch_info {
 	char        *ic_name;
 };
 
-static struct patch_info patch_table[] = {
-	/* match flags, chip type, lmp subver, proj id(unused), hci_ver, hci_rev, ...*/
+static struct patch_info h4_patch_table[] = {
+	/* match flags, chip type, lmp subver, proj id(unused), hci_ver,
+	 * hci_rev, ...
+	 */
 
-	/* RTL8761AT H4 */
-	{ 0, 0, 0xffff, 0xffff, 0, 0,
+	/* RTL8761AT */
+	{ RTL_FW_MATCH_CHIP_TYPE, CHIP_8761AT,
+		0x8761, 0xffff, 0, 0x000a,
 		"rtl8761at_fw", "rtl8761at_config", "RTL8761AT" },
+	/* RTL8761ATF */
+	{ RTL_FW_MATCH_CHIP_TYPE, CHIP_8761ATF,
+		0x8761, 0xffff, 0, 0x000a,
+		"rtl8761atf_fw", "rtl8761atf_config", "RTL8761ATF" },
+	/* RTL8761B TC
+	 * FW/Config is not used.
+	 */
+	{ RTL_FW_MATCH_CHIP_TYPE, CHIP_8761BTC,
+		0x8763, 0xffff, 0, 0x000b,
+		"rtl8761btc_fw", "rtl8761btc_config", "RTL8761BTC" },
+	/* RTL8761B */
+	{ RTL_FW_MATCH_CHIP_TYPE, CHIP_8761B,
+		0x8761, 0xffff, 0, 0x000b,
+		"rtl8761b_fw", "rtl8761b_config", "RTL8761B" },
+
+	{ 0, 0, 0, ROM_LMP_NONE, 0, 0, "rtl_none_fw", "rtl_none_config", "NONE"}
+};
+
+static struct patch_info patch_table[] = {
+	/* match flags, chip type, lmp subver, proj id(unused), hci_ver,
+	 * hci_rev, ...
+	 */
 
 	/* RTL8723AS */
 	{ 0, 0, ROM_LMP_8723a, ROM_LMP_8723a, 0, 0,
 		"rtl8723a_fw", "rtl8723a_config", "RTL8723AS"},
 	/* RTL8821CS */
-	{ RTL_FW_MATCH_HCI_REV, 0,
+	{ RTL_FW_MATCH_HCI_REV, CHIP_8821CS,
 		ROM_LMP_8821a, ROM_LMP_8821a, 0, 0x000c,
 		"rtl8821c_fw", "rtl8821c_config", "RTL8821CS"},
 	/* RTL8821AS */
@@ -324,7 +375,7 @@ static struct patch_info patch_table[] = {
 		ROM_LMP_8723b, ROM_LMP_8723b, 0, 0,
 		"rtl8703a_fw", "rtl8703a_config", "RTL8703AS"},
 #endif
-	{ 0, 0, ROM_LMP_8822b, ROM_LMP_8822b, 0, 0,
+	{ 0, CHIP_8822BS, ROM_LMP_8822b, ROM_LMP_8822b, 0, 0,
 		"rtl8822b_fw", "rtl8822b_config", "RTL8822BS"},
 
 	/* RTL8703BS
@@ -350,7 +401,7 @@ static struct patch_info patch_table[] = {
 		ROM_LMP_8723b, ROM_LMP_8723b, 6, 0x000b,
 		"rtl8723b_fw", "rtl8723b_config", "RTL8723BS"},
 	/* RTL8723DS */
-	{ RTL_FW_MATCH_HCI_VER | RTL_FW_MATCH_HCI_REV, 0,
+	{ RTL_FW_MATCH_HCI_VER | RTL_FW_MATCH_HCI_REV, CHIP_8723DS,
 		ROM_LMP_8723b, ROM_LMP_8723b, 8, 0x000d,
 		"rtl8723d_fw", "rtl8723d_config", "RTL8723DS"},
 	/* add entries here*/
@@ -409,11 +460,175 @@ typedef struct btrtl_info {
 
 static rtk_hw_cfg_t rtk_hw_cfg;
 
+void util_hexdump(const uint8_t *buf, size_t len)
+{
+	static const char hexdigits[] = "0123456789abcdef";
+	char str[16 * 3];
+	size_t i;
+
+	if (!buf || !len)
+		return;
+
+	for (i = 0; i < len; i++) {
+		str[((i % 16) * 3)] = hexdigits[buf[i] >> 4];
+		str[((i % 16) * 3) + 1] = hexdigits[buf[i] & 0xf];
+		str[((i % 16) * 3) + 2] = ' ';
+		if ((i + 1) % 16 == 0) {
+			str[16 * 3 - 1] = '\0';
+			RS_INFO("%s", str);
+		}
+	}
+
+	if (i % 16 > 0) {
+		str[(i % 16) * 3 - 1] = '\0';
+		RS_INFO("%s", str);
+	}
+}
+
+#ifdef EXTRA_CONFIG_OPTION
+
+static inline int xtalset_supported(void)
+{
+	struct patch_info *pent = rtk_hw_cfg.patch_ent;
+
+	/* Only support rtl8723ds, rtl8822bs and rtl8821cs xtal config */
+	if (pent->chip_type != CHIP_8723DS &&
+	    pent->chip_type != CHIP_8822BS &&
+	    pent->chip_type != CHIP_8821CS)
+		return 0;
+
+	return 1;
+}
+
+static void line_proc(char *buff, int len)
+{
+	char *argv[32];
+	int nargs = 0;
+	RS_INFO("%s", buff);
+
+	while (nargs < 32) {
+		/* skip any white space */
+		while ((*buff == ' ') || (*buff == '\t') ||
+			*buff == ',') {
+			++buff;
+		}
+
+		if (*buff == '\0') {
+			/* end of line, no more args */
+			argv[nargs] = NULL;
+			break;
+		}
+
+		/* begin of argument string */
+		argv[nargs++] = buff;
+
+		/* find end of string */
+		while (*buff && (*buff != ' ') && (*buff != '\t')) {
+			++buff;
+		}
+
+		if (*buff == '\r' || *buff == '\n')
+			++buff;
+
+		if (*buff == '\0') {
+			/* end of line, no more args */
+			argv[nargs] = NULL;
+			break;
+		}
+
+		*buff++ = '\0';	/* terminate current arg */
+	}
+
+	/* valid config */
+	if (nargs >= 4) {
+		unsigned long int offset;
+		uint8_t l;
+		uint8_t i = 0;
+
+		offset = strtoul(argv[0], NULL, 16);
+		offset = offset | (strtoul(argv[1], NULL, 16) << 8);
+		RS_INFO("extra config offset %04lx", offset);
+		l = strtoul(argv[2], NULL, 16);
+		if (l != (uint8_t)(nargs - 3)) {
+			RS_ERR("invalid len %u", l);
+			return;
+		}
+
+		if (offset == 0x015b && l <= 4) {
+			/* Tx power */
+			for (i = 0; i < l; i++)
+				txpower_cfg[i] = (uint8_t)strtoul(argv[3 + i], NULL, 16);
+			txpower_len = l;
+			config_flags |= CONFIG_TXPOWER;
+		} else if (offset == 0x01e6) {
+			/* XTAL for 8822B, 8821C 8723D */
+			xtal_cfg = (uint8_t)strtoul(argv[3], NULL, 16);
+			config_flags |= CONFIG_XTAL;
+		} else {
+			RS_ERR("extra config %04lx is not supported", offset);
+		}
+	}
+}
+
+static void config_proc(uint8_t *buff, int len)
+{
+	uint8_t *head = buff;
+	uint8_t *ptr = buff;
+	int l;
+
+	while (len > 0) {
+		ptr = strchr(head, '\n');
+		if (!ptr)
+			break;
+		*ptr++ = '\0';
+		while (*head == ' ' || *head == '\t')
+			head++;
+		l = ptr - head;
+		if (l > 0 && *head != '#')
+			line_proc(head, l);
+		head = ptr;
+		len -= l;
+	}
+}
+
+static void config_file_proc(const char *path)
+{
+	int fd;
+	uint8_t buff[256];
+	int result;
+
+	fd = open(path, O_RDONLY);
+	if (fd == -1) {
+		RS_INFO("Couldnt open extra config %s, %s", path, strerror(errno));
+		return;
+	}
+
+	result = read(fd, buff, sizeof(buff));
+	if (result == -1) {
+		RS_ERR("Couldnt read %s, %s", path, strerror(errno));
+		close(fd);
+		return;
+	} else if (result == 0) {
+		RS_ERR("File is empty");
+		close(fd);
+		return;
+	}
+
+	config_proc(buff, result);
+
+	close(fd);
+}
+#endif
+
 /* Get the entry from patch_table according to LMP subversion */
 struct patch_info *get_patch_entry(struct btrtl_info *btrtl)
 {
 	struct patch_info *n = NULL;
-	n = patch_table;
+
+	if (btrtl->proto == HCI_UART_3WIRE)
+		n = patch_table;
+	else
+		n = h4_patch_table;
 	for (; n->lmp_subver; n++) {
 		if ((n->match_flags & RTL_FW_MATCH_CHIP_TYPE) &&
 		    n->chip_type != btrtl->chip_type)
@@ -1772,53 +1987,81 @@ static int rtk_vendor_change_speed_h4(int fd, RT_U32 baudrate)
 * proto, baudrate and flow control is followed by 0xc offset,
 *
 * @param config_buf point to config file content
-* @param filelen length of config file
+* @param *plen length of config file
 * @param bt_addr where bt addr is stored
-* @return baudrate in config file
+* @return
+*  1. new config buf
+*  2. new config length *plen
+*  3. result (for baudrate)
 *
 */
 
-RT_U32 rtk_parse_config_file(RT_U8 * config_buf, size_t filelen,
-			     char bt_addr[6])
+uint8_t *rtk_parse_config_file(RT_U8 *config_buf, size_t *plen,
+			       uint8_t bt_addr[6], uint32_t *result)
 {
+
 	struct rtk_bt_vendor_config *config =
 	    (struct rtk_bt_vendor_config *)config_buf;
 	RT_U16 config_len = 0, temp = 0;
 	struct rtk_bt_vendor_config_entry *entry = NULL;
 	RT_U16 i;
 	RT_U32 baudrate = 0;
+	uint32_t flags = 0;
+	uint32_t add_flags;
+#ifdef USE_CUSTOMER_ADDRESS
+	uint8_t j = 0;
+	struct patch_info *pent = rtk_hw_cfg.patch_ent;
+#endif
+#ifdef EXTRA_CONFIG_OPTION
+	uint8_t *head = config_buf;
 
-	if (config == NULL)
-		return 0;
+	add_flags = config_flags;
+#endif
 
+	if (!config || !plen)
+		return NULL;
+
+	RS_INFO("Original Cfg len %u", *plen);
 	config_len = le16_to_cpu(config->data_len);
 	entry = config->entry;
 
 	if (le32_to_cpu(config->signature) != RTK_VENDOR_CONFIG_MAGIC) {
-		RS_ERR
-		    ("config signature magic number(%x) is not set to RTK_VENDOR_CONFIG_MAGIC",
+		RS_ERR("signature magic number(%x) is incorrect",
 		     (unsigned int)config->signature);
-		return 0;
+		return NULL;
 	}
 
-	if (config_len != filelen - sizeof(struct rtk_bt_vendor_config)) {
-		RS_ERR("config len(%d) is not right(%zd)", config_len,
-		       filelen - sizeof(struct rtk_bt_vendor_config));
-		return 0;
+	if (config_len != *plen - sizeof(struct rtk_bt_vendor_config)) {
+		RS_ERR("config len(%d) is incorrect(%zd)", config_len,
+		       *plen - sizeof(struct rtk_bt_vendor_config));
+		return NULL;
 	}
 
 	for (i = 0; i < config_len;) {
 
 		switch (le16_to_cpu(entry->offset)) {
-#ifdef USE_CUSTUMER_ADDRESS
-		case 0x3c:
-			{
-				int j = 0;
-				for (j = 0; j < entry->entry_len; j++)
-					entry->entry_data[j] =
-					    bt_addr[entry->entry_len - 1 - j];
+#ifdef USE_CUSTOMER_ADDRESS
+		case 0x003c:
+		case 0x0044:
+			if (!customer_bdaddr)
 				break;
-			}
+			if (pent->chip_type > CHIP_BEFORE &&
+			    le16_to_cpu(entry->offset) != 0x44)
+				break;
+			if (pent->chip_type <= CHIP_BEFORE &&
+			    le16_to_cpu(entry->offset) != 0x3c)
+				break;
+			for (j = 0; j < entry->entry_len; j++)
+				entry->entry_data[j] = bt_addr[j];
+			flags |= CONFIG_BTMAC;
+			RS_INFO("BT MAC found %02x:%02x:%02x:%02x:%02x:%02x",
+				entry->entry_data[5],
+				entry->entry_data[4],
+				entry->entry_data[3],
+				entry->entry_data[2],
+				entry->entry_data[1],
+				entry->entry_data[0]);
+			break;
 #endif
 		case 0xc:
 			{
@@ -1833,45 +2076,154 @@ RT_U32 rtk_parse_config_file(RT_U8 * config_buf, size_t filelen,
 				if (entry->entry_len >= 12)	//0ffset 0x18 - 0xc
 				{
 					rtk_hw_cfg.hw_flow_control = (entry->entry_data[12] & 0x4) ? 1 : 0;	//0x18 byte bit2
+					//rtk_hw_cfg.hw_flow_control = 0;
 				}
 				RS_DBG
-				    ("config baud rate to :%x, hwflowcontrol:%x, %x",
+				    ("config baud rate to :0x%08x, hwflowcontrol:%x, %x",
 				     (unsigned int)baudrate,
 				     entry->entry_data[12],
 				     rtk_hw_cfg.hw_flow_control);
 				break;
 			}
+#ifdef EXTRA_CONFIG_OPTION
+		case 0x015b:
+			if (!(add_flags & CONFIG_TXPOWER))
+				break;
+			add_flags &= ~CONFIG_TXPOWER;
+			if (txpower_len != entry->entry_len) {
+				RS_ERR("invalid tx power cfg len %u, %u",
+				       txpower_len, entry->entry_len);
+				break;
+			}
+			memcpy(entry->entry_data, txpower_cfg, txpower_len);
+			RS_INFO("Replace Tx power Cfg %02x %02x %02x %02x",
+				txpower_cfg[0], txpower_cfg[1], txpower_cfg[2],
+				txpower_cfg[3]);
+			break;
+		case 0x01e6:
+			if (!(add_flags & CONFIG_XTAL))
+				break;
+			add_flags &= ~CONFIG_XTAL;
+			RS_INFO("Replace XTAL Cfg 0x%02x", xtal_cfg);
+			entry->entry_data[0] = xtal_cfg;
+			break;
+#endif
 		default:
-			RS_DBG("config offset(%04x),length(%02x)", entry->offset,
+			RS_DBG("cfg offset (%04x),length (%02x)", entry->offset,
 			       entry->entry_len);
 			break;
 		}
-		temp =
-		    entry->entry_len +
-		    sizeof(struct rtk_bt_vendor_config_entry);
+		temp = entry->entry_len +
+		       sizeof(struct rtk_bt_vendor_config_entry);
 		i += temp;
-		entry =
-		    (struct rtk_bt_vendor_config_entry *)((RT_U8 *) entry +
-							  temp);
+		entry = (struct rtk_bt_vendor_config_entry *)((RT_U8 *)entry +
+							      temp);
 	}
 
-	return baudrate;
+#ifdef USE_CUSTOMER_ADDRESS
+	if (!(flags & CONFIG_BTMAC) && customer_bdaddr) {
+		uint8_t *b;
+
+		b = config_buf + *plen;
+		if (pent->chip_type > CHIP_BEFORE) {
+			b[0] = 0x44;
+			b[1] = 0x00;
+		} else {
+			b[0] = 0x3c;
+			b[1] = 0x00;
+		}
+		RS_INFO("add bdaddr sec, offset %02x%02x", b[1], b[0]);
+		b[2] = 6;
+		for (j = 0; j < 6; j++)
+			b[3 + j] = bt_addr[j];
+
+		*plen += 9;
+		config_len += 9;
+		temp = *plen - 6;
+
+		config_buf[4] = (temp & 0xff);
+		config_buf[5] = ((temp >> 8) & 0xff);
+	}
+#endif
+
+#ifdef EXTRA_CONFIG_OPTION
+	temp = *plen;
+	if (add_flags & CONFIG_TXPOWER)
+		temp += (2 + 1 + txpower_len);
+	if ((add_flags & CONFIG_XTAL))
+		temp += (2 + 1 + 1);
+
+	if (add_flags) {
+		RS_INFO("Add extra configs");
+		config_buf = head;
+		temp -= sizeof(struct rtk_bt_vendor_config);
+		config_buf[4] = (temp & 0xff);
+		config_buf[5] = ((temp >> 8) & 0xff);
+		config_buf += *plen;
+		if (add_flags & CONFIG_TXPOWER) {
+			RS_INFO("Add Tx power Cfg");
+			*config_buf++ = 0x5b;
+			*config_buf++ = 0x01;
+			*config_buf++ = txpower_len;
+			memcpy(config_buf, txpower_cfg, txpower_len);
+			config_buf += txpower_len;
+		}
+		if ((add_flags & CONFIG_XTAL)) {
+			RS_INFO("Add XTAL Cfg");
+			*config_buf++ = 0xe6;
+			*config_buf++ = 0x01;
+			*config_buf++ = 1;
+			*config_buf++ = xtal_cfg;
+		}
+		*plen = config_buf - head;
+		config_buf = head;
+	}
+#endif
+
+done:
+	*result = baudrate;
+	return config_buf;
 }
 
-#ifdef USE_CUSTUMER_ADDRESS
+#ifdef USE_CUSTOMER_ADDRESS
+int bachk(const char *str)
+{
+	if (!str)
+		return -1;
+
+	if (strlen(str) != 17)
+		return -1;
+
+	while (*str) {
+		if (!isxdigit(*str++))
+			return -1;
+
+		if (!isxdigit(*str++))
+			return -1;
+
+		if (*str == 0)
+			break;
+
+		if (*str++ != ':')
+			return -1;
+	}
+
+	return 0;
+}
 /**
 * get random realtek Bluetooth addr.
 *
 * @param bt_addr where bt addr is stored
 *
 */
-static void rtk_get_ram_addr(char bt_addr[0])
-{
-	srand(time(NULL) + getpid() + getpid() * 987654 + rand());
-
-	RT_U32 addr = rand();
-	memcpy(bt_addr, &addr, sizeof(RT_U8));
-}
+/* static void rtk_get_ram_addr(char bt_addr[0])
+ * {
+ * 	srand(time(NULL) + getpid() + getpid() * 987654 + rand());
+ * 
+ * 	RT_U32 addr = rand();
+ * 	memcpy(bt_addr, &addr, sizeof(RT_U8));
+ * }
+ */
 
 /**
 * Write the random bt addr to the file /data/misc/bluetoothd/bt_mac/btmac.txt.
@@ -1879,24 +2231,24 @@ static void rtk_get_ram_addr(char bt_addr[0])
 * @param bt_addr where bt addr is stored
 *
 */
-static void rtk_write_btmac2file(char bt_addr[6])
-{
-	int fd;
-	mkdir(BT_ADDR_DIR, 0777);
-	fd = open(BT_ADDR_FILE, O_CREAT | O_RDWR | O_TRUNC);
-
-	if (fd > 0) {
-		chmod(BT_ADDR_FILE, 0666);
-		char addr[18] = { 0 };
-		addr[17] = '\0';
-		sprintf(addr, "%2x:%2x:%2x:%2x:%2x:%2x", bt_addr[0], bt_addr[1],
-			bt_addr[2], bt_addr[3], bt_addr[4], bt_addr[5]);
-		write(fd, addr, strlen(addr));
-		close(fd);
-	} else {
-		RS_ERR("open file error:%s\n", BT_ADDR_FILE);
-	}
-}
+/* static void rtk_write_btmac2file(char bt_addr[6])
+ * {
+ * 	int fd;
+ * 	fd = open(BT_ADDR_FILE, O_CREAT | O_RDWR | O_TRUNC);
+ * 
+ * 	if (fd > 0) {
+ * 		chmod(BT_ADDR_FILE, 0666);
+ * 		char addr[18] = { 0 };
+ * 		addr[17] = '\0';
+ * 		sprintf(addr, "%2x:%2x:%2x:%2x:%2x:%2x", bt_addr[0], bt_addr[1],
+ * 			bt_addr[2], bt_addr[3], bt_addr[4], bt_addr[5]);
+ * 		write(fd, addr, strlen(addr));
+ * 		close(fd);
+ * 	} else {
+ * 		RS_ERR("open file error:%s\n", BT_ADDR_FILE);
+ * 	}
+ * }
+ */
 #endif
 
 /**
@@ -1913,49 +2265,72 @@ int rtk_get_bt_config(struct btrtl_info *btrtl, uint8_t **config_buf,
 {
 	char bt_config_file_name[PATH_MAX] = { 0 };
 	RT_U8 *bt_addr_temp = NULL;
-	char bt_addr[6] = { 0x00, 0xe0, 0x4c, 0x88, 0x88, 0x88 };
+	uint8_t bt_addr[6] = { 0x00, 0xe0, 0x4c, 0x88, 0x88, 0x88 };
 	struct stat st;
 	size_t filelen;
+	size_t tlength;
 	int fd;
-	FILE *file = NULL;
 	int ret = 0;
 	int i = 0;
 
-#ifdef USE_CUSTUMER_ADDRESS
-	sprintf(bt_config_file_name, BT_ADDR_FILE);
-	if (stat(bt_config_file_name, &st) < 0) {
-		RS_ERR
-		    ("can't access bt bt_mac_addr file:%s, try use ramdom BT Addr\n",
-		     bt_config_file_name);
+#ifdef USE_CUSTOMER_ADDRESS
+#define BDADDR_STRING_LEN	17
+	size_t size;
+	size_t result;
+	uint8_t tbuf[BDADDR_STRING_LEN + 1];
+	char *str;
 
-		for (i = 0; i < 6; i++)
-			rtk_get_ram_addr(&bt_addr[i]);
-		rtk_write_btmac2file(bt_addr);
+	if (stat(BT_ADDR_FILE, &st) < 0) {
+		RS_INFO("Couldnt access customer BT MAC file %s",
+		        BT_ADDR_FILE);
+
+		/* for (i = 0; i < 6; i++)
+		 * 	rtk_get_ram_addr(&bt_addr[i]);
+		 * rtk_write_btmac2file(bt_addr);
+		 */
 		goto GET_CONFIG;
 	}
 
-	filelen = st.st_size;
-	if ((file = fopen(bt_config_file_name, "rb")) == NULL) {
-		RS_ERR("Can't open bt btaddr file, just use preset BT Addr");
+	size = st.st_size;
+	/* Only read the first 17-byte if the file length is larger */
+	if (size > BDADDR_STRING_LEN)
+		size = BDADDR_STRING_LEN;
+
+	fd = open(BT_ADDR_FILE, O_RDONLY);
+	if (fd == -1) {
+		RS_ERR("Couldnt open BT MAC file %s, %s", BT_ADDR_FILE,
+		       strerror(errno));
 	} else {
-		int i = 0;
-		char temp;
-		fscanf(file, "%2x:%2x:%2x:%2x:%2x:%2x",
-		       (unsigned int *)&bt_addr[0], (unsigned int *)&bt_addr[1],
-		       (unsigned int *)&bt_addr[2], (unsigned int *)&bt_addr[3],
-		       (unsigned int *)&bt_addr[4],
-		       (unsigned int *)&bt_addr[5]);
+		memset(tbuf, 0, sizeof(tbuf));
+		result = read(fd, tbuf, size);
+		close(fd);
+		if (result == -1) {
+			RS_ERR("Couldnt read BT MAC file %s, err %s",
+			       BT_ADDR_FILE, strerror(errno));
+			goto GET_CONFIG;
+		}
+
+		if (bachk(tbuf) < 0) {
+			goto GET_CONFIG;
+		}
+
+		str = tbuf;
+		for (i = 5; i >= 0; i--) {
+			bt_addr[i] = (uint8_t)strtoul(str, NULL, 16);
+			str += 3;
+		}
 
 		/*reserve LAP addr from 0x9e8b00 to 0x9e8b3f, change to 0x008b** */
 		if (0x9e == bt_addr[3] && 0x8b == bt_addr[4]
 		    && (bt_addr[5] <= 0x3f)) {
 			bt_addr[3] = 0x00;
 		}
-		RS_DBG("BT MAC IS : %X,%X,%X,%X,%X,%X\n", bt_addr[0],
-		       bt_addr[1], bt_addr[2], bt_addr[3], bt_addr[4],
-		       bt_addr[5]);
 
-		fclose(file);
+		RS_DBG("BT MAC is %02x:%02x:%02x:%02x:%02x:%02x",
+		       bt_addr[5], bt_addr[4],
+		       bt_addr[3], bt_addr[2],
+		       bt_addr[1], bt_addr[0]);
+		customer_bdaddr = 1;
 	}
 #endif
 
@@ -1976,8 +2351,23 @@ GET_CONFIG:
 		return -1;
 	}
 
-	if ((*config_buf = malloc(filelen)) == NULL) {
-		RS_DBG("malloc buffer for config file fail(%zd)\n", filelen);
+	tlength = filelen;
+#ifdef USE_CUSTOMER_ADDRESS
+	tlength += 9;
+#endif
+
+#ifdef EXTRA_CONFIG_OPTION
+	config_file_proc(EXTRA_CONFIG_FILE);
+	if (!xtalset_supported())
+		config_flags &= ~CONFIG_XTAL;
+	if (config_flags & CONFIG_TXPOWER)
+		tlength += 7;
+	if (config_flags & CONFIG_XTAL)
+		tlength += 4;
+#endif
+
+	if ((*config_buf = malloc(tlength)) == NULL) {
+		RS_DBG("Couldnt malloc buffer for config (%zd)\n", tlength);
 		close(fd);
 		return -1;
 	}
@@ -1991,8 +2381,10 @@ GET_CONFIG:
 		return -1;
 	}
 
-	*config_baud_rate =
-	    rtk_parse_config_file(*config_buf, filelen, bt_addr);
+	*config_buf = rtk_parse_config_file(*config_buf, &filelen, bt_addr,
+					    config_baud_rate);
+	util_hexdump((const uint8_t *)*config_buf, filelen);
+	RS_INFO("Cfg length %u", filelen);
 	RS_DBG("Get config baud rate from config file:%x",
 	       (unsigned int)*config_baud_rate);
 
@@ -2609,6 +3001,128 @@ void rtk_get_lmp_version(int dd)
 	return;
 }
 
+static int rtk_max_retries = 5;
+
+static void rtk_local_ver_sig_alarm(int sig)
+{
+	uint8_t cmd[4] = { 0x01, 0x01, 0x10, 0x00 };
+	static int retries;
+
+	if (retries < rtk_max_retries) {
+		retries++;
+		if (write(rtk_hw_cfg.serial_fd, cmd, sizeof(cmd)) < 0)
+			return;
+		alarm(1);
+		return;
+	}
+
+	tcflush(rtk_hw_cfg.serial_fd, TCIOFLUSH);
+	RS_ERR("init timed out, read local ver fails");
+	exit(1);
+}
+
+static void rtk_hci_local_ver(int fd)
+{
+	struct sigaction sa;
+	uint8_t result[258];
+	int ret;
+
+	alarm(0);
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_flags = SA_NOCLDSTOP;
+	sa.sa_handler = rtk_local_ver_sig_alarm;
+	sigaction(SIGALRM, &sa, NULL);
+
+	rtk_local_ver_sig_alarm(0);
+
+	while (1) {
+		ret = read_hci_evt(fd, result, 0x0e);
+		/* break down is not needed if read fails, because the program
+		 * will exit when alarm timeout
+		 */
+		if (ret < 0)
+			RS_ERR("%s: Read HCI event error.", __func__);
+		else
+			break;
+	}
+
+	/* Cancel pending alarm */
+	alarm(0);
+
+	if (ret != 15) {
+		RS_ERR("%s: incorrect complete event, len %u", __func__, ret);
+		exit(1);
+	}
+
+	if (result[6]) {
+		RS_ERR("%s: status is %u", __func__, result[6]);
+		exit(1);
+	}
+
+	rtk_hw_cfg.hci_rev = (uint32_t)result[9] << 8 | result[8];
+	rtk_hw_cfg.lmp_subver = (uint32_t)result[14] << 8 | result[13];
+}
+
+static void rtk_rom_ver_sig_alarm(int sig)
+{
+	uint8_t cmd[4] = { 0x01, 0x6d, 0xfc, 0x00 };
+	static int retries;
+
+	if (retries < rtk_max_retries) {
+		retries++;
+		if (write(rtk_hw_cfg.serial_fd, cmd, sizeof(cmd)) < 0)
+			return;
+		alarm(1);
+		return;
+	}
+
+	tcflush(rtk_hw_cfg.serial_fd, TCIOFLUSH);
+	RS_ERR("init timed out, read rom ver fails");
+	exit(1);
+}
+
+static void rtk_hci_rom_ver(int fd)
+{
+	struct sigaction sa;
+	uint8_t result[256];
+	int ret;
+
+	alarm(0);
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_flags = SA_NOCLDSTOP;
+	sa.sa_handler = rtk_rom_ver_sig_alarm;
+	sigaction(SIGALRM, &sa, NULL);
+
+	rtk_rom_ver_sig_alarm(0);
+
+	while (1) {
+		ret = read_hci_evt(fd, result, 0x0e);
+		/* break down is not needed if read fails, because the program
+		 * will exit when alarm timeout
+		 */
+		if (ret < 0)
+			RS_ERR("%s: Read HCI event error.", __func__);
+		else
+			break;
+	}
+
+	/* Cancel pending alarm */
+	alarm(0);
+
+	if (ret != 8) {
+		RS_ERR("%s: incorrect complete event, len %u", __func__, ret);
+		exit(1);
+	}
+
+	if (result[6]) {
+		RS_ERR("%s: status is %u", __func__, result[6]);
+		rtk_hw_cfg.eversion = 0;
+	} else
+		rtk_hw_cfg.eversion = result[7];
+}
+
 uint8_t rtk_get_fw_project_id(uint8_t * p_buf)
 {
 	uint8_t opcode;
@@ -2867,14 +3381,41 @@ static int rtk_config(int fd, int proto, int speed, struct termios *ti)
 
 	/* Get Local Version Information and RTK ROM version */
 	if (proto == HCI_UART_3WIRE) {
+		RS_INFO("H5 IC");
 		rtk_get_lmp_version(fd);
 		rtk_get_eversion(fd);
-		RS_INFO("LMP Subversion 0x%04x", btrtl->lmp_subver);
-		RS_INFO("EVersion %d", btrtl->eversion);
 	} else {
-		/* RTL8761AT H4 */
-		btrtl->lmp_subver = 0xffff;
+		RS_INFO("H4 IC");
+		rtk_hci_local_ver(fd);
+		rtk_hci_rom_ver(fd);
+		if (rtk_hw_cfg.lmp_subver == ROM_LMP_8761btc) {
+			rtk_hw_cfg.chip_type = CHIP_8761BTC;
+			rtk_hw_cfg.hw_flow_control = 1;
+			/* TODO: Change to different uart baud */
+			uart_speed_to_rtk_speed(1500000, &rtk_hw_cfg.baudrate);
+			goto change_baud;
+		}
+
+		if (rtk_hw_cfg.lmp_subver == ROM_LMP_8761a) {
+			if (rtk_hw_cfg.hci_rev == 0x000b) {
+				rtk_hw_cfg.chip_type = CHIP_8761B;
+				rtk_hw_cfg.hw_flow_control = 1;
+				/* TODO: Change to different uart baud */
+				uart_speed_to_rtk_speed(1500000, &rtk_hw_cfg.baudrate);
+				goto change_baud;
+			} else if (rtk_hw_cfg.hci_rev == 0x000a) {
+				if (rtk_hw_cfg.eversion == 3)
+					rtk_hw_cfg.chip_type = CHIP_8761ATF;
+				else if (rtk_hw_cfg.eversion == 2)
+					rtk_hw_cfg.chip_type = CHIP_8761AT;
+				else
+					rtk_hw_cfg.chip_type = CHIP_UNKNOWN;
+			}
+		}
 	}
+
+	RS_INFO("LMP Subversion 0x%04x", btrtl->lmp_subver);
+	RS_INFO("EVersion %d", btrtl->eversion);
 
 	switch (rtk_hw_cfg.lmp_subver) {
 	case ROM_LMP_8723a:
@@ -2928,15 +3469,15 @@ static int rtk_config(int fd, int proto, int speed, struct termios *ti)
 
 	RS_INFO("Total len %d for fw/config", rtk_hw_cfg.total_len);
 
+change_baud:
 	/* change baudrate if needed
 	 * rtk_hw_cfg.baudrate is a __u32/__u16 vendor-specific variable
 	 * parsed from config file
 	 * */
 	if (rtk_hw_cfg.baudrate == 0) {
 		uart_speed_to_rtk_speed(speed, &rtk_hw_cfg.baudrate);
-		RS_DBG
-		    ("no config file to set uart baudrate, use input parameters:%x, %x",
-		     (unsigned int)speed, (unsigned int)rtk_hw_cfg.baudrate);
+		RS_DBG("No cfg file, set baudrate, : %u, 0x%08x",
+		       (unsigned int)speed, (unsigned int)rtk_hw_cfg.baudrate);
 		goto SET_FLOW_CONTRL;
 	} else
 		rtk_speed_to_uart_speed(rtk_hw_cfg.baudrate,
@@ -2973,6 +3514,11 @@ SET_FLOW_CONTRL:
 	/* wait for while for controller to setup */
 	usleep(10000);
 
+	/* For 8761B Test chip, no patch to download */
+	if (rtk_hw_cfg.chip_type == CHIP_8761BTC ||
+	    rtk_hw_cfg.chip_type == CHIP_8761B)
+		goto done;
+
 	if ((rtk_hw_cfg.total_len > 0) && (rtk_hw_cfg.dl_fw_flag)) {
 		rtk_hw_cfg.link_estab_state = H5_PATCH;
 		rtk_hw_cfg.rx_index = -1;
@@ -2986,6 +3532,8 @@ SET_FLOW_CONTRL:
 		if (ret < 0)
 			return ret;
 	}
+
+done:
 	RS_DBG("Init Process finished");
 	return 0;
 }

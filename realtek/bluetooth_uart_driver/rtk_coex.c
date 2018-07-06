@@ -576,22 +576,22 @@ static void rtk_check_del_timer(int8_t profile_index)
 {
 	if (profile_a2dp == profile_index) {
 		btrtl_coex.a2dp_packet_count = 0;
-		del_timer(&(btrtl_coex.a2dp_count_timer));
+		del_timer_sync(&(btrtl_coex.a2dp_count_timer));
 	}
 	if (profile_pan == profile_index) {
 		btrtl_coex.pan_packet_count = 0;
-		del_timer(&(btrtl_coex.pan_count_timer));
+		del_timer_sync(&(btrtl_coex.pan_count_timer));
 	}
 	if (profile_hogp == profile_index) {
 		btrtl_coex.hogp_packet_count = 0;
 		if (btrtl_coex.profile_refcount[profile_voice] == 0) {
-			del_timer(&(btrtl_coex.hogp_count_timer));
+			del_timer_sync(&(btrtl_coex.hogp_count_timer));
 		}
 	}
 	if (profile_voice == profile_index) {
 		btrtl_coex.voice_packet_count = 0;
 		if (btrtl_coex.profile_refcount[profile_hogp] == 0) {
-			del_timer(&(btrtl_coex.hogp_count_timer));
+			del_timer_sync(&(btrtl_coex.hogp_count_timer));
 		}
 	}
 }
@@ -853,6 +853,10 @@ static uint8_t handle_l2cap_discon_req(uint16_t handle, uint16_t dcid,
 	}
 
 	update_profile_connection(phci_conn, prof_info->profile_index, FALSE);
+	if (prof_info->profile_index == profile_a2dp &&
+	    (phci_conn->profile_bitmap & BIT(profile_sink)))
+		update_profile_connection(phci_conn, profile_sink, FALSE);
+
 	delete_profile_from_hash(prof_info);
 	spin_unlock(&btrtl_coex.spin_lock_profile);
 
@@ -917,6 +921,12 @@ static void packets_count(uint16_t handle, uint16_t scid, uint16_t length,
 				struct rtp_header *rtph;
 				u8 bitpool;
 				update_profile_state(profile_a2dp, TRUE);
+				if (!direction) {
+					btrtl_coex.profile_bitmap |= BIT(profile_sink);
+					hci_conn->profile_bitmap |= BIT(profile_sink);
+					update_profile_connection(hci_conn, profile_sink, 1);
+					update_profile_state(profile_sink, TRUE);
+				}
 				rtph = (struct rtp_header *)user_data;
 
 				RTKBT_DBG("rtp: v %u, cc %u, pt %u",
@@ -946,12 +956,15 @@ static void packets_count(uint16_t handle, uint16_t scid, uint16_t length,
 
 static void count_a2dp_packet_timeout(unsigned long data)
 {
-	RTKBT_DBG("%s: a2dp_packet_count %d", __func__,
-			btrtl_coex.a2dp_packet_count);
+	if (btrtl_coex.a2dp_packet_count)
+		RTKBT_DBG("%s: a2dp_packet_count %d", __func__,
+			  btrtl_coex.a2dp_packet_count);
 	if (btrtl_coex.a2dp_packet_count == 0) {
 		if (is_profile_busy(profile_a2dp)) {
 			RTKBT_DBG("%s: a2dp busy->idle!", __func__);
 			update_profile_state(profile_a2dp, FALSE);
+			if (btrtl_coex.profile_bitmap & BIT(profile_sink))
+				update_profile_state(profile_sink, FALSE);
 		}
 	}
 	btrtl_coex.a2dp_packet_count = 0;
@@ -961,8 +974,9 @@ static void count_a2dp_packet_timeout(unsigned long data)
 
 static void count_pan_packet_timeout(unsigned long data)
 {
-	RTKBT_DBG("%s: pan_packet_count %d", __func__,
-			btrtl_coex.pan_packet_count);
+	if (btrtl_coex.pan_packet_count)
+		RTKBT_DBG("%s: pan_packet_count %d", __func__,
+			  btrtl_coex.pan_packet_count);
 	if (btrtl_coex.pan_packet_count < PAN_PACKET_COUNT) {
 		if (is_profile_busy(profile_pan)) {
 			RTKBT_DBG("%s: pan busy->idle!", __func__);
@@ -981,8 +995,9 @@ static void count_pan_packet_timeout(unsigned long data)
 
 static void count_hogp_packet_timeout(unsigned long data)
 {
-	RTKBT_DBG("%s: hogp_packet_count %d", __func__,
-			btrtl_coex.hogp_packet_count);
+	if (btrtl_coex.hogp_packet_count)
+		RTKBT_DBG("%s: hogp_packet_count %d", __func__,
+			  btrtl_coex.hogp_packet_count);
 	if (btrtl_coex.hogp_packet_count == 0) {
 		if (is_profile_busy(profile_hogp)) {
 			RTKBT_DBG("%s: hogp busy->idle!", __func__);
@@ -991,8 +1006,9 @@ static void count_hogp_packet_timeout(unsigned long data)
 	}
 	btrtl_coex.hogp_packet_count = 0;
 
-	RTKBT_DBG("%s: voice_packet_count %d", __func__,
-			btrtl_coex.voice_packet_count);
+	if (btrtl_coex.voice_packet_count)
+		RTKBT_DBG("%s: voice_packet_count %d", __func__,
+			  btrtl_coex.voice_packet_count);
 	if (btrtl_coex.voice_packet_count == 0) {
 		if (is_profile_busy(profile_voice)) {
 			RTKBT_DBG("%s: voice busy->idle!", __func__);
@@ -2583,6 +2599,7 @@ void rtk_btcoex_close(void)
 	}
 	del_timer_sync(&(btrtl_coex.a2dp_count_timer));
 	del_timer_sync(&(btrtl_coex.pan_count_timer));
+	del_timer_sync(&(btrtl_coex.hogp_count_timer));
 
 	cancel_delayed_work_sync(&btrtl_coex.fw_work);
 	cancel_delayed_work_sync(&btrtl_coex.l2_work);

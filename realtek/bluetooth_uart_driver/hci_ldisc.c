@@ -120,10 +120,16 @@ static inline struct sk_buff *hci_uart_dequeue(struct hci_uart *hu)
 {
 	struct sk_buff *skb = hu->tx_skb;
 
-	if (!skb)
-		skb = hu->proto->dequeue(hu);
-	else
+	if (!skb) {
+		read_lock(&hu->proto_lock);
+
+		if (test_bit(HCI_UART_PROTO_READY, &hu->flags))
+			skb = hu->proto->dequeue(hu);
+
+		read_unlock(&hu->proto_lock);
+	} else {
 		hu->tx_skb = NULL;
+	}
 
 	return skb;
 }
@@ -136,16 +142,24 @@ int hci_uart_tx_wakeup(struct hci_uart *hu)
 	struct sk_buff *skb;
 #endif
 
+	read_lock(&hu->proto_lock);
+
+	if (!test_bit(HCI_UART_PROTO_READY, &hu->flags))
+		goto no_schedule;
+
 	if (test_and_set_bit(HCI_UART_SENDING, &hu->tx_state)) {
 		set_bit(HCI_UART_TX_WAKEUP, &hu->tx_state);
-		return 0;
+		goto no_schedule;
 	}
 
 	BT_DBG("");
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
-	schedule_work(&hu->write_work);
+	/* schedule_work(&hu->write_work); */
+	queue_work(hu->hci_uart_wq, &hu->write_work);
+
 #else
+	read_unlock(&hu->proto_lock);
  restart:
 	clear_bit(HCI_UART_TX_WAKEUP, &hu->tx_state);
 
@@ -170,7 +184,12 @@ int hci_uart_tx_wakeup(struct hci_uart *hu)
 		goto restart;
 
 	clear_bit(HCI_UART_SENDING, &hu->tx_state);
+
+	return 0;
 #endif
+
+no_schedule:
+	read_unlock(&hu->proto_lock);
 
 	return 0;
 }
@@ -251,8 +270,12 @@ static int hci_uart_flush(struct hci_dev *hdev)
 	tty_ldisc_flush(tty);
 	tty_driver_flush_buffer(tty);
 
+	read_lock(&hu->proto_lock);
+
 	if (test_bit(HCI_UART_PROTO_READY, &hu->flags))
 		hu->proto->flush(hu);
+
+	read_unlock(&hu->proto_lock);
 
 	return 0;
 }
@@ -317,7 +340,15 @@ int hci_uart_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 		rtk_btcoex_parse_l2cap_data_tx(skb->data, skb->len);
 #endif
 
+	read_lock(&hu->proto_lock);
+
+	if (!test_bit(HCI_UART_PROTO_READY, &hu->flags)) {
+		read_unlock(&hu->proto_lock);
+		return -EUNATCH;
+	}
+
 	hu->proto->enqueue(hu, skb);
+	read_unlock(&hu->proto_lock);
 
 	hci_uart_tx_wakeup(hu);
 
@@ -378,6 +409,17 @@ static int hci_uart_tty_open(struct tty_struct *tty)
 		return -ENFILE;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
+	BT_INFO("Create singlethread HCI UART tx wq");
+	hu->hci_uart_wq = create_singlethread_workqueue("hci_uart_tx_wq");
+	if (!hu->hci_uart_wq) {
+		BT_ERR("Can't create single wq for hci uart tx");
+		kfree(hu);
+		hu = NULL;
+		return -EINVAL;
+	}
+#endif
+
 	tty->disc_data = hu;
 	hu->tty = tty;
 	tty->receive_room = 65536;
@@ -386,9 +428,7 @@ static int hci_uart_tty_open(struct tty_struct *tty)
 	INIT_WORK(&hu->write_work, hci_uart_write_work);
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
-	spin_lock_init(&hu->rx_lock);
-#endif
+	rwlock_init(&hu->proto_lock);
 
 	/* Flush any pending characters in the driver and line discipline. */
 
@@ -411,6 +451,7 @@ static void hci_uart_tty_close(struct tty_struct *tty)
 {
 	struct hci_uart *hu = (void *)tty->disc_data;
 	struct hci_dev *hdev;
+	unsigned long flags;
 
 	BT_DBG("tty %p", tty);
 
@@ -428,7 +469,11 @@ static void hci_uart_tty_close(struct tty_struct *tty)
 	cancel_work_sync(&hu->write_work);
 #endif
 
-	if (test_and_clear_bit(HCI_UART_PROTO_READY, &hu->flags)) {
+	if (test_bit(HCI_UART_PROTO_READY, &hu->flags)) {
+		write_lock_irqsave(&hu->proto_lock, flags);
+		clear_bit(HCI_UART_PROTO_READY, &hu->flags);
+		write_unlock_irqrestore(&hu->proto_lock, flags);
+
 		if (hdev) {
 			if (test_bit(HCI_UART_REGISTERED, &hu->flags))
 				hci_unregister_dev(hdev);
@@ -437,6 +482,11 @@ static void hci_uart_tty_close(struct tty_struct *tty)
 		hu->proto->close(hu);
 	}
 	clear_bit(HCI_UART_PROTO_SET, &hu->flags);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
+	flush_workqueue(hu->hci_uart_wq);
+	destroy_workqueue(hu->hci_uart_wq);
+#endif
 
 	kfree(hu);
 }
@@ -487,24 +537,18 @@ static void hci_uart_tty_receive(struct tty_struct *tty, const u8 * data,
 	if (!hu || tty != hu->tty)
 		return;
 
-	if (!test_bit(HCI_UART_PROTO_READY, &hu->flags))
-		return;
+	read_lock(&hu->proto_lock);
 
-	/* It does not need a lock here as it is already protected by a mutex in
-	 * tty caller
-	 */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
-	spin_lock(&hu->rx_lock);
-#endif
+	if (!test_bit(HCI_UART_PROTO_READY, &hu->flags)) {
+		read_unlock(&hu->proto_lock);
+		return;
+	}
 
 	hu->proto->recv(hu, (void *)data, count);
+	read_unlock(&hu->proto_lock);
 
 	if (hu->hdev)
 		hu->hdev->stat.byte_rx += count;
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
-	spin_unlock(&hu->rx_lock);
-#endif
 
 	tty_unthrottle(tty);
 }
@@ -546,13 +590,7 @@ static int hci_uart_register_dev(struct hci_uart *hu)
 	 * before this function called in hci_uart_set_proto()
 	 */
 
-#if ((LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 38)) && \
-(LINUX_VERSION_CODE < KERNEL_VERSION(3, 5, 0)))
-	hdev->parent = hu->tty->dev;
-#endif
-#if HCI_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
 	SET_HCIDEV_DEV(hdev, hu->tty->dev);
-#endif
 
 #if HCI_VERSION_CODE < KERNEL_VERSION(3, 4, 0)
 	hdev->destruct = hci_uart_destruct;
@@ -587,7 +625,11 @@ static int hci_uart_register_dev(struct hci_uart *hu)
 	if (test_bit(HCI_UART_CREATE_AMP, &hu->hdev_flags))
 		hdev->dev_type = HCI_AMP;
 	else
+#if HCI_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 		hdev->dev_type = HCI_BREDR;
+#else
+		hdev->dev_type = HCI_PRIMARY;
+#endif
 #endif
 
 	if (hci_register_dev(hdev) < 0) {

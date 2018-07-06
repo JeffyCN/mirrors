@@ -128,7 +128,8 @@ enum {
 	profile_hid_interval = 4,
 	profile_hogp = 5,
 	profile_voice = 6,
-	profile_max = 7
+	profile_sink = 7,
+	profile_max = 8
 };
 
 //profile info data
