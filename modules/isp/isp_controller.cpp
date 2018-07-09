@@ -415,6 +415,31 @@ resync:
 }
 
 XCamReturn
+IspController::get_frame_softime (int64_t &sof_tim)
+{
+    sof_tim = _frame_sof_time;
+    return XCAM_RETURN_NO_ERROR;
+}
+
+XCamReturn
+IspController::get_vcm_time (struct rk_cam_vcm_tim *vcm_tim)
+{
+#if RKISP
+    if (_vcm_device.ptr()) {
+        if (_vcm_device->io_control (RK_VIDIOC_VCM_TIMEINFO, vcm_tim) < 0) {
+            XCAM_LOG_ERROR (" get RK_VIDIOC_VCM_TIMEINFO failed. cmd = 0x%x", RK_VIDIOC_VCM_TIMEINFO);
+            return XCAM_RETURN_ERROR_IOCTL;
+        }
+        XCAM_LOG_DEBUG("get RK_VIDIOC_VCM_TIMEINFO vcm_tim 0x%lx, 0x%lx, 0x%lx, 0x%lx",
+            vcm_tim->vcm_start_t.tv_sec, vcm_tim->vcm_start_t.tv_usec,
+            vcm_tim->vcm_end_t.tv_sec, vcm_tim->vcm_end_t.tv_usec);
+    }
+#endif
+    return XCAM_RETURN_NO_ERROR;
+}
+
+
+XCamReturn
 IspController::set_3a_config (X3aIspConfig *config)
 {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;

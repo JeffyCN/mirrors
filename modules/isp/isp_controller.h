@@ -56,6 +56,8 @@ public:
     XCamReturn get_sensor_descriptor (rk_aiq_exposure_sensor_descriptor *sensor_desc);
     XCamReturn get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &sensor_mode_data);
     XCamReturn get_isp_parameter (struct rkisp_parm &parameters);
+    XCamReturn get_frame_softime (int64_t &sof_tim);
+    XCamReturn get_vcm_time (struct rk_cam_vcm_tim *vcm_tim);
 
     XCamReturn get_3a_statistics (SmartPtr<X3aIspStatistics> &stats);
     XCamReturn set_3a_config (X3aIspConfig *config);

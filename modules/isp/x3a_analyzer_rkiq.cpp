@@ -267,6 +267,8 @@ X3aAnalyzerRKiq::pre_3a_analyze (SmartPtr<X3aStats> &stats)
     SmartPtr<X3aIspStatistics> xcam_isp_stats = stats.dynamic_cast_ptr<X3aIspStatistics> ();
     XCAM_ASSERT (xcam_isp_stats.ptr ());
     struct isp_supplemental_sensor_mode_data sensor_mode_data;
+    struct rk_cam_vcm_tim vcm_tim;
+    int64_t sof_tim;
     xcam_mem_clear (sensor_mode_data);
     XCAM_ASSERT (_isp.ptr());
 
@@ -278,8 +280,23 @@ X3aAnalyzerRKiq::pre_3a_analyze (SmartPtr<X3aStats> &stats)
     //function
     _rkiq_compositor->setAiqInputParams(this->getAiqInputParams());
 
+    ret = _isp->get_frame_softime (sof_tim);
+    XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret, "get sof time failed");
+    ret = _isp->get_vcm_time (&vcm_tim);
+    XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret, "get vcm time failed");
+
     if (!_rkiq_compositor->set_sensor_mode_data (&_sensor_mode_data)) {
         XCAM_LOG_WARNING ("AIQ configure 3a failed");
+        return XCAM_RETURN_ERROR_AIQ;
+    }
+
+    if (!_rkiq_compositor->set_frame_softime (sof_tim)) {
+        XCAM_LOG_WARNING ("AIQ set vcm time failed");
+        return XCAM_RETURN_ERROR_AIQ;
+    }
+
+    if (!_rkiq_compositor->set_vcm_time (&vcm_tim)) {
+        XCAM_LOG_WARNING ("AIQ set vcm time failed");
         return XCAM_RETURN_ERROR_AIQ;
     }
 

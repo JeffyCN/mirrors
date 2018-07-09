@@ -5,9 +5,11 @@
 // for rk3326 ISP
 #if defined(RKISP_v12)
 #include <rkisp1-config_v12.h>
+#include <rk_vcm_head.h>
 #elif defined(RKISP)
 // for rk3399,rk3288 ISP
 #include <rkisp1-config.h>
+#include <rk_vcm_head.h>
 // for old isp driver ported from sofia
 #else
 #ifdef RK_ISP10

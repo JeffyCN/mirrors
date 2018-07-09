@@ -118,6 +118,7 @@ public:
     // virtual functions from AeHandler
     virtual XCamFlickerMode get_flicker_mode ();
     virtual int64_t get_current_exposure_time ();
+    virtual float get_current_exposure_time_us ();
     virtual double get_current_analog_gain ();
     virtual double get_max_analog_gain ();
 
@@ -311,6 +312,8 @@ public:
     bool set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *sensor_mode);
     struct CamIA10_SensorModeData &get_sensor_mode_data() { return _ia_stat.sensor_mode; };
     bool set_3a_stats (SmartPtr<X3aIspStatistics> &stats);
+    bool set_vcm_time (struct rk_cam_vcm_tim *vcm_tim);
+    bool set_frame_softime (int64_t sof_tim);
 
     ia_aiq  * get_handle () {
         return _ia_handle;

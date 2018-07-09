@@ -96,6 +96,8 @@ struct CamIA10_Stats {
   CamerIcAwbMeasuringResult_t awb;
   AfMeas_t af;
   struct CamIA10_SensorModeData sensor_mode;
+  int64_t sof_tim;
+  struct rk_cam_vcm_tim vcm_tim;
 };
 
 typedef struct CamIA10_AWB_Result_s {

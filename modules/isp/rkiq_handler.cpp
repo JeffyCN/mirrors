@@ -688,6 +688,14 @@ AiqAeHandler::get_current_exposure_time ()
     return (int64_t)_result.coarse_integration_time;
 }
 
+float
+AiqAeHandler::get_current_exposure_time_us ()
+{
+    AnalyzerHandler::HandlerLock lock(this);
+
+    return _result.coarse_integration_time * 1000000;
+}
+
 double
 AiqAeHandler::get_current_analog_gain ()
 {
@@ -1197,15 +1205,59 @@ RKiqCompositor::init_dynamic_config ()
 }
 
 bool
-RKiqCompositor::set_3a_stats (SmartPtr<X3aIspStatistics> &stats)
+RKiqCompositor::set_vcm_time (struct rk_cam_vcm_tim *vcm_tim)
 {
     if (!_isp10_engine) {
         XCAM_LOG_ERROR ("ISP control device is null");
         return false;
     }
 
+    _ia_stat.vcm_tim = *vcm_tim;
+
+    return true;
+}
+
+bool
+RKiqCompositor::set_frame_softime (int64_t sof_tim)
+{
+    if (!_isp10_engine) {
+        XCAM_LOG_ERROR ("ISP control device is null");
+        return false;
+    }
+
+    _ia_stat.sof_tim = sof_tim;
+
+    return true;
+}
+
+bool
+RKiqCompositor::set_3a_stats (SmartPtr<X3aIspStatistics> &stats)
+{
+    int64_t frame_ts;
+    int64_t vcm_ts;
+    float cur_exptime = 0;
+
+    if (!_isp10_engine) {
+        XCAM_LOG_ERROR ("ISP control device is null");
+        return false;
+    }
+
     _isp_stats = *(struct cifisp_stat_buffer*)stats->get_isp_stats();
+    frame_ts = _ia_stat.sof_tim / 1000;
     XCAM_LOG_DEBUG ("set_3a_stats meas type: %d", _isp_stats.meas_type);
+
+    vcm_ts = (int64_t)_ia_stat.vcm_tim.vcm_end_t.tv_sec * 1000 * 1000 +
+             (int64_t)_ia_stat.vcm_tim.vcm_end_t.tv_usec;
+
+    cur_exptime = _ae_handler->get_current_exposure_time_us();
+
+    if (vcm_ts + cur_exptime <= frame_ts)
+      _ia_stat.af.cameric.MoveStatus = AFM_VCM_MOVE_END;
+    else
+      _ia_stat.af.cameric.MoveStatus = AFM_VCM_MOVE_RUNNING;
+
+    XCAM_LOG_DEBUG ("MoveStatus: %d, vcm_ts %lld, cur_exptime %f, frame_ts %lld",
+        _ia_stat.af.cameric.MoveStatus, vcm_ts / 1000, cur_exptime / 1000, frame_ts / 1000);
 
     _isp_stats.meas_type = CIFISP_STAT_AUTOEXP | CIFISP_STAT_HIST | CIFISP_STAT_AWB | CIFISP_STAT_AFM_FIN;
     _isp10_engine->convertIspStats(&_isp_stats, &_ia_stat);
