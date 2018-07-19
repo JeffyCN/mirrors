@@ -11,10 +11,10 @@ LOCAL_CFLAGS += -DROCKCHIP_GPU_LIB_ENABLE
 
 #LOCAL_CFLAGS += -Wall -Werror -Wunreachable-code
 
+LOCAL_C_INCLUDES += external/libdrm
 LOCAL_C_INCLUDES += external/tinyalsa/include
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
-LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/normal
 
 LOCAL_CFLAGS := \
@@ -42,6 +42,7 @@ LOCAL_SHARED_LIBRARIES += \
 LOCAL_C_INCLUDES += bionic
 endif
 
+LOCAL_C_INCLUDES += system/core/libcutils/include
 LOCAL_SRC_FILES:= \
     RockchipRga.cpp \
     GraphicBuffer.cpp \
@@ -87,27 +88,30 @@ include $(CLEAR_VARS)
 
 $(info $(shell $(LOCAL_PATH)/version.sh))
 
-LOCAL_SRC_FILES += \
-	RockchipRga.cpp \
-	GraphicBuffer.cpp \
-	normal/NormalRga.cpp \
-	normal/NormalRgaApi.cpp
-
 LOCAL_MODULE := librga
 LOCAL_PROPRIETARY_MODULE := true
+LOCAL_C_INCLUDES += external/libdrm
 LOCAL_C_INCLUDES += external/libdrm/rockchip
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
-LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
 LOCAL_C_INCLUDES += hardware/libhardware/modules/gralloc
 
-LOCAL_SHARED_LIBRARIES := libdrm
+LOCAL_SHARED_LIBRARIES := libcutils
 LOCAL_SHARED_LIBRARIES += \
         libdrm_rockchip \
+		libdrm \
+		libEGL \
+		libGLESv1_CM \
         liblog \
         libui \
         libcutils \
         libhardware
+
+LOCAL_SRC_FILES += \
+		RockchipRga.cpp \
+		GraphicBuffer.cpp \
+		normal/NormalRga.cpp \
+		normal/NormalRgaApi.cpp
 
 LOCAL_CFLAGS := \
         -DLOG_TAG=\"librga\"
@@ -138,6 +142,14 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
 
+LOCAL_HEADER_LIBRARIES += \
+		libutils_headers \
+		libcutils_headers \
+		libhardware_headers \
+		liblog_headers \
+		libgui_headers
+
+
 include $(BUILD_SHARED_LIBRARY)
 endif
 #===================================================================
@@ -159,9 +171,10 @@ LOCAL_C_INCLUDES += external/libdrm/rockchip
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/drm
+LOCAL_C_INCLUDES += system/core/libcutils/include
 
-LOCAL_SHARED_LIBRARIES := libdrm
 LOCAL_SHARED_LIBRARIES += \
+        libdrm \
         libdrm_rockchip \
         liblog \
         libui \

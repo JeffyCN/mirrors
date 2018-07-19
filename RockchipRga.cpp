@@ -25,6 +25,8 @@
 #include <time.h>
 
 #include <cutils/properties.h>
+#include <android/log.h>
+#include <log/log_main.h>
 
 #ifndef ANDROID_8
 
