@@ -8,13 +8,12 @@ $(info $(shell $(LOCAL_PATH)/version.sh))
 LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
 
 LOCAL_CFLAGS += -DROCKCHIP_GPU_LIB_ENABLE
-
 #LOCAL_CFLAGS += -Wall -Werror -Wunreachable-code
 
-LOCAL_C_INCLUDES += external/libdrm
 LOCAL_C_INCLUDES += external/tinyalsa/include
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
+LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/normal
 
 LOCAL_CFLAGS := \
@@ -42,7 +41,6 @@ LOCAL_SHARED_LIBRARIES += \
 LOCAL_C_INCLUDES += bionic
 endif
 
-LOCAL_C_INCLUDES += system/core/libcutils/include
 LOCAL_SRC_FILES:= \
     RockchipRga.cpp \
     GraphicBuffer.cpp \
@@ -78,6 +76,7 @@ ifeq ($(strip $(GRAPHIC_MEMORY_PROVIDER)),dma_buf)
 LOCAL_CFLAGS += -DUSE_DMA_BUF
 endif
 
+LOCAL_CFLAGS += -Wno-error
 LOCAL_MODULE:= librga
 include $(BUILD_SHARED_LIBRARY)
 endif
@@ -87,31 +86,27 @@ ifeq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
 $(info $(shell $(LOCAL_PATH)/version.sh))
+LOCAL_SRC_FILES += \
+	RockchipRga.cpp \
+	GraphicBuffer.cpp \
+	normal/NormalRga.cpp \
+	normal/NormalRgaApi.cpp
 
 LOCAL_MODULE := librga
 LOCAL_PROPRIETARY_MODULE := true
-LOCAL_C_INCLUDES += external/libdrm
 LOCAL_C_INCLUDES += external/libdrm/rockchip
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
+LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
 LOCAL_C_INCLUDES += hardware/libhardware/modules/gralloc
 
-LOCAL_SHARED_LIBRARIES := libcutils
+LOCAL_SHARED_LIBRARIES := libdrm
 LOCAL_SHARED_LIBRARIES += \
         libdrm_rockchip \
-		libdrm \
-		libEGL \
-		libGLESv1_CM \
         liblog \
         libui \
         libcutils \
         libhardware
-
-LOCAL_SRC_FILES += \
-		RockchipRga.cpp \
-		GraphicBuffer.cpp \
-		normal/NormalRga.cpp \
-		normal/NormalRgaApi.cpp
 
 LOCAL_CFLAGS := \
         -DLOG_TAG=\"librga\"
@@ -137,18 +132,11 @@ ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 8.0)))
 LOCAL_CFLAGS += -DANDROID_8
 endif
 
+LOCAL_CFLAGS += -Wno-error
 LOCAL_MODULE_TAGS := optional
 #LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
-
-LOCAL_HEADER_LIBRARIES += \
-		libutils_headers \
-		libcutils_headers \
-		libhardware_headers \
-		liblog_headers \
-		libgui_headers
-
 
 include $(BUILD_SHARED_LIBRARY)
 endif
@@ -157,7 +145,6 @@ ifeq ($(strip $(BOARD_USE_DRM)), future)
 #############################################################################################
 ifeq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
-
 $(info $(shell $(LOCAL_PATH)/version.sh))
 
 LOCAL_SRC_FILES += \
@@ -166,15 +153,13 @@ LOCAL_SRC_FILES += \
         drm/DrmmodeRga.cpp
 
 LOCAL_MODULE := librga
-
 LOCAL_C_INCLUDES += external/libdrm/rockchip
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/drm
-LOCAL_C_INCLUDES += system/core/libcutils/include
 
+LOCAL_SHARED_LIBRARIES := libdrm
 LOCAL_SHARED_LIBRARIES += \
-        libdrm \
         libdrm_rockchip \
         liblog \
         libui \
@@ -184,6 +169,7 @@ LOCAL_SHARED_LIBRARIES += \
 LOCAL_CFLAGS := \
         -DLOG_TAG=\"librga-drm\"
 
+LOCAL_CFLAGS += -Wno-error
 LOCAL_MODULE_TAGS := optional
 #LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES

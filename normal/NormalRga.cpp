@@ -112,6 +112,10 @@ init:
 	*context = (void *)ctx;
 	return ret;
 
+loadModErr:
+rgaInitErr:
+devCreateErr:
+	close(fd);
 drmOpenErr:
 	free(ctx);
 mallocErr:
@@ -176,12 +180,15 @@ int NormalRgaPaletteTable(buffer_handle_t dst,
 	struct rgaContext *ctx = rgaCtx;
 	int srcVirW,srcVirH,srcActW,srcActH,srcXPos,srcYPos;
 	int dstVirW,dstVirH,dstActW,dstActH,dstXPos,dstYPos;
-	int rotateMode,orientation;
+	int scaleMode,rotateMode,orientation,ditherEn;
 	int srcType,dstType,srcMmuFlag,dstMmuFlag;
+	int planeAlpha;
 	int dstFd = -1;
+	int srcFd = -1;
 	int ret = 0;
 	drm_rga_t tmpRects,relRects;
 	struct rga_req rgaReg;
+	bool perpixelAlpha;
 	void *srcBuf = NULL;
 	void *dstBuf = NULL;
 	RECT clip;
@@ -316,6 +323,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	struct rgaContext *ctx = rgaCtx;
 	int srcVirW,srcVirH,srcActW,srcActH,srcXPos,srcYPos;
 	int dstVirW,dstVirH,dstActW,dstActH,dstXPos,dstYPos;
+	int src1VirW,src1VirH,src1ActW,src1ActH,src1XPos,src1YPos;
 	int scaleMode,rotateMode,orientation,ditherEn;
 	int srcType,dstType,src1Type,srcMmuFlag,dstMmuFlag,src1MmuFlag;
 	int planeAlpha;
@@ -328,13 +336,14 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     float vScale = 1;
 	int ret = 0;
 	rga_rect_t relSrcRect,tmpSrcRect,relDstRect,tmpDstRect;
-	rga_rect_t relSrc1Rect;
-	struct rga_req rgaReg;
+	rga_rect_t relSrc1Rect,tmpSrc1Rect;
+	struct rga_req rgaReg,tmprgaReg;
 	unsigned int blend;
 	unsigned int yuvToRgbMode;
 	bool perpixelAlpha = 0;
 	void *srcBuf = NULL;
 	void *dstBuf = NULL;
+	void *src1Buf = NULL;
 	RECT clip;
 	int sync_mode = RGA_BLIT_SYNC;
 
@@ -444,7 +453,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	}
 
     if(is_out_log())
-        ALOGD("srcFd = %.2d , phyAddr = %p , virAddr = %p\n",srcFd,src->phyAddr,src->virAddr);
+        ALOGD("srcFd = %.2d , phyAddr = %x , virAddr = %x\n",srcFd,src->phyAddr,src->virAddr);
 
 	/*
 	 * First to use phyical address or fd, second to usr virtual address. Phyical address can save time beacause cpu
@@ -481,7 +490,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	}
 
     if(is_out_log())
-        ALOGD("dstFd = %.2d , phyAddr = %p , virAddr = %p\n",dstFd,dst->phyAddr,dst->virAddr);
+        ALOGD("dstFd = %.2d , phyAddr = %x , virAddr = %x\n",dstFd,dst->phyAddr,dst->virAddr);
 
 	/*
 	 * First to use phyical address or fd, second to usr virtual address. Phyical address can save time beacause cpu
@@ -497,7 +506,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 #endif		//ANDROID_8
 
     if(is_out_log())
-        ALOGD("srcBuf = %p , dstBuf = %p\n",srcBuf,dstBuf);
+        ALOGD("srcBuf = %x , dstBuf = %x\n",srcBuf,dstBuf);
 
 	if (dst && dstFd == -1 && !dstBuf) {
 		ALOGE("%d:dst has not fd and address for render", __LINE__);
@@ -947,8 +956,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	rgaReg.render_mode |= RGA_BUF_GEM_TYPE_DMA;
 #endif
 #endif
-
-    sync_mode = src->sync_mode;
+	if(src->sync_mode != NULL)
+	{
+		sync_mode = src->sync_mode;
+	}
 	/* using sync to pass config to rga driver. */
 	if(ioctl(ctx->rgaFd, sync_mode, &rgaReg)) {
 		printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
@@ -982,6 +993,7 @@ int RgaCollorFill(rga_info *dst)
 	//check buffer_handle_t with rects
 	struct rgaContext *ctx = rgaCtx;
 	int dstVirW,dstVirH,dstActW,dstActH,dstXPos,dstYPos;
+	int scaleMode,ditherEn;
 	int dstType,dstMmuFlag;
 	int dstFd = -1;
 	int ret = 0;

@@ -287,7 +287,7 @@ int NormalRgaSetPatVirtualInfo(struct rga_req *msg,
 	msg->pat.yrgb_addr = yrgb_addr;
 	msg->pat.uv_addr  = uv_addr;
 	msg->pat.v_addr   = v_addr;
-    ALOGD("yrgb_addr=%lx,uv_addr=%lx,v_addr=%lx",(long)yrgb_addr, (long)uv_addr, (long)v_addr);
+    ALOGD("yrgb_addr=%x,uv_addr=%x,v_addr=%x",yrgb_addr,uv_addr,v_addr);
 	msg->pat.vir_w = vir_w;
 	msg->pat.vir_h = vir_h;
 	msg->pat.format = format;
