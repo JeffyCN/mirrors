@@ -1,0 +1,56 @@
+diff --git a/home/jcliang/arc/system/media/camera/src/camera_metadata.c b/camera_metadata.c
+index 041d0d6..c1ae362 100644
+--- a/home/jcliang/arc/system/media/camera/src/camera_metadata.c
++++ b/camera_metadata.c
+@@ -14,13 +14,18 @@
+  * limitations under the License.
+  */
+ 
+-#define _GNU_SOURCE // for fdprintf
+ #include <inttypes.h>
+ #include <system/camera_metadata.h>
+ #include <camera_metadata_hidden.h>
+ 
+ #define LOG_TAG "camera_metadata"
+-#include <cutils/log.h>
++/*
++ * Replace ALOGE() with a fprintf to stderr so that we don't need to
++ * re-implement Android's logging system.  The cutils/log.h header file is
++ * no longer necessary once we removed dependency on ALOGE().
++ */
++//#include <cutils/log.h>
++#define ALOGE(...) fprintf(stderr, LOG_TAG __VA_ARGS__)
+ #include <assert.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -310,7 +315,7 @@ static int validate_and_calculate_camera_metadata_entry_data_size(size_t *data_s
+     // Check for overflow
+     if (data_count != 0 &&
+             camera_metadata_type_size[type] > (SIZE_MAX - DATA_ALIGNMENT + 1) / data_count) {
+-        android_errorWriteLog(SN_EVENT_LOG_ID, "30741779");
++        //android_errorWriteLog(SN_EVENT_LOG_ID, "30741779");
+         return ERROR;
+     }
+ 
+@@ -395,7 +400,7 @@ int validate_camera_metadata_structure(const camera_metadata_t *metadata,
+         ALOGE("%s: Data count (%" PRIu32 ") should be <= data capacity "
+               "(%" PRIu32 ")",
+               __FUNCTION__, metadata->data_count, metadata->data_capacity);
+-        android_errorWriteLog(SN_EVENT_LOG_ID, "30591838");
++        //android_errorWriteLog(SN_EVENT_LOG_ID, "30591838");
+         return ERROR;
+     }
+ 
+@@ -757,6 +762,12 @@ int update_camera_metadata_entry(camera_metadata_t *dst,
+     size_t data_bytes =
+             calculate_camera_metadata_entry_data_size(entry->type,
+                     data_count);
++
++    if (entry->type >= NUM_TYPES) {
++        ALOGE("%s: Entry index %zu had a bad type %d",
++              __FUNCTION__, index, entry->type);
++        return ERROR;
++    }
+     size_t data_payload_bytes =
+             data_count * camera_metadata_type_size[entry->type];
+ 

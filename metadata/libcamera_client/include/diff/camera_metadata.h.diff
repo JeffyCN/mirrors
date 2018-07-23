@@ -1,0 +1,86 @@
+index d284477..73ec9e2 100644
+--- a/usr/local/google/home/hywu/code/arc/./frameworks/av/include/camera/CameraMetadata.h
++++ b/android/libcamera_client/include/camera/camera_metadata.h
+@@ -17,20 +17,20 @@
+ #ifndef ANDROID_CLIENT_CAMERA2_CAMERAMETADATA_CPP
+ #define ANDROID_CLIENT_CAMERA2_CAMERAMETADATA_CPP
+ 
++#include <string.h>
++#include <string>
++#include <vector>
++
+ #include "system/camera_metadata.h"
+ 
+-#include <utils/String8.h>
+-#include <utils/Vector.h>
+-#include <binder/Parcelable.h>
++typedef int32_t status_t;
+ 
+ namespace android {
+ 
+-class VendorTagDescriptor;
+-
+ /**
+  * A convenience wrapper around the C-based camera_metadata_t library.
+  */
+-class CameraMetadata: public Parcelable {
++class CameraMetadata {
+   public:
+     /** Creates an empty object; best used when expecting to acquire contents
+      * from elsewhere */
+@@ -139,12 +139,12 @@ class CameraMetadata: public Parcelable {
+     status_t update(uint32_t tag,
+             const camera_metadata_rational_t *data, size_t data_count);
+     status_t update(uint32_t tag,
+-            const String8 &string);
++            const std::string &string);
+     status_t update(const camera_metadata_ro_entry &entry);
+ 
+ 
+     template<typename T>
+-    status_t update(uint32_t tag, Vector<T> data) {
++    status_t update(uint32_t tag, std::vector<T> data) {
+         return update(tag, data.array(), data.size());
+     }
+ 
+@@ -186,40 +186,6 @@ class CameraMetadata: public Parcelable {
+      */
+     void dump(int fd, int verbosity = 1, int indentation = 0) const;
+ 
+-    /**
+-     * Serialization over Binder
+-     */
+-
+-    // Metadata object is unchanged when reading from parcel fails.
+-    virtual status_t readFromParcel(const Parcel *parcel) override;
+-    virtual status_t writeToParcel(Parcel *parcel) const override;
+-
+-    /**
+-      * Caller becomes the owner of the new metadata
+-      * 'const Parcel' doesnt prevent us from calling the read functions.
+-      *  which is interesting since it changes the internal state
+-      *
+-      * NULL can be returned when no metadata was sent, OR if there was an issue
+-      * unpacking the serialized data (i.e. bad parcel or invalid structure).
+-      */
+-    static status_t readFromParcel(const Parcel &parcel,
+-                                   camera_metadata_t** out);
+-    /**
+-      * Caller retains ownership of metadata
+-      * - Write 2 (int32 + blob) args in the current position
+-      */
+-    static status_t writeToParcel(Parcel &parcel,
+-                                  const camera_metadata_t* metadata);
+-
+-    /**
+-     * Find tag id for a given tag name, also checking vendor tags if available.
+-     * On success, returns OK and writes the tag id into tag.
+-     *
+-     * This is a slow method.
+-     */
+-    static status_t getTagFromName(const char *name,
+-            const VendorTagDescriptor* vTags, uint32_t *tag);
+-
+   private:
+     camera_metadata_t *mBuffer;
+     mutable bool       mLocked;

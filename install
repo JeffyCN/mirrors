@@ -1,0 +1,9 @@
+#!/bin/sh
+rm build/lib/*
+make
+#scp build/lib/*.so root@172.16.7.45:/usr/lib
+#scp ext/rkisp/lib/librkisp.so root@172.16.7.45:/usr/lib
+#scp build/lib/librkisp_aiq.so root@172.16.7.45:/usr/lib/rkisp/3a
+#scp build/lib/librkisp_ae.so root@172.16.7.45:/usr/lib/rkisp/ae
+#scp build/lib/librkisp_awb.so root@172.16.7.45:/usr/lib/rkisp/awb
+#scp build/lib/libgstrkisp.so root@172.16.7.45:/usr/lib/gstreamer-1.0

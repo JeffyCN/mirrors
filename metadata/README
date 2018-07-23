@@ -1,0 +1,3 @@
+The files under the android/include directory are copied from goog/nyc-mr1-arc
+branch on Android.  The files are the dependencies required to build and
+translate camera HAL v3 APIs and their corresponding Mojo IPC functions.

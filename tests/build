@@ -1,0 +1,1 @@
+/home/jacobchen/mksdk/compiler/gcc-linaro-5.5.0-2017.10-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-g++ rkisp_demo.cpp -ldl -o rkisp_demo

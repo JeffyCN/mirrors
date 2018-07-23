@@ -1,0 +1,404 @@
+index 373b94e..219464f 100644
+--- a/usr/local/google/home/hywu/code/arc/./frameworks/av/camera/CameraMetadata.cpp
++++ b/android/libcamera_client/src/camera_metadata.cc
+@@ -17,21 +17,37 @@
+ // #define LOG_NDEBUG 0
+ 
+ #define LOG_TAG "Camera2-Metadata"
+-#include <utils/Log.h>
+-#include <utils/Errors.h>
+ 
+-#include <binder/Parcel.h>
+-#include <camera/CameraMetadata.h>
+-#include <camera/VendorTagDescriptor.h>
++#include <camera/camera_metadata.h>
++
++/*
++ * Replace ALOGE() with a fprintf to stderr so that we don't need to
++ * re-implement Android's logging system.  The cutils/log.h header file is
++ * no longer necessary once we removed dependency on ALOGE().
++ */
++//#include <cutils/log.h>
++#define ALOGE(...) fprintf(stderr, LOG_TAG __VA_ARGS__)
++#define ALOGE_IF(cond, ...) \
++    ( (cond) \
++    ? ((void)fprintf(stderr, LOG_TAG __VA_ARGS__)) \
++    : (void)0 )
++#define IF_ALOGV()
++
++#include <errno.h>
++#include <stdio.h>
++#include <stdlib.h>
++
++#define OK                0
++#define BAD_VALUE         -EINVAL
++#define INVALID_OPERATION -ENOTSUP
++#define NAME_NOT_FOUND    -ENOENT
++#define NO_MEMORY         -ENOMEM
+ 
+ namespace android {
+ 
+ #define ALIGN_TO(val, alignment) \
+     (((uintptr_t)(val) + ((alignment) - 1)) & ~((alignment) - 1))
+ 
+-typedef Parcel::WritableBlob WritableBlob;
+-typedef Parcel::ReadableBlob ReadableBlob;
+-
+ CameraMetadata::CameraMetadata() :
+         mBuffer(NULL), mLocked(false) {
+ }
+@@ -265,7 +281,7 @@ status_t CameraMetadata::update(uint32_t tag,
+ }
+ 
+ status_t CameraMetadata::update(uint32_t tag,
+-        const String8 &string) {
++        const std::string &string) {
+     status_t res;
+     if (mLocked) {
+         ALOGE("%s: CameraMetadata is locked", __FUNCTION__);
+@@ -275,7 +291,7 @@ status_t CameraMetadata::update(uint32_t tag,
+         return res;
+     }
+     // string.size() doesn't count the null termination character.
+-    return updateImpl(tag, (const void*)string.string(), string.size() + 1);
++    return updateImpl(tag, (const void*)string.c_str(), string.size() + 1);
+ }
+ 
+ status_t CameraMetadata::update(const camera_metadata_ro_entry &entry) {
+@@ -448,236 +464,6 @@ status_t CameraMetadata::resizeIfNeeded(size_t extraEntries, size_t extraData) {
+     return OK;
+ }
+ 
+-status_t CameraMetadata::readFromParcel(const Parcel& data,
+-                                        camera_metadata_t** out) {
+-
+-    status_t err = OK;
+-
+-    camera_metadata_t* metadata = NULL;
+-
+-    if (out) {
+-        *out = NULL;
+-    }
+-
+-    // See CameraMetadata::writeToParcel for parcel data layout diagram and explanation.
+-    // arg0 = blobSize (int32)
+-    int32_t blobSizeTmp = -1;
+-    if ((err = data.readInt32(&blobSizeTmp)) != OK) {
+-        ALOGE("%s: Failed to read metadata size (error %d %s)",
+-              __FUNCTION__, err, strerror(-err));
+-        return err;
+-    }
+-    const size_t blobSize = static_cast<size_t>(blobSizeTmp);
+-    const size_t alignment = get_camera_metadata_alignment();
+-
+-    // Special case: zero blob size means zero sized (NULL) metadata.
+-    if (blobSize == 0) {
+-        ALOGV("%s: Read 0-sized metadata", __FUNCTION__);
+-        return OK;
+-    }
+-
+-    if (blobSize <= alignment) {
+-        ALOGE("%s: metadata blob is malformed, blobSize(%zu) should be larger than alignment(%zu)",
+-                __FUNCTION__, blobSize, alignment);
+-        return BAD_VALUE;
+-    }
+-
+-    const size_t metadataSize = blobSize - alignment;
+-
+-    // NOTE: this doesn't make sense to me. shouldn't the blob
+-    // know how big it is? why do we have to specify the size
+-    // to Parcel::readBlob ?
+-    ReadableBlob blob;
+-    // arg1 = metadata (blob)
+-    do {
+-        if ((err = data.readBlob(blobSize, &blob)) != OK) {
+-            ALOGE("%s: Failed to read metadata blob (sized %zu). Possible "
+-                  " serialization bug. Error %d %s",
+-                  __FUNCTION__, blobSize, err, strerror(-err));
+-            break;
+-        }
+-
+-        // arg2 = offset (blob)
+-        // Must be after blob since we don't know offset until after writeBlob.
+-        int32_t offsetTmp;
+-        if ((err = data.readInt32(&offsetTmp)) != OK) {
+-            ALOGE("%s: Failed to read metadata offsetTmp (error %d %s)",
+-                  __FUNCTION__, err, strerror(-err));
+-            break;
+-        }
+-        const size_t offset = static_cast<size_t>(offsetTmp);
+-        if (offset >= alignment) {
+-            ALOGE("%s: metadata offset(%zu) should be less than alignment(%zu)",
+-                    __FUNCTION__, blobSize, alignment);
+-            err = BAD_VALUE;
+-            break;
+-        }
+-
+-        const uintptr_t metadataStart = reinterpret_cast<uintptr_t>(blob.data()) + offset;
+-        const camera_metadata_t* tmp =
+-                       reinterpret_cast<const camera_metadata_t*>(metadataStart);
+-        ALOGV("%s: alignment is: %zu, metadata start: %p, offset: %zu",
+-                __FUNCTION__, alignment, tmp, offset);
+-        metadata = allocate_copy_camera_metadata_checked(tmp, metadataSize);
+-        if (metadata == NULL) {
+-            // We consider that allocation only fails if the validation
+-            // also failed, therefore the readFromParcel was a failure.
+-            ALOGE("%s: metadata allocation and copy failed", __FUNCTION__);
+-            err = BAD_VALUE;
+-        }
+-    } while(0);
+-    blob.release();
+-
+-    if (out) {
+-        ALOGV("%s: Set out metadata to %p", __FUNCTION__, metadata);
+-        *out = metadata;
+-    } else if (metadata != NULL) {
+-        ALOGV("%s: Freed camera metadata at %p", __FUNCTION__, metadata);
+-        free_camera_metadata(metadata);
+-    }
+-
+-    return err;
+-}
+-
+-status_t CameraMetadata::writeToParcel(Parcel& data,
+-                                       const camera_metadata_t* metadata) {
+-    status_t res = OK;
+-
+-    /**
+-     * Below is the camera metadata parcel layout:
+-     *
+-     * |--------------------------------------------|
+-     * |             arg0: blobSize                 |
+-     * |              (length = 4)                  |
+-     * |--------------------------------------------|<--Skip the rest if blobSize == 0.
+-     * |                                            |
+-     * |                                            |
+-     * |              arg1: blob                    |
+-     * | (length = variable, see arg1 layout below) |
+-     * |                                            |
+-     * |                                            |
+-     * |--------------------------------------------|
+-     * |              arg2: offset                  |
+-     * |              (length = 4)                  |
+-     * |--------------------------------------------|
+-     */
+-
+-    // arg0 = blobSize (int32)
+-    if (metadata == NULL) {
+-        // Write zero blobSize for null metadata.
+-        return data.writeInt32(0);
+-    }
+-
+-    /**
+-     * Always make the blob size sufficiently larger, as we need put alignment
+-     * padding and metadata into the blob. Since we don't know the alignment
+-     * offset before writeBlob. Then write the metadata to aligned offset.
+-     */
+-    const size_t metadataSize = get_camera_metadata_compact_size(metadata);
+-    const size_t alignment = get_camera_metadata_alignment();
+-    const size_t blobSize = metadataSize + alignment;
+-    res = data.writeInt32(static_cast<int32_t>(blobSize));
+-    if (res != OK) {
+-        return res;
+-    }
+-
+-    size_t offset = 0;
+-    /**
+-     * arg1 = metadata (blob).
+-     *
+-     * The blob size is the sum of front padding size, metadata size and back padding
+-     * size, which is equal to metadataSize + alignment.
+-     *
+-     * The blob layout is:
+-     * |------------------------------------|<----Start address of the blob (unaligned).
+-     * |           front padding            |
+-     * |          (size = offset)           |
+-     * |------------------------------------|<----Aligned start address of metadata.
+-     * |                                    |
+-     * |                                    |
+-     * |            metadata                |
+-     * |       (size = metadataSize)        |
+-     * |                                    |
+-     * |                                    |
+-     * |------------------------------------|
+-     * |           back padding             |
+-     * |     (size = alignment - offset)    |
+-     * |------------------------------------|<----End address of blob.
+-     *                                            (Blob start address + blob size).
+-     */
+-    WritableBlob blob;
+-    do {
+-        res = data.writeBlob(blobSize, false, &blob);
+-        if (res != OK) {
+-            break;
+-        }
+-        const uintptr_t metadataStart = ALIGN_TO(blob.data(), alignment);
+-        offset = metadataStart - reinterpret_cast<uintptr_t>(blob.data());
+-        ALOGV("%s: alignment is: %zu, metadata start: %p, offset: %zu",
+-                __FUNCTION__, alignment,
+-                reinterpret_cast<const void *>(metadataStart), offset);
+-        copy_camera_metadata(reinterpret_cast<void*>(metadataStart), metadataSize, metadata);
+-
+-        // Not too big of a problem since receiving side does hard validation
+-        // Don't check the size since the compact size could be larger
+-        if (validate_camera_metadata_structure(metadata, /*size*/NULL) != OK) {
+-            ALOGW("%s: Failed to validate metadata %p before writing blob",
+-                   __FUNCTION__, metadata);
+-        }
+-
+-    } while(false);
+-    blob.release();
+-
+-    // arg2 = offset (int32)
+-    res = data.writeInt32(static_cast<int32_t>(offset));
+-
+-    return res;
+-}
+-
+-status_t CameraMetadata::readFromParcel(const Parcel *parcel) {
+-
+-    ALOGV("%s: parcel = %p", __FUNCTION__, parcel);
+-
+-    status_t res = OK;
+-
+-    if (parcel == NULL) {
+-        ALOGE("%s: parcel is null", __FUNCTION__);
+-        return BAD_VALUE;
+-    }
+-
+-    if (mLocked) {
+-        ALOGE("%s: CameraMetadata is locked", __FUNCTION__);
+-        return INVALID_OPERATION;
+-    }
+-
+-    camera_metadata *buffer = NULL;
+-    // TODO: reading should return a status code, in case validation fails
+-    res = CameraMetadata::readFromParcel(*parcel, &buffer);
+-
+-    if (res != NO_ERROR) {
+-        ALOGE("%s: Failed to read from parcel. Metadata is unchanged.",
+-              __FUNCTION__);
+-        return res;
+-    }
+-
+-    clear();
+-    mBuffer = buffer;
+-
+-    return OK;
+-}
+-
+-status_t CameraMetadata::writeToParcel(Parcel *parcel) const {
+-
+-    ALOGV("%s: parcel = %p", __FUNCTION__, parcel);
+-
+-    if (parcel == NULL) {
+-        ALOGE("%s: parcel is null", __FUNCTION__);
+-        return BAD_VALUE;
+-    }
+-
+-    return CameraMetadata::writeToParcel(*parcel, mBuffer);
+-}
+-
+ void CameraMetadata::swap(CameraMetadata& other) {
+     if (mLocked) {
+         ALOGE("%s: CameraMetadata is locked", __FUNCTION__);
+@@ -694,99 +480,5 @@ void CameraMetadata::swap(CameraMetadata& other) {
+     mBuffer = otherBuf;
+ }
+ 
+-status_t CameraMetadata::getTagFromName(const char *name,
+-        const VendorTagDescriptor* vTags, uint32_t *tag) {
+-
+-    if (name == nullptr || tag == nullptr) return BAD_VALUE;
+-
+-    size_t nameLength = strlen(name);
+-
+-    const SortedVector<String8> *vendorSections;
+-    size_t vendorSectionCount = 0;
+-
+-    if (vTags != NULL) {
+-        vendorSections = vTags->getAllSectionNames();
+-        vendorSectionCount = vendorSections->size();
+-    }
+-
+-    // First, find the section by the longest string match
+-    const char *section = NULL;
+-    size_t sectionIndex = 0;
+-    size_t sectionLength = 0;
+-    size_t totalSectionCount = ANDROID_SECTION_COUNT + vendorSectionCount;
+-    for (size_t i = 0; i < totalSectionCount; ++i) {
+-
+-        const char *str = (i < ANDROID_SECTION_COUNT) ? camera_metadata_section_names[i] :
+-                (*vendorSections)[i - ANDROID_SECTION_COUNT].string();
+-
+-        ALOGV("%s: Trying to match against section '%s'", __FUNCTION__, str);
+-
+-        if (strstr(name, str) == name) { // name begins with the section name
+-            size_t strLength = strlen(str);
+-
+-            ALOGV("%s: Name begins with section name", __FUNCTION__);
+-
+-            // section name is the longest we've found so far
+-            if (section == NULL || sectionLength < strLength) {
+-                section = str;
+-                sectionIndex = i;
+-                sectionLength = strLength;
+-
+-                ALOGV("%s: Found new best section (%s)", __FUNCTION__, section);
+-            }
+-        }
+-    }
+-
+-    // TODO: Make above get_camera_metadata_section_from_name ?
+-
+-    if (section == NULL) {
+-        return NAME_NOT_FOUND;
+-    } else {
+-        ALOGV("%s: Found matched section '%s' (%zu)",
+-              __FUNCTION__, section, sectionIndex);
+-    }
+-
+-    // Get the tag name component of the name
+-    const char *nameTagName = name + sectionLength + 1; // x.y.z -> z
+-    if (sectionLength + 1 >= nameLength) {
+-        return BAD_VALUE;
+-    }
+-
+-    // Match rest of name against the tag names in that section only
+-    uint32_t candidateTag = 0;
+-    if (sectionIndex < ANDROID_SECTION_COUNT) {
+-        // Match built-in tags (typically android.*)
+-        uint32_t tagBegin, tagEnd; // [tagBegin, tagEnd)
+-        tagBegin = camera_metadata_section_bounds[sectionIndex][0];
+-        tagEnd = camera_metadata_section_bounds[sectionIndex][1];
+-
+-        for (candidateTag = tagBegin; candidateTag < tagEnd; ++candidateTag) {
+-            const char *tagName = get_camera_metadata_tag_name(candidateTag);
+-
+-            if (strcmp(nameTagName, tagName) == 0) {
+-                ALOGV("%s: Found matched tag '%s' (%d)",
+-                      __FUNCTION__, tagName, candidateTag);
+-                break;
+-            }
+-        }
+-
+-        if (candidateTag == tagEnd) {
+-            return NAME_NOT_FOUND;
+-        }
+-    } else if (vTags != NULL) {
+-        // Match vendor tags (typically com.*)
+-        const String8 sectionName(section);
+-        const String8 tagName(nameTagName);
+-
+-        status_t res = OK;
+-        if ((res = vTags->lookupTag(tagName, sectionName, &candidateTag)) != OK) {
+-            return NAME_NOT_FOUND;
+-        }
+-    }
+-
+-    *tag = candidateTag;
+-    return OK;
+-}
+-
+ 
+ }; // namespace android

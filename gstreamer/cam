@@ -1,0 +1,13 @@
+#!/bin/sh
+inputw=$1
+inputh=$2
+export LD_LIBRARY_PATH=/usr/lib/gstreamer-1.0
+if [ -z $inputw ];then
+	inputw=800
+	inputh=600
+fi
+
+gst-launch-1.0 rkisp io-mode=1 analyzer=3 ! videoconvert !  video/x-raw, format=NV12, width=$inputw, height=$inputh, framerate=30/1 ! queue ! kmssink
+#gst-launch-1.0 rkisp io-mode=1 ! videoconvert !  video/x-raw, format=NV12, width=$inputw, height=$inputh, framerate=30/1 ! videoconvert ! autovideosink
+#gst-launch-1.0 rkisp io-mode=1 ! video/x-raw, format=NV12, width=1920, height=1080, framerate=30/1 ! videoconvert ! filesink location=./rk3399.ts
+#gst-launch-1.0 v4l2src --gst-debug-level=0 device=/dev/video0 ! videoconvert ! video/x-raw,format=NV12,width=1280,height=800 ! queue ! kmssink

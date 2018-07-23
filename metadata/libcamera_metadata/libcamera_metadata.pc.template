@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=${prefix}
+include_dir=@INCLUDE_DIR@
+lib_dir=@LIB_DIR@
+
+Name: libcamera_metadata
+Description: Android libcamera_metadata
+Version: 0
+Cflags: -I${include_dir}
+Libs: -L${lib_dir} -lcamera_metadata.pic

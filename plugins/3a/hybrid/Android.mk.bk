@@ -1,0 +1,25 @@
+LOCAL_PATH:= $(call my-dir)
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES +=\
+	sample.cpp
+
+LOCAL_CFLAGS += -Wno-error=unused-function -Wno-array-bounds -Wno-error -std=c++11
+LOCAL_CFLAGS += -DLINUX  -D_FILE_OFFSET_BITS=64 -DHAS_STDINT_H -DENABLE_ASSERT
+LOCAL_CPPFLAGS += -std=c++11 -Wno-error -lstdc++
+LOCAL_CPPFLAGS += -DLINUX  -DENABLE_ASSERT
+
+LOCAL_C_INCLUDES := \
+	$(LOCAL_PATH) \
+	$(LOCAL_PATH)/interface
+
+LOCAL_SHARED_LIBRARIES := \
+	librkisp_ctrlloop \
+	librkisp_analyzer \
+	libstdc++
+
+LOCAL_STATIC_LIBRARIES := 
+
+LOCAL_MODULE:= librkisp_hybrid
+
+include $(BUILD_SHARED_LIBRARY)
