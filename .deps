@@ -1,0 +1,7 @@
+BUILD_DEPS += xcore metadata  rkisp modules plugins interface gstreamer tests
+
+ifeq ($(IS_BUILD_TEST_APP),true)
+BUILD_DEPS += testApp
+endif
+
+
