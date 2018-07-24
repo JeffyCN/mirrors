@@ -36,7 +36,9 @@
 
 #include <utils/Atomic.h>
 #include <utils/Errors.h>
+#include <android/log.h>
 #include <utils/Log.h>
+#include <log/log_main.h>
 #include <utils/Mutex.h>
 #include <utils/Singleton.h>
 

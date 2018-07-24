@@ -25,7 +25,6 @@
 #include <GLES/gl.h>
 
 //////////////////////////////////////////////////////////////////////////////////
-#include <hardware/hardware.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -41,7 +40,9 @@
 
 #include <utils/Atomic.h>
 #include <utils/Errors.h>
+#include <android/log.h>
 #include <utils/Log.h>
+#include <log/log_main.h>
 
 #include "drmrga.h"
 

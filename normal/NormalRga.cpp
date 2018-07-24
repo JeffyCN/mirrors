@@ -453,7 +453,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	}
 
     if(is_out_log())
-        ALOGD("srcFd = %.2d , phyAddr = %x , virAddr = %x\n",srcFd,src->phyAddr,src->virAddr);
+        ALOGD("srcFd = %.2d , phyAddr = %p , virAddr = %p\n",srcFd,src->phyAddr,src->virAddr);
 
 	/*
 	 * First to use phyical address or fd, second to usr virtual address. Phyical address can save time beacause cpu
@@ -490,7 +490,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	}
 
     if(is_out_log())
-        ALOGD("dstFd = %.2d , phyAddr = %x , virAddr = %x\n",dstFd,dst->phyAddr,dst->virAddr);
+        ALOGD("dstFd = %.2d , phyAddr = %p , virAddr = %p\n",dstFd,dst->phyAddr,dst->virAddr);
 
 	/*
 	 * First to use phyical address or fd, second to usr virtual address. Phyical address can save time beacause cpu
@@ -506,7 +506,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 #endif		//ANDROID_8
 
     if(is_out_log())
-        ALOGD("srcBuf = %x , dstBuf = %x\n",srcBuf,dstBuf);
+        ALOGD("srcBuf = %p , dstBuf = %p\n",srcBuf,dstBuf);
 
 	if (dst && dstFd == -1 && !dstBuf) {
 		ALOGE("%d:dst has not fd and address for render", __LINE__);
@@ -956,7 +956,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	rgaReg.render_mode |= RGA_BUF_GEM_TYPE_DMA;
 #endif
 #endif
-	if(src->sync_mode != NULL)
+	if(src->sync_mode != RGA_BLIT_SYNC)
 	{
 		sync_mode = src->sync_mode;
 	}
