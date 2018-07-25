@@ -74,7 +74,7 @@
  * Gamma out
  */
 /* Maximum number of color samples supported */
-#define CIFISP_GAMMA_OUT_MAX_SAMPLES       17
+#define CIFISP_GAMMA_OUT_MAX_SAMPLES       34
 
 /*
  * Lens shade correction

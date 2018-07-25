@@ -1021,14 +1021,6 @@ XCamReturn rkisp1_convert_results(
 
     last_aiq_results = *aiq_results;
 
-#ifdef RKISP_v12
-    /*
-     * TODO: gstreamer has not configure the size of ISP pipeline correctly,
-     * so disable LSC and AE window setting now
-     */
-    isp_cfg->module_ens &= ~HAL_ISP_LSC_MASK;
-    isp_cfg->module_cfg_update &= ~(HAL_ISP_AEC_MASK | HAL_ISP_LSC_MASK);
-#endif
     return XCAM_RETURN_NO_ERROR;
 }
 
