@@ -960,13 +960,19 @@ XCamReturn rkisp1_convert_results(
     }
 
     //disable ie cproc bdm
-    aiq_results->enabled[HAL_ISP_IE_ID] = 0;
+    /* aiq_results->enabled[HAL_ISP_IE_ID] = 0; */
+    /*
+     * TODO: BDM cause the image black-white
+     * BDM enable means demosaic bypassed, so it should
+     * be disabled normally, but now the value is 1 here,
+     * we just force it disabled here for workaround.
+     */
     aiq_results->enabled[HAL_ISP_BDM_ID] = 0;
-    aiq_results->enabled[HAL_ISP_CPROC_ID] = 0;
+    /* aiq_results->enabled[HAL_ISP_CPROC_ID] = 0; */
 
     //aiq_results->enabled[HAL_ISP_AWB_MEAS_ID] = 0;
     //aiq_results->enabled[HAL_ISP_AWB_GAIN_ID] = 0;
-    aiq_results->enabled[HAL_ISP_CTK_ID] = 0;
+    /* aiq_results->enabled[HAL_ISP_CTK_ID] = 0; */
     //aiq_results->enabled[HAL_ISP_LSC_ID] = 0;
     //aiq_results->enabled[HAL_ISP_BLS_ID] = 0;
     //aiq_results->enabled[HAL_ISP_BPC_ID] = 0;
@@ -975,6 +981,7 @@ XCamReturn rkisp1_convert_results(
     //aiq_results->enabled[HAL_ISP_DPF_STRENGTH_ID] = 0;
     //aiq_results->enabled[HAL_ISP_GOC_ID] = 0;
 
+#if 0
     struct cifisp_aec_config aec_config;
     aec_config.autostop = 0;
     aec_config.meas_window = aiq_results->aec_config.meas_window;
@@ -986,6 +993,10 @@ XCamReturn rkisp1_convert_results(
     last_aec_config.mode = last_aiq_results.aec_config.mode;
     CONVERT_RET(HAL_ISP_AEC_ID, HAL_ISP_AEC_MASK,
         isp_cfg->meas.aec_config, aec_config, last_aec_config);
+#else
+    CONVERT_RET(HAL_ISP_AEC_ID, HAL_ISP_AEC_MASK,
+        isp_cfg->meas.aec_config, aiq_results->aec_config, last_aiq_results.aec_config);
+#endif
     CONVERT_RET(HAL_ISP_AWB_MEAS_ID, HAL_ISP_AWB_MEAS_MASK,
         isp_cfg->meas.awb_meas_config, aiq_results->awb_meas_config, last_aiq_results.awb_meas_config);
     CONVERT_RET(HAL_ISP_HST_ID, HAL_ISP_HST_MASK,
@@ -1021,6 +1032,10 @@ XCamReturn rkisp1_convert_results(
 
     last_aiq_results = *aiq_results;
 
+    XCAM_LOG_DEBUG("isp_cfg module_ens 0x%x, en_update 0x%x, cfg_update 0x%x",
+                 isp_cfg->module_ens,
+                 isp_cfg->module_en_update,
+                 isp_cfg->module_cfg_update);
     return XCAM_RETURN_NO_ERROR;
 }
 

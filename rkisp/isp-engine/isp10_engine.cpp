@@ -758,7 +758,8 @@ bool Isp10Engine::convertIAResults(
       //TODO:
       isp_cfg->configs.awb_meas_config.frames = /*CIFISP_AWB_MAX_FRAMES*/0;
       LOGV("AWB FRAMES:%d", isp_cfg->configs.awb_meas_config.frames);
-      //isp_cfg->configs.awb_meas_config.enable_ymax_cmp
+      // set enable_ymax_cmp default as true asked by cxf
+      isp_cfg->configs.awb_meas_config.enable_ymax_cmp = true;
     }
     if (ia_results->active &
         (CAMIA10_DPF_MASK | CAMIA10_DPF_STRENGTH_MASK)) {
