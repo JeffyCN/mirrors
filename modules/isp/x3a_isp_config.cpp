@@ -277,6 +277,10 @@ X3aIspConfig::attach (SmartPtr<X3aResult> &result, IspConfigTranslator *translat
         return false;
     }
 
+    //the member _3a_results of class X3aIspConfig could hold the smartPtr ref of
+    //X3aAtomIspParametersResult result, thereby causing the memory leak
+    clear();
+
     switch (type) {
     case X3aIspConfig::IspAllParameters: {
         SmartPtr<X3aAtomIspParametersResult> isp_3a =
