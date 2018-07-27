@@ -218,12 +218,12 @@ DeviceManager::start ()
     LOGD("-----DeviceManager::start");
     // start device
     //XCAM_ASSERT (_device->is_opened());
-    if (_device.ptr()) {
-        if (!_device->is_opened()) {
-            XCAM_FAILED_STOP (ret = XCAM_RETURN_ERROR_FILE, "capture device not ready");
-        }
-        XCAM_FAILED_STOP (ret = _device->start(), "capture device start failed");
-    }
+    /* if (_device.ptr()) { */
+    /*     if (!_device->is_opened()) { */
+    /*         XCAM_FAILED_STOP (ret = XCAM_RETURN_ERROR_FILE, "capture device not ready"); */
+    /*     } */
+    /*     XCAM_FAILED_STOP (ret = _device->start(), "capture device start failed"); */
+    /* } */
 
     //start subdevice
     //XCAM_ASSERT (_event_subdevice->is_opened());
@@ -307,6 +307,16 @@ DeviceManager::start ()
         _3a_process_center->set_image_callback(this);
         XCAM_FAILED_STOP (ret = _3a_process_center->start (), "3A process center start failed");
 
+    }
+
+    /* capture device should be started after params device, so we can set the
+     * initial ISP params before streaming
+     */
+    if (_device.ptr()) {
+        if (!_device->is_opened()) {
+            XCAM_FAILED_STOP (ret = XCAM_RETURN_ERROR_FILE, "capture device not ready");
+        }
+        XCAM_FAILED_STOP (ret = _device->start(), "capture device start failed");
     }
 
     //Initialize and start poll thread
