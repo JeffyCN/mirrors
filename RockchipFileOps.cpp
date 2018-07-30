@@ -30,6 +30,7 @@ float get_bpp_from_format(int format)
         case RK_FORMAT_RGB_565:
             bpp = 2;
             break;
+        case RK_FORMAT_BGR_888:
         case RK_FORMAT_RGB_888:
             bpp = 3;
             break;
@@ -42,6 +43,7 @@ float get_bpp_from_format(int format)
         case RK_FORMAT_BGRA_8888:
             bpp = 4;
             break;
+        case RK_FORMAT_YCrCb_420_P:
 	    case RK_FORMAT_YCrCb_420_SP:
             bpp = 1.5;
             break;
@@ -94,6 +96,12 @@ int get_string_by_format(char *value, int format)
             break;
 	    case RK_FORMAT_YCrCb_420_SP:
             memcpy(value, "crcb420sp", sizeof("crcb420sp"));
+            break;
+        case RK_FORMAT_BGR_888:
+            memcpy(value, "bgr888", sizeof("bgr888"));
+            break;
+        case RK_FORMAT_YCrCb_420_P:
+            memcpy(value, "crcb420p", sizeof("crcb420p"));
             break;
         //case RK_FORMAT_YCrCb_NV12:
             //memcpy(value, "nv12", sizeof("nv12"));
