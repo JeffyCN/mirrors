@@ -765,8 +765,15 @@ bool Isp10Engine::convertIAResults(
         (CAMIA10_DPF_MASK | CAMIA10_DPF_STRENGTH_MASK)) {
 
       if (ia_results->active & CAMIA10_DPF_MASK) {
+        // enum cifisp_dpf_gain_usage defined in rkisp driver head in not
+        // the same as in isp10 driver(old isp driver for RV1108) head
+        #if defined(RKISP_v12) || defined(RKISP)
         isp_cfg->configs.dpf_config.gain.mode =
-            (enum cifisp_dpf_gain_usage)ia_results->adpf.DpfMode.GainUsage;
+            (enum cifisp_dpf_gain_usage)(ia_results->adpf.DpfMode.GainUsage - 1);
+        #else
+        isp_cfg->configs.dpf_config.gain.mode =
+            (enum cifisp_dpf_gain_usage)(ia_results->adpf.DpfMode.GainUsage);
+        #endif
         isp_cfg->configs.dpf_config.gain.nf_b_gain =
             ia_results->adpf.NfGains.Blue;
         isp_cfg->configs.dpf_config.gain.nf_gr_gain =

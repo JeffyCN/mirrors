@@ -125,8 +125,8 @@ typedef enum CamerIcDpfGainUsage_e {
 
 typedef enum CamerIcDpfRedBlueFilterSize_e {
   CAMERIC_DPF_RB_FILTERSIZE_INVALID   = -1,    /**< lower border (only for an internal evaluation) */
-  CAMERIC_DPF_RB_FILTERSIZE_9x9       = 0,    /**< red and blue filter kernel size 9x9 (means 5x5 active pixel) */
-  CAMERIC_DPF_RB_FILTERSIZE_13x9      = 1,    /**< red and blue filter kernel size 13x9 (means 7x5 active pixel) */
+  CAMERIC_DPF_RB_FILTERSIZE_13x9      = 0,    /**< red and blue filter kernel size 13x9 (means 7x5 active pixel) */
+  CAMERIC_DPF_RB_FILTERSIZE_9x9       = 1,    /**< red and blue filter kernel size 9x9 (means 5x5 active pixel) */
   CAMERIC_DPF_RB_FILTERSIZE_MAX               /**< upper border (only for an internal evaluation) */
 } CamerIcDpfRedBlueFilterSize_t;
 

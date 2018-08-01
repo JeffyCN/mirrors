@@ -915,14 +915,15 @@ RESULT cam_ia10_isp_hst_update_stepSize
     MaxNumOfPixel += weights[i];
   }
   MaxNumOfPixel = MaxNumOfPixel * \
-                  (((uint32_t)height / CAMERIC_ISP_HIST_GRID_W) * ((uint32_t)width) / CAMERIC_ISP_HIST_GRID_W);
+                  (((uint32_t)height / CAMERIC_ISP_HIST_GRID_W) * ((uint32_t)width)
+                   / CAMERIC_ISP_HIST_GRID_W);
 
   switch (mode) {
     case CAMERIC_ISP_HIST_MODE_RGB_COMBINED: {
       #ifdef RKISP_v12
-      square = ((3 * MaxNumOfPixel) / (0x000FFFFF + 1));
+      square = ((3 * MaxNumOfPixel) / 0x003FFFFF + 1);
       #else
-      square = ((3 * MaxNumOfPixel) / 0x000FFFFF);
+      square = ((3 * MaxNumOfPixel) / 0x000FFFFF + 1);
       #endif
       break;
     }
@@ -932,9 +933,9 @@ RESULT cam_ia10_isp_hst_update_stepSize
     case CAMERIC_ISP_HIST_MODE_B:
     case CAMERIC_ISP_HIST_MODE_Y: {
       #ifdef RKISP_v12
-      square = (MaxNumOfPixel / (0x000FFFFF + 1));
+      square = (MaxNumOfPixel / 0x003FFFFF + 1);
       #else
-      square = (MaxNumOfPixel / 0x000FFFFF);
+      square = (MaxNumOfPixel / 0x000FFFFF + 1);
       #endif
       break;
     }

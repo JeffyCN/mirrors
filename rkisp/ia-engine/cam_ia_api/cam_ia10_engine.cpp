@@ -1010,7 +1010,7 @@ RESULT CamIA10Engine::initAWB() {
 
     awbcfg.MeasMode          = CAMERIC_ISP_AWB_MEASURING_MODE_YCBCR;
     awbcfg.MeasConfig        = MeasConfig;
-    awbcfg.Flags             = 0;//(AWB_WORKING_FLAG_USE_DAMPING | AWB_WORKING_FLAG_USE_CC_OFFSET);
+    awbcfg.Flags             = AWB_WORKING_FLAG_USE_DAMPING | AWB_WORKING_FLAG_USE_CC_OFFSET;
     awbcfg.hCamCalibDb = hCamCalibDb;
     awbcfg.validHistBinsNum = CIFISP_HIST_BIN_N_MAX;
 
