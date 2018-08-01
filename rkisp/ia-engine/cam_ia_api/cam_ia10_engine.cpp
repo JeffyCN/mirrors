@@ -576,7 +576,8 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
             awbcfg.awbWin.v_size = HAL_WIN_REF_HEIGHT;
         }
         //mode change ?
-        if (cfg->awb_cfg.mode != dCfg.awb_cfg.mode) {
+        if (cfg->awb_cfg.mode != dCfgShd.awb_cfg.mode) {
+            LOGI("@%s %d: AwbMode changed from %d to %d", __FUNCTION__, __LINE__, dCfgShd.awb_cfg.mode, cfg->awb_cfg.mode);
             memset(&lastAwbResult, 0x00, sizeof(lastAwbResult));
             if (cfg->awb_cfg.mode != HAL_WB_AUTO) {
                 char prfName[10];

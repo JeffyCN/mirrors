@@ -109,7 +109,6 @@ public:
     }
 
     X3aAnalyzerRKiq* get3aAnalyzer() { return _analyzer; };
-    void convert_from_rkisp_aec_result(rk_aiq_ae_results* aec_result, AecResult_t* result);
     XCamReturn processAeMetaResults(AecResult_t aec_results, X3aResultList &output);
 
     //virtual functions from AnalyzerHandler
@@ -188,7 +187,6 @@ public:
     ~AiqAwbHandler () {}
 
     virtual XCamReturn analyze (X3aResultList &output, bool first = false);
-    void convert_from_rkisp_awb_result(rk_aiq_awb_results* aiq_awb_result, CamIA10_AWB_Result_t* result);
     XCamReturn processAwbMetaResults(CamIA10_AWB_Result_t awb_results, X3aResultList &output);
 
     // virtual functions from AwbHandler
@@ -299,6 +297,7 @@ public:
     bool open (ia_binary_data &cpf);
     void close ();
 
+    bool init_dynamic_config ();
     bool set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *sensor_mode);
     struct CamIA10_SensorModeData &get_sensor_mode_data() { return _ia_stat.sensor_mode; };
     bool set_3a_stats (SmartPtr<X3aIspStatistics> &stats);

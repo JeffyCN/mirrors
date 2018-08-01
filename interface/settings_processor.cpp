@@ -333,7 +333,7 @@ SettingsProcessor::fillAwbInputParams(const CameraMetadata *settings,
     if (entry.count == 1) {
         awbCtrl->awbMode = entry.data.u8[0];
     }
-    LOGI("@%s %d: awbMode:%d, awbLock:%d", __FUNCTION__, __LINE__, awbCtrl->awbMode, awbCtrl->awbLock);
+    LOGI("@%s %d:metadata awbMode:%d, awbLock:%d", __FUNCTION__, __LINE__, awbCtrl->awbMode, awbCtrl->awbLock);
 
     switch (awbCtrl->awbMode) {
     case ANDROID_CONTROL_AWB_MODE_OFF:

@@ -20,6 +20,7 @@
  */
 
 #include "rkiq_handler.h"
+#include "rk_params_translate.h"
 #include "x3a_isp_config.h"
 
 #include <string.h>
@@ -206,199 +207,11 @@ AiqAeHandler::pop_result ()
     return result;
 }
 
-void
-AiqAeHandler::convert_from_rkisp_aec_result(
-        rk_aiq_ae_results* aec_result, AecResult_t* result) {
-    struct CamIA10_SensorModeData &sensor_desc = _aiq_compositor->get_sensor_mode_data();
-    aec_result->exposure.exposure_time_us = result->coarse_integration_time * 1000 * 1000;
-    aec_result->exposure.analog_gain = result->analog_gain_code_global;
-
-    //useless
-    aec_result->exposure.digital_gain = result->analog_gain_code_global;
-    aec_result->exposure.iso = result->analog_gain_code_global;
-
-    aec_result->sensor_exposure.coarse_integration_time = result->regIntegrationTime;
-    aec_result->sensor_exposure.analog_gain_code_global = result->regGain;
-
-    //useless
-    aec_result->sensor_exposure.fine_integration_time = result->regIntegrationTime;
-    aec_result->sensor_exposure.digital_gain_global = result->gainFactor;
-
-    aec_result->sensor_exposure.frame_length_lines = result->LinePeriodsPerField;
-    aec_result->sensor_exposure.line_length_pixels = result->PixelPeriodsPerLine;
-
-    aec_result->flicker_reduction_mode = rk_aiq_ae_flicker_reduction_50hz;
-
-    // grid 5x5 maxsize=[2580x1950]
-    aec_result->aec_config_result.enabled = true;
-    aec_result->aec_config_result.mode = RK_ISP_EXP_MEASURING_MODE_0;
-    aec_result->aec_config_result.win.width =
-        result->meas_win.h_size > 2580 ? 2580 : result->meas_win.h_size; // 35 <= value <= 516
-    aec_result->aec_config_result.win.height =
-        result->meas_win.v_size > 1950 ? 1950 : result->meas_win.v_size; // 28 <= value <= 390
-    aec_result->aec_config_result.win.h_offset = // 0 <= value <= 2424
-        (sensor_desc.sensor_output_width - aec_result->aec_config_result.win.width) / 2;
-    aec_result->aec_config_result.win.v_offset = // 0 <= value <= 1806
-         (sensor_desc.sensor_output_height - aec_result->aec_config_result.win.height) / 2;
-
-    aec_result->hist_config_result.enabled = true;
-    aec_result->hist_config_result.mode = RK_ISP_HIST_MODE_RGB_COMBINED;
-    aec_result->hist_config_result.stepSize = result->stepSize;
-    aec_result->hist_config_result.weights_cnt = RK_AIQ_HISTOGRAM_WEIGHT_GRIDS_SIZE;
-    memcpy(aec_result->hist_config_result.weights, result->GridWeights, sizeof(unsigned char)*RK_AIQ_HISTOGRAM_WEIGHT_GRIDS_SIZE);
-    aec_result->hist_config_result.window.width = result->meas_win.h_size;
-    aec_result->hist_config_result.window.height = result->meas_win.v_size;
-    aec_result->hist_config_result.window.h_offset =
-		(sensor_desc.sensor_output_width - aec_result->hist_config_result.window.width) / 2;
-    aec_result->hist_config_result.window.v_offset =
-		(sensor_desc.sensor_output_height - aec_result->hist_config_result.window.height) / 2;
-
-    aec_result->converged = result->converged;
-
-#if 0
-    printf("aec converged: %d\n", aec_result->converged);
-
-    printf("aec result: vts-hts=%d-%d \n", aec_result->sensor_exposure.frame_length_lines, aec_result->sensor_exposure.line_length_pixels);
-
-    printf("interface check hist weights=[%d-%d-%d-%d-%d]\n",
-		aec_result->hist_config_result.weights[0],
-		aec_result->hist_config_result.weights[1],
-		aec_result->hist_config_result.weights[2],
-		aec_result->hist_config_result.weights[3],
-		aec_result->hist_config_result.weights[12]);
-
-    printf("interface check aec result win=[%d-%d-%d-%d]\n",
-		aec_result->aec_config_result.win.h_offset,
-		aec_result->aec_config_result.win.v_offset,
-		aec_result->aec_config_result.win.width,
-		aec_result->aec_config_result.win.height);
-
-    printf("interface check hist result step=[%d] win=[%d-%d-%d-%d]\n",
-		aec_result->hist_config_result.stepSize,
-		aec_result->hist_config_result.window.h_offset,
-		aec_result->hist_config_result.window.v_offset,
-		aec_result->hist_config_result.window.width,
-		aec_result->hist_config_result.window.height);
-#endif
-
-}
-
-void
-AiqAwbHandler::convert_from_rkisp_awb_result(
-        rk_aiq_awb_results* aiq_awb_result, CamIA10_AWB_Result_t* result) {
-
-    struct CamIA10_SensorModeData &sensor_desc = _aiq_compositor->get_sensor_mode_data();
-    aiq_awb_result->awb_meas_cfg.enabled = true;
-    aiq_awb_result->awb_meas_cfg.awb_meas_mode = RK_ISP_AWB_MEASURING_MODE_YCBCR;//result->MeasMode;
-    aiq_awb_result->awb_meas_cfg.awb_meas_cfg.max_y= result->MeasConfig.MaxY;
-    aiq_awb_result->awb_meas_cfg.awb_meas_cfg.ref_cr_max_r= result->MeasConfig.RefCr_MaxR;
-    aiq_awb_result->awb_meas_cfg.awb_meas_cfg.min_y_max_g= result->MeasConfig.MinY_MaxG;
-    aiq_awb_result->awb_meas_cfg.awb_meas_cfg.ref_cb_max_b= result->MeasConfig.RefCb_MaxB;
-    aiq_awb_result->awb_meas_cfg.awb_meas_cfg.max_c_sum= result->MeasConfig.MaxCSum;
-    aiq_awb_result->awb_meas_cfg.awb_meas_cfg.min_c= result->MeasConfig.MinC;
-
-    aiq_awb_result->awb_meas_cfg.awb_win.h_offset = result->awbWin.h_offs;
-    aiq_awb_result->awb_meas_cfg.awb_win.v_offset = result->awbWin.v_offs;
-    aiq_awb_result->awb_meas_cfg.awb_win.width= result->awbWin.h_size;
-    aiq_awb_result->awb_meas_cfg.awb_win.height = result->awbWin.v_size;
-
-    //394-256-256-296
-    aiq_awb_result->awb_gain_cfg.enabled = true;
-    aiq_awb_result->awb_gain_cfg.awb_gains.red_gain = result->awbGains.Red == 0 ? 394 : result->awbGains.Red;
-    aiq_awb_result->awb_gain_cfg.awb_gains.green_b_gain= result->awbGains.GreenB == 0 ? 256 : result->awbGains.GreenB;
-    aiq_awb_result->awb_gain_cfg.awb_gains.green_r_gain= result->awbGains.GreenR == 0 ? 256 : result->awbGains.GreenR;
-    aiq_awb_result->awb_gain_cfg.awb_gains.blue_gain= result->awbGains.Blue == 0 ? 296 : result->awbGains.Blue;
-
-    //ALOGD("AWB GAIN RESULT: %d-%d-%d-%d", result->awbGains.Red, result->awbGains.GreenB, result->awbGains.GreenR, result->awbGains.Blue);
-
-    aiq_awb_result->ctk_config.enabled = true;
-    memcpy(aiq_awb_result->ctk_config.ctk_matrix.coeff, result->CcMatrix.Coeff, sizeof(unsigned int)*9);
-    aiq_awb_result->ctk_config.cc_offset.red= result->CcOffset.Red;
-    aiq_awb_result->ctk_config.cc_offset.green= result->CcOffset.Green;
-    aiq_awb_result->ctk_config.cc_offset.blue= result->CcOffset.Blue;
-
-    if (sensor_desc.sensor_output_width != 0 &&
-		sensor_desc.sensor_output_height != 0) {
-    aiq_awb_result->lsc_cfg.enabled = true;
-    aiq_awb_result->lsc_cfg.config_width = sensor_desc.sensor_output_width;
-    aiq_awb_result->lsc_cfg.config_height = sensor_desc.sensor_output_height;
-
-    aiq_awb_result->lsc_cfg.lsc_config.lsc_size_tbl_cnt = RK_AIQ_LSC_SIZE_TBL_SIZE;
-    memcpy(aiq_awb_result->lsc_cfg.lsc_config.lsc_x_size_tbl,
-        result->SectorConfig.LscXSizeTbl, RK_AIQ_LSC_SIZE_TBL_SIZE*sizeof(unsigned short));
-    memcpy(aiq_awb_result->lsc_cfg.lsc_config.lsc_y_size_tbl,
-        result->SectorConfig.LscYSizeTbl, RK_AIQ_LSC_SIZE_TBL_SIZE*sizeof(unsigned short));
-
-    aiq_awb_result->lsc_cfg.lsc_config.lsc_grad_tbl_cnt = RK_AIQ_LSC_GRAD_TBL_SIZE;
-    memcpy(aiq_awb_result->lsc_cfg.lsc_config.lsc_x_grad_tbl,
-        result->SectorConfig.LscXGradTbl, RK_AIQ_LSC_GRAD_TBL_SIZE*sizeof(unsigned short));
-    memcpy(aiq_awb_result->lsc_cfg.lsc_config.lsc_y_grad_tbl,
-        result->SectorConfig.LscYGradTbl, RK_AIQ_LSC_GRAD_TBL_SIZE*sizeof(unsigned short));
-
-    aiq_awb_result->lsc_cfg.lsc_config.lsc_data_tbl_cnt = RK_AIQ_LSC_DATA_TBL_SIZE;
-    memcpy(aiq_awb_result->lsc_cfg.lsc_config.lsc_r_data_tbl,
-        result->LscMatrixTable.LscMatrix[CAM_4CH_COLOR_COMPONENT_RED].uCoeff,
-        RK_AIQ_LSC_DATA_TBL_SIZE*sizeof(unsigned short));
-    memcpy(aiq_awb_result->lsc_cfg.lsc_config.lsc_gr_data_tbl,
-        result->LscMatrixTable.LscMatrix[CAM_4CH_COLOR_COMPONENT_GREENR].uCoeff,
-        RK_AIQ_LSC_DATA_TBL_SIZE*sizeof(unsigned short));
-    memcpy(aiq_awb_result->lsc_cfg.lsc_config.lsc_gb_data_tbl,
-        result->LscMatrixTable.LscMatrix[CAM_4CH_COLOR_COMPONENT_GREENB].uCoeff,
-        RK_AIQ_LSC_DATA_TBL_SIZE*sizeof(unsigned short));
-    memcpy(aiq_awb_result->lsc_cfg.lsc_config.lsc_b_data_tbl,
-        result->LscMatrixTable.LscMatrix[CAM_4CH_COLOR_COMPONENT_BLUE].uCoeff,
-        RK_AIQ_LSC_DATA_TBL_SIZE*sizeof(unsigned short));
-
-    }
-
-    aiq_awb_result->converged = result->converged;
-
-    LOGI("awb converged: %d, R-B gain: %d-%d\n",
-		aiq_awb_result->converged,
-		aiq_awb_result->awb_gain_cfg.awb_gains.red_gain,
-		aiq_awb_result->awb_gain_cfg.awb_gains.blue_gain);
-#if 0
-
-    printf("--awb config, max_y: %d, cr: %d, cb: %d, miny: %d, maxcsum: %d, minc: %d\n",
-           aiq_awb_result->awb_meas_cfg.awb_meas_cfg.max_y,
-           aiq_awb_result->awb_meas_cfg.awb_meas_cfg.ref_cr_max_r,
-           aiq_awb_result->awb_meas_cfg.awb_meas_cfg.ref_cb_max_b,
-           aiq_awb_result->awb_meas_cfg.awb_meas_cfg.min_y_max_g,
-           aiq_awb_result->awb_meas_cfg.awb_meas_cfg.max_c_sum,
-           aiq_awb_result->awb_meas_cfg.awb_meas_cfg.min_c);
-
-    printf("interface check awb result win=[%d-%d-%d-%d]\n",
-		aiq_awb_result->awb_meas_cfg.awb_win.h_offset,
-		aiq_awb_result->awb_meas_cfg.awb_win.v_offset,
-		aiq_awb_result->awb_meas_cfg.awb_win.width,
-		aiq_awb_result->awb_meas_cfg.awb_win.height);
-
-    printf("ctk offset=[%d-%d-%d]\n",
-		aiq_awb_result->ctk_config.cc_offset.red,
-		aiq_awb_result->ctk_config.cc_offset.green,
-		aiq_awb_result->ctk_config.cc_offset.blue);
-    printf("interface check awb ctk config=[%d-%d-%d]\n",
-		aiq_awb_result->ctk_config.ctk_matrix.coeff[0],
-		aiq_awb_result->ctk_config.ctk_matrix.coeff[1],
-		aiq_awb_result->ctk_config.ctk_matrix.coeff[2]
-		);
-    printf("interface check awb ctk config=[%d-%d-%d]\n",
-		aiq_awb_result->ctk_config.ctk_matrix.coeff[3],
-		aiq_awb_result->ctk_config.ctk_matrix.coeff[4],
-		aiq_awb_result->ctk_config.ctk_matrix.coeff[5]
-		);
-    printf("interface check awb ctk config=[%d-%d-%d]\n",
-		aiq_awb_result->ctk_config.ctk_matrix.coeff[6],
-		aiq_awb_result->ctk_config.ctk_matrix.coeff[7],
-		aiq_awb_result->ctk_config.ctk_matrix.coeff[8]
-		);
-#endif
-}
-
 XCamReturn
 AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &output)
 {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_entry entry;
     SmartPtr<AiqInputParams> inputParams = _aiq_compositor->getAiqInputParams();
     SmartPtr<XmetaResult> res;
     for (X3aResultList::iterator iter = output.begin ();
@@ -433,7 +246,8 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
     metadata->update(ANDROID_STATISTICS_SCENE_FLICKER,
                                     &sceneFlickerMode, 1);
 
-    convert_from_rkisp_aec_result(&_rkaiq_result, &aec_results);
+    struct CamIA10_SensorModeData &sensor_desc = _aiq_compositor->get_sensor_mode_data();
+    ParamsTranslate::convert_from_rkisp_aec_result(&_rkaiq_result, &aec_results, &sensor_desc);
 
     LOGD("%s exp_time=%d gain=%f", __FUNCTION__,
             _rkaiq_result.exposure.exposure_time_us,
@@ -442,8 +256,12 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
     ret = mAeState->processResult(_rkaiq_result, *metadata,
                             inputParams->reqId);
 
-    /* not support aeRegions now */
     //# ANDROID_METADATA_Dynamic android.control.aeRegions done
+    /* TODO, not support aeRegions now */
+    /* entry = inputParams->settings.find(ANDROID_CONTROL_AE_REGIONS); */
+    /* if (entry.count == 5) { */
+    /*     metadata->update(ANDROID_CONTROL_AE_REGIONS, entry.data.i32, entry.count); */
+    /* } */
 
     //# ANDROID_METADATA_Dynamic android.control.aeExposureCompensation done
     // TODO get step size (currently 1/3) from static metadata
@@ -458,7 +276,6 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
     uint16_t pixels_per_line = 0;
     uint16_t lines_per_frame = 0;
     int64_t manualExpTime = 1;
-    struct CamIA10_SensorModeData &sensor_desc = _aiq_compositor->get_sensor_mode_data();
 
     if (inputParams->aaaControls.ae.aeMode != ANDROID_CONTROL_AE_MODE_OFF) {
 
@@ -498,7 +315,7 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
 
     int32_t value = ANDROID_SENSOR_TEST_PATTERN_MODE_OFF;
     CameraMetadata *settings = &inputParams->settings;
-    camera_metadata_entry entry = settings->find(ANDROID_SENSOR_TEST_PATTERN_MODE);
+    entry = settings->find(ANDROID_SENSOR_TEST_PATTERN_MODE);
     if (entry.count == 1)
         value = entry.data.i32[0];
 
@@ -531,7 +348,8 @@ AiqAwbHandler::processAwbMetaResults(CamIA10_AWB_Result_t awb_results, X3aResult
     }
 
     CameraMetadata* metadata = res->get_metadata_result();
-    convert_from_rkisp_awb_result(&_rkaiq_result, &awb_results);
+    struct CamIA10_SensorModeData &sensor_desc = _aiq_compositor->get_sensor_mode_data();
+    ParamsTranslate::convert_from_rkisp_awb_result(&_rkaiq_result, &awb_results, &sensor_desc);
 
     ret = mAwbState->processResult(_rkaiq_result, *metadata);
 
@@ -1170,10 +988,26 @@ RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *
         return false;
     }
 
-    _ia_dcfg = *(_isp10_engine->getDynamicISPConfig());
     _isp10_engine->getSensorModedata(sensor_mode,  &_ia_dcfg.sensor_mode);
+    if (_inputParams.ptr()) {
+        ParamsTranslate::convert_to_rkisp_awb_config(&_inputParams->awbInputParams.awbParams,
+                                                     &_ia_dcfg.awb_cfg, &_ia_dcfg.sensor_mode);
+
+    }
     _isp10_engine->updateDynamicConfig(&_ia_dcfg);
     _ia_stat.sensor_mode = _ia_dcfg.sensor_mode;
+
+    return true;
+}
+
+bool
+RKiqCompositor::init_dynamic_config ()
+{
+    if (!_isp10_engine) {
+        XCAM_LOG_ERROR ("ISP control device is null");
+        return false;
+    }
+    _ia_dcfg = *(_isp10_engine->getDynamicISPConfig());
 
     return true;
 }

@@ -18,6 +18,7 @@ LOCAL_SRC_FILES +=\
 	x3a_statistics_queue.cpp \
 	ae_state_machine.cpp \
 	awb_state_machine.cpp \
+	rk_params_translate.cpp \
 	Metadata2Str.cpp \
 	rkaiq.cpp
 

@@ -147,6 +147,7 @@ X3aAnalyzerRKiq::internal_init (uint32_t width, uint32_t height, double framerat
 
     _rkiq_compositor->set_size (width, height);
     _rkiq_compositor->set_framerate (framerate);
+    _rkiq_compositor->init_dynamic_config();
 
     return XCAM_RETURN_NO_ERROR;
 
@@ -273,6 +274,10 @@ X3aAnalyzerRKiq::pre_3a_analyze (SmartPtr<X3aStats> &stats)
     XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret, "get sensor mode data failed");
     _sensor_mode_data = sensor_mode_data;
 
+    //ensure that the inputParams is the same one in the awb and ae anzlyer
+    //function
+    _rkiq_compositor->setAiqInputParams(this->getAiqInputParams());
+
     if (!_rkiq_compositor->set_sensor_mode_data (&_sensor_mode_data)) {
         XCAM_LOG_WARNING ("AIQ configure 3a failed");
         return XCAM_RETURN_ERROR_AIQ;
@@ -283,9 +288,6 @@ X3aAnalyzerRKiq::pre_3a_analyze (SmartPtr<X3aStats> &stats)
         return XCAM_RETURN_ERROR_UNKNOWN;
     }
 
-    //ensure that the inputParams is the same one in the awb and ae anzlyer
-    //function
-    _rkiq_compositor->setAiqInputParams(this->getAiqInputParams());
     return ret;
 }
 
