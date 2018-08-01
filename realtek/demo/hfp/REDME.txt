@@ -1,0 +1,25 @@
+1.下发AT+BLDNd到 hci0,标准API如下
+
+/**
+ * Send AT command message.
+ *
+ * @param fd Opened socket file descriptor.
+   like this:
+   const char *ba_interface = "hci0"; developer should use bluealsa_open to get the fd 
+   ba_fd  = bluealsa_open(ba_interface));
+   
+ * @param bdaddr_t addr MAC address of the Bluetooth device, 
+   MAC addr like this:D8:1D:72:1C:26:DC
+ 
+ * @param command NULL-terminated command string
+	AT command such as:
+	"ATA,AT+CHUP/ATD/AT+BLDN"
+ * @return Upon success this function returns 0. Otherwise, -1 is returned. */
+ 
+int bluealsa_send_rfcomm_command(int fd, bdaddr_t addr, const char *command) 
+
+
+2. 应用包含ctl-client.h bluetooth.h ctl-proto.h 避免有些结构体找不到，这些文件是从BLUEZ和blualsa截取出来，直接使用
+
+
+

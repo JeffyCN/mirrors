@@ -1,0 +1,35 @@
+#!/bin/sh
+
+echo 0 > /sys/class/rfkill/rfkill0/state
+
+sleep 2
+
+echo 1 > /sys/class/rfkill/rfkill0/state
+
+sleep 2
+
+insmod /usr/lib/modules/hci_uart.ko
+
+rtk_hciattach -n -s 115200 /dev/ttyS4 rtk_h5 &
+
+hciconfig hci0 up
+
+/usr/libexec/bluetooth/bluetoothd --compat -n  &
+sleep 1
+sdptool add A2SNK
+sleep 1
+hciconfig hci0 up
+sleep 1
+hciconfig hci0 piscan
+sleep 1
+hciconfig hci0 name 'realtek_bt'
+sleep 1
+hciconfig hci0 down
+sleep 1
+hciconfig hci0 up
+sleep 2
+bluealsa --profile=a2dp-sink & 
+sleep 1
+bluealsa-aplay --profile-a2dp 00:00:00:00:00:00 & 
+sleep 1
+hciconfig hci0 class 0x240404
