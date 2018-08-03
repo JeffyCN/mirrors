@@ -508,7 +508,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     if (ctx->mVersion <= (float)1.003) {
         srcMmuFlag = dstMmuFlag = 1;
 
-#if defined(__arm64__) || defined(__aarch64__)
+//#if defined(__arm64__) || defined(__aarch64__)
         NormalRgaSetSrcVirtualInfo(&rgaReg, (unsigned long)srcBuf,
         		(unsigned long)srcBuf + srcVirW * srcVirH, 
         		(unsigned long)srcBuf + srcVirW * srcVirH * 5/4,
@@ -520,13 +520,13 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         		(unsigned long)dstBuf + dstVirW * dstVirH * 5/4,
         		dstVirW, dstVirH, &clip,
         		RkRgaGetRgaFormat(relDstRect.format),0);
+/*
 #else
         NormalRgaSetSrcVirtualInfo(&rgaReg, (unsigned long)srcBuf,
         		(unsigned int)srcBuf + srcVirW * srcVirH, 
         		(unsigned int)srcBuf + srcVirW * srcVirH * 5/4,
         		srcVirW, srcVirH,
         		RkRgaGetRgaFormat(relSrcRect.format),0);
-        /*dst*/
         NormalRgaSetDstVirtualInfo(&rgaReg, (unsigned long)dstBuf,
         		(unsigned int)dstBuf + dstVirW * dstVirH,
         		(unsigned int)dstBuf + dstVirW * dstVirH * 5/4,
@@ -534,6 +534,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         		RkRgaGetRgaFormat(relDstRect.format),0);
         
 #endif
+*/
         } else if (ctx->mVersion < (float)1.6) {
             /*Src*/
             if (srcFd != -1) {
@@ -550,12 +551,13 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
             		srcMmuFlag = 1;
             	if (src && srcBuf == src->phyAddr)
             		srcMmuFlag = 0;
-#if defined(__arm64__) || defined(__aarch64__)
+//#if defined(__arm64__) || defined(__aarch64__)
             	NormalRgaSetSrcVirtualInfo(&rgaReg, (unsigned long)srcBuf,
             			(unsigned long)srcBuf + srcVirW * srcVirH, 
             			(unsigned long)srcBuf + srcVirW * srcVirH * 5/4,
             			srcVirW, srcVirH,
             			RkRgaGetRgaFormat(relSrcRect.format),0);
+/*
 #else
             	NormalRgaSetSrcVirtualInfo(&rgaReg, (unsigned int)srcBuf,
             			(unsigned int)srcBuf + srcVirW * srcVirH, 
@@ -563,6 +565,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
             			srcVirW, srcVirH,
             			RkRgaGetRgaFormat(relSrcRect.format),0);
 #endif
+*/
             }
             /*dst*/
             if (dstFd != -1) {
@@ -580,12 +583,13 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
             		dstMmuFlag = 1;
             	if (dst && dstBuf == dst->phyAddr)
             		dstMmuFlag = 0;
-#if defined(__arm64__) || defined(__aarch64__)
+//#if defined(__arm64__) || defined(__aarch64__)
             	NormalRgaSetDstVirtualInfo(&rgaReg, (unsigned long)dstBuf,
             			(unsigned long)dstBuf + dstVirW * dstVirH,
             			(unsigned long)dstBuf + dstVirW * dstVirH * 5/4,
             			dstVirW, dstVirH, &clip,
             			RkRgaGetRgaFormat(relDstRect.format),0);
+/*
 #else
             	NormalRgaSetDstVirtualInfo(&rgaReg, (unsigned int)dstBuf,
             			(unsigned int)dstBuf + dstVirW * dstVirH,
@@ -593,6 +597,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
             			dstVirW, dstVirH, &clip,
             			RkRgaGetRgaFormat(relDstRect.format),0);
 #endif
+*/
             }
         } else {
         if (src && src->hnd)
@@ -618,7 +623,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         	dstMmuFlag = dst->mmuFlag ? 1 : 0;
 
         
-#if defined(__arm64__) || defined(__aarch64__)
+//#if defined(__arm64__) || defined(__aarch64__)
         NormalRgaSetSrcVirtualInfo(&rgaReg, srcFd != -1 ? srcFd : 0,
         		(unsigned long)srcBuf, 
         		(unsigned long)srcBuf + srcVirW * srcVirH,
@@ -630,21 +635,20 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
         		(unsigned long)dstBuf + dstVirW * dstVirH,
         		dstVirW, dstVirH, &clip,
         		RkRgaGetRgaFormat(relDstRect.format),0);
-
+/*
 #else
         NormalRgaSetSrcVirtualInfo(&rgaReg, srcFd != -1 ? srcFd : 0,
         		(unsigned int)srcBuf, 
         		(unsigned int)srcBuf + srcVirW * srcVirH,
         		srcVirW, srcVirH,
         		RkRgaGetRgaFormat(relSrcRect.format),0);
-        /*dst*/
         NormalRgaSetDstVirtualInfo(&rgaReg, dstFd != -1 ? dstFd : 0,
         		(unsigned int)dstBuf,
         		(unsigned int)dstBuf + dstVirW * dstVirH,
         		dstVirW, dstVirH, &clip,
         		RkRgaGetRgaFormat(relDstRect.format),0);
-
 #endif
+*/
         }
 
 	NormalRgaSetSrcActiveInfo(&rgaReg, srcActW, srcActH, srcXPos, srcYPos);
@@ -775,21 +779,22 @@ int RgaCollorFill(rga_info *dst)
 	clip.ymax = dstActH - 1;
 
 	if (ctx->mVersion <= 1.003) {
-#if defined(__arm64__) || defined(__aarch64__)
+//#if defined(__arm64__) || defined(__aarch64__)
 		/*dst*/
 		NormalRgaSetDstVirtualInfo(&rgaReg, (unsigned long)dstBuf,
 				(unsigned long)dstBuf + dstVirW * dstVirH,
 				(unsigned long)dstBuf + dstVirW * dstVirH * 5/4,
 				dstVirW, dstVirH, &clip,
 				RkRgaGetRgaFormat(relDstRect.format),0);
+/*
 #else
-		/*dst*/
 		NormalRgaSetDstVirtualInfo(&rgaReg, (unsigned int)dstBuf,
 				(unsigned int)dstBuf + dstVirW * dstVirH,
 				(unsigned int)dstBuf + dstVirW * dstVirH * 5/4,
 				dstVirW, dstVirH, &clip,
 				RkRgaGetRgaFormat(relDstRect.format),0);
 #endif
+*/
 	} else if (ctx->mVersion < 1.6 ) {
 		/*dst*/
 		if (dstFd != -1) {
@@ -807,12 +812,13 @@ int RgaCollorFill(rga_info *dst)
 				dstMmuFlag = 1;
 			if (dst && dstBuf == dst->phyAddr)
 				dstMmuFlag = 0;
-#if defined(__arm64__) || defined(__aarch64__)
+//#if defined(__arm64__) || defined(__aarch64__)
 			NormalRgaSetDstVirtualInfo(&rgaReg, (unsigned long)dstBuf,
 					(unsigned long)dstBuf + dstVirW * dstVirH,
 					(unsigned long)dstBuf + dstVirW * dstVirH * 5/4,
 					dstVirW, dstVirH, &clip,
 					RkRgaGetRgaFormat(relDstRect.format),0);
+/*
 #else
 			NormalRgaSetDstVirtualInfo(&rgaReg, (unsigned int)dstBuf,
 					(unsigned int)dstBuf + dstVirW * dstVirH,
@@ -820,6 +826,7 @@ int RgaCollorFill(rga_info *dst)
 					dstVirW, dstVirH, &clip,
 					RkRgaGetRgaFormat(relDstRect.format),0);
 #endif
+*/
 		}
 	} else {
 		if (dst && dst->hnd)
@@ -832,21 +839,22 @@ int RgaCollorFill(rga_info *dst)
 			dstMmuFlag = dstType ? 1 : 0;
 		if (dst && dstFd == dst->fd)
 			dstMmuFlag = dst->mmuFlag ? 1 : 0;
-#if defined(__arm64__) || defined(__aarch64__)
+//#if defined(__arm64__) || defined(__aarch64__)
 		/*dst*/
 		NormalRgaSetDstVirtualInfo(&rgaReg, dstFd != -1 ? dstFd : 0,
 				(unsigned long)dstBuf,
 				(unsigned long)dstBuf + dstVirW * dstVirH,
 				dstVirW, dstVirH, &clip,
 				RkRgaGetRgaFormat(relDstRect.format),0);
+/*
 #else
-		/*dst*/
 		NormalRgaSetDstVirtualInfo(&rgaReg, dstFd != -1 ? dstFd : 0,
 				(unsigned int)dstBuf,
 				(unsigned int)dstBuf + dstVirW * dstVirH,
 				dstVirW, dstVirH, &clip,
 				RkRgaGetRgaFormat(relDstRect.format),0);
 #endif
+*/
 	}
 
 	NormalRgaSetDstActiveInfo(&rgaReg, dstActW, dstActH, dstXPos, dstYPos);
