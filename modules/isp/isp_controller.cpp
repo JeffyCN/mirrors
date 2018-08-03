@@ -735,6 +735,20 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
             }
         }
 
+        // set vts before exposure time firstly
+        rk_aiq_exposure_sensor_descriptor sensor_desc;
+        get_sensor_descriptor (&sensor_desc);
+        if (sensor_desc.line_periods_per_field < isp_exposure.coarse_integration_time) {
+            memset(&ctrl, 0, sizeof(ctrl));
+            ctrl.id = V4L2_CID_VBLANK;
+            /* TODO: havn't consider the margin */
+            ctrl.value = isp_exposure.coarse_integration_time - sensor_desc.sensor_output_width;
+            if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
+                XCAM_LOG_ERROR ("failed to set vblank result(val: %d)", ctrl.value);
+                return XCAM_RETURN_ERROR_IOCTL;
+            }
+        }
+
         if (isp_exposure.coarse_integration_time!= 0) {
             memset(&ctrl, 0, sizeof(ctrl));
             ctrl.id = V4L2_CID_EXPOSURE;
