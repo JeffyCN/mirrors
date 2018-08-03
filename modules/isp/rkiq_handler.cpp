@@ -992,6 +992,8 @@ RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *
     if (_inputParams.ptr()) {
         ParamsTranslate::convert_to_rkisp_awb_config(&_inputParams->awbInputParams.awbParams,
                                                      &_ia_dcfg.awb_cfg, &_ia_dcfg.sensor_mode);
+        ParamsTranslate::convert_to_rkisp_aec_config(&_inputParams->aeInputParams.aeParams,
+                                                     &_ia_dcfg.aec_cfg, &_ia_dcfg.sensor_mode);
 
     }
     _isp10_engine->updateDynamicConfig(&_ia_dcfg);

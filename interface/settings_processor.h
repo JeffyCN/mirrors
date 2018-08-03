@@ -24,6 +24,7 @@
 #include <xcam_std.h>
 #include <camera/CameraMetadata.h>
 #include "rkaiq.h"
+#include "CameraWindow.h"
 
 using namespace android;
 using namespace XCam;
@@ -50,7 +51,7 @@ private:
     XCamReturn fillAwbInputParams(const CameraMetadata *settings,
                                  AiqInputParams *aiqInputParams);
     void parseMeteringRegion(const CameraMetadata *settings,
-                             int tagId, XCam3AWindow *meteringWindow);
+                             int tagId, CameraWindow *meteringWindow);
 private:
 
 };

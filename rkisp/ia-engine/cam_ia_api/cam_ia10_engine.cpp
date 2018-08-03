@@ -348,6 +348,21 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
     set = &dCfg.aec_cfg;
     shd = &dCfgShd.aec_cfg;
 
+    uint16_t out_width, out_height, out_hOff, out_vOff;
+    mapHalWinToRef(set->win.left_hoff,
+                   set->win.top_voff,
+                   set->win.right_width,
+                   set->win.bottom_height,
+                   cfg->sensor_mode.isp_input_width,
+                   cfg->sensor_mode.isp_input_height,
+                   out_hOff, out_vOff,
+                   out_width, out_height);
+
+    set->win.left_hoff = out_hOff;
+    set->win.top_voff = out_vOff;
+    set->win.right_width = out_width;
+    set->win.bottom_height = out_height;
+
     if ((set->win.left_hoff != shd->win.left_hoff) ||
             (set->win.top_voff != shd->win.top_voff) ||
             (set->win.right_width != shd->win.right_width) ||
@@ -2150,6 +2165,19 @@ RESULT CamIA10Engine::runAF(HAL_AfcCfg* config) {
     }
   }
   return result;
+}
+
+void CamIA10Engine::mapHalWinToRef(
+    uint16_t in_hOff, uint16_t in_vOff,
+    uint16_t in_width, uint16_t in_height,
+    uint16_t drvWidth, uint16_t drvHeight,
+    uint16_t& out_hOff, uint16_t& out_vOff,
+    uint16_t& out_width, uint16_t& out_height
+) {
+  out_hOff = in_hOff * HAL_WIN_REF_WIDTH / drvWidth;
+  out_vOff = in_vOff * HAL_WIN_REF_HEIGHT / drvHeight;
+  out_width = in_width * HAL_WIN_REF_WIDTH / drvWidth;
+  out_height = in_height * HAL_WIN_REF_HEIGHT / drvHeight;
 }
 
 void CamIA10Engine::mapHalWinToIsp(

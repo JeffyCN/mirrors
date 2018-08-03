@@ -80,7 +80,8 @@ typedef struct _AiqInputParams {
     AAAControls     aaaControls;
     CameraMetadata  settings;
     void init();
-    /* AiqInputParams()                    { CLEAR(*this); } */
+    _AiqInputParams();
+    ~_AiqInputParams() {}
 } AiqInputParams;
 
 };

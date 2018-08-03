@@ -76,7 +76,7 @@ static int SetAutoAdjustFps(int m_cam_fd_overlay, bool auto_adjust_fps) {
     LOGE("ERR(%s):set of  AE seting auto adjust fps to sensor config failed! err: %s\n",
          __func__,
          strerror(errno));
-  } 
+  }
 
   return ret;
 }
@@ -451,7 +451,7 @@ bool Isp10Engine::convertIspStats(
     ia_stats->af.cameric.LuminanceB = isp_stats->params.af.window[1].lum;
     ia_stats->af.cameric.SharpnessC = isp_stats->params.af.window[2].sum;
     ia_stats->af.cameric.LuminanceC = isp_stats->params.af.window[2].lum;
- 
+
     for (int i=0; i<CIFISP_AFM_MAX_WINDOWS; i++) {
       LOGD("Af window[%d]: lum=0x%08x, sum=0x%08x\n", i,
           isp_stats->params.af.window[i].lum,
@@ -561,6 +561,7 @@ bool Isp10Engine::convertIAResults(
                        (uint16_t&)isp_cfg->configs.hst_config.meas_window.v_size,
                        (uint16_t&)isp_cfg->configs.hst_config.meas_window.h_offs,
                        (uint16_t&)isp_cfg->configs.hst_config.meas_window.v_offs);
+
         memcpy(isp_cfg->configs.hst_config.hist_weight,
                ia_results->hst.Weights, sizeof(isp_cfg->configs.hst_config.hist_weight));
         LOGV("step size: %d, w-h: %d-%d\n",

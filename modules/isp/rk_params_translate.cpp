@@ -209,6 +209,89 @@ ParamsTranslate::convert_from_rkisp_awb_result(
 #endif
 }
 
+void ParamsTranslate::convert_to_rkisp_aec_config( XCamAeParam* aec_params,
+                                                   HAL_AecCfg* config, struct CamIA10_SensorModeData *sensor_desc) {
+    memset(config, 0, sizeof(HAL_AecCfg));
+
+    switch (aec_params->flicker_mode) {
+    case XCAM_AE_FLICKER_MODE_AUTO:
+        config->flk = HAL_AE_FLK_AUTO;
+        break;
+    case XCAM_AE_FLICKER_MODE_50HZ:
+        config->flk = HAL_AE_FLK_50;
+        break;
+    case XCAM_AE_FLICKER_MODE_60HZ:
+        config->flk = HAL_AE_FLK_60;
+        break;
+    case XCAM_AE_FLICKER_MODE_OFF:
+        config->flk = HAL_AE_FLK_OFF;
+        break;
+    default :
+        LOGI("@%s %d: Do not support the flicker mode:%d", __FUNCTION__, __LINE__, aec_params->flicker_mode);
+        config->flk = HAL_AE_FLK_AUTO;
+        break;
+    }
+
+    switch (aec_params->mode) {
+    case XCAM_AE_MODE_AUTO:
+        config->mode = HAL_AE_OPERATION_MODE_AUTO;
+        break;
+    case XCAM_AE_MODE_MANUAL:
+        config->mode = HAL_AE_OPERATION_MODE_MANUAL;
+        break;
+    default :
+        LOGI("@%s %d: Do not support the ae mode:%d", __FUNCTION__, __LINE__, aec_params->mode);
+        config->mode = HAL_AE_OPERATION_MODE_AUTO;
+        break;
+    }
+
+    switch (aec_params->metering_mode) {
+    case XCAM_AE_METERING_MODE_AUTO:
+        config->meter_mode = HAL_AE_METERING_MODE_AVERAGE;
+        break;
+    case XCAM_AE_METERING_MODE_SPOT:
+        config->meter_mode = HAL_AE_METERING_MODE_SPOT;
+        break;
+    case XCAM_AE_METERING_MODE_CENTER:
+        config->meter_mode = HAL_AE_METERING_MODE_CENTER;
+        break;
+    case XCAM_AE_METERING_MODE_WEIGHTED_WINDOW:
+        config->meter_mode = HAL_AE_METERING_MODE_MATRIX;
+        break;
+    default :
+        LOGI("@%s %d: Do not support the metering_mode:%d", __FUNCTION__, __LINE__, aec_params->metering_mode);
+        config->meter_mode = HAL_AE_METERING_MODE_AVERAGE;
+        break;
+    }
+
+    // window
+    if (aec_params->window.x_end < 0 || aec_params->window.x_end > sensor_desc->sensor_output_width ||
+        aec_params->window.y_end < 0 || aec_params->window.y_end > sensor_desc->sensor_output_height) {
+        LOGE("%s, XCamAeParam window is not right", __func__);
+        return;
+    } else if( aec_params->window.x_end != 0 && aec_params->window.y_end != 0 ) {
+        config->win.left_hoff =  aec_params->window.x_start;
+        config->win.top_voff =  aec_params->window.y_start;
+        config->win.right_width =  aec_params->window.x_end - aec_params->window.x_start;
+        config->win.bottom_height =  aec_params->window.y_end - aec_params->window.y_start;
+    } else {
+        config->win.left_hoff = 0;
+        config->win.top_voff =  0;
+        config->win.right_width = sensor_desc->sensor_output_width;
+        config->win.bottom_height = sensor_desc->sensor_output_height;
+    }
+    // bias
+    config->ae_bias = (int)(aec_params->ev_shift);
+
+    config->frame_time_us_min = aec_params->exposure_time_min;
+    config->frame_time_us_max = aec_params->exposure_time_max;
+
+    LOGI("@%s %d: flk:%d, mode:%d, meter_mode:%d, win(%d,%d,%d,%d), bias:%d, min:%d, max:%d ", __FUNCTION__, __LINE__,
+         config->flk, config->mode, config->meter_mode,
+         config->win.left_hoff, config->win.top_voff, config->win.right_width, config->win.bottom_height,
+         config->ae_bias, config->frame_time_us_min, config->frame_time_us_max);
+}
+
 void
 ParamsTranslate::convert_to_rkisp_awb_config(XCamAwbParam* awb_params,
                                              HAL_AwbCfg* config, struct CamIA10_SensorModeData *sensor_desc) {

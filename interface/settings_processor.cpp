@@ -30,28 +30,71 @@ SettingsProcessor::~SettingsProcessor()
 {
 }
 
-void
-SettingsProcessor::parseMeteringRegion(const CameraMetadata *settings,
-                                   int tagId, XCam3AWindow *meteringWindow) {
+/**
+ * Parses the request setting to find one of the 3 metering regions
+ *
+ * CONTROL_AE_REGIONS
+ * CONTROL_AWB_REGIONS
+ * CONTROL_AF_REGIONS
+ *
+ * It then initializes a CameraWindow structure. If no metering region is found
+ * the CameraWindow is initialized empty. Users of this method can check this
+ * by calling CameraWindow::isValid().
+ *
+ * \param[in] settings request settings to parse
+ * \param[in] tagID one of the 3 metadata tags for the metering regions
+ *                   (AE,AWB or AF)
+ * \param[out] meteringWindow initialized region.
+ *
+ */
+void SettingsProcessor::parseMeteringRegion(const CameraMetadata *settings,
+                                   int tagId, CameraWindow *meteringWindow)
+{
     camera_metadata_ro_entry_t entry;
+    ia_coordinate topLeft, bottomRight;
+    CLEAR(topLeft);
+    CLEAR(bottomRight);
     int weight = 0;
+
+    CameraWindow croppingRegion;
+    int width, height;
+
+    entry = settings->find(ANDROID_SCALER_CROP_REGION);
+    if (entry.count == 4) {
+        topLeft.x = entry.data.i32[0];
+        topLeft.y = entry.data.i32[1];
+        width = entry.data.i32[2];
+        height = entry.data.i32[3];
+        // TODO support more than one metering region
+    } else {
+        LOGW("invalid control entry count for crop region: %d", entry.count);
+    }
+    croppingRegion.init(topLeft, width, height, 0);
 
     if (tagId == ANDROID_CONTROL_AE_REGIONS ||
         tagId == ANDROID_CONTROL_AWB_REGIONS ||
         tagId == ANDROID_CONTROL_AF_REGIONS) {
         entry = settings->find(tagId);
         if (entry.count >= 5) {
-            meteringWindow->x_start = entry.data.i32[0];
-            meteringWindow->y_start = entry.data.i32[1];
-            meteringWindow->x_end = entry.data.i32[2];
-            meteringWindow->y_end = entry.data.i32[3];
-            meteringWindow->weight = entry.data.i32[4];
+            topLeft.x = entry.data.i32[0];
+            topLeft.y = entry.data.i32[1];
+            bottomRight.x = entry.data.i32[2];
+            bottomRight.y = entry.data.i32[3];
+            weight = entry.data.i32[4];
             // TODO support more than one metering region
         } else
             LOGW("invalid control entry count %d", entry.count);
     } else {
         LOGW("Unsupported tag ID (%d) is given", tagId);
     }
+
+    meteringWindow->init(topLeft, bottomRight, weight);
+    if (meteringWindow->isValid()) {
+        // Clip the region to the crop rectangle
+        if (croppingRegion.isValid())
+            meteringWindow->clip(croppingRegion);
+    }
+
 }
 
 /**
@@ -72,12 +115,14 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
              __FUNCTION__, __LINE__, settings, aiqInputParams);
         return XCAM_RETURN_ERROR_UNKNOWN;
     }
+    CameraMetadata& staticMeta = RkispDeviceManager::get_static_metadata();
     AeInputParams* aeInputParams = &aiqInputParams->aeInputParams;
     AeControls *aeCtrl = &aiqInputParams->aaaControls.ae;
     XCamAeParam *aeParams = &aeInputParams->aeParams;
 
     //# METADATA_Control control.aeLock done
     camera_metadata_ro_entry entry = settings->find(ANDROID_CONTROL_AE_LOCK);
+    camera_metadata_entry_t rw_entry;
     if (entry.count == 1) {
         aeCtrl->aeLock = entry.data.u8[0];
     }
@@ -131,27 +176,24 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
         }
     }
 
-    parseMeteringRegion(settings, ANDROID_CONTROL_AE_REGIONS, &aeParams->window);
+    CameraWindow aeRegion;
+    parseMeteringRegion(settings, ANDROID_CONTROL_AE_REGIONS, &aeRegion);
 
-    /* TODO  crop region*/
-    /* CameraWindow *aeRegion = aeInputParams->aeRegion; */
-    /* CameraWindow *croppingRegion = aeInputParams->croppingRegion; */
-    /* if (aeRegion && croppingRegion) { */
-        // ******** exposure_window
-        //# METADATA_Control control.aeRegions done
-        /* parseMeteringRegion(settings, ANDROID_CONTROL_AE_REGIONS, aeRegion); */
-        /* if (aeRegion->isValid()) { */
-        /*     // Clip the region to the crop rectangle */
-        /*     if (croppingRegion->isValid()) */
-        /*         aeRegion->clip(*croppingRegion); */
+    if (aeRegion.isValid()) {
+        aeParams->window.x_start = aeRegion.left();
+        aeParams->window.y_start = aeRegion.top();
+        aeParams->window.x_end = aeRegion.right();
+        aeParams->window.y_end = aeRegion.bottom();
+        LOGI("@%s %d: window:(%d,%d,%d,%d)", __FUNCTION__, __LINE__,
+             aeParams->window.x_start, aeParams->window.y_start, aeParams->window.x_end, aeParams->window.y_end);
+    }
 
-        /*     aiqInputParams->aeParams.window->h_offset = aeRegion->left(); */
-        /*     aiqInputParams->aeParams.window->v_offset = aeRegion->top(); */
-        /*     aiqInputParams->aeParams.window->width = aeRegion->width(); */
-        /*     aiqInputParams->aeParams.window->height = aeRegion->height(); */
-        /* } */
-    /* } */
     // ******** exposure_coordinate
+    rw_entry = staticMeta.find(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE);
+    if (rw_entry.count == 2) {
+        aeParams->exposure_time_min = rw_entry.data.i64[0];
+        aeParams->exposure_time_max = rw_entry.data.i64[1];
+    }
     /*
      * MANUAL AE CONTROL
      */
@@ -163,15 +205,15 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
             int64_t timeMicros = entry.data.i64[0] / 1000;
             if (timeMicros > 0) {
                 /* TODO  need add exposure time limited mechanism*/
-                /* if (timeMicros > mMaxExposureTime / 1000) { */
-                /*     LOGE("exposure time %" PRId64 " ms is bigger than the max exposure time %" PRId64 " ms", */
-                /*         timeMicros, mMaxExposureTime / 1000); */
-                /*     return XCAM_RETURN_ERROR_UNKNOWN; */
-                /* } else if (timeMicros < mMinExposureTime / 1000) { */
-                /*     LOGE("exposure time %" PRId64 " ms is smaller than the min exposure time %" PRId64 " ms", */
-                /*         timeMicros, mMinExposureTime / 1000); */
-                /*     return XCAM_RETURN_ERROR_UNKNOWN; */
-                /* } */
+                if (timeMicros > aeParams->exposure_time_max / 1000) {
+                    LOGE("exposure time %" PRId64 " ms is bigger than the max exposure time %" PRId64 " ms",
+                        timeMicros, aeParams->exposure_time_max / 1000);
+                    return XCAM_RETURN_ERROR_UNKNOWN;
+                } else if (timeMicros < aeParams->exposure_time_min / 1000) {
+                    LOGE("exposure time %" PRId64 " ms is smaller than the min exposure time %" PRId64 " ms",
+                        timeMicros, aeParams->exposure_time_min / 1000);
+                    return XCAM_RETURN_ERROR_UNKNOWN;
+                }
                 aeParams->manual_exposure_time = timeMicros;
             } else {
                 // Don't constrain AIQ.
@@ -179,31 +221,13 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
             }
         }
 
-        // ******** manual frame time --> frame rate
-        //# METADATA_Control sensor.frameDuration done
-        /* TODO  need add frameduration*/
-        /* entry = settings->find(ANDROID_SENSOR_FRAME_DURATION); */
-        /* if (entry.count == 1) { */
-        /*     int64_t timeMicros = entry.data.i64[0] / 1000; */
-        /*     if (timeMicros > 0) { */
-        /*         if (timeMicros > mMaxFrameDuration / 1000) { */
-        /*             LOGE("frame duration %" PRId64 " ms is bigger than the max frame duration %" PRId64 " ms", */
-        /*                 timeMicros, mMaxFrameDuration / 1000); */
-        /*             return XCAM_RETURN_ERROR_UNKNOWN; */
-        /*         } */
-        /*         aiqInputParams->aeParams.manual_limits-> */
-        /*           manual_frame_time_us_min = (int)timeMicros; */
-        /*         aiqInputParams->aeParams.manual_limits-> */
-        /*           manual_frame_time_us_max = (int)timeMicros; */
-        /*     } else { */
-        /*         // Don't constrain AIQ. */
-        /*         aiqInputParams->aeParams.manual_limits-> */
-        /*             manual_frame_time_us_min = -1; */
-        /*         aiqInputParams->aeParams.manual_limits-> */
-        /*             manual_frame_time_us_max = -1; */
-        /*     } */
-        /* } */
-
+        uint64_t iso_min, iso_max;
+        rw_entry = staticMeta.find(ANDROID_SENSOR_INFO_SENSITIVITY_RANGE);
+        if (rw_entry.count == 2) {
+            iso_min = rw_entry.data.i64[0];
+            iso_max = rw_entry.data.i64[1];
+        }
+        aeParams->max_analog_gain = (double)iso_max;
         // ******** manual_iso
         //# METADATA_Control sensor.sensitivity done
         entry = settings->find(ANDROID_SENSOR_SENSITIVITY);
@@ -211,14 +235,12 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
             int32_t iso = entry.data.i32[0];
             aeParams->manual_analog_gain = iso;
             /* TODO  need add iso limited mechanism*/
-            /* if (iso >= mMinSensitivity && iso <= mMaxSensitivity) { */
-            /*     aiqInputParams->aeParams.manual_iso[0] = iso; */
-            /*     aiqInputParams->aeParams.manual_limits-> */
-            /*         manual_iso_min = aiqInputParams->aeParams.manual_iso[0]; */
-            /*     aiqInputParams->aeParams.manual_limits-> */
-            /*         manual_iso_max = aiqInputParams->aeParams.manual_iso[0]; */
-            /* } else */
-            /*     aiqInputParams->aeParams.manual_iso = nullptr; */
+            if (iso >= iso_min && iso <= iso_max) {
+                aeParams->manual_analog_gain = (double)iso;
+            } else {
+                LOGE("@%s %d: manual iso(%d) is out of range[%d,%d]", __FUNCTION__, __LINE__, iso, iso_min, iso_max);
+                aeParams->manual_analog_gain = (double)(iso_min+iso_max) / 2;
+            }
         }
         // fill target fps range, it needs to be proper in results anyway
         entry = settings->find(ANDROID_CONTROL_AE_TARGET_FPS_RANGE);
@@ -226,6 +248,7 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
             aeCtrl->aeTargetFpsRange[0] = entry.data.i32[0];
             aeCtrl->aeTargetFpsRange[1] = entry.data.i32[1];
         }
+        LOGI("@%s %d: manual iso :%d, exp time:%d", __FUNCTION__, __LINE__, (int)aeParams->manual_analog_gain, aeParams->manual_exposure_time);
 
     } else {
         /*
@@ -233,26 +256,29 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
          */
         // ******** ev_shift
         //# METADATA_Control control.aeExposureCompensation done
+        float stepEV = 1 / 3.0f; //if can't get stepEv, use 1/3 as default
+        rw_entry = staticMeta.find(ANDROID_CONTROL_AE_COMPENSATION_STEP);
+        if (rw_entry.type == TYPE_RATIONAL || rw_entry.count == 1) {
+            const camera_metadata_rational_t* aeCompStep = rw_entry.data.r;
+            stepEV = (float)aeCompStep->numerator / aeCompStep->denominator;
+        }
+
+        uint64_t compensation_min, compensation_max;
+        rw_entry = staticMeta.find(ANDROID_CONTROL_AE_COMPENSATION_RANGE);
+        if (rw_entry.count == 2) {
+            compensation_min = rw_entry.data.i64[0];
+            compensation_max = rw_entry.data.i64[1];
+        }
         entry = settings->find(ANDROID_CONTROL_AE_EXPOSURE_COMPENSATION);
         if (entry.count == 1) {
+            int32_t compensation = entry.data.i32[0];
 
-            CameraMetadata& staticMeta = RkispDeviceManager::get_static_metadata();
-            float stepEV = 1 / 3.0f;
-
-            camera_metadata_entry_t _entry;
-            _entry = staticMeta.find(ANDROID_CONTROL_AE_COMPENSATION_STEP);
-            if (_entry.type == TYPE_RATIONAL || _entry.count == 1) {
-                const camera_metadata_rational_t* aeCompStep = _entry.data.r;
-                stepEV = (float)aeCompStep->numerator / aeCompStep->denominator;
+            if (compensation >= compensation_min && compensation <= compensation_max) {
+                aeCtrl->evCompensation = compensation;
             } else {
-                LOGE("@%s %d: can't get EV step, type:%d, count:%d", __FUNCTION__, __LINE__, _entry.type, _entry.count);
+                LOGE("@%s %d: evCompensation(%d) is out of range[%d,%d]", __FUNCTION__, __LINE__, compensation, compensation_min, compensation_max);
+                aeCtrl->evCompensation = 0;
             }
-
-            /* TODO  need add compensation limitation */
-            /* int32_t evCompensation = CLIP(entry.data.i32[0] + aeInputParams->extraEvShift, */
-            /*                               mMaxAeCompensation, mMinAeCompensation); */
-
-            aeCtrl->evCompensation = entry.data.i32[0];
 
             aeParams->ev_shift = aeCtrl->evCompensation * stepEV;
         } else {
@@ -262,17 +288,9 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
         aeParams->manual_analog_gain = 0;
 
         // ******** target fps
-        /* int32_t maxSupportedFps = INT_MAX; */
-        /* if (aeInputParams->maxSupportedFps != 0) */
-        /*     maxSupportedFps = aeInputParams->maxSupportedFps; */
         //# METADATA_Control control.aeTargetFpsRange done
         entry = settings->find(ANDROID_CONTROL_AE_TARGET_FPS_RANGE);
         if (entry.count == 2) {
-            /* int32_t minFps = MIN(entry.data.i32[0], maxSupportedFps); */
-            /* int32_t maxFps = MIN(entry.data.i32[1], maxSupportedFps); */
-            /* aeCtrl->aeTargetFpsRange[0] = minFps; */
-            /* aeCtrl->aeTargetFpsRange[1] = maxFps; */
-
             aeCtrl->aeTargetFpsRange[0] = entry.data.i32[0];
             aeCtrl->aeTargetFpsRange[1] = entry.data.i32[1];
         }
@@ -372,7 +390,14 @@ SettingsProcessor::fillAwbInputParams(const CameraMetadata *settings,
      */
 
     //# METADATA_Control control.awbRegion done
-    parseMeteringRegion(settings, ANDROID_CONTROL_AWB_REGIONS, &awbCfg->window);
+    CameraWindow awbRegion;
+    parseMeteringRegion(settings, ANDROID_CONTROL_AWB_REGIONS, &awbRegion);
+    if (awbRegion.isValid()) {
+        awbCfg->window.x_start = awbRegion.left();
+        awbCfg->window.y_start = awbRegion.top();
+        awbCfg->window.x_end = awbRegion.right();
+        awbCfg->window.y_end = awbRegion.bottom();
+    }
 
     /*
      * MANUAL COLOR CORRECTION

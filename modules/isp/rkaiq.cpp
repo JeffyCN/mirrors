@@ -17,6 +17,17 @@
 #include "rkaiq.h"
 
 using namespace XCam;
+_AiqInputParams::_AiqInputParams():
+    reqId(0)
+{
+    memset(&aeInputParams, 0, sizeof(AeInputParams));
+    memset(&awbInputParams, 0, sizeof(AwbInputParams));
+    memset(&afInputParams, 0, sizeof(AfInputParams));
+    memset(&aaaControls, 0, sizeof(AAAControls));
+    aeInputParams.aiqParams = this;
+    awbInputParams.aiqParams = this;
+    afInputParams.aiqParams = this;
+}
 void XCam::_AiqInputParams::init()
 {
 }

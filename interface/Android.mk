@@ -5,6 +5,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES +=\
 	rkisp_control_loop_impl.cpp \
 	settings_processor.cpp \
+	CameraWindow.cpp \
 	rkisp_dev_manager.cpp
 
 ifeq ($(IS_ANDROID_OS),false)

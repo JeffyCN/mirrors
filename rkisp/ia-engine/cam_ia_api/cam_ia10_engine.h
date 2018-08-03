@@ -60,6 +60,12 @@ class CamIA10Engine: public CamIA10EngineItf {
       int sensorInttime,
       float& halGain,
       float& halInttime);
+  virtual void mapHalWinToRef(
+      uint16_t in_hOff, uint16_t in_vOff,
+      uint16_t in_width, uint16_t in_height,
+      uint16_t drvWidth, uint16_t drvHeight,
+      uint16_t& out_hOff, uint16_t& out_vOff,
+      uint16_t& out_width, uint16_t& out_height);
   virtual void mapHalWinToIsp(
     uint16_t in_width, uint16_t in_height,
     uint16_t in_hOff, uint16_t in_vOff,
