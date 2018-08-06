@@ -87,6 +87,7 @@ RESULT CamIA10Engine::deinit() {
     if (hAwb) {
         if (awbDesc) {
             awbDesc->free_results(awbContext, NULL, 0);
+            awbDesc->destroy_context(awbContext);
         } 
         hAwb = NULL;
     }
@@ -94,6 +95,7 @@ RESULT CamIA10Engine::deinit() {
     if (hAf) {
         if (afDesc) {
             afDesc->free_results(afContext, NULL, 0);
+            afDesc->destroy_context(afContext);
         } 
 
         hAf = NULL;
@@ -101,6 +103,7 @@ RESULT CamIA10Engine::deinit() {
 
     if (aecDesc) {
         aecDesc->free_results(aecContext, NULL, 0);
+        aecDesc->destroy_context(aecContext);
     } 
 
     if (hAdpf) {

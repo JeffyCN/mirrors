@@ -1247,7 +1247,7 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
         XCAM_LOG_ERROR("%s:run ISP manual failed!", __func__);
     }
 
-    if (_ae_handler.ptr() && _awb_handler.ptr() && _inputParams.ptr()) {
+    if (_ae_handler && _awb_handler && _inputParams.ptr()) {
         _ae_handler->processAeMetaResults(_ia_results.aec, results);
         _awb_handler->processAwbMetaResults(_ia_results.awb, results);
     }
@@ -1304,29 +1304,29 @@ RKiqCompositor::generate_3a_configs (struct rkisp_parameters *parameters)
 void
 RKiqCompositor::set_ae_handler (SmartPtr<AiqAeHandler> &handler)
 {
-    XCAM_ASSERT (!_ae_handler.ptr());
-    _ae_handler = handler;
+    XCAM_ASSERT (!_ae_handler);
+    _ae_handler = handler.ptr();
 }
 
 void
 RKiqCompositor::set_awb_handler (SmartPtr<AiqAwbHandler> &handler)
 {
-    XCAM_ASSERT (!_awb_handler.ptr());
-    _awb_handler = handler;
+    XCAM_ASSERT (!_awb_handler);
+    _awb_handler = handler.ptr();
 }
 
 void
 RKiqCompositor::set_af_handler (SmartPtr<AiqAfHandler> &handler)
 {
-    XCAM_ASSERT (!_af_handler.ptr());
-    _af_handler = handler;
+    XCAM_ASSERT (!_af_handler);
+    _af_handler = handler.ptr();
 }
 
 void
 RKiqCompositor::set_common_handler (SmartPtr<AiqCommonHandler> &handler)
 {
     XCAM_ASSERT (!_common_handler.ptr());
-    _common_handler = handler;
+    _common_handler = handler.ptr();
 }
 
 

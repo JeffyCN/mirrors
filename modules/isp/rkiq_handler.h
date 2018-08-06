@@ -173,7 +173,7 @@ private:
     /**
      * To be handled by the AE state machine
      */
-    RkAEStateMachine     *mAeState;      /**< AE state machine */
+    SmartPtr<RkAEStateMachine>     mAeState;      /**< AE state machine */
 
     SmartPtr<X3aResult> mLastestAeresult;
 
@@ -219,7 +219,7 @@ protected:
      * To be handled by the AWB state machine
      */
     /**< AWB state machine */
-    RkAWBStateMachine    *mAwbState;
+    SmartPtr<RkAWBStateMachine>    mAwbState;
 
     CamIA10_AWB_Result_t                 _result;
     rk_aiq_awb_results                 _rkaiq_result;
@@ -343,10 +343,12 @@ private:
     SmartPtr<AiqInputParams> _inputParams;
 
     SmartPtr<IaIspAdaptor>     _adaptor;
-    SmartPtr<AiqAeHandler>     _ae_handler;
-    SmartPtr<AiqAwbHandler>    _awb_handler;
-    SmartPtr<AiqAfHandler>     _af_handler;
-    SmartPtr<AiqCommonHandler> _common_handler;
+    //can't be SmartPtr because AiqAeHandler hold an RKiqCompositor SmartPtr ref,
+    //if this point changes to SmartPtr, it will cause memory leak
+    AiqAeHandler*     _ae_handler;
+    AiqAwbHandler*    _awb_handler;
+    AiqAfHandler*     _af_handler;
+    AiqCommonHandler* _common_handler;
     ia_aiq                    *_ia_handle;
     ia_mkn                    *_ia_mkn;
     ia_aiq_pa_results         *_pa_result;
