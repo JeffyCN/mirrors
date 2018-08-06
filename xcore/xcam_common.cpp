@@ -26,6 +26,9 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <stdarg.h>
+#ifdef ANDROID_OS
+#include <cutils/properties.h>
+#endif
 
 static char log_file_name[XCAM_MAX_STR_SIZE] = {0};
 
