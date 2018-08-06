@@ -1,7 +1,7 @@
 ifeq ($(PLATFORM_SDK_VERSION),)
 IS_ANDROID_OS = false
 IS_RKISP = true
-IS_RKISP_v12 = true 
+IS_RKISP_v12 = true
 IS_RK_ISP10 = false
 IS_RK_ISP11 = false
 IS_NEED_SHARED_PTR = false
