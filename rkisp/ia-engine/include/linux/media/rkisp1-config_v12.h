@@ -728,7 +728,7 @@ struct cifisp_af_stat {
  * with ISP_HIST_XXX
  */
 struct cifisp_hist_stat {
-	unsigned short hist_bins[CIFISP_HIST_BIN_N_MAX];
+	unsigned int hist_bins[CIFISP_HIST_BIN_N_MAX];
 } __attribute__ ((packed));
 
 /**
