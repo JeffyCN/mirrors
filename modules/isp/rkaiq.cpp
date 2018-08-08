@@ -40,9 +40,11 @@ _AiqInputParams &_AiqInputParams::operator=(const _AiqInputParams &other)
     this->reqId = other.reqId;
     memcpy(&this->aeInputParams, &other.aeInputParams, sizeof(AeInputParams));
     memcpy(&this->awbInputParams, &other.awbInputParams, sizeof(AwbInputParams));
+    memcpy(&this->afInputParams, &other.afInputParams, sizeof(AfInputParams));
     memcpy(&this->aaaControls, &other.aaaControls, sizeof(AAAControls));
     this->aeInputParams.aiqParams = this;
     this->awbInputParams.aiqParams = this;
+    this->afInputParams.aiqParams = this;
     this->settings = other.settings;
 
     return *this;

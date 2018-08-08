@@ -54,10 +54,22 @@ typedef struct _AwbControls {
     uint8_t colorCorrectionAberrationMode;  /**< COLOR_CORRECTION_ABERRATION_MODE */
 } AwbControls;
 
+/**
+ * \struct AfControls
+ *
+ * Control Modes saved and passed back to control unit after reading
+ *
+ */
+typedef struct _AfControls {
+    uint8_t afMode; /**< AF_MODE */
+    uint8_t afTrigger; /**< AF_TRIGGER */
+} AfControls;
+
 typedef struct _AAAControls {
     uint8_t controlMode;    /**< MODE */
     AeControls  ae;
     AwbControls awb;
+    AfControls  af;
 } AAAControls;
 
 typedef struct _AeInputParams {
@@ -72,11 +84,18 @@ typedef struct _AwbInputParams {
     /* AwbInputParams()                    { CLEAR(*this); } */
 } AwbInputParams;
 
+typedef struct _AfInputParams {
+    XCamAfParam                        afParams;
+    AiqInputParams*                     aiqParams;
+    /* AfInputParams()                    { CLEAR(*this); } */
+} AfInputParams;
+
 typedef struct _AiqInputParams {
     _AiqInputParams &operator=(const _AiqInputParams &other);
     unsigned int    reqId;
     AeInputParams   aeInputParams;
     AwbInputParams  awbInputParams;
+    AfInputParams   afInputParams;
     AAAControls     aaaControls;
     CameraMetadata  settings;
     void init();

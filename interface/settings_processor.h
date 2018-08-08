@@ -46,9 +46,13 @@ private:
                                 AiqInputParams &aiqparams);
     XCamReturn processAeSettings(const CameraMetadata &settings,
                                AiqInputParams &aiqparams);
+    XCamReturn processAfSettings(const CameraMetadata &settings,
+                               AiqInputParams &aiqparams);
     XCamReturn fillAeInputParams(const CameraMetadata *settings,
                                  AiqInputParams *aiqInputParams);
     XCamReturn fillAwbInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillAfInputParams(const CameraMetadata *settings,
                                  AiqInputParams *aiqInputParams);
     void parseMeteringRegion(const CameraMetadata *settings,
                              int tagId, CameraWindow *meteringWindow);

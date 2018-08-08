@@ -387,6 +387,36 @@ AiqAwbHandler::processAwbMetaResults(CamIA10_AWB_Result_t awb_results, X3aResult
 }
 
 XCamReturn
+AiqAfHandler::processAfMetaResults(CamIA10_AFC_Result_t af_results, X3aResultList &output)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    SmartPtr<AiqInputParams> inputParams = _aiq_compositor->getAiqInputParams();
+    SmartPtr<XmetaResult> res;
+    LOGI("@%s %d: enter", __FUNCTION__, __LINE__);
+
+    for (X3aResultList::iterator iter = output.begin ();
+            iter != output.end ();)
+    {
+        if ((*iter)->get_type() == XCAM_3A_METADATA_RESULT_TYPE) {
+            res = (*iter).dynamic_cast_ptr<XmetaResult> ();
+            break ;
+        }
+        ++iter;
+        if (iter == output.end()) {
+            res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
+            output.push_back(res);
+        }
+    }
+
+    CameraMetadata* metadata = res->get_metadata_result();
+    struct CamIA10_SensorModeData &sensor_desc = _aiq_compositor->get_sensor_mode_data();
+    ParamsTranslate::convert_from_rkisp_af_result(&_rkaiq_result, &af_results, &sensor_desc);
+
+    ret = mAfState->processResult(_rkaiq_result, inputParams->afInputParams.afParams, *metadata);
+
+    return ret;
+}
+XCamReturn
 AiqAeHandler::analyze (X3aResultList &output, bool first)
 {
     XCAM_ASSERT (_analyzer);
@@ -858,6 +888,12 @@ AiqAwbHandler::get_current_estimate_cct ()
     return 0;//(uint32_t)_result.cct_estimate;
 }
 
+AiqAfHandler::AiqAfHandler (SmartPtr<RKiqCompositor> &aiq_compositor)
+    : _aiq_compositor (aiq_compositor)
+{
+    mAfState = new RkAFStateMachine();
+}
+
 XCamReturn
 AiqAfHandler::analyze (X3aResultList &output, bool first)
 {
@@ -994,6 +1030,8 @@ RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *
                                                      &_ia_dcfg.awb_cfg, &_ia_dcfg.sensor_mode);
         ParamsTranslate::convert_to_rkisp_aec_config(&_inputParams->aeInputParams.aeParams,
                                                      &_ia_dcfg.aec_cfg, &_ia_dcfg.sensor_mode);
+        ParamsTranslate::convert_to_rkisp_af_config(&_inputParams->afInputParams.afParams,
+                                                     &_ia_dcfg.afc_cfg, &_ia_dcfg.sensor_mode);
 
     }
     _isp10_engine->updateDynamicConfig(&_ia_dcfg);

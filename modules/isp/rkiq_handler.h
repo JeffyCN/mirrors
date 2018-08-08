@@ -34,6 +34,7 @@
 #include "x3a_analyzer_rkiq.h"
 #include "rkaiq.h"
 #include "awb_state_machine.h"
+#include "af_state_machine.h"
 #include "ae_state_machine.h"
 #include "x3a_meta_result.h"
 
@@ -229,17 +230,18 @@ class AiqAfHandler
     : public AfHandler
 {
 public:
-    explicit AiqAfHandler (SmartPtr<RKiqCompositor> &aiq_compositor)
-        : _aiq_compositor (aiq_compositor)
-    {}
+    explicit AiqAfHandler (SmartPtr<RKiqCompositor> &aiq_compositor);
     ~AiqAfHandler () {}
 
+    XCamReturn processAfMetaResults(CamIA10_AFC_Result_t af_results, X3aResultList &output);
     virtual XCamReturn analyze (X3aResultList &output, bool first = false);
 
 private:
     XCAM_DEAD_COPY (AiqAfHandler);
 
 protected:
+    rk_aiq_af_results                 _rkaiq_result;
+    SmartPtr<RkAFStateMachine>      mAfState;
     SmartPtr<RKiqCompositor>        _aiq_compositor;
 };
 

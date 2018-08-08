@@ -345,8 +345,66 @@ ParamsTranslate::convert_to_rkisp_awb_config(XCamAwbParam* awb_params,
         config->win.right_width= sensor_desc->sensor_output_width;
         config->win.bottom_height= sensor_desc->sensor_output_height;
     }
-
 }
 
+void
+ParamsTranslate::convert_to_rkisp_af_config(XCamAfParam* af_params,
+                                       HAL_AfcCfg* config, struct CamIA10_SensorModeData *sensor_desc) {
+    memset(config, 0, sizeof(HAL_AfcCfg));
+    switch (af_params->focus_mode) {
+    case AF_MODE_NOT_SET:
+        config->mode = HAL_AF_MODE_NOT_SET;
+        break;
+    case AF_MODE_AUTO:
+        config->mode = HAL_AF_MODE_AUTO;
+        break;
+    case AF_MODE_MACRO:
+        config->mode = HAL_AF_MODE_MACRO;
+        break;
+    case AF_MODE_INFINITY:
+        config->mode = HAL_AF_MODE_INFINITY;
+        break;
+    case AF_MODE_FIXED:
+        config->mode = HAL_AF_MODE_FIXED;
+        break;
+    case AF_MODE_EDOF:
+        config->mode = HAL_AF_MODE_EDOF;
+        break;
+    case AF_MODE_CONTINUOUS_VIDEO:
+        config->mode = HAL_AF_MODE_CONTINUOUS_VIDEO;
+        break;
+    case AF_MODE_CONTINUOUS_PICTURE:
+        config->mode = HAL_AF_MODE_CONTINUOUS_PICTURE;
+        break;
+    default :
+        LOGI("@%s %d: Do not support the Af mode :%d, set af mode to Auto mode", __FUNCTION__, __LINE__, af_params->focus_mode);
+        config->mode = HAL_AF_MODE_AUTO;
+        break;
+    }
+    config->oneshot_trigger =
+		af_params->trigger_new_search ? BOOL_TRUE : BOOL_FALSE;
+    /* config->win_num = af_params->focus_rect_cnt; */
+    config->win_num = 1;
+
+    config->win_a.left_hoff = af_params->focus_rect[0].left_hoff;
+    config->win_a.top_voff= af_params->focus_rect[0].top_voff;
+    config->win_a.right_width = af_params->focus_rect[0].right_width;
+    config->win_a.bottom_height = af_params->focus_rect[0].bottom_height;
+}
+
+void
+ParamsTranslate::convert_from_rkisp_af_result(rk_aiq_af_results* aiq_af_result,
+                                         CamIA10_AFC_Result_t* result, struct CamIA10_SensorModeData *sensor_desc) {
+
+    aiq_af_result->afc_config.enabled = true;
+    aiq_af_result->afc_config.num_afm_win = result->Window_Num;
+    aiq_af_result->afc_config.afm_win[0].h_offset = result->WindowA.h_offs;
+    aiq_af_result->afc_config.afm_win[0].width = result->WindowA.h_size;
+    aiq_af_result->afc_config.afm_win[0].v_offset = result->WindowA.v_offs;
+    aiq_af_result->afc_config.afm_win[0].height = result->WindowA.v_size;
+
+    aiq_af_result->afc_config.thres = result->Thres;
+    aiq_af_result->afc_config.var_shift = result->VarShift;
+}
 
 };

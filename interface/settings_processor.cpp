@@ -452,6 +452,171 @@ SettingsProcessor::fillAwbInputParams(const CameraMetadata *settings,
     return XCAM_RETURN_NO_ERROR;
 }
 
+/**
+ * Fills the input parameters for the AF algorithm from the capture request
+ * settings.
+ * Not all the input parameters will be filled. This class is supposed to
+ * be common for all PSL's that use Intel AIQ.
+ * There are some input parameters that will be filled by the PSL specific
+ * code.
+ * The field initialize here are the mandatory ones:
+ * frame_use: derived from the control.captureIntent
+ * focus_mode: derived from control.afMode
+ * focus_range: Focusing range. Only valid when focus_mode is
+ *              ia_aiq_af_operation_mode_auto.
+ * focus_metering_mode:  Metering mode (multispot, touch).
+ * flash_mode:  User setting for flash.
+ * trigger_new_search: if new AF search is needed, FALSE otherwise.
+ *                     Host is responsible for flag cleaning.
+ *
+ * There are two mandatory fields that will be filled by the PSL code:
+ * lens_position:  Current lens position.
+ * lens_movement_start_timestamp: Lens movement start timestamp in us.
+ *                          Timestamp is compared against statistics timestamp
+ *                          to determine if lens was moving during statistics
+ *                          collection.
+ *
+ * the OPTIONAL fields:
+ * manual_focus_parameters: Manual focus parameters (manual lens position,
+ *                          manual focusing distance). Used only if focus mode
+ *                          'ia_aiq_af_operation_mode_manual' is used. Implies
+ *                          that CONTROL_AF_MODE_OFF is used.
+ *
+ * focus_rect: Not filled here. The reason is that not all platforms implement
+ *             touch focus using this rectangle. PSL is responsible for filling
+ *             this rectangle or setting it to nullptr.
+ *
+ * \param[in]  settings capture request metadata settings
+ * \param[out] afInputParams struct with the input parameters for the
+ *              3A algorithms and also other specific settings parsed
+ *              in this method
+ *
+ * \return OK
+ */
+XCamReturn
+SettingsProcessor::fillAfInputParams(const CameraMetadata *settings,
+                                      AiqInputParams *aiqInputParams)
+{
+    XCamReturn status = XCAM_RETURN_ERROR_UNKNOWN;
+
+    if (settings == nullptr
+        || aiqInputParams == nullptr) {
+        LOGE("settings = %p, aiqInput = %p", settings, aiqInputParams);
+        return XCAM_RETURN_ERROR_UNKNOWN;
+    }
+
+    XCamAfParam &afCfg = aiqInputParams->afInputParams.afParams;
+    AfControls &afCtrl = aiqInputParams->aaaControls.af;
+
+    uint8_t &afMode = afCtrl.afMode;
+    uint8_t &trigger = afCtrl.afTrigger;
+
+    /* frame_use
+     *  BEWARE - THIS VALUE WILL NOT WORK WITH AIQ WHICH RUNS PRE-CAPTURE
+     *  WITH ia_aiq_frame_use_still, WHEN HAL GETS PREVIEW INTENTS
+     *  DURING PRE-CAPTURE!!!
+     */
+    /* afCfg.frame_use = getFrameUseFromIntent(settings); */
+
+    camera_metadata_ro_entry entry;
+    //# METADATA_Control control.afTrigger done
+    entry = settings->find(ANDROID_CONTROL_AF_TRIGGER);
+    if (entry.count == 1) {
+        trigger = entry.data.u8[0];
+        if (trigger == ANDROID_CONTROL_AF_TRIGGER_START) {
+            afCfg.trigger_new_search = true;
+        } else if (trigger == ANDROID_CONTROL_AF_TRIGGER_CANCEL) {
+            afCfg.trigger_new_search = false;
+        }
+        // Otherwise should be IDLE; no effect.
+    } else {
+        // trigger not present in settigns, default to IDLE
+        trigger = ANDROID_CONTROL_AF_TRIGGER_IDLE;
+    }
+
+    afMode = ANDROID_CONTROL_AF_MODE_AUTO;
+    entry = settings->find(ANDROID_CONTROL_AF_MODE);
+    if (entry.count == 1) {
+        afMode = entry.data.u8[0];
+    }
+    if (aiqInputParams->aaaControls.controlMode == ANDROID_CONTROL_MODE_OFF)
+        afMode = ANDROID_CONTROL_AF_MODE_OFF;
+
+    switch (afMode) {
+        case ANDROID_CONTROL_AF_MODE_CONTINUOUS_VIDEO:
+            afCfg.focus_mode = AF_MODE_CONTINUOUS_VIDEO;
+            afCfg.focus_range = AF_RANGE_NORMAL;
+            afCfg.focus_metering_mode = AF_METERING_AUTO;
+            break;
+        case ANDROID_CONTROL_AF_MODE_CONTINUOUS_PICTURE:
+            afCfg.focus_mode = AF_MODE_CONTINUOUS_PICTURE;
+            afCfg.focus_range = AF_RANGE_NORMAL;
+            afCfg.focus_metering_mode = AF_METERING_AUTO;
+            break;
+        case ANDROID_CONTROL_AF_MODE_MACRO:
+            // TODO: can switch to operation_mode_auto,
+            // when frame_use is not reset by value from getFrameUseFromIntent();
+            afCfg.focus_mode = AF_MODE_MACRO;
+            afCfg.focus_range = AF_RANGE_MACRO;
+            afCfg.focus_metering_mode = AF_METERING_AUTO;
+            break;
+        case ANDROID_CONTROL_AF_MODE_EDOF:
+            afCfg.focus_mode = AF_MODE_EDOF;
+            afCfg.focus_range = AF_RANGE_EXTENDED;
+            afCfg.focus_metering_mode = AF_METERING_AUTO;
+            break;
+        case ANDROID_CONTROL_AF_MODE_OFF:
+            // Generally the infinity focus is obtained as 0.0f manual
+            afCfg.focus_mode = AF_MODE_EDOF;
+            afCfg.focus_range = AF_RANGE_EXTENDED;
+            afCfg.focus_metering_mode = AF_METERING_AUTO;
+            break;
+        case ANDROID_CONTROL_AF_MODE_AUTO:
+            // TODO: switch to operation_mode_auto, similar to MACRO AF
+            afCfg.focus_mode = AF_MODE_AUTO;
+            afCfg.focus_range = AF_RANGE_EXTENDED;
+            afCfg.focus_metering_mode = AF_METERING_AUTO;
+            break;
+        default:
+            LOGE("ERROR @%s: Unknown focus mode %d- using auto",
+                    __FUNCTION__, afMode);
+            afCfg.focus_mode = AF_MODE_AUTO;
+            afCfg.focus_range = AF_RANGE_EXTENDED;
+            afCfg.focus_metering_mode = AF_METERING_AUTO;
+            break;
+    }
+
+    /* TODO manual af*/
+    /* if (afMode == ANDROID_CONTROL_AF_MODE_OFF) { */
+    /*     status = parseFocusDistance(*settings, afCfg); */
+    /*     if (status != NO_ERROR) { */
+    /*         afCfg.manual_focus_parameters = nullptr; */
+    /*         LOGE("Focus distance parsing failed"); */
+    /*     } */
+    /* } else { */
+    /*     afCfg.manual_focus_parameters = nullptr; */
+    /* } */
+
+    /* flash mode not support, set default value for aiq af*/
+    afCfg.flash_mode = AF_FLASH_MODE_OFF;
+
+    /**
+     * AF region parsing
+     * we only support one for the time being
+     */
+    //# METADATA_Control control.afRegions done
+    CameraWindow afRegion;
+    parseMeteringRegion(settings, ANDROID_CONTROL_AF_REGIONS, &afRegion);
+    if (afRegion.isValid()) {
+        afCfg.focus_rect[0].left_hoff = afRegion.left();
+        afCfg.focus_rect[0].top_voff = afRegion.top();
+        afCfg.focus_rect[0].right_width = afRegion.width();
+        afCfg.focus_rect[0].bottom_height = afRegion.height();
+    }
+
+    return XCAM_RETURN_NO_ERROR;
+}
+
 XCamReturn
 SettingsProcessor::processAeSettings(const CameraMetadata &settings,
                              AiqInputParams &aiqparams) {
@@ -471,6 +636,15 @@ SettingsProcessor::processAwbSettings(const CameraMetadata &settings,
 }
 
 XCamReturn
+SettingsProcessor::processAfSettings(const CameraMetadata &settings,
+                              AiqInputParams &aiqparams) {
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    ret = fillAfInputParams(&settings, &aiqparams);
+
+    return ret;
+}
+
+XCamReturn
 SettingsProcessor::processRequestSettings(const CameraMetadata &settings,
                              AiqInputParams &aiqparams) {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
@@ -479,6 +653,9 @@ SettingsProcessor::processRequestSettings(const CameraMetadata &settings,
         return ret;
 
     if ((ret = processAwbSettings(settings, aiqparams)) != XCAM_RETURN_NO_ERROR)
+        return ret;
+
+    if ((ret = processAfSettings(settings, aiqparams)) != XCAM_RETURN_NO_ERROR)
         return ret;
     return ret;
 }
