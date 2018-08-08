@@ -50,6 +50,7 @@ enum LOG_LEVEL {
     xcam_print_log (INFO_LEVEL, "XCAM INFO (%d) %s:%d: " format "\n", getpid(), basename((char*)__FILE__), __LINE__, ## __VA_ARGS__)
 #endif
 
+#define VERBOSE
 #ifdef VERBOSE
 #ifndef XCAM_LOG_VERBOSE
 #define XCAM_LOG_VERBOSE(format, ...)   \
