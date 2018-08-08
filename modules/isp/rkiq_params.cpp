@@ -41,17 +41,21 @@ static int dpcc_param_check(struct cifisp_dpcc_config* arg)
     unsigned int i = 0;
     struct cifisp_dpcc_methods_config* method;
     if (arg->mode > CIF_ISP_DPCC_MODE_MAX || arg->output_mode > CIF_ISP_DPCC_OUTPUTMODE_MAX || arg->set_use > CIF_ISP_DPCC_SETUSE_MAX) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         goto err;
     }
     if (arg->ro_limits & CIF_ISP_DPCC_RO_LIMIT_RESERVED || arg->rnd_offs & CIF_ISP_DPCC_RND_OFFS_RESERVED) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         goto err;
     }
     method = &arg->methods[i];
     for (i = 0; i < CIFISP_DPCC_METHODS_MAX; i++) {
         if ((method->method & CIF_ISP_DPCC_METHODS_SET_RESERVED) || (method->line_thresh & CIF_ISP_DPCC_LINE_THRESH_RESERVED) || (method->line_mad_fac & CIF_ISP_DPCC_LINE_MAD_FAC_RESERVED)) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             goto err;
         }
         if ((method->pg_fac & CIF_ISP_DPCC_PG_FAC_RESERVED) || (method->rnd_thresh & CIF_ISP_DPCC_RND_THRESH_RESERVED) || (method->rg_fac & CIF_ISP_DPCC_RG_FAC_RESERVED)) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             goto err;
         }
         method++;
@@ -63,14 +67,22 @@ err:
 
 static int bls_param_check(struct cifisp_bls_config* arg)
 {
-    if (!BLS_START_H_MAX_IS_VALID(arg->bls_window1.h_offs) || !BLS_STOP_H_MAX_IS_VALID(arg->bls_window1.h_size) || !BLS_START_V_MAX_IS_VALID(arg->bls_window1.v_offs) || !BLS_STOP_V_MAX_IS_VALID(arg->bls_window1.v_size))
+    if (!BLS_START_H_MAX_IS_VALID(arg->bls_window1.h_offs) || !BLS_STOP_H_MAX_IS_VALID(arg->bls_window1.h_size) || !BLS_START_V_MAX_IS_VALID(arg->bls_window1.v_offs) || !BLS_STOP_V_MAX_IS_VALID(arg->bls_window1.v_size)) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         goto err;
-    if (!BLS_START_H_MAX_IS_VALID(arg->bls_window2.h_offs) || !BLS_STOP_H_MAX_IS_VALID(arg->bls_window2.h_size) || !BLS_START_V_MAX_IS_VALID(arg->bls_window2.v_offs) || !BLS_STOP_V_MAX_IS_VALID(arg->bls_window2.v_size))
+    }
+    if (!BLS_START_H_MAX_IS_VALID(arg->bls_window2.h_offs) || !BLS_STOP_H_MAX_IS_VALID(arg->bls_window2.h_size) || !BLS_START_V_MAX_IS_VALID(arg->bls_window2.v_offs) || !BLS_STOP_V_MAX_IS_VALID(arg->bls_window2.v_size)) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         goto err;
-    if (!BLS_SAMPLE_MAX_IS_VALID(arg->bls_samples))
+    }
+    if (!BLS_SAMPLE_MAX_IS_VALID(arg->bls_samples)) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         goto err;
-    if (!BLS_FIX_SUB_IS_VALID(arg->fixed_val.r) || !BLS_FIX_SUB_IS_VALID(arg->fixed_val.gr) || !BLS_FIX_SUB_IS_VALID(arg->fixed_val.gb) || !BLS_FIX_SUB_IS_VALID(arg->fixed_val.b))
+    }
+    if (!BLS_FIX_SUB_IS_VALID(arg->fixed_val.r) || !BLS_FIX_SUB_IS_VALID(arg->fixed_val.gr) || !BLS_FIX_SUB_IS_VALID(arg->fixed_val.gb) || !BLS_FIX_SUB_IS_VALID(arg->fixed_val.b)) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         goto err;
+    }
     return 0;
 err:
     return -1;
@@ -80,10 +92,12 @@ static int sdg_param_check(struct cifisp_sdg_config* arg)
 {
     int i;
     if (arg->xa_pnts.gamma_dx0 & CIFISP_DEGAMMA_X_RESERVED || arg->xa_pnts.gamma_dx1 & CIFISP_DEGAMMA_X_RESERVED) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
     for (i = 0; i < CIFISP_DEGAMMA_CURVE_SIZE; i++) {
         if ((arg->curve_b.gamma_y[i] & CIFISP_DEGAMMA_Y_RESERVED) || (arg->curve_r.gamma_y[i] & CIFISP_DEGAMMA_Y_RESERVED) || (arg->curve_g.gamma_y[i] & CIFISP_DEGAMMA_Y_RESERVED)) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             return -1;
         }
     }
@@ -95,16 +109,19 @@ static int lsc_param_check(struct cifisp_lsc_config* arg)
     int i;
     for (i = 0; i < CIFISP_LSC_SIZE_TBL_SIZE; i++) {
         if ((arg->x_size_tbl[i] & CIF_ISP_LSC_SECT_SIZE_RESERVED) || (arg->y_size_tbl[i] & CIF_ISP_LSC_SECT_SIZE_RESERVED)) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             return -1;
         }
     }
     for (i = 0; i < CIFISP_LSC_GRAD_TBL_SIZE; i++) {
         if ((arg->x_grad_tbl[i] & CIF_ISP_LSC_GRAD_RESERVED) || (arg->y_grad_tbl[i] & CIF_ISP_LSC_GRAD_RESERVED)) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             return -1;
         }
     }
     for (i = 0; i < CIFISP_LSC_DATA_TBL_SIZE; i++) {
         if ((arg->r_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED) || (arg->gr_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED) || (arg->gb_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED) || (arg->b_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED)) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             return -1;
         }
     }
@@ -114,10 +131,14 @@ static int lsc_param_check(struct cifisp_lsc_config* arg)
 static int awb_gain_param_check(struct cifisp_awb_gain_config* arg)
 {
     if (arg->gain_red > CIF_ISP_AWB_GAINS_MAX_VAL || arg->gain_green_r > CIF_ISP_AWB_GAINS_MAX_VAL || arg->gain_green_b > CIF_ISP_AWB_GAINS_MAX_VAL || arg->gain_blue > CIF_ISP_AWB_GAINS_MAX_VAL) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
 
     if (arg->gain_red == 0 || arg->gain_green_r == 0 || arg->gain_green_b == 0 || arg->gain_blue == 0) {
+        LOGE("awb gain %d,%d,%d,%d",
+             arg->gain_red,arg->gain_green_r, arg->gain_green_b,arg->gain_blue);
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
 
@@ -127,6 +148,7 @@ static int awb_gain_param_check(struct cifisp_awb_gain_config* arg)
 static int flt_param_check(struct cifisp_flt_config* arg)
 {
     if (arg->mode > CIF_ISP_FLT_MODE_MAX || arg->grn_stage1 > CIF_ISP_FLT_GREEN_STAGE1_MAX || arg->chr_v_mode > CIF_ISP_FLT_CHROMA_MODE_MAX || arg->chr_h_mode > CIF_ISP_FLT_CHROMA_MODE_MAX || arg->thresh_sh0 & CIF_ISP_FLT_THREAD_RESERVED || arg->thresh_sh1 & CIF_ISP_FLT_THREAD_RESERVED || arg->thresh_bl0 & CIF_ISP_FLT_THREAD_RESERVED || arg->thresh_bl1 & CIF_ISP_FLT_THREAD_RESERVED || arg->fac_bl0 & CIF_ISP_FLT_FAC_RESERVED || arg->fac_bl1 & CIF_ISP_FLT_FAC_RESERVED || arg->fac_sh0 & CIF_ISP_FLT_FAC_RESERVED || arg->fac_sh1 & CIF_ISP_FLT_FAC_RESERVED || arg->fac_mid & CIF_ISP_FLT_FAC_RESERVED || arg->lum_weight & CIF_ISP_FLT_LUM_WEIGHT_RESERVED) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
     return 0;
@@ -135,6 +157,7 @@ static int flt_param_check(struct cifisp_flt_config* arg)
 static int ctk_param_check(struct cifisp_ctk_config* arg)
 {
     if (arg->coeff0 & CIF_ISP_CTK_COEFF_RESERVED || arg->coeff1 & CIF_ISP_CTK_COEFF_RESERVED || arg->coeff2 & CIF_ISP_CTK_COEFF_RESERVED || arg->coeff3 & CIF_ISP_CTK_COEFF_RESERVED || arg->coeff4 & CIF_ISP_CTK_COEFF_RESERVED || arg->coeff5 & CIF_ISP_CTK_COEFF_RESERVED || arg->coeff6 & CIF_ISP_CTK_COEFF_RESERVED || arg->coeff7 & CIF_ISP_CTK_COEFF_RESERVED || arg->coeff8 & CIF_ISP_CTK_COEFF_RESERVED || arg->ct_offset_r & CIF_ISP_XTALK_OFFSET_RESERVED || arg->ct_offset_g & CIF_ISP_XTALK_OFFSET_RESERVED || arg->ct_offset_b & CIF_ISP_XTALK_OFFSET_RESERVED) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
     return 0;
@@ -143,6 +166,7 @@ static int ctk_param_check(struct cifisp_ctk_config* arg)
 static int goc_param_check(struct cifisp_goc_config* arg)
 {
     if (arg->mode > CIF_ISP_GOC_MODE_MAX)
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     return 0;
 }
@@ -150,6 +174,7 @@ static int goc_param_check(struct cifisp_goc_config* arg)
 static int cproc_param_check(struct cifisp_cproc_config* arg)
 {
     if (arg->c_out_range & CIF_C_PROC_CTRL_RESERVED || arg->y_out_range & CIF_C_PROC_CTRL_RESERVED || arg->y_in_range & CIF_C_PROC_CTRL_RESERVED || arg->contrast & CIF_C_PROC_CONTRAST_RESERVED || arg->brightness & CIF_C_PROC_BRIGHTNESS_RESERVED || arg->sat & CIF_C_PROC_SATURATION_RESERVED || arg->hue & CIF_C_PROC_HUE_RESERVED) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
     return 0;
@@ -168,6 +193,7 @@ static int ie_param_check(struct cifisp_ie_config* arg)
     case V4L2_COLORFX_SET_CBCR:
         return 0;
     default:
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
 }
@@ -178,30 +204,36 @@ static int dpf_param_check(struct cifisp_dpf_config* arg)
     int i;
     /* Parameter check */
     if (arg->gain.mode >= CIFISP_DPF_GAIN_USAGE_MAX || arg->gain.mode < CIFISP_DPF_GAIN_USAGE_DISABLED || arg->gain.nf_b_gain & CIF_ISP_DPF_NF_GAIN_RESERVED || arg->gain.nf_r_gain & CIF_ISP_DPF_NF_GAIN_RESERVED || arg->gain.nf_gr_gain & CIF_ISP_DPF_NF_GAIN_RESERVED || arg->gain.nf_gb_gain & CIF_ISP_DPF_NF_GAIN_RESERVED) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         retval = -1;
         goto end;
     }
     for (i = 0; i < CIFISP_DPF_MAX_SPATIAL_COEFFS; i++) {
         if (arg->g_flt.spatial_coeff[i] > CIF_ISP_DPF_SPATIAL_COEFF_MAX) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             retval = -1;
             goto end;
         }
         if (arg->rb_flt.spatial_coeff[i] > CIF_ISP_DPF_SPATIAL_COEFF_MAX) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             retval = -1;
             goto end;
         }
     }
     if (arg->rb_flt.fltsize != CIFISP_DPF_RB_FILTERSIZE_9x9 && arg->rb_flt.fltsize != CIFISP_DPF_RB_FILTERSIZE_13x9) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         retval = -1;
         goto end;
     }
     for (i = 0; i < CIFISP_DPF_MAX_NLF_COEFFS; i++) {
         if (arg->nll.coeff[i] > CIF_ISP_DPF_NLL_COEFF_N_MAX) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             retval = -1;
             goto end;
         }
     }
     if (arg->nll.scale_mode != CIFISP_NLL_SCALE_LINEAR && arg->nll.scale_mode != CIFISP_NLL_SCALE_LOGARITHMIC) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         retval = -1;
         goto end;
     }
@@ -212,6 +244,7 @@ end:
 static int awb_meas_param_check(struct cifisp_awb_meas_config* arg)
 {
     if (arg->awb_mode > CIFISP_AWB_MODE_YCBCR || arg->awb_wnd.h_offs > CIF_ISP_AWB_WINDOW_OFFSET_MAX || arg->awb_wnd.v_offs > CIF_ISP_AWB_WINDOW_OFFSET_MAX || arg->awb_wnd.h_size > CIF_ISP_AWB_WINDOW_MAX_SIZE || arg->awb_wnd.v_size > CIF_ISP_AWB_WINDOW_MAX_SIZE || arg->frames > CIFISP_AWB_MAX_FRAMES) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
     return 0;
@@ -221,10 +254,12 @@ static int afm_param_check(struct cifisp_afc_config* arg)
 {
     int i;
     if (arg->num_afm_win > CIFISP_AFM_MAX_WINDOWS || arg->thres & CIF_ISP_AFM_THRES_RESERVED || arg->var_shift & CIF_ISP_AFM_VAR_SHIFT_RESERVED) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
     for (i = 0; i < arg->num_afm_win; i++) {
         if (arg->afm_win[i].h_offs & CIF_ISP_AFM_WINDOW_X_RESERVED || arg->afm_win[i].h_offs < CIF_ISP_AFM_WINDOW_X_MIN || arg->afm_win[i].v_offs & CIF_ISP_AFM_WINDOW_Y_RESERVED || arg->afm_win[i].v_offs < CIF_ISP_AFM_WINDOW_Y_MIN || arg->afm_win[i].h_size & CIF_ISP_AFM_WINDOW_X_RESERVED || arg->afm_win[i].v_size & CIF_ISP_AFM_WINDOW_Y_RESERVED) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             return -1;
         }
     }
@@ -235,10 +270,12 @@ static int hst_param_check(struct cifisp_hst_config* arg)
 {
     int i;
     if (arg->mode > CIFISP_HISTOGRAM_MODE_Y_HISTOGRAM || arg->histogram_predivider > CIF_ISP_MAX_HIST_PREDIVIDER || arg->meas_window.v_offs & CIF_ISP_HIST_WINDOW_OFFSET_RESERVED || arg->meas_window.h_offs & CIF_ISP_HIST_WINDOW_OFFSET_RESERVED || (arg->meas_window.v_size / (CIF_ISP_HIST_ROW_NUM - 1)) & CIF_ISP_HIST_WINDOW_SIZE_RESERVED || (arg->meas_window.h_size / (CIF_ISP_HIST_COLUMN_NUM - 1)) & CIF_ISP_HIST_WINDOW_SIZE_RESERVED) {
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
     for (i = 0; i < CIFISP_HISTOGRAM_WEIGHT_GRIDS_SIZE; i++) {
         if (arg->hist_weight[i] & CIF_ISP_HIST_WEIGHT_RESERVED) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             return -1;
         }
     }
@@ -247,7 +284,18 @@ static int hst_param_check(struct cifisp_hst_config* arg)
 
 static int aec_param_check(struct cifisp_aec_config* arg)
 {
-    if (arg->meas_window.h_offs > CIF_ISP_EXP_MAX_HOFFS || arg->meas_window.h_size > CIF_ISP_EXP_MAX_HSIZE || arg->meas_window.h_size < CIF_ISP_EXP_MIN_HSIZE || arg->meas_window.v_offs > CIF_ISP_EXP_MAX_VOFFS || arg->meas_window.v_size > CIF_ISP_EXP_MAX_VSIZE || arg->meas_window.v_size < CIF_ISP_EXP_MIN_VSIZE || arg->mode > CIFISP_EXP_MEASURING_MODE_1) {
+    if (arg->meas_window.h_offs > CIF_ISP_EXP_MAX_HOFFS ||
+        arg->meas_window.h_size > CIF_ISP_EXP_MAX_HSIZE ||
+        arg->meas_window.h_size < CIF_ISP_EXP_MIN_HSIZE ||
+        arg->meas_window.v_offs > CIF_ISP_EXP_MAX_VOFFS ||
+        arg->meas_window.v_size > CIF_ISP_EXP_MAX_VSIZE ||
+        arg->meas_window.v_size < CIF_ISP_EXP_MIN_VSIZE ||
+        arg->mode > CIFISP_EXP_MEASURING_MODE_1) {
+        LOGE("aec meas win %dx%d(%dx%d)",
+             arg->meas_window.h_size, arg->meas_window.v_size,
+             arg->meas_window.h_offs, arg->meas_window.v_offs
+             );
+        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
     return 0;
@@ -255,7 +303,8 @@ static int aec_param_check(struct cifisp_aec_config* arg)
 
 XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg* configs)
 {
-    int ret;
+    int ret = 0;
+
     if (configs->module_cfg_update & CIFISP_MODULE_DPCC) {
         ret = dpcc_param_check(&configs->others.dpcc_config);
         if (ret < 0)
@@ -951,7 +1000,7 @@ XCamReturn rkisp1_convert_results(
 {
 #define CONVERT_RET(id, mask, cfg, ret, last) \
     XCAM_LOG_DEBUG("convert ret id: %d, en: %d, lasten: %d", id, aiq_results->enabled[id], last_aiq_results.enabled[id]); \
-    if (memcmp(&ret, &last, sizeof(ret)) != 0) { \
+    if ((aiq_results->active_configs & mask) && (memcmp(&ret, &last, sizeof(ret)) != 0)) { \
         if (aiq_results->enabled[id] != last_aiq_results.enabled[id]) \
             isp_cfg->module_en_update |= mask; \
         isp_cfg->module_cfg_update |= mask; \
