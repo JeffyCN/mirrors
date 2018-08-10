@@ -956,7 +956,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	rgaReg.render_mode |= RGA_BUF_GEM_TYPE_DMA;
 #endif
 #endif
-	if(src->sync_mode != RGA_BLIT_SYNC)
+	if(src->sync_mode == RGA_BLIT_ASYNC)
 	{
 		sync_mode = src->sync_mode;
 	}
