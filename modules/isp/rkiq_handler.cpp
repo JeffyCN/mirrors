@@ -1199,7 +1199,7 @@ RKiqCompositor::set_af_handler (SmartPtr<AiqAfHandler> &handler)
 void
 RKiqCompositor::set_common_handler (SmartPtr<AiqCommonHandler> &handler)
 {
-    XCAM_ASSERT (!_common_handler.ptr());
+    XCAM_ASSERT (!_common_handler);
     _common_handler = handler.ptr();
 }
 
