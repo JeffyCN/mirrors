@@ -6,8 +6,6 @@ busybox killall bluealsa
 
 bluealsa -p hfp-hf &
 
-echo ATA | bluealsa-rfcomm --hci=hci0 $( hcitool con | sed -n 2p |busybox tr -d "\n" | busybox cut -b 8-25)
+arecord -Dhw:1,0 -r 8000 -c 2 -f S16_LE |aplay -Dhw:0,0 -r 8000 -c 2 -f S16_LE &
 
-arecord -Dhw:1,0 -r 8000 -c 2 -f S16_LE |aplay -Dhw:0,0 -r 8000 -c 2 -f S16_LE
-
-arecord -Dhw:0,0 -r 8000 -f S16_LE -c 2 |aplay -D hw:0,1 -r 8000 -c 2 -f S16_LE
+arecord -D 2mic_loopback -r 8000 -f S16_LE -c 2 --period-size 128 --buffer-size 65536|aplay -D hw:1,0 -r 8000 -c 2 -f S16_LE &

@@ -1,0 +1,2 @@
+#!/bin/sh
+echo ATA | bluealsa-rfcomm --hci=hci0 $( hcitool con | sed -n 2p |busybox tr -d "\n" | busybox cut -b 8-25)
