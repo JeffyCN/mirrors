@@ -43,6 +43,16 @@ int RkRgaGetRgaFormat(int format)
 			return RK_FORMAT_YCbCr_420_SP;
 		case RK_FORMAT_YCrCb_420_P:
 			return RK_FORMAT_YCrCb_420_P;
+		case RK_FORMAT_YCbCr_422_SP:
+			return RK_FORMAT_YCbCr_422_SP;
+        case RK_FORMAT_YCbCr_422_P:
+			return RK_FORMAT_YCbCr_422_P;
+        case RK_FORMAT_YCbCr_420_P:
+			return RK_FORMAT_YCbCr_420_P;
+        case RK_FORMAT_YCrCb_422_SP:
+			return RK_FORMAT_YCrCb_422_SP;
+        case RK_FORMAT_YCrCb_422_P:
+			return RK_FORMAT_YCrCb_422_P;
 		case RK_FORMAT_YCbCr_420_SP_10B:
 			return RK_FORMAT_YCbCr_420_SP_10B; //0x20
 		default:

@@ -43,6 +43,12 @@ float get_bpp_from_format(int format)
         case RK_FORMAT_BGRA_8888:
             bpp = 4;
             break;
+        case RK_FORMAT_YCbCr_422_SP:
+        case RK_FORMAT_YCbCr_422_P:
+        case RK_FORMAT_YCbCr_420_SP:
+        case RK_FORMAT_YCbCr_420_P:
+        case RK_FORMAT_YCrCb_422_SP:
+        case RK_FORMAT_YCrCb_422_P:
         case RK_FORMAT_YCrCb_420_P:
 	    case RK_FORMAT_YCrCb_420_SP:
             bpp = 1.5;
@@ -102,6 +108,24 @@ int get_string_by_format(char *value, int format)
             break;
         case RK_FORMAT_YCrCb_420_P:
             memcpy(value, "crcb420p", sizeof("crcb420p"));
+            break;
+        case RK_FORMAT_YCbCr_422_SP:
+            memcpy(value, "cbcr422sp", sizeof("cbcr422sp"));
+            break;
+        case RK_FORMAT_YCbCr_422_P:
+            memcpy(value, "cbcr422p", sizeof("cbcr422p"));
+            break;
+        case RK_FORMAT_YCbCr_420_SP:
+            memcpy(value, "cbcr420sp", sizeof("cbcr420sp"));
+            break;
+        case RK_FORMAT_YCbCr_420_P:
+            memcpy(value, "cbcr420p", sizeof("cbcr420p"));
+            break;
+        case RK_FORMAT_YCrCb_422_SP:
+            memcpy(value, "crcb422sp", sizeof("crcb422sp"));
+            break;
+        case RK_FORMAT_YCrCb_422_P:
+            memcpy(value, "crcb422p", sizeof("crcb422p"));
             break;
         //case RK_FORMAT_YCrCb_NV12:
             //memcpy(value, "nv12", sizeof("nv12"));
