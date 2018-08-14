@@ -31,7 +31,7 @@ public:
     static void convert_from_rkisp_awb_result(rk_aiq_awb_results* aiq_awb_result,
                                        CamIA10_AWB_Result_t* result, struct CamIA10_SensorModeData *sensor_desc);
     static void convert_from_rkisp_af_result(rk_aiq_af_results* aiq_af_result,
-                                       CamIA10_AFC_Result_t* result, struct CamIA10_SensorModeData *sensor_desc);
+                                       XCam3aResultFocus* result, struct CamIA10_SensorModeData *sensor_desc);
 
     static void convert_to_rkisp_aec_config(XCamAeParam* aec_params,
                                             HAL_AecCfg* config, struct CamIA10_SensorModeData *sensor_desc);

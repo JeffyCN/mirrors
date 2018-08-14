@@ -286,7 +286,7 @@ void ParamsTranslate::convert_to_rkisp_aec_config( XCamAeParam* aec_params,
     config->frame_time_us_min = aec_params->exposure_time_min;
     config->frame_time_us_max = aec_params->exposure_time_max;
 
-    LOGI("@%s %d: flk:%d, mode:%d, meter_mode:%d, win(%d,%d,%d,%d), bias:%d, min:%d, max:%d ", __FUNCTION__, __LINE__,
+    LOGI("@%s %d: aec_config, flk:%d, mode:%d, meter_mode:%d, win(%d,%d,%d,%d), bias:%d, min:%d, max:%d ", __FUNCTION__, __LINE__,
          config->flk, config->mode, config->meter_mode,
          config->win.left_hoff, config->win.top_voff, config->win.right_width, config->win.bottom_height,
          config->ae_bias, config->frame_time_us_min, config->frame_time_us_max);
@@ -390,21 +390,19 @@ ParamsTranslate::convert_to_rkisp_af_config(XCamAfParam* af_params,
     config->win_a.top_voff= af_params->focus_rect[0].top_voff;
     config->win_a.right_width = af_params->focus_rect[0].right_width;
     config->win_a.bottom_height = af_params->focus_rect[0].bottom_height;
+    LOGI("@%s %d: af_config, mode:%d, new_search:%d, win(%d,%d,%d,%d)", __FUNCTION__, __LINE__, config->mode, config->oneshot_trigger,
+         config->win_a.left_hoff, config->win_a.top_voff, config->win_a.right_width, config->win_a.bottom_height);
 }
 
 void
 ParamsTranslate::convert_from_rkisp_af_result(rk_aiq_af_results* aiq_af_result,
-                                         CamIA10_AFC_Result_t* result, struct CamIA10_SensorModeData *sensor_desc) {
+                                         XCam3aResultFocus* result, struct CamIA10_SensorModeData *sensor_desc) {
 
-    aiq_af_result->afc_config.enabled = true;
-    aiq_af_result->afc_config.num_afm_win = result->Window_Num;
-    aiq_af_result->afc_config.afm_win[0].h_offset = result->WindowA.h_offs;
-    aiq_af_result->afc_config.afm_win[0].width = result->WindowA.h_size;
-    aiq_af_result->afc_config.afm_win[0].v_offset = result->WindowA.v_offs;
-    aiq_af_result->afc_config.afm_win[0].height = result->WindowA.v_size;
-
-    aiq_af_result->afc_config.thres = result->Thres;
-    aiq_af_result->afc_config.var_shift = result->VarShift;
+    aiq_af_result->afc_config = result->afc_config;
+    aiq_af_result->status = result->status;
+    aiq_af_result->current_focus_distance = result->current_focus_distance;
+    aiq_af_result->next_lens_position = result->next_lens_position;
+    aiq_af_result->final_lens_position_reached = result->final_lens_position_reached;
 }
 
 };

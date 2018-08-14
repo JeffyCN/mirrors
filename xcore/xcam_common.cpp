@@ -126,7 +126,7 @@ void xcam_print_log (int level, const char* format, ...) {
         return ;
     }
 #ifdef ANDROID_OS
-    char property_value[50] = {0};
+    char property_value[PROPERTY_VALUE_MAX] = {0};
 
     property_get("persist.camera.engine.log", property_value, "0");
     int cam_engine_log_level = atoi(property_value);

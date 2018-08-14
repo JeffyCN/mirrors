@@ -291,12 +291,22 @@ static int aec_param_check(struct cifisp_aec_config* arg)
         arg->meas_window.v_size > CIF_ISP_EXP_MAX_VSIZE ||
         arg->meas_window.v_size < CIF_ISP_EXP_MIN_VSIZE ||
         arg->mode > CIFISP_EXP_MEASURING_MODE_1) {
-        LOGE("aec meas win %dx%d(%dx%d)",
+        LOGW("aec meas win %dx%d(%dx%d)",
              arg->meas_window.h_size, arg->meas_window.v_size,
              arg->meas_window.h_offs, arg->meas_window.v_offs
              );
-        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
-        return -1;
+        LOGW("%s:%d check error, use limit value !", __FUNCTION__, __LINE__);
+        // AE regions when zoom may not meet the limitation,
+        // so just set the regions to the limitation
+        arg->meas_window.h_size = arg->meas_window.h_size >
+            CIF_ISP_EXP_MIN_HSIZE ? arg->meas_window.h_size : CIF_ISP_EXP_MIN_HSIZE;
+        arg->meas_window.v_size = arg->meas_window.v_size >
+            CIF_ISP_EXP_MIN_VSIZE ? arg->meas_window.v_size : CIF_ISP_EXP_MIN_VSIZE;
+
+        arg->meas_window.h_size = arg->meas_window.h_size <
+            CIF_ISP_EXP_MAX_HSIZE ? arg->meas_window.h_size : CIF_ISP_EXP_MAX_HSIZE;
+        arg->meas_window.v_size = arg->meas_window.v_size <
+            CIF_ISP_EXP_MAX_VSIZE ? arg->meas_window.v_size : CIF_ISP_EXP_MAX_VSIZE;
     }
     return 0;
 }

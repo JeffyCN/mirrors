@@ -233,7 +233,7 @@ public:
     explicit AiqAfHandler (SmartPtr<RKiqCompositor> &aiq_compositor);
     ~AiqAfHandler () {}
 
-    XCamReturn processAfMetaResults(CamIA10_AFC_Result_t af_results, X3aResultList &output);
+    XCamReturn processAfMetaResults(XCam3aResultFocus af_results, X3aResultList &output);
     virtual XCamReturn analyze (X3aResultList &output, bool first = false);
 
 private:

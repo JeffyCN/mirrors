@@ -387,7 +387,7 @@ AiqAwbHandler::processAwbMetaResults(CamIA10_AWB_Result_t awb_results, X3aResult
 }
 
 XCamReturn
-AiqAfHandler::processAfMetaResults(CamIA10_AFC_Result_t af_results, X3aResultList &output)
+AiqAfHandler::processAfMetaResults(XCam3aResultFocus af_results, X3aResultList &output)
 {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
     SmartPtr<AiqInputParams> inputParams = _aiq_compositor->getAiqInputParams();
@@ -1124,6 +1124,7 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
     if (_ae_handler && _awb_handler && _inputParams.ptr()) {
         _ae_handler->processAeMetaResults(_ia_results.aec, results);
         _awb_handler->processAwbMetaResults(_ia_results.awb, results);
+        _af_handler->processAfMetaResults(_ia_results.af, results);
     }
 
     _isp10_engine->convertIAResults(&_isp_cfg, &_ia_results);
