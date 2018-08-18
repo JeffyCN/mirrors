@@ -10,3 +10,12 @@ v2.52更新内容：
 1.gpt支持固件uuid
 通过在parameter文件中，按以下格式指定uuid:
 uuid:分区名=00000000-0000-0000-0000-000000000000
+
+v2.56更新内容：
+1.fix不支持gpt错误
+
+v2.57更新内容:
+1.烧录前检查paramter是否有被修改和自动更新
+
+v2.58更新内容:
+1.fix "wait for maskrom failed" bug
