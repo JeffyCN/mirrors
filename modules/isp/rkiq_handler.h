@@ -251,7 +251,7 @@ class AiqCommonHandler
     friend class RKiqCompositor;
 public:
     explicit AiqCommonHandler (SmartPtr<RKiqCompositor> &aiq_compositor);
-    ~AiqCommonHandler () {}
+    ~AiqCommonHandler ();
 
     virtual XCamReturn analyze (X3aResultList &output, bool first = false);
     ia_aiq_gbce_results *get_gbce_result () {
@@ -260,9 +260,17 @@ public:
     XCamColorEffect get_color_effect() {
         return _params.color_effect;
     }
+    XCamReturn processToneMapsMetaResults(CamerIcIspGocConfig_t goc, X3aResultList &output);
 
 private:
+    XCamReturn initTonemaps();
+    XCamReturn fillTonemapCurve(CamerIcIspGocConfig_t goc, AiqInputParams* inputParams, CameraMetadata* metadata);
     XCAM_DEAD_COPY (AiqCommonHandler);
+    // for tonemaps result
+    uint32_t mMaxCurvePoints; /*!< Cache for max curve points for tonemap */
+    float   *mRGammaLut;      /*!< [(P_IN, P_OUT), (P_IN, P_OUT), ..] */
+    float   *mGGammaLut;      /*!< [(P_IN, P_OUT), (P_IN, P_OUT), ..] */
+    float   *mBGammaLut;      /*!< [(P_IN, P_OUT), (P_IN, P_OUT), ..] */
 
 protected:
     SmartPtr<RKiqCompositor>     _aiq_compositor;

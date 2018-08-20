@@ -98,6 +98,7 @@ typedef struct _AiqInputParams {
     AfInputParams   afInputParams;
     AAAControls     aaaControls;
     CameraMetadata  settings;
+    CameraMetadata* staticMeta;
     void init();
     _AiqInputParams();
     ~_AiqInputParams() {}

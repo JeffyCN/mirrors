@@ -113,6 +113,7 @@ RkispDeviceManager::set_control_params(const int request_frame_id,
     XCam::SmartPtr<AiqInputParams> inputParams = new AiqInputParams();
     inputParams->reqId = request_frame_id;
     inputParams->settings = metas;
+    inputParams->staticMeta = &RkispDeviceManager::staticMeta;
     if(_settingsProcessor) {
         _settingsProcessor->processRequestSettings(inputParams->settings, *inputParams.ptr());
     } else {
