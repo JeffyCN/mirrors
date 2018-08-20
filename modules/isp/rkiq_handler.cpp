@@ -257,11 +257,10 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
                             inputParams->reqId);
 
     //# ANDROID_METADATA_Dynamic android.control.aeRegions done
-    /* TODO, not support aeRegions now */
-    /* entry = inputParams->settings.find(ANDROID_CONTROL_AE_REGIONS); */
-    /* if (entry.count == 5) { */
-    /*     metadata->update(ANDROID_CONTROL_AE_REGIONS, entry.data.i32, entry.count); */
-    /* } */
+    entry = inputParams->settings.find(ANDROID_CONTROL_AE_REGIONS);
+    if (entry.count == 5) {
+        metadata->update(ANDROID_CONTROL_AE_REGIONS, entry.data.i32, entry.count);
+    }
 
     //# ANDROID_METADATA_Dynamic android.control.aeExposureCompensation done
     // TODO get step size (currently 1/3) from static metadata
@@ -392,6 +391,7 @@ AiqAfHandler::processAfMetaResults(XCam3aResultFocus af_results, X3aResultList &
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
     SmartPtr<AiqInputParams> inputParams = _aiq_compositor->getAiqInputParams();
     SmartPtr<XmetaResult> res;
+    camera_metadata_entry entry;
     LOGI("@%s %d: enter", __FUNCTION__, __LINE__);
 
     for (X3aResultList::iterator iter = output.begin ();
@@ -411,6 +411,11 @@ AiqAfHandler::processAfMetaResults(XCam3aResultFocus af_results, X3aResultList &
     CameraMetadata* metadata = res->get_metadata_result();
     struct CamIA10_SensorModeData &sensor_desc = _aiq_compositor->get_sensor_mode_data();
     ParamsTranslate::convert_from_rkisp_af_result(&_rkaiq_result, &af_results, &sensor_desc);
+
+    entry = inputParams->settings.find(ANDROID_CONTROL_AF_REGIONS);
+    if (entry.count == 5) {
+        metadata->update(ANDROID_CONTROL_AF_REGIONS, entry.data.i32, entry.count);
+    }
 
     ret = mAfState->processResult(_rkaiq_result, inputParams->afInputParams.afParams, *metadata);
 
@@ -1025,8 +1030,17 @@ AiqAfHandler::analyze (X3aResultList &output, bool first)
     XCam3aResultFocus isp_result;
     xcam_mem_clear(isp_result);
     XCamAfParam param = this->get_params_unlock();
+    SmartPtr<AiqInputParams> inputParams = _aiq_compositor->getAiqInputParams();
+    if (inputParams.ptr()) {
+        mAfState->processTriggers(inputParams->aaaControls.af.afTrigger,
+                                    inputParams->aaaControls.af.afMode, 0,
+                                    inputParams->afInputParams.afParams);
+    }
+
     _aiq_compositor->_isp10_engine->runAf(&param, &isp_result);
 
+    if (inputParams.ptr())
+        processAfMetaResults(isp_result, output);
     XCAM_LOG_INFO ("AiqAfHandler, position: %d",
         isp_result.next_lens_position);
 
