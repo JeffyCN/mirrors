@@ -107,7 +107,7 @@ private:
 
 const int PollThread::default_subdev_event_timeout = 100; // ms
 const int PollThread::default_capture_event_timeout = 100; // ms
-const int PollThread::default_isp_event_timeout = 3000; // ms
+const int PollThread::default_isp_event_timeout = 1000; // ms
 
 
 PollThread::PollThread ()
