@@ -21,7 +21,7 @@ case "$1" in
 		fi
 
 		printf "load wifi modules: "
-		insmod MODULE_PATH
+		rk_wifi_init
 		[ $? = 0 ] && echo "OK" || echo "FAIL"
 
 		wl PM 0
