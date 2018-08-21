@@ -1,6 +1,7 @@
 #CROSS_COMPILE ?= $(CURDIR)/../../../../toolschain/usr/bin/arm-linux-
 #CROSS_COMPILE ?= /usr/bin/arm-linux-gnueabihf-
-#CROSS_COMPILE ?= 
+#CROSS_COMPILE ?=
+
 include $(CURDIR)/productConfigs.mk
 export CROSS_COMPILE
 LOCAL_PATH:= $(CURDIR)
@@ -28,6 +29,22 @@ export  PRJ_CPPFLAGS
 export BUILD_EVERYTHING
 export CLEAN_EVERYTHING
 
+ifeq ($(IS_RKISP_v12),true)
+	PRJ_CPPFLAGS += -DRKISP_v12=1
+endif
+
+ifeq ($(ARCH),arm)
+define SET_EVERYTHING
+	@cp -rf $(CURDIR)/ext/rkisp/usr/lib32 $(CURDIR)/ext/rkisp/usr/lib
+	@cp -rf $(CURDIR)/ext/rkisp/usr/include/glib-2.0-32 $(CURDIR)/ext/rkisp/usr/include/glib-2.0
+endef
+else
+define SET_EVERYTHING
+	@cp -rf $(CURDIR)/ext/rkisp/usr/lib64 $(CURDIR)/ext/rkisp/usr/lib
+	@cp -rf $(CURDIR)/ext/rkisp/usr/include/glib-2.0-64 $(CURDIR)/ext/rkisp/usr/include/glib-2.0
+endef
+endif
+
 define BUILD_EVERYTHING
 	@make -f Android.mk
 endef
@@ -36,6 +53,8 @@ define CLEAN_EVERYTHING
 	@echo "clean build objects"
 	@-rm -f `find ./ -name *.o`
 	@echo "clean build libraries"
+	@-rm -rf $(CURDIR)/ext/rkisp/usr/lib
+	@-rm -rf $(CURDIR)/ext/rkisp/usr/include/glib-2.0
 	@-rm -f `find ./ -path "./libs" -prune -name *.a`
 	@-rm -f `find ./build -name *.so`
 	@echo "clean build output directory"
@@ -44,9 +63,9 @@ endef
 
 .PHONY:all
 all:
-#cp ./libs/* ./build/lib/ 
+#cp ./libs/* ./build/lib/
+	$(SET_EVERYTHING)
 	$(BUILD_EVERYTHING)
 
 clean:
 	$(CLEAN_EVERYTHING)
-	

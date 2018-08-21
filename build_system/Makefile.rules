@@ -1,9 +1,9 @@
 export ROOT_DIR:=$(CURDIR)/
 export BUILD_SYSTEM:=$(CURDIR)/build_system/
 export BUILD_OUTPUT_STATIC_LIBS:=$(CURDIR)/build/lib/
-export BUILD_OUPUT_EXTERNAL_LIBS:=$(CURDIR)/ext/rkisp/usr/lib64
+export BUILD_OUPUT_EXTERNAL_LIBS:=$(CURDIR)/ext/rkisp/usr/lib
 export BUILD_OUPUT_RKISP_LIBS:=$(CURDIR)/ext/rkisp/lib
-export BUILD_OUPUT_GSTREAMER_LIBS:=$(CURDIR)/ext/rkisp/usr/lib64/gstreamer-1.0
+export BUILD_OUPUT_GSTREAMER_LIBS:=$(CURDIR)/ext/rkisp/usr/lib/gstreamer-1.0
 export BUILD_OUPUT_SHARED_LIBS:=$(CURDIR)/build/lib/
 export BUILD_OUTPUT_STATIC_OBJS:=$(CURDIR)/build/obj/static/
 export BUILD_OUTPUT_SHARED_OBJS:=$(CURDIR)/build/obj/shared/
