@@ -52,8 +52,10 @@ gst_media_controller_new_by_vnode (const gchar * vnode)
     for (j = 0; j < nents; ++j) {
       struct media_entity *entity = media_get_entity (device, j);
       const char *devname = media_entity_get_devname (entity);
-      if (!strcmp (devname, vnode)) {
-        goto out;
+      if (NULL != devname) {
+        if (!strcmp (devname, vnode)) {
+          goto out;
+        }
       }
     }
 

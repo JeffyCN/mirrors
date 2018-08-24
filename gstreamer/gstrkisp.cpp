@@ -638,6 +638,10 @@ gst_xcam_src_start (GstBaseSrc *src)
     SmartPtr<V4l2Device> capture_device;
     struct rkisp_cl_prepare_params_s params={0};
 
+    /* Set iq path */
+    device_manager->set_iq_path(rkisp->path_to_iqf);
+    XCAM_LOG_INFO ("using IQ file path %s", rkisp->path_to_iqf);
+
     // Check device
     if (rkisp->device == NULL) {
         if (rkisp->capture_mode == V4L2_CAPTURE_MODE_STILL)
@@ -669,7 +673,7 @@ gst_xcam_src_start (GstBaseSrc *src)
 #endif
 
     rkisp->controller =
-          gst_media_controller_new_by_vnode (CAPTURE_DEVICE_STILL);
+          gst_media_controller_new_by_vnode (rkisp->device);
     if (!rkisp->controller)
     XCAM_LOG_ERROR(
         "Can't find controller, maybe use a wrong video-node or wrong permission to media node");
@@ -692,7 +696,7 @@ gst_xcam_src_start (GstBaseSrc *src)
     /* assume the last enity is sensor_subdev */
     rkisp->sensor_subdev = gst_media_get_last_entity (rkisp->controller);
 
-    if (strcmp (CAPTURE_DEVICE_STILL,
+    if (strcmp (rkisp->device,
           media_entity_get_devname (rkisp->main_path)))
     XCAM_LOG_INFO ("using ISP self path");
     else
