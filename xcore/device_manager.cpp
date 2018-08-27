@@ -74,7 +74,7 @@ XCamMessage::~XCamMessage ()
 }
 
 DeviceManager::DeviceManager()
-    : _has_3a (true)
+    : _has_3a (false)
     , _is_running (false)
     , _device(NULL)
     , _event_subdevice(NULL)
@@ -207,6 +207,12 @@ bool
 DeviceManager::set_iq_path(const char* iq_file) {
 	strcpy(_iq_file, iq_file);
 	return true;
+}
+
+bool
+DeviceManager::set_has_3a(bool has_3a) {
+    _has_3a = has_3a;
+    return true;
 }
 
 #include <base/log.h>

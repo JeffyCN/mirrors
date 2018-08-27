@@ -81,6 +81,7 @@ public:
     bool add_image_processor (SmartPtr<ImageProcessor> processor);
     bool set_poll_thread (SmartPtr<PollThread> thread);
     bool set_iq_path(const char* iq_file);
+    bool set_has_3a(bool has_3a);
     const char* get_iq_path() {
         return _iq_file;
     }

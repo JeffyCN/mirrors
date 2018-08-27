@@ -66,7 +66,7 @@ using namespace GstXCam;
 #define DEFAULT_PROP_SENSOR             0
 #define DEFAULT_PROP_MEM_MODE           V4L2_MEMORY_DMABUF
 #if HAVE_RK_IQ
-#define DEFAULT_PROP_ENABLE_3A          TRUE
+#define DEFAULT_PROP_DISABLE_3A         FALSE
 #endif
 #define DEFAULT_PROP_ENABLE_USB         FALSE
 #define DEFAULT_PROP_BUFFERCOUNT        4
@@ -361,6 +361,11 @@ gst_xcam_src_class_init (GstXCamSrcClass * class_self)
 
 #if HAVE_RK_IQ
     g_object_class_install_property (
+        gobject_class, PROP_ENABLE_3A,
+        g_param_spec_boolean ("enable-3a", "enable 3a", "Enable 3A",
+                              DEFAULT_PROP_DISABLE_3A, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+
+    g_object_class_install_property (
         gobject_class, PROP_IQF,
         g_param_spec_string ("path-iqf", "iqf", "Path to IQ file",
                              NULL, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
@@ -404,6 +409,7 @@ gst_xcam_src_init (GstXCamSrc *rkisp)
     rkisp->enable_usb = DEFAULT_PROP_ENABLE_USB;
 
 #if HAVE_RK_IQ
+    rkisp->enable_3a = DEFAULT_PROP_DISABLE_3A;
     rkisp->path_to_iqf = strndup(DEFAULT_IQ_FILE_NAME, XCAM_MAX_STR_SIZE);
 #endif
 
@@ -490,6 +496,9 @@ gst_xcam_src_get_property (
         g_value_set_enum (value, src->analyzer_type);
         break;
 #if HAVE_RK_IQ
+    case PROP_ENABLE_3A:
+        g_value_set_boolean (value, src->enable_3a);
+        break;
     case PROP_IQF:
         g_value_set_string (value, src->path_to_iqf);
         break;
@@ -569,6 +578,9 @@ gst_xcam_src_set_property (
         src->analyzer_type = (AnalyzerType)g_value_get_enum (value);
         break;
 #if HAVE_RK_IQ
+    case PROP_ENABLE_3A:
+        src->enable_3a = g_value_get_boolean (value);
+        break;
     case PROP_IQF: {
         const char * iqf = g_value_get_string (value);
         if (src->path_to_iqf)
@@ -638,10 +650,14 @@ gst_xcam_src_start (GstBaseSrc *src)
     SmartPtr<V4l2Device> capture_device;
     struct rkisp_cl_prepare_params_s params={0};
 
-    /* Set iq path */
-    device_manager->set_iq_path(rkisp->path_to_iqf);
-    XCAM_LOG_INFO ("using IQ file path %s", rkisp->path_to_iqf);
-
+    /* Set 3A en/disabel*/
+    device_manager->set_has_3a(rkisp->enable_3a);
+    if(device_manager->has_3a()){
+        /* Set iq path */
+        device_manager->set_iq_path(rkisp->path_to_iqf);
+        XCAM_LOG_INFO ("Enable 3a ,using IQ file path %s", rkisp->path_to_iqf);
+    }
+    XCAM_LOG_INFO ("--------------Disable 3a---------------");
     // Check device
     if (rkisp->device == NULL) {
         if (rkisp->capture_mode == V4L2_CAPTURE_MODE_STILL)
