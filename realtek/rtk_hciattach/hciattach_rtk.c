@@ -2287,9 +2287,9 @@ static void rknand_get_randeom_btaddr(char *bt_addr)
 {
 	int i;
 	/* No autogen BDA. Generate one now. */
-	bt_addr[0] = 0x22;
-	bt_addr[1] = 0x22;
-	for (i = 2; i < 6; i++)
+	bt_addr[4] = 0x22;
+	bt_addr[5] = 0x22;
+	for (i = 0; i < 4; i++)
 		rtk_get_ram_addr(&bt_addr[i]);
 }
 
