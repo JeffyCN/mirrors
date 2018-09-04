@@ -37,7 +37,7 @@ void NormalRgaSetAlwaysLogFlag(int log)
 void is_debug_log(void)
 {
     struct rgaContext *ctx = rgaCtx;
-    ctx->Is_debug = hwc_get_int_property("sys.rga.log","0");
+    ctx->Is_debug = hwc_get_int_property("vendor.rga.log","0");
 }
 
 int is_out_log( void )
@@ -362,7 +362,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	blend = 0;
 	yuvToRgbMode = 0;
 
-	/* print debug log by setting property sys.rga.log as 1 */
+	/* print debug log by setting property vendor.rga.log as 1 */
 	is_debug_log();
 	if(is_out_log())
 		ALOGD("<<<<-------- print rgaLog -------->>>>");
