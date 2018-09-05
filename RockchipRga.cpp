@@ -53,8 +53,9 @@
 
 #include "RockchipRga.h"
 #include "RgaApi.h"
-#include "version.h"
 #include "normal/NormalRga.h"
+
+#define RK_GRAPHICS_VER "version:1.00"
 
 namespace android {
 
