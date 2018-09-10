@@ -39,10 +39,6 @@
 #include <ui/GraphicBufferMapper.h>
 #include <RockchipRga.h>
 
-#include <gui/ISurfaceComposer.h>
-#include <gui/Surface.h>
-#include <gui/SurfaceComposerClient.h>
-
 #include <GLES/gl.h>
 #include <GLES/glext.h>
 #include <EGL/eglext.h>

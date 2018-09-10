@@ -5,6 +5,7 @@ LOCAL_PATH:= $(call my-dir)
 #
 #======================================================================
 include $(CLEAR_VARS)
+LOCAL_VENDOR_MODULE := true
 
 LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
 
@@ -15,19 +16,30 @@ LOCAL_CFLAGS += -Wall -Werror -Wunreachable-code
 LOCAL_C_INCLUDES += external/tinyalsa/include
 
 LOCAL_C_INCLUDES += hardware/rockchip/librga
-LOCAL_C_INCLUDES += hardware/rk29/librga
+LOCAL_C_INCLUDES += hardware/rk29/librga \
+    system/core \
+    system/core/include/utils \
+    system/core/liblog/include 
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
     liblog \
     libutils \
-    libbinder \
     libui \
     libEGL \
     libGLESv1_CM \
-    libgui \
     libhardware \
+    libsync_vendor \
     librga
+
+LOCAL_HEADER_LIBRARIES += \
+    libutils_headers \
+    libcutils_headers \
+    libhardware_headers \
+    liblog_headers \
+    libgui_headers \
+    libbinder_headers
+
 
 #has no "external/stlport" from Android 6.0 on
 ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.0)))

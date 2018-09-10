@@ -40,8 +40,6 @@
 #include <RockchipRga.h>
 
 #include <gui/ISurfaceComposer.h>
-#include <gui/Surface.h>
-#include <gui/SurfaceComposerClient.h>
 
 #include <GLES/gl.h>
 #include <GLES/glext.h>
@@ -108,7 +106,7 @@ int main()
      * Instantiation Android's tool of GraphicBufferMapper,
      * It provides a mapping of buffer address into a user's address space
      ******************************/
-    GraphicBufferMapper &mgbMapper = GraphicBufferMapper::get();
+//    GraphicBufferMapper &mgbMapper = GraphicBufferMapper::get();
 
     /******************************
      * Apply For Src_buffer:
@@ -150,6 +148,7 @@ int main()
     /******************************
      * Map Buffer_address To Userspace:
      ******************************/
+/*
 #ifdef ANDROID_8
     buffer_handle_t importedHandle_src;
     buffer_handle_t importedHandle_dst;
@@ -161,7 +160,7 @@ int main()
     mgbMapper.registerBuffer(gbs->handle);
     mgbMapper.registerBuffer(gbd->handle);
 #endif
-
+*/
     /******************************
      * Lock Src_buffer:
      ******************************/

@@ -40,8 +40,6 @@
 #include <RockchipRga.h>
 
 #include <gui/ISurfaceComposer.h>
-#include <gui/Surface.h>
-#include <gui/SurfaceComposerClient.h>
 
 #include <GLES/gl.h>
 #include <GLES/glext.h>
@@ -93,7 +91,7 @@ int main()
 
     RockchipRga& rkRga(RockchipRga::get());
 
-    GraphicBufferMapper &mgbMapper = GraphicBufferMapper::get();
+//    GraphicBufferMapper &mgbMapper = GraphicBufferMapper::get();
 
 	/********** apply for src_buffer **********/
 #ifdef ANDROID_7_DRM
@@ -125,7 +123,7 @@ int main()
         printf("GraphicBuffer_dst %s \n","ok");
 
 	/********** map buffer_address to userspace **********/
-    
+/*    
 #ifdef ANDROID_8
     buffer_handle_t importedHandle_src;
     buffer_handle_t importedHandle_dst;
@@ -137,7 +135,7 @@ int main()
     mgbMapper.registerBuffer(gbs->handle);
     mgbMapper.registerBuffer(gbd->handle);
 #endif
-
+*/
 	/********** write data to src_buffer or init buffer**********/
     ret = gbs->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&buf);
     if (ret) {
