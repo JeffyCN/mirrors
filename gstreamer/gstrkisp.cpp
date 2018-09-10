@@ -64,7 +64,7 @@ using namespace GstXCam;
 #define V4L2_CAPTURE_MODE_PREVIEW 0x8000
 
 #define DEFAULT_PROP_SENSOR             0
-#define DEFAULT_PROP_MEM_MODE           V4L2_MEMORY_DMABUF
+#define DEFAULT_PROP_MEM_MODE           V4L2_MEMORY_MMAP
 #if HAVE_RK_IQ
 #define DEFAULT_PROP_DISABLE_3A         FALSE
 #endif
