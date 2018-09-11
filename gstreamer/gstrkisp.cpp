@@ -66,7 +66,7 @@ using namespace GstXCam;
 #define DEFAULT_PROP_SENSOR             0
 #define DEFAULT_PROP_MEM_MODE           V4L2_MEMORY_MMAP
 #if HAVE_RK_IQ
-#define DEFAULT_PROP_DISABLE_3A         FALSE
+#define DEFAULT_PROP_ENABLE_3A         TRUE
 #endif
 #define DEFAULT_PROP_ENABLE_USB         FALSE
 #define DEFAULT_PROP_BUFFERCOUNT        4
@@ -363,12 +363,12 @@ gst_xcam_src_class_init (GstXCamSrcClass * class_self)
     g_object_class_install_property (
         gobject_class, PROP_ENABLE_3A,
         g_param_spec_boolean ("enable-3a", "enable 3a", "Enable 3A",
-                              DEFAULT_PROP_DISABLE_3A, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+                              DEFAULT_PROP_ENABLE_3A, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
     g_object_class_install_property (
         gobject_class, PROP_IQF,
         g_param_spec_string ("path-iqf", "iqf", "Path to IQ file",
-                             NULL, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+                             DEFAULT_IQ_FILE_NAME, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 #endif
     gst_element_class_set_details_simple (element_class,
                                           "Gstreamer Plugin For Rockchip ISP Source",
@@ -409,7 +409,7 @@ gst_xcam_src_init (GstXCamSrc *rkisp)
     rkisp->enable_usb = DEFAULT_PROP_ENABLE_USB;
 
 #if HAVE_RK_IQ
-    rkisp->enable_3a = DEFAULT_PROP_DISABLE_3A;
+    rkisp->enable_3a = DEFAULT_PROP_ENABLE_3A;
     rkisp->path_to_iqf = strndup(DEFAULT_IQ_FILE_NAME, XCAM_MAX_STR_SIZE);
 #endif
 
@@ -648,16 +648,20 @@ gst_xcam_src_start (GstBaseSrc *src)
     GstXCamSrc *rkisp = GST_XCAM_SRC (src);
     SmartPtr<RkispDeviceManager> device_manager = rkisp->device_manager;
     SmartPtr<V4l2Device> capture_device;
-    struct rkisp_cl_prepare_params_s params={0};
+    struct rkisp_cl_prepare_params_s params = {0};
 
-    /* Set 3A en/disabel*/
-    device_manager->set_has_3a(rkisp->enable_3a);
-    if(device_manager->has_3a()){
+    /* Check the 3A xml file */
+    if((access(rkisp->path_to_iqf, F_OK)) < 0){
+        rkisp->enable_3a = 0;
+        XCAM_LOG_INFO ("The '%s' file is not exists.", rkisp->path_to_iqf);
+    } else{
         /* Set iq path */
         device_manager->set_iq_path(rkisp->path_to_iqf);
-        XCAM_LOG_INFO ("Enable 3a ,using IQ file path %s", rkisp->path_to_iqf);
     }
-    XCAM_LOG_INFO ("--------------Disable 3a---------------");
+
+    /* Set 3A en/disable*/
+    device_manager->set_has_3a(rkisp->enable_3a);
+
     // Check device
     if (rkisp->device == NULL) {
         if (rkisp->capture_mode == V4L2_CAPTURE_MODE_STILL)
