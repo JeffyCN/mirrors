@@ -339,6 +339,7 @@ AiqAwbHandler::processAwbMetaResults(CamIA10_AWB_Result_t awb_results, X3aResult
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
     SmartPtr<AiqInputParams> inputParams = _aiq_compositor->getAiqInputParams();
     SmartPtr<XmetaResult> res;
+    camera_metadata_entry entry;
     LOGI("@%s %d: enter", __FUNCTION__, __LINE__);
 
     for (X3aResultList::iterator iter = output.begin ();
@@ -380,6 +381,7 @@ AiqAwbHandler::processAwbMetaResults(CamIA10_AWB_Result_t awb_results, X3aResult
     /*
      * store the results in row major order
      */
+    if (mAwbState->getState() != ANDROID_CONTROL_AWB_STATE_LOCKED) {
         camera_metadata_rational_t transformMatrix[9];
         const int32_t COLOR_TRANSFORM_PRECISION = 10000;
         for (int i = 0; i < 9; i++) {
@@ -391,6 +393,12 @@ AiqAwbHandler::processAwbMetaResults(CamIA10_AWB_Result_t awb_results, X3aResult
 
         metadata->update(ANDROID_COLOR_CORRECTION_TRANSFORM,
                          transformMatrix, 9);
+    } else {
+        entry = inputParams->settings.find(ANDROID_COLOR_CORRECTION_TRANSFORM);
+        if (entry.count == 9) {
+            metadata->update(ANDROID_COLOR_CORRECTION_TRANSFORM, entry.data.r, entry.count);
+        }
+    }
     return ret;
 }
 
