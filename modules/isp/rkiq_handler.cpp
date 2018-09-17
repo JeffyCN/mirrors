@@ -259,7 +259,16 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
     //# ANDROID_METADATA_Dynamic android.control.aeRegions done
     entry = inputParams->settings.find(ANDROID_CONTROL_AE_REGIONS);
     if (entry.count == 5) {
-        metadata->update(ANDROID_CONTROL_AE_REGIONS, entry.data.i32, entry.count);
+        int32_t aeRegion[5];
+        // Region value is (xMin, yMin, xMax, yMax) but not (xmin, ymin, w, h),
+        // Refering to the value parse function in
+        // MarshalQueryableMeteringRectangle.java@unmarshal
+        aeRegion[0] = aeParams.window.x_start;
+        aeRegion[1] = aeParams.window.y_start;
+        aeRegion[2] = aeParams.window.x_end;
+        aeRegion[3] = aeParams.window.y_end;
+        aeRegion[4] = entry.data.i32[4];
+        metadata->update(ANDROID_CONTROL_AE_REGIONS, aeRegion, entry.count);
     }
 
     //# ANDROID_METADATA_Dynamic android.control.aeExposureCompensation done
@@ -371,17 +380,17 @@ AiqAwbHandler::processAwbMetaResults(CamIA10_AWB_Result_t awb_results, X3aResult
     /*
      * store the results in row major order
      */
-    camera_metadata_rational_t transformMatrix[9];
-    const int32_t COLOR_TRANSFORM_PRECISION = 10000;
-    for (int i = 0; i < 9; i++) {
-        transformMatrix[i].numerator =
-            (int32_t)(_rkaiq_result.ctk_config.ctk_matrix.coeff[i] * COLOR_TRANSFORM_PRECISION);
-        transformMatrix[i].denominator = COLOR_TRANSFORM_PRECISION;
+        camera_metadata_rational_t transformMatrix[9];
+        const int32_t COLOR_TRANSFORM_PRECISION = 10000;
+        for (int i = 0; i < 9; i++) {
+            transformMatrix[i].numerator =
+                (int32_t)(_rkaiq_result.ctk_config.ctk_matrix.coeff[i] * COLOR_TRANSFORM_PRECISION);
+            transformMatrix[i].denominator = COLOR_TRANSFORM_PRECISION;
 
-    }
+        }
 
-    metadata->update(ANDROID_COLOR_CORRECTION_TRANSFORM,
-                  transformMatrix, 9);
+        metadata->update(ANDROID_COLOR_CORRECTION_TRANSFORM,
+                         transformMatrix, 9);
     return ret;
 }
 
@@ -412,12 +421,19 @@ AiqAfHandler::processAfMetaResults(XCam3aResultFocus af_results, X3aResultList &
     struct CamIA10_SensorModeData &sensor_desc = _aiq_compositor->get_sensor_mode_data();
     ParamsTranslate::convert_from_rkisp_af_result(&_rkaiq_result, &af_results, &sensor_desc);
 
+    XCamAfParam &afParams = inputParams->afInputParams.afParams;
     entry = inputParams->settings.find(ANDROID_CONTROL_AF_REGIONS);
     if (entry.count == 5) {
-        metadata->update(ANDROID_CONTROL_AF_REGIONS, entry.data.i32, entry.count);
+        int32_t afRegion[5];
+        afRegion[0] = afParams.focus_rect[0].left_hoff;
+        afRegion[1] = afParams.focus_rect[0].top_voff;
+        afRegion[2] = afParams.focus_rect[0].right_width + afParams.focus_rect[0].left_hoff;
+        afRegion[3] = afParams.focus_rect[0].bottom_height + afParams.focus_rect[0].top_voff;
+        afRegion[4] = entry.data.i32[4];
+        metadata->update(ANDROID_CONTROL_AF_REGIONS, afRegion, entry.count);
     }
 
-    ret = mAfState->processResult(_rkaiq_result, inputParams->afInputParams.afParams, *metadata);
+    ret = mAfState->processResult(_rkaiq_result, afParams, *metadata);
 
     return ret;
 }

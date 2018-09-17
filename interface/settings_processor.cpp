@@ -89,12 +89,15 @@ void SettingsProcessor::parseMeteringRegion(const CameraMetadata *settings,
     }
 
     meteringWindow->init(topLeft, bottomRight, weight);
-    if (meteringWindow->isValid()) {
+    if (meteringWindow->isValid() && croppingRegion.isValid()) {
         // Clip the region to the crop rectangle
-        if (croppingRegion.isValid()){
-            LOGI("@%s %d: crop region(%d,%d,%d,%d)", __FUNCTION__, __LINE__,
-                 croppingRegion.left(), croppingRegion.top(), croppingRegion.width(), croppingRegion.height());
-            meteringWindow->clip(croppingRegion);
+        meteringWindow->clip(croppingRegion);
+        if (meteringWindow->isValid()){
+            LOGI("%s(%d,%d,%d,%d) + cropRegion(%d,%d,%d,%d) --> window:(%d,%d,%d,%d)",
+                 tagId == ANDROID_CONTROL_AE_REGIONS ? "AeRegion" : "AfRegion",
+                 topLeft.x, topLeft.y, bottomRight.x, bottomRight.y,
+                 croppingRegion.left(), croppingRegion.top(), croppingRegion.width(), croppingRegion.height(),
+                 meteringWindow->left(), meteringWindow->top(), meteringWindow->width(), meteringWindow->height());
         }
     }
 }
