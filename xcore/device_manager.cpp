@@ -74,13 +74,15 @@ XCamMessage::~XCamMessage ()
 }
 
 DeviceManager::DeviceManager()
-    : _has_3a (false)
-    , _is_running (false)
-    , _device(NULL)
-    , _event_subdevice(NULL)
-    , _sensor_subdevice(NULL)
+    :  _device(NULL)
     , _isp_stats_device(NULL)
     , _isp_params_device(NULL)
+    , _event_subdevice(NULL)
+    , _sensor_subdevice(NULL)
+    , _vcm_subdevice(NULL)
+    , _poll_thread(NULL)
+    , _has_3a (false)
+    , _is_running (false)
 
 {
     _3a_process_center = new X3aImageProcessCenter;

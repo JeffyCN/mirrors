@@ -173,7 +173,7 @@ RESULT cam_ia10_isp_sdg_config
   if (enable_mode == HAL_ISP_ACTIVE_FALSE) {
     sdg_result->enabled = BOOL_FALSE;
   } else if (enable_mode == HAL_ISP_ACTIVE_SETTING) {
-    int ind = 0;
+    unsigned int ind = 0;
     ISP_CHECK_NULL(sdg_cfg);
     sdg_result->enabled = BOOL_TRUE;
 
@@ -197,7 +197,7 @@ RESULT cam_ia10_isp_sdg_config
 
   } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {
     //default is active
-    int ind = 0;
+    unsigned int ind = 0;
     int16_t  def_curve[CAMERIC_DEGAMMA_CURVE_SIZE] = {
       0x0000, 0x0100, 0x0200, 0x0300,
       0x0400, 0x0500, 0x0600, 0x0700,
@@ -594,7 +594,7 @@ RESULT cam_ia10_isp_flt_config
 	 
   } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {
     //flt_result->enabled = BOOL_FALSE;
-    struct HAL_ISP_flt_cfg_s flt_default_cfg = {2, 5};
+    struct HAL_ISP_flt_cfg_s flt_default_cfg = {2, 5, 0};
     cam_ia10_isp_flt_config(hCamCalibDb, HAL_ISP_ACTIVE_SETTING, &flt_default_cfg, drv_width, drv_height, flt_result);
   } else {
     ALOGE("%s:error enable mode %d!", __func__, enable_mode);
@@ -1319,7 +1319,7 @@ RESULT cam_ia10_isp_wdr_config
     wdr_result->enabled = BOOL_FALSE;
   } else if (enable_mode == HAL_ISP_ACTIVE_SETTING) {
     ISP_CHECK_NULL(wdr_cfg);
-    int index = 0;
+    unsigned int index = 0;
     wdr_result->enabled = BOOL_TRUE;
     wdr_result->mode = (CameraIcWdrMode_t)(wdr_cfg->mode);
     wdr_result->wdr_bavg_clip = wdr_cfg->wdr_bavg_clip;
@@ -1361,7 +1361,7 @@ RESULT cam_ia10_isp_wdr_config
       LOGD("fail to get pWdrGlobal, ret: %d", result);
     }
 
-    int index = 0;
+    unsigned int index = 0;
     wdr_result->enabled = BOOL_TRUE;
     wdr_result->mode = CAMERIC_WDR_MODE_BLOCK;
     if (pWdrGlobal != NULL) {

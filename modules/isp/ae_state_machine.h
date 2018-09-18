@@ -18,7 +18,12 @@
 #define _AE_STATE_MACHINE_H_
 
 #include <xcam_std.h>
+#ifdef ANDROID_VERSION_ABOVE_8_X
+#include <CameraMetadata.h>
+using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
+#else
 #include <camera/CameraMetadata.h>
+#endif
 #include "rkaiq.h"
 #include "rk_aiq_types.h"
 #include <base/log.h>

@@ -22,6 +22,13 @@ LOCAL_CFLAGS += $(PRJ_CPPFLAGS)
 
 #LOCAL_MODULE_RELATIVE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_MODULE:= libisp_aaa_awdr
+ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+LOCAL_PROPRIETARY_MODULE := true
+LOCAL_C_INCLUDES += \
+system/core/libutils/include \
+system/core/include \
+frameworks/native/libs/binder/include
+endif
 
 LOCAL_MODULE_TAGS:= optional
 include $(BUILD_STATIC_LIBRARY)

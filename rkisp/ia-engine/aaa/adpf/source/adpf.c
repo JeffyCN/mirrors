@@ -764,7 +764,8 @@ static RESULT AdpfCalculate3DNRResult(
   }
 
   if (fSensorGain < 1.0f || pCamDsp3DNRSettingProfile->ArraySize < 1) {
-    ALOGE("%s: INVALID_PARM fSensorGain(%d)  ArraySize(%d) \n", __func__);
+    ALOGE("%s: INVALID_PARM fSensorGain(%f)  ArraySize(%d) \n", __func__,
+         fSensorGain, pCamDsp3DNRSettingProfile->ArraySize);
     return (RET_INVALID_PARM);
   }
 
@@ -1131,7 +1132,7 @@ static RESULT AdpfApplyConfiguration
         break;
       default:
         ALOGE("%s: pConfig->mode: %d isn't support",
-              pConfig->mode);
+              __func__, pConfig->mode);
         break;
     }
 
@@ -1369,7 +1370,8 @@ RESULT AdpfRun
   }
 
   if(LightMode <= LIGHT_MODE_MIN || LightMode >= LIGHT_MODE_MAX ){
-	ALOGW( "%s: light mode %d is wrong, so use day mode instead\n", __func__);
+	ALOGW( "%s: light mode %d is wrong, so use day mode instead\n",
+         __func__, LightMode);
 	LightMode = LIGHT_MODE_DAY;
   }
   pAdpfCtx->pFilterProfile = &(pAdpfCtx->FilterProfile[LightMode]);

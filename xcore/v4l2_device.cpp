@@ -41,11 +41,11 @@ V4l2Device::V4l2Device (const char *name)
     , _capture_mode (0)
     , _buf_type (V4L2_BUF_TYPE_VIDEO_CAPTURE)
     , _memory_type (V4L2_MEMORY_MMAP)
+    , _planes (NULL)
     , _fps_n (0)
     , _fps_d (0)
     , _active (false)
     , _buf_count (XCAM_V4L2_DEFAULT_BUFFER_COUNT)
-    , _planes (NULL)
 {
     if (name)
         _name = strndup (name, XCAM_MAX_STR_SIZE);

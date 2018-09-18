@@ -45,8 +45,17 @@ LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../ia-engine \
     $(LOCAL_PATH)/../ia-engine/include \
     $(LOCAL_PATH)/../ia-engine/include/linux \
-    $(LOCAL_PATH)/../ia-engine/include/linux/media
-			
+    $(LOCAL_PATH)/../ia-engine/include/linux/media \
+
+ifeq ($(IS_NEED_COMPILE_TINYXML2), true)
+LOCAL_C_INCLUDES += \
+    $(LOCAL_PATH)/../../ext/tinyxml2 \
+
+else
+LOCAL_C_INCLUDES += \
+    external/tinyxml2 \
+
+endif
 
 LOCAL_STATIC_LIBRARIES += \
 	librkisp_ctrlloop \
@@ -57,6 +66,14 @@ LOCAL_STATIC_LIBRARIES += libisp_ebase libisp_oslayer
 
 ifeq ($(IS_NEED_LINK_STLPORT),true)
 LOCAL_SHARED_LIBRARIES += libstlport
+endif
+
+ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+LOCAL_PROPRIETARY_MODULE := true
+LOCAL_C_INCLUDES += \
+system/core/libutils/include \
+system/core/include \
+frameworks/native/libs/binder/include
 endif
 
 LOCAL_MODULE:= librkisp_isp_engine

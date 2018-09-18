@@ -466,8 +466,11 @@ bool Isp10Engine::configureISP(const void* config) {
   bool ret = IspEngine::configureISP(config);
   if (ret) {
     if (mCamIA_DyCfg.uc == UC_RAW) {
-      struct CamIA10_Results ia_results = {0};
-      struct CamIsp10ConfigSet isp_cfg = {0};
+      struct CamIA10_Results ia_results;
+      struct CamIsp10ConfigSet isp_cfg;
+
+      memset(&ia_results, 0, sizeof(struct CamIA10_Results));
+      memset(&isp_cfg, 0, sizeof(struct CamIsp10ConfigSet));
       //run isp manual config??will override the 3A results
       if (!runISPManual(&ia_results, BOOL_TRUE))
         ALOGE("%s:run ISP manual failed!", __func__);
@@ -1324,12 +1327,15 @@ bool Isp10Engine::threadLoop() {
   unsigned int buf_index;
   struct cifisp_stat_buffer* buffer = NULL;
   struct v4l2_buffer v4l2_buf;
-  struct CamIA10_Stats ia_stat = {0};
+  struct CamIA10_Stats ia_stat;
   struct CamIA10_DyCfg ia_dcfg;
-  struct CamIA10_Results ia_results = {0};
-  struct CamIsp10ConfigSet isp_cfg = {0};
+  struct CamIA10_Results ia_results;
+  struct CamIsp10ConfigSet isp_cfg;
 
   memset(&ia_dcfg, 0, sizeof(ia_dcfg));
+  memset(&ia_stat, 0, sizeof(ia_stat));
+  memset(&ia_results, 0, sizeof(ia_results));
+  memset(&isp_cfg, 0, sizeof(isp_cfg));
   //LOGD("%s: enter",__func__);
 
   if (!getMeasurement(v4l2_buf)) {
@@ -1338,7 +1344,7 @@ bool Isp10Engine::threadLoop() {
   }
 
   if (v4l2_buf.index >= CAM_ISP_NUM_OF_STAT_BUFS) {
-    ALOGE("%s: v4l2_buf index: %d is invalidate!", __func__);
+    ALOGE("%s: v4l2_buf index: %d is invalidate!", __func__, v4l2_buf.index);
     return true;//false;
   }
 

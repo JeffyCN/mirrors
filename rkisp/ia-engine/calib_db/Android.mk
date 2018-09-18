@@ -24,6 +24,13 @@ LOCAL_CFLAGS += $(PRJ_CPPFLAGS)
 LOCAL_STATIC_LIBRARIES := libisp_ebase libisp_oslayer
 
 LOCAL_MODULE:= libisp_cam_calibdb
+ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+LOCAL_PROPRIETARY_MODULE := true
+LOCAL_C_INCLUDES += \
+system/core/libutils/include \
+system/core/include \
+frameworks/native/libs/binder/include
+endif
 
 LOCAL_MODULE_TAGS:= optional
 include $(BUILD_STATIC_LIBRARY)

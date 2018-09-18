@@ -53,12 +53,12 @@ X3aHandlerManager::instance()
 }
 
 X3aHandlerManager::X3aHandlerManager ():
-    _ae_handler(NULL),
-    _awb_handler(NULL),
-    _af_handler(NULL),
     _loader_ae(NULL),
     _loader_awb(NULL),
-    _loader_af(NULL)
+    _loader_af(NULL),
+    _ae_handler(NULL),
+    _awb_handler(NULL),
+    _af_handler(NULL)
 {
     XCAM_LOG_DEBUG ("X3aHandlerManager construction");
     find_handler();

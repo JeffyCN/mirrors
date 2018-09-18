@@ -1,8 +1,6 @@
 #ifndef _CAM_THREAD_H_
 #define _CAM_THREAD_H_
 
-using namespace std;
-
 #include "oslayer/oslayer.h"
 #include <memory>
 #ifdef ANDROID_SHARED_PTR
@@ -15,6 +13,12 @@ using google::protobuf::internal::weak_ptr;
 # endif
 
 #endif
+
+// using std namspace after include any c++ header can avoid
+// this compile error:
+// Using directive refers to implicitly-defined namespace 'std'
+using namespace std;
+
 class CamThread : public enable_shared_from_this<CamThread> {
  public:
   // Create a Thread object, but doesn't create or start the associated

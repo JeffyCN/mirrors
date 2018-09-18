@@ -11,8 +11,16 @@ LOCAL_C_INCLUDES := \
 				$(LOCAL_PATH)/../include\
 				$(LOCAL_PATH)/include\
 				$(LOCAL_PATH)/./calib_xml\
-				$(LOCAL_PATH)/../tinyxml2
 
+ifeq ($(IS_NEED_COMPILE_TINYXML2), true)
+LOCAL_C_INCLUDES += \
+    $(LOCAL_PATH)/../../../ext/tinyxml2 \
+
+else
+LOCAL_C_INCLUDES += \
+    external/tinyxml2 \
+
+endif
 
 
 LOCAL_CPPFLAGS := -fuse-cxa-atexit -Wall -Wextra -Werror -Wno-unused -Wformat-nonliteral -g -O0 -pedantic -Wno-error=unused-function -std=c++11
@@ -25,6 +33,13 @@ LOCAL_CPPFLAGS += -Wno-error=unused-function -Wno-error=unused-parameter
 
 
 LOCAL_MODULE:= libisp_calibdb
+ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+LOCAL_PROPRIETARY_MODULE := true
+LOCAL_C_INCLUDES += \
+system/core/libutils/include \
+system/core/include \
+frameworks/native/libs/binder/include
+endif
 
 LOCAL_MODULE_TAGS:= optional
 include $(BUILD_STATIC_LIBRARY)

@@ -60,9 +60,19 @@ ifeq ($(IS_ANDROID_OS),true)
 LOCAL_C_INCLUDES += \
     system/media/camera/include \
     frameworks/av/include
+ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+LOCAL_PROPRIETARY_MODULE := true
+LOCAL_C_INCLUDES += \
+system/core/libutils/include \
+system/core/include \
+frameworks/native/libs/binder/include
+LOCAL_CFLAGS += -DANDROID_VERSION_ABOVE_8_X
+LOCAL_STATIC_LIBRARIES += android.hardware.camera.common@1.0-helper
+else
 LOCAL_SHARED_LIBRARIES += \
 	libcamera_metadata \
 	libcamera_client
+endif
 else
 LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../../metadata/libcamera_client/include \

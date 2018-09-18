@@ -60,12 +60,25 @@ LOCAL_SHARED_LIBRARIES += \
 endif
 
 ifeq ($(IS_ANDROID_OS),true)
+LOCAL_SHARED_LIBRARIES += libutils libcutils liblog
+LOCAL_SHARED_LIBRARIES += \
+	libcamera_metadata
 LOCAL_C_INCLUDES += \
     system/media/camera/include \
     frameworks/av/include
+ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+LOCAL_PROPRIETARY_MODULE := true
+LOCAL_C_INCLUDES += \
+system/core/libutils/include \
+system/core/include \
+frameworks/native/libs/binder/include
+LOCAL_STATIC_LIBRARIES += android.hardware.camera.common@1.0-helper
+LOCAL_CFLAGS += -DANDROID_VERSION_ABOVE_8_X
+else
 LOCAL_SHARED_LIBRARIES += \
 	libcamera_metadata \
 	libcamera_client
+endif
 else
 LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../metadata/libcamera_client/include \
@@ -73,10 +86,6 @@ LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../metadata/header_files/include/system/core/include
 LOCAL_STATIC_LIBRARIES += \
 	librkisp_metadata
-endif
-
-ifeq ($(IS_ANDROID_OS),true)
-LOCAL_SHARED_LIBRARIES += libutils libcutils
 endif
 
 LOCAL_MODULE:= librkisp

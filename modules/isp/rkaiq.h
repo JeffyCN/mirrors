@@ -19,7 +19,12 @@
 #define __RKAIQ_H
 
 #include <xcam_std.h>
+#ifdef ANDROID_VERSION_ABOVE_8_X
+#include <CameraMetadata.h>
+using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
+#else
 #include <camera/CameraMetadata.h>
+#endif
 #include <base/xcam_params.h>
 
 using namespace android;

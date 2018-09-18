@@ -64,7 +64,7 @@ typedef struct AwdrInstanceConfig_s {
 
 
 typedef struct CamerIcWdrConfig_s {
-
+  void *place_holder;
 } CamerIcWdrConfig_t;
 
 

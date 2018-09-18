@@ -1,5 +1,5 @@
 ifeq ($(IS_NEED_COMPILE_TINYXML2),true)
-BUILD_DEPS += tinyxml2
+BUILD_DEPS += ../../ext/tinyxml2
 endif
 
 ifeq ($(IS_NEED_COMPILE_STLPORT),true)
@@ -7,7 +7,7 @@ BUILD_DEPS+=stlport
 endif
 
 ifeq ($(IS_NEED_COMPILE_EXPAT),true)
-BUILD_DEPS+=expat
+BUILD_DEPS+= ../../ext/expat
 endif
 
 

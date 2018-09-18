@@ -14,14 +14,14 @@
 
 CamIA10Engine::CamIA10Engine():
     aecContext(NULL),
-    awbContext(NULL),
-    afContext(NULL),
-    aecParams(NULL),
-    awbParams(NULL),
-    afParams(NULL),
     aecDesc(NULL),
+    aecParams(NULL),
+    awbContext(NULL),
     awbDesc(NULL),
-    afDesc(NULL)
+    awbParams(NULL),
+    afContext(NULL),
+    afDesc(NULL),
+    afParams(NULL)
 {
     init();
     /*
@@ -489,7 +489,6 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
         }
     }
     *shd = *set;
-updateAeConfig_end:
     return result;
 }
 
@@ -562,7 +561,8 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
 
         }
 
-        AwbRunningOutputResult_t outresult = {0};
+        AwbRunningOutputResult_t outresult;
+        memset(&outresult, 0, sizeof(AwbRunningOutputResult_t));
         if (awbDesc) {
             XCamAwbParam param;
             param.mode = XCAM_AWB_MODE_AUTO;
@@ -797,8 +797,6 @@ RESULT CamIA10Engine::updateAfConfig(struct CamIA10_DyCfg* cfg) {
           AfUnLock(hAf);
     }
 #endif
-
-updateAfConfig_end:
     return result;
 }
 
@@ -874,9 +872,11 @@ void CamIA10Engine::dumpAe()
 RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result)
 {
     RESULT ret = RET_SUCCESS;
-    AwbRunningInputParams_t MeasResult = {0};
-    AwbRunningOutputResult_t retOuput = {0};
+    AwbRunningInputParams_t MeasResult;
+    AwbRunningOutputResult_t retOuput;
 
+    memset(&MeasResult, 0, sizeof(AwbRunningInputParams_t));
+    memset(&retOuput, 0, sizeof(AwbRunningOutputResult_t));
     awbParams = param;
     HalCamerIcAwbMeasure2AwbMeasure(&(mStats.awb), &(MeasResult.MesureResult));
     for (int i = 0; i < AWB_HIST_NUM_BINS; i++)
@@ -1602,7 +1602,7 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
         }
         //end of dynamic config
 
-        if (mStats.meas_type & (CAMIA10_AEC_MASK | CAMIA10_HST_MASK) == 0) {
+        if ((mStats.meas_type & (CAMIA10_AEC_MASK | CAMIA10_HST_MASK)) == 0) {
             return ret;
         }
         if ((lastTime == -1 && lastGain == -1) ||
@@ -1818,9 +1818,11 @@ void CamIA10Engine::updateAwbResults
 RESULT CamIA10Engine::runAWB(HAL_AwbCfg* awbHalCfg) {
     RESULT result = RET_SUCCESS;
     //convert statics to awb algorithm
-    AwbRunningInputParams_t MeasResult = {0};
-    AwbRunningOutputResult_t retOuput = {0};
+    AwbRunningInputParams_t MeasResult;
+    AwbRunningOutputResult_t retOuput;
 
+    memset(&MeasResult, 0, sizeof(AwbRunningInputParams_t));
+    memset(&retOuput, 0, sizeof(AwbRunningOutputResult_t));
     //start dynamic config
     if (!mInitDynamic) {
         mAWBHalCfg = *awbHalCfg;
@@ -1890,7 +1892,8 @@ RESULT CamIA10Engine::runAWB(HAL_AwbCfg* awbHalCfg) {
 
             }
 
-            AwbRunningOutputResult_t outresult = {0};
+            AwbRunningOutputResult_t outresult;
+            memset(&outresult, 0, sizeof(AwbRunningOutputResult_t));
             if (awbDesc) {
                 XCamAwbParam param;
                 param.mode = XCAM_AWB_MODE_AUTO;
@@ -2330,7 +2333,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     //may override other awb related modules, so need place it first.
     if (manCfg->updated_mask & HAL_ISP_AWB_MEAS_MASK) {
-        CamerIcAwbMeasConfig_t awb_meas_result = {BOOL_FALSE, 0};
+        CamerIcAwbMeasConfig_t awb_meas_result = {BOOL_FALSE, 0, 0, 0};
         awb_meas_result.awb_meas_mode_result = &(result->awb.MeasMode);
         awb_meas_result.awb_meas_result = &(result->awb.MeasConfig);
         awb_meas_result.awb_win = &(result->awb.awbWin);
@@ -2423,7 +2426,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
     }
 
     if (manCfg->updated_mask & HAL_ISP_LSC_MASK) {
-        CamerIcLscConfig_t lsc_result = {BOOL_FALSE, 0};
+        CamerIcLscConfig_t lsc_result = {BOOL_FALSE, 0, 0};
         lsc_result.lsc_result = &(result->awb.LscMatrixTable);
         lsc_result.lsc_seg_result = &(result->awb.SectorConfig);
         ret = cam_ia10_isp_lsc_config
@@ -2485,7 +2488,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
     }
 
     if (manCfg->updated_mask & HAL_ISP_CTK_MASK) {
-        CameraIcCtkConfig_t ctk_result = {BOOL_FALSE, 0};
+        CameraIcCtkConfig_t ctk_result = {BOOL_FALSE, 0, 0};
         ctk_result.ctk_matrix_result = &(result->awb.CcMatrix);
         ctk_result.ctk_offset_result = &(result->awb.CcOffset);
         ret = cam_ia10_isp_ctk_config
@@ -2530,7 +2533,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
     }
 
     if (manCfg->updated_mask & HAL_ISP_AEC_MASK) {
-        CameraIcAecConfig_t aec_result = {BOOL_FALSE, 0};
+        CameraIcAecConfig_t aec_result = {BOOL_FALSE, 0, 0};
         aec_result.aec_meas_mode = (int*)(&(result->aec.meas_mode));
         aec_result.meas_win = &(result->aec.meas_win);
         ret = cam_ia10_isp_aec_config

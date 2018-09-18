@@ -132,7 +132,7 @@ static RESULT AwdrApplyConfiguration
   ALOGV( "%s: (enter)\n", __func__);
 
   if (pConfig->hCamCalibDb == NULL) {
-    ALOGE("%s: hCamCalibDb NULL\n", __func__, pConfig->hCamCalibDb);
+    ALOGE("%s: hCamCalibDb NULL\n", __func__);
     return (RET_INVALID_PARM);
   }
 
@@ -166,7 +166,7 @@ static RESULT AwdrApplyConfiguration
         break;
       default:
         ALOGV( "%s: pConfig->mode: %d isn't support",
-              pConfig->mode);
+              __func__, pConfig->mode);
         break;
     }
 

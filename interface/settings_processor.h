@@ -22,7 +22,12 @@
 #define __SETTINGS_PROCESSOR_H
 
 #include <xcam_std.h>
+#ifdef ANDROID_VERSION_ABOVE_8_X
+#include <CameraMetadata.h>
+using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
+#else
 #include <camera/CameraMetadata.h>
+#endif
 #include "rkaiq.h"
 #include "CameraWindow.h"
 

@@ -82,5 +82,11 @@ LOCAL_C_INCLUDES += \
 endif
 
 LOCAL_MODULE:= librkisp_ctrlloop
+ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+LOCAL_PROPRIETARY_MODULE := true
+LOCAL_C_INCLUDES += \
+system/core/libutils/include \
+system/core/include
+endif
 
 include $(BUILD_STATIC_LIBRARY)
