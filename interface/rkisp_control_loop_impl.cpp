@@ -24,7 +24,9 @@ int rkisp_cl_init(void** cl_ctx, const char* tuning_file_path,
                   const cl_result_callback_ops_t *callback_ops) {
 	LOGD("--------------------------rkisp_cl_init");
     RkispDeviceManager *device_manager = new RkispDeviceManager(callback_ops);
+    device_manager->set_has_3a(true);
     device_manager->set_iq_path(tuning_file_path);
+    LOGD("Enable 3a ,using IQ file path %s", tuning_file_path);
     *cl_ctx = (void*)device_manager;
     return 0;
 }
