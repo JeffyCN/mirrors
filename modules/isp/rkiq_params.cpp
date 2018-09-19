@@ -273,7 +273,11 @@ static int hst_param_check(struct cifisp_hst_config* arg)
         LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
     }
-    for (i = 0; i < CIFISP_HISTOGRAM_WEIGHT_GRIDS_SIZE; i++) {
+#ifdef RKISP_v12
+    for (i = 0; i < 81; i++) {
+#else
+    for (i = 0; i < 81; i++) {
+#endif
         if (arg->hist_weight[i] & CIF_ISP_HIST_WEIGHT_RESERVED) {
             LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             return -1;

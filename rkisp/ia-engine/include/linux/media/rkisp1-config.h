@@ -4,32 +4,15 @@
  * Copyright (C) 2017 Rockchip Electronics Co., Ltd.
  */
 
-#ifndef _UAPI_RKISP1_CONFIG_H
-#define _UAPI_RKISP1_CONFIG_H
+#ifndef _UAPI_RKISP1_V12_CONFIG_H
+#define _UAPI_RKISP1_V12_CONFIG_H
 
+/*
+ * BELOWS ARE COPIED FROM include/uapi/linux/rkisp1-config_v12.h,
+ * DO NOT EDIT IT.
+ */
 #include <linux/types.h>
 #include <linux/v4l2-controls.h>
-
-#define CIFISP_DPCC_ID      0
-#define CIFISP_BLS_ID       1
-#define CIFISP_SDG_ID       2
-#define CIFISP_HST_ID       3
-
-#define CIFISP_LSC_ID       4
-#define CIFISP_AWB_GAIN_ID  5
-#define CIFISP_FLT_ID       6
-#define CIFISP_BDM_ID       7
-#define CIFISP_CTK_ID       8
-#define CIFISP_GOC_ID       9
-#define CIFISP_CPROC_ID     10
-#define CIFISP_AFC_ID       11
-#define CIFISP_AWB_ID       12
-
-#define CIFISP_IE_ID        13
-#define CIFISP_AEC_ID       14
-#define CIFISP_WDR_ID       15
-#define CIFISP_DPF_ID       16
-#define CIFISP_DPF_STRENGTH_ID  17
 
 #define CIFISP_MODULE_DPCC              (1 << 0)
 #define CIFISP_MODULE_BLS               (1 << 1)
@@ -53,9 +36,9 @@
 #define CIFISP_CTK_COEFF_MAX            0x100
 #define CIFISP_CTK_OFFSET_MAX           0x800
 
-#define CIFISP_AE_MEAN_MAX              25
-#define CIFISP_AE_MEAN_W                5
-#define CIFISP_HIST_BIN_N_MAX           16
+#define CIFISP_AE_MEAN_MAX              81
+#define CIFISP_AE_MEAN_W                9
+#define CIFISP_HIST_BIN_N_MAX           32
 #define CIFISP_AFM_MAX_WINDOWS          3
 #define CIFISP_DEGAMMA_CURVE_SIZE       17
 
@@ -91,7 +74,7 @@
  * Gamma out
  */
 /* Maximum number of color samples supported */
-#define CIFISP_GAMMA_OUT_MAX_SAMPLES       17
+#define CIFISP_GAMMA_OUT_MAX_SAMPLES       34
 
 /*
  * Lens shade correction
@@ -109,7 +92,7 @@
  * Histogram calculation
  */
 /* Last 3 values unused. */
-#define CIFISP_HISTOGRAM_WEIGHT_GRIDS_SIZE 28
+#define CIFISP_HISTOGRAM_WEIGHT_GRIDS_SIZE 81
 
 /*
  * Defect Pixel Cluster Correction
@@ -591,19 +574,6 @@ struct cifisp_dpf_strength_config {
 	unsigned char b;
 } __attribute__ ((packed));
 
-struct cifisp_last_capture_config {
-	struct cifisp_cproc_config cproc;
-	struct cifisp_goc_config   goc;
-	struct cifisp_ctk_config   ctk;
-	struct cifisp_bdm_config   bdm;
-	struct cifisp_flt_config   flt;
-	struct cifisp_awb_gain_config awb_gain;
-	struct cifisp_awb_meas_config awb_meas;
-	struct cifisp_lsc_config lsc;
-	struct cifisp_sdg_config sdg;
-	struct cifisp_bls_config bls;
-};
-
 /**
  * struct cifisp_isp_other_cfg - Parameters for some blocks in rockchip isp1
  *
@@ -783,10 +753,57 @@ struct cifisp_stat {
  * @frame_id: frame ID for sync
  * @params: statistics data
  */
+struct rkisp1_stat_buffer {
+	unsigned int meas_type;
+	unsigned int frame_id;
+	struct cifisp_stat params;
+} __attribute__ ((packed));
+
+/* COPIED FROM KERNEL DONE */
+
+/*
+ * BELOWS ARE FOR COMPATIBLE RESEON, COPIED FORM rk-isp10-config.h
+ */
+
+
+// rename struct rkisp1_stat_buffer to cifisp_stat_buffer
 struct cifisp_stat_buffer {
 	unsigned int meas_type;
 	unsigned int frame_id;
 	struct cifisp_stat params;
 } __attribute__ ((packed));
 
-#endif /* _UAPI_RKISP1_CONFIG_H */
+struct cifisp_last_capture_config {
+	struct cifisp_cproc_config cproc;
+	struct cifisp_goc_config   goc;
+	struct cifisp_ctk_config   ctk;
+	struct cifisp_bdm_config   bdm;
+	struct cifisp_flt_config   flt;
+	struct cifisp_awb_gain_config awb_gain;
+	struct cifisp_awb_meas_config awb_meas;
+	struct cifisp_lsc_config lsc;
+	struct cifisp_sdg_config sdg;
+	struct cifisp_bls_config bls;
+};
+
+#define CIFISP_DPCC_ID      0
+#define CIFISP_BLS_ID       1
+#define CIFISP_SDG_ID       2
+#define CIFISP_HST_ID       3
+
+#define CIFISP_LSC_ID       4
+#define CIFISP_AWB_GAIN_ID  5
+#define CIFISP_FLT_ID       6
+#define CIFISP_BDM_ID       7
+#define CIFISP_CTK_ID       8
+#define CIFISP_GOC_ID       9
+#define CIFISP_CPROC_ID     10
+#define CIFISP_AFC_ID       11
+#define CIFISP_AWB_ID       12
+
+#define CIFISP_IE_ID        13
+#define CIFISP_AEC_ID       14
+#define CIFISP_WDR_ID       15
+#define CIFISP_DPF_ID       16
+#define CIFISP_DPF_STRENGTH_ID  17
+#endif /* _UAPI_RKISP1_V12_CONFIG_H */

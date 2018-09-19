@@ -61,12 +61,8 @@ X3aIspStatsData::fill_standard_stats ()
 
     XCamGridStat *standard_data = standard_stats->stats;
 
-    for (uint32_t i = 0; i < CIFISP_AE_MEAN_W; ++i) {
-        for (uint32_t j = 0; j < CIFISP_AE_MEAN_W; ++j) {
-            standard_data[i * CIFISP_AE_MEAN_W + j].avg_y =
-                _isp_data->params.ae.exp_mean[i * CIFISP_AE_MEAN_W + j];
-        }
-    }
+    for (uint32_t i = 0; i < CIFISP_AE_MEAN_MAX; ++i)
+            standard_data[i].avg_y =_isp_data->params.ae.exp_mean[i];
 #if RKISP
     standard_data[0].mean_cr_or_r= _isp_data->params.awb.awb_mean[0].mean_cr_or_r;
     standard_data[0].mean_y_or_g= _isp_data->params.awb.awb_mean[0].mean_y_or_g;
@@ -92,27 +88,28 @@ X3aIspStatsData::fill_standard_stats ()
     }
 #if 1
     XCAM_LOG_INFO("> AE Measurement:\n");
-    for (int i = 0; i < CIFISP_AE_MEAN_MAX; i += CIFISP_AE_MEAN_W) {
-        if (CIFISP_AE_MEAN_W == 5)
-            XCAM_LOG_INFO("> Exposure means %d-%d: %d, %d, %d, %d, %d\n",i, i+4,
-                                _isp_data->params.ae.exp_mean[i],
-                                _isp_data->params.ae.exp_mean[i + 1],
-                                _isp_data->params.ae.exp_mean[i + 2],
-                                _isp_data->params.ae.exp_mean[i + 3],
-                                _isp_data->params.ae.exp_mean[i + 4]);
-        else if (CIFISP_AE_MEAN_W == 9)
-            XCAM_LOG_INFO("> Exposure means %d-%d: %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
-                                i, i+8,
-                                _isp_data->params.ae.exp_mean[i],
-                                _isp_data->params.ae.exp_mean[i + 1],
-                                _isp_data->params.ae.exp_mean[i + 2],
-                                _isp_data->params.ae.exp_mean[i + 3],
-                                _isp_data->params.ae.exp_mean[i + 4],
-                                _isp_data->params.ae.exp_mean[i + 5],
-                                _isp_data->params.ae.exp_mean[i + 6],
-                                _isp_data->params.ae.exp_mean[i + 7],
-                                _isp_data->params.ae.exp_mean[i + 8]);
-    }
+    #ifdef RKISP_v12
+    for (int i = 0; i < 81; i += 9)
+        XCAM_LOG_INFO("> Exposure means %d-%d: %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
+                            i, i+8,
+                            _isp_data->params.ae.exp_mean[i],
+                            _isp_data->params.ae.exp_mean[i + 1],
+                            _isp_data->params.ae.exp_mean[i + 2],
+                            _isp_data->params.ae.exp_mean[i + 3],
+                            _isp_data->params.ae.exp_mean[i + 4],
+                            _isp_data->params.ae.exp_mean[i + 5],
+                            _isp_data->params.ae.exp_mean[i + 6],
+                            _isp_data->params.ae.exp_mean[i + 7],
+                            _isp_data->params.ae.exp_mean[i + 8]);
+    #else
+    for (int i = 0; i < 25; i += 5)
+        XCAM_LOG_INFO("> Exposure means %d-%d: %d, %d, %d, %d, %d\n",i, i+4,
+                            _isp_data->params.ae.exp_mean[i],
+                            _isp_data->params.ae.exp_mean[i + 1],
+                            _isp_data->params.ae.exp_mean[i + 2],
+                            _isp_data->params.ae.exp_mean[i + 3],
+                            _isp_data->params.ae.exp_mean[i + 4]);
+    #endif
 
     XCAM_LOG_INFO("> AWB mean lumin-ycbcr-rgb=[%d-%d-%d]",
         standard_data[0].mean_cr_or_r,
