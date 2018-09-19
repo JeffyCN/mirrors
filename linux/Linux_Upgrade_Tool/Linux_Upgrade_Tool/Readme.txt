@@ -19,3 +19,11 @@ v1.33 revision:
 1.support fixed uuid in the gpt
 add one line as following in the parameter:
 uuid:partition_name=00000000-0000-0000-0000-000000000000
+
+v1.34 revision:
+fix prepare_gpt_backup bug
+
+v1.35 revision:
+1.support do operateion on specific device by sn
+2.add rid rfi rci rcb of shell mode
+3.when not found config.ini in ~./.config/upgrade_tool/,move ./config.ini  
