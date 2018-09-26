@@ -10,7 +10,7 @@
 #include <netpacket/packet.h>
 #include <net/if.h>
 
-#define VERSION	"1.1"
+#define VERSION	"1.2"
 
 #define TAG "dhd_priv: "
 #if defined(ANDROID)
@@ -61,7 +61,8 @@ main(int argc, char **argv)
 
 	while (*++argv) {
 		strcat(buf, *argv);
-		strcat(buf, " ");
+		if (*(argv+1))
+			strcat(buf, " ");
 	}
 
 	ioctl_sock = socket(PF_INET, SOCK_DGRAM, 0);
@@ -80,7 +81,7 @@ main(int argc, char **argv)
 	ifr.ifr_data = &priv_cmd;
 
 	if ((ret = ioctl(ioctl_sock, SIOCDEVPRIVATE + 1, &ifr)) < 0) {
-		DHD_PRINTF(TAG "%failed to issue private commands %d\n", ret);
+		DHD_PRINTF(TAG "failed to issue private commands %d\n", ret);
 	} else {
 		DHD_PRINTF(TAG "buf = %s, len = %d, ret = %d\n", buf, strlen(buf), ret);
 	}
