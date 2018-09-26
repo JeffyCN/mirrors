@@ -21,7 +21,7 @@ case "$1" in
 		fi
 
 		printf "load wifi modules: "
-		rk_wifi_init
+		rk_wifi_init BT_TTY_DEV
 		[ $? = 0 ] && echo "OK" || echo "FAIL"
 
 		wl PM 0

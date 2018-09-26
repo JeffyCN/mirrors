@@ -20,6 +20,8 @@
 
 #define UNKKOWN_DRIVER_MODULE_ARG ""
 
+#define BT_TTY_DEV "/dev/ttyS4"
+
 int check_wifi_chip_type(void);
 int check_wifi_chip_type_string(char *type);
 int rk_wifi_power_ctrl(int on);
@@ -39,7 +41,9 @@ static const char PREFIX_USB[] = "PRODUCT=";
 
 static int invalid_wifi_device_id = -1;
 static char wifi_type[64] = {0};
+static char *bt_firmware_patch = {0};
 static int wifi_dirver_is_loaded = -1;
+static char bt_tty_dev[64] = { 0 };
 
 typedef struct _wifi_devices
 {
@@ -52,6 +56,7 @@ typedef struct _wifi_ko_file_name
 	char wifi_name[64];
 	char wifi_module_path[128];
 	char wifi_module_arg[128];
+	char bt_firmware_path[128];
 
 } wifi_ko_file_name;
 
@@ -69,11 +74,12 @@ static wifi_device supported_wifi_devices[] = {
 	{"RTL8189FS",	"024c:f179"},
 	{"RTL8192DU",	"0bda:8194"},
 	{"RTL8812AU",	"0bda:8812"},
-	{"AP6354",	"02d0:4354"},
-	{"AP6330",	"02d0:4330"},
-	{"AP6356S",	"02d0:4356"},
-	{"AP6335",	"02d0:4335"},
+	{"AP6354",		"02d0:4354"},
+	{"AP6330",		"02d0:4330"},
+	{"AP6356S",		"02d0:4356"},
+	{"AP6335",		"02d0:4335"},
 	{"AP6255",      "02d0:a9bf"},
+	{"AP6212A",     "02d0:a9a6"},
 	{"RTL8822BE",	"10ec:b822"},
 };
 
@@ -110,28 +116,41 @@ static wifi_device supported_wifi_devices[] = {
 #define RTL8812AU_DRIVER_MODULE_NAME "8812au"
 #define BCM_DRIVER_MODULE_NAME       "bcmdhd"
 
+#define AP6330_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/rk903.hcd"
+#define AP6212_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/bcm43438a0.hcd"
+#define AP6212A_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/bcm43438a1.hcd"
+#define AP6335_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/bcm4339a0.hcd"
+#define AP6255_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/BCM4345C0.hcd"
+#define AP6354_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/bcm4354a1.hcd"
+#define AP6356_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/BCM4356A2.hcd"
+#define AP6398s_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/BCM4359C0.hcd"
+#define AP6236_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/BCM4343B0.hcd"
+
 wifi_ko_file_name module_list[] =
 {
-	{"RTL8723BU", RTL8723BU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8188EU", RTL8188EU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8192DU", RTL8192DU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8822BU", RTL8822BU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8822BS", RTL8822BS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8188FU", RTL8188FU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8189ES", RTL8189ES_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8723BS", RTL8723BS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8723CS", RTL8723CS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8723DS", RTL8723DS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8812AU", RTL8812AU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8189FS", RTL8189FS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"RTL8822BE", RTL8822BE_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"AP6335",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"AP6330",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"AP6354",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"AP6356S",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"AP6255",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"APXXX",           BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG},
-	{"UNKNOW",       DRIVER_MODULE_PATH_UNKNOW, UNKKOWN_DRIVER_MODULE_ARG}
+	{"RTL8723BU", RTL8723BU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8188EU", RTL8188EU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8192DU", RTL8192DU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8822BU", RTL8822BU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8822BS", RTL8822BS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8188FU", RTL8188FU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8189ES", RTL8189ES_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8723BS", RTL8723BS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8723CS", RTL8723CS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8723DS", RTL8723DS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8812AU", RTL8812AU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8189FS", RTL8189FS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8822BE", RTL8822BE_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"AP6335",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6335_BT_FIRMWARE_MODULE_PATH},
+	{"AP6330",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6330_BT_FIRMWARE_MODULE_PATH},
+	{"AP6354",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6354_BT_FIRMWARE_MODULE_PATH},
+	{"AP6356S",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"AP6255",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6255_BT_FIRMWARE_MODULE_PATH},
+	{"AP6212",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6212_BT_FIRMWARE_MODULE_PATH},
+	{"AP6212A",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6212A_BT_FIRMWARE_MODULE_PATH},
+	{"AP6356",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6356_BT_FIRMWARE_MODULE_PATH},
+	{"APXXX",           BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"UNKNOW",       DRIVER_MODULE_PATH_UNKNOW, UNKKOWN_DRIVER_MODULE_ARG, ""}
 
 };
 
@@ -295,13 +314,13 @@ int check_wireless_ready(void)
 	return 0;
 }
 
-int wifi_load_driver(void)
+int wifibt_load_driver(void)
 {
 	char* wifi_ko_path = NULL ;
 	char* wifi_ko_arg =NULL;
 	int i = 0;
 	int count = 100; /* wait at most 20 seconds for completion */
-	char temp[120] = {0};
+	char temp[256] = {0};
 
 	if (wifi_dirver_is_loaded == 1) {
 		return 0;
@@ -309,7 +328,6 @@ int wifi_load_driver(void)
 
 	if (check_wireless_ready()) {
 		wifi_dirver_is_loaded = 1;
-		return 0;
 	}
 
 	printf("%s \n", __func__);
@@ -323,16 +341,17 @@ int wifi_load_driver(void)
 		if (!strcmp(wifi_type , module_list[i].wifi_name)) {
 			wifi_ko_path = module_list[i].wifi_module_path;
 			wifi_ko_arg = module_list[i].wifi_module_arg;
+			bt_firmware_patch = module_list[i].bt_firmware_path;
 			printf("%s matched ko file path  %s \n", __func__, wifi_ko_path);
 			break;
 		}
 	}
+
 	if (wifi_ko_path == NULL) {
 		printf("%s falied to find wifi driver for type=%s \n", __func__, wifi_type);
 		return -1;
 	}
 
-	//if (insmod(wifi_ko_path, wifi_ko_arg) < 0) {
 	sprintf(temp, "insmod %s %s", wifi_ko_path, wifi_ko_arg);
 	printf("%s %s\n", __func__, temp);
 	if (system(temp)) {
@@ -342,19 +361,37 @@ int wifi_load_driver(void)
 
 	while (count-- > 0) {
 		if (check_wireless_ready())
-			return 0;
+			break;
 		usleep(200000);
 	}
 
-	//wifi_unload_driver();
-	return -1;
+	//bt init
+	if (strcmp(bt_firmware_patch , "")) {
+		memset(temp, 0, 256);
+		system("echo 0 > /sys/class/rfkill/rfkill0/state");
+		usleep(2);
+		system("echo 1 > /sys/class/rfkill/rfkill0/state");
+		usleep(2);
+
+		sprintf(temp, "brcm_patchram_plus1 --bd_addr_rand --enable_hci --no2bytes --use_baudrate_for_download  --tosleep  200000 --baudrate 1500000 --patchram  %s %s &", bt_firmware_patch, bt_tty_dev);
+		printf("%s %s\n", __func__, temp);
+		if (system(temp)) {
+			printf("bt_init: %s failed \n", temp);
+			return -1;
+		}
+	}
+
+	return 0;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	printf("Rockchip Linux Wifi init");
+	printf("Rockchip Linux WifiBt init \n");
 
-	wifi_load_driver();
+	strncpy(bt_tty_dev, argv[1], 10);
+	printf("BT TTY: %s \n", bt_tty_dev);
+
+	wifibt_load_driver();
 
 	return 0;
 }
