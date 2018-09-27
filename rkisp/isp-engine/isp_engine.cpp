@@ -292,8 +292,10 @@ bool IspEngine::configure(const Configuration& config)
     if ((mCamIA_DyCfg.aec_cfg.win.right_width == 0) ||
             (mCamIA_DyCfg.aec_cfg.win.bottom_height == 0))
     {
-        mCamIA_DyCfg.aec_cfg.win.right_width = 2048;
-        mCamIA_DyCfg.aec_cfg.win.bottom_height = 2048;
+        mCamIA_DyCfg.aec_cfg.win.right_width =
+            config.sensor_mode.isp_input_width;
+        mCamIA_DyCfg.aec_cfg.win.bottom_height =
+            config.sensor_mode.isp_input_height;
         mCamIA_DyCfg.aec_cfg.win.left_hoff = 0;
         mCamIA_DyCfg.aec_cfg.win.top_voff = 0;
     }
@@ -307,8 +309,10 @@ bool IspEngine::configure(const Configuration& config)
             int width, height, x, y;
             int outWidth, outHeight;
 
-            outWidth = 2048;
-            outHeight = 2048;
+            outWidth =
+                config.sensor_mode.isp_input_width;
+            outHeight =
+                config.sensor_mode.isp_input_height;
             width  = outWidth * 0.15;
             height = outHeight * 0.15;
             x = ( outWidth  >> 1 ) - ( width  >> 1 );
