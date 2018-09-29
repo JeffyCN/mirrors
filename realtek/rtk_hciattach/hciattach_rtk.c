@@ -2342,7 +2342,7 @@ static int vendor_storage_read(int cmd, char *buf, int buf_len)
         close(sys_fd);
 
         rknand_print_hex_data("vendor read:", req, req->len);
-        strncpy(buf, req->data, buf_len);
+	memcpy(buf, req->data, req->len);
         return req->len;
 }
 static int vendor_storage_write(int cmd, char *num)
