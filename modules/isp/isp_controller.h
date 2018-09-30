@@ -78,6 +78,7 @@ public:
 private:
 
     XCAM_DEAD_COPY (IspController);
+    int get_sensor_fps(float& fps);
 
 private:
     volatile bool            _is_exit;

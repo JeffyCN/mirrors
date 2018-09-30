@@ -345,6 +345,8 @@ struct rkisp_exposure {
     unsigned int digital_gain;    
 	unsigned int shutter_speed;
 	unsigned int aperture;
+    // also means LinePeriodsPerField or VTS
+    unsigned int frame_line_length;
 };
 
 struct rkisp_focus {

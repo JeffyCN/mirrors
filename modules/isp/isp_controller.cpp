@@ -118,6 +118,7 @@ IspController::handle_sof(int64_t time, int frameid)
     exposure.coarse_integration_time = _exposure_queue[EXPOSURE_TIME_DELAY - 1].coarse_integration_time;
     exposure.analog_gain = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].analog_gain;
     exposure.digital_gain = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].digital_gain;
+    exposure.frame_line_length = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].frame_line_length;
 
     set_3a_exposure(exposure);
 
@@ -218,6 +219,22 @@ IspController::get_pixel(rk_aiq_exposure_sensor_descriptor* sensor_desc)
     return 0;
 }
 
+int
+IspController::get_sensor_fps(float& fps)
+{
+    struct v4l2_subdev_frame_interval finterval;
+
+    memset(&finterval, 0, sizeof(finterval));
+    finterval.pad = 0;
+
+    if (_sensor_subdev->io_control(VIDIOC_SUBDEV_G_FRAME_INTERVAL, &finterval) < 0)
+        return -errno;
+
+    fps = (float)(finterval.interval.denominator) / finterval.interval.numerator;
+
+   return 0;
+}
+
 XCamReturn
 IspController::get_sensor_descriptor (rk_aiq_exposure_sensor_descriptor *sensor_desc)
 {
@@ -228,8 +245,14 @@ IspController::get_sensor_descriptor (rk_aiq_exposure_sensor_descriptor *sensor_
 
     if (get_blank(sensor_desc))
         return XCAM_RETURN_ERROR_IOCTL;
-
-    if (get_pixel(sensor_desc))
+    // pixel rate is not equal to pclk sometimes
+    // prefer to use pclk = ppl * lpp * fps
+    float fps = 0;
+    if (get_sensor_fps(fps) == 0)
+        sensor_desc->pixel_clock_freq_mhz =
+            (float)(sensor_desc->pixel_periods_per_line) *
+            sensor_desc->line_periods_per_field * fps / 1000000.0;
+    else if (get_pixel(sensor_desc))
         return XCAM_RETURN_ERROR_IOCTL;
 
     if (get_exposure_range(sensor_desc))
@@ -711,9 +734,10 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
         return XCAM_RETURN_BYPASS;
 
     LOGD("----------------------------------------------");
-    LOGD("|||set_3a_exposure (%d-%d) expsync in sof %d\n",
+    LOGD("|||set_3a_exposure (%d-%d) fll 0x%x expsync in sof %d\n",
         isp_exposure.coarse_integration_time,
         isp_exposure.analog_gain,
+        isp_exposure.frame_line_length,
         _frame_sequence);
 
     if (_device.ptr()) {
@@ -763,15 +787,16 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
         // set vts before exposure time firstly
         rk_aiq_exposure_sensor_descriptor sensor_desc;
         get_sensor_descriptor (&sensor_desc);
-        if (sensor_desc.line_periods_per_field < isp_exposure.coarse_integration_time) {
-            memset(&ctrl, 0, sizeof(ctrl));
-            ctrl.id = V4L2_CID_VBLANK;
-            /* TODO: havn't consider the margin */
-            ctrl.value = isp_exposure.coarse_integration_time - sensor_desc.sensor_output_width;
-            if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
-                XCAM_LOG_ERROR ("failed to set vblank result(val: %d)", ctrl.value);
-                return XCAM_RETURN_ERROR_IOCTL;
-            }
+
+        isp_exposure.frame_line_length =
+            (sensor_desc.line_periods_per_field < isp_exposure.frame_line_length) ?
+            isp_exposure.frame_line_length : sensor_desc.line_periods_per_field;
+        memset(&ctrl, 0, sizeof(ctrl));
+        ctrl.id = V4L2_CID_VBLANK;
+        ctrl.value = isp_exposure.frame_line_length - sensor_desc.sensor_output_height;
+        if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
+            XCAM_LOG_ERROR ("failed to set vblank result(val: %d)", ctrl.value);
+            return XCAM_RETURN_ERROR_IOCTL;
         }
 
         if (isp_exposure.coarse_integration_time!= 0) {
