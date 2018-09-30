@@ -123,9 +123,16 @@ RkispDeviceManager::set_control_params(const int request_frame_id,
     }
     XCamAeParam aeparams = inputParams->aeInputParams.aeParams;
     AeControls aectl = inputParams->aaaControls.ae;
-    LOGI("@%s %d: aeparms: mode-%d, metering_mode-%d, flicker_mode-%d, ex_min-%d, ex_max-%d, manual_exp-%d, manual_gain-%d, aeControls: mode-%d, lock-%d, preTrigger-%d, antibanding-%d, evCompensation-%d, fpsrange[%d, %d]", __FUNCTION__, __LINE__,
-         aeparams.mode, aeparams.metering_mode, aeparams.flicker_mode, aeparams.exposure_time_min, aeparams.exposure_time_max, aeparams.manual_exposure_time, aeparams.manual_analog_gain, 
-         aectl.aeMode, aectl.aeLock, aectl.aePreCaptureTrigger, aectl.aeAntibanding, aectl.evCompensation, aectl.aeTargetFpsRange[0], aectl.aeTargetFpsRange[1]);
+    LOGI("@%s %d: aeparms: mode-%d, metering_mode-%d, flicker_mode-%d,"
+         "ex_min-%" PRId64 ",ex_max-%" PRId64 ", manual_exp-%" PRId64 ", manual_gain-%f,"
+         "aeControls: mode-%d, lock-%d, preTrigger-%d, antibanding-%d,"
+         "evCompensation-%d, fpsrange[%d, %d]", __FUNCTION__, __LINE__,
+         aeparams.mode, aeparams.metering_mode, aeparams.flicker_mode,
+         aeparams.exposure_time_min, aeparams.exposure_time_max,
+         aeparams.manual_exposure_time, aeparams.manual_analog_gain,
+         aectl.aeMode, aectl.aeLock, aectl.aePreCaptureTrigger,
+         aectl.aeAntibanding, aectl.evCompensation,
+         aectl.aeTargetFpsRange[0], aectl.aeTargetFpsRange[1]);
     {
         SmartLock lock(_settingsMutex);
         _settings.push_back(inputParams);

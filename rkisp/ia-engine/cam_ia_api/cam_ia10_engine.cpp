@@ -470,6 +470,32 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
                               (set->ae_bias / 100.0f) * MAX(10, SetPoint / (1 - pAecGlobal->ClmTolerance / 100.0f) / 10.0f) ;
 
             mLightMode = cfg->LightMode;
+#if 1
+            if (set->frame_time_us_min != -1 && set->frame_time_us_max != -1) {
+                aecCfg.FpsSetEnable = true;
+                aecCfg.isFpsFix = false;
+                int ecmCnt = sizeof(pAecGlobal->EcmTimeDot.fCoeff) / sizeof (float);
+
+                for (int i = 1; i < ecmCnt - 3; i++) {
+                    aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_us_min / 1000000;
+                }
+                for (int i = ecmCnt - 3; i < ecmCnt; i++) {
+                    aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_us_max / 1000000;
+                }
+                LOGD("sensor param (%d)=[%f-%f-%f-%f-%f-%f] vts: %f, vtsMax: %d, pclk: %f, hts: %f\n",
+                  ecmCnt,
+                  aecCfg.EcmTimeDot.fCoeff[0],
+                  aecCfg.EcmTimeDot.fCoeff[1],
+                  aecCfg.EcmTimeDot.fCoeff[2],
+                  aecCfg.EcmTimeDot.fCoeff[3],
+                  aecCfg.EcmTimeDot.fCoeff[4],
+                  aecCfg.EcmTimeDot.fCoeff[5],
+                  aecCfg.LinePeriodsPerField,
+                  mStats.sensor_mode.line_periods_per_field,
+                  aecCfg.PixelClockFreqMHZ,
+                  aecCfg.PixelPeriodsPerLine);
+            }
+#endif
         }
 
         if ((set->mode != HAL_AE_OPERATION_MODE_MANUAL) &&
@@ -1564,9 +1590,8 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
                             aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_us_min / 1000000;
                         }
                         for (int i = ecmCnt - 3; i < ecmCnt; i++) {
-                            aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_us_min / 1000000;
+                            aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_us_max / 1000000;
                         }
-                        /*
                         				LOGD("sensor param (%d)=[%f-%f-%f-%f-%f-%f] vts: %f, vtsMax: %d, pclk: %f, hts: %f\n",
                         				  ecmCnt,
                         				  aecCfg.EcmTimeDot.fCoeff[0],
@@ -1579,7 +1604,6 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
                         				  mStats.sensor_mode.line_periods_per_field,
                         				  aecCfg.PixelClockFreqMHZ,
                         				  aecCfg.PixelPeriodsPerLine);
-                        */
                     }
                 }
             }

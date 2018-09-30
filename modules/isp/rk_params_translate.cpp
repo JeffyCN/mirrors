@@ -267,8 +267,8 @@ void ParamsTranslate::convert_to_rkisp_aec_config( XCamAeParam* aec_params,
     // window
     if (aec_params->window.x_end < 0 || aec_params->window.x_end > sensor_desc->sensor_output_width ||
         aec_params->window.y_end < 0 || aec_params->window.y_end > sensor_desc->sensor_output_height) {
-        LOGE("%s, XCamAeParam window is not right", __func__);
-        return;
+        LOGW("%s, XCamAeParam window is not right top,bottom(%d,%d)", __FUNCTION__,
+             aec_params->window.x_end, aec_params->window.y_end);
     } else if( aec_params->window.x_end != 0 && aec_params->window.y_end != 0 ) {
         config->win.left_hoff =  aec_params->window.x_start;
         config->win.top_voff =  aec_params->window.y_start;
@@ -283,8 +283,8 @@ void ParamsTranslate::convert_to_rkisp_aec_config( XCamAeParam* aec_params,
     // bias
     config->ae_bias = (int)(aec_params->ev_shift);
 
-    config->frame_time_us_min = aec_params->exposure_time_min;
-    config->frame_time_us_max = aec_params->exposure_time_max;
+    config->frame_time_us_min = aec_params->exposure_time_min / 1000;
+    config->frame_time_us_max = aec_params->exposure_time_max / 1000;
 
     LOGI("@%s %d: aec_config, flk:%d, mode:%d, meter_mode:%d, win(%d,%d,%d,%d), bias:%d, min:%d, max:%d ", __FUNCTION__, __LINE__,
          config->flk, config->mode, config->meter_mode,
