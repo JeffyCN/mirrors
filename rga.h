@@ -185,28 +185,28 @@ typedef struct RANGE
 }
 RANGE;
 
-typedef struct POINT
+typedef struct POINT_t
 {
     unsigned short x;
     unsigned short y;
 }
-POINT;
+POINT_t;
 
-typedef struct RECT
+typedef struct RECT_t
 {
     unsigned short xmin;
     unsigned short xmax; // width - 1
     unsigned short ymin; 
     unsigned short ymax; // height - 1 
-} RECT;
+} RECT_t;
 
-typedef struct RGB
+typedef struct RGT_t
 {
     unsigned char r;
     unsigned char g;
     unsigned char b;
     unsigned char res;
-}RGB;
+}RGB_t;
 
 
 typedef struct MMU
@@ -250,8 +250,8 @@ FADING;
 
 typedef struct line_draw_t
 {
-    POINT start_point;              /* LineDraw_start_point                */
-    POINT end_point;                /* LineDraw_end_point                  */
+    POINT_t start_point;              /* LineDraw_start_point                */
+    POINT_t end_point;                /* LineDraw_end_point                  */
     unsigned int   color;               /* LineDraw_color                      */
     unsigned int   flag;                /* (enum) LineDrawing mode sel         */
     unsigned int   line_width;          /* range 1~16 */
@@ -275,7 +275,7 @@ line_draw_t;
     unsigned int LUT_addr;              /* LUT addr */
 #endif
 
-    RECT clip;                      /* dst clip window default value is dst_vir */
+    RECT_t clip;                      /* dst clip window default value is dst_vir */
                                     /* value from [0, w-1] / [0, h-1]*/
         
     int sina;                   /* dst angle  default value 0  16.16 scan from table */
@@ -507,7 +507,7 @@ RGA_set_dst_vir_info(
 		unsigned long   v_addr,      /* v_addr      */
 		unsigned int   vir_w,       /* vir width   */
 		unsigned int   vir_h,       /* vir height  */
-		RECT           *clip,        /* clip window */
+		RECT_t           *clip,        /* clip window */
 		unsigned char  format,      /* format      */
 		unsigned char  a_swap_en
 		);
@@ -520,7 +520,7 @@ RGA_set_dst_vir_info(
 		unsigned int   v_addr,      /* v_addr      */
 		unsigned int   vir_w,       /* vir width   */
 		unsigned int   vir_h,       /* vir height  */
-		RECT           *clip,        /* clip window */
+		RECT_t           *clip,        /* clip window */
 		unsigned char  format,      /* format      */
 		unsigned char  a_swap_en
 		);
@@ -633,8 +633,8 @@ RGA_set_color_fill_mode(
 int
 RGA_set_line_point_drawing_mode(
 		struct rga_req *msg,
-		POINT sp,                     /* start point              */
-		POINT ep,                     /* end   point              */
+		POINT_t sp,                     /* start point              */
+		POINT_t ep,                     /* end   point              */
 		unsigned int color,           /* line point drawing color */
 		unsigned int line_width,      /* line width               */
 		unsigned char AA_en,          /* AA en                    */

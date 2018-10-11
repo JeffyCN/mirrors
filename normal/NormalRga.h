@@ -117,12 +117,12 @@ int         NormalRgaSetDstActiveInfo(struct rga_req *req,
 int         NormalRgaSetDstVirtualInfo(struct rga_req *msg,
         	unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,    
         	unsigned int  vir_w,    unsigned int vir_h,      
-        	RECT          *clip,    unsigned char format, unsigned char a_swap_en);
+        	RECT_t          *clip,    unsigned char format, unsigned char a_swap_en);
 #else
 int         NormalRgaSetDstVirtualInfo(struct rga_req *msg,
         	unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr,     
         	unsigned int vir_w,    unsigned int vir_h,      
-        	RECT           *clip,  unsigned char  format, unsigned char a_swap_en);
+        	RECT_t                     *clip,  unsigned char  format, unsigned char a_swap_en);
 #endif
 
 
@@ -138,12 +138,12 @@ int         NormalRgaSetPatActiveInfo(struct rga_req *req,
 int         NormalRgaSetPatVirtualInfo(struct rga_req *msg,
         	unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,    
         	unsigned int  vir_w,    unsigned int vir_h,      
-        	RECT          *clip,    unsigned char format, unsigned char a_swap_en);
+        	RECT_t                    *clip,    unsigned char format, unsigned char a_swap_en);
 #else
 int         NormalRgaSetPatVirtualInfo(struct rga_req *msg,
         	unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr,     
         	unsigned int vir_w,    unsigned int vir_h,      
-        	RECT           *clip,  unsigned char  format, unsigned char a_swap_en);
+        	RECT_t                     *clip,  unsigned char  format, unsigned char a_swap_en);
 #endif
 
 #if defined(__arm64__) || defined(__aarch64__)
@@ -233,7 +233,7 @@ int         NormalRgaSetColorFillMode(
 /* AA en                    */
 /* last point en            */
 int         NormalRgaSetLineDrawingMode(struct rga_req *msg,
-        		POINT sp,                     POINT ep,                     
+        		POINT_t sp,                     POINT_t  ep,                     
         		unsigned int color,           unsigned int line_width,      
         		unsigned char AA_en,          unsigned char last_point_en);
 

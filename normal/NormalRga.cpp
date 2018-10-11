@@ -167,7 +167,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	void *srcBuf = NULL;
 	void *dstBuf = NULL;
 	void *src1Buf = NULL;
-	RECT clip;
+	RECT_t clip;
 
 	if (!ctx) {
 		DEBUG("Try to use uninit rgaCtx=%p \n",ctx);
@@ -697,7 +697,7 @@ int RgaCollorFill(rga_info *dst)
 	struct rga_req rgaReg;
 	COLOR_FILL fillColor ;
 	void *dstBuf = NULL;
-	RECT clip;
+	RECT_t  clip;
 
 	if (!ctx) {
 		DEBUG("Try to use uninit rgaCtx=%p \n",ctx);
