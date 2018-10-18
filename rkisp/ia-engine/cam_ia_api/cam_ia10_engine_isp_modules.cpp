@@ -885,15 +885,6 @@ RESULT cam_ia10_isp_ie_config
   return result;
 }
 
-void cam_ia10_map_hal_win_to_isp(
-    uint16_t in_width, uint16_t in_height,
-    uint16_t drvWidth, uint16_t drvHeight,
-    uint16_t* out_width, uint16_t*  out_height
-) {
-  *out_width = in_width * drvWidth / HAL_WIN_REF_WIDTH;
-  *out_height = in_height * drvHeight / HAL_WIN_REF_HEIGHT;
-}
-
 /******************************************************************************
  * UpdateStepSize()
  *****************************************************************************/
@@ -974,7 +965,6 @@ RESULT cam_ia10_isp_hst_config
   } else if (enable_mode == HAL_ISP_ACTIVE_SETTING) {
     int ind = 0;
     uint8_t step_size = 0;
-    uint16_t step_width, step_height;
     ISP_CHECK_NULL(hst_cfg);
     hst_result->enabled = BOOL_TRUE;
     hst_result->mode = (CamerIcIspHistMode_t)(hst_cfg->mode);
@@ -985,18 +975,10 @@ RESULT cam_ia10_isp_hst_config
     hst_result->Window.height = hst_cfg->win.bottom_height;
     for (; ind < CAMERIC_ISP_HIST_GRID_ITEMS; ind++)
       hst_result->Weights[ind] = hst_cfg->weight[ind];
-    cam_ia10_map_hal_win_to_isp(
-        hst_cfg->win.right_width,
-        hst_cfg->win.bottom_height,
-        drv_width,
-        drv_height,
-        &step_width,
-        &step_height
-    );
     cam_ia10_isp_hst_update_stepSize(hst_result->mode,
                                      hst_result->Weights,
-                                     step_width,
-                                     step_height,
+                                     hst_cfg->win.right_width,
+                                     hst_cfg->win.bottom_height,
                                      &step_size);
     hst_result->StepSize = step_size;
   } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {

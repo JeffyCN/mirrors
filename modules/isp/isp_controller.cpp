@@ -41,7 +41,7 @@ IspController::IspController ():
     _ae_stats_delay(-1)
 {
     xcam_mem_clear(_last_aiq_results);
-
+    xcam_mem_clear(_full_active_isp_params);
     _max_delay = EXPOSURE_GAIN_DELAY > EXPOSURE_TIME_DELAY ?
                     EXPOSURE_GAIN_DELAY : EXPOSURE_TIME_DELAY;
 
@@ -57,9 +57,9 @@ IspController::~IspController ()
     free(_exposure_queue);
 }
 
-void IspController::exit() {
-    XCAM_LOG_DEBUG("ISP controller has exit");
-    _is_exit = true;
+void IspController::exit(bool pause) {
+    XCAM_LOG_DEBUG("ISP controller has exit %d", pause);
+    _is_exit = pause;
 }
 
 void
@@ -461,6 +461,92 @@ IspController::get_vcm_time (struct rk_cam_vcm_tim *vcm_tim)
     return XCAM_RETURN_NO_ERROR;
 }
 
+void
+IspController::gen_full_isp_params(const struct rkisp1_isp_params_cfg *update_params,
+                                   struct rkisp1_isp_params_cfg *full_params)
+{
+    XCAM_ASSERT (update_params);
+    XCAM_ASSERT (full_params);
+    int i = 0;
+
+	unsigned int module_en_update;
+	unsigned int module_ens;
+	unsigned int module_cfg_update;
+
+	struct cifisp_isp_meas_cfg meas;
+	struct cifisp_isp_other_cfg others;
+    for (; i <= CIFISP_DPF_STRENGTH_ID; i++)
+        if (update_params->module_en_update & (1 << i)) {
+            full_params->module_en_update |= 1 << i;
+            // clear old bit value
+            full_params->module_ens &= ~(1 << i);
+            // set new bit value
+            full_params->module_ens |= update_params->module_ens & (1 << i);
+        }
+
+    for (i = 0; i <= CIFISP_DPF_STRENGTH_ID; i++) {
+        if (update_params->module_cfg_update & (1 << i)) {
+            full_params->module_cfg_update |= 1 << i;
+            switch (i) {
+            case CIFISP_DPCC_ID:
+                full_params->others.dpcc_config = update_params->others.dpcc_config;
+                break;
+            case CIFISP_BLS_ID:
+                full_params->others.bls_config = update_params->others.bls_config;
+                break;
+            case CIFISP_SDG_ID:
+                full_params->others.sdg_config = update_params->others.sdg_config;
+                break;
+            case CIFISP_HST_ID:
+                full_params->meas.hst_config = update_params->meas.hst_config;
+                break;
+            case CIFISP_LSC_ID:
+                full_params->others.lsc_config = update_params->others.lsc_config;
+                break;
+            case CIFISP_AWB_GAIN_ID:
+                full_params->others.awb_gain_config = update_params->others.awb_gain_config;
+                break;
+            case CIFISP_FLT_ID:
+                full_params->others.flt_config = update_params->others.flt_config;
+                break;
+            case CIFISP_BDM_ID:
+                full_params->others.bdm_config = update_params->others.bdm_config;
+                break;
+            case CIFISP_CTK_ID:
+                full_params->others.ctk_config = update_params->others.ctk_config;
+                break;
+            case CIFISP_GOC_ID:
+                full_params->others.goc_config = update_params->others.goc_config;
+                break;
+            case CIFISP_CPROC_ID:
+                full_params->others.cproc_config = update_params->others.cproc_config;
+                break;
+            case CIFISP_AFC_ID:
+                full_params->meas.afc_config = update_params->meas.afc_config;
+                break;
+            case CIFISP_AWB_ID:
+                full_params->meas.awb_meas_config = update_params->meas.awb_meas_config;
+                break;
+            case CIFISP_IE_ID:
+                full_params->others.ie_config = update_params->others.ie_config;
+                break;
+            case CIFISP_AEC_ID:
+                full_params->meas.aec_config = update_params->meas.aec_config;
+                break;
+            case CIFISP_WDR_ID:
+                break;
+            case CIFISP_DPF_ID:
+                full_params->others.dpf_config = update_params->others.dpf_config;
+                break;
+            case CIFISP_DPF_STRENGTH_ID:
+                full_params->others.dpf_strength_config = update_params->others.dpf_strength_config;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
 
 XCamReturn
 IspController::set_3a_config (X3aIspConfig *config)
@@ -480,18 +566,18 @@ IspController::set_3a_config (X3aIspConfig *config)
     if (_isp_params_device.ptr()) {
         struct rkisp1_isp_params_cfg* isp_params;
         struct v4l2_buffer v4l2buf = _isp_params_device->get_buffer_by_index(0);
+        struct rkisp1_isp_params_cfg update_params;
         int sequence = v4l2buf.sequence;
         if (0)
             printf("params buf.sequence: %d\n", sequence);
-
-        isp_params = (struct rkisp1_isp_params_cfg*)v4l2buf.m.userptr;
-        memset(isp_params, 0, sizeof(struct rkisp1_isp_params_cfg));
-        //rkisp1_convert_params(isp_params, &rkisp1_core->aiq_results);
-        ret = rkisp1_convert_results(isp_params,isp_cfg, _last_aiq_results);
+        memset(&update_params, 0, sizeof(struct rkisp1_isp_params_cfg));
+        ret = rkisp1_convert_results(&update_params,isp_cfg, _last_aiq_results);
         if (ret != XCAM_RETURN_NO_ERROR) {
             LOGE("rkisp1_convert_results error\n");
         }
-
+        gen_full_isp_params(&update_params, &_full_active_isp_params);
+        isp_params = (struct rkisp1_isp_params_cfg*)v4l2buf.m.userptr;
+        *isp_params = _full_active_isp_params;
         dump_isp_config(isp_params, isp_cfg);
 
         ret = rkisp1_check_params(isp_params);
@@ -850,6 +936,7 @@ IspController::dump_isp_config(struct rkisp1_isp_params_cfg* isp_params,
                awb config - rbgain: %d - %d, y: %d - %d\n \
                coeff config: [%d-%d-%d-%d-%d-%d-%d-%d-%d], offset: [%d-%d-%d]\n \
                aec window[%d-%d-%d-%d]\n \
+               afc window0[%d-%d-%d-%d]\n \
                hst mode: %d, predivider: %d, window[%d-%d-%d-%d]\n \
                bdm 10bit bypass: %d, demosaic_th: %d",
         sizeof (struct rkisp1_isp_params_cfg),
@@ -883,7 +970,12 @@ IspController::dump_isp_config(struct rkisp1_isp_params_cfg* isp_params,
         isp_params->meas.aec_config.meas_window.h_size,
         isp_params->meas.aec_config.meas_window.v_size,
 
+        isp_params->meas.afc_config.afm_win[0].h_offs,
+        isp_params->meas.afc_config.afm_win[0].v_offs,
+        isp_params->meas.afc_config.afm_win[0].h_size,
+        isp_params->meas.afc_config.afm_win[0].v_size,
         isp_params->meas.hst_config.mode,
+
         isp_params->meas.hst_config.histogram_predivider,
         isp_params->meas.hst_config.meas_window.h_offs,
         isp_params->meas.hst_config.meas_window.v_offs,

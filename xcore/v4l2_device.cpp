@@ -727,7 +727,7 @@ V4l2Device::fini_buffer_pool()
 {
     uint32_t i = 0;
 
-    for (; i < _buf_count; i++) {
+    for (; i < _buf_pool.size(); i++) {
         release_buffer(_buf_pool [i]);
     }
 

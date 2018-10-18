@@ -212,8 +212,8 @@ CameraWindow CameraWindow::scale(float widthRatio, float heightRatio)
 {
     CameraWindow ret;
     ia_coordinate topLeft;
-    topLeft.x = mXleft;
-    topLeft.y = mYtop;
+    topLeft.x = mXleft * widthRatio;
+    topLeft.y = mYtop * heightRatio;
 
     int newWidth = mWidth*widthRatio;
     int newHeight = mHeight*heightRatio;

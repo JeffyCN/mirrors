@@ -176,7 +176,8 @@ X3aAnalyzerRKiq::configure_3a ()
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
     X3aResultList first_results;
 
-    if (!_sensor_data_ready) {
+    // always true for reconfig 3a
+    if (/* !_sensor_data_ready */true) {
         struct isp_supplemental_sensor_mode_data sensor_mode_data;
         xcam_mem_clear (sensor_mode_data);
         XCAM_ASSERT (_isp.ptr());
@@ -222,8 +223,8 @@ X3aAnalyzerRKiq::configure_3a ()
 
     // initialize ae and awb
     get_ae_handler ()->analyze (first_results, true);
-    get_awb_handler ()->analyze (first_results);
-    //get_af_handler ()->analyze (first_results);
+    get_awb_handler ()->analyze (first_results, true);
+    //get_af_handler ()->analyze (first_results, true);
 
     ret = _rkiq_compositor->integrate (first_results);
     XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret, "AIQ configure_3a failed on integrate results");
@@ -239,7 +240,7 @@ X3aAnalyzerRKiq::configure_3a ()
                     isp_result.dynamic_cast_ptr<X3aAtomIspParametersResult> ();
                 XCAM_ASSERT (isp_3a_all.ptr ());
                 const struct rkisp_parameters &rkisp_params = isp_3a_all->get_isp_config ();
-                XCAM_LOG_ERROR ("rkiq active_configs: %x", rkisp_params.active_configs);
+                XCAM_LOG_INFO("rkiq active_configs: %x", rkisp_params.active_configs);
             }
 
         }

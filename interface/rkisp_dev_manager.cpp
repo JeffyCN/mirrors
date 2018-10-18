@@ -21,6 +21,8 @@
 
 #include "rkisp_dev_manager.h"
 #include "settings_processor.h"
+#include "x3a_analyzer_rkiq.h"
+#include "isp_poll_thread.h"
 #include <base/log.h>
 
 using namespace XCam;
@@ -30,6 +32,7 @@ RkispDeviceManager::RkispDeviceManager(const cl_result_callback_ops_t *cb)
 {
     _settingsProcessor = new SettingsProcessor();
     _settings.clear();
+    _cl_state = -1;
 }
 
 RkispDeviceManager::~RkispDeviceManager()
@@ -116,6 +119,10 @@ RkispDeviceManager::set_control_params(const int request_frame_id,
     inputParams->settings = metas;
     inputParams->staticMeta = &RkispDeviceManager::staticMeta;
     if(_settingsProcessor) {
+        SmartPtr<X3aAnalyzerRKiq> RK3a_analyzer =  _3a_analyzer.dynamic_cast_ptr<X3aAnalyzerRKiq> ();
+        struct isp_supplemental_sensor_mode_data* sensorModeData = RK3a_analyzer->getSensorModeData ();
+        inputParams->sensorOutputWidth = sensorModeData->sensor_output_width;
+        inputParams->sensorOutputHeight = sensorModeData->sensor_output_height;
         _settingsProcessor->processRequestSettings(inputParams->settings, *inputParams.ptr());
     } else {
         LOGE("@%s %d: _settingsProcessor is null , is a bug, fix me", __FUNCTION__, __LINE__);
@@ -143,11 +150,33 @@ RkispDeviceManager::set_control_params(const int request_frame_id,
 void
 RkispDeviceManager::pause_dequeue ()
 {
+    // should stop 3a because isp video stream may have been stopped
+    if (_poll_thread.ptr())
+        _poll_thread->stop();
+    if (_isp_params_device.ptr())
+        _isp_params_device->stop();
+    if (_isp_stats_device.ptr())
+        _isp_stats_device->stop();
+
     return _ready_buffers.pause_pop ();
 }
 
 void
 RkispDeviceManager::resume_dequeue ()
 {
+    SmartPtr<IspPollThread> ispPollThread =  _poll_thread.dynamic_cast_ptr<IspPollThread> ();
+
+    if (_isp_params_device.ptr())
+        _isp_params_device->start(false);
+    if (_isp_stats_device.ptr())
+        _isp_stats_device->start();
+
+    // for IspController 
+    ispPollThread->resume();
+    // sensor mode may be changed, so we should re-generate the first isp
+    // configs
+    _3a_analyzer->configure();
+    ispPollThread->start();
+
     return _ready_buffers.resume_pop ();
 }

@@ -38,6 +38,7 @@ public:
 
     virtual XCamReturn start();
     virtual XCamReturn stop ();
+    virtual XCamReturn resume();
 
 protected:
     virtual XCamReturn handle_events (struct v4l2_event &event);

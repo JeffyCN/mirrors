@@ -60,7 +60,8 @@ private:
     XCamReturn fillAfInputParams(const CameraMetadata *settings,
                                  AiqInputParams *aiqInputParams);
     void parseMeteringRegion(const CameraMetadata *settings,
-                             int tagId, CameraWindow *meteringWindow);
+                             int tagId, CameraWindow *meteringWindow,
+                             int sensorOutputWidth, int sensorOutputHeight);
 private:
 
 };

@@ -82,7 +82,8 @@ public:
     // only called one time in the func rkisp_cl_prepare@rkisp_control_loop_impl.cpp
     void set_static_metadata(const camera_metadata_t *metas) { staticMeta = metas; };
     static CameraMetadata& get_static_metadata() { return staticMeta; };
-
+public:
+    int _cl_state;
 #if HAVE_LIBCL
 public:
     void set_cl_image_processor (XCam::SmartPtr<XCam::CL3aImageProcessor> &processor) {

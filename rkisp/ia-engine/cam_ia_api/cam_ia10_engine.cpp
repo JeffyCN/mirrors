@@ -21,7 +21,9 @@ CamIA10Engine::CamIA10Engine():
     awbParams(NULL),
     afContext(NULL),
     afDesc(NULL),
-    afParams(NULL)
+    afParams(NULL),
+    mSensorWRatio(1.0f),
+    mSensorHRatio(1.0f)
 {
     init();
     /*
@@ -163,6 +165,15 @@ init_fail:
 RESULT CamIA10Engine::initDynamic(struct CamIA10_DyCfg* cfg) {
     RESULT result = RET_SUCCESS;
     mInitDynamic = true;
+    // check if sensor mode changed
+    if (dCfg.sensor_mode.isp_input_width != 0 &&
+        cfg->sensor_mode.isp_input_width != dCfg.sensor_mode.isp_input_width) {
+        mSensorWRatio = (float)(cfg->sensor_mode.isp_input_width) / dCfg.sensor_mode.isp_input_width;
+        mSensorHRatio = (float)(cfg->sensor_mode.isp_input_height) / dCfg.sensor_mode.isp_input_height;
+    } else {
+        mSensorWRatio = 1.0f;
+        mSensorHRatio = 1.0f;
+    }
     dCfg = *cfg;
 
     LOGD("init dynamic af mode: %d, shdmode: %d", dCfg.afc_cfg.mode, dCfgShd.afc_cfg.mode);
@@ -349,19 +360,37 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
     shd = &dCfgShd.aec_cfg;
 
     uint16_t out_width, out_height, out_hOff, out_vOff;
-    mapHalWinToRef(set->win.left_hoff,
-                   set->win.top_voff,
-                   set->win.right_width,
-                   set->win.bottom_height,
-                   cfg->sensor_mode.isp_input_width,
-                   cfg->sensor_mode.isp_input_height,
-                   out_hOff, out_vOff,
-                   out_width, out_height);
+    if (set->win.left_hoff == 0 && set->win.top_voff == 0 &&
+        set->win.right_width == 0 && set->win.bottom_height == 0) {
+        out_width = cfg->sensor_mode.isp_input_width;
+        out_height = cfg->sensor_mode.isp_input_height;
+        out_hOff = 0;
+        out_vOff = 0;
+    } else {
+        out_width = set->win.right_width * mSensorWRatio;
+        out_height = set->win.bottom_height * mSensorHRatio;
+        out_hOff = set->win.left_hoff * mSensorWRatio;
+        out_vOff = set->win.top_voff * mSensorHRatio;
+    }
 
     set->win.left_hoff = out_hOff;
     set->win.top_voff = out_vOff;
     set->win.right_width = out_width;
     set->win.bottom_height = out_height;
+
+    aecCfg.LinePeriodsPerField =
+        dCfg.sensor_mode.line_periods_per_field;
+    aecCfg.PixelClockFreqMHZ =
+        dCfg.sensor_mode.pixel_clock_freq_mhz == 0 ?
+        16.8 : dCfg.sensor_mode.pixel_clock_freq_mhz;
+    aecCfg.PixelPeriodsPerLine =
+        dCfg.sensor_mode.pixel_periods_per_line == 0 ?
+        1312 : dCfg.sensor_mode.pixel_periods_per_line;
+
+    LOGD("config aec sensor mode, HTS: %f, VTS: %f, PCLK: %f",
+        aecCfg.PixelPeriodsPerLine,
+        aecCfg.LinePeriodsPerField,
+        aecCfg.PixelClockFreqMHZ);
 
     if ((set->win.left_hoff != shd->win.left_hoff) ||
             (set->win.top_voff != shd->win.top_voff) ||
@@ -372,39 +401,16 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
             (set->flk != shd->flk) ||
             (set->ae_bias != shd->ae_bias)||
             mLightMode != cfg->LightMode) {
-        uint16_t step_width, step_height;
         //cifisp_histogram_mode mode = CIFISP_HISTOGRAM_MODE_RGB_COMBINED;
-        cam_ia10_map_hal_win_to_isp(
-            set->win.right_width,
-            set->win.bottom_height,
-            cfg->sensor_mode.isp_input_width,
-            cfg->sensor_mode.isp_input_height,
-            &step_width,
-            &step_height
-        );
         cam_ia10_isp_hst_update_stepSize(
             aecCfg.HistMode,
             aecCfg.GridWeights.uCoeff,
-            step_width,
-            step_height,
+            set->win.right_width,
+            set->win.bottom_height,
             &(aecCfg.StepSize));
 
         //LOGD("aec set win:%dx%d",
         //  set->win.right_width,set->win.bottom_height);
-
-        aecCfg.LinePeriodsPerField =
-            dCfg.sensor_mode.line_periods_per_field;
-        aecCfg.PixelClockFreqMHZ =
-            dCfg.sensor_mode.pixel_clock_freq_mhz == 0 ?
-            16.8 : dCfg.sensor_mode.pixel_clock_freq_mhz;
-        aecCfg.PixelPeriodsPerLine =
-            dCfg.sensor_mode.pixel_periods_per_line == 0 ?
-            1312 : dCfg.sensor_mode.pixel_periods_per_line;
-
-        LOGD("config aec sensor mode, HTS: %f, VTS: %f, PCLK: %f",
-            aecCfg.PixelPeriodsPerLine,
-            aecCfg.LinePeriodsPerField,
-            aecCfg.PixelClockFreqMHZ);
 
         if (set->flk == HAL_AE_FLK_OFF)
             aecCfg.EcmFlickerSelect = AEC_EXPOSURE_CONVERSION_FLICKER_OFF;
@@ -471,7 +477,7 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
 
             mLightMode = cfg->LightMode;
 #if 1
-            if (set->frame_time_us_min != -1 && set->frame_time_us_max != -1) {
+            if (set->frame_time_us_min != 0 && set->frame_time_us_max != 0) {
                 aecCfg.FpsSetEnable = true;
                 aecCfg.isFpsFix = false;
                 int ecmCnt = sizeof(pAecGlobal->EcmTimeDot.fCoeff) / sizeof (float);
@@ -573,8 +579,8 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
         awbcfg.height = cfg->sensor_mode.isp_input_height;
         awbcfg.awbWin.h_offs = 0;
         awbcfg.awbWin.v_offs = 0;
-        awbcfg.awbWin.h_size = HAL_WIN_REF_WIDTH;
-        awbcfg.awbWin.v_size = HAL_WIN_REF_HEIGHT;
+        awbcfg.awbWin.h_size = cfg->sensor_mode.isp_input_width;
+        awbcfg.awbWin.v_size = cfg->sensor_mode.isp_input_height;
 
         if (awbDesc) {
             result = awbDesc->update_awb_params(awbContext, &awbcfg);
@@ -605,17 +611,21 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
             goto updateAwbConfig_end;
         }
     } else {
+        awbcfg.width = cfg->sensor_mode.isp_input_width;
+        awbcfg.height = cfg->sensor_mode.isp_input_height;
         if (cfg->awb_cfg.win.right_width && cfg->awb_cfg.win.bottom_height) {
-            awbcfg.awbWin.h_offs = cfg->awb_cfg.win.left_hoff;
-            awbcfg.awbWin.v_offs = cfg->awb_cfg.win.top_voff;
-            awbcfg.awbWin.h_size = cfg->awb_cfg.win.right_width;
-            awbcfg.awbWin.v_size = cfg->awb_cfg.win.bottom_height;
+            LOGD("%s: cfg awb win[%dx%d]", __FUNCTION__, cfg->awb_cfg.win.right_width, cfg->awb_cfg.win.bottom_height);
+            awbcfg.awbWin.h_offs = cfg->awb_cfg.win.left_hoff * mSensorWRatio;
+            awbcfg.awbWin.v_offs = cfg->awb_cfg.win.top_voff * mSensorHRatio;
+            awbcfg.awbWin.h_size = cfg->awb_cfg.win.right_width * mSensorHRatio;
+            awbcfg.awbWin.v_size = cfg->awb_cfg.win.bottom_height * mSensorWRatio;
         } else {
             awbcfg.awbWin.h_offs = 0;
             awbcfg.awbWin.v_offs = 0;
-            awbcfg.awbWin.h_size = HAL_WIN_REF_WIDTH;
-            awbcfg.awbWin.v_size = HAL_WIN_REF_HEIGHT;
+            awbcfg.awbWin.h_size = cfg->sensor_mode.isp_input_width;
+            awbcfg.awbWin.v_size = cfg->sensor_mode.isp_input_height;
         }
+        LOGD("%s: update awb win[%dx%d]", __FUNCTION__, awbcfg.awbWin.h_size, awbcfg.awbWin.v_size);
         //mode change ?
         if (cfg->awb_cfg.mode != dCfgShd.awb_cfg.mode) {
             LOGI("@%s %d: AwbMode changed from %d to %d", __FUNCTION__, __LINE__, dCfgShd.awb_cfg.mode, cfg->awb_cfg.mode);
@@ -692,6 +702,15 @@ updateAwbConfig_end:
 
 RESULT CamIA10Engine::updateAfConfig(struct CamIA10_DyCfg* cfg) {
     RESULT result = RET_SUCCESS;
+
+    struct HAL_AfcCfg* afset;
+    afset = &dCfg.afc_cfg;
+
+    afcCfg.WindowB.h_size *= mSensorWRatio;
+    afcCfg.WindowB.v_size *= mSensorHRatio;
+    afcCfg.WindowB.h_offs *= mSensorWRatio;
+    afcCfg.WindowB.v_offs *= mSensorHRatio;
+
     if (afDesc) {
         afDesc->configure_af(afContext,
                                 cfg->sensor_mode.isp_input_width,
@@ -853,6 +872,12 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
                 aecDesc->analyze_ae(aecContext, param);
             }
         }
+    } else {
+        if (aecDesc != NULL) {
+            aecDesc->set_stats(aecContext, NULL);
+            aecDesc->update_ae_params(aecContext, &aecCfg);
+            aecDesc->analyze_ae(aecContext, NULL);
+        }
     }
     getAECResults(result);
 
@@ -895,7 +920,7 @@ void CamIA10Engine::dumpAe()
 
 }
 
-RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result)
+RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, bool first)
 {
     RESULT ret = RET_SUCCESS;
     AwbRunningInputParams_t MeasResult;
@@ -914,7 +939,9 @@ RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result)
     dumpAwb();
 
     if (awbDesc) {
-        ret = awbDesc->set_stats(awbContext, &MeasResult);
+        ret = awbDesc->set_stats(awbContext, first ? NULL : &MeasResult);
+        if (first)
+            awbDesc->update_awb_params(awbContext, &awbcfg);
         ret = awbDesc->analyze_awb(awbContext, param);
         ret = awbDesc->get_results(awbContext, &retOuput);
     }
@@ -924,7 +951,6 @@ RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result)
         memset(&curAwbResult, 0, sizeof(curAwbResult));
         convertAwbResult2Cameric(&retOuput, &curAwbResult);
     }
-
     curAwbResult.err_code = retOuput.err_code;
 
     //getAWBResults(result);
@@ -948,7 +974,7 @@ void CamIA10Engine::dumpAwb()
 #endif
 }
 
-RESULT CamIA10Engine::runAf(XCamAfParam *param, XCam3aResultFocus* result)
+RESULT CamIA10Engine::runAf(XCamAfParam *param, XCam3aResultFocus* result, bool first)
 {
     afParams = param;
 
@@ -1114,10 +1140,10 @@ RESULT CamIA10Engine::initAF() {
     dCfg.afc_cfg.type.laser_af = false;
     dCfg.afc_cfg.type.pdaf = false;
     dCfg.afc_cfg.win_num = 1;
-    dCfg.afc_cfg.win_a.left_hoff = 512;
-    dCfg.afc_cfg.win_a.right_width = 1024;
-    dCfg.afc_cfg.win_a.top_voff = 512;
-    dCfg.afc_cfg.win_a.bottom_height = 1024;
+    dCfg.afc_cfg.win_a.left_hoff = 0;
+    dCfg.afc_cfg.win_a.right_width = 0;
+    dCfg.afc_cfg.win_a.top_voff = 0;
+    dCfg.afc_cfg.win_a.bottom_height = 0;
 
     afcCfg.AfType.contrast_af = true;
     afcCfg.AfType.laser_af = false;
@@ -1129,17 +1155,6 @@ RESULT CamIA10Engine::initAF() {
 #endif
     afcCfg.Afss = AFM_FSS_ADAPTIVE_RANGE;
     afcCfg.Window_Num = 1;
-    mapHalWinToIsp(dCfg.afc_cfg.win_a.right_width,
-                    dCfg.afc_cfg.win_a.bottom_height,
-                    dCfg.afc_cfg.win_a.left_hoff,
-                    dCfg.afc_cfg.win_a.top_voff,
-                    640,
-                    480,
-                    afcCfg.WindowA.h_size,
-                    afcCfg.WindowA.v_size,
-                    afcCfg.WindowA.h_offs,
-                    afcCfg.WindowA.v_offs);
-
     if (afDesc) {
         result = afDesc->update_af_params(afContext, &afcCfg);
     }
@@ -1410,6 +1425,8 @@ RESULT CamIA10Engine::initAEC() {
     aecCfg.Valid_GridWeights_W = 5;
     aecCfg.Valid_HistBins_Num = 16;
 #endif
+    aecCfg.FpsSetEnable = true;
+    aecCfg.isFpsFix = false;
     memcpy(aecCfg.TimeFactor, pAecGlobal->TimeFactor, sizeof(pAecGlobal->TimeFactor));
     memcpy(aecCfg.GridWeights.uCoeff, pAecGlobal->GridWeights.pWeight, pAecGlobal->GridWeights.ArraySize);
     memcpy(aecCfg.EcmTimeDot.fCoeff, pAecGlobal->EcmTimeDot.fCoeff, sizeof(pAecGlobal->EcmTimeDot.fCoeff));
@@ -1481,21 +1498,12 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
                 (set->ae_bias != shd->ae_bias) ||
                 (set->frame_time_us_min != shd->frame_time_us_min) /*||
 		mLightMode != cfg->LightMode*/) {
-            uint16_t step_width, step_height;
             //cifisp_histogram_mode mode = CIFISP_HISTOGRAM_MODE_RGB_COMBINED;
-            cam_ia10_map_hal_win_to_isp(
-                set->win.right_width,
-                set->win.bottom_height,
-                mStats.sensor_mode.isp_input_width,
-                mStats.sensor_mode.isp_input_height,
-                &step_width,
-                &step_height
-            );
             cam_ia10_isp_hst_update_stepSize(
                 aecCfg.HistMode,
                 aecCfg.GridWeights.uCoeff,
-                step_width,
-                step_height,
+                mStats.sensor_mode.isp_input_width,
+                mStats.sensor_mode.isp_input_height,
                 &(aecCfg.StepSize));
 
             //LOGD("aec set win:%dx%d",
@@ -1951,8 +1959,8 @@ RESULT CamIA10Engine::runAWB(HAL_AwbCfg* awbHalCfg) {
             } else {
                 awbcfg.awbWin.h_offs = 0;
                 awbcfg.awbWin.v_offs = 0;
-                awbcfg.awbWin.h_size = HAL_WIN_REF_WIDTH;
-                awbcfg.awbWin.v_size = HAL_WIN_REF_HEIGHT;
+                awbcfg.awbWin.h_size = mStats.sensor_mode.isp_input_width;//HAL_WIN_REF_WIDTH;
+                awbcfg.awbWin.v_size = mStats.sensor_mode.isp_input_height;//HAL_WIN_REF_HEIGHT;
             }
             //mode change ?
             if (awbHalCfg->mode != mAWBHalCfg.mode) {
@@ -2200,32 +2208,6 @@ RESULT CamIA10Engine::runAF(HAL_AfcCfg* config) {
     }
   }
   return result;
-}
-
-void CamIA10Engine::mapHalWinToRef(
-    uint16_t in_hOff, uint16_t in_vOff,
-    uint16_t in_width, uint16_t in_height,
-    uint16_t drvWidth, uint16_t drvHeight,
-    uint16_t& out_hOff, uint16_t& out_vOff,
-    uint16_t& out_width, uint16_t& out_height
-) {
-  out_hOff = in_hOff * HAL_WIN_REF_WIDTH / drvWidth;
-  out_vOff = in_vOff * HAL_WIN_REF_HEIGHT / drvHeight;
-  out_width = in_width * HAL_WIN_REF_WIDTH / drvWidth;
-  out_height = in_height * HAL_WIN_REF_HEIGHT / drvHeight;
-}
-
-void CamIA10Engine::mapHalWinToIsp(
-    uint16_t in_width, uint16_t in_height,
-    uint16_t in_hOff, uint16_t in_vOff,
-    uint16_t drvWidth, uint16_t drvHeight,
-    uint16_t& out_width, uint16_t& out_height,
-    uint16_t& out_hOff, uint16_t& out_vOff
-) {
-  out_hOff = in_hOff * drvWidth / HAL_WIN_REF_WIDTH;
-  out_vOff = in_vOff * drvHeight / HAL_WIN_REF_HEIGHT;
-  out_width = in_width * drvWidth / HAL_WIN_REF_WIDTH;
-  out_height = in_height * drvHeight / HAL_WIN_REF_HEIGHT;
 }
 
 RESULT CamIA10Engine::getAFResults(XCam3aResultFocus* result) {

@@ -27,6 +27,8 @@ _AiqInputParams::_AiqInputParams():
     aeInputParams.aiqParams = this;
     awbInputParams.aiqParams = this;
     afInputParams.aiqParams = this;
+    sensorOutputWidth = 0;
+    sensorOutputHeight = 0;
 }
 void XCam::_AiqInputParams::init()
 {

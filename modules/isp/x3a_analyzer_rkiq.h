@@ -42,6 +42,7 @@ public:
     explicit X3aAnalyzerRKiq (struct isp_supplemental_sensor_mode_data &sensor_data, const char *cpf_path);
     RkispDeviceManager* getDeviceManager() { return _device_manager; };
     SmartPtr<AiqInputParams> getAiqInputParams () { XCAM_ASSERT (_device_manager); return _device_manager->getAiqInputParams(); }
+    struct isp_supplemental_sensor_mode_data* getSensorModeData () { return &_sensor_mode_data; }
     ~X3aAnalyzerRKiq ();
 
 private:

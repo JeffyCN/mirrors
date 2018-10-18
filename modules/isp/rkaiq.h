@@ -104,6 +104,8 @@ typedef struct _AiqInputParams {
     AAAControls     aaaControls;
     CameraMetadata  settings;
     CameraMetadata* staticMeta;
+    int sensorOutputWidth;
+    int sensorOutputHeight;
     void init();
     _AiqInputParams();
     ~_AiqInputParams() {}

@@ -20,12 +20,21 @@ using namespace android;
 
 CameraMetadata RkispDeviceManager::staticMeta;
 
+typedef enum RKISP_CL_STATE_enum {
+    RKISP_CL_STATE_INVALID  = -1,
+    RKISP_CL_STATE_INITED   =  0,
+    RKISP_CL_STATE_PREPARED     ,
+    RKISP_CL_STATE_STARTED      ,
+    RKISP_CL_STATE_PAUSED       ,
+} RKISP_CL_STATE_e;
+
 int rkisp_cl_init(void** cl_ctx, const char* tuning_file_path,
                   const cl_result_callback_ops_t *callback_ops) {
 	LOGD("--------------------------rkisp_cl_init");
     RkispDeviceManager *device_manager = new RkispDeviceManager(callback_ops);
     device_manager->set_has_3a(true);
     device_manager->set_iq_path(tuning_file_path);
+    device_manager->_cl_state = RKISP_CL_STATE_INITED;
     LOGD("Enable 3a ,using IQ file path %s", tuning_file_path);
     *cl_ctx = (void*)device_manager;
     return 0;
@@ -43,6 +52,15 @@ int rkisp_cl_prepare(void* cl_ctx,
     SmartPtr<V4l2Device> stats_dev = NULL;
     SmartPtr<V4l2Device> param_dev = NULL;
 
+    if (device_manager->_cl_state == RKISP_CL_STATE_INVALID) {
+        LOGE("%s: cl haven't been init %d", __FUNCTION__, device_manager->_cl_state);
+        return -1;
+    }
+    if (device_manager->_cl_state >= RKISP_CL_STATE_PREPARED) {
+        LOGI("%s: cl has already been prepared, now in state %d",
+             __FUNCTION__, device_manager->_cl_state);
+        return 0;
+    }
 	LOGD("rkisp_cl_prepare, isp: %s, sensor: %s, stats: %s, params: %s, lens: %s",
         prepare_params->isp_sd_node_path,
         prepare_params->sensor_sd_node_path,
@@ -127,6 +145,7 @@ int rkisp_cl_prepare(void* cl_ctx,
 
     device_manager->set_static_metadata (prepare_params->staticMeta);
 
+    device_manager->_cl_state = RKISP_CL_STATE_PREPARED;
     LOGD("--------------------------rkisp_cl_prepare done");
 
     return 0;
@@ -137,11 +156,20 @@ int rkisp_cl_start(void* cl_ctx) {
     LOGD("--------------------------rkisp_cl_start");
     RkispDeviceManager *device_manager = AIQ_CONTEXT_CAST (cl_ctx);
 
-    ret = device_manager->start();
-    if (ret != XCAM_RETURN_NO_ERROR) {
-        device_manager->stop();
-        device_manager->pause_dequeue ();
+    if (device_manager->_cl_state < RKISP_CL_STATE_PREPARED) {
+        LOGE("%s: invalid cl state %d", __FUNCTION__, device_manager->_cl_state);
+        return -1;
     }
+    if (device_manager->_cl_state == RKISP_CL_STATE_PAUSED) {
+        device_manager->resume_dequeue ();
+    } else {
+        ret = device_manager->start();
+        if (ret != XCAM_RETURN_NO_ERROR) {
+            device_manager->stop();
+            device_manager->pause_dequeue ();
+        }
+    }
+    device_manager->_cl_state = RKISP_CL_STATE_STARTED;
     LOGD("--------------------------rkisp_cl_start done");
 
     return ret;
@@ -160,11 +188,14 @@ int rkisp_cl_set_frame_params(const void* cl_ctx,
     return 0;
 }
 
+// implement interface stop as pause so we could keep all the 3a status,
+// and could speed up 3a converged
 int rkisp_cl_stop(void* cl_ctx) {
     RkispDeviceManager *device_manager = AIQ_CONTEXT_CAST (cl_ctx);
     LOGD("--------------------------rkisp_cl_stop");
-    device_manager->stop();
+    //device_manager->stop();
     device_manager->pause_dequeue ();
+    device_manager->_cl_state = RKISP_CL_STATE_PAUSED;
     LOGD("--------------------------rkisp_cl_stop done");
     return 0;
 }
@@ -176,6 +207,7 @@ void rkisp_cl_deinit(void* cl_ctx) {
         device_manager->stop();
         device_manager->pause_dequeue ();
     }
+    device_manager->_cl_state = RKISP_CL_STATE_INVALID;
     delete device_manager;
     device_manager = NULL;
     LOGD("--------------------------rkisp_cl_deinit done");

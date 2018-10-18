@@ -175,8 +175,8 @@ class CamIA10EngineItf {
   virtual RESULT setStatistics(struct CamIA10_Stats* stats) = 0;
 
   virtual RESULT runAe(XCamAeParam *param, AecResult_t* result, bool first = false) = 0;
-  virtual RESULT runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result) = 0; 
-  virtual RESULT runAf(XCamAfParam *param, XCam3aResultFocus* result) = 0;
+  virtual RESULT runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, bool first = false) = 0;
+  virtual RESULT runAf(XCamAfParam *param, XCam3aResultFocus* result, bool first = false) = 0;
 
 
   virtual void setExternalAEHandlerDesc(XCamAEDescription* desc) = 0;
@@ -207,20 +207,6 @@ class CamIA10EngineItf {
       int sensorInttime,
       float& halGain,
       float& halInttime) = 0;
-
-  virtual void mapHalWinToRef(
-      uint16_t in_hOff, uint16_t in_vOff,
-      uint16_t in_width, uint16_t in_height,
-      uint16_t drvWidth, uint16_t drvHeight,
-      uint16_t& out_hOff, uint16_t& out_vOff,
-      uint16_t& out_width, uint16_t& out_height) = 0;
-
-  virtual void mapHalWinToIsp(
-    uint16_t in_width, uint16_t in_height,
-    uint16_t in_hOff, uint16_t in_vOff,
-    uint16_t drvWidth, uint16_t drvHeight,
-    uint16_t& out_width, uint16_t& out_height,
-    uint16_t& out_hOff, uint16_t& out_vOff) = 0;
 };
 
 shared_ptr<CamIA10EngineItf> getCamIA10EngineItf(void);

@@ -127,6 +127,7 @@ public:
         _isp_params_device = (V4l2Device*)dev;
     }
 
+    virtual XCamReturn configure () = 0;
     //SmartPtr<V4l2Device>        _ispdevice;
     //SmartPtr<V4l2Device>        _device;
     V4l2Device* _device;
@@ -141,7 +142,7 @@ protected:
     virtual XCamReturn internal_deinit () = 0;
 
     // in analyzer thread
-    virtual XCamReturn configure () = 0;
+    //virtual XCamReturn configure () = 0;
     virtual XCamReturn analyze (const SmartPtr<VideoBuffer> &buffer) = 0;
 
 protected:

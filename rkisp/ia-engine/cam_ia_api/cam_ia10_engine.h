@@ -28,8 +28,8 @@ class CamIA10Engine: public CamIA10EngineItf {
   virtual RESULT updateAfConfig(struct CamIA10_DyCfg* cfg);
 
   virtual RESULT runAe(XCamAeParam *param, AecResult_t* result, bool first = false);
-  virtual RESULT runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result);
-  virtual RESULT runAf(XCamAfParam *param, XCam3aResultFocus* result);
+  virtual RESULT runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, bool first = false);
+  virtual RESULT runAf(XCamAfParam *param, XCam3aResultFocus* result, bool first = false);
 
   virtual void dumpAe();
   virtual void dumpAwb();
@@ -60,18 +60,6 @@ class CamIA10Engine: public CamIA10EngineItf {
       int sensorInttime,
       float& halGain,
       float& halInttime);
-  virtual void mapHalWinToRef(
-      uint16_t in_hOff, uint16_t in_vOff,
-      uint16_t in_width, uint16_t in_height,
-      uint16_t drvWidth, uint16_t drvHeight,
-      uint16_t& out_hOff, uint16_t& out_vOff,
-      uint16_t& out_width, uint16_t& out_height);
-  virtual void mapHalWinToIsp(
-    uint16_t in_width, uint16_t in_height,
-    uint16_t in_hOff, uint16_t in_vOff,
-    uint16_t drvWidth, uint16_t drvHeight,
-    uint16_t& out_width, uint16_t& out_height,
-    uint16_t& out_hOff, uint16_t& out_vOff);
 
    struct CamIA10_Stats mStats;
    char g_aiqb_data_file[256];
@@ -152,7 +140,10 @@ class CamIA10Engine: public CamIA10EngineItf {
 
   bool_t  mWdrEnabledState;
   enum LIGHT_MODE mLightMode;
-
+  // sensor output resolution may be changed while reconfiging 3a,
+  // we should map the old 3a win to new one
+  float   mSensorWRatio;
+  float   mSensorHRatio;
  private:
   RESULT initAEC();
   RESULT initAWB();

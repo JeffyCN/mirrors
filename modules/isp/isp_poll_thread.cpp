@@ -48,11 +48,23 @@ IspPollThread::set_isp_controller (SmartPtr<IspController>  &isp)
 }
 
 XCamReturn
+IspPollThread::resume()
+{
+    if (_isp_controller.ptr()) {
+        _isp_controller->exit(false);
+    }
+
+    return XCAM_RETURN_NO_ERROR;
+}
+
+XCamReturn
 IspPollThread::start ()
 {
-    SmartPtr<X3aStatsPool> stats_pool = new X3aStatisticsQueue;
-    XCAM_ASSERT (stats_pool.ptr ());
-    _3a_stats_pool = stats_pool;
+    if (_3a_stats_pool.ptr() == nullptr) {
+        SmartPtr<X3aStatsPool> stats_pool = new X3aStatisticsQueue;
+        XCAM_ASSERT (stats_pool.ptr ());
+        _3a_stats_pool = stats_pool;
+    }
 
     return PollThread::start ();
 }
@@ -62,12 +74,13 @@ IspPollThread::stop ()
 {
     XCAM_LOG_DEBUG ("IspPollThread stop");
     if (_isp_controller.ptr()) {
-        _isp_controller->exit();
+        _isp_controller->exit(true);
     }
+#if 0
 
     if (_3a_stats_pool.ptr ())
         _3a_stats_pool->stop ();
-
+#endif
     return PollThread::stop ();
 }
 

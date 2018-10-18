@@ -179,6 +179,7 @@ bool Isp10Engine::init(const char* tuningFile,
 */
 	LOGD("initISPStream bypass");
 
+#if 0
     if ((mCamIA_DyCfg.aec_cfg.win.right_width == 0) ||
         (mCamIA_DyCfg.aec_cfg.win.bottom_height == 0)) {
       mCamIA_DyCfg.aec_cfg.win.left_hoff = 512;
@@ -186,7 +187,7 @@ bool Isp10Engine::init(const char* tuningFile,
       mCamIA_DyCfg.aec_cfg.win.right_width = 1024;
       mCamIA_DyCfg.aec_cfg.win.bottom_height = 1024;
     }
-
+#endif
     for (i = 0; i < CAM_ISP_NUM_OF_STAT_BUFS; i++) {
       mIspStats[i] = (struct cifisp_stat_buffer*)mIspStatBuf[i];
     }
@@ -527,16 +528,10 @@ bool Isp10Engine::convertIAResults(
         isp_cfg->configs.aec_config.autostop =
             CIFISP_EXP_CTRL_AUTOSTOP_0;
 
-        mCamIAEngine->mapHalWinToIsp(ia_results->aec.meas_win.h_size,
-                       ia_results->aec.meas_win.v_size,
-                       ia_results->aec.meas_win.h_offs,
-                       ia_results->aec.meas_win.v_offs,
-                       mCamIA_DyCfg.sensor_mode.isp_input_width,
-                       mCamIA_DyCfg.sensor_mode.isp_input_height,
-                       (uint16_t&)isp_cfg->configs.aec_config.meas_window.h_size,
-                       (uint16_t&)isp_cfg->configs.aec_config.meas_window.v_size,
-                       (uint16_t&)isp_cfg->configs.aec_config.meas_window.h_offs,
-                       (uint16_t&)isp_cfg->configs.aec_config.meas_window.v_offs);
+        isp_cfg->configs.aec_config.meas_window.h_size = ia_results->aec.meas_win.h_size;
+        isp_cfg->configs.aec_config.meas_window.v_size = ia_results->aec.meas_win.v_size;
+        isp_cfg->configs.aec_config.meas_window.h_offs = ia_results->aec.meas_win.h_offs;
+        isp_cfg->configs.aec_config.meas_window.v_offs = ia_results->aec.meas_win.v_offs;
 
 		if(ia_results->aec.actives & CAMIA10_AEC_AFPS_MASK)
 	    {
@@ -554,16 +549,10 @@ bool Isp10Engine::convertIAResults(
         isp_cfg->configs.hst_config.mode = (cifisp_histogram_mode)
                                            (ia_results->hst.mode);
 
-        mCamIAEngine->mapHalWinToIsp(ia_results->hst.Window.width,
-                       ia_results->hst.Window.height,
-                       ia_results->hst.Window.hOffset,
-                       ia_results->hst.Window.vOffset,
-                       mCamIA_DyCfg.sensor_mode.isp_input_width,
-                       mCamIA_DyCfg.sensor_mode.isp_input_height,
-                       (uint16_t&)isp_cfg->configs.hst_config.meas_window.h_size,
-                       (uint16_t&)isp_cfg->configs.hst_config.meas_window.v_size,
-                       (uint16_t&)isp_cfg->configs.hst_config.meas_window.h_offs,
-                       (uint16_t&)isp_cfg->configs.hst_config.meas_window.v_offs);
+        isp_cfg->configs.hst_config.meas_window.h_size = ia_results->hst.Window.width;
+        isp_cfg->configs.hst_config.meas_window.v_size = ia_results->hst.Window.height;
+        isp_cfg->configs.hst_config.meas_window.h_offs = ia_results->hst.Window.hOffset;
+        isp_cfg->configs.hst_config.meas_window.v_offs = ia_results->hst.Window.vOffset;
 
         memcpy(isp_cfg->configs.hst_config.hist_weight,
                ia_results->hst.Weights, sizeof(isp_cfg->configs.hst_config.hist_weight));
@@ -738,16 +727,10 @@ bool Isp10Engine::convertIAResults(
       }
       //if (ia_results->awb.actives & AWB_RECONFIG_AWBWIN)
       {
-        mCamIAEngine->mapHalWinToIsp(ia_results->awb.awbWin.h_size,
-                       ia_results->awb.awbWin.v_size,
-                       ia_results->awb.awbWin.h_offs,
-                       ia_results->awb.awbWin.v_offs,
-                       mCamIA_DyCfg.sensor_mode.isp_input_width,
-                       mCamIA_DyCfg.sensor_mode.isp_input_height,
-                       (uint16_t&)isp_cfg->configs.awb_meas_config.awb_wnd.h_size,
-                       (uint16_t&)isp_cfg->configs.awb_meas_config.awb_wnd.v_size,
-                       (uint16_t&)isp_cfg->configs.awb_meas_config.awb_wnd.h_offs,
-                       (uint16_t&)isp_cfg->configs.awb_meas_config.awb_wnd.v_offs);
+        isp_cfg->configs.awb_meas_config.awb_wnd.h_size = ia_results->awb.awbWin.h_size;
+        isp_cfg->configs.awb_meas_config.awb_wnd.v_size = ia_results->awb.awbWin.v_size;
+        isp_cfg->configs.awb_meas_config.awb_wnd.h_offs = ia_results->awb.awbWin.h_offs;
+        isp_cfg->configs.awb_meas_config.awb_wnd.v_offs = ia_results->awb.awbWin.v_offs;
 
         isp_cfg->active_configs |= ISP_AWB_MEAS_MASK;
         isp_cfg->enabled[HAL_ISP_AWB_MEAS_ID] =
@@ -1257,6 +1240,10 @@ bool Isp10Engine::getSensorModedata
   iaCfg->line_periods_per_field = drvCfg->frame_length_lines;
   iaCfg->sensor_output_height = drvCfg->sensor_output_height;
   iaCfg->sensor_output_width = drvCfg->sensor_output_width;
+  iaCfg->isp_input_width = drvCfg->isp_input_width;
+  iaCfg->isp_input_height = drvCfg->isp_input_height;
+  iaCfg->isp_output_width = drvCfg->isp_output_width;
+  iaCfg->isp_output_height = drvCfg->isp_output_height;
   iaCfg->fine_integration_time_min = drvCfg->fine_integration_time_min;
   iaCfg->fine_integration_time_max_margin = drvCfg->line_length_pck - drvCfg->fine_integration_time_max_margin;
   iaCfg->coarse_integration_time_min = drvCfg->coarse_integration_time_min;

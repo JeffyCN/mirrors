@@ -143,13 +143,6 @@ RESULT cam_ia10_isp_hst_update_stepSize
     uint8_t*                     StepSize
 );
 
-void cam_ia10_map_hal_win_to_isp
-(
-    uint16_t in_width, uint16_t in_height,
-    uint16_t drvWidth, uint16_t drvHeight,
-    uint16_t* out_width, uint16_t*  out_height
-);
-
 RESULT cam_ia10_isp_wdr_config
 (
     CamCalibDbHandle_t hCamCalibDb,

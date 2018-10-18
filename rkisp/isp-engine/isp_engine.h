@@ -28,8 +28,8 @@ public:
     virtual int setStatistics(struct CamIA10_Stats* ia_stats);
     virtual int updateDynamicConfig(struct CamIA10_DyCfg* ia_dcfg);
     virtual int runAe(XCamAeParam *param, AecResult_t* result, bool first = false);
-    virtual int runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result);
-    virtual int runAf(XCamAfParam *param, XCam3aResultFocus* result);
+    virtual int runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, bool first = false);
+    virtual int runAf(XCamAfParam *param, XCam3aResultFocus* result, bool first = false);
     virtual bool getIAResult(struct CamIA10_Results* ia_results);
     virtual void setExternalAEHandlerDesc(XCamAEDescription* desc);
     virtual void setExternalAWBHandlerDesc(XCamAWBDescription* desc);

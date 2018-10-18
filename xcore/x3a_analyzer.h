@@ -105,11 +105,12 @@ public:
         return _common_handler;
     }
 
+    virtual XCamReturn configure ();
 protected:
     /* virtual function list */
     virtual XCamReturn create_handlers ();
     virtual XCamReturn release_handlers ();
-    virtual XCamReturn configure ();
+    //virtual XCamReturn configure ();
     virtual XCamReturn analyze (const SmartPtr<VideoBuffer> &buffer);
 
     virtual SmartPtr<AeHandler> create_ae_handler () = 0;

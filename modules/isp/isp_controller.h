@@ -38,7 +38,7 @@ public:
     explicit IspController ();
     ~IspController ();
 
-    void exit();
+    void exit(bool pause);
     void set_isp_device(SmartPtr<V4l2Device> &dev);
     void set_video_device(SmartPtr<V4l2Device> &dev);
 
@@ -79,6 +79,8 @@ private:
 
     XCAM_DEAD_COPY (IspController);
     int get_sensor_fps(float& fps);
+    void gen_full_isp_params(const struct rkisp1_isp_params_cfg *update_params,
+                             struct rkisp1_isp_params_cfg *full_params);
 
 private:
     volatile bool            _is_exit;
@@ -108,6 +110,8 @@ private:
 
     Mutex             _mutex;
     XCam::Cond        _frame_sequence_cond;
+
+    struct rkisp1_isp_params_cfg _full_active_isp_params;
 };
 
 };

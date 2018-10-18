@@ -190,6 +190,7 @@ AiqAeHandler::pop_result ()
     sensor.coarse_integration_time = _result.regIntegrationTime;
     sensor.analog_gain = _result.regGain;
     sensor.digital_gain = 0;
+    sensor.frame_line_length = (uint32_t)_result.LinePeriodsPerField;
     result->set_isp_config (sensor);
 
     xcam_mem_clear (exposure);
@@ -482,7 +483,7 @@ AiqCommonHandler::fillTonemapCurve(CamerIcIspGocConfig_t goc, AiqInputParams* in
             return XCAM_RETURN_NO_ERROR;
         }
     } else {
-        LOGE("@%s %d: only support fast and high_quality tonemaps mode, modify camera3_profile.xml", __FUNCTION__, __LINE__);
+        LOGW("@%s %d: only support fast and high_quality tonemaps mode, modify camera3_profile.xml", __FUNCTION__, __LINE__);
         return XCAM_RETURN_NO_ERROR;
     }
 
@@ -573,7 +574,7 @@ AiqAeHandler::analyze (X3aResultList &output, bool first)
 {
     XCAM_ASSERT (_analyzer);
     SmartPtr<AiqInputParams> inputParams = _aiq_compositor->getAiqInputParams();
-    bool forceAeRun = false;
+    bool forceAeRun = first ? true : false;
 
     if (inputParams.ptr()) {
         bool forceAeRun = _latestInputParams.aeInputParams.aeParams.ev_shift !=
@@ -989,7 +990,7 @@ AiqAwbHandler::analyze (X3aResultList &output, bool first)
 
     XCAM_ASSERT (_analyzer);
     SmartPtr<AiqInputParams> inputParams = _aiq_compositor->getAiqInputParams();
-    bool forceAeRun = false;
+    bool forceAwbRun = first ? true : false;
 
     if (inputParams.ptr()) {
         bool forceAwbRun = (inputParams->reqId == 0);
@@ -999,14 +1000,14 @@ AiqAwbHandler::analyze (X3aResultList &output, bool first)
                                inputParams->aaaControls.awb);
     }
 
-    if (forceAeRun || mAwbState->getState() != ANDROID_CONTROL_AWB_STATE_LOCKED) {
+    if (forceAwbRun || mAwbState->getState() != ANDROID_CONTROL_AWB_STATE_LOCKED) {
 
         if (inputParams.ptr())
             this->update_parameters (inputParams->awbInputParams.awbParams);
 
         //ensure_ia_parameters();
         XCamAwbParam param = this->get_params_unlock ();
-        _aiq_compositor->_isp10_engine->runAwb(&param, &_result);
+        _aiq_compositor->_isp10_engine->runAwb(&param, &_result, first);
     }
 
     return XCAM_RETURN_NO_ERROR;
@@ -1069,7 +1070,7 @@ AiqAfHandler::analyze (X3aResultList &output, bool first)
                                     inputParams->afInputParams.afParams);
     }
 
-    _aiq_compositor->_isp10_engine->runAf(&param, &isp_result);
+    _aiq_compositor->_isp10_engine->runAf(&param, &isp_result, first);
 
     if (inputParams.ptr())
         processAfMetaResults(isp_result, output);

@@ -85,6 +85,8 @@ int IspEngine::setStatistics(struct CamIA10_Stats* ia_stats)
 
 int IspEngine::updateDynamicConfig(struct CamIA10_DyCfg* ia_dcfg)
 {
+    mCamIA_DyCfg = *ia_dcfg;
+
     mCamIAEngine->initDynamic(ia_dcfg);
 
     return 0;
@@ -99,14 +101,14 @@ int IspEngine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
     return 0;
 }
 
-int IspEngine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result)
+int IspEngine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, bool first)
 {
-    return mCamIAEngine->runAwb(param, result);
+    return mCamIAEngine->runAwb(param, result, first);
 }
 
-int IspEngine::runAf(XCamAfParam *param, XCam3aResultFocus* result)
+int IspEngine::runAf(XCamAfParam *param, XCam3aResultFocus* result, bool first)
 {
-    return mCamIAEngine->runAf(param, result);
+    return mCamIAEngine->runAf(param, result, first);
 }
 
 bool IspEngine::getIAResult(struct CamIA10_Results* ia_results) {
