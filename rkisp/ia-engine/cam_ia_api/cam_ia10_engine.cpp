@@ -861,15 +861,14 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
     if (!first) {
         int lastTime = lastAecResult.regIntegrationTime;
         int lastGain = lastAecResult.regGain;
-
         dumpAe();
-
         if ((lastTime == -1 && lastGain == -1)
-                        || (lastTime == dCfg.sensor_mode.exp_time && lastGain == dCfg.sensor_mode.gain)) {
+            || (lastTime == dCfg.sensor_mode.exp_time && lastGain == dCfg.sensor_mode.gain)) {
             aecParams = param;
             if (aecDesc != NULL) {
                 aecDesc->set_stats(aecContext, &mStats.aec);
-                aecDesc->analyze_ae(aecContext, param);
+                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE))
+                    aecDesc->analyze_ae(aecContext, param);
             }
         }
     } else {
@@ -942,7 +941,8 @@ RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, 
         ret = awbDesc->set_stats(awbContext, first ? NULL : &MeasResult);
         if (first)
             awbDesc->update_awb_params(awbContext, &awbcfg);
-        ret = awbDesc->analyze_awb(awbContext, param);
+        if (!(dCfg.aaa_locks & HAL_3A_LOCKS_WB))
+            ret = awbDesc->analyze_awb(awbContext, param);
         ret = awbDesc->get_results(awbContext, &retOuput);
     }
 
@@ -1013,7 +1013,9 @@ RESULT CamIA10Engine::runAf(XCamAfParam *param, XCam3aResultFocus* result, bool 
     
               param.trigger_new_search = set->oneshot_trigger;
               ret = afDesc->set_stats(afContext, &mStats.af);
-              ret = afDesc->analyze_af(afContext, &param);
+
+              if (!(dCfg.aaa_locks & HAL_3A_LOCKS_FOCUS))
+                  ret = afDesc->analyze_af(afContext, &param);
           }//AfProcessFrame(hAf, &mStats.af);
     
           if ((ret != RET_SUCCESS) && (ret != RET_CANCELED))

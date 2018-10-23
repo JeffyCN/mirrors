@@ -1209,7 +1209,14 @@ RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *
                                                      &_ia_dcfg.aec_cfg, &_ia_dcfg.sensor_mode);
         ParamsTranslate::convert_to_rkisp_af_config(&_inputParams->afInputParams.afParams,
                                                      &_ia_dcfg.afc_cfg, &_ia_dcfg.sensor_mode);
-
+        AAAControls *aaaControls = &_inputParams->aaaControls;
+        // update ae lock
+        _ia_dcfg.aaa_locks &= ~HAL_3A_LOCKS_EXPOSURE;
+        _ia_dcfg.aaa_locks |= aaaControls->ae.aeLock ? HAL_3A_LOCKS_EXPOSURE : 0;
+        // update awb lock
+        _ia_dcfg.aaa_locks &= ~HAL_3A_LOCKS_WB;
+        _ia_dcfg.aaa_locks |= aaaControls->awb.awbLock ? HAL_3A_LOCKS_WB : 0;
+        // update af lock
     }
     _isp10_engine->updateDynamicConfig(&_ia_dcfg);
     _ia_stat.sensor_mode = _ia_dcfg.sensor_mode;
