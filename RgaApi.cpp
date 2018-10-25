@@ -51,6 +51,11 @@ int c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1)
     return ret ;
 }
 
+int c_RkRgaColorFill(rga_info_t *dst)
+{
+    return rkRga.RkRgaCollorFill(dst);
+}
+
 #ifdef __cplusplus
 }
 #endif

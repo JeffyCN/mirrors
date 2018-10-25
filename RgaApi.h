@@ -36,6 +36,7 @@ int c_RkRgaGetMmap(bo_t *bo_info);
 int c_RkRgaUnmap(bo_t *bo_info);
 int c_RkRgaGetBufferFd(bo_t *bo_info, int *fd);
 int c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
+int c_RkRgaColorFill(rga_info_t *dst);
 #ifdef __cplusplus
 }
 #endif
