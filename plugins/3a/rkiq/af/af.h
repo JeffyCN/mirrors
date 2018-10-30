@@ -43,26 +43,26 @@
 *
 *
 *
-*v0.1.0x00
+*v0.1.0
 * 1)init af.c,AfSearchFullRange is ok.
 * 2)add af search table(AfPosTbl),and support 8 or 16 units.
 * 3)add af reset search direction(search_dir),it can adaptive to choose infinity or marco position according to which is closer position.
 * 4)tide the code,to eliminate the warning in the process of compilation.
-*v0.1.0x01
+*v0.1.1
 * 1)correct the region of touch af.
 * 2)if fStart\AfOneShot\AfStop is fail,it need't AfRelease, so rm AfRelease.
-*v0.2.0x00
+*v0.2.0
 * 1)add touch af trigger that cause by differnce area.keyword: measureWdw.
 * 2)separate Af state update and arithmetic run process from AfProcessFrame.keyword: AfUpdateState.
 * 3)tide the struct for af.
 * 4)complete xcam_get_results function.keyword: FinalLensPosReached.
 * 5)fix the case when the window af is null. keyword: mapHalWinToIsp.
 * 6)remove bssa and rename af_ctrl. keyword: bssa.
-*v0.2.0x01
+*v0.2.1
 * 1)add af_module.h,last version is lost.
 */
 
-#define CONFIG_AF_LIB_VERSION KERNEL_VERSION(0, 2, 1)
+#define CONFIG_AF_LIB_VERSION "v0.2.1"
 
 #ifdef __cplusplus
 extern "C"

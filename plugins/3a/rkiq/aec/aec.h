@@ -43,6 +43,14 @@
 #include <cam_ia_api/cameric.h>
 #include "base/log.h"
 
+/*
+ ***************** AE LIB VERSION NOTE *****************
+ * v0.0.1
+ *  - platform independence, support rkisp v10 and v12
+ */
+
+#define CONFIG_AE_LIB_VERSION "v0.0.1"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -427,7 +435,8 @@ RESULT AecInit
 RESULT AecUpdateConfig
 (
     AecContext_t* pAecCtx,
-    AecConfig_t*         pConfig
+    AecConfig_t*         pConfig,
+    bool          isReconfig
 );
 
 RESULT AecStart

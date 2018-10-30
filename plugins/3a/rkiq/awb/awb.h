@@ -36,6 +36,14 @@
 #include <base/log.h>
 //#include "awb_independent.h"
 
+/*
+ ***************** AWB LIB VERSION NOTE *****************
+ * v0.0.1
+ *  - platform independence, support rkisp v10 and v12
+ */
+
+#define CONFIG_AWB_LIB_VERSION "v0.0.1"
+
 #ifdef __cplusplus
 extern "C"
 {
