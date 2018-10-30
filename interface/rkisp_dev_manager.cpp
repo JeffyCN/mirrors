@@ -180,3 +180,12 @@ RkispDeviceManager::resume_dequeue ()
 
     return _ready_buffers.resume_pop ();
 }
+
+static void xcam_init_cam_engine_lib(void) __attribute__((constructor));
+static void xcam_init_cam_engine_lib(void)
+{
+    LOGI("\n*******************************************\n"
+         "        CAM ENGINE LIB VERSION IS %s"
+         "\n*******************************************\n"
+         , CONFIG_CAM_ENGINE_LIB_VERSION);
+}

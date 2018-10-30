@@ -55,6 +55,15 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
 #include "x3a_meta_result.h"
 #include "rkaiq.h"
 
+/*
+ ***************** CAM ENGINE LIB VERSION NOTE *****************
+ * v1.2.0
+ *  - support both Linux and Android 7.x/8.x/9.x
+ *  - support auto/manual AE/AWB/AF
+ */
+
+#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.2.0"
+
 using namespace XCam;
 class SettingsProcessor;
 
