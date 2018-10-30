@@ -28,10 +28,17 @@
 namespace XCam {
 
 #ifdef ANDROID_OS
+#if defined(ANDROID_VERSION_ABOVE_8_X)
+#define XCAM_DEFAULT_3A_LIB_DIR "/vendor/lib/rkisp/3a"
+#define XCAM_DEFAULT_AE_LIB_DIR "/vendor/lib/rkisp/ae"
+#define XCAM_DEFAULT_AWB_LIB_DIR "/vendor/lib/rkisp/awb"
+#define XCAM_DEFAULT_AF_LIB_DIR "/vendor/lib/rkisp/af"
+#else
 #define XCAM_DEFAULT_3A_LIB_DIR "/system/lib/rkisp/3a"
 #define XCAM_DEFAULT_AE_LIB_DIR "/system/lib/rkisp/ae"
 #define XCAM_DEFAULT_AWB_LIB_DIR "/system/lib/rkisp/awb"
 #define XCAM_DEFAULT_AF_LIB_DIR "/system/lib/rkisp/af"
+#endif
 #else
 #define XCAM_DEFAULT_3A_LIB_DIR "/usr/lib/rkisp/3a"
 #define XCAM_DEFAULT_AE_LIB_DIR "/usr/lib/rkisp/ae"

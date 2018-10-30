@@ -83,6 +83,7 @@ endif
 
 LOCAL_MODULE:= librkisp_ctrlloop
 ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+LOCAL_CFLAGS += -DANDROID_VERSION_ABOVE_8_X
 LOCAL_PROPRIETARY_MODULE := true
 LOCAL_C_INCLUDES += \
 system/core/libutils/include \
