@@ -1,6 +1,6 @@
 cc_library_shared {
     name: "librga",
-    vendor: true,
+    vendor_available: true,
 
     header_libs: [
         "gl_headers",
