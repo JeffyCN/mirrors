@@ -4,7 +4,7 @@
 3、 SecureBootTool 		固件签名工具
 4、 efuseTool			efuse烧写工具
 5、 rk_provision_tool		写号工具
-6、 SD_Firmware_Tool 	        SD卡镜像制作
+6、 SDDiskTool	        	SD卡镜像制作
 7、 SpiImageTools		烧录器升级工具
 8、 DriverAssitant		驱动安装工具
 9、 RKImageMaker		打包工具
