@@ -5,7 +5,7 @@
  * transcribed, or translated into any language or computer format, in any form
  * or by any means without written permission of:
  * Fuzhou Rockchip Electronics Co.Ltd .
- * 
+ *
  *
  *****************************************************************************/
 /**
@@ -242,7 +242,13 @@
 #define CALIB_SENSOR_AEC_CAMERICISPEXPMEASURINGMODE_2       "RGB"//cxf
 
 #define CALIB_SENSOR_AEC_ECMTIMEDOT_TAG                     "EcmTimeDot"
+#define CALIB_SENSOR_AEC_ECMLTIMEDOT_TAG                     "EcmLTimeDot"//zlj
+#define CALIB_SENSOR_AEC_ECMSTIMEDOT_TAG                     "EcmSTimeDot"//zlj
 #define CALIB_SENSOR_AEC_ECMGAINDOT_TAG                     "EcmGainDot"
+#define CALIB_SENSOR_AEC_ECMLGAINDOT_TAG                     "EcmLGainDot"//zlj
+#define CALIB_SENSOR_AEC_ECMSGAINDOT_TAG                     "EcmSGainDot"//zlj
+
+
 #define CALIB_SENSOR_AEC_ECMMODE_TAG                        "EcmMode"
 #define CALIB_SENSOR_AEC_ECMMODE_1                          "MODE_1"
 #define CALIB_SENSOR_AEC_ECMMODE_2                          "MODE_2"
@@ -277,6 +283,31 @@
 #define CALIB_SENSOR_AEC_FPS_IS_FPS_FIX				"isFpsFix"
 #define CALIB_SENSOR_AEC_FPS_FPS_FIX_TIMEDOT		"FpsFix_TimeDot"
 
+/*LockAE-for HDR*/
+#define CALIB_SENSOR_LOCK_AE_TAG "LockAE"
+#define CALIB_SENSOR_LOCK_AE_ENABEL	 "LockAE_enable"
+#define CALIB_SENSOR_LOCK_AE_GAINVALUE	"GainValue"
+#define CALIB_SENSOR_LOCK_AE_TIMEVALUE  "TimeValue"
+#define CALIB_SENSOR_LOCK_AE_MEANLUMADISTTH  "MeanLumaDistTh"
+
+/*HDR-Ctrl*/
+#define CALIB_SENSOR_HDRCTRL_TAG "HdrCtrl"
+#define CALIB_SENSOR_HDRCTRL_ENABEL	"Enable"
+#define CALIB_SENSOR_HDRCTRL_MODE "Mode"
+#define CALIB_SENSOR_HDRCTRL_MODE_DCG "DCG"
+#define CALIB_SENSOR_HDRCTRL_MODE_STAGGER "STAGGER"
+#define CALIB_SENSOR_HDRCTRL_FrameNum "FrameNum"
+#define CALIB_SENSOR_HDRCTRL_DCG_Ratio "DCGRatio"
+#define CALIB_SENSOR_HDRCTRL_M2S_Ratio "M2S_Ratio"
+#define CALIB_SENSOR_HDRCTRL_L2M_Ratio "L2M_Ratio"
+#define CALIB_SENSOR_HDRCTRL_LframeCtrl "LframeCtrl"
+#define CALIB_SENSOR_HDRCTRL_LGAINS "GainLevel"
+#define CALIB_SENSOR_HDRCTRL_LGMEAN "LgmeanTarget"
+#define CALIB_SENSOR_HDRCTRL_SframeCtrl "SframeCtrl"
+#define CALIB_SENSOR_HDRCTRL_SGAINS "GainLevel"
+#define CALIB_SENSOR_HDRCTRL_OETOLERANCE "OETolerance"
+#define CALIB_SENSOR_HDRCTRL_OELUMA "TargetOELuma"
+#define CALIB_SENSOR_HDRCTRL_OELUMADIST "OELumaDistTh"
 
 /******************************************************************************
  * XML BLS section

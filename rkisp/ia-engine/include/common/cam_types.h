@@ -5,7 +5,7 @@
  * transcribed, or translated into any language or computer format, in any form
  * or by any means without written permission of:
  * Fuzhou Rockchip Electronics Co.Ltd .
- * 
+ *
  *
  *****************************************************************************/
 /**
@@ -851,7 +851,7 @@ typedef struct CamDsp3DnrDefaultLevelSetting_s
 	unsigned char * pchrm_te_nr_level;		   // control the strength of temporal chroma denoise level
 	unsigned char shp_en;
 	unsigned char * pshp_level; 		  // control sharpness strenth
-	
+
 }CamDsp3DnrDefaultLevelSetting_t;
 
 #define CAM_DSP_3DNR_SETTING_WEIGHT_ROW_NUM  (5)
@@ -859,13 +859,13 @@ typedef struct CamDsp3DnrDefaultLevelSetting_s
 #define CAM_CALIBDB_3DNR_WEIGHT_NUM  (CAM_DSP_3DNR_SETTING_WEIGHT_ROW_NUM*CAM_DSP_3DNR_SETTING_WEIGHT_COL_NUM)
 
 
-typedef struct CamDsp3DNRLumaSetting_s{	
+typedef struct CamDsp3DNRLumaSetting_s{
 	//5x5 luma spatial weight table,8bit for the center point,6bit for the other point,
 	//low 30bit is useful in w0 w1 w3 w4,6 6 8 6 6 in w2,all these weight are int type.
 	unsigned char luma_default;      // 1 use level define,0 use those parameters below
 	unsigned char *pluma_sp_rad;      //spatial bilateral filter size
 	unsigned char *pluma_te_max_bi_num;      //temporal max bilateral frame num
-	uint8_t *pluma_weight[CAM_CALIBDB_3DNR_WEIGHT_NUM]; 
+	uint8_t *pluma_weight[CAM_CALIBDB_3DNR_WEIGHT_NUM];
 }CamDsp3DNRLumaSetting_t;
 
 typedef struct CamDsp3DNRChrmSetting_s{
@@ -895,13 +895,13 @@ typedef struct CamDsp3DNRShpSetting_s{
 typedef struct CamDsp3DNRSettingProfile_s {
 	void*                    p_next;
 	CamDsp3dnrProfileName_t name;
-	
+
 	unsigned char Enable;
     int ArraySize;
 	float *pgain_Level;
 	uint16_t *pnoise_coef_numerator;
 	uint16_t *pnoise_coef_denominator;
-    
+
 	CamDsp3DnrDefaultLevelSetting_t sDefaultLevelSetting;
 	CamDsp3DNRLumaSetting_t sLumaSetting;
 	CamDsp3DNRChrmSetting_t sChrmSetting;
@@ -1166,6 +1166,22 @@ typedef enum AecSemMode_e {
 
 /*****************************************************************************/
 /**
+ *          AecHdrMode_t
+ *
+ * @brief   mode type of Hdr-AEC
+ *
+ */
+/*****************************************************************************/
+typedef enum AecHdrMode_e {
+  AEC_HDR_MODE_INVALID    = 0,        /* invalid (only used for initialization) */
+  AEC_HDR_MODE_STAGGER   = 1,        /* HDR DCG MODE (only one integration time value) */
+  AEC_HDR_MODE_DCG    = 2,        /* HDR STAGGER MODE (independent integration time value) */
+  AEC_HDR_MODE_MAX
+} AecHdrMode_t;
+
+
+/*****************************************************************************/
+/**
  * @brief   Matrix coefficients
  *
  *          | 0 | 1 |  2 |3| 4 |  5 |
@@ -1228,6 +1244,21 @@ typedef struct CamCalibAecGainRange_s{
 	float *pGainRange;
 }CamCalibAecGainRange_t;
 
+typedef struct CamCalibAecHdrCtrl_s{
+  uint8_t   Enable;
+  uint8_t	Mode;
+  uint8_t	FrameNum;
+  float		DCG_Ratio;
+  float 	M2S_Ratio;
+  float 	L2M_Ratio;
+  Cam6x1FloatMatrix_t Lgains;
+  Cam6x1FloatMatrix_t Sgains;
+  Cam6x1FloatMatrix_t TargetOELuma;
+  Cam6x1FloatMatrix_t TargetLgmean;
+  float 	OETolerance;
+  float		OELumaDistTh;
+}CamCalibAecHdrCtrl_t;
+
 /*****************************************************************************/
 /**
  * @brief   Global AEC calibration structure
@@ -1254,6 +1285,10 @@ typedef struct CamCalibAecGlobal_s {
   CamExpMeasuringMode_t   CamerIcIspExpMeasuringMode;//cxf
   Cam6x1FloatMatrix_t     EcmTimeDot;
   Cam6x1FloatMatrix_t     EcmGainDot;
+  Cam6x1FloatMatrix_t     EcmLTimeDot;
+  Cam6x1FloatMatrix_t     EcmLGainDot;
+  Cam6x1FloatMatrix_t     EcmSTimeDot;
+  Cam6x1FloatMatrix_t     EcmSGainDot;
   CamECMMode_t            EcmMode;
   //float                   GainRange[42];
 
@@ -1262,7 +1297,7 @@ typedef struct CamCalibAecGlobal_s {
   Cam6x1FloatMatrix_t     FpsFixTimeDot;
   uint8_t				  isFpsFix;
   uint8_t				  FpsSetEnable;
-  
+
 
   float         AOE_Enable;
   float         AOE_Max_point;
@@ -1271,7 +1306,7 @@ typedef struct CamCalibAecGlobal_s {
   float         AOE_Y_Min_th;
   float         AOE_Step_Inc;
   float         AOE_Step_Dec;
-  
+
   uint8_t                 DON_Enable;
   float         DON_Day2Night_Gain_th;
   float         DON_Day2Night_Inttime_th;
@@ -1282,13 +1317,18 @@ typedef struct CamCalibAecGlobal_s {
   uint8_t                 DON_Bouncing_th;
 
   CamCalibAecInterAdjust_t InterAdjustStrategy;
-  
+  /*zlj add for LockAE*/
+  uint8_t		LockAE_enable;
+  Cam3x1FloatMatrix_t GainValue;
+  Cam3x1FloatMatrix_t TimeValue;
+  /*zlj add for HdrCtrl*/
+  CamCalibAecHdrCtrl_t HdrCtrl;
 } CamCalibAecGlobal_t;
 
 typedef struct CamCalibGocProfile_s {
-  void*                    p_next;  
+  void*                    p_next;
   CamGOCProfileName_t name;
-  
+
   uint16_t enable_mode;
   uint16_t def_cfg_mode;
   uint16_t GammaY[34];
