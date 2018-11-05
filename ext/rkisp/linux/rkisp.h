@@ -339,14 +339,22 @@ struct rkisp_sensor_mode_data {
 };
 
 struct rkisp_exposure {
-	unsigned int coarse_integration_time;
+    unsigned int coarse_integration_time;
     unsigned int fine_integration_time;
-	unsigned int analog_gain;
-    unsigned int digital_gain;    
-	unsigned int shutter_speed;
-	unsigned int aperture;
+    unsigned int analog_gain;
+    unsigned int digital_gain;
+    unsigned int shutter_speed;
+    unsigned int aperture;
     // also means LinePeriodsPerField or VTS
     unsigned int frame_line_length;
+    // for hdr
+    bool  IsHdrExp;
+    float NormalExpRatio;
+    float LongExpRatio;
+    int RegHdrGains[3];
+    int RegHdrTime[3];
+    float HdrGains[3];
+    float HdrIntTimes[3];
 };
 
 struct rkisp_focus {

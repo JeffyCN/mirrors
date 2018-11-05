@@ -27,11 +27,11 @@ CamIA10Engine::CamIA10Engine():
 {
     init();
     /*
-      mStats.sensor_mode.pixel_clock_freq_mhz = 180;
-      mStats.sensor_mode.pixel_periods_per_line = 2688;
-      mStats.sensor_mode.isp_input_width = 2592;
-      mStats.sensor_mode.isp_input_height = 1944;
-    */
+       mStats.sensor_mode.pixel_clock_freq_mhz = 180;
+       mStats.sensor_mode.pixel_periods_per_line = 2688;
+       mStats.sensor_mode.isp_input_width = 2592;
+       mStats.sensor_mode.isp_input_height = 1944;
+       */
 }
 
 CamIA10Engine::~CamIA10Engine() {
@@ -82,7 +82,13 @@ RESULT CamIA10Engine::init() {
     lastAecResult.coarse_integration_time = -1;
     lastAecResult.analog_gain_code_global = -1;
 
-	return 0;
+    //init for Hdr
+    for(int i=0;i<3;i++){
+        lastAecResult.RegHdrGains[i]=-1;
+        lastAecResult.RegHdrTime[i]=-1;
+    }
+
+    return 0;
 }
 
 RESULT CamIA10Engine::deinit() {
@@ -123,13 +129,13 @@ RESULT CamIA10Engine::deinit() {
     mInitDynamic = false;
     mFrameId = 0;
 
-	return 0;
+    return 0;
 }
 
 RESULT CamIA10Engine::initStatic
 (
-    char* aiqb_data_file
-) {
+ char* aiqb_data_file
+ ) {
     RESULT result = RET_FAILURE;
     if (!hCamCalibDb) {
         if (calidb.CreateCalibDb(aiqb_data_file)) {
@@ -233,45 +239,45 @@ initDynamic_end:
 
 RESULT HalAwbGains2CamerIcGains
 (
-    AwbGains_t*      pAwbGains,
-    CamerIcGains_t*  pCamerIcGains
-) {
-  RESULT result = RET_SUCCESS;
+ AwbGains_t*      pAwbGains,
+ CamerIcGains_t*  pCamerIcGains
+ ) {
+    RESULT result = RET_SUCCESS;
 
-  LOGV( "%s: (enter)\n", __FUNCTION__);
+    LOGV( "%s: (enter)\n", __FUNCTION__);
 
-  if ((pAwbGains != NULL) && (pCamerIcGains != NULL)) {
-  	if(pAwbGains->fRed > AWB_GAIN_REG_VALUE_MAX)
-		pAwbGains->fRed = AWB_GAIN_REG_VALUE_MAX;
-	if(pAwbGains->fRed < AWB_GAIN_REG_VALUE_MIN)
-		pAwbGains->fRed = AWB_GAIN_REG_VALUE_MIN;
-	
-	if(pAwbGains->fGreenR > AWB_GAIN_REG_VALUE_MAX)
-		pAwbGains->fGreenR = AWB_GAIN_REG_VALUE_MAX;
-	if(pAwbGains->fGreenR < AWB_GAIN_REG_VALUE_MIN)
-		pAwbGains->fGreenR = AWB_GAIN_REG_VALUE_MIN;
+    if ((pAwbGains != NULL) && (pCamerIcGains != NULL)) {
+        if(pAwbGains->fRed > AWB_GAIN_REG_VALUE_MAX)
+            pAwbGains->fRed = AWB_GAIN_REG_VALUE_MAX;
+        if(pAwbGains->fRed < AWB_GAIN_REG_VALUE_MIN)
+            pAwbGains->fRed = AWB_GAIN_REG_VALUE_MIN;
 
-	if(pAwbGains->fGreenB > AWB_GAIN_REG_VALUE_MAX)
-		pAwbGains->fGreenB = AWB_GAIN_REG_VALUE_MAX;
-	if(pAwbGains->fGreenB < AWB_GAIN_REG_VALUE_MIN)
-		pAwbGains->fGreenB = AWB_GAIN_REG_VALUE_MIN;
-	
-	if(pAwbGains->fBlue > AWB_GAIN_REG_VALUE_MAX)
-		pAwbGains->fBlue = AWB_GAIN_REG_VALUE_MAX;
-	if(pAwbGains->fBlue < AWB_GAIN_REG_VALUE_MIN)
-		pAwbGains->fBlue = AWB_GAIN_REG_VALUE_MIN;
-	
-    pCamerIcGains->Red      = UtlFloatToFix_U0208(pAwbGains->fRed);
-    pCamerIcGains->GreenR   = UtlFloatToFix_U0208(pAwbGains->fGreenR);
-    pCamerIcGains->GreenB   = UtlFloatToFix_U0208(pAwbGains->fGreenB);
-    pCamerIcGains->Blue     = UtlFloatToFix_U0208(pAwbGains->fBlue);
-  } else {
-    result = RET_NULL_POINTER;
-  }
+        if(pAwbGains->fGreenR > AWB_GAIN_REG_VALUE_MAX)
+            pAwbGains->fGreenR = AWB_GAIN_REG_VALUE_MAX;
+        if(pAwbGains->fGreenR < AWB_GAIN_REG_VALUE_MIN)
+            pAwbGains->fGreenR = AWB_GAIN_REG_VALUE_MIN;
 
-  LOGV( "%s: (exit %d)\n", __FUNCTION__, result);
+        if(pAwbGains->fGreenB > AWB_GAIN_REG_VALUE_MAX)
+            pAwbGains->fGreenB = AWB_GAIN_REG_VALUE_MAX;
+        if(pAwbGains->fGreenB < AWB_GAIN_REG_VALUE_MIN)
+            pAwbGains->fGreenB = AWB_GAIN_REG_VALUE_MIN;
 
-  return (result);
+        if(pAwbGains->fBlue > AWB_GAIN_REG_VALUE_MAX)
+            pAwbGains->fBlue = AWB_GAIN_REG_VALUE_MAX;
+        if(pAwbGains->fBlue < AWB_GAIN_REG_VALUE_MIN)
+            pAwbGains->fBlue = AWB_GAIN_REG_VALUE_MIN;
+
+        pCamerIcGains->Red      = UtlFloatToFix_U0208(pAwbGains->fRed);
+        pCamerIcGains->GreenR   = UtlFloatToFix_U0208(pAwbGains->fGreenR);
+        pCamerIcGains->GreenB   = UtlFloatToFix_U0208(pAwbGains->fGreenB);
+        pCamerIcGains->Blue     = UtlFloatToFix_U0208(pAwbGains->fBlue);
+    } else {
+        result = RET_NULL_POINTER;
+    }
+
+    LOGV( "%s: (exit %d)\n", __FUNCTION__, result);
+
+    return (result);
 }
 
 /******************************************************************************
@@ -279,25 +285,25 @@ RESULT HalAwbGains2CamerIcGains
  *****************************************************************************/
 RESULT HalAwbXtalk2CamerIcXtalk
 (
-    Cam3x3FloatMatrix_t* pAwbXTalkMatrix,
-    CamerIc3x3Matrix_t*  pXTalkMatrix
-) {
-  RESULT result = RET_SUCCESS;
+ Cam3x3FloatMatrix_t* pAwbXTalkMatrix,
+ CamerIc3x3Matrix_t*  pXTalkMatrix
+ ) {
+    RESULT result = RET_SUCCESS;
 
-  LOGV( "%s: (enter)\n", __FUNCTION__);
+    LOGV( "%s: (enter)\n", __FUNCTION__);
 
-  if ((pAwbXTalkMatrix != NULL) && (pXTalkMatrix != NULL)) {
-    int32_t i;
-    for (i = 0UL; i < 9; i++) {
-      pXTalkMatrix->Coeff[i] = UtlFloatToFix_S0407(pAwbXTalkMatrix->fCoeff[i]);
+    if ((pAwbXTalkMatrix != NULL) && (pXTalkMatrix != NULL)) {
+        int32_t i;
+        for (i = 0UL; i < 9; i++) {
+            pXTalkMatrix->Coeff[i] = UtlFloatToFix_S0407(pAwbXTalkMatrix->fCoeff[i]);
+        }
+    } else {
+        result = RET_NULL_POINTER;
     }
-  } else {
-    result = RET_NULL_POINTER;
-  }
 
-  LOGV( "%s: (exit %d)\n", __FUNCTION__, result);
+    LOGV( "%s: (exit %d)\n", __FUNCTION__, result);
 
-  return (result);
+    return (result);
 }
 
 /******************************************************************************
@@ -305,51 +311,51 @@ RESULT HalAwbXtalk2CamerIcXtalk
  *****************************************************************************/
 RESULT HalAwbXTalkOffset2CamerIcXTalkOffset
 (
-    Cam1x3FloatMatrix_t*     pAwbXTalkOffset,
-    CamerIcXTalkOffset_t*    pCamerIcXTalkOffset
-) {
-  RESULT result = RET_SUCCESS;
+ Cam1x3FloatMatrix_t*     pAwbXTalkOffset,
+ CamerIcXTalkOffset_t*    pCamerIcXTalkOffset
+ ) {
+    RESULT result = RET_SUCCESS;
 
-  LOGV( "%s: (enter)\n", __FUNCTION__);
+    LOGV( "%s: (enter)\n", __FUNCTION__);
 
-  if ((pAwbXTalkOffset != NULL) && (pCamerIcXTalkOffset != NULL)) {
-    if ((pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_RED] > 2047.0f)
-        || (pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_RED] < -2048.0f)
-        || (pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_GREEN] > 2047.0f)
-        || (pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_GREEN] < -2048.0f)
-        || (pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_BLUE] > 2047.0f)
-        || (pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_BLUE] < -2048.0f)) {
-      result = RET_OUTOFRANGE;
+    if ((pAwbXTalkOffset != NULL) && (pCamerIcXTalkOffset != NULL)) {
+        if ((pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_RED] > 2047.0f)
+            || (pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_RED] < -2048.0f)
+            || (pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_GREEN] > 2047.0f)
+            || (pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_GREEN] < -2048.0f)
+            || (pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_BLUE] > 2047.0f)
+            || (pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_BLUE] < -2048.0f)) {
+            result = RET_OUTOFRANGE;
+        } else {
+            pCamerIcXTalkOffset->Red      = UtlFloatToFix_S1200(pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_RED]);
+            pCamerIcXTalkOffset->Green    = UtlFloatToFix_S1200(pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_GREEN]);
+            pCamerIcXTalkOffset->Blue     = UtlFloatToFix_S1200(pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_BLUE]);
+        }
     } else {
-      pCamerIcXTalkOffset->Red      = UtlFloatToFix_S1200(pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_RED]);
-      pCamerIcXTalkOffset->Green    = UtlFloatToFix_S1200(pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_GREEN]);
-      pCamerIcXTalkOffset->Blue     = UtlFloatToFix_S1200(pAwbXTalkOffset->fCoeff[CAM_3CH_COLOR_COMPONENT_BLUE]);
+        result = RET_NULL_POINTER;
     }
-  } else {
-    result = RET_NULL_POINTER;
-  }
 
-  LOGV( "%s: (exit %d)\n", __FUNCTION__, result);
+    LOGV( "%s: (exit %d)\n", __FUNCTION__, result);
 
-  return (result);
+    return (result);
 }
 
 RESULT HalCamerIcAwbMeasure2AwbMeasure
 (
-    CamerIcAwbMeasuringResult_t*   pCamericMeasResult,
-    AwbMeasuringResult_t*          pAwbMeasuringResult
+ CamerIcAwbMeasuringResult_t*   pCamericMeasResult,
+ AwbMeasuringResult_t*          pAwbMeasuringResult
 
-) {
-  RESULT result = RET_SUCCESS;
+ ) {
+    RESULT result = RET_SUCCESS;
 
-  LOGV( "%s: (enter)\n", __FUNCTION__);
-  pAwbMeasuringResult->NoWhitePixel = pCamericMeasResult->NoWhitePixel;
-  pAwbMeasuringResult->MeanY__G = (float)pCamericMeasResult->MeanY__G;
-  pAwbMeasuringResult->MeanCb__B = (float)pCamericMeasResult->MeanCb__B;
-  pAwbMeasuringResult->MeanCr__R = (float)pCamericMeasResult->MeanCr__R;
-  LOGV( "%s: (exit %d)\n", __FUNCTION__, result);
+    LOGV( "%s: (enter)\n", __FUNCTION__);
+    pAwbMeasuringResult->NoWhitePixel = pCamericMeasResult->NoWhitePixel;
+    pAwbMeasuringResult->MeanY__G = (float)pCamericMeasResult->MeanY__G;
+    pAwbMeasuringResult->MeanCb__B = (float)pCamericMeasResult->MeanCb__B;
+    pAwbMeasuringResult->MeanCr__R = (float)pCamericMeasResult->MeanCr__R;
+    LOGV( "%s: (exit %d)\n", __FUNCTION__, result);
 
-  return (result);
+    return (result);
 }
 
 RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
@@ -388,26 +394,28 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
         1312 : dCfg.sensor_mode.pixel_periods_per_line;
 
     LOGD("config aec sensor mode, HTS: %f, VTS: %f, PCLK: %f",
-        aecCfg.PixelPeriodsPerLine,
-        aecCfg.LinePeriodsPerField,
-        aecCfg.PixelClockFreqMHZ);
+         aecCfg.PixelPeriodsPerLine,
+         aecCfg.LinePeriodsPerField,
+         aecCfg.PixelClockFreqMHZ);
 
     if ((set->win.left_hoff != shd->win.left_hoff) ||
-            (set->win.top_voff != shd->win.top_voff) ||
-            (set->win.right_width != shd->win.right_width) ||
-            (set->win.bottom_height != shd->win.bottom_height) ||
-            (set->meter_mode != shd->meter_mode) ||
-            (set->mode != shd->mode) ||
-            (set->flk != shd->flk) ||
-            (set->ae_bias != shd->ae_bias)||
-            mLightMode != cfg->LightMode) {
+        (set->win.top_voff != shd->win.top_voff) ||
+        (set->win.right_width != shd->win.right_width) ||
+        (set->win.bottom_height != shd->win.bottom_height) ||
+        (set->meter_mode != shd->meter_mode) ||
+        (set->mode != shd->mode) ||
+        (set->flk != shd->flk) ||
+        (set->ae_bias != shd->ae_bias)||
+        (set->frame_time_us_min != shd->frame_time_us_min)||
+        (set->frame_time_us_max != shd->frame_time_us_max)||
+        mLightMode != cfg->LightMode) {
         //cifisp_histogram_mode mode = CIFISP_HISTOGRAM_MODE_RGB_COMBINED;
         cam_ia10_isp_hst_update_stepSize(
-            aecCfg.HistMode,
-            aecCfg.GridWeights.uCoeff,
-            set->win.right_width,
-            set->win.bottom_height,
-            &(aecCfg.StepSize));
+                                         aecCfg.HistMode,
+                                         aecCfg.GridWeights.uCoeff,
+                                         set->win.right_width,
+                                         set->win.bottom_height,
+                                         &(aecCfg.StepSize));
 
         //LOGD("aec set win:%dx%d",
         //  set->win.right_width,set->win.bottom_height);
@@ -473,7 +481,7 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
                 SetPoint = pAecGlobal->NightSetPoint;
 
             aecCfg.SetPoint = (SetPoint) +
-                              (set->ae_bias / 100.0f) * MAX(10, SetPoint / (1 - pAecGlobal->ClmTolerance / 100.0f) / 10.0f) ;
+                (set->ae_bias / 100.0f) * MAX(10, SetPoint / (1 - pAecGlobal->ClmTolerance / 100.0f) / 10.0f) ;
 
             mLightMode = cfg->LightMode;
 #if 1
@@ -491,23 +499,23 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
                 aecCfg.MinFrameDuration = (float)set->frame_time_us_min / 1000000;
                 aecCfg.MaxFrameDuration = (float)set->frame_time_us_max / 1000000;
                 LOGD("sensor param (%d)=[%f-%f-%f-%f-%f-%f] vts: %f, vtsMax: %d, pclk: %f, hts: %f\n",
-                  ecmCnt,
-                  aecCfg.EcmTimeDot.fCoeff[0],
-                  aecCfg.EcmTimeDot.fCoeff[1],
-                  aecCfg.EcmTimeDot.fCoeff[2],
-                  aecCfg.EcmTimeDot.fCoeff[3],
-                  aecCfg.EcmTimeDot.fCoeff[4],
-                  aecCfg.EcmTimeDot.fCoeff[5],
-                  aecCfg.LinePeriodsPerField,
-                  mStats.sensor_mode.line_periods_per_field,
-                  aecCfg.PixelClockFreqMHZ,
-                  aecCfg.PixelPeriodsPerLine);
+                     ecmCnt,
+                     aecCfg.EcmTimeDot.fCoeff[0],
+                     aecCfg.EcmTimeDot.fCoeff[1],
+                     aecCfg.EcmTimeDot.fCoeff[2],
+                     aecCfg.EcmTimeDot.fCoeff[3],
+                     aecCfg.EcmTimeDot.fCoeff[4],
+                     aecCfg.EcmTimeDot.fCoeff[5],
+                     aecCfg.LinePeriodsPerField,
+                     mStats.sensor_mode.line_periods_per_field,
+                     aecCfg.PixelClockFreqMHZ,
+                     aecCfg.PixelPeriodsPerLine);
             }
 #endif
         }
 
         if ((set->mode != HAL_AE_OPERATION_MODE_MANUAL) &&
-                !(cfg->aaa_locks & HAL_3A_LOCKS_EXPOSURE)) {
+            !(cfg->aaa_locks & HAL_3A_LOCKS_EXPOSURE)) {
             if (aecDesc != NULL) {
                 aecDesc->update_ae_params(aecContext, &aecCfg);
             }//AecUpdateConfig(&aecCfg);
@@ -692,10 +700,10 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
         /*
         //awb locks
         if ((cfg->aaa_locks & HAL_3A_LOCKS_WB)
-                && (dCfg.awb_cfg.mode == HAL_WB_AUTO)) {
-            AwbTryLock(hAwb);
+        && (dCfg.awb_cfg.mode == HAL_WB_AUTO)) {
+        AwbTryLock(hAwb);
         } else if (dCfg.aaa_locks & HAL_3A_LOCKS_WB)
-            AwbUnLock(hAwb);
+        AwbUnLock(hAwb);
         */
     }
 updateAwbConfig_end:
@@ -715,8 +723,8 @@ RESULT CamIA10Engine::updateAfConfig(struct CamIA10_DyCfg* cfg) {
 
     if (afDesc) {
         afDesc->configure_af(afContext,
-                                cfg->sensor_mode.isp_input_width,
-                                cfg->sensor_mode.isp_input_height);
+                             cfg->sensor_mode.isp_input_width,
+                             cfg->sensor_mode.isp_input_height);
     }
 #if 0
     // AF
@@ -744,34 +752,34 @@ RESULT CamIA10Engine::updateAfConfig(struct CamIA10_DyCfg* cfg) {
         //start af
         if (afset->mode != afshd->mode) {
             if (afshd->mode != HAL_AF_MODE_NOT_SET &&
-              afshd->mode != HAL_AF_MODE_FIXED)
+                afshd->mode != HAL_AF_MODE_FIXED)
                 AfStop(hAf);
 
             if (afset->mode == HAL_AF_MODE_CONTINUOUS_VIDEO ||
-                    afset->mode == HAL_AF_MODE_CONTINUOUS_PICTURE) {
+                afset->mode == HAL_AF_MODE_CONTINUOUS_PICTURE) {
                 result = AfStart(hAf, AFM_FSS_ADAPTIVE_RANGE);
                 if (result != RET_SUCCESS) {
-                  ALOGE("%s: AfStart failure!", __func__);
-                  goto updateAfConfig_end;
+                    ALOGE("%s: AfStart failure!", __func__);
+                    goto updateAfConfig_end;
                 }
             } else if (afset->mode == HAL_AF_MODE_AUTO) {
                 result = AfOneShot(hAf, AFM_FSS_ADAPTIVE_RANGE);
                 if (result != RET_SUCCESS) {
-                  ALOGE("%s: AfOneShot failure!", __func__);
-                  goto updateAfConfig_end;
+                    ALOGE("%s: AfOneShot failure!", __func__);
+                    goto updateAfConfig_end;
                 }
             } else if (afset->mode == HAL_AF_MODE_FIXED ||
-                     afset->mode == HAL_AF_MODE_NOT_SET) {
+                       afset->mode == HAL_AF_MODE_NOT_SET) {
                 result = AfStop(hAf);
                 if (result != RET_SUCCESS) {
-                  ALOGE("%s: AfStop failure!", __func__);
-                  goto updateAfConfig_end;
+                    ALOGE("%s: AfStop failure!", __func__);
+                    goto updateAfConfig_end;
                 }
             }
 
             afshd->mode = afset->mode;
         } else if ((afset->mode == HAL_AF_MODE_AUTO) &&
-              (afset->oneshot_trigger == BOOL_TRUE)) {
+                   (afset->oneshot_trigger == BOOL_TRUE)) {
             afset->oneshot_trigger = BOOL_FALSE;
             result = AfOneShot(hAf, AFM_FSS_ADAPTIVE_RANGE);
             if (result != RET_SUCCESS) {
@@ -781,47 +789,47 @@ RESULT CamIA10Engine::updateAfConfig(struct CamIA10_DyCfg* cfg) {
         }
 
         if ((afset->win_num != afshd->win_num) ||
-                (memcmp(&afset->win_a, &afshd->win_a, sizeof(HAL_Window))) ||
-                (memcmp(&afset->win_b, &afshd->win_b, sizeof(HAL_Window))) ||
-                (memcmp(&afset->win_c, &afshd->win_c, sizeof(HAL_Window)))) {
+            (memcmp(&afset->win_a, &afshd->win_a, sizeof(HAL_Window))) ||
+            (memcmp(&afset->win_b, &afshd->win_b, sizeof(HAL_Window))) ||
+            (memcmp(&afset->win_c, &afshd->win_c, sizeof(HAL_Window)))) {
             AfConfig_t afcCfg;
 
             afcCfg.Window_Num = afset->win_num;
             if (afset->win_num >= 1) {
                 mapHalWinToIsp(afset->win_a.right_width - afset->win_a.left_hoff,
-                            afset->win_a.bottom_height - afset->win_a.top_voff,
-                            afset->win_a.left_hoff,
-                            afset->win_a.top_voff,
-                            isp_ref_width,
-                            isp_ref_height,
-                            afcCfg.WindowA.h_size,
-                            afcCfg.WindowA.v_size,
-                            afcCfg.WindowA.h_offs,
-                            afcCfg.WindowA.v_offs);
+                               afset->win_a.bottom_height - afset->win_a.top_voff,
+                               afset->win_a.left_hoff,
+                               afset->win_a.top_voff,
+                               isp_ref_width,
+                               isp_ref_height,
+                               afcCfg.WindowA.h_size,
+                               afcCfg.WindowA.v_size,
+                               afcCfg.WindowA.h_offs,
+                               afcCfg.WindowA.v_offs);
             }
             if (afset->win_num >= 2) {
                 mapHalWinToIsp(afset->win_b.right_width - afset->win_b.left_hoff,
-                            afset->win_b.bottom_height - afset->win_b.top_voff,
-                            afset->win_b.left_hoff,
-                            afset->win_b.top_voff,
-                            isp_ref_width,
-                            isp_ref_height,
-                            afcCfg.WindowB.h_size,
-                            afcCfg.WindowB.v_size,
-                            afcCfg.WindowB.h_offs,
-                            afcCfg.WindowB.v_offs);
+                               afset->win_b.bottom_height - afset->win_b.top_voff,
+                               afset->win_b.left_hoff,
+                               afset->win_b.top_voff,
+                               isp_ref_width,
+                               isp_ref_height,
+                               afcCfg.WindowB.h_size,
+                               afcCfg.WindowB.v_size,
+                               afcCfg.WindowB.h_offs,
+                               afcCfg.WindowB.v_offs);
             }
             if (afset->win_num >= 3) {
                 mapHalWinToIsp(afset->win_c.right_width - afset->win_c.left_hoff,
-                            afset->win_c.bottom_height - afset->win_c.top_voff,
-                            afset->win_c.left_hoff,
-                            afset->win_c.top_voff,
-                            isp_ref_width,
-                            isp_ref_height,
-                            afcCfg.WindowC.h_size,
-                            afcCfg.WindowC.v_size,
-                            afcCfg.WindowC.h_offs,
-                            afcCfg.WindowC.v_offs);
+                               afset->win_c.bottom_height - afset->win_c.top_voff,
+                               afset->win_c.left_hoff,
+                               afset->win_c.top_voff,
+                               isp_ref_width,
+                               isp_ref_height,
+                               afcCfg.WindowC.h_size,
+                               afcCfg.WindowC.v_size,
+                               afcCfg.WindowC.h_offs,
+                               afcCfg.WindowC.v_offs);
             }
 
             result = AfReConfigure(hAf, &afcCfg);
@@ -839,9 +847,9 @@ RESULT CamIA10Engine::updateAfConfig(struct CamIA10_DyCfg* cfg) {
 
     if ((dCfgShd.aaa_locks & HAL_3A_LOCKS_FOCUS) != (dCfg.aaa_locks & HAL_3A_LOCKS_FOCUS)) {
         if (dCfg.aaa_locks & HAL_3A_LOCKS_FOCUS)
-          AfTryLock(hAf);
+            AfTryLock(hAf);
         else
-          AfUnLock(hAf);
+            AfUnLock(hAf);
     }
 #endif
     return result;
@@ -863,14 +871,56 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
     if (!first) {
         int lastTime = lastAecResult.regIntegrationTime;
         int lastGain = lastAecResult.regGain;
+
+        //zlj add for Hdr result
+        int lastTime_L = lastAecResult.RegHdrTime[0];
+        int lastGain_L = lastAecResult.RegHdrGains[0];
+        int lastTime_M = lastAecResult.RegHdrTime[1];
+        int lastGain_M = lastAecResult.RegHdrGains[1];
+        int lastTime_S = lastAecResult.RegHdrTime[2];
+        int lastGain_S = lastAecResult.RegHdrGains[2];
+
         dumpAe();
-        if ((lastTime == -1 && lastGain == -1)
-            || (lastTime == dCfg.sensor_mode.exp_time && lastGain == dCfg.sensor_mode.gain)) {
-            aecParams = param;
-            if (aecDesc != NULL) {
-                aecDesc->set_stats(aecContext, &mStats.aec);
-                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE))
-                    aecDesc->analyze_ae(aecContext, param);
+
+        if(!lastAecResult.IsHdrExp){
+            if ((lastTime == -1 && lastGain == -1)
+                || (lastTime == dCfg.sensor_mode.exp_time && lastGain == dCfg.sensor_mode.gain)) {
+                aecParams = param;
+                if (aecDesc != NULL) {
+                    aecDesc->set_stats(aecContext, &mStats.aec);
+                    if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE))
+                        aecDesc->analyze_ae(aecContext, param);
+                }
+            }
+        }else{ //add check exposure value between AE & 1608 Embedded data
+            LOGD( "runAEC - 1608 Time_L=%d,Gain_L=%d,Time_M=%d,Gain_M=%d,Time_S=%d,Gain_S=%d\n",
+                  mStats.aec.sensor.exp_time_l,
+                  mStats.aec.sensor.gain_l,
+                  mStats.aec.sensor.exp_time,
+                  mStats.aec.sensor.gain,
+                  mStats.aec.sensor.exp_time_s,
+                  mStats.aec.sensor.gain_s);
+
+            LOGD( "runAEC - aec Time_L=%d,Gain_L=%d,Time_M=%d,Gain_M=%d,Time_S=%d,Gain_S=%d\n",
+                  lastTime_L,
+                  lastGain_L,
+                  lastTime_M,
+                  lastGain_M,
+                  lastTime_S,
+                  lastGain_S);
+
+            if ((lastTime_L == -1 && lastGain_L== -1 && lastTime_M== -1 && lastGain_M== -1 &&
+                 lastTime_S == -1 && lastGain_S== -1)||
+                (lastTime_L == (int)mStats.aec.sensor.exp_time_l &&
+                 lastGain_L == (int)mStats.aec.sensor.gain_l &&
+                 lastTime_S == (int)mStats.aec.sensor.exp_time_s &&
+                 lastGain_S == (int)mStats.aec.sensor.gain_s)) {
+                aecParams = param;
+                if (aecDesc != NULL) {
+                    aecDesc->set_stats(aecContext, &mStats.aec);
+                    if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE))
+                        aecDesc->analyze_ae(aecContext, param);
+                }
             }
         }
     } else {
@@ -934,8 +984,17 @@ RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, 
     for (int i = 0; i < AWB_HIST_NUM_BINS; i++)
         MeasResult.HistBins[i] = mStats.aec.hist_bins[i];
 
-    MeasResult.fGain = lastAecResult.analog_gain_code_global;
-    MeasResult.fIntegrationTime = lastAecResult.coarse_integration_time;
+    if(!lastAecResult.IsHdrExp){
+        MeasResult.fGain = lastAecResult.analog_gain_code_global;
+        MeasResult.fIntegrationTime = lastAecResult.coarse_integration_time;
+    }else{
+        MeasResult.fGain = lastAecResult.analog_gain_code_global/lastAecResult.DCG_Ratio;
+        MeasResult.fIntegrationTime = lastAecResult.coarse_integration_time;
+        LOGD("%s:fgain=%f,fintegrationTime=%f,DCG_raio=%f\n",__FUNCTION__,
+             lastAecResult.analog_gain_code_global,
+             lastAecResult.coarse_integration_time,
+             lastAecResult.DCG_Ratio);
+    }
 
     dumpAwb();
 
@@ -988,43 +1047,43 @@ RESULT CamIA10Engine::runAf(XCamAfParam *param, XCam3aResultFocus* result, bool 
     shd = &dCfgShd.afc_cfg;
     if (set->mode == HAL_AF_MODE_NOT_SET) {
         LOGE("af mode not set");
-      return RET_FAILURE;
+        return RET_FAILURE;
     }
     
     if (shd->mode != HAL_AF_MODE_NOT_SET &&
-          shd->mode != HAL_AF_MODE_FIXED) {
-      if (hAf != NULL) {
-          if (afDesc) {
-              XCamAfParam param;
-              param.focus_mode = XCamAfOperationMode(set->mode);
-              param.focus_rect_cnt = set->win_num;
-              param.focus_rect[0].left_hoff = set->win_a.left_hoff;
-              param.focus_rect[0].top_voff = set->win_a.top_voff;
-              param.focus_rect[0].right_width = set->win_a.right_width;
-              param.focus_rect[0].bottom_height = set->win_a.bottom_height;
-    
-              param.focus_rect[1].left_hoff = set->win_b.left_hoff;
-              param.focus_rect[1].top_voff = set->win_b.top_voff;
-              param.focus_rect[1].right_width = set->win_b.right_width;
-              param.focus_rect[1].bottom_height = set->win_b.bottom_height;
-    
-              param.focus_rect[2].left_hoff = set->win_c.left_hoff;
-              param.focus_rect[2].top_voff = set->win_c.top_voff;
-              param.focus_rect[2].right_width = set->win_c.right_width;
-              param.focus_rect[2].bottom_height = set->win_c.bottom_height;
-    
-              param.trigger_new_search = set->oneshot_trigger;
-              ret = afDesc->set_stats(afContext, &mStats.af);
+        shd->mode != HAL_AF_MODE_FIXED) {
+        if (hAf != NULL) {
+            if (afDesc) {
+                XCamAfParam param;
+                param.focus_mode = XCamAfOperationMode(set->mode);
+                param.focus_rect_cnt = set->win_num;
+                param.focus_rect[0].left_hoff = set->win_a.left_hoff;
+                param.focus_rect[0].top_voff = set->win_a.top_voff;
+                param.focus_rect[0].right_width = set->win_a.right_width;
+                param.focus_rect[0].bottom_height = set->win_a.bottom_height;
 
-              if (!(dCfg.aaa_locks & HAL_3A_LOCKS_FOCUS))
-                  ret = afDesc->analyze_af(afContext, &param);
-          }//AfProcessFrame(hAf, &mStats.af);
-    
-          if ((ret != RET_SUCCESS) && (ret != RET_CANCELED))
-              ALOGE( "%s AfProcessFrame: %d", __func__, ret );
-      } else {
-        LOGE("af handle is null");
-      }
+                param.focus_rect[1].left_hoff = set->win_b.left_hoff;
+                param.focus_rect[1].top_voff = set->win_b.top_voff;
+                param.focus_rect[1].right_width = set->win_b.right_width;
+                param.focus_rect[1].bottom_height = set->win_b.bottom_height;
+
+                param.focus_rect[2].left_hoff = set->win_c.left_hoff;
+                param.focus_rect[2].top_voff = set->win_c.top_voff;
+                param.focus_rect[2].right_width = set->win_c.right_width;
+                param.focus_rect[2].bottom_height = set->win_c.bottom_height;
+
+                param.trigger_new_search = set->oneshot_trigger;
+                ret = afDesc->set_stats(afContext, &mStats.af);
+
+                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_FOCUS))
+                    ret = afDesc->analyze_af(afContext, &param);
+            }//AfProcessFrame(hAf, &mStats.af);
+
+            if ((ret != RET_SUCCESS) && (ret != RET_CANCELED))
+                ALOGE( "%s AfProcessFrame: %d", __func__, ret );
+        } else {
+            LOGE("af handle is null");
+        }
     }
 
     getAFResults(result);
@@ -1170,56 +1229,56 @@ RESULT CamIA10Engine::initAF() {
     dCfgShd.afc_cfg = dCfg.afc_cfg;
     LOGD("initAF af mode: %d, shdmode: %d", dCfg.afc_cfg.mode, dCfgShd.afc_cfg.mode);
 end:
-  return result;
+    return result;
 
 }
 /*
-RESULT CamHwItfFocusSet(void* handle, const uint32_t AbsStep) {
-  ALOGE("%s", __func__);
-  return 0;
-}
+   RESULT CamHwItfFocusSet(void* handle, const uint32_t AbsStep) {
+   ALOGE("%s", __func__);
+   return 0;
+   }
 
-RESULT CamHwItfFocusGet(void* handle, uint32_t* pAbsStep) {
-  ALOGE("%s", __func__);
-  return 0;
-}
+   RESULT CamHwItfFocusGet(void* handle, uint32_t* pAbsStep) {
+   ALOGE("%s", __func__);
+   return 0;
+   }
 
-RESULT CamHwItfInitMotoDrive(void* handle) {
-  ALOGE("%s", __func__);
-  return 0;
-}
-RESULT CamHwItfSetupMotoDrive(void* handle, uint32_t* pMaxStep) {
-  ALOGE("%s", __func__);
-  return 0;
-}
+   RESULT CamHwItfInitMotoDrive(void* handle) {
+   ALOGE("%s", __func__);
+   return 0;
+   }
+   RESULT CamHwItfSetupMotoDrive(void* handle, uint32_t* pMaxStep) {
+   ALOGE("%s", __func__);
+   return 0;
+   }
 
-RESULT CamIA10Engine::initAF() {
-    struct IsiSensor_s gCamHwLtfConfig = {
-      .pIsiMdiInitMotoDriveMds = CamHwItfInitMotoDrive,
-      .pIsiMdiSetupMotoDrive = CamHwItfSetupMotoDrive,
-      .pIsiMdiFocusSet = CamHwItfFocusSet,
-      .pIsiMdiFocusGet = CamHwItfFocusGet,
-    };
+   RESULT CamIA10Engine::initAF() {
+   struct IsiSensor_s gCamHwLtfConfig = {
+   .pIsiMdiInitMotoDriveMds = CamHwItfInitMotoDrive,
+   .pIsiMdiSetupMotoDrive = CamHwItfSetupMotoDrive,
+   .pIsiMdiFocusSet = CamHwItfFocusSet,
+   .pIsiMdiFocusGet = CamHwItfFocusGet,
+   };
 
-    //LOGD("%s:%d", __func__, __LINE__);
+//LOGD("%s:%d", __func__, __LINE__);
 
-    //init afcCfg
-    afcCfg.hSensor = 0;
-    afcCfg.hSubSensor = 0;
-    afcCfg.Afss = AFM_FSS_ADAPTIVE_RANGE;
+//init afcCfg
+afcCfg.hSensor = 0;
+afcCfg.hSubSensor = 0;
+afcCfg.Afss = AFM_FSS_ADAPTIVE_RANGE;
 
-    IsiMdiSetup(&gCamHwLtfConfig);
+IsiMdiSetup(&gCamHwLtfConfig);
 
-    return RET_SUCCESS;
+return RET_SUCCESS;
 }
 */
 void CamIA10Engine::mapSensorExpToHal
 (
-    int sensorGain,
-    int sensorInttime,
-    float& halGain,
-    float& halInttime
-) {
+ int sensorGain,
+ int sensorInttime,
+ float& halGain,
+ float& halInttime
+ ) {
 
     float gainRange[] = {
         1,  1.9375, 16,  16, 1, 0, 15,
@@ -1264,7 +1323,7 @@ void CamIA10Engine::mapSensorExpToHal
             maxReg = pgainrange[i*7 + 6];
 #if 0
             LOGD("%s: gain(%f) c1:%f c0%f m0:%f min:%f max:%f",
-                  __func__, ag, C1, C0, M0, minReg, maxReg);
+                 __func__, ag, C1, C0, M0, minReg, maxReg);
 #endif
             break;
         }
@@ -1289,7 +1348,7 @@ void CamIA10Engine::mapSensorExpToHal
 
 #if 0
     halInttime = sensorInttime * aecCfg.PixelPeriodsPerLine /
-                 (aecCfg.PixelClockFreqMHZ * 1000000);
+        (aecCfg.PixelClockFreqMHZ * 1000000);
 #else
     float timeC0 = aecCfg.TimeFactor[0];
     float timeC1 = aecCfg.TimeFactor[1];
@@ -1297,7 +1356,7 @@ void CamIA10Engine::mapSensorExpToHal
     float timeC3 = aecCfg.TimeFactor[3];
 
     halInttime = ((sensorInttime - timeC0 * aecCfg.LinePeriodsPerField - timeC1) / timeC2 - timeC3) *
-                 aecCfg.PixelPeriodsPerLine / (aecCfg.PixelClockFreqMHZ * 1000000);
+        aecCfg.PixelPeriodsPerLine / (aecCfg.PixelClockFreqMHZ * 1000000);
 
     if(revert_gain_array != NULL) {
         free(revert_gain_array);
@@ -1309,11 +1368,11 @@ void CamIA10Engine::mapSensorExpToHal
 }
 void CamIA10Engine::mapHalExpToSensor
 (
-    float hal_gain,
-    float hal_time,
-    int& sensor_gain,
-    int& sensor_time
-) {
+ float hal_gain,
+ float hal_time,
+ int& sensor_gain,
+ int& sensor_time
+ ) {
 
     float gainRange[] = {
         1,  1.9375, 16,  16, 1, 0, 15,
@@ -1429,13 +1488,25 @@ RESULT CamIA10Engine::initAEC() {
     aecCfg.Valid_GridWeights_W = 5;
     aecCfg.Valid_HistBins_Num = 16;
 #endif
+    //zlj add for 1608 HDR stats
+#if 1//def RK1608_HDR
+    aecCfg.Valid_GridWeights_Num = 225;
+    aecCfg.Valid_GridWeights_W = 15;
+    aecCfg.Valid_HistBins_Num = 256;
+    aecCfg.IsHdrAeMode = true;
+#endif
     aecCfg.FpsSetEnable = true;
     aecCfg.isFpsFix = false;
     memcpy(aecCfg.TimeFactor, pAecGlobal->TimeFactor, sizeof(pAecGlobal->TimeFactor));
     memcpy(aecCfg.GridWeights.uCoeff, pAecGlobal->GridWeights.pWeight, pAecGlobal->GridWeights.ArraySize);
     memcpy(aecCfg.EcmTimeDot.fCoeff, pAecGlobal->EcmTimeDot.fCoeff, sizeof(pAecGlobal->EcmTimeDot.fCoeff));
     memcpy(aecCfg.EcmGainDot.fCoeff, pAecGlobal->EcmGainDot.fCoeff, sizeof(pAecGlobal->EcmGainDot.fCoeff));
+    memcpy(aecCfg.EcmLTimeDot.fCoeff, pAecGlobal->EcmLTimeDot.fCoeff, sizeof(pAecGlobal->EcmLTimeDot.fCoeff));//zlj
+    memcpy(aecCfg.EcmLGainDot.fCoeff, pAecGlobal->EcmLGainDot.fCoeff, sizeof(pAecGlobal->EcmLGainDot.fCoeff));//zlj
+    memcpy(aecCfg.EcmSTimeDot.fCoeff, pAecGlobal->EcmSTimeDot.fCoeff, sizeof(pAecGlobal->EcmSTimeDot.fCoeff));//zlj
+    memcpy(aecCfg.EcmSGainDot.fCoeff, pAecGlobal->EcmSGainDot.fCoeff, sizeof(pAecGlobal->EcmSGainDot.fCoeff));//zlj
     memcpy(aecCfg.FpsFixTimeDot.fCoeff, pAecGlobal->FpsFixTimeDot.fCoeff, sizeof(pAecGlobal->FpsFixTimeDot.fCoeff));
+    memcpy (&aecCfg.HdrCtrl,&pAecGlobal->HdrCtrl,sizeof(pAecGlobal->HdrCtrl));//zlj
 
     aecCfg.StepSize = 0;
     aecCfg.HistMode = (CamerIcIspHistMode_t)(pAecGlobal->CamerIcIspHistMode);
@@ -1493,22 +1564,22 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
         shd = &mAECHalCfgShd;
 
         if ((set->win.left_hoff != shd->win.left_hoff) ||
-                (set->win.top_voff != shd->win.top_voff) ||
-                (set->win.right_width != shd->win.right_width) ||
-                (set->win.bottom_height != shd->win.bottom_height) ||
-                (set->meter_mode != shd->meter_mode) ||
-                (set->mode != shd->mode) ||
-                (set->flk != shd->flk) ||
-                (set->ae_bias != shd->ae_bias) ||
-                (set->frame_time_us_min != shd->frame_time_us_min) /*||
-		mLightMode != cfg->LightMode*/) {
+            (set->win.top_voff != shd->win.top_voff) ||
+            (set->win.right_width != shd->win.right_width) ||
+            (set->win.bottom_height != shd->win.bottom_height) ||
+            (set->meter_mode != shd->meter_mode) ||
+            (set->mode != shd->mode) ||
+            (set->flk != shd->flk) ||
+            (set->ae_bias != shd->ae_bias) ||
+            (set->frame_time_us_min != shd->frame_time_us_min) /*||
+                                                                 mLightMode != cfg->LightMode*/) {
             //cifisp_histogram_mode mode = CIFISP_HISTOGRAM_MODE_RGB_COMBINED;
             cam_ia10_isp_hst_update_stepSize(
-                aecCfg.HistMode,
-                aecCfg.GridWeights.uCoeff,
-                mStats.sensor_mode.isp_input_width,
-                mStats.sensor_mode.isp_input_height,
-                &(aecCfg.StepSize));
+                                             aecCfg.HistMode,
+                                             aecCfg.GridWeights.uCoeff,
+                                             mStats.sensor_mode.isp_input_width,
+                                             mStats.sensor_mode.isp_input_height,
+                                             &(aecCfg.StepSize));
 
             //LOGD("aec set win:%dx%d",
             //  set->win.right_width,set->win.bottom_height);
@@ -1582,14 +1653,14 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
                 CamCalibDbGetAecGlobal(hCamCalibDb, &pAecGlobal);
                 float SetPoint = pAecGlobal->SetPoint ;
                 /*
-                if(cfg->LightMode == LIGHT_MODE_NIGHT && pAecGlobal->NightSetPoint != 0)
-                  SetPoint = pAecGlobal->NightSetPoint;
+                   if(cfg->LightMode == LIGHT_MODE_NIGHT && pAecGlobal->NightSetPoint != 0)
+                   SetPoint = pAecGlobal->NightSetPoint;
 
-                aecCfg.SetPoint = (SetPoint) +
-                				  (set->ae_bias / 100.0f) * MAX(10, SetPoint / (1 - pAecGlobal->ClmTolerance / 100.0f) / 10.0f) ;
+                   aecCfg.SetPoint = (SetPoint) +
+                   (set->ae_bias / 100.0f) * MAX(10, SetPoint / (1 - pAecGlobal->ClmTolerance / 100.0f) / 10.0f) ;
 
-                mLightMode = cfg->LightMode;
-                */
+                   mLightMode = cfg->LightMode;
+                   */
 
                 //if (set->frame_time_us_min != -1 && set->frame_time_us_max != -1)
                 {
@@ -1604,25 +1675,25 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
                         for (int i = ecmCnt - 3; i < ecmCnt; i++) {
                             aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_us_max / 1000000;
                         }
-                        				LOGD("sensor param (%d)=[%f-%f-%f-%f-%f-%f] vts: %f, vtsMax: %d, pclk: %f, hts: %f\n",
-                        				  ecmCnt,
-                        				  aecCfg.EcmTimeDot.fCoeff[0],
-                        				  aecCfg.EcmTimeDot.fCoeff[1],
-                        				  aecCfg.EcmTimeDot.fCoeff[2],
-                        				  aecCfg.EcmTimeDot.fCoeff[3],
-                        				  aecCfg.EcmTimeDot.fCoeff[4],
-                        				  aecCfg.EcmTimeDot.fCoeff[5],
-                        				  aecCfg.LinePeriodsPerField,
-                        				  mStats.sensor_mode.line_periods_per_field,
-                        				  aecCfg.PixelClockFreqMHZ,
-                        				  aecCfg.PixelPeriodsPerLine);
+                        LOGD("sensor param (%d)=[%f-%f-%f-%f-%f-%f] vts: %f, vtsMax: %d, pclk: %f, hts: %f\n",
+                             ecmCnt,
+                             aecCfg.EcmTimeDot.fCoeff[0],
+                             aecCfg.EcmTimeDot.fCoeff[1],
+                             aecCfg.EcmTimeDot.fCoeff[2],
+                             aecCfg.EcmTimeDot.fCoeff[3],
+                             aecCfg.EcmTimeDot.fCoeff[4],
+                             aecCfg.EcmTimeDot.fCoeff[5],
+                             aecCfg.LinePeriodsPerField,
+                             mStats.sensor_mode.line_periods_per_field,
+                             aecCfg.PixelClockFreqMHZ,
+                             aecCfg.PixelPeriodsPerLine);
                     }
                 }
             }
 
             //AecStop();
             if ((set->mode != HAL_AE_OPERATION_MODE_MANUAL)/* &&
-		  !(cfg->aaa_locks & HAL_3A_LOCKS_EXPOSURE)*/) {
+                                                              !(cfg->aaa_locks & HAL_3A_LOCKS_EXPOSURE)*/) {
                 if (aecDesc != NULL) {
                     aecDesc->update_ae_params(aecContext, &aecCfg);
                 } //AecUpdateConfig(&aecCfg);
@@ -1649,8 +1720,9 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
         if ((mStats.meas_type & (CAMIA10_AEC_MASK | CAMIA10_HST_MASK)) == 0) {
             return ret;
         }
+
         if ((lastTime == -1 && lastGain == -1) ||
-                (lastTime == mStats.sensor_mode.exp_time && lastGain == mStats.sensor_mode.gain)) {
+            (lastTime == mStats.sensor_mode.exp_time && lastGain == mStats.sensor_mode.gain)) {
             if (aecDesc != NULL) {
                 aecDesc->set_stats(aecContext, &mStats.aec);
 
@@ -1659,9 +1731,10 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
                 aecDesc->analyze_ae(aecContext, &aeParam);
             }
         }
+
     } else {
         if ((lastTime == -1 && lastGain == -1)
-                || (lastTime == dCfg.sensor_mode.exp_time && lastGain == dCfg.sensor_mode.gain)) {
+            || (lastTime == dCfg.sensor_mode.exp_time && lastGain == dCfg.sensor_mode.gain)) {
             if (aecDesc != NULL) {
                 aecDesc->set_stats(aecContext, &mStats.aec);
 
@@ -1696,19 +1769,48 @@ RESULT CamIA10Engine::getAECResults(AecResult_t* result) {
         aecDesc->get_results(aecContext, result);
     } //AecGetResults(result);
 
+    // TODO: need this now, getAECResults will be called twice in one 3a loop,
+    // should return the same result each time in one loop
     result->actives |= CAMIA10_AEC_MASK;
-    if (lastAecResult.coarse_integration_time != result->coarse_integration_time
+    if(!result->IsHdrExp){
+        if (lastAecResult.coarse_integration_time != result->coarse_integration_time
             || lastAecResult.analog_gain_code_global != result->analog_gain_code_global
             ||lastAecResult.regIntegrationTime != result->regIntegrationTime
             || lastAecResult.regGain != result->regGain) {
-        result->actives |= CAMIA10_AEC_MASK;
-        lastAecResult.coarse_integration_time = result->coarse_integration_time;
-        lastAecResult.analog_gain_code_global = result->analog_gain_code_global;
-        lastAecResult.regIntegrationTime = result->regIntegrationTime;
-        lastAecResult.regGain = result->regGain;
-        lastAecResult.gainFactor = result->gainFactor;
-        lastAecResult.gainBias = result->gainBias;
-        //*shd = *set;
+            result->actives |= CAMIA10_AEC_MASK;
+            lastAecResult.coarse_integration_time = result->coarse_integration_time;
+            lastAecResult.analog_gain_code_global = result->analog_gain_code_global;
+            lastAecResult.regIntegrationTime = result->regIntegrationTime;
+            lastAecResult.regGain = result->regGain;
+            lastAecResult.gainFactor = result->gainFactor;
+            lastAecResult.gainBias = result->gainBias;
+            lastAecResult.IsHdrExp=result->IsHdrExp;
+            //*shd = *set;
+        }
+    }else{
+        if ((lastAecResult.RegHdrGains[0]!=result->RegHdrGains[0])
+            || (lastAecResult.RegHdrTime[0]!=result->RegHdrTime[0])
+            || (lastAecResult.RegHdrGains[1]!=result->RegHdrGains[1])
+            || (lastAecResult.RegHdrTime[1]!=result->RegHdrTime[1])
+            || (lastAecResult.RegHdrGains[2]!=result->RegHdrGains[2])
+            || (lastAecResult.RegHdrTime[2]!=result->RegHdrTime[2])) {
+            result->actives |= CAMIA10_AEC_MASK;
+            lastAecResult.coarse_integration_time = result->coarse_integration_time;
+            lastAecResult.analog_gain_code_global = result->analog_gain_code_global;
+            lastAecResult.regIntegrationTime = result->regIntegrationTime;
+            lastAecResult.regGain = result->regGain;
+            lastAecResult.gainFactor = result->gainFactor;
+            lastAecResult.gainBias = result->gainBias;
+            lastAecResult.RegHdrGains[0]=result->RegHdrGains[0];
+            lastAecResult.RegHdrGains[1]=result->RegHdrGains[1];
+            lastAecResult.RegHdrGains[2]=result->RegHdrGains[2];
+            lastAecResult.RegHdrTime[0]=result->RegHdrTime[0];
+            lastAecResult.RegHdrTime[1]=result->RegHdrTime[1];
+            lastAecResult.RegHdrTime[2]=result->RegHdrTime[2];
+            lastAecResult.IsHdrExp=result->IsHdrExp;
+            lastAecResult.DCG_Ratio=result->DCG_Ratio;
+            //*shd = *set;
+        }
     }
 
     result->actives |= CAMIA10_HST_MASK;
@@ -1733,28 +1835,28 @@ RESULT CamIA10Engine::getAECResults(AecResult_t* result) {
 
 void CamIA10Engine::convertAwbResult2Cameric
 (
-    AwbRunningOutputResult_t* awbResult,
-    CamIA10_AWB_Result_t* awbCamicResult
-) {
+ AwbRunningOutputResult_t* awbResult,
+ CamIA10_AWB_Result_t* awbCamicResult
+ ) {
     if (!awbResult || !awbCamicResult)
         return;
     awbCamicResult->actives = awbResult->validParam;
     HalAwbGains2CamerIcGains(
-        &awbResult->WbGains,
-        &awbCamicResult->awbGains
-    );
+                             &awbResult->WbGains,
+                             &awbCamicResult->awbGains
+                            );
 
     HalAwbXtalk2CamerIcXtalk
-    (
-        &awbResult->CcMatrix,
-        &awbCamicResult->CcMatrix
-    );
+        (
+         &awbResult->CcMatrix,
+         &awbCamicResult->CcMatrix
+        );
 
     HalAwbXTalkOffset2CamerIcXTalkOffset
-    (
-        &awbResult->CcOffset,
-        &awbCamicResult->CcOffset
-    );
+        (
+         &awbResult->CcOffset,
+         &awbCamicResult->CcOffset
+        );
     awbCamicResult->LscMatrixTable = awbResult->LscMatrixTable;
     awbCamicResult->SectorConfig   = awbResult->SectorConfig;
     awbCamicResult->MeasMode    =  awbResult->MeasMode;
@@ -1766,23 +1868,23 @@ void CamIA10Engine::convertAwbResult2Cameric
 
 void CamIA10Engine::updateAwbResults
 (
-    CamIA10_AWB_Result_t* old,
-    CamIA10_AWB_Result_t* newCfg,
-    CamIA10_AWB_Result_t* update
-) {
+ CamIA10_AWB_Result_t* old,
+ CamIA10_AWB_Result_t* newCfg,
+ CamIA10_AWB_Result_t* update
+ ) {
     if (!old || !newCfg || !update)
         return;
     /*
-      newCfg->awbGains.Red = 400;
-      newCfg->awbGains.GreenB = 200;
-      newCfg->awbGains.GreenR = 200;
-      newCfg->awbGains.Blue = 250;
-    */
+       newCfg->awbGains.Red = 400;
+       newCfg->awbGains.GreenB = 200;
+       newCfg->awbGains.GreenR = 200;
+       newCfg->awbGains.Blue = 250;
+       */
     if (newCfg->actives & AWB_RECONFIG_GAINS) {
         if ((newCfg->awbGains.Blue != old->awbGains.Blue)
-                || (newCfg->awbGains.Red != old->awbGains.Red)
-                || (newCfg->awbGains.GreenR != old->awbGains.GreenR)
-                || (newCfg->awbGains.GreenB != old->awbGains.GreenB)) {
+            || (newCfg->awbGains.Red != old->awbGains.Red)
+            || (newCfg->awbGains.GreenR != old->awbGains.GreenR)
+            || (newCfg->awbGains.GreenB != old->awbGains.GreenB)) {
             update->actives |= AWB_RECONFIG_GAINS;
             update->awbGains = newCfg->awbGains;
         } else {
@@ -1800,7 +1902,7 @@ void CamIA10Engine::updateAwbResults
 
         for (; ((i < 9) &&
                 (newCfg->CcMatrix.Coeff[i] == old->CcMatrix.Coeff[i]))
-                ; i++);
+             ; i++);
         if (i != 9) {
             update->actives |= AWB_RECONFIG_CCMATRIX;
             update->CcMatrix = newCfg->CcMatrix;
@@ -1811,8 +1913,8 @@ void CamIA10Engine::updateAwbResults
 
     if (newCfg->actives & AWB_RECONFIG_CCOFFSET) {
         if ((newCfg->CcOffset.Blue) != (old->CcOffset.Blue)
-                || (newCfg->CcOffset.Red) != (old->CcOffset.Red)
-                || (newCfg->CcOffset.Green) != (old->CcOffset.Green)) {
+            || (newCfg->CcOffset.Red) != (old->CcOffset.Red)
+            || (newCfg->CcOffset.Green) != (old->CcOffset.Green)) {
             update->actives |= AWB_RECONFIG_CCOFFSET;
             update->CcOffset = newCfg->CcOffset;
         } else
@@ -2027,13 +2129,13 @@ RESULT CamIA10Engine::runAWB(HAL_AwbCfg* awbHalCfg) {
                 }
             }
             /*
-            		//awb locks
-            		if ((cfg->aaa_locks & HAL_3A_LOCKS_WB)
-            			&& (dCfg.awb_cfg.mode == HAL_WB_AUTO)) {
-            		  AwbTryLock(hAwb);
-            		} else if (dCfg.aaa_locks & HAL_3A_LOCKS_WB)
-                    AwbUnLock(hAwb);
-             */
+            //awb locks
+            if ((cfg->aaa_locks & HAL_3A_LOCKS_WB)
+            && (dCfg.awb_cfg.mode == HAL_WB_AUTO)) {
+            AwbTryLock(hAwb);
+            } else if (dCfg.aaa_locks & HAL_3A_LOCKS_WB)
+            AwbUnLock(hAwb);
+            */
         }
         mAWBHalCfg = *awbHalCfg;
         if (!mStatisticsUpdated) {
@@ -2101,117 +2203,117 @@ uint32_t CamIA10Engine::calcAfmLuminanceShift(const uint32_t MaxPixelCnt) {
 }
 
 RESULT CamIA10Engine::runAF(HAL_AfcCfg* config) {
-/*
-    RESULT ret = -1;
+    /*
+       RESULT ret = -1;
+       RESULT result = RET_SUCCESS;
+       struct HAL_AfcCfg* set;
+
+       if (mInitDynamic) {
+       set = &dCfg.afc_cfg;
+       } else {
+       set = config;
+       mAFCHalCfg = *config;
+       }
+       if (set->mode == HAL_AF_MODE_NOT_SET) {
+       return RET_FAILURE;
+       }
+
+    //init af
+    if (!hAf) {
+    AfInstanceConfig_t afInstance;
+    AfConfig_t afcCfg;
+    if (afDesc) {
+    result = afDesc->update_af_params(afContext, &afInstance);
+    } //result = AfInit(&afInstance);
+
+    if (result != RET_SUCCESS)
+    return ret;
+    else
+    hAf = afInstance.hAf;
+
+    afcCfg.hSensor = (void*)1;
+    afcCfg.hSubSensor = (void*)1;
+    afcCfg.Afss = AFM_FSS_ADAPTIVE_RANGE;
+
+    if (afDesc) {
+    result = afDesc->update_af_params(afContext, &afcCfg);
+    } //result = AfConfigure(hAf, &afcCfg);
+
+    if (result != RET_SUCCESS) {
+    LOGE("%s:af config failure! result %d", __func__, result);
+    hAf = NULL;
+    return ret;
+    }
+    }
+
+    if (afDesc) {
+    XCamAfParam param;
+    param.focus_mode = XCamAfOperationMode(set->mode);
+    param.focus_rect_cnt = set->win_num;
+    param.focus_rect[0].left_hoff = set->win_a.left_hoff;
+    param.focus_rect[0].top_voff = set->win_a.top_voff;
+    param.focus_rect[0].right_width = set->win_a.right_width;
+    param.focus_rect[0].bottom_height = set->win_a.bottom_height;
+
+    param.focus_rect[1].left_hoff = set->win_b.left_hoff;
+    param.focus_rect[1].top_voff = set->win_b.top_voff;
+    param.focus_rect[1].right_width = set->win_b.right_width;
+    param.focus_rect[1].bottom_height = set->win_b.bottom_height;
+
+    param.focus_rect[2].left_hoff = set->win_c.left_hoff;
+    param.focus_rect[2].top_voff = set->win_c.top_voff;
+    param.focus_rect[2].right_width = set->win_c.right_width;
+    param.focus_rect[2].bottom_height = set->win_c.bottom_height;
+
+    param.trigger_new_search = set->oneshot_trigger;
+    result = afDesc->set_stats(afContext, &mStats.af);
+    result = afDesc->analyze_af(afContext, &param);
+    }
+
+    return ret;
+    */
     RESULT result = RET_SUCCESS;
     struct HAL_AfcCfg* set;
+    struct HAL_AfcCfg* shd;
 
-    if (mInitDynamic) {
-        set = &dCfg.afc_cfg;
-    } else {
-        set = config;
-        mAFCHalCfg = *config;
-    }
+    set = &dCfg.afc_cfg;
+    shd = &dCfgShd.afc_cfg;
     if (set->mode == HAL_AF_MODE_NOT_SET) {
         return RET_FAILURE;
     }
 
-    //init af
-    if (!hAf) {
-        AfInstanceConfig_t afInstance;
-        AfConfig_t afcCfg;
-        if (afDesc) {
-            result = afDesc->update_af_params(afContext, &afInstance);
-        } //result = AfInit(&afInstance);
+    if (shd->mode != HAL_AF_MODE_NOT_SET &&
+        shd->mode != HAL_AF_MODE_FIXED) {
+        if (hAf != NULL) {
+            if (afDesc) {
+                XCamAfParam param;
+                param.focus_mode = XCamAfOperationMode(set->mode);
+                param.focus_rect_cnt = set->win_num;
+                param.focus_rect[0].left_hoff = set->win_a.left_hoff;
+                param.focus_rect[0].top_voff = set->win_a.top_voff;
+                param.focus_rect[0].right_width = set->win_a.right_width;
+                param.focus_rect[0].bottom_height = set->win_a.bottom_height;
 
-        if (result != RET_SUCCESS)
-            return ret;
-        else
-            hAf = afInstance.hAf;
+                param.focus_rect[1].left_hoff = set->win_b.left_hoff;
+                param.focus_rect[1].top_voff = set->win_b.top_voff;
+                param.focus_rect[1].right_width = set->win_b.right_width;
+                param.focus_rect[1].bottom_height = set->win_b.bottom_height;
 
-        afcCfg.hSensor = (void*)1;
-        afcCfg.hSubSensor = (void*)1;
-        afcCfg.Afss = AFM_FSS_ADAPTIVE_RANGE;
+                param.focus_rect[2].left_hoff = set->win_c.left_hoff;
+                param.focus_rect[2].top_voff = set->win_c.top_voff;
+                param.focus_rect[2].right_width = set->win_c.right_width;
+                param.focus_rect[2].bottom_height = set->win_c.bottom_height;
 
-        if (afDesc) {
-            result = afDesc->update_af_params(afContext, &afcCfg);
-        } //result = AfConfigure(hAf, &afcCfg);
+                param.trigger_new_search = set->oneshot_trigger;
+                result = afDesc->set_stats(afContext, &mStats.af);
+                result = afDesc->analyze_af(afContext, &param);
+            }//AfProcessFrame(hAf, &mStats.af);
 
-        if (result != RET_SUCCESS) {
-            LOGE("%s:af config failure! result %d", __func__, result);
-            hAf = NULL;
-            return ret;
+            if ((result != RET_SUCCESS) && (result != RET_CANCELED))
+                ALOGE( "%s AfProcessFrame: %d", __func__, result );
         }
     }
-
-    if (afDesc) {
-        XCamAfParam param;
-        param.focus_mode = XCamAfOperationMode(set->mode);
-        param.focus_rect_cnt = set->win_num;
-        param.focus_rect[0].left_hoff = set->win_a.left_hoff;
-        param.focus_rect[0].top_voff = set->win_a.top_voff;
-        param.focus_rect[0].right_width = set->win_a.right_width;
-        param.focus_rect[0].bottom_height = set->win_a.bottom_height;
-
-        param.focus_rect[1].left_hoff = set->win_b.left_hoff;
-        param.focus_rect[1].top_voff = set->win_b.top_voff;
-        param.focus_rect[1].right_width = set->win_b.right_width;
-        param.focus_rect[1].bottom_height = set->win_b.bottom_height;
-
-        param.focus_rect[2].left_hoff = set->win_c.left_hoff;
-        param.focus_rect[2].top_voff = set->win_c.top_voff;
-        param.focus_rect[2].right_width = set->win_c.right_width;
-        param.focus_rect[2].bottom_height = set->win_c.bottom_height;
-
-        param.trigger_new_search = set->oneshot_trigger;
-        result = afDesc->set_stats(afContext, &mStats.af);
-        result = afDesc->analyze_af(afContext, &param);
-    }
-
-    return ret;
-*/
-  RESULT result = RET_SUCCESS;
-  struct HAL_AfcCfg* set;
-  struct HAL_AfcCfg* shd;
-
-  set = &dCfg.afc_cfg;
-  shd = &dCfgShd.afc_cfg;
-  if (set->mode == HAL_AF_MODE_NOT_SET) {
-    return RET_FAILURE;
-  }
-
-  if (shd->mode != HAL_AF_MODE_NOT_SET &&
-        shd->mode != HAL_AF_MODE_FIXED) {
-    if (hAf != NULL) {
-        if (afDesc) {
-            XCamAfParam param;
-            param.focus_mode = XCamAfOperationMode(set->mode);
-            param.focus_rect_cnt = set->win_num;
-            param.focus_rect[0].left_hoff = set->win_a.left_hoff;
-            param.focus_rect[0].top_voff = set->win_a.top_voff;
-            param.focus_rect[0].right_width = set->win_a.right_width;
-            param.focus_rect[0].bottom_height = set->win_a.bottom_height;
-
-            param.focus_rect[1].left_hoff = set->win_b.left_hoff;
-            param.focus_rect[1].top_voff = set->win_b.top_voff;
-            param.focus_rect[1].right_width = set->win_b.right_width;
-            param.focus_rect[1].bottom_height = set->win_b.bottom_height;
-
-            param.focus_rect[2].left_hoff = set->win_c.left_hoff;
-            param.focus_rect[2].top_voff = set->win_c.top_voff;
-            param.focus_rect[2].right_width = set->win_c.right_width;
-            param.focus_rect[2].bottom_height = set->win_c.bottom_height;
-
-            param.trigger_new_search = set->oneshot_trigger;
-            result = afDesc->set_stats(afContext, &mStats.af);
-            result = afDesc->analyze_af(afContext, &param);
-        }//AfProcessFrame(hAf, &mStats.af);
-
-        if ((result != RET_SUCCESS) && (result != RET_CANCELED))
-            ALOGE( "%s AfProcessFrame: %d", __func__, result );
-    }
-  }
-  return result;
+    return result;
 }
 
 RESULT CamIA10Engine::getAFResults(XCam3aResultFocus* result) {
@@ -2220,59 +2322,59 @@ RESULT CamIA10Engine::getAFResults(XCam3aResultFocus* result) {
         afDesc->get_results(afContext, result);
     }
 #if 0
-  uint32_t max_pixel_cnt;
-  uint32_t tshift = 0U;
-  uint32_t lshift = 0U;
-  struct HAL_AfcCfg* set;
-  CamerIcAfmOutputResult_t afm_results;
-  uint32_t pixel_cnt;
-  RESULT ret;
+    uint32_t max_pixel_cnt;
+    uint32_t tshift = 0U;
+    uint32_t lshift = 0U;
+    struct HAL_AfcCfg* set;
+    CamerIcAfmOutputResult_t afm_results;
+    uint32_t pixel_cnt;
+    RESULT ret;
 
-  set = &dCfg.afc_cfg;
-  if (set->mode == HAL_AF_MODE_NOT_SET) {
-    return RET_FAILURE;
-  }
-
-  ret = AfGetResult(hAf, &afm_results);
-  if (ret != RET_SUCCESS) {
-    return ret;
-  }
-
-  result->Window_Num = afm_results.Window_Num;
-  if( result->Window_Num >= 1) {
-    result->WindowA = afm_results.WindowA;
-    pixel_cnt = ((result->WindowA.h_size * result->WindowA.v_size) >> 1);
-    max_pixel_cnt = pixel_cnt;
-  }
-
-  if( result->Window_Num >= 2) {
-    result->WindowB = afm_results.WindowB;
-    pixel_cnt = (( result->WindowB.h_size * result->WindowB.v_size ) >> 1);
-    if( max_pixel_cnt < pixel_cnt ) {
-      max_pixel_cnt = pixel_cnt;
+    set = &dCfg.afc_cfg;
+    if (set->mode == HAL_AF_MODE_NOT_SET) {
+        return RET_FAILURE;
     }
-  }
 
-  if( result->Window_Num >= 3) {
-    result->WindowC = afm_results.WindowC;
-    pixel_cnt  = (( result->WindowC.h_size * result->WindowC.v_size ) >> 1);
-    if( max_pixel_cnt < pixel_cnt ) {
-      max_pixel_cnt = pixel_cnt;
+    ret = AfGetResult(hAf, &afm_results);
+    if (ret != RET_SUCCESS) {
+        return ret;
     }
-  }
 
-  tshift = calcAfmTenengradShift(max_pixel_cnt);
-  lshift = calcAfmLuminanceShift(max_pixel_cnt);
-  result->VarShift = lshift << 16 | tshift;
- /* LOGD("%s: win num: %d max_pixel_cnt: %d win: (%d,%d,%d,%d), lshift: 0x%x 0x%x\n",
-  	__func__, result->Window_Num, max_pixel_cnt,
-  	result->WindowA.h_offs,
-  	result->WindowA.v_offs,
-  	result->WindowA.h_size,
-  	result->WindowA.v_size,
-  	lshift, result->VarShift);*/
-  result->Thres = 0x4U;
-  result->LensePos = afm_results.NextLensePos;
+    result->Window_Num = afm_results.Window_Num;
+    if( result->Window_Num >= 1) {
+        result->WindowA = afm_results.WindowA;
+        pixel_cnt = ((result->WindowA.h_size * result->WindowA.v_size) >> 1);
+        max_pixel_cnt = pixel_cnt;
+    }
+
+    if( result->Window_Num >= 2) {
+        result->WindowB = afm_results.WindowB;
+        pixel_cnt = (( result->WindowB.h_size * result->WindowB.v_size ) >> 1);
+        if( max_pixel_cnt < pixel_cnt ) {
+            max_pixel_cnt = pixel_cnt;
+        }
+    }
+
+    if( result->Window_Num >= 3) {
+        result->WindowC = afm_results.WindowC;
+        pixel_cnt  = (( result->WindowC.h_size * result->WindowC.v_size ) >> 1);
+        if( max_pixel_cnt < pixel_cnt ) {
+            max_pixel_cnt = pixel_cnt;
+        }
+    }
+
+    tshift = calcAfmTenengradShift(max_pixel_cnt);
+    lshift = calcAfmLuminanceShift(max_pixel_cnt);
+    result->VarShift = lshift << 16 | tshift;
+    /* LOGD("%s: win num: %d max_pixel_cnt: %d win: (%d,%d,%d,%d), lshift: 0x%x 0x%x\n",
+       __func__, result->Window_Num, max_pixel_cnt,
+       result->WindowA.h_offs,
+       result->WindowA.v_offs,
+       result->WindowA.h_size,
+       result->WindowA.v_size,
+       lshift, result->VarShift);*/
+    result->Thres = 0x4U;
+    result->LensePos = afm_results.NextLensePos;
 #endif
     return RET_SUCCESS;
 }
@@ -2356,14 +2458,14 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
         awb_meas_result.awb_meas_result = &(result->awb.MeasConfig);
         awb_meas_result.awb_win = &(result->awb.awbWin);
         ret = cam_ia10_isp_awb_meas_config
-              (
-                  manCfg->enabled[HAL_ISP_AWB_MEAS_ID],
-                  manCfg->awb_cfg,
-                  &(awb_meas_result)
-              );
+            (
+             manCfg->enabled[HAL_ISP_AWB_MEAS_ID],
+             manCfg->awb_cfg,
+             &(awb_meas_result)
+            );
 
         if ((manCfg->awb_cfg) && (!manCfg->enabled[HAL_ISP_AWB_MEAS_ID])
-                && (manCfg->awb_cfg->illuIndex >= 0)) {
+            && (manCfg->awb_cfg->illuIndex >= 0)) {
             //to get default LSC,CC,awb gain settings correspoding to illu
             awbcfg.Mode = AWB_MODE_MANUAL;
             //LOGD("%s:illu index %d",__func__,manCfg->awb_cfg->illuIndex);
@@ -2384,14 +2486,14 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     if (manCfg->updated_mask & HAL_ISP_BPC_MASK) {
         ret =  cam_ia10_isp_dpcc_config
-               (
-                   manCfg->enabled[HAL_ISP_BPC_ID],
-                   manCfg->dpcc_cfg,
-                   hCamCalibDb,
-                   width,
-                   height,
-                   &(result->dpcc)
-               );
+            (
+             manCfg->enabled[HAL_ISP_BPC_ID],
+             manCfg->dpcc_cfg,
+             hCamCalibDb,
+             width,
+             height,
+             &(result->dpcc)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config DPCC failed !", __FUNCTION__);
@@ -2400,14 +2502,14 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     if (manCfg->updated_mask & HAL_ISP_BLS_MASK) {
         ret = cam_ia10_isp_bls_config
-              (
-                  manCfg->enabled[HAL_ISP_BLS_ID],
-                  hCamCalibDb,
-                  width,
-                  height,
-                  manCfg->bls_cfg,
-                  &(result->bls)
-              );
+            (
+             manCfg->enabled[HAL_ISP_BLS_ID],
+             hCamCalibDb,
+             width,
+             height,
+             manCfg->bls_cfg,
+             &(result->bls)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config BLS failed !", __FUNCTION__);
@@ -2416,11 +2518,11 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     if (manCfg->updated_mask & HAL_ISP_SDG_MASK) {
         ret = cam_ia10_isp_sdg_config
-              (
-                  manCfg->enabled[HAL_ISP_SDG_ID],
-                  manCfg->sdg_cfg,
-                  &(result->sdg)
-              );
+            (
+             manCfg->enabled[HAL_ISP_SDG_ID],
+             manCfg->sdg_cfg,
+             &(result->sdg)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config SDG failed !", __FUNCTION__);
@@ -2429,13 +2531,13 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     if (manCfg->updated_mask & HAL_ISP_HST_MASK) {
         ret = cam_ia10_isp_hst_config
-              (
-                  manCfg->enabled[HAL_ISP_HST_ID],
-                  manCfg->hst_cfg,
-                  width,
-                  height,
-                  &(result->hst)
-              );
+            (
+             manCfg->enabled[HAL_ISP_HST_ID],
+             manCfg->hst_cfg,
+             width,
+             height,
+             &(result->hst)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config hst failed !", __FUNCTION__);
@@ -2448,11 +2550,11 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
         lsc_result.lsc_result = &(result->awb.LscMatrixTable);
         lsc_result.lsc_seg_result = &(result->awb.SectorConfig);
         ret = cam_ia10_isp_lsc_config
-              (
-                  manCfg->enabled[HAL_ISP_LSC_ID],
-                  manCfg->lsc_cfg,
-                  &(lsc_result)
-              );
+            (
+             manCfg->enabled[HAL_ISP_LSC_ID],
+             manCfg->lsc_cfg,
+             &(lsc_result)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config LSC failed !", __FUNCTION__);
@@ -2464,11 +2566,11 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
         CameraIcAwbGainConfig_t awb_result = {BOOL_FALSE, 0};
         awb_result.awb_gain_result = &(result->awb.awbGains);
         ret = cam_ia10_isp_awb_gain_config
-              (
-                  manCfg->enabled[HAL_ISP_AWB_GAIN_ID],
-                  manCfg->awb_gain_cfg,
-                  &(awb_result)
-              );
+            (
+             manCfg->enabled[HAL_ISP_AWB_GAIN_ID],
+             manCfg->awb_gain_cfg,
+             &(awb_result)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config AWB Gain failed !", __FUNCTION__);
@@ -2478,14 +2580,14 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     if (manCfg->updated_mask & HAL_ISP_FLT_MASK) {
         ret = cam_ia10_isp_flt_config
-              (
-                  hCamCalibDb,
-                  manCfg->enabled[HAL_ISP_FLT_ID],
-                  manCfg->flt_cfg,
-                  width,
-                  height,
-                  &(result->flt)
-              );
+            (
+             hCamCalibDb,
+             manCfg->enabled[HAL_ISP_FLT_ID],
+             manCfg->flt_cfg,
+             width,
+             height,
+             &(result->flt)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config FLT failed !", __FUNCTION__);
@@ -2494,11 +2596,11 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     if (manCfg->updated_mask & HAL_ISP_BDM_MASK) {
         ret = cam_ia10_isp_bdm_config
-              (
-                  manCfg->enabled[HAL_ISP_BDM_ID],
-                  manCfg->bdm_cfg,
-                  &(result->bdm)
-              );
+            (
+             manCfg->enabled[HAL_ISP_BDM_ID],
+             manCfg->bdm_cfg,
+             &(result->bdm)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config BDM failed !", __FUNCTION__);
@@ -2510,11 +2612,11 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
         ctk_result.ctk_matrix_result = &(result->awb.CcMatrix);
         ctk_result.ctk_offset_result = &(result->awb.CcOffset);
         ret = cam_ia10_isp_ctk_config
-              (
-                  manCfg->enabled[HAL_ISP_CTK_ID],
-                  manCfg->ctk_cfg,
-                  &(ctk_result)
-              );
+            (
+             manCfg->enabled[HAL_ISP_CTK_ID],
+             manCfg->ctk_cfg,
+             &(ctk_result)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config CTK failed !", __FUNCTION__);
@@ -2525,12 +2627,12 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     if (manCfg->updated_mask & HAL_ISP_CPROC_MASK) {
         ret = cam_ia10_isp_cproc_config
-              (
-                  hCamCalibDb,
-                  manCfg->enabled[HAL_ISP_CPROC_ID],
-                  manCfg->cproc_cfg,
-                  &(result->cproc)
-              );
+            (
+             hCamCalibDb,
+             manCfg->enabled[HAL_ISP_CPROC_ID],
+             manCfg->cproc_cfg,
+             &(result->cproc)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config CPROC failed !", __FUNCTION__);
@@ -2539,11 +2641,11 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     if (manCfg->updated_mask & HAL_ISP_IE_MASK) {
         ret = cam_ia10_isp_ie_config
-              (
-                  manCfg->enabled[HAL_ISP_IE_ID],
-                  manCfg->ie_cfg,
-                  &(result->ie)
-              );
+            (
+             manCfg->enabled[HAL_ISP_IE_ID],
+             manCfg->ie_cfg,
+             &(result->ie)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config IE failed !", __FUNCTION__);
@@ -2555,11 +2657,11 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
         aec_result.aec_meas_mode = (int*)(&(result->aec.meas_mode));
         aec_result.meas_win = &(result->aec.meas_win);
         ret = cam_ia10_isp_aec_config
-              (
-                  manCfg->enabled[HAL_ISP_AEC_ID],
-                  manCfg->aec_cfg,
-                  &(aec_result)
-              );
+            (
+             manCfg->enabled[HAL_ISP_AEC_ID],
+             manCfg->aec_cfg,
+             &(aec_result)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config AEC Meas failed !", __FUNCTION__);
@@ -2567,14 +2669,14 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
         result->aec_enabled = aec_result.enabled;
 
         if ((manCfg->aec_cfg) && (!aec_result.enabled) &&
-                ((manCfg->aec_cfg->exp_time > 0.01) || (manCfg->aec_cfg->exp_gain > 0.01))) {
+            ((manCfg->aec_cfg->exp_time > 0.01) || (manCfg->aec_cfg->exp_gain > 0.01))) {
             mapHalExpToSensor
-            (
-                manCfg->aec_cfg->exp_gain,
-                manCfg->aec_cfg->exp_time,
-                result->aec.regGain,
-                result->aec.regIntegrationTime
-            );
+                (
+                 manCfg->aec_cfg->exp_gain,
+                 manCfg->aec_cfg->exp_time,
+                 result->aec.regGain,
+                 result->aec.regIntegrationTime
+                );
             //FIXME: for some reason, kernel report error manual ae time and gain values to HAL
             //if aec is disabled , so here is just a workaround
             result->aec_enabled = BOOL_TRUE;
@@ -2586,12 +2688,12 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
     /*TODOS*/
     if (manCfg->updated_mask & HAL_ISP_WDR_MASK) {
         ret = cam_ia10_isp_wdr_config
-              (
-                  hCamCalibDb,
-                  manCfg->enabled[HAL_ISP_WDR_ID],
-                  manCfg->wdr_cfg,
-                  &(result->wdr)
-              );
+            (
+             hCamCalibDb,
+             manCfg->enabled[HAL_ISP_WDR_ID],
+             manCfg->wdr_cfg,
+             &(result->wdr)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config WDR failed !", __FUNCTION__);
@@ -2612,13 +2714,13 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     if (manCfg->updated_mask & HAL_ISP_GOC_MASK) {
         ret = cam_ia10_isp_goc_config
-              (
-                  hCamCalibDb,
-                  manCfg->enabled[HAL_ISP_GOC_ID],
-                  manCfg->goc_cfg,
-                  &(result->goc),
-                  mWdrEnabledState
-              );
+            (
+             hCamCalibDb,
+             manCfg->enabled[HAL_ISP_GOC_ID],
+             manCfg->goc_cfg,
+             &(result->goc),
+             mWdrEnabledState
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config GOC failed !", __FUNCTION__);
@@ -2628,11 +2730,11 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
     if (manCfg->updated_mask & HAL_ISP_DPF_MASK) {
         CameraIcDpfConfig_t dpfConfig;
         ret = cam_ia10_isp_dpf_config
-              (
-                  manCfg->enabled[HAL_ISP_DPF_ID],
-                  manCfg->dpf_cfg,
-                  &(dpfConfig)
-              );
+            (
+             manCfg->enabled[HAL_ISP_DPF_ID],
+             manCfg->dpf_cfg,
+             &(dpfConfig)
+            );
 
         if (ret != RET_SUCCESS)
             ALOGE("%s:config DPF failed !", __FUNCTION__);
@@ -2643,11 +2745,11 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
     if (manCfg->updated_mask & HAL_ISP_DPF_STRENGTH_MASK) {
         CameraIcDpfStrengthConfig_t dpfStrengConfig;
         ret = cam_ia10_isp_dpf_strength_config
-              (
-                  manCfg->enabled[HAL_ISP_DPF_STRENGTH_ID],
-                  manCfg->dpf_strength_cfg,
-                  &(dpfStrengConfig)
-              );
+            (
+             manCfg->enabled[HAL_ISP_DPF_STRENGTH_ID],
+             manCfg->dpf_strength_cfg,
+             &(dpfStrengConfig)
+            );
 
         result->adpf.DynInvStrength.WeightB = dpfStrengConfig.b;
         result->adpf.DynInvStrength.WeightG = dpfStrengConfig.g;

@@ -407,6 +407,47 @@ bool Isp10Engine::convertIspStats(
     */
   }
 
+  if (isp_stats->meas_type & CIFISP_STAT_EMB_DATA) {
+    cifisp_preisp_hdr_ae_embeded_type_t *preisp_hdr_ae_stats =
+           (cifisp_preisp_hdr_ae_embeded_type_t *)isp_stats->params.emd.data;
+
+    ia_stats->meas_type |= CAMIA10_AEC_MASK | CAMIA10_HST_MASK;
+    ia_stats->aec.is_hdr_stats = true;
+
+    ia_stats->aec.lgmean = preisp_hdr_ae_stats->result.lgmean;
+    ia_stats->aec.sensor.exp_time_l =
+            preisp_hdr_ae_stats->result.reg_exp_time[0];
+    ia_stats->aec.sensor.exp_time =
+            preisp_hdr_ae_stats->result.reg_exp_time[1];
+    ia_stats->aec.sensor.exp_time_s =
+            preisp_hdr_ae_stats->result.reg_exp_time[2];
+    ia_stats->aec.sensor.gain_l =
+            preisp_hdr_ae_stats->result.reg_exp_gain[0];
+    ia_stats->aec.sensor.gain =
+            preisp_hdr_ae_stats->result.reg_exp_gain[1];
+    ia_stats->aec.sensor.gain_s =
+            preisp_hdr_ae_stats->result.reg_exp_gain[2];
+    for (int i = 0; i < CIFISP_PREISP_HDRAE_MAXFRAMES; i++) {
+        memcpy((char*)ia_stats->aec.oneframe[i].hdr_hist_bins,
+               (char*)preisp_hdr_ae_stats->result.oneframe[i].hist_meas.hist_bin,
+               sizeof(ia_stats->aec.oneframe[i].hdr_hist_bins));
+        memcpy((char*)ia_stats->aec.oneframe[i].hdr_exp_mean,
+               (char*)preisp_hdr_ae_stats->result.oneframe[i].mean_meas.y_meas,
+               sizeof(ia_stats->aec.oneframe[i].hdr_exp_mean));
+    }
+
+    ia_stats->aec.fDRIndex.NormalIndex =
+            preisp_hdr_ae_stats->result.DRIndexRes.fNormalIndex;
+    ia_stats->aec.fDRIndex.LongIndex =
+            preisp_hdr_ae_stats->result.DRIndexRes.fLongIndex;
+    ia_stats->aec.fOEMeasRes.OE_Pixel =
+            preisp_hdr_ae_stats->result.OEMeasRes.OE_Pixel;
+    ia_stats->aec.fOEMeasRes.SumHistPixel =
+            preisp_hdr_ae_stats->result.OEMeasRes.SumHistPixel;
+    ia_stats->aec.fOEMeasRes.SframeMaxLuma =
+            preisp_hdr_ae_stats->result.OEMeasRes.SframeMaxLuma;
+  }
+
   if (isp_stats->meas_type & CIFISP_STAT_AWB) {
     ia_stats->meas_type |= CAMIA10_AWB_MEAS_MASK;
     if (mIspCfg.awb_meas_config.awb_mode == CIFISP_AWB_MODE_YCBCR) {

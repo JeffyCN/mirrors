@@ -115,11 +115,12 @@ IspController::handle_sof(int64_t time, int frameid)
     XCAM_LOG_DEBUG("--SOF[%d]------------------expsync-statsync\n%s", frameid, log_str);
 
     struct rkisp_exposure exposure;
-    exposure.coarse_integration_time = _exposure_queue[EXPOSURE_TIME_DELAY - 1].coarse_integration_time;
-    exposure.analog_gain = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].analog_gain;
-    exposure.digital_gain = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].digital_gain;
-    exposure.frame_line_length = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].frame_line_length;
 
+    //exposure.coarse_integration_time = _exposure_queue[EXPOSURE_TIME_DELAY - 1].coarse_integration_time;
+    //exposure.analog_gain = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].analog_gain;
+    //exposure.digital_gain = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].digital_gain;
+    //exposure.frame_line_length = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].frame_line_length;
+    exposure = _exposure_queue[EXPOSURE_GAIN_DELAY - 1];
     set_3a_exposure(exposure);
 
     return XCAM_RETURN_NO_ERROR;
@@ -383,26 +384,99 @@ IspController::get_3a_statistics (SmartPtr<X3aIspStatistics> &stats)
 
         //translate stats to struct cifisp_stat_buffer
         struct cifisp_stat_buffer *aiq_stats = (struct cifisp_stat_buffer*)v4l2buf->map();
-        isp_stats->params.ae = aiq_stats->params.ae;
-        isp_stats->params.hist= aiq_stats->params.hist;
-        isp_stats->params.awb = aiq_stats->params.awb;
-        isp_stats->params.af = aiq_stats->params.af;
 
+        /* isp_stats->params.ae = aiq_stats->params.ae; */
+        /* isp_stats->params.hist= aiq_stats->params.hist; */
+        /* isp_stats->params.awb = aiq_stats->params.awb; */
+        /* isp_stats->params.af = aiq_stats->params.af; */
+        /* compatible with no emd info, so we could use new camera engine with
+         * old rkisp driver that has no emd field in stats
+         */
+        if (isp_stats->meas_type & CIFISP_STAT_EMB_DATA)
+            *isp_stats = *aiq_stats;
+        else
+            memcpy(isp_stats, aiq_stats,
+                   sizeof(*isp_stats) - sizeof(struct cifisp_embedded_data));
         ret = _isp_stats_device->queue_buffer (v4l2buf);
         if (ret != XCAM_RETURN_NO_ERROR) {
             XCAM_LOG_WARNING ("queue stats buffer failed");
             return ret;
         }
 
-        XCAM_LOG_DEBUG("|||get_3a_statistics[%d-%d] MEAS AE: %d MEAS AWB[%d] [%d-%d-%d] expsync",
+        XCAM_LOG_DEBUG("|||get_3a_statistics[%d-%d] MEAS AE: %d MEAS AWB[%d] [%d-%d-%d] expsync, meastype 0x%x",
             cur_frame_id,
             _frame_sequence,
             isp_stats->params.ae.exp_mean[0],
             isp_stats->params.awb.awb_mean[0].cnt,
             isp_stats->params.awb.awb_mean[0].mean_y_or_g,
             isp_stats->params.awb.awb_mean[0].mean_cr_or_r,
-            isp_stats->params.awb.awb_mean[0].mean_cb_or_b);
+            isp_stats->params.awb.awb_mean[0].mean_cb_or_b,
+            isp_stats->meas_type);
+        //print embeded data stats
+        if (0 && isp_stats->meas_type & CIFISP_STAT_EMB_DATA) {
+            cifisp_preisp_hdr_ae_embeded_type_t *emb =
+                (cifisp_preisp_hdr_ae_embeded_type_t*)isp_stats->params.emd.data;
+            XCAM_LOG_DEBUG("%s: emb head: size %u, fid %u, msg count %u",
+                           __FUNCTION__, emb->head.mesg_total_size,
+                           emb->head.frame_id, emb->head.mesg_count);
 
+            struct cifisp_preisp_hdrae_result *hdr_ae_result = &emb->result;
+
+            XCAM_LOG_DEBUG("%s: emb hdr result: lgmean %u, timereg[%u-%u-%u], gainreg[%u-%u-%u]",
+                           __FUNCTION__, hdr_ae_result->lgmean,
+                          hdr_ae_result->reg_exp_time[0],
+                          hdr_ae_result->reg_exp_time[1],
+                          hdr_ae_result->reg_exp_time[2],
+                          hdr_ae_result->reg_exp_gain[0],
+                          hdr_ae_result->reg_exp_gain[1],
+                          hdr_ae_result->reg_exp_gain[2]);
+            struct cifisp_preisp_hdrae_OE_meas_res *OEMeasRes =
+                &hdr_ae_result->OEMeasRes; //zlj add
+
+            XCAM_LOG_DEBUG("%s: emb hdr oe meas result: oe_pixel %u,sumhistpixel %u, maxluma %u",
+                            __FUNCTION__, OEMeasRes->OE_Pixel,
+                            OEMeasRes->SumHistPixel, OEMeasRes->SframeMaxLuma);
+            struct cifisp_preisp_hdrae_DRIndex_res *DRIndexRes =
+                &hdr_ae_result->DRIndexRes; //zlj add
+
+            XCAM_LOG_DEBUG("%s: emb hdr dr result: fNormalIndex %u,fLongIndex %u",
+                           __FUNCTION__, DRIndexRes->fNormalIndex, DRIndexRes->fLongIndex);
+            struct cifisp_preisp_hdrae_oneframe_result *oneframe =
+                hdr_ae_result->oneframe; //zlj add
+            struct cifisp_preisp_hdrae_hist_meas_res *hist_meas;
+            struct cifisp_preisp_hdrae_mean_meas_res *mean_meas;
+
+            for (int i = 0; i < CIFISP_PREISP_HDRAE_MAXFRAMES; i++) {
+                hist_meas = &oneframe[i].hist_meas;
+                mean_meas = &oneframe[i].mean_meas;
+                uint32_t *hist_bin = (uint32_t*)hist_meas->hist_bin;
+                uint16_t *y_meas = (uint16_t*)mean_meas->y_meas;
+                XCAM_LOG_DEBUG("\n-------------%s: frame [%d] emb hdr hist bins:"
+                               "---------------\n", __FUNCTION__, i);
+                for (int j = 0; j < CIFISP_PREISP_HDRAE_HIST_BIN_NUM; j +=16) {
+                    XCAM_LOG_DEBUG("%s:%d->%d: %u  %u  %u  %u  %u %u  %u  %u  "
+                                   "%u  %u  %u  %u  %u  %u  %u %u",
+                                   __FUNCTION__, j, j+15,
+                                   hist_bin[j],hist_bin[j+1],hist_bin[j+2],hist_bin[j+3],
+                                   hist_bin[j+4],hist_bin[j+5],hist_bin[j+6],hist_bin[j+7],
+                                   hist_bin[j+8],hist_bin[j+9],hist_bin[j+10],hist_bin[j+11],
+                                   hist_bin[j+12],hist_bin[j+13],hist_bin[j+14],hist_bin[j+15]);
+                }
+
+                XCAM_LOG_DEBUG("\n--------------%s: frame [%d] emb hdr max grid items:"
+                               "----------------\n", __FUNCTION__, i);
+                for (int j = 0; j < CIFISP_PREISP_HDRAE_MAXGRIDITEMS; j +=15) {
+                    XCAM_LOG_DEBUG("%s:%d->%d: %u  %u  %u  %u  %u  %u  %u  %u  "
+                                   "%u  %u  %u  %u  %u  %u  %u",
+                                   __FUNCTION__, j, j+14,
+                                   y_meas[j],y_meas[j+1],y_meas[j+2],y_meas[j+3],
+                                   y_meas[j+4],y_meas[j+5],y_meas[j+6],y_meas[j+7],
+                                   y_meas[j+8],y_meas[j+9],y_meas[j+10],y_meas[j+11],
+                                   y_meas[j+12],y_meas[j+13],y_meas[j+14]);
+                }
+            }
+
+        }
         XCAM_LOG_DEBUG("stats event sequence: [%d-%d], time: [%ld-%ld], during: %ld - statsync",
             _frame_sequence, cur_frame_id,
             _frame_sof_time, cur_time,
@@ -794,9 +868,16 @@ IspController::exposure_delay(struct rkisp_exposure isp_exposure)
     }
     /* if missing the sof, update immediately */
     if (_ae_stats_delay != -1) {
+        _ae_stats_delay = -1;
+        // don't apply immediatly, this will cause exposure and stats
+        // async in rk1608 driver, the root cause is the apply timing may
+        // occur at nearly next SOF. maybe we could add more conditions for
+        // this case to avoid this bug, the conditon is like :
+        // cur_time - sof_time < LIMITATION(decided by fps)
+        if (isp_exposure.IsHdrExp)
+            return ;
         XCAM_LOG_DEBUG ("set exposure for delay stats %u immediately !", _ae_stats_delay);
         set_3a_exposure(isp_exposure);
-        _ae_stats_delay = -1;
     }
 }
 
@@ -827,12 +908,19 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
         return XCAM_RETURN_BYPASS;
 
     LOGD("----------------------------------------------");
-    LOGD("|||set_3a_exposure (%d-%d) fll 0x%x expsync in sof %d\n",
-        isp_exposure.coarse_integration_time,
-        isp_exposure.analog_gain,
-        isp_exposure.frame_line_length,
-        _frame_sequence);
-
+    if (!isp_exposure.IsHdrExp)
+        LOGD("|||set_3a_exposure (%d-%d) fll 0x%x expsync in sof %d\n",
+            isp_exposure.coarse_integration_time,
+            isp_exposure.analog_gain,
+            isp_exposure.frame_line_length,
+            _frame_sequence);
+    else
+        LOGD("|||set_3a_exposure timereg (%d-%d-%d), gainreg (%d-%d-%d)"
+             "fll 0x%x expsync in sof %d\n",
+            isp_exposure.RegHdrTime[0], isp_exposure.RegHdrTime[1],
+            isp_exposure.RegHdrTime[2], isp_exposure.RegHdrGains[0],
+            isp_exposure.RegHdrGains[1],isp_exposure.RegHdrGains[2],
+            isp_exposure.frame_line_length, _frame_sequence);
     if (_device.ptr()) {
         struct v4l2_ext_control exp_gain[3];
         struct v4l2_ext_controls ctrls;
@@ -856,48 +944,83 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
             return XCAM_RETURN_ERROR_IOCTL;
         }
     } else {
-        struct v4l2_control ctrl;
+        if (!isp_exposure.IsHdrExp) {
+            struct v4l2_control ctrl;
 
-        if (isp_exposure.analog_gain!= 0) {
+            if (isp_exposure.analog_gain!= 0) {
+                memset(&ctrl, 0, sizeof(ctrl));
+                ctrl.id = V4L2_CID_ANALOGUE_GAIN;
+                ctrl.value = isp_exposure.analog_gain;
+                if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
+                    XCAM_LOG_ERROR ("failed to  set again result(val: %d)", isp_exposure.analog_gain);
+                    return XCAM_RETURN_ERROR_IOCTL;
+                }
+            }
+            if (isp_exposure.digital_gain!= 0) {
+                memset(&ctrl, 0, sizeof(ctrl));
+                ctrl.id = V4L2_CID_GAIN;
+                ctrl.value = isp_exposure.digital_gain;
+                if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
+                    XCAM_LOG_ERROR ("failed to set dgain result(val: %d)", isp_exposure.digital_gain);
+                    return XCAM_RETURN_ERROR_IOCTL;
+                }
+            }
+
+            // set vts before exposure time firstly
+            rk_aiq_exposure_sensor_descriptor sensor_desc;
+            get_sensor_descriptor (&sensor_desc);
+
+            isp_exposure.frame_line_length =
+                (sensor_desc.line_periods_per_field < isp_exposure.frame_line_length) ?
+                isp_exposure.frame_line_length : sensor_desc.line_periods_per_field;
             memset(&ctrl, 0, sizeof(ctrl));
-            ctrl.id = V4L2_CID_ANALOGUE_GAIN;
-            ctrl.value = isp_exposure.analog_gain;
+            ctrl.id = V4L2_CID_VBLANK;
+            ctrl.value = isp_exposure.frame_line_length - sensor_desc.sensor_output_height;
             if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
-                XCAM_LOG_ERROR ("failed to  set again result(val: %d)", isp_exposure.analog_gain);
+                XCAM_LOG_ERROR ("failed to set vblank result(val: %d)", ctrl.value);
                 return XCAM_RETURN_ERROR_IOCTL;
             }
-        }
-        if (isp_exposure.digital_gain!= 0) {
-            memset(&ctrl, 0, sizeof(ctrl));
-            ctrl.id = V4L2_CID_GAIN;
-            ctrl.value = isp_exposure.digital_gain;
-            if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
-                XCAM_LOG_ERROR ("failed to set dgain result(val: %d)", isp_exposure.digital_gain);
-                return XCAM_RETURN_ERROR_IOCTL;
+
+            if (isp_exposure.coarse_integration_time!= 0) {
+                memset(&ctrl, 0, sizeof(ctrl));
+                ctrl.id = V4L2_CID_EXPOSURE;
+                ctrl.value = isp_exposure.coarse_integration_time;
+                if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
+                    XCAM_LOG_ERROR ("failed to set integration time result(val: %d)", isp_exposure.coarse_integration_time);
+                    return XCAM_RETURN_ERROR_IOCTL;
+                }
             }
-        }
+        } else {
+            struct preisp_hdrae_exp_s hdrae;
 
-        // set vts before exposure time firstly
-        rk_aiq_exposure_sensor_descriptor sensor_desc;
-        get_sensor_descriptor (&sensor_desc);
+            memset(&hdrae, 0, sizeof(hdrae));
+            hdrae.long_exp_reg = isp_exposure.RegHdrTime[0];
+            hdrae.long_gain_reg = isp_exposure.RegHdrGains[0];
+            hdrae.middle_exp_reg = isp_exposure.RegHdrTime[1];
+            hdrae.middle_gain_reg = isp_exposure.RegHdrGains[1];
+            hdrae.short_exp_reg = isp_exposure.RegHdrTime[2];
+            hdrae.short_gain_reg = isp_exposure.RegHdrGains[2];
+            memcpy(&hdrae.long_exp_val,
+                   &isp_exposure.HdrIntTimes[0],
+                   sizeof(hdrae.long_exp_val));
+            memcpy(&hdrae.long_gain_val,
+                   &isp_exposure.HdrGains[0],
+                   sizeof(hdrae.long_gain_val));
+            memcpy(&hdrae.middle_exp_val,
+                   &isp_exposure.HdrIntTimes[1],
+                   sizeof(hdrae.middle_exp_val));
+            memcpy(&hdrae.middle_gain_val,
+                   &isp_exposure.HdrGains[1],
+                   sizeof(hdrae.middle_gain_val));
+            memcpy(&hdrae.short_exp_val,
+                   &isp_exposure.HdrIntTimes[2],
+                   sizeof(hdrae.short_exp_val));
+            memcpy(&hdrae.short_gain_val,
+                   &isp_exposure.HdrGains[2],
+                   sizeof(hdrae.short_gain_val));
 
-        isp_exposure.frame_line_length =
-            (sensor_desc.line_periods_per_field < isp_exposure.frame_line_length) ?
-            isp_exposure.frame_line_length : sensor_desc.line_periods_per_field;
-        memset(&ctrl, 0, sizeof(ctrl));
-        ctrl.id = V4L2_CID_VBLANK;
-        ctrl.value = isp_exposure.frame_line_length - sensor_desc.sensor_output_height;
-        if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
-            XCAM_LOG_ERROR ("failed to set vblank result(val: %d)", ctrl.value);
-            return XCAM_RETURN_ERROR_IOCTL;
-        }
-
-        if (isp_exposure.coarse_integration_time!= 0) {
-            memset(&ctrl, 0, sizeof(ctrl));
-            ctrl.id = V4L2_CID_EXPOSURE;
-            ctrl.value = isp_exposure.coarse_integration_time;
-            if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
-                XCAM_LOG_ERROR ("failed to set integration time result(val: %d)", isp_exposure.coarse_integration_time);
+            if (_sensor_subdev->io_control(CIFISP_CMD_SET_HDRAE_EXP, &hdrae) < 0) {
+                XCAM_LOG_ERROR ("failed to set hdrae exp");
                 return XCAM_RETURN_ERROR_IOCTL;
             }
         }

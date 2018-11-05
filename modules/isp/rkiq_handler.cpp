@@ -190,7 +190,16 @@ AiqAeHandler::pop_result ()
     sensor.coarse_integration_time = _result.regIntegrationTime;
     sensor.analog_gain = _result.regGain;
     sensor.digital_gain = 0;
-    sensor.frame_line_length = (uint32_t)_result.LinePeriodsPerField;
+    sensor.frame_line_length = (uint32_t)(_result.LinePeriodsPerField + 0.5);
+    sensor.IsHdrExp = _result.IsHdrExp;
+    sensor.NormalExpRatio = _result.NormalExpRatio;
+    sensor.LongExpRatio = _result.LongExpRatio;
+    for (int i = 0; i < 3; i++) {
+        sensor.RegHdrGains[i] = _result.RegHdrGains[i];
+        sensor.RegHdrTime[i] = _result.RegHdrTime[i];
+        sensor.HdrGains[i] = _result.HdrGains[i];
+        sensor.HdrIntTimes[i] = _result.HdrIntTimes[i];
+    }
     result->set_isp_config (sensor);
 
     xcam_mem_clear (exposure);
@@ -1278,7 +1287,8 @@ RKiqCompositor::set_3a_stats (SmartPtr<X3aIspStatistics> &stats)
     XCAM_LOG_DEBUG ("MoveStatus: %d, vcm_ts %lld, cur_exptime %f, frame_ts %lld",
         _ia_stat.af.cameric.MoveStatus, vcm_ts / 1000, cur_exptime / 1000, frame_ts / 1000);
 
-    _isp_stats.meas_type = CIFISP_STAT_AUTOEXP | CIFISP_STAT_HIST | CIFISP_STAT_AWB | CIFISP_STAT_AFM_FIN;
+    /* TODO: remove this when isp driver fix the awb meas type unreported bug */
+    _isp_stats.meas_type |= CIFISP_STAT_AWB;
     _isp10_engine->convertIspStats(&_isp_stats, &_ia_stat);
     _isp10_engine->setStatistics(&_ia_stat);
     return true;

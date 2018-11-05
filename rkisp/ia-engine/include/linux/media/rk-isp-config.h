@@ -6,6 +6,7 @@
 #if defined(RKISP_v12) || defined(RKISP)
 #include <rkisp1-config.h>
 #include <rk_vcm_head.h>
+#include <rk-preisp.h>
 // for old isp driver ported from sofia
 #else
 #ifdef RK_ISP10
