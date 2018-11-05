@@ -97,6 +97,7 @@ private:
     SmartPtr<V4l2Device>     _isp_params_device;
 
     SmartPtr<V4l2SubDevice>  _vcm_device;
+    bool                     _is_bw_sensor;
     /* frame sync */
 #define EXPOSURE_GAIN_DELAY 3
 #define EXPOSURE_TIME_DELAY 3

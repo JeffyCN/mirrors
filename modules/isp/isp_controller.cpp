@@ -142,6 +142,7 @@ IspController::get_format(rk_aiq_exposure_sensor_descriptor* sensor_desc)
 
     sensor_desc->isp_input_width= fmt.format.width;
     sensor_desc->isp_input_height= fmt.format.height;
+    _is_bw_sensor = fmt.format.code == MEDIA_BUS_FMT_Y10_1X10 ? true : false;
 
     return 0;
 }
@@ -574,6 +575,12 @@ IspController::set_3a_config (X3aIspConfig *config)
         ret = rkisp1_convert_results(&update_params,isp_cfg, _last_aiq_results);
         if (ret != XCAM_RETURN_NO_ERROR) {
             LOGE("rkisp1_convert_results error\n");
+        }
+        if (_is_bw_sensor) {
+            /* bypass BDM/CTK/AWB gain params */
+             update_params.module_ens &= ~(CIFISP_MODULE_BDM | CIFISP_MODULE_CTK | CIFISP_MODULE_AWB_GAIN);
+             update_params.module_en_update |= CIFISP_MODULE_BDM | CIFISP_MODULE_CTK | CIFISP_MODULE_AWB_GAIN;
+             update_params.module_cfg_update &= ~(CIFISP_MODULE_BDM | CIFISP_MODULE_CTK | CIFISP_MODULE_AWB_GAIN);
         }
         gen_full_isp_params(&update_params, &_full_active_isp_params);
         isp_params = (struct rkisp1_isp_params_cfg*)v4l2buf.m.userptr;
