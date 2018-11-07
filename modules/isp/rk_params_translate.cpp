@@ -247,7 +247,7 @@ void ParamsTranslate::convert_to_rkisp_aec_config( XCamAeParam* aec_params,
 
     switch (aec_params->metering_mode) {
     case XCAM_AE_METERING_MODE_AUTO:
-        config->meter_mode = HAL_AE_METERING_MODE_AVERAGE;
+        config->meter_mode = HAL_AE_METERING_MODE_CENTER;
         break;
     case XCAM_AE_METERING_MODE_SPOT:
         config->meter_mode = HAL_AE_METERING_MODE_SPOT;
