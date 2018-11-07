@@ -55,6 +55,10 @@ ifeq ($(IS_RKISP),true)
 PRJ_CPPFLAGS += -DRKISP=1
 endif
 
+ifeq ($(IS_RKISP_v12),true)
+PRJ_CPPFLAGS += -DRKISP_v12=1
+endif
+
 ifeq ($(IS_RK_ISP10),true)
 PRJ_CPPFLAGS := -DRK_ISP10=1
 endif
