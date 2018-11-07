@@ -166,9 +166,9 @@ RkispDeviceManager::resume_dequeue ()
 {
     SmartPtr<IspPollThread> ispPollThread =  _poll_thread.dynamic_cast_ptr<IspPollThread> ();
 
-    if (_isp_params_device.ptr())
+    if (_isp_params_device.ptr() && !_isp_params_device->is_activated())
         _isp_params_device->start(false);
-    if (_isp_stats_device.ptr())
+    if (_isp_stats_device.ptr() && !_isp_stats_device->is_activated())
         _isp_stats_device->start();
 
     // for IspController 

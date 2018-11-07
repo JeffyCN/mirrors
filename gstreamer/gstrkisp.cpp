@@ -762,22 +762,26 @@ gst_xcam_src_stop (GstBaseSrc *src)
 static gboolean
 gst_xcam_src_unlock (GstBaseSrc *src)
 {
+#if 0
     GstXCamSrc *rkisp = GST_XCAM_SRC_CAST (src);
     SmartPtr<RkispDeviceManager> device_manager = rkisp->device_manager;
     XCAM_ASSERT (device_manager.ptr ());
 
     device_manager->pause_dequeue ();
+#endif
     return TRUE;
 }
 
 static gboolean
 gst_xcam_src_unlock_stop (GstBaseSrc *src)
 {
+#if 0
     GstXCamSrc *rkisp = GST_XCAM_SRC_CAST (src);
     SmartPtr<RkispDeviceManager> device_manager = rkisp->device_manager;
     XCAM_ASSERT (device_manager.ptr ());
 
     device_manager->resume_dequeue ();
+#endif
     return TRUE;
 }
 
