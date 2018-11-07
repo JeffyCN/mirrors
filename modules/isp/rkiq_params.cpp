@@ -387,7 +387,7 @@ XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg* configs)
     if (configs->module_cfg_update & CIFISP_MODULE_HST) {
         ret = hst_param_check(&configs->meas.hst_config);
         if (ret < 0)
-            configs->module_cfg_update &= ~CIFISP_MODULE_AFC;
+            configs->module_cfg_update &= ~CIFISP_MODULE_HST;
     }
     if (configs->module_cfg_update & CIFISP_MODULE_AEC) {
         ret = aec_param_check(&configs->meas.aec_config);
