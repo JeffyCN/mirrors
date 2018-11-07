@@ -25,10 +25,10 @@ RESULT cam_ia10_isp_bls_config
   } else if (enable_mode == HAL_ISP_ACTIVE_SETTING) {
     ISP_CHECK_NULL(bls_cfg);
     bls_result->enabled = BOOL_TRUE;
-    bls_result->isp_bls_a_fixed = bls_cfg->fixed_blue;
-    bls_result->isp_bls_b_fixed = bls_cfg->fixed_greenB;
-    bls_result->isp_bls_c_fixed = bls_cfg->fixed_greenR;
-    bls_result->isp_bls_d_fixed = bls_cfg->fixed_red;
+    bls_result->isp_bls_a_fixed = bls_cfg->fixed_red;
+    bls_result->isp_bls_b_fixed = bls_cfg->fixed_greenR;
+    bls_result->isp_bls_c_fixed = bls_cfg->fixed_greenB;
+    bls_result->isp_bls_d_fixed = bls_cfg->fixed_blue;
     //TODO
     //bls_result->num_win
     //bls_result->Window1
@@ -50,10 +50,10 @@ RESULT cam_ia10_isp_bls_config
       return (result);
     }
     DCT_ASSERT(NULL != pBlsProfile);
-    bls_result->isp_bls_d_fixed   =  pBlsProfile->level.uCoeff[CAM_4CH_COLOR_COMPONENT_RED];
-    bls_result->isp_bls_c_fixed   =  pBlsProfile->level.uCoeff[CAM_4CH_COLOR_COMPONENT_GREENR];
-    bls_result->isp_bls_b_fixed   =  pBlsProfile->level.uCoeff[CAM_4CH_COLOR_COMPONENT_GREENB];
-    bls_result->isp_bls_a_fixed   =  pBlsProfile->level.uCoeff[CAM_4CH_COLOR_COMPONENT_BLUE];
+    bls_result->isp_bls_a_fixed   =  pBlsProfile->level.uCoeff[CAM_4CH_COLOR_COMPONENT_RED];
+    bls_result->isp_bls_b_fixed   =  pBlsProfile->level.uCoeff[CAM_4CH_COLOR_COMPONENT_GREENR];
+    bls_result->isp_bls_c_fixed   =  pBlsProfile->level.uCoeff[CAM_4CH_COLOR_COMPONENT_GREENB];
+    bls_result->isp_bls_d_fixed   =  pBlsProfile->level.uCoeff[CAM_4CH_COLOR_COMPONENT_BLUE];
     //TODO
     //bls_result->num_win
     //bls_result->Window1
