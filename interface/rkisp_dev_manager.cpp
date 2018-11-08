@@ -153,9 +153,9 @@ RkispDeviceManager::pause_dequeue ()
     // should stop 3a because isp video stream may have been stopped
     if (_poll_thread.ptr())
         _poll_thread->stop();
-    if (_isp_params_device.ptr())
+    if (_isp_params_device.ptr() && _isp_params_device->is_activated())
         _isp_params_device->stop();
-    if (_isp_stats_device.ptr())
+    if (_isp_stats_device.ptr() && _isp_stats_device->is_activated())
         _isp_stats_device->stop();
 
     return _ready_buffers.pause_pop ();
