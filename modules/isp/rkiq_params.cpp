@@ -165,9 +165,10 @@ static int ctk_param_check(struct cifisp_ctk_config* arg)
 
 static int goc_param_check(struct cifisp_goc_config* arg)
 {
-    if (arg->mode > CIF_ISP_GOC_MODE_MAX)
+    if (arg->mode > CIF_ISP_GOC_MODE_MAX) {
         LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
         return -1;
+    }
     return 0;
 }
 
