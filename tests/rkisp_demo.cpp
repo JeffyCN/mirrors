@@ -21,11 +21,11 @@
 #include <linux/videodev2.h>
 #include <rkisp_control_loop.h>
 #include <rkisp_dev_manager.h>
+#include <media-controller.h>
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define FMT_NUM_PLANES 1
 
-const char* _iq_file="/etc/cam_iq.xml";
 void* _rkisp_engine;
 
 typedef int (*rkisp_init_func)(void** cl_ctx, const char* tuning_file_path);
@@ -45,17 +45,30 @@ struct RKIspFunc {
 };
 struct RKIspFunc _RKIspFunc;
 
+struct RKisp_media_ctl
+{
+    /* media controller */
+    GstMediaController *controller;
+    GstMediaEntity *isp_subdev;
+    GstMediaEntity *isp_params_dev;
+    GstMediaEntity *isp_stats_dev;
+    GstMediaEntity *sensor_subdev;
+};
 struct buffer {
         void *start;
         size_t length;
 };
-
-static char *dev_name;
+static char iq_file[255] = "/etc/cam_iq.xml";
+static char out_file[255];
+static char dev_name[255];
+static int width = 640;
+static int height = 480;
+static int format = V4L2_PIX_FMT_NV12;
 static int fd = -1;
 static enum v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 struct buffer *buffers;
 static unsigned int n_buffers;
-static int frame_count = 3;
+static int frame_count = 5;
 FILE *fp;
 
 static void errno_exit(const char *s)
@@ -138,15 +151,33 @@ static void stop_capturing(void)
 static void start_capturing(void)
 {
         unsigned int i;
+        struct RKisp_media_ctl rkisp;
         enum v4l2_buf_type type;
 
     	if (_RKIspFunc.init_func != NULL) {
-			_RKIspFunc.init_func(&_rkisp_engine, _iq_file);
+			_RKIspFunc.init_func(&_rkisp_engine, iq_file);
 		}
-
     	if (_RKIspFunc.prepare_func != NULL) {
 			struct rkisp_cl_prepare_params_s params={0};
+            rkisp.controller =
+                gst_media_controller_new_by_vnode (dev_name);
+            if (!rkisp.controller)
+                errno_exit(
+                    "Can't find controller, maybe use a wrong video-node or wrong permission to media node");
+            rkisp.isp_subdev =
+              gst_media_find_entity_by_name (rkisp.controller, "rkisp1-isp-subdev");
+            rkisp.isp_params_dev =
+              gst_media_find_entity_by_name (rkisp.controller, "rkisp1-input-params");
+            rkisp.isp_stats_dev =
+              gst_media_find_entity_by_name (rkisp.controller, "rkisp1-statistics");
+             /* assume the last enity is sensor_subdev */
+            rkisp.sensor_subdev = gst_media_get_last_entity (rkisp.controller);
 
+            params.isp_sd_node_path = media_entity_get_devname (rkisp.isp_subdev);
+            params.isp_vd_params_path = media_entity_get_devname (rkisp.isp_params_dev);
+            params.isp_vd_stats_path = media_entity_get_devname (rkisp.isp_stats_dev);
+            params.sensor_sd_node_path = media_entity_get_devname (rkisp.sensor_subdev);
+            /*
             // isp subdev node path
             params.isp_sd_node_path="/dev/v4l-subdev0";
             // isp params video node path
@@ -155,7 +186,7 @@ static void start_capturing(void)
             params.isp_vd_stats_path="/dev/video2";
             // camera sensor subdev node path
             params.sensor_sd_node_path="/dev/v4l-subdev2";
-
+            */
 			_RKIspFunc.prepare_func(_rkisp_engine, &params);
 		}
 
@@ -323,9 +354,9 @@ static void init_device(void)
             buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 
         fmt.type = buf_type;
-        fmt.fmt.pix.width = 640;
-        fmt.fmt.pix.height = 480;
-        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_NV12;
+        fmt.fmt.pix.width = width;
+        fmt.fmt.pix.height = height;
+        fmt.fmt.pix.pixelformat = format;
         fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
 
         if (-1 == xioctl(fd, VIDIOC_S_FMT, &fmt))
@@ -376,20 +407,88 @@ static void open_device(void)
         }
 }
 
+void parse_args(int argc, char **argv)
+{
+   int c;
+   int digit_optind = 0;
+
+   while (1) {
+       int this_option_optind = optind ? optind : 1;
+       int option_index = 0;
+       static struct option long_options[] = {
+           {"width",    required_argument, 0, 'w' },
+           {"height",   required_argument, 0, 'h' },
+           {"format",   required_argument, 0, 'f' },
+           {"iqfile",   required_argument, 0, 'i' },
+           {"device",   required_argument, 0, 'd' },
+           {"output",   required_argument, 0, 'o' },
+           {"count",    required_argument, 0, 'c' },
+           {"help",     no_argument,       0, 'p' },
+           {"verbose",  no_argument,       0, 'v' },
+           {0,          0,                 0,  0  }
+       };
+
+       c = getopt_long(argc, argv, "w:h:f:i:d:o:pv",
+           long_options, &option_index);
+       if (c == -1)
+           break;
+
+       switch (c) {
+       case 'c':
+           frame_count = atoi(optarg);
+           break;
+       case 'w':
+           width = atoi(optarg);
+           break;
+       case 'h':
+           height = atoi(optarg);
+           break;
+       case 'f':
+           format = v4l2_fourcc(optarg[0], optarg[1], optarg[2], optarg[3]);
+           break;
+       case 'i':
+           strcpy(iq_file, optarg);
+           break;
+       case 'd':
+           strcpy(dev_name, optarg);
+           break;
+       case 'o':
+           strcpy(out_file, optarg);
+           break;
+       case '?':
+       case 'p':
+           printf("Usage: %s to capture rkisp1 frames\n"
+                  "         --width,  default 640,             optional, width of image\n"
+                  "         --height, default 480,             optional, height of image\n"
+                  "         --format, default NV12,            optional, fourcc of format\n"
+                  "         --count,  default    5,            optional, how many frames to capture\n"
+                  "         --iqfile, default /etc/cam_iq.xml, optional, camera IQ file\n"
+                  "         --device,                          required, path of video device\n"
+                  "         --output,                          required, output file path\n"
+                  "         --verbose,                         optional, print more log\n",
+                  argv[0]);
+           exit(-1);
+
+       default:
+           printf("?? getopt returned character code 0%o ??\n", c);
+       }
+   }
+
+   if (strlen(out_file) == 0 || strlen(dev_name) == 0) {
+        fprintf(stderr, "arguments --output and --device are required\n");
+        exit(-1);
+   }
+
+}
 
 int main(int argc, char **argv)
 {
-        dev_name = "/dev/video0";
-        
-        if(argc != 2)
-        {
-            printf("usage :%s filename\n", argv[0]);
+        parse_args(argc, argv);
+
+        if ((fp = fopen(out_file, "w")) == NULL) {
+            perror("Creat file failed");
             exit(0);
         }
-        if ((fp = fopen(argv[1], "w")) == NULL) { 
-            perror("Creat file failed"); 
-            exit(0); 
-        } 
         open_device();
         init_device();
         start_capturing();
