@@ -74,7 +74,8 @@ public:
     bool set_isp_stats_device (SmartPtr<V4l2Device> device);
     bool set_isp_params_device (SmartPtr<V4l2Device> device);
     bool set_event_subdevice (SmartPtr<V4l2SubDevice> device);
-    bool set_sensor_subdevice (SmartPtr<V4l2SubDevice> device);
+    bool set_sensor_subdevice (SmartPtr<V4l2SubDevice> device, const char* name = nullptr);
+    const char* get_sensor_entity_name () { return _sensor_name; }
     bool set_vcm_subdevice (SmartPtr<V4l2SubDevice> device);
     bool set_3a_analyzer (SmartPtr<X3aAnalyzer> analyzer);
     bool set_smart_analyzer (SmartPtr<SmartAnalyzer> analyzer);
@@ -158,6 +159,7 @@ protected:
     SmartPtr<SmartAnalyzer>          _smart_analyzer;
 
 	char _iq_file[512];
+    char _sensor_name[32];
 };
 
 };

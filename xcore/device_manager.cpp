@@ -139,13 +139,15 @@ DeviceManager::set_event_subdevice (SmartPtr<V4l2SubDevice> device)
 }
 
 bool
-DeviceManager::set_sensor_subdevice (SmartPtr<V4l2SubDevice> device)
+DeviceManager::set_sensor_subdevice (SmartPtr<V4l2SubDevice> device, const char* name)
 {
     if (is_running())
         return false;
 
     XCAM_ASSERT (device.ptr () && !_sensor_subdevice.ptr ());
     _sensor_subdevice = device;
+    if (name)
+        strncpy(_sensor_name, name, 32);
     return true;
 }
 

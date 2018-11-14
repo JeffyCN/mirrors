@@ -6,11 +6,11 @@ LOCAL_SRC_FILES +=\
 	rkisp_control_loop_impl.cpp \
 	settings_processor.cpp \
 	CameraWindow.cpp \
-	rkisp_dev_manager.cpp
+	rkisp_dev_manager.cpp \
+	mediactl.c \
 
 ifeq ($(IS_ANDROID_OS),false)
 LOCAL_SRC_FILES +=\
-	mediactl.c \
 	media-controller.c
 endif
 

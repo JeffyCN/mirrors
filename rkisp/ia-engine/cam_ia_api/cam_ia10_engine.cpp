@@ -23,7 +23,8 @@ CamIA10Engine::CamIA10Engine():
     afDesc(NULL),
     afParams(NULL),
     mSensorWRatio(1.0f),
-    mSensorHRatio(1.0f)
+    mSensorHRatio(1.0f),
+    mSensorEntityName(NULL)
 {
     init();
     /*
@@ -43,7 +44,7 @@ CamIA10Engine::~CamIA10Engine() {
 RESULT CamIA10Engine::restart() {
     deinit();
     init();
-    return initStatic(g_aiqb_data_file);
+    return initStatic(g_aiqb_data_file, mSensorEntityName);
 }
 
 RESULT CamIA10Engine::init() {
@@ -96,7 +97,7 @@ RESULT CamIA10Engine::deinit() {
         if (awbDesc) {
             awbDesc->free_results(awbContext, NULL, 0);
             awbDesc->destroy_context(awbContext);
-        } 
+        }
         hAwb = NULL;
     }
 
@@ -104,7 +105,7 @@ RESULT CamIA10Engine::deinit() {
         if (afDesc) {
             afDesc->free_results(afContext, NULL, 0);
             afDesc->destroy_context(afContext);
-        } 
+        }
 
         hAf = NULL;
     }
@@ -112,7 +113,7 @@ RESULT CamIA10Engine::deinit() {
     if (aecDesc) {
         aecDesc->free_results(aecContext, NULL, 0);
         aecDesc->destroy_context(aecContext);
-    } 
+    }
 
     if (hAdpf) {
         AdpfRelease(hAdpf);
@@ -134,7 +135,8 @@ RESULT CamIA10Engine::deinit() {
 
 RESULT CamIA10Engine::initStatic
 (
- char* aiqb_data_file
+ char* aiqb_data_file,
+ const char* sensor_entity_name
  ) {
     RESULT result = RET_FAILURE;
     if (!hCamCalibDb) {
@@ -148,6 +150,7 @@ RESULT CamIA10Engine::initStatic
     }
 
     strcpy(g_aiqb_data_file, aiqb_data_file);
+    mSensorEntityName = sensor_entity_name;
 
     result = initAEC();
     if (result != RET_SUCCESS)
@@ -1042,14 +1045,14 @@ RESULT CamIA10Engine::runAf(XCamAfParam *param, XCam3aResultFocus* result, bool 
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
     struct HAL_AfcCfg* set;
     struct HAL_AfcCfg* shd;
-    
+
     set = &dCfg.afc_cfg;
     shd = &dCfgShd.afc_cfg;
     if (set->mode == HAL_AF_MODE_NOT_SET) {
         LOGE("af mode not set");
         return RET_FAILURE;
     }
-    
+
     if (shd->mode != HAL_AF_MODE_NOT_SET &&
         shd->mode != HAL_AF_MODE_FIXED) {
         if (hAf != NULL) {
@@ -1489,12 +1492,13 @@ RESULT CamIA10Engine::initAEC() {
     aecCfg.Valid_HistBins_Num = 16;
 #endif
     //zlj add for 1608 HDR stats
-#if 1//def RK1608_HDR
-    aecCfg.Valid_GridWeights_Num = 225;
-    aecCfg.Valid_GridWeights_W = 15;
-    aecCfg.Valid_HistBins_Num = 256;
-    aecCfg.IsHdrAeMode = true;
-#endif
+    if (mSensorEntityName && strstr(mSensorEntityName, "1608")) {
+        LOGD("sensor is attached to rk1608, use HDR ae !");
+        aecCfg.Valid_HdrGridWeights_Num = 225;
+        aecCfg.Valid_HdrGridWeights_W = 15;
+        aecCfg.Valid_HdrHistBins_Num = 256;
+        aecCfg.IsHdrAeMode = true;
+    }
     aecCfg.FpsSetEnable = true;
     aecCfg.isFpsFix = false;
     memcpy(aecCfg.TimeFactor, pAecGlobal->TimeFactor, sizeof(pAecGlobal->TimeFactor));

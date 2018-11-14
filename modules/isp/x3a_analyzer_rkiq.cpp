@@ -143,7 +143,7 @@ X3aAnalyzerRKiq::internal_init (uint32_t width, uint32_t height, double framerat
         _isp_ctrl_dev->setISPDeviceFd(_isp_stats_device->get_fd());
     }
 
-    _isp_ctrl_dev->init(_cpf_path, "/dev/video1", /*_device->get_fd()*/0);
+    _isp_ctrl_dev->init(_cpf_path, _device_manager->get_sensor_entity_name(), /*_device->get_fd()*/0);
 
     _rkiq_compositor->set_size (width, height);
     _rkiq_compositor->set_framerate (framerate);

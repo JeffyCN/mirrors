@@ -7,11 +7,17 @@
 #include "x3a_analyzer_rkiq.h"
 #include "dynamic_analyzer_loader.h"
 
+#include "mediactl-priv.h"
+#include "mediactl.h"
+#include "v4l2subdev.h"
+
 #include <base/log.h>
 
 #define V4L2_CAPTURE_MODE_STILL 0x2000
 #define V4L2_CAPTURE_MODE_VIDEO 0x4000
 #define V4L2_CAPTURE_MODE_PREVIEW 0x8000
+
+#define MAX_MEDIA_INDEX 16
 
 #define AIQ_CONTEXT_CAST(context)  ((RkispDeviceManager*)(context))
 
@@ -38,6 +44,62 @@ int rkisp_cl_init(void** cl_ctx, const char* tuning_file_path,
     LOGD("Enable 3a ,using IQ file path %s", tuning_file_path);
     *cl_ctx = (void*)device_manager;
     return 0;
+}
+
+static int __rkisp_get_sensor_name(const char* vnode, char* sensor_name) {
+    char sys_path[64];
+    struct media_device *device = NULL;
+    uint32_t nents, j, i = 0;
+    FILE *fp;
+    int ret;
+
+    while (i < MAX_MEDIA_INDEX) {
+        snprintf (sys_path, 64, "/dev/media%d", i++);
+        fp = fopen (sys_path, "r");
+        if (!fp)
+          continue;
+        fclose (fp);
+
+        device = media_device_new (sys_path);
+
+        /* Enumerate entities, pads and links. */
+        media_device_enumerate (device);
+
+        nents = media_get_entities_count (device);
+        for (j = 0; j < nents; ++j) {
+          struct media_entity *entity = media_get_entity (device, j);
+          const char *devname = media_entity_get_devname (entity);
+          if (NULL != devname) {
+            // get dev path
+            char devpath[32];
+            char sysname[32];
+            char target[1024];
+            char *p;
+
+            sprintf(sysname, "/sys/dev/char/%u:%u", entity->info.v4l.major,
+                entity->info.v4l.minor);
+            ret = readlink(sysname, target, sizeof(target));
+            if (ret < 0)
+                return -errno;
+
+            target[ret] = '\0';
+            p = strrchr(target, '/');
+            if (p == NULL)
+              continue ;
+            sprintf(devpath, "/dev/%s", p + 1);
+
+            LOGD("entity name %s", entity->info.name);
+            if (!strcmp (devpath, vnode)) {
+              strcpy(sensor_name, entity->info.name);
+              media_device_unref (device);
+              return 0;
+            }
+          }
+        }
+        media_device_unref (device);
+    }
+
+    return -1;
 }
 
 int rkisp_cl_prepare(void* cl_ctx,
@@ -82,7 +144,10 @@ int rkisp_cl_prepare(void* cl_ctx,
     ret = sensor_dev->open ();
     if (ret == XCAM_RETURN_NO_ERROR) {
         //sensor_dev->subscribe_event (V4L2_EVENT_FRAME_SYNC);
-        device_manager->set_sensor_subdevice(sensor_dev);
+        char sensor_name[32];
+        if (__rkisp_get_sensor_name(prepare_params->sensor_sd_node_path, sensor_name))
+            LOGW("%s: can't get sensor name");
+        device_manager->set_sensor_subdevice(sensor_dev, sensor_name);
     } else {
         ALOGE("failed to open isp subdev");
         return -1;

@@ -159,7 +159,7 @@ bool Isp10Engine::init(const char* tuningFile,
     }
 
     LOGD("%s:tuningFile %s", __func__, tuningFile);
-    if (mCamIAEngine->initStatic((char*)tuningFile) != RET_SUCCESS) {
+    if (mCamIAEngine->initStatic((char*)tuningFile, ispDev) != RET_SUCCESS) {
       ALOGE("%s: initstatic failed", __func__);
       osMutexUnlock(&mApiLock);
       deInit();
