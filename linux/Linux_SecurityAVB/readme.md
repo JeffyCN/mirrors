@@ -11,7 +11,7 @@
 ------
 
 **前言**
-​	适用于RK3308。
+​	适用于RK3308 / RK3326。
 
 **概述**
 
@@ -36,6 +36,7 @@
 | 2018.05.28 | V1.0   | jason.zhu |                              |
 | 2018.06.12 | V1.1   | jason.zhu | 增加 Authenticated Unlock及一些说明 |
 | 2018.06.27 | V1.2   | Zain.Wong | 增加 key生成描述 |
+| 2018.11.16 | V1.3   | Zain.Wong | 增加 uboot 配置说明， 兼容rk3326 |
 
 ---
 
@@ -43,8 +44,7 @@
 
 ## 1 . 注意事项
 
-1.1. boot.img不能超过9MB
-1.2. 关于device lock & unlock
+关于device lock & unlock
 
 ​        当设备处于unlock状态，程序还是会校验整个boot.img，如果固件有错误，程序会报具体是什么错误，**正常启动设备**。而如果设备处于lock状态，程序会校验整个boot.img，如果固件有误，则不会启动下一级固件。所以调试阶段设置device处于unlock状态，方便调试。
 
@@ -54,27 +54,23 @@
 
 2.1. trust
 
-   进入rkbin/RKTRUST，找到RK3308TRUST.ini，修改
+   进入rkbin/RKTRUST，以rk3308为例，找到RK3308TRUST.ini，修改
 ```
 [BL32_OPTION]
 SEC=0
-PATH=bin/rk33/rk3308_bl32_v1.00.bin //v1.00版本或以上版本
 改为
 [BL32_OPTION]
 SEC=1
-PATH=bin/rk33/rk3308_bl32_v1.00.bin //v1.00版本或以上版本
 ```
 
 2.2. uboot
 
    uboot需要fastboot和optee支持。
-   uboot下打上avb.patch。
-   使用./make.sh evb-rk3308，生成uboot.img, trust.img, rk3308_loader_v1.21.103.bin
-   说明：
 
 ```
 CONFIG_OPTEE_CLIENT=y
-CONFIG_OPTEE_V2=y
+CONFIG_OPTEE_V1=y	#rk312x/rk322x/rk3288/rk3228H/rk3368/rk3399 与V2互斥
+CONFIG_OPTEE_V2=y	#rk3308/rk3326 与V1互斥
 ```
 
 ​	avb开启需要在config文件中配置
@@ -85,9 +81,8 @@ CONFIG_AVB_LIBAVB_AB=y
 CONFIG_AVB_LIBAVB_ATX=y
 CONFIG_AVB_LIBAVB_USER=y
 CONFIG_RK_AVB_LIBAVB_USER=y
-上面几个为必选
-CONFIG_ANDROID_AB=y //这个支持a/b
-CONFIG_ANDROID_AVB=y //这个支持avb
+CONFIG_ANDROID_AVB=y
+CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION=y	#rpmb无法使用时打开，默认不开
 ```
 
 ​	固件，ATX及hash需要通过fastboot烧写，所以需要在config文件中配置
@@ -100,15 +95,31 @@ CONFIG_FASTBOOT_FLASH=y
 CONFIG_FASTBOOT_FLASH_MMC_DEV=0
 ```
 
+在ib/avb/libavb_user/avb_ops_user.c中定义
+```
+#define AVB_VBMETA_PUBLIC_KEY_VALIDATE
+```
+
+打开rpmb支持，在include/configs找到对应的板子，比如evb_rk3399.h，在其中定义：
+```
+#define CONFIG_SUPPORT_EMMC_RPMB
+```
+
+使用./make.sh evb-rkxxxx，生成uboot.img, trust.img, loader.bin
+
 2.3. parameter
 
-parameter可以使用该目录下的gpt-emmc-security.txt,或gpt-emmc-nand-security.txt.
-如果不满足需求，可以自行修改。
+AVB需要添加vbmeta分区，用来存放固件签名信息。内容加密存放。大小1M，位置无关。
 
-使用AVB需要在parameter中新增vbmeta分区，用来存放avb信息，分区大小为1M，位置无关。
-如果存储介质为nand，还需要额外添加security分区，大小4M，位置无关。
+AVB需要system分区，在buildroot上，即rootfs分区，需要将rootfs改名为system，如果使用了uuid，同时修改uuid分区名。
 
-AVB分区中，必须有system分区，如果使用buildroot，请将rootfs分区改为system分区，
+如果存储介质使用flash，还需要另外添加security分区，用来存放操作信息。内容同样加密存放。大小4M，位置无关。（emmc无需添加该分区，emmc操作信息存放在物理rpmb分区）
+Note：rk3399 无论使用什么存储，统一使用security分区。
+
+以下是avb parameter例子：
+0x00002000@0x00004000(uboot),0x00002000@0x00006000(trust),0x00002000@0x00008000(misc),0x00010000@0x0000a000(boot),0x00010000@0x0001a000(recovery),0x00010000@0x0002a000(backup),0x00020000@0x0003a000(oem),0x00300000@0x0005a000(system),0x00000800@0x0035a000(vbmeta),0x00002000@0x0035a800(vbmeta),-@0x0035c800(userdata:grow)
+uuid:system=614e0000-0000-4b53-8000-1d28000054a9
+
 下载的时候，工具上的名称要同步修改，修改后，重载parameter。
 
 ## 3 . Key
@@ -185,37 +196,58 @@ unlock_key_certificate=atx_puk_certificate.bin ‐‐challenge=atx_unlock_chall
 unlock_key=testkey_atx_puk.pem
 ~~~
 
-## 4 . 操作流程
+## 4 . 修改脚本
+签名脚本为make_vbmeta.sh
+给固件签名的格式为：
 
-1. 把boot.img放到这个目录下
-2. 运行make_vbmeta.sh,生成vbmeta.bin和加密过的boot.img
+```
+	python avbtool add_hash_footer --image <IMG> --partition_size <SIZE> --partition_name <PARTITION> --key testkey_atx_psk.pem --algorithm SHA512_RSA4096
+```
+	IMG 为签名固件
+	SIZE 为签名后，固件大小，至少比原文件大64K，且不超过parameter中定义的分区大小，大小必须4K对齐
+	PARTITION = boot / recovery
+
+
+签名完成后，用签名过的文件生成vbmeta.img
+基本格式：
+```
+	python avbtool make_vbmeta_image --public_key_metadata atx_metadata.bin --include_descriptors_from_image <IMG> SHA256_RSA4096 --rollback_index 0 --key testkey_atx_psk.pem  --output vbmeta.img
+```
+--include_descriptors_from_image <IMG> 该字段可以多次使用，即有多少个加密过的文件，就添加多少个 --include_descriptors_from_image。
+例如：
+```
+python avbtool make_vbmeta_image --public_key_metadata atx_metadata.bin --include_descriptors_from_image boot.img --include_descriptors_from_image recovery.img--algorithm SHA256_RSA4096 --rollback_index 0 --key testkey_atx_psk.pem  --output vbmeta.img
+```
+可按照上述规则自行修改make_vbmeta.sh脚本
+
+## 5 . 操作流程
+
+1. 把boot.img/recovery.img放到这个目录下
+2. 运行make_vbmeta.sh,生成vbmeta.bin和加密过的boot.img/recovery.img
 3. 替换固件:
    uboot.img, trust.img, MiniloaderAll.bin替换成上一个步骤中，uboot生成的3个固件。
    boot.img使用该目录下生成的加密固件。
    vbmeta.bin提取出来。
-   parameter.txt使用该目录下的2种带security的。或自行在原来parameter中添加分区（详见2-3）
+   parameter.txt 按 2.3 中规则修改
 4. 使用工具烧录。
-   如果使用的windows工具，请在工具中添加vbmeta分区（如果是nand，还需额外添加security分区），地址不填。
+   如果使用的windows工具，请在工具中添加vbmeta分区（security分区视parameter而定），地址不填。
    然后重新加载parameter，工具会自行更新地址。
 5. 使能atx校验：
-   启动系统，在console里面输入reboot fastboot，进入fastboot模式 （重启使用fastboot reboot）
-   电脑端输入（可能需要管理员权限）
-
-~~~
-fastboot stage atx_permanent_attributes.bin
-fastboot oem fuse at-perm-attr
-~~~
-
-​	atx_permanent_attributes.bin也在该文件夹下。
+   启动系统，在设备端console里面输入reboot fastboot（或在uboot console下，输入fastboot usb 0），进入fastboot模式 （重启使用fastboot reboot）
+   此时设备端串口将无法输入，说明进入fastboot成功。
 
 ## 5 . avb lock & unlock
 
 ​	锁定设备：
 
+   电脑端输入（可能需要管理员权限）
 ~~~
-fastboot oem at-lock-vboot
+sudo ./fastboot stage atx_permanent_attributes.bin
+sudo ./fastboot oem fuse at-perm-attr
+sudo ./fastboot oem at-lock-vboot
 ~~~
 
+​	atx_permanent_attributes.bin也在该文件夹下。
 ​	现在uboot这里做了Authenticated Unlock可以用于解锁后级boot.img的校验。
 
 ​	解锁设备步骤：
@@ -223,8 +255,8 @@ fastboot oem at-lock-vboot
 1. 设备进入fastboot模式，电脑端输入
 
 ```
-fastboot oem at-get-vboot-unlock-challenge
-fastboot get-staged raw_atx_unlock_challenge.bin
+sudo ./fastboot oem at-get-vboot-unlock-challenge
+sudo ./fastboot get_staged raw_atx_unlock_challenge.bin
 ```
 
 2. raw_atx_unlock_challenge.bin放进本文件夹内，运行
@@ -238,8 +270,8 @@ fastboot get-staged raw_atx_unlock_challenge.bin
 3. 电脑端输入
 
 ```
-fastboot stage atx_unlock_credential.bin
-fastboot oem at-unlock-vboot
+sudo ./fastboot stage atx_unlock_credential.bin
+sudo ./fastboot oem at-unlock-vboot
 ```
 
 ​	**注意**：此时设备状态一直处于第一次进入fastboot模式状态，在此期间不能断电、关机、重启。因为步骤1.做完后，设备也存储着生成的随机数，如果断电、关机、重启，会导致随机数丢失，后续校验challenge signature会因为随机数不匹配失败。
@@ -249,116 +281,7 @@ fastboot oem at-unlock-vboot
 ## 6 . 最终打印
 
 ~~~
-<debug_uart> 
-U-Boot TPL 2017.09-01346-g0068ab3 (May 11 2018 - 17:46:30)
-00000000In
-589MHz
-DDR3
- Col=10 Bank=8 Row=15 Size=512MB
-msch:1
-00015a08Returning to boot ROM...
-Boot1 Release Time: Mar 29 2018 14:20:07, version: 1.01
-chip_id:000,0
-ChipType = 0x13, 35791055
-DPLL = 1300 MHz
-NeedKHz=200KHz,clock=12000KHz
-NeedKHz=200KHz,clock=12000KHz
-NeedKHz=200KHz,clock=12000KHz
-DPLL = 1300 MHz
-NeedKHz=18000KHz,clock=650000KHz
-DPLL = 1300 MHz
-NeedKHz=48000KHz,clock=650000KHz
-mmc2:cmd19,256
-SdmmcInit=2 0
-BootCapSize=2000
-UserCapSize=7456MB
-FwPartOffset=2000 , 2000
-SdmmcInit=0 NOT PRESENT
-StorageInit ok = 35752692
-SecureMode = 0
-Secure read PBA: 0x4
-Secure read PBA: 0x404
-Secure read PBA: 0x804
-Secure read PBA: 0xc04
-Secure read PBA: 0x1004
-SecureInit ret = 0, SecureMode = 0
-LoadTrustBL
-No find bl30.bin
-Load uboot, ReadLba = 2000
-Load OK, addr=0x200000, size=0xc2fb8
-RunBL31 0x10000
-NOTICE:  BL31: v1.3(debug):490c474
-NOTICE:  BL31: Built : 14:21:24, May 11 2018
-NOTICE:  BL31:Rockchip release version: v1.0
-INFO:    ARM GICv2 driver initialized
-INFO:    Using opteed sec cpu_context!
-INFO:    boot cpu mask: 1
-INFO:    plat_rockchip_pmu_init: pd status 0xe
-INFO:    BL31: Initializing runtime services
-INFO:    BL31: Initializing BL32
-INFO:    TEE-CORE: 
-INFO:    TEE-CORE: Start rockchip platform init
-INFO:    TEE-CORE: Rockchip release version: 1.0
-INFO:    TEE-CORE: OP-TEE version: 2.6.0-91-g916f2a2-dev #37 Mon May 28 11:46:39 UTC 2018 aarch64
-INFO:    TEE-CORE: Initialized
-INFO:    BL31: Preparing for EL3 exit to normal world
-INFO:    Entry point address = 0x200000
-INFO:    SPSR = 0x3c9
 
-
-U-Boot 2017.09-01565-g46a684d-dirty (May 28 2018 - 21:18:50 +0800)
-
-Model: Rockchip RK3308 EVB
-DRAM:  480 MiB
-Relocation Offset is: 1fcf4000
-MMC:   dwmmc@ff490000: 0
-Using default environment
-
-In:    serial@ff0c0000
-Out:   serial@ff0c0000
-Err:   serial@ff0c0000
-Model: Rockchip RK3308 EVB
-MMC Device 1 not found
-no mmc device at slot 1
-switch to partitions #0, OK
-mmc0(part 0) is current device
-boot mode: normal
-Net:   Net Initialization Skipped
-No ethernet found.
-Hit any key to stop autoboot:  0 
-ca head not found
 ANDROID: reboot reason: "(none)"
 Could not find security partition
-rkss_read_section fail ! ret: -65536.read_is_device_unlocked() ops returned that device is LOCKED
-Could not find security partition
-rkss_read_section fail ! ret: -65536.INFO:    USER-TA: Hello Rockchip Keymaster! rpmb :1
-INFO:    USER-TA: TEE_ReadObjectData success !
-INFO:    USER-TA: Goodbye Rockchip Keymaster!
-Could not find security partition
-rkss_read_section fail ! ret: -65536.Could not find security partition
-rkss_read_section fail ! ret: -65536.Could not find security partition
-rkss_read_section fail ! ret: -65536.Could not find security partition
-rkss_read_section fail ! ret: -65536.Could not find security partition
-rkss_read_section fail ! ret: -65536.Could not find security partition
-rkss_read_section fail ! ret: -65536.Could not find security partition
-rkss_read_section fail ! ret: -65536.Could not find security partition
-rkss_read_section fail ! ret: -65536.INFO:    USER-TA: Hello Rockchip Keymaster! rpmb :1
-INFO:    USER-TA: TEE_ReadObjectData success !
-INFO:    USER-TA: Goodbye Rockchip Keymaster!
-FDT load addr 0x10f00000 size 229 KiB
-Booting kernel at 0x207f800 with fdt at 27ec800...
-
-
-## Booting Android Image at 0x0207f800 ...
-Kernel load addr 0x02080000 size 7599 KiB
-## Flattened Device Tree blob at 027ec800
-   Booting using the fdt blob at 0x27ec800
-   XIP Kernel Image ... OK
-   Loading Device Tree to 00000000081f2000, end 00000000081ff4a7 ... OK
-Adding bank: start=0x00200000, size=0x08200000
-Adding bank: start=0x0a200000, size=0x15e00000
-
-Starting kernel ...
-
-[    0.000000] Booting Linux on physical CPU 0x0
-[    0.000000] Linux version 4.4.126 (yhx@srv165) (gcc version 6.3.1 20170404 (Linaro GCC 6.3-2017.05) ) #1 SMP PREEMPT Thu May 10 20:55:18 CST 2018
+read_is_device_unlocked() ops returned that device is LOCKED
