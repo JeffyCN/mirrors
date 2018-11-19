@@ -488,6 +488,8 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
                 for (int i = ecmCnt - 3; i < ecmCnt; i++) {
                     aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_us_max / 1000000;
                 }
+                aecCfg.MinFrameDuration = (float)set->frame_time_us_min / 1000000;
+                aecCfg.MaxFrameDuration = (float)set->frame_time_us_max / 1000000;
                 LOGD("sensor param (%d)=[%f-%f-%f-%f-%f-%f] vts: %f, vtsMax: %d, pclk: %f, hts: %f\n",
                   ecmCnt,
                   aecCfg.EcmTimeDot.fCoeff[0],
