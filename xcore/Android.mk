@@ -1,5 +1,34 @@
+# build log
 LOCAL_PATH:= $(call my-dir)
 
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES +=\
+	xcam_common.cpp \
+
+LOCAL_CFLAGS += -Wno-error=unused-function -Wno-array-bounds
+LOCAL_CFLAGS += -DLINUX  -D_FILE_OFFSET_BITS=64 -DHAS_STDINT_H -DENABLE_ASSERTa
+LOCAL_CFLAGS += $(PRJ_CPPFLAGS)
+LOCAL_CPPFLAGS += -std=c++11 -frtti
+LOCAL_CPPFLAGS +=  -DLINUX  -DENABLE_ASSERT
+LOCAL_CPPFLAGS += $(PRJ_CPPFLAGS)
+
+LOCAL_C_INCLUDES := \
+	$(LOCAL_PATH) \
+	$(LOCAL_PATH)/../ \
+	$(LOCAL_PATH)/base \
+
+LOCAL_MODULE:= libisp_log
+ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+LOCAL_PROPRIETARY_MODULE := true
+LOCAL_C_INCLUDES += \
+system/core/libutils/include \
+system/core/include
+endif
+
+include $(BUILD_STATIC_LIBRARY)
+
+# build xcore
 include $(CLEAR_VARS)
 
 DRM_SRC_FILES += \
@@ -50,7 +79,6 @@ LOCAL_SRC_FILES +=\
 	x3a_stats_pool.cpp \
 	xcam_analyzer.cpp \
 	xcam_buffer.cpp \
-	xcam_common.cpp \
 	xcam_thread.cpp \
 	xcam_utils.cpp \
 	dynamic_algorithms_libs_loader.cpp

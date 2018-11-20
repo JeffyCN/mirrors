@@ -68,27 +68,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../rkisp/ia-engine/include/linux/media \
 	$(LOCAL_PATH)/../rkisp/isp-engine
 
-LOCAL_STATIC_LIBRARIES := \
-    librkisp_analyzer \
-    librkisp_isp_engine \
-    libisp_ia_engine \
-    librkisp_ctrlloop \
-    libstdc++
-
-LOCAL_STATIC_LIBRARIES += \
-    libisp_aaa_adpf \
-    libisp_aaa_awdr \
-    libisp_cam_calibdb \
-    libisp_calibdb \
-    libtinyxml2 \
-    libisp_oslayer \
-    libisp_ebase
-
-LOCAL_SHARED_LIBRARIES += libdl librkisp libdrm
-
-ifeq ($(IS_ANDROID_OS),false)
-LOCAL_SHARED_LIBRARIES += libgobject-2.0 libglib-2.0
-endif
+LOCAL_SHARED_LIBRARIES += libdl librkisp
 
 ifeq ($(IS_ANDROID_OS),true)
 LOCAL_SHARED_LIBRARIES += libutils libcutils

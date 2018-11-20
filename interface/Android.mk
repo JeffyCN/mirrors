@@ -9,11 +9,6 @@ LOCAL_SRC_FILES +=\
 	rkisp_dev_manager.cpp \
 	mediactl.c \
 
-ifeq ($(IS_ANDROID_OS),false)
-LOCAL_SRC_FILES +=\
-	media-controller.c
-endif
-
 #LOCAL_CFLAGS += -Wno-error=unused-function -Wno-array-bounds -Wno-error
 #LOCAL_CFLAGS += -DLINUX  -D_FILE_OFFSET_BITS=64 -DHAS_STDINT_H -DENABLE_ASSERT
 LOCAL_CPPFLAGS += -std=c++11 -Wno-error -frtti
@@ -43,6 +38,7 @@ LOCAL_STATIC_LIBRARIES := \
 	librkisp_ctrlloop
 
 LOCAL_STATIC_LIBRARIES += \
+	libisp_log \
 	libisp_aaa_adpf \
 	libisp_aaa_awdr \
 	libisp_cam_calibdb \
@@ -53,11 +49,6 @@ LOCAL_STATIC_LIBRARIES += \
 
 LOCAL_SHARED_LIBRARIES += \
 	libdrm
-
-ifeq ($(IS_ANDROID_OS),false)
-LOCAL_SHARED_LIBRARIES += \
-	libglib-2.0
-endif
 
 ifeq ($(IS_ANDROID_OS),true)
 LOCAL_SHARED_LIBRARIES += libutils libcutils liblog

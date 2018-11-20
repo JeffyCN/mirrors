@@ -6,7 +6,8 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES +=\
 	gstrkisp.cpp \
 	gstxcambuffermeta.cpp \
-	gstxcambufferpool.cpp
+	gstxcambufferpool.cpp \
+	media-controller.c
 
 LOCAL_SRC_FILES +=\
 	interface/gstxcaminterface.c
@@ -51,21 +52,8 @@ LOCAL_SHARED_LIBRARIES += \
     libdrm \
     librkisp
 
-LOCAL_STATIC_LIBRARIES := \
-    librkisp_analyzer \
-    librkisp_isp_engine \
-    libisp_ia_engine \
-    librkisp_ctrlloop \
-    libstdc++
-
 LOCAL_STATIC_LIBRARIES += \
-    libisp_aaa_adpf \
-    libisp_aaa_awdr \
-    libisp_cam_calibdb \
-    libisp_calibdb \
-    libtinyxml2 \
-    libisp_oslayer \
-    libisp_ebase
+	libisp_log\
 
 LOCAL_MODULE:= libgstrkisp
 
