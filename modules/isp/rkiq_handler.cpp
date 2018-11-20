@@ -259,18 +259,8 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
 
     //# ANDROID_METADATA_Dynamic android.control.aeRegions done
     entry = inputParams->settings.find(ANDROID_CONTROL_AE_REGIONS);
-    if (entry.count == 5) {
-        int32_t aeRegion[5];
-        // Region value is (xMin, yMin, xMax, yMax) but not (xmin, ymin, w, h),
-        // Refering to the value parse function in
-        // MarshalQueryableMeteringRectangle.java@unmarshal
-        aeRegion[0] = aeParams.window.x_start;
-        aeRegion[1] = aeParams.window.y_start;
-        aeRegion[2] = aeParams.window.x_end;
-        aeRegion[3] = aeParams.window.y_end;
-        aeRegion[4] = entry.data.i32[4];
-        metadata->update(ANDROID_CONTROL_AE_REGIONS, aeRegion, entry.count);
-    }
+    if (entry.count == 5)
+        metadata->update(ANDROID_CONTROL_AE_REGIONS, inputParams->aeInputParams.aeRegion, entry.count);
 
     //# ANDROID_METADATA_Dynamic android.control.aeExposureCompensation done
     // TODO get step size (currently 1/3) from static metadata
@@ -379,6 +369,10 @@ AiqAwbHandler::processAwbMetaResults(CamIA10_AWB_Result_t awb_results, X3aResult
     gains[3] = _rkaiq_result.awb_gain_cfg.awb_gains.blue_gain;
     metadata->update(ANDROID_COLOR_CORRECTION_GAINS, gains, 4);
 
+    //# ANDROID_METADATA_Dynamic android.control.awbRegions done
+    entry = inputParams->settings.find(ANDROID_CONTROL_AWB_REGIONS);
+    if (entry.count == 5)
+        metadata->update(ANDROID_CONTROL_AWB_REGIONS, inputParams->awbInputParams.awbRegion, entry.count);
     /*
      * store the results in row major order
      */
@@ -432,15 +426,8 @@ AiqAfHandler::processAfMetaResults(XCam3aResultFocus af_results, X3aResultList &
 
     XCamAfParam &afParams = inputParams->afInputParams.afParams;
     entry = inputParams->settings.find(ANDROID_CONTROL_AF_REGIONS);
-    if (entry.count == 5) {
-        int32_t afRegion[5];
-        afRegion[0] = afParams.focus_rect[0].left_hoff;
-        afRegion[1] = afParams.focus_rect[0].top_voff;
-        afRegion[2] = afParams.focus_rect[0].right_width + afParams.focus_rect[0].left_hoff;
-        afRegion[3] = afParams.focus_rect[0].bottom_height + afParams.focus_rect[0].top_voff;
-        afRegion[4] = entry.data.i32[4];
-        metadata->update(ANDROID_CONTROL_AF_REGIONS, afRegion, entry.count);
-    }
+    if (entry.count == 5)
+        metadata->update(ANDROID_CONTROL_AF_REGIONS, inputParams->afInputParams.afRegion, entry.count);
 
     ret = mAfState->processResult(_rkaiq_result, afParams, *metadata);
 

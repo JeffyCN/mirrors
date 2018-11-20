@@ -48,8 +48,7 @@ SettingsProcessor::~SettingsProcessor()
  *
  */
 void SettingsProcessor::parseMeteringRegion(const CameraMetadata *settings,
-                                   int tagId, CameraWindow *meteringWindow,
-                                   int sensorOutputWidth, int sensorOutputHeight)
+                                   int tagId, CameraWindow *meteringWindow)
 {
     camera_metadata_ro_entry_t entry;
     ia_coordinate topLeft, bottomRight;
@@ -100,12 +99,33 @@ void SettingsProcessor::parseMeteringRegion(const CameraMetadata *settings,
                  croppingRegion.left(), croppingRegion.top(), croppingRegion.width(), croppingRegion.height(),
                  meteringWindow->left(), meteringWindow->top(), meteringWindow->width(), meteringWindow->height());
         }
+    }
+}
+
+void SettingsProcessor::convertCoordinates(CameraWindow *region,
+                                   int sensorOutputWidth, int sensorOutputHeight)
+{
+    int pixel_width = sensorOutputWidth;
+    int pixel_height = sensorOutputHeight;
+    if(!region)
+        return;
+
+    CameraMetadata& staticMeta = RkispDeviceManager::get_static_metadata();
+    camera_metadata_entry_t rw_entry;
+    rw_entry = staticMeta.find(ANDROID_SENSOR_INFO_PIXEL_ARRAY_SIZE);
+    if(rw_entry.count == 2) {
+        pixel_width = rw_entry.data.i32[0];
+        pixel_height = rw_entry.data.i32[1];
+    }
+
+    if (region->isValid()) {
         // map to sensor output coordinate
-        *meteringWindow = meteringWindow->scale((float)sensorOutputWidth / croppingRegion.width(),
-                                               (float)sensorOutputHeight / croppingRegion.height());
-        LOGI("%s: map to sensor output window:(%d,%d,%d,%d)",
-             tagId == ANDROID_CONTROL_AE_REGIONS ? "AeRegion" : "AfRegion",
-             meteringWindow->left(), meteringWindow->top(), meteringWindow->width(), meteringWindow->height());
+        if(pixel_height != 0 && pixel_width != 0) {
+            *region = region->scale((float)sensorOutputWidth / pixel_width,
+                                   (float)sensorOutputHeight / pixel_height);
+            LOGI("%s: map to sensor output window:(%d,%d,%d,%d)", __FUNCTION__,
+                 region->left(), region->top(), region->width(), region->height());
+        }
     }
 }
 
@@ -189,8 +209,10 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
     }
 
     CameraWindow aeRegion;
-    parseMeteringRegion(settings, ANDROID_CONTROL_AE_REGIONS, &aeRegion,
-                        aiqInputParams->sensorOutputWidth, aiqInputParams->sensorOutputHeight);
+    parseMeteringRegion(settings, ANDROID_CONTROL_AE_REGIONS, &aeRegion);
+    memcpy(aiqInputParams->aeInputParams.aeRegion, aeRegion.meteringRectangle(),
+           sizeof(aiqInputParams->aeInputParams.aeRegion));
+    convertCoordinates(&aeRegion, aiqInputParams->sensorOutputWidth, aiqInputParams->sensorOutputHeight);
 
     if (aeRegion.isValid()) {
         aeParams->window.x_start = aeRegion.left();
@@ -411,8 +433,10 @@ SettingsProcessor::fillAwbInputParams(const CameraMetadata *settings,
 
     //# METADATA_Control control.awbRegion done
     CameraWindow awbRegion;
-    parseMeteringRegion(settings, ANDROID_CONTROL_AWB_REGIONS, &awbRegion,
-                        aiqInputParams->sensorOutputWidth, aiqInputParams->sensorOutputHeight);
+    parseMeteringRegion(settings, ANDROID_CONTROL_AWB_REGIONS, &awbRegion);
+    memcpy(aiqInputParams->awbInputParams.awbRegion, awbRegion.meteringRectangle(),
+           sizeof(aiqInputParams->awbInputParams.awbRegion));
+    convertCoordinates(&awbRegion, aiqInputParams->sensorOutputWidth, aiqInputParams->sensorOutputHeight);
     if (awbRegion.isValid()) {
         awbCfg->window.x_start = awbRegion.left();
         awbCfg->window.y_start = awbRegion.top();
@@ -627,8 +651,10 @@ SettingsProcessor::fillAfInputParams(const CameraMetadata *settings,
      */
     //# METADATA_Control control.afRegions done
     CameraWindow afRegion;
-    parseMeteringRegion(settings, ANDROID_CONTROL_AF_REGIONS, &afRegion,
-                        aiqInputParams->sensorOutputWidth, aiqInputParams->sensorOutputHeight);
+    parseMeteringRegion(settings, ANDROID_CONTROL_AF_REGIONS, &afRegion);
+    memcpy(aiqInputParams->afInputParams.afRegion, afRegion.meteringRectangle(),
+           sizeof(aiqInputParams->afInputParams.afRegion));
+    convertCoordinates(&afRegion, aiqInputParams->sensorOutputWidth, aiqInputParams->sensorOutputHeight);
     if (afRegion.isValid()) {
         afCfg.focus_rect[0].left_hoff = afRegion.left();
         afCfg.focus_rect[0].top_voff = afRegion.top();

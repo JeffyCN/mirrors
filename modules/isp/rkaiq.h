@@ -79,18 +79,21 @@ typedef struct _AAAControls {
 
 typedef struct _AeInputParams {
     XCamAeParam                         aeParams;
+    int32_t                             aeRegion[5];
     AiqInputParams*                     aiqParams;
     /* AeInputParams()                     { CLEAR(*this); } */
 } AeInputParams;
 
 typedef struct _AwbInputParams {
     XCamAwbParam                        awbParams;
+    int32_t                             awbRegion[5];
     AiqInputParams*                     aiqParams;
     /* AwbInputParams()                    { CLEAR(*this); } */
 } AwbInputParams;
 
 typedef struct _AfInputParams {
-    XCamAfParam                        afParams;
+    XCamAfParam                         afParams;
+    int32_t                             afRegion[5];
     AiqInputParams*                     aiqParams;
     /* AfInputParams()                    { CLEAR(*this); } */
 } AfInputParams;
