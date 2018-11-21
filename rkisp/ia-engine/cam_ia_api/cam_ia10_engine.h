@@ -7,7 +7,7 @@
 #include "cam_ia10_engine_api.h"
 #include "cameric.h"
 #include <awb/awb.h>
-#include <awb/awbConvert.h>
+//#include <awb/awbConvert.h>
 #include <base/xcam_3a_description.h>
 
 class CamIA10Engine: public CamIA10EngineItf {

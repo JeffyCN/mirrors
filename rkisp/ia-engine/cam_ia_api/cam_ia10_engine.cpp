@@ -1,7 +1,7 @@
 #include <ebase/types.h>
 //#include <ebase/trace.h>
 #include <ebase/builtins.h>
-
+#include <ebase/utl_fixfloat.h>
 #include <calib_xml/calibdb.h>
 #include <base/log.h>
 
