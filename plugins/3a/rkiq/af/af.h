@@ -60,9 +60,11 @@
 * 6)remove bssa and rename af_ctrl. keyword: bssa.
 *v0.2.1
 * 1)add af_module.h,last version is lost.
+*v0.2.2
+* remove unnecessary lib dependancy
 */
 
-#define CONFIG_AF_LIB_VERSION "v0.2.1"
+#define CONFIG_AF_LIB_VERSION "v0.2.2"
 
 #ifdef __cplusplus
 extern "C"

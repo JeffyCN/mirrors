@@ -5,7 +5,7 @@
  * transcribed, or translated into any language or computer format, in any form
  * or by any means without written permission of:
  * Fuzhou Rockchip Electronics Co.Ltd .
- * 
+ *
  *
  *****************************************************************************/
 #ifndef __AEC_H__
@@ -24,7 +24,7 @@
  * For a detailed list of functions and implementation detail refer to:
  * - @ref module_name
  *
- * @defgroup AECM Auto white Balance Module
+ * @defgroup AECM Auto Exposure Control Module
  * @{
  *
  */
@@ -47,9 +47,13 @@
  ***************** AE LIB VERSION NOTE *****************
  * v0.0.1
  *  - platform independence, support rkisp v10 and v12
+ * v0.0.2
+ *  - support rk1608 HDR ae
+ *  - remove unnecessary lib dependancy
+ *  - do not expose the head file aec_ctrl.h
  */
 
-#define CONFIG_AE_LIB_VERSION "v0.0.1"
+#define CONFIG_AE_LIB_VERSION "v0.0.2"
 
 #ifdef __cplusplus
 extern "C"
@@ -57,7 +61,8 @@ extern "C"
 #endif
 
 #define AEC_AFPS_MASK (1 << 0)
-
+struct AecContext_s;
+typedef struct AecContext_s AecContext_t;
 /*****************************************************************************/
 /**
  * @brief   The number of mean and hist.
@@ -65,6 +70,11 @@ extern "C"
 /*****************************************************************************/
 #define AEC_AE_MEAN_MAX 81
 #define AEC_HIST_BIN_N_MAX 32
+#define AEC_HDR_AE_MEAN_MAX 225 //zlj modify for hdr
+#define AEC_HDR_HIST_BIN_N_MAX 256 //zlj modify for hdr
+/*zlj add*/
+#define LockAE_NO	(3)
+#define HDRAE_LOGHISTBIN_NUM 100
 
 typedef enum AecMeasuringMode_e {
   AEC_MEASURING_MODE_INVALID    = 0,    /**< invalid histogram measuring mode   */
@@ -152,10 +162,16 @@ typedef struct AecConfig_s {
   float                       DampOverVideo;              /**< damping coefficient for video mode */
   float                       DampUnderVideo;             /**< damping coefficient for video mode */
   Cam6x1FloatMatrix_t         EcmTimeDot;
+  Cam6x1FloatMatrix_t         EcmLTimeDot; //zlj add for Hdr
+  Cam6x1FloatMatrix_t         EcmSTimeDot;//zlj add for Hdr
   Cam6x1FloatMatrix_t         EcmGainDot;
+  Cam6x1FloatMatrix_t         EcmLGainDot; //zlj add for Hdr
+  Cam6x1FloatMatrix_t         EcmSGainDot;//zlj add for Hdr
   Cam6x1FloatMatrix_t         FpsFixTimeDot;
   uint8_t				      isFpsFix;
   uint8_t				      FpsSetEnable;
+  float                       MinFrameDuration;         /**< minmal frame duration time (for vts control) */
+  float                       MaxFrameDuration;         /**< maximal frame duration time (for vts control) */
   AecDampingMode_t            DampingMode;              /**< damping mode */
   AecSemMode_t                SemMode;                  /**< scene evaluation mode */
   AecEcmFlickerPeriod_t       EcmFlickerSelect;         /**< flicker period selection */
@@ -191,6 +207,18 @@ typedef struct AecConfig_s {
   uint8_t       Valid_GridWeights_Num;
   uint8_t       Valid_GridWeights_W; /* H has the same dimension as W */
   uint8_t       Valid_HistBins_Num;
+  //zlj add for HdrAec GridWeights
+  uint8_t       Valid_HdrGridWeights_Num;
+  uint8_t       Valid_HdrGridWeights_W; /* H has the same dimension as W */
+  uint8_t       Valid_HdrHistBins_Num;
+
+  //zlj add for LockAE
+  uint8_t		LockAE_enable;
+  Cam3x1FloatMatrix_t GainValue;
+  Cam3x1FloatMatrix_t TimeValue;
+  //zlj add for HdrCtrl
+  CamCalibAecHdrCtrl_t HdrCtrl;
+  bool          IsHdrAeMode;
 } AecConfig_t;
 
 /*****************************************************************************/
@@ -200,9 +228,43 @@ typedef struct AecConfig_s {
  * @brief   AEC Module Hardware statistics structure
  *
  *****************************************************************************/
+/*zlj add*/
+typedef struct Hdrae_DRIndex_res
+{
+	uint32_t NormalIndex;
+	uint32_t LongIndex;
+}Hdrae_DRIndex_res_t;
+typedef struct Hdrae_OE_meas_res
+{
+	uint32_t OE_Pixel;
+	uint32_t SumHistPixel;
+	uint32_t SframeMaxLuma;
+}Hdrae_OE_meas_res_t;
+typedef struct Hdrae_stat_s
+{
+    unsigned int hdr_hist_bins[AEC_HDR_HIST_BIN_N_MAX];
+    unsigned short hdr_exp_mean[AEC_HDR_AE_MEAN_MAX];
+}Hdrae_stat_t;
+
+typedef struct Hdr_sensor_metadata_s {
+	unsigned int exp_time_l;
+	unsigned int exp_time;
+	unsigned int exp_time_s;
+	unsigned int gain_l;
+	unsigned int gain;
+	unsigned int gain_s;
+}Hdr_sensor_metadata_t;
+
 typedef struct AecStat_s {
   unsigned char  exp_mean[AEC_AE_MEAN_MAX];
   unsigned int   hist_bins[AEC_HIST_BIN_N_MAX];
+  /*zlj add*/
+  bool   is_hdr_stats;
+  struct Hdrae_stat_s oneframe[3];
+  struct Hdrae_DRIndex_res fDRIndex;
+  struct Hdrae_OE_meas_res fOEMeasRes;
+  struct Hdr_sensor_metadata_s sensor;
+  unsigned int lgmean;
 } AecStat_t;
 
 
@@ -239,6 +301,16 @@ typedef struct AecResult_s {
   bool auto_adjust_fps;
   double aperture_fn;
   bool converged;
+
+  /*zlj add for hdr result*/
+  bool IsHdrExp;
+  float DCG_Ratio;
+  float NormalExpRatio;
+  float LongExpRatio;
+  int RegHdrGains[3];
+  int RegHdrTime[3];
+  float HdrGains[3];
+  float HdrIntTimes[3];
 } AecResult_t;
 
 // aec ctrl
@@ -259,6 +331,7 @@ typedef enum AecState_e {
  *
  *****************************************************************************/
 typedef uint32_t CamerIcHistBins_t[AEC_HIST_BIN_N_MAX];
+typedef uint32_t CamerIcHdrHistBins_t[AEC_HDR_HIST_BIN_N_MAX];
 
 /*****************************************************************************/
 /**
@@ -266,153 +339,7 @@ typedef uint32_t CamerIcHistBins_t[AEC_HIST_BIN_N_MAX];
  *
  *****************************************************************************/
 typedef uint8_t CamerIcMeanLuma_t[AEC_AE_MEAN_MAX];
-
-
-typedef struct AecContext_s {
-  AecState_t          state;
-
-  float               StartExposure;      /**< start exposure value of the ae control system */
-  float               Exposure;           /**< current exposure value of the ae control system */
-  float               MinExposure;        /**< minmal exposure value (sensor specific) */
-  float               MaxExposure;        /**< maximal exposure value (sensor specific) */
-
-  float               MinGain;            /**< minmal exposure value (sensor specific) */
-  float               MaxGain;            /**< maximal exposure value (sensor specific) */
-
-  float               MinIntegrationTime; /**< minmal exposure value (sensor specific) */
-  float               MaxIntegrationTime; /**< maximal exposure value (sensor specific) */
-
-  /* scene evaluation module */
-  AecSemMode_t        SemMode;            /**< scene evaluation mode */
-
-  float               SetPoint;           /**< set point to hit by the ae control system */
-  float               SemSetPoint;        /**< set point calculated by scene evaluation module */
-
-  AecDampingMode_t    DampingMode;        /**< damping mode */
-  float               DampOverStill;      /**< Damping coefficient for still image mode */
-  float               DampUnderStill;     /**< Damping coefficient for still image mode */
-  float               DampOverVideo;      /**< Damping coefficient for video mode */
-  float               DampUnderVideo;     /**< Damping coefficient for video mode */
-
-  float               MeanLuma;           /**< mean luminace calculated */
-  float               MeanLumaObject;
-  float               *MeanLumas;
-  uint32_t         MeanLumaIndex;
-  uint32_t         AecTrigFrames;
-
-  float               d;
-  float               z;
-  float               m0;
-
-  float               EcmOldAlpha;        /**< for ECM lock range >*/
-  float               EcmOldGain;         /**< for ECM lock range >*/
-  float               EcmOldTint;         /**< for ECM lock range >*/
-
-  union SemCtx_u {
-    struct sem_s {
-      float MeanLumaRegion0;
-      float MeanLumaRegion1;
-      float MeanLumaRegion2;
-      float MeanLumaRegion3;
-      float MeanLumaRegion4;
-    } sem;
-
-    struct asem_s {
-      float               OtsuThreshold;  /**< threshold calculated with otsu */
-
-      CamerIcMeanLuma_t   Binary0;        /**< thresholded luma matrix */
-      CamerIcMeanLuma_t   Cc0;            /**< matrix of labeled 0-conponents */
-      CamerIcMeanLuma_t   Ll0;            /**< matrix of labeled 1-conponents */
-      uint32_t            NumCc0;         /**< number of 0-conponents */
-      uint32_t            LblBiggestCc0;  /**< label of biggest 0-connected-component */
-      float               MaxCenterX0;
-      float               MaxCenterY0;
-
-      CamerIcMeanLuma_t   Binary1;        /**< thresholded luma matrix */
-      CamerIcMeanLuma_t   Cc1;            /**< matrix of labeled 1-conponents */
-      CamerIcMeanLuma_t   Ll1;            /**< matrix of labeled 1-conponents */
-      uint32_t            NumCc1;         /**< number of 1-conponents */
-      uint32_t            LblBiggestCc1;  /**< label of biggest 1-connected-component */
-      float               MaxCenterX1;
-      float               MaxCenterY1;
-
-      CamerIcMeanLuma_t   ObjectRegion;   /**< resulting matrix  (0 = Object, 1 = Background ) */
-    } asem;
-
-  } SemCtx;
-
-  /* control loop module */
-#define CLM_HIST_NUM_BINS   ( 3 * AEC_HIST_BIN_N_MAX )
-
-  float               ClmTolerance;
-  float               LumaDeviation;
-  uint32_t            ClmHistogram[CLM_HIST_NUM_BINS];
-  uint32_t            ClmHistogramSize;
-  float               ClmHistogramX[CLM_HIST_NUM_BINS];
-  uint32_t            SumHistogram;
-  float               MeanHistogram;
-
-  /* debug output */
-  CamerIcHistBins_t   Histogram;
-  CamerIcMeanLuma_t   Luma;
-  unsigned char        GridWeights[AEC_AE_MEAN_MAX];
-  CamerIcIspHistMode_t HistMode;
-  AecMeasuringMode_t   meas_mode;
-
-  /* ECM module (incl. AFPS) */
-#define ECM_DOT_NO         (6)
-  float               EcmTimeDot[ECM_DOT_NO];
-  float               EcmGainDot[ECM_DOT_NO];
-  float               EcmVtsDot[ECM_DOT_NO];
-  AecEcmFlickerPeriod_t EcmFlickerSelect;
-  float               EcmTflicker;        /**< flicker period */
-  float         EcmLockRange;
-
-  float               Gain;
-  float               IntegrationTime;
-  uint8_t             StepSize;
-  float               GainFactor;
-  float               GainBias;
-  uint32_t            curFrameId;
-  float               LinePeriodsPerField;
-  float               PixelClockFreqMHZ;
-  float               PixelPeriodsPerLine;
-  int         regIntegrationTime;
-  int         regGain;
-
-
-  /* gain range */
-  uint32_t					GainRange_size;
-  float               *pGainRange;
-  float               TimeFactor[4];
-
-  float         AOE_Enable;
-  float         AOE_Max_point;
-  float         AOE_Min_point;
-  float         AOE_Y_Max_th;
-  float         AOE_Y_Min_th;
-  float         AOE_Step_Inc;
-  float         AOE_Step_Dec;
-  /* curent state */
-  bool_t          night;
-  /* last state */
-  bool_t                  night_last;
-  uint8_t                 DON_Enable;
-  uint32_t                ae_daynight_holdon_times;
-  Aec_daynight_th_t       day2nitht_th;
-  Aec_daynight_th_t       night2day_th;
-
-  unsigned int actives;
-  bool auto_adjust_fps;
-
-  AecInterAdjust_t IntervalAdjStgy;
-  bool converged;
-  uint8_t       Valid_GridWeights_Num;
-  uint8_t       Valid_GridWeights_W; /* H has the same dimension as W */
-  uint8_t       Valid_HistBins_Num;
-} AecContext_t;
-
-//end of aec ctrl
+typedef uint16_t CamerIcHdrMeanLuma_t[AEC_HDR_AE_MEAN_MAX];
 
 /*****************************************************************************/
 /**

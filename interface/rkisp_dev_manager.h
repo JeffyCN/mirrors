@@ -60,11 +60,12 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
  * v1.2.0
  *  - support both Linux and Android 7.x/8.x/9.x
  *  - support auto/manual AE/AWB/AF
- * v1.2.1
+ * v1.3.0
  *  - support rk1608 HDR ae
+ *  - remove unnecessary lib dependance 
  */
 
-#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.2.1"
+#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.3.0"
 
 using namespace XCam;
 class SettingsProcessor;

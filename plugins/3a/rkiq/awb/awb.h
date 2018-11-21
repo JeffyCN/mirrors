@@ -40,9 +40,11 @@
  ***************** AWB LIB VERSION NOTE *****************
  * v0.0.1
  *  - platform independence, support rkisp v10 and v12
+ * v0.0.2
+ *  - remove unnecessary lib dependancy
  */
 
-#define CONFIG_AWB_LIB_VERSION "v0.0.1"
+#define CONFIG_AWB_LIB_VERSION "v0.0.2"
 
 #ifdef __cplusplus
 extern "C"
