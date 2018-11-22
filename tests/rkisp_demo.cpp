@@ -148,6 +148,44 @@ static void stop_capturing(void)
             errno_exit("VIDIOC_STREAMOFF");
 }
 
+#define MAX_MEDIA_INDEX 64
+static struct media_device* __rkisp_get_media_dev_by_vnode(const char* vnode) {
+    char sys_path[64];
+    struct media_device *device = NULL;
+    uint32_t nents, j, i = 0;
+    FILE *fp;
+    int ret;
+
+    while (i < MAX_MEDIA_INDEX) {
+        snprintf (sys_path, 64, "/dev/media%d", i++);
+        fp = fopen (sys_path, "r");
+        if (!fp)
+          continue;
+        fclose (fp);
+
+        device = media_device_new (sys_path);
+
+        /* Enumerate entities, pads and links. */
+        media_device_enumerate (device);
+
+        nents = media_get_entities_count (device);
+        for (j = 0; j < nents; ++j) {
+          struct media_entity *entity = media_get_entity (device, j);
+          const char *devname = media_entity_get_devname (entity);
+          if (NULL != devname) {
+            if (!strcmp (devname, vnode)) {
+                  goto out;
+            }
+          }
+        }
+        media_device_unref (device);
+    }
+
+out:
+    return device;
+}
+
+
 static void start_capturing(void)
 {
         unsigned int i;
@@ -162,12 +200,10 @@ static void start_capturing(void)
             int nents;
 
             rkisp.controller =
-                media_device_new (dev_name);
+                __rkisp_get_media_dev_by_vnode (dev_name);
             if (!rkisp.controller)
                 errno_exit(
                     "Can't find controller, maybe use a wrong video-node or wrong permission to media node");
-            /* Enumerate entities, pads and links. */
-            media_device_enumerate (rkisp.controller);
             rkisp.isp_subdev =
               media_get_entity_by_name (rkisp.controller, "rkisp1-isp-subdev",
                                         strlen("rkisp1-isp-subdev"));
@@ -185,7 +221,6 @@ static void start_capturing(void)
             params.isp_vd_params_path = media_entity_get_devname (rkisp.isp_params_dev);
             params.isp_vd_stats_path = media_entity_get_devname (rkisp.isp_stats_dev);
             params.sensor_sd_node_path = media_entity_get_devname (rkisp.sensor_subdev);
-            media_device_unref (rkisp.controller);
             /*
             // isp subdev node path
             params.isp_sd_node_path="/dev/v4l-subdev0";
@@ -197,6 +232,7 @@ static void start_capturing(void)
             params.sensor_sd_node_path="/dev/v4l-subdev2";
             */
 			_RKIspFunc.prepare_func(_rkisp_engine, &params);
+            media_device_unref (rkisp.controller);
 		}
 
     	if (_RKIspFunc.start_func != NULL) {
