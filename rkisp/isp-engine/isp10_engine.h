@@ -44,6 +44,7 @@ class Isp10Engine: public IspEngine {
 
   virtual bool init(const char* tuningFile,
                     const char* ispDev,
+                    int isp_ver,
                     int devFd);
   virtual bool deInit();
   virtual void transDrvMetaDataToHal(const void* drvMeta, struct HAL_Buffer_MetaData* halMeta);

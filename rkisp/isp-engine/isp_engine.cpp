@@ -19,6 +19,7 @@ IspEngine::IspEngine():
     mStartCnt = 0;
     mStreaming = false;
     mIspFd = -1;
+    mIspVer = 0;
     memset(&mCamIA_DyCfg, 0x00, sizeof(struct CamIA10_DyCfg));
     osMutexInit(&mApiLock);
 }
@@ -30,6 +31,7 @@ IspEngine::~IspEngine()
 
 bool IspEngine::init(const char* tuningFile,
                      const char* ispDev,
+                     int isp_ver,
                      int devFd)
 {
     return true;

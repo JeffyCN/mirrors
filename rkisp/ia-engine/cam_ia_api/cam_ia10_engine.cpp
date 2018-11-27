@@ -24,7 +24,8 @@ CamIA10Engine::CamIA10Engine():
     afParams(NULL),
     mSensorWRatio(1.0f),
     mSensorHRatio(1.0f),
-    mSensorEntityName(NULL)
+    mSensorEntityName(NULL),
+    mIspVer(0)
 {
     init();
     /*
@@ -44,7 +45,7 @@ CamIA10Engine::~CamIA10Engine() {
 RESULT CamIA10Engine::restart() {
     deinit();
     init();
-    return initStatic(g_aiqb_data_file, mSensorEntityName);
+    return initStatic(g_aiqb_data_file, mSensorEntityName, mIspVer);
 }
 
 RESULT CamIA10Engine::init() {
@@ -136,7 +137,8 @@ RESULT CamIA10Engine::deinit() {
 RESULT CamIA10Engine::initStatic
 (
  char* aiqb_data_file,
- const char* sensor_entity_name
+ const char* sensor_entity_name,
+ int isp_ver
  ) {
     RESULT result = RET_FAILURE;
     if (!hCamCalibDb) {
@@ -151,6 +153,7 @@ RESULT CamIA10Engine::initStatic
 
     strcpy(g_aiqb_data_file, aiqb_data_file);
     mSensorEntityName = sensor_entity_name;
+    mIspVer = isp_ver;
 
     result = initAEC();
     if (result != RET_SUCCESS)

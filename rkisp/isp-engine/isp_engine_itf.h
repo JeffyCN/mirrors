@@ -52,6 +52,7 @@ class IspEngineItf {
   virtual ~IspEngineItf() {};
   virtual bool init(const char* tuningFile,
                     const char* ispDev,
+                    int isp_ver,
                     int devFd) = 0;
   virtual bool deInit() = 0;
   virtual bool configure(const Configuration& config) = 0;

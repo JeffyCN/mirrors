@@ -142,13 +142,15 @@ Isp10Engine::~Isp10Engine() {
 }
 
 bool Isp10Engine::init(const char* tuningFile,
-                          const char* ispDev,
-                          int devFd) {
+                       const char* ispDev,
+                       int isp_ver,
+                       int devFd) {
   int i;
   bool ret = false;
   struct CamIA10_Results ia_results;
   struct CamIsp10ConfigSet isp_cfg;
   mDevFd = devFd;
+  mIspVer = isp_ver;
 
   osMutexLock(&mApiLock);
   if (mInitialized == 0) {
@@ -159,7 +161,7 @@ bool Isp10Engine::init(const char* tuningFile,
     }
 
     LOGD("%s:tuningFile %s", __func__, tuningFile);
-    if (mCamIAEngine->initStatic((char*)tuningFile, ispDev) != RET_SUCCESS) {
+    if (mCamIAEngine->initStatic((char*)tuningFile, ispDev, isp_ver) != RET_SUCCESS) {
       ALOGE("%s: initstatic failed", __func__);
       osMutexUnlock(&mApiLock);
       deInit();

@@ -46,6 +46,30 @@ int rkisp_cl_init(void** cl_ctx, const char* tuning_file_path,
     return 0;
 }
 
+static int __rkisp_get_isp_ver(V4l2Device* vdev, int* isp_ver) {
+    struct v4l2_capability cap;
+
+    if (vdev->query_cap(cap) == XCAM_RETURN_NO_ERROR) {
+        char *p;
+        p = strrchr((char*)cap.driver, '_');
+        if (p == NULL)
+            goto out;
+        // version info:
+        // rk3399,rk3288: 0
+        // rk3326:        2
+        // rk1808:        3
+        if (*(p + 1) != 'v')
+            goto out;
+        *isp_ver = atoi(p + 2);
+
+        return 0;
+    }
+
+out:
+    LOGE("get isp version failed !");
+    return -1;
+}
+
 static int __rkisp_get_sensor_name(const char* vnode, char* sensor_name) {
     char sys_path[64];
     struct media_device *device = NULL;
@@ -167,6 +191,11 @@ int rkisp_cl_prepare(void* cl_ctx,
         return -1;
     }
 
+    int isp_ver = 0;
+    if (__rkisp_get_isp_ver(stats_dev.ptr(), &isp_ver))
+        LOGW("get isp version failed, please check ISP driver !");
+    LOGD("isp version is %d !", isp_ver);
+    device_manager->set_isp_ver(isp_ver);
     param_dev = new V4l2Device (prepare_params->isp_vd_params_path);
     param_dev->set_sensor_id (0);
     param_dev->set_capture_mode (V4L2_CAPTURE_MODE_VIDEO);

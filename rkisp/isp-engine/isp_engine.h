@@ -18,6 +18,7 @@ public:
     virtual ~IspEngine();
     virtual bool init(const char* tuningFile,
                       const char* ispDev,
+                      int isp_ver,
                       int devFd);
     virtual bool deInit();
     virtual bool configure(const Configuration& config);
@@ -66,6 +67,7 @@ protected:
     bool mStreaming;
     unsigned short mFramesToDrop;
     int mInitialized;
+    int mIspVer;
     shared_ptr<CamIA10EngineItf> mCamIAEngine;
     //manual isp related,
     //notice that 3A algorithm result will be covered by manual isp settings

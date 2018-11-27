@@ -83,6 +83,8 @@ public:
     bool set_poll_thread (SmartPtr<PollThread> thread);
     bool set_iq_path(const char* iq_file);
     bool set_has_3a(bool has_3a);
+    void set_isp_ver(int isp_ver) { _isp_ver = isp_ver; }
+    int  get_isp_ver() { return _isp_ver; }
     const char* get_iq_path() {
         return _iq_file;
     }
@@ -160,6 +162,7 @@ protected:
 
 	char _iq_file[512];
     char _sensor_name[32];
+    int  _isp_ver;
 };
 
 };

@@ -19,7 +19,7 @@ class CamIA10Engine: public CamIA10EngineItf {
   virtual RESULT deinit();
   virtual RESULT restart();
 
-  virtual RESULT initStatic(char* aiqb_data_file, const char* sensor_entity_name);
+  virtual RESULT initStatic(char* aiqb_data_file, const char* sensor_entity_name, int isp_ver);
   virtual RESULT initDynamic(struct CamIA10_DyCfg* cfg);
   virtual RESULT setStatistics(struct CamIA10_Stats* stats);
 
@@ -151,6 +151,7 @@ class CamIA10Engine: public CamIA10EngineItf {
   RESULT initAF();
   RESULT initAWDR();
   const char* mSensorEntityName;
+  int mIspVer;
 };
 
 #endif
