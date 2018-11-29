@@ -1,7 +1,7 @@
 mklink /J Image ..\..\..\..\rockdev
 Afptool -pack ./ Image\update.img
 
-RKImageMaker.exe -RK3328 Image\MiniLoaderAll.bin  Image\update.img update.img -os_type:androidos
+RKImageMaker.exe -RK322H Image\MiniLoaderAll.bin  Image\update.img update.img -os_type:androidos
 
 rem update.img is new format, Image\update.img is old format, so delete older format
 del  Image\update.img
