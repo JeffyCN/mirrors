@@ -57,10 +57,15 @@ RESULT cam_ia10_isp_goc_config
     enum HAL_ISP_ACTIVE_MODE enable_mode,
     struct HAL_ISP_goc_cfg_s* goc_cfg,
     CamerIcIspGocConfig_t* goc_result,
-    bool_t WDR_enable_mohde
+    bool_t WDR_enable_mohde,
+    int isp_ver
 ) ;
 
-
+void cam_ia10_isp_goc_map_34_to_17
+(
+     uint16_t* goc_in,
+     uint16_t* goc_out
+);
 
 RESULT cam_ia10_isp_cproc_config
 (
@@ -85,14 +90,23 @@ RESULT cam_ia10_isp_hst_config
     struct HAL_ISP_hst_cfg_s* hst_cfg,
     uint16_t drv_width,
     uint16_t drv_height,
+    int isp_ver,
     CamerIcIspHistConfig_t* hst_result
 );
 
+void cam_ia10_isp_map_hstw_9x9_to_5x5
+(
+    uint8_t* histw_9x9_in,
+    uint8_t* histw_5x5_out
+);
 
 RESULT cam_ia10_isp_lsc_config
 (
     enum HAL_ISP_ACTIVE_MODE enable_mode,
     struct HAL_ISP_lsc_cfg_s* lsc_cfg,
+    int width,
+    int height,
+    int isp_ver,
     CamerIcLscConfig_t* lsc_result
 );
 
@@ -140,6 +154,7 @@ RESULT cam_ia10_isp_hst_update_stepSize
     const CamerIcHistWeights_t  weights,
     const uint16_t              width,
     const uint16_t              height,
+    int                         isp_ver,
     uint8_t*                     StepSize
 );
 

@@ -603,7 +603,7 @@ RESULT cam_ia10_isp_flt_config
   return result;
 
 }
-#ifdef RK_ISP10
+#if 0
 static uint16_t cam_ia_goc_def_gamma_y[CAMERIC_ISP_GAMMA_CURVE_SIZE] = {
   0x000, 0x049, 0x089, 0x0B7,
   0x0DF, 0x11F, 0x154, 0x183,
@@ -612,7 +612,9 @@ static uint16_t cam_ia_goc_def_gamma_y[CAMERIC_ISP_GAMMA_CURVE_SIZE] = {
   0x3FF,
 };
 //[0 73 137 183 223 287 340 387 429 502 565 623 723 810 888 959 1023]
-#else
+#endif
+// only define the 34 segments goc, if other number of segments is
+// required, we could map from this.
 static uint16_t cam_ia_goc_def_gamma_y[CAMERIC_ISP_GAMMA_CURVE_SIZE] = {
   0x000, 0x092, 0x124, 0x1a4,
   0x224, 0x280, 0x2dc, 0x32c,
@@ -624,7 +626,18 @@ static uint16_t cam_ia_goc_def_gamma_y[CAMERIC_ISP_GAMMA_CURVE_SIZE] = {
   0xde0, 0xe6e, 0xefc, 0xf7c,
   0xfff, 0x000
 };
-#endif
+
+void cam_ia10_isp_goc_map_34_to_17
+(
+     uint16_t* goc_in,
+     uint16_t* goc_out
+) {
+    int i;
+
+    for (i = 0; i < 17; i++) {
+        goc_out[i] = goc_in[i * 2] / 4;
+    }
+}
 
 RESULT cam_ia10_isp_goc_config
 (
@@ -632,7 +645,8 @@ RESULT cam_ia10_isp_goc_config
     enum HAL_ISP_ACTIVE_MODE enable_mode,
     struct HAL_ISP_goc_cfg_s* goc_cfg,
     CamerIcIspGocConfig_t* goc_result,
-    bool_t WDR_enable_mode
+    bool_t WDR_enable_mode,
+    int isp_ver
 ) {
   RESULT result = RET_SUCCESS;
   ISP_CHECK_NULL(goc_result);
@@ -642,19 +656,33 @@ RESULT cam_ia10_isp_goc_config
     ISP_CHECK_NULL(goc_cfg);
     goc_result->enabled = BOOL_FALSE;
     goc_result->mode = (CamerIcIspGammaSegmentationMode_t)(goc_cfg->mode);
-    for (ind = 0; (ind < goc_cfg->used_cnt) && \
-         (ind < CAMERIC_ISP_GAMMA_CURVE_SIZE);
-         ind++)
-      goc_result->gamma_y.GammaY[ind] = goc_cfg->gamma_y[ind];
+    if (isp_ver > 0) {
+        if (goc_cfg->used_cnt != 34)
+            LOGE("goc segment count %d is error for isp ver %d",
+                 goc_cfg->used_cnt, isp_ver);
+        for (ind = 0; (ind < goc_cfg->used_cnt); ind++)
+          goc_result->gamma_y.GammaY[ind] = goc_cfg->gamma_y[ind];
+
+    } else {
+        cam_ia10_isp_goc_map_34_to_17(goc_cfg->gamma_y,
+                                      goc_result->gamma_y.GammaY);
+    }
   } else if (enable_mode == HAL_ISP_ACTIVE_SETTING) {
     int ind = 0;
     ISP_CHECK_NULL(goc_cfg);
     goc_result->enabled = BOOL_TRUE;
     goc_result->mode = (CamerIcIspGammaSegmentationMode_t)(goc_cfg->mode);
-    for (ind = 0; (ind < goc_cfg->used_cnt) && \
-         (ind < CAMERIC_ISP_GAMMA_CURVE_SIZE);
-         ind++)
-      goc_result->gamma_y.GammaY[ind] = goc_cfg->gamma_y[ind];
+    if (isp_ver > 0) {
+        if (goc_cfg->used_cnt != 34)
+            LOGE("goc segment count %d is error for isp ver %d",
+                 goc_cfg->used_cnt, isp_ver);
+        for (ind = 0; (ind < goc_cfg->used_cnt); ind++)
+          goc_result->gamma_y.GammaY[ind] = goc_cfg->gamma_y[ind];
+
+    } else {
+        cam_ia10_isp_goc_map_34_to_17(goc_cfg->gamma_y,
+                                      goc_result->gamma_y.GammaY);
+    }
   } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {
     //default gamma 2.2
     //goc_result->enabled = BOOL_TRUE;
@@ -694,10 +722,6 @@ RESULT cam_ia10_isp_goc_config
       for (int index = 0; index < (CAMERIC_ISP_GAMMA_CURVE_SIZE); index++) {
         goc_def_cfg.gamma_y[index] = pGocProfile->GammaY[index];
       }
-    } else if (pGocProfile != NULL && pGocProfile->WdrOn_GammaY[CAMERIC_ISP_GAMMA_CURVE_SIZE / 2 - 1] > 0) {
-      for (int index = 0; index < (CAMERIC_ISP_GAMMA_CURVE_SIZE); index++) {
-        goc_def_cfg.gamma_y[index] = pGocProfile->WdrOn_GammaY[index];
-      }
     } else {
       for (int index = 0; index < (CAMERIC_ISP_GAMMA_CURVE_SIZE); index++) {
         goc_def_cfg.gamma_y[index] = cam_ia_goc_def_gamma_y[index];
@@ -705,7 +729,8 @@ RESULT cam_ia10_isp_goc_config
     }
 
     result = cam_ia10_isp_goc_config(hCamCalibDb, goc_enable_mode,
-                                     &goc_def_cfg, goc_result, WDR_enable_mode);
+                                     &goc_def_cfg, goc_result,
+                                     WDR_enable_mode, isp_ver);
   } else {
     ALOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
@@ -894,28 +919,35 @@ RESULT cam_ia10_isp_hst_update_stepSize
     const CamerIcHistWeights_t  weights,
     const uint16_t              width,
     const uint16_t              height,
+    const int                   isp_ver,
     uint8_t*                     StepSize
 ) {
   uint32_t i;
   uint32_t square;
 
   uint32_t MaxNumOfPixel = 0U;
-
+  uint32_t hist_grid_items, hist_grid_w;
   //TRACE( CAMERIC_ISP_HIST_DRV_INFO, "%s: (enter)\n", __FUNCTION__ );
-  for (i = 0; i < CAMERIC_ISP_HIST_GRID_ITEMS; i++) {
+  if (isp_ver == 0) {
+      hist_grid_items = 25;
+      hist_grid_w = 5;
+  } else {
+      hist_grid_items = 81;
+      hist_grid_w = 9;
+  }
+  for (i = 0; i < hist_grid_items; i++) {
     MaxNumOfPixel += weights[i];
   }
   MaxNumOfPixel = MaxNumOfPixel * \
-                  (((uint32_t)height / CAMERIC_ISP_HIST_GRID_W) * ((uint32_t)width)
-                   / CAMERIC_ISP_HIST_GRID_W);
+                  (((uint32_t)height / hist_grid_w) * ((uint32_t)width)
+                   / hist_grid_w);
 
   switch (mode) {
     case CAMERIC_ISP_HIST_MODE_RGB_COMBINED: {
-      #ifdef RKISP_v12
-      square = ((3 * MaxNumOfPixel) / 0x003FFFFF + 1);
-      #else
-      square = ((3 * MaxNumOfPixel) / 0x000FFFFF + 1);
-      #endif
+      if (isp_ver > 0)
+          square = ((3 * MaxNumOfPixel) / 0x003FFFFF + 1);
+      else
+          square = ((3 * MaxNumOfPixel) / 0x000FFFFF + 1);
       break;
     }
 
@@ -923,11 +955,10 @@ RESULT cam_ia10_isp_hst_update_stepSize
     case CAMERIC_ISP_HIST_MODE_G:
     case CAMERIC_ISP_HIST_MODE_B:
     case CAMERIC_ISP_HIST_MODE_Y: {
-      #ifdef RKISP_v12
-      square = (MaxNumOfPixel / 0x003FFFFF + 1);
-      #else
-      square = (MaxNumOfPixel / 0x000FFFFF + 1);
-      #endif
+      if (isp_ver > 0)
+          square = (MaxNumOfPixel / 0x003FFFFF + 1);
+      else
+          square = (MaxNumOfPixel / 0x000FFFFF + 1);
       break;
     }
 
@@ -950,12 +981,66 @@ RESULT cam_ia10_isp_hst_update_stepSize
   return (RET_SUCCESS);
 }
 
+void cam_ia10_isp_map_hstw_9x9_to_5x5
+(
+    uint8_t* histw_9x9_in,
+    uint8_t* histw_5x5_out
+) {
+    // 9x9->5x5 can be split to two step:
+    // 1. 9x9 -> 9x5
+    //    do the horizon map firstly, and each element in first line can be
+    //    calculated like this:
+    //      w00_5x5 = w00 * 1.0 + w01 * 0.8 + w02 * 0.0
+    //      w01_5x5 = w01 * 0.2 + w02 * 1.0 + w03 * 0.6
+    //      w02_5x5 = w03 * 0.4 + w04 * 1.0 + w05 * 0.4
+    //      w03_5x5 = w05 * 0.6 + w06 * 1.0 + w07 * 0.2
+    //      w04_5x5 = w07 * 0.8 + w08 * 1.0
+    //    so does other horizon lines.
+    // 2. 9x5 -> 5x5
+    //    do the vertical map, map fomular is the same as above
+    int i, j;
+    // isp v12 weights limit is 0x3f
+    float max_val_9x9 = 1.8*0x3f*2;
+    // isp v10 weights limit is 0x1f
+    float max_val_5x5 = 0x1f;
+    float weights[5][3] = {
+        {1.0 , 0.8 , 0.0},
+        {0.2 , 1.0 , 0.6},
+        {0.4 , 1.0 , 0.4},
+        {0.6 , 1.0 , 0.2},
+        {0.8 , 1.0 , 0.0}
+    };
+    float histw_9x5[45];
+    // 9x9 -> 9x5
+    for (j = 0; j < 9; j++) {
+        for (i = 0; i < 5; i++) {
+           int base_h = i*1.8;
+           histw_9x5[5*j+i] =
+               histw_9x9_in[9*j+base_h]   * weights[i][0] +
+               histw_9x9_in[9*j+base_h+1] * weights[i][1] +
+               ((i == 4) ? 0 : histw_9x9_in[9*j+base_h+2] * weights[i][2]);
+        }
+    }
+    // 9x5 -> 5x5
+    for (j = 0; j < 5; j++) {
+        for (i = 0; i < 5; i++) {
+           int base_v = j*1.8;
+           histw_5x5_out[5*j+i] =
+               (histw_9x5[base_v*5+i]     * weights[j][0] +
+               histw_9x5[(base_v+1)*5+i] * weights[j][1] +
+               ((j==4) ? 0 : histw_9x5[(base_v+2)*5+i] * weights[j][2])) *
+               max_val_5x5 / max_val_9x9;
+        }
+    }
+}
+
 RESULT cam_ia10_isp_hst_config
 (
     enum HAL_ISP_ACTIVE_MODE enable_mode,
     struct HAL_ISP_hst_cfg_s* hst_cfg,
     uint16_t drv_width,
     uint16_t drv_height,
+    int      isp_ver,
     CamerIcIspHistConfig_t* hst_result
 ) {
   RESULT result = RET_SUCCESS;
@@ -973,12 +1058,16 @@ RESULT cam_ia10_isp_hst_config
     /* notice: driver will translate to grid (means divided 5)*/
     hst_result->Window.width = hst_cfg->win.right_width;
     hst_result->Window.height = hst_cfg->win.bottom_height;
-    for (; ind < CAMERIC_ISP_HIST_GRID_ITEMS; ind++)
-      hst_result->Weights[ind] = hst_cfg->weight[ind];
+    if (isp_ver > 0)
+        cam_ia10_isp_map_hstw_9x9_to_5x5(hst_cfg->weight, hst_result->Weights);
+    else
+        for (; ind < CAMERIC_ISP_HIST_GRID_ITEMS; ind++)
+          hst_result->Weights[ind] = hst_cfg->weight[ind];
     cam_ia10_isp_hst_update_stepSize(hst_result->mode,
                                      hst_result->Weights,
                                      hst_cfg->win.right_width,
                                      hst_cfg->win.bottom_height,
+                                     isp_ver,
                                      &step_size);
     hst_result->StepSize = step_size;
   } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {
@@ -1001,6 +1090,9 @@ RESULT cam_ia10_isp_lsc_config
 (
     enum HAL_ISP_ACTIVE_MODE enable_mode,
     struct HAL_ISP_lsc_cfg_s* lsc_cfg,
+    int width,
+    int height,
+    int isp_ver,
     CamerIcLscConfig_t* lsc_result
 ) {
   RESULT result = RET_SUCCESS;

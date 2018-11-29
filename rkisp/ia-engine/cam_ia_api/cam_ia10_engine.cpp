@@ -421,6 +421,7 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
                                          aecCfg.GridWeights.uCoeff,
                                          set->win.right_width,
                                          set->win.bottom_height,
+                                         mIspVer,
                                          &(aecCfg.StepSize));
 
         //LOGD("aec set win:%dx%d",
@@ -1504,7 +1505,23 @@ RESULT CamIA10Engine::initAEC() {
     aecCfg.FpsSetEnable = true;
     aecCfg.isFpsFix = false;
     memcpy(aecCfg.TimeFactor, pAecGlobal->TimeFactor, sizeof(pAecGlobal->TimeFactor));
-    memcpy(aecCfg.GridWeights.uCoeff, pAecGlobal->GridWeights.pWeight, pAecGlobal->GridWeights.ArraySize);
+    char* pweight = (char*)pAecGlobal->GridWeights.pWeight;
+    LOGD("weights before transform...");
+    for ( int i = 0; i < 81; i+=9 )
+        LOGD("%02d -> %02d: %02d, %02d, %02d, %02d, %02d, %02d, %02d, %02d", i, i+8,
+             pweight[i], pweight[i+1],pweight[i+2],pweight[i+3],pweight[i+4],
+             pweight[i+5],pweight[i+6],pweight[i+7],pweight[i+8]);
+    if (mIspVer > 0)
+        memcpy(aecCfg.GridWeights.uCoeff, pAecGlobal->GridWeights.pWeight, pAecGlobal->GridWeights.ArraySize);
+    else {
+        cam_ia10_isp_map_hstw_9x9_to_5x5(pAecGlobal->GridWeights.pWeight, aecCfg.GridWeights.uCoeff);
+        pweight = (char*)aecCfg.GridWeights.uCoeff;
+        LOGD("weights after transform...");
+        for ( int i = 0; i < 25; i+=5 )
+            LOGD("%02d -> %02d: %02d, %02d, %02d, %02d, %02d", i, i+4,
+                 pweight[i], pweight[i+1],pweight[i+2],pweight[i+3],pweight[i+4]);
+    }
+
     memcpy(aecCfg.EcmTimeDot.fCoeff, pAecGlobal->EcmTimeDot.fCoeff, sizeof(pAecGlobal->EcmTimeDot.fCoeff));
     memcpy(aecCfg.EcmGainDot.fCoeff, pAecGlobal->EcmGainDot.fCoeff, sizeof(pAecGlobal->EcmGainDot.fCoeff));
     memcpy(aecCfg.EcmLTimeDot.fCoeff, pAecGlobal->EcmLTimeDot.fCoeff, sizeof(pAecGlobal->EcmLTimeDot.fCoeff));//zlj
@@ -1585,6 +1602,7 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
                                              aecCfg.GridWeights.uCoeff,
                                              mStats.sensor_mode.isp_input_width,
                                              mStats.sensor_mode.isp_input_height,
+                                             mIspVer,
                                              &(aecCfg.StepSize));
 
             //LOGD("aec set win:%dx%d",
@@ -1980,6 +1998,7 @@ RESULT CamIA10Engine::runAWB(HAL_AwbCfg* awbHalCfg) {
         mAWBHalCfg = *awbHalCfg;
         if (!hAwb) {
             AwbInstanceConfig_t awbInstance;
+            awbInstance.isp_ver = mIspVer;
             if (awbDesc) {
                 result = awbDesc->update_awb_params(awbContext, &awbInstance);
             } //result = AwbInit(&awbInstance);
@@ -2542,6 +2561,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
              manCfg->hst_cfg,
              width,
              height,
+             mIspVer,
              &(result->hst)
             );
 
@@ -2559,6 +2579,9 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             (
              manCfg->enabled[HAL_ISP_LSC_ID],
              manCfg->lsc_cfg,
+             width,
+             height,
+             mIspVer,
              &(lsc_result)
             );
 
@@ -2725,7 +2748,8 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
              manCfg->enabled[HAL_ISP_GOC_ID],
              manCfg->goc_cfg,
              &(result->goc),
-             mWdrEnabledState
+             mWdrEnabledState,
+             mIspVer
             );
 
         if (ret != RET_SUCCESS)
