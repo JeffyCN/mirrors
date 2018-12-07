@@ -1084,9 +1084,7 @@ bool CalibDb::CreateCalibDb
   if (doc.Error()) {
 #if 1
     redirectOut
-        << "Error: Parse error errorID " << errorID
-        << ", " << "errorstr1 " << doc.GetErrorStr1()
-        << ":errstr2" << doc.GetErrorStr2() << std::endl;
+        << "Error: Parse error errorID " << errorID << std::endl;
 #endif
     return (false);
   }
