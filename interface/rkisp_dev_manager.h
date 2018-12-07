@@ -63,9 +63,13 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
  * v1.3.0
  *  - support rk1608 HDR ae
  *  - remove unnecessary lib dependance 
+ * v1.4.0
+ *  - unify isp v10/v12 iq files
+ *  - remove RKISP_V12 macro, get isp version from
+ *    driver in runtime
  */
 
-#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.3.0"
+#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.4.0"
 
 using namespace XCam;
 class SettingsProcessor;
