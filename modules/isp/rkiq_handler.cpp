@@ -1145,7 +1145,10 @@ RKiqCompositor::RKiqCompositor ()
     _ae_desc = _handle_manager->get_ae_handler_desc();
     _awb_desc = _handle_manager->get_awb_handler_desc();
     _af_desc = _handle_manager->get_af_handler_desc();
-
+    _ae_handler = NULL;
+    _awb_handler = NULL;
+    _af_handler = NULL;
+    _common_handler = NULL;
 #else
     _ae_desc = X3aHandlerManager::instance()->get_ae_handler_desc();
     _awb_desc = X3aHandlerManager::instance()->get_awb_handler_desc();
@@ -1404,28 +1407,28 @@ RKiqCompositor::generate_3a_configs (struct rkisp_parameters *parameters)
 void
 RKiqCompositor::set_ae_handler (SmartPtr<AiqAeHandler> &handler)
 {
-    XCAM_ASSERT (!_ae_handler);
+    XCAM_ASSERT (handler.ptr());
     _ae_handler = handler.ptr();
 }
 
 void
 RKiqCompositor::set_awb_handler (SmartPtr<AiqAwbHandler> &handler)
 {
-    XCAM_ASSERT (!_awb_handler);
+    XCAM_ASSERT (handler.ptr());
     _awb_handler = handler.ptr();
 }
 
 void
 RKiqCompositor::set_af_handler (SmartPtr<AiqAfHandler> &handler)
 {
-    XCAM_ASSERT (!_af_handler);
+    XCAM_ASSERT (handler.ptr());
     _af_handler = handler.ptr();
 }
 
 void
 RKiqCompositor::set_common_handler (SmartPtr<AiqCommonHandler> &handler)
 {
-    XCAM_ASSERT (!_common_handler);
+    XCAM_ASSERT (handler.ptr());
     _common_handler = handler.ptr();
 }
 
