@@ -56,10 +56,10 @@ RkispDeviceManager::handle_buffer (const SmartPtr<VideoBuffer> &buf)
 }
 
 SmartPtr<VideoBuffer>
-RkispDeviceManager::dequeue_buffer ()
+RkispDeviceManager::dequeue_buffer (int32_t timeout)
 {
     SmartPtr<VideoBuffer> ret;
-    ret = _ready_buffers.pop (-1);
+    ret = _ready_buffers.pop (timeout);
     return ret;
 }
 

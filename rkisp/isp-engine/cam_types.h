@@ -816,4 +816,8 @@ struct HAL_ISP_cfg_s {
   enum HAL_ISP_ACTIVE_MODE enabled[HAL_ISP_MODULE_MAX_ID_ID + 1];
 };
 
+RK_FRMAE_FORMAT V4l2FmtToHalFmt(unsigned int v4l2fmt);
+unsigned int halFmtToV4l2Fmt(unsigned int halFmt);
+unsigned int halColorSpaceToV4l2ColorSpace(unsigned int halColorSpace);
+
 #endif
