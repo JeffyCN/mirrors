@@ -13,10 +13,6 @@
 #include <gralloc_rga.h>
 gralloc_module_t const *mAllocMod = NULL;
 
-#ifdef RK3368
-#define private_handle_t IMG_native_handle_t
-#endif
-
 //enum {
 //	GET_HANDLE_FD           = GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD,
 //	GET_HADNLE_ATTRIBUTES   = GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES,
@@ -61,31 +57,6 @@ int gralloc_backend_get_attrs(private_handle_t* hnd, void *attrs)
 	return 0;
 }
 
-#else
-
-#ifdef RK3368
-
-int gralloc_backend_get_fd(private_handle_t* hnd, int *fd)
-{
-	*fd = hnd->fd[0];
-	return 0;
-}
-
-int gralloc_backend_get_attrs(private_handle_t* hnd, void *attrs)
-{
-	std::vector<int> *attributes = (std::vector<int> *)attrs;
-	attributes->clear();
-	attributes->push_back(hnd->width);
-	attributes->push_back(hnd->height);
-	attributes->push_back(hnd->stride);
-	attributes->push_back(hnd->format);
-	attributes->push_back(hnd->size);
-	attributes->push_back(hnd->type);
-	return 0;
-}
-
-#endif		//RK3368
-
 #endif		//ANDROID_7_DRM
 
 int RkRgaGetHandleFd(buffer_handle_t handle, int *fd)
@@ -105,7 +76,6 @@ int RkRgaGetHandleFd(buffer_handle_t handle, int *fd)
 		//return -ENODEV;
 #ifdef ANDROID_7_DRM
 
-#ifndef RK3368
 	//ret = gralloc_drm_handle_get_prime_fd(handle,fd);
 
 	int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD;
@@ -113,10 +83,6 @@ int RkRgaGetHandleFd(buffer_handle_t handle, int *fd)
 		mAllocMod->perform(mAllocMod, op, handle, fd);
 	else
 		return -ENODEV;
-#else
-	private_handle_t* hnd = (private_handle_t*)handle;
-	ret = gralloc_backend_get_fd(hnd,fd);
-#endif		//RK3368
 
 #else
 	private_handle_t* hnd = (private_handle_t*)handle;
@@ -147,44 +113,14 @@ int RkRgaGetHandleAttributes(buffer_handle_t handle,
 
 	//if(!mAllocMod->perform)
 		//return -ENODEV;
-
-#if RK3368_DRM
-	int w,h,pixel_stride,format,size;
-
-	op = GRALLOC_MODULE_PERFORM_GET_HADNLE_WIDTH;
-	mAllocMod->perform(mAllocMod, op, handle, &w);
-	op = GRALLOC_MODULE_PERFORM_GET_HADNLE_HEIGHT;
-	mAllocMod->perform(mAllocMod, op, handle, &h);
-	op = GRALLOC_MODULE_PERFORM_GET_HADNLE_STRIDE;
-	mAllocMod->perform(mAllocMod, op, handle, &pixel_stride);
-	op = GRALLOC_MODULE_PERFORM_GET_HADNLE_FORMAT;
-	mAllocMod->perform(mAllocMod, op, handle, &format);
-	op = GRALLOC_MODULE_PERFORM_GET_HADNLE_SIZE;
-	mAllocMod->perform(mAllocMod, op, handle, &size);
-
-	//add to attrs.
-	attrs->emplace_back(w);
-	attrs->emplace_back(h);
-	attrs->emplace_back(pixel_stride);
-	attrs->emplace_back(format);
-	attrs->emplace_back(size);
-
-#else
-
 #ifdef ANDROID_7_DRM
 
-#ifndef RK3368
 	//ret = gralloc_drm_handle_get_attributes(handle, (void*)attrs);
 	int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES;
 	if(!mAllocMod->perform)
 		return -ENODEV;
 
 	mAllocMod->perform(mAllocMod, op, handle, attrs);
-#else
-	//mAllocMod->perform(mAllocMod, op, handle, attrs);
-	private_handle_t* hnd = (private_handle_t*)handle;
-	ret = gralloc_backend_get_attrs(hnd, (void*)attrs);
-#endif		//RK3368
 
 #else
 	//mAllocMod->perform(mAllocMod, op, handle, attrs);
@@ -202,7 +138,6 @@ int RkRgaGetHandleAttributes(buffer_handle_t handle,
 				attrs->at(0),attrs->at(1),attrs->at(2),
 				attrs->at(3),attrs->at(4),attrs->at(5));
 	}
-#endif
 
 	return ret;
 }

@@ -13,18 +13,13 @@
 #ifndef _rockchip_rga_drm_gralloc_h_
 #define _rockchip_rga_drm_gralloc_h_
 
-#ifndef RK3368
 
 #ifdef ANDROID_7_DRM
 #include <hardware/gralloc.h>
-#include <gralloc_drm.h>
-#include <gralloc_drm_priv.h>
 #else
 #include <gralloc_priv.h>
 #endif
 
-#else
-#include <hardware/gralloc.h>
 #include <hardware/img_gralloc_public.h>
 
 #ifndef GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD
@@ -44,5 +39,4 @@
 #endif
 #endif
 
-#endif
 

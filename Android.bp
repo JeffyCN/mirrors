@@ -20,7 +20,6 @@ cc_library_shared {
         "external/libdrm/include/drm",
         "hardware/libhardware/include/hardware",
         "hardware/libhardware/modules/gralloc",
-        "hardware/rockchip/libgralloc",
         "system/core/liblog/include"
     ],
 
