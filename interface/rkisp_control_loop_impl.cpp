@@ -36,12 +36,17 @@ typedef enum RKISP_CL_STATE_enum {
 
 int rkisp_cl_init(void** cl_ctx, const char* tuning_file_path,
                   const cl_result_callback_ops_t *callback_ops) {
-	LOGD("--------------------------rkisp_cl_init");
+    LOGD("--------------------------rkisp_cl_init");
     RkispDeviceManager *device_manager = new RkispDeviceManager(callback_ops);
-    device_manager->set_has_3a(true);
-    device_manager->set_iq_path(tuning_file_path);
+    if (tuning_file_path && access(tuning_file_path, F_OK) == 0) {
+        device_manager->set_iq_path(tuning_file_path);
+        device_manager->set_has_3a(true);
+        LOGD("Enable 3a, using IQ file path %s", tuning_file_path);
+    } else {
+        device_manager->set_has_3a(false);
+        LOGD("Disable 3a, don't find IQ file");
+    }
     device_manager->_cl_state = RKISP_CL_STATE_INITED;
-    LOGD("Enable 3a ,using IQ file path %s", tuning_file_path);
     *cl_ctx = (void*)device_manager;
     return 0;
 }

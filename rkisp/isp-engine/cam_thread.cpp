@@ -46,7 +46,6 @@ int CamThread::_threadLoop(void* user) {
 
   } while (strong.get() != NULL);
 
-  printf("----thread mission complete.\n");
   return RET_SUCCESS;
 }
 

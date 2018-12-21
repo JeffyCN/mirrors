@@ -60,10 +60,12 @@ V4l2BufferProxy::V4l2BufferProxy (SmartPtr<V4l2Buffer> &buf, SmartPtr<V4l2Device
 {
     VideoBufferInfo info;
     struct timeval ts = buf->get_buf().timestamp;
+    uint32_t sequence = buf->get_buf().sequence;
 
     v4l2_format_to_video_info (buf->get_format(), info);
     set_video_info (info);
     set_timestamp (XCAM_TIMEVAL_2_USEC (ts));
+    set_sequence (sequence);
 }
 
 V4l2BufferProxy::~V4l2BufferProxy ()

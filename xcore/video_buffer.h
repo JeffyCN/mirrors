@@ -90,6 +90,14 @@ public:
         return _videoinfo.size;
     }
 
+    void set_sequence (uint32_t sequence) {
+        _sequence = sequence;
+    }
+
+    uint32_t get_sequence () const {
+        return _sequence;
+    }
+
     bool attach_buffer (const SmartPtr<VideoBuffer>& buf);
     bool detach_buffer (const SmartPtr<VideoBuffer>& buf);
     bool copy_attaches (const SmartPtr<VideoBuffer>& buf);
@@ -115,6 +123,7 @@ protected:
 private:
     VideoBufferInfo           _videoinfo;
     int64_t                   _timestamp; // in microseconds
+    uint32_t                  _sequence;
 
     SmartPtr<VideoBuffer>     _parent;
 };
