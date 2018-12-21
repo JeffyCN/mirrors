@@ -709,7 +709,7 @@ gst_xcam_src_start (GstBaseSrc *src)
     rkisp->isp_stats_dev =
       gst_media_find_entity_by_name (rkisp->controller, "rkisp1-statistics");
     rkisp->phy_subdev =
-      gst_media_find_entity_by_name (rkisp->controller, "rockchip-sy-mipi-dphy");
+      gst_media_find_entity_by_name (rkisp->controller, "rockchip-mipi-dphy-rx");
     rkisp->lens_subdev =
           gst_media_find_entity_by_name (rkisp->controller, "lens");
 
