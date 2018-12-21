@@ -331,23 +331,21 @@ static void init_mmap(void)
 
         for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
                 struct v4l2_buffer buf;
-
+                struct v4l2_plane planes[FMT_NUM_PLANES];
                 CLEAR(buf);
+                CLEAR(planes);
 
                 buf.type = buf_type;
                 buf.memory = V4L2_MEMORY_MMAP;
                 buf.index = n_buffers;
 
                 if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == buf_type) {
-                    struct v4l2_plane planes[FMT_NUM_PLANES];
                     buf.m.planes = planes;
                     buf.length = FMT_NUM_PLANES;
                 }
 
                 if (-1 == xioctl(fd, VIDIOC_QUERYBUF, &buf))
                         errno_exit("VIDIOC_QUERYBUF");
-
-                buffers[n_buffers].length = buf.length;
 
                 if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == buf_type) {
                     buffers[n_buffers].length = buf.m.planes[0].length;
