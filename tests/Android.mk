@@ -1,11 +1,11 @@
-ifeq ($(PLATFORM_SDK_VERSION),)
-
 LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
+# add mediactl.c to avoid link librkisp.so apparently
 LOCAL_SRC_FILES +=\
-	rkisp_demo.cpp
+	rkisp_demo.cpp \
+	../interface/mediactl.c \
 
 LOCAL_CPPFLAGS += -std=c++11 -Wno-error
 LOCAL_CPPFLAGS += -DLINUX 
@@ -34,6 +34,11 @@ LOCAL_SHARED_LIBRARIES += libdl
 
 ifeq ($(IS_ANDROID_OS),true)
 LOCAL_SHARED_LIBRARIES += libutils libcutils
+LOCAL_CFLAGS += -DANDROID
+ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+LOCAL_CFLAGS += -DANDROID_VERSION_ABOVE_8_X
+LOCAL_STATIC_LIBRARIES += android.hardware.camera.common@1.0-helper
+endif
 endif
 
 LOCAL_MODULE:= rkisp_demo
@@ -72,9 +77,13 @@ LOCAL_SHARED_LIBRARIES += libdl librkisp
 
 ifeq ($(IS_ANDROID_OS),true)
 LOCAL_SHARED_LIBRARIES += libutils libcutils
+LOCAL_CFLAGS += -DANDROID
+ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+LOCAL_CFLAGS += -DANDROID_VERSION_ABOVE_8_X
+LOCAL_STATIC_LIBRARIES += android.hardware.camera.common@1.0-helper
+endif
 endif
 
 LOCAL_MODULE:= test_ispcl
 
-include $(BUILD_EXECUTABLE)
-endif
+#include $(BUILD_EXECUTABLE)

@@ -70,6 +70,15 @@ struct buffer *buffers;
 static unsigned int n_buffers;
 static int frame_count = 5;
 FILE *fp;
+#ifdef ANDROID
+#ifdef ANDROID_VERSION_ABOVE_8_X
+#define LIBRKISP "/vendor/lib64/librkisp.so"
+#else
+#define LIBRKISP "/system/lib64/librkisp.so"
+#endif
+#else
+#define LIBRKISP "/usr/lib/librkisp.so"
+#endif
 
 static void errno_exit(const char *s)
 {
@@ -341,6 +350,7 @@ static void init_mmap(void)
                 buffers[n_buffers].length = buf.length;
 
                 if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == buf_type) {
+                    buffers[n_buffers].length = buf.m.planes[0].length;
                     buffers[n_buffers].start =
                         mmap(NULL /* start anywhere */,
                               buf.m.planes[0].length,
@@ -348,6 +358,7 @@ static void init_mmap(void)
                               MAP_SHARED /* recommended */,
                               fd, buf.m.planes[0].m.mem_offset);
                 } else {
+                    buffers[n_buffers].length = buf.length;
                     buffers[n_buffers].start =
                         mmap(NULL /* start anywhere */,
                               buf.length,
@@ -410,11 +421,11 @@ static void init_device(void)
         init_mmap();
 
 		//INIT RKISP
-		_RKIspFunc.rkisp_handle = dlopen("/usr/lib/librkisp.so", RTLD_NOW);
+        _RKIspFunc.rkisp_handle = dlopen(LIBRKISP, RTLD_NOW);
     	if (_RKIspFunc.rkisp_handle == NULL) {
-    	    printf ("open /usr/lib/librkisp.so failed");
+            printf ("open %s failed\n", LIBRKISP);
     	} else {
-    	    printf ("open /usr/lib/librkisp.so successed");
+            printf ("open %s successed\n", LIBRKISP);
     	    _RKIspFunc.init_func=(rkisp_init_func)dlsym(_RKIspFunc.rkisp_handle, "rkisp_cl_init");
     	    _RKIspFunc.prepare_func=(rkisp_prepare_func)dlsym(_RKIspFunc.rkisp_handle, "rkisp_cl_prepare");
     	    _RKIspFunc.start_func=(rkisp_start_func)dlsym(_RKIspFunc.rkisp_handle, "rkisp_cl_start");
