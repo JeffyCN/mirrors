@@ -46,6 +46,8 @@ public:
     void set_vcm_subdev (SmartPtr<V4l2SubDevice> &subdev);
     void set_isp_stats_device(SmartPtr<V4l2Device> &dev);
     void set_isp_params_device(SmartPtr<V4l2Device> &dev);
+    void set_isp_ver(int isp_ver) { _isp_ver = isp_ver; }
+    int  get_isp_ver() { return _isp_ver; }
 
     XCamReturn handle_sof(int64_t time, int frameid);
 
@@ -113,6 +115,7 @@ private:
     XCam::Cond        _frame_sequence_cond;
 
     struct rkisp1_isp_params_cfg _full_active_isp_params;
+    int               _isp_ver;
 };
 
 };

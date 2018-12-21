@@ -223,6 +223,7 @@ int rkisp_cl_prepare(void* cl_ctx,
     isp_controller->set_sensor_subdev(sensor_dev);
     isp_controller->set_isp_stats_device(stats_dev);
     isp_controller->set_isp_params_device(param_dev);
+    isp_controller->set_isp_ver(isp_ver);
     if (vcm_dev.ptr())
         isp_controller->set_vcm_subdev(vcm_dev);
 

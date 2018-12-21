@@ -88,7 +88,7 @@ X3aIspStatsData::fill_standard_stats ()
     }
 #if 1
     XCAM_LOG_INFO("> AE Measurement:\n");
-    #ifdef RKISP_v12
+    
     for (int i = 0; i < 81; i += 9)
         XCAM_LOG_INFO("> Exposure means %d-%d: %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
                             i, i+8,
@@ -101,15 +101,6 @@ X3aIspStatsData::fill_standard_stats ()
                             _isp_data->params.ae.exp_mean[i + 6],
                             _isp_data->params.ae.exp_mean[i + 7],
                             _isp_data->params.ae.exp_mean[i + 8]);
-    #else
-    for (int i = 0; i < 25; i += 5)
-        XCAM_LOG_INFO("> Exposure means %d-%d: %d, %d, %d, %d, %d\n",i, i+4,
-                            _isp_data->params.ae.exp_mean[i],
-                            _isp_data->params.ae.exp_mean[i + 1],
-                            _isp_data->params.ae.exp_mean[i + 2],
-                            _isp_data->params.ae.exp_mean[i + 3],
-                            _isp_data->params.ae.exp_mean[i + 4]);
-    #endif
 
     XCAM_LOG_INFO("> AWB mean lumin-ycbcr-rgb=[%d-%d-%d]",
         standard_data[0].mean_cr_or_r,

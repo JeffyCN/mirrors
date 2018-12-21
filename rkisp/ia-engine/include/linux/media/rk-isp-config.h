@@ -3,7 +3,7 @@
 
 // for new isp driver ported from chrome
 // for rk3326(v12), rk3288(v10), rk3399(v10) ISP
-#if defined(RKISP_v12) || defined(RKISP)
+#if defined(RKISP)
 #include <rkisp1-config.h>
 #include <rk_vcm_head.h>
 #include <rk-preisp.h>

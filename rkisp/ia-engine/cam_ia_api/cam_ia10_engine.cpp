@@ -1152,11 +1152,10 @@ RESULT CamIA10Engine::initAWB() {
     awbcfg.MeasConfig        = MeasConfig;
     awbcfg.Flags             = AWB_WORKING_FLAG_USE_DAMPING | AWB_WORKING_FLAG_USE_CC_OFFSET;
     awbcfg.hCamCalibDb = hCamCalibDb;
-#ifdef RKISP_v12
-    awbcfg.validHistBinsNum = 32;
-#else
-    awbcfg.validHistBinsNum = 16;
-#endif
+    if (mIspVer > 0)
+        awbcfg.validHistBinsNum = 32;
+    else
+        awbcfg.validHistBinsNum = 16;
     return RET_SUCCESS;
 }
 
@@ -1485,15 +1484,15 @@ RESULT CamIA10Engine::initAEC() {
     aecCfg.IntervalAdjStgy.dluma_high_th = pAecGlobal->InterAdjustStrategy.dluma_high_th;
     aecCfg.IntervalAdjStgy.dluma_low_th = pAecGlobal->InterAdjustStrategy.dluma_low_th;
     aecCfg.IntervalAdjStgy.trigger_frame = pAecGlobal->InterAdjustStrategy.trigger_frame;
-#ifdef RKISP_v12
-    aecCfg.Valid_GridWeights_Num = 81;
-    aecCfg.Valid_GridWeights_W = 9;
-    aecCfg.Valid_HistBins_Num = 32;
-#else
-    aecCfg.Valid_GridWeights_Num = 25;
-    aecCfg.Valid_GridWeights_W = 5;
-    aecCfg.Valid_HistBins_Num = 16;
-#endif
+    if (mIspVer > 0) {
+        aecCfg.Valid_GridWeights_Num = 81;
+        aecCfg.Valid_GridWeights_W = 9;
+        aecCfg.Valid_HistBins_Num = 32;
+    } else {
+        aecCfg.Valid_GridWeights_Num = 25;
+        aecCfg.Valid_GridWeights_W = 5;
+        aecCfg.Valid_HistBins_Num = 16;
+    }
     //zlj add for 1608 HDR stats
     if (mSensorEntityName && strstr(mSensorEntityName, "1608")) {
         LOGD("sensor is attached to rk1608, use HDR ae !");

@@ -661,7 +661,7 @@ IspController::set_3a_config (X3aIspConfig *config)
         *isp_params = _full_active_isp_params;
         dump_isp_config(isp_params, isp_cfg);
 
-        ret = rkisp1_check_params(isp_params);
+        ret = rkisp1_check_params(isp_params, _isp_ver);
         if (ret != XCAM_RETURN_NO_ERROR) {
             LOGE("rkisp1_check_params error\n");
             return XCAM_RETURN_ERROR_PARAM;

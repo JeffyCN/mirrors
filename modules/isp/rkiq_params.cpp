@@ -104,7 +104,7 @@ static int sdg_param_check(struct cifisp_sdg_config* arg)
     return 0;
 }
 
-static int lsc_param_check(struct cifisp_lsc_config* arg)
+static int lsc_param_check(struct cifisp_lsc_config* arg, int isp_ver)
 {
     int i;
     for (i = 0; i < CIFISP_LSC_SIZE_TBL_SIZE; i++) {
@@ -114,15 +114,31 @@ static int lsc_param_check(struct cifisp_lsc_config* arg)
         }
     }
     for (i = 0; i < CIFISP_LSC_GRAD_TBL_SIZE; i++) {
-        if ((arg->x_grad_tbl[i] & CIF_ISP_LSC_GRAD_RESERVED) || (arg->y_grad_tbl[i] & CIF_ISP_LSC_GRAD_RESERVED)) {
-            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
-            return -1;
+        if (isp_ver == 0) {
+            if ((arg->x_grad_tbl[i] & CIF_ISP_LSC_GRAD_RESERVED_V10) || (arg->y_grad_tbl[i] & CIF_ISP_LSC_GRAD_RESERVED_V10)) {
+                LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
+                return -1;
+            }
+        } else {
+            if ((arg->x_grad_tbl[i] & CIF_ISP_LSC_GRAD_RESERVED_V12) || (arg->y_grad_tbl[i] & CIF_ISP_LSC_GRAD_RESERVED_V12)) {
+                LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
+                return -1;
+            }
         }
     }
     for (i = 0; i < CIFISP_LSC_DATA_TBL_SIZE; i++) {
-        if ((arg->r_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED) || (arg->gr_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED) || (arg->gb_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED) || (arg->b_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED)) {
-            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
-            return -1;
+        if (isp_ver == 0) {
+            if ((arg->r_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED_V10) || (arg->gr_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED_V10) ||
+                (arg->gb_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED_V10) || (arg->b_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED_V10)) {
+                LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
+                return -1;
+            }
+        } else {
+            if ((arg->r_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED_V12) || (arg->gr_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED_V12) ||
+                (arg->gb_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED_V12) || (arg->b_data_tbl[i] & CIF_ISP_LSC_SAMPLE_RESERVED_V12)) {
+                LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
+                return -1;
+            }
         }
     }
     return 0;
@@ -267,56 +283,102 @@ static int afm_param_check(struct cifisp_afc_config* arg)
     return 0;
 }
 
-static int hst_param_check(struct cifisp_hst_config* arg)
+static int hst_param_check(struct cifisp_hst_config* arg, int isp_ver)
 {
     int i;
-    if (arg->mode > CIFISP_HISTOGRAM_MODE_Y_HISTOGRAM || arg->histogram_predivider > CIF_ISP_MAX_HIST_PREDIVIDER || arg->meas_window.v_offs & CIF_ISP_HIST_WINDOW_OFFSET_RESERVED || arg->meas_window.h_offs & CIF_ISP_HIST_WINDOW_OFFSET_RESERVED || (arg->meas_window.v_size / (CIF_ISP_HIST_ROW_NUM - 1)) & CIF_ISP_HIST_WINDOW_SIZE_RESERVED || (arg->meas_window.h_size / (CIF_ISP_HIST_COLUMN_NUM - 1)) & CIF_ISP_HIST_WINDOW_SIZE_RESERVED) {
-        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
-        return -1;
-    }
-#ifdef RKISP_v12
-    for (i = 0; i < 81; i++) {
-#else
-    for (i = 0; i < 81; i++) {
-#endif
-        if (arg->hist_weight[i] & CIF_ISP_HIST_WEIGHT_RESERVED) {
+    if (isp_ver == 0) {
+        if (arg->mode > CIFISP_HISTOGRAM_MODE_Y_HISTOGRAM ||
+            arg->histogram_predivider > CIF_ISP_MAX_HIST_PREDIVIDER_V10 ||
+            arg->meas_window.v_offs & CIF_ISP_HIST_WINDOW_OFFSET_RESERVED_V10 ||
+            arg->meas_window.h_offs & CIF_ISP_HIST_WINDOW_OFFSET_RESERVED_V10 ||
+            (arg->meas_window.v_size / (CIF_ISP_HIST_ROW_NUM_V10 - 1)) & CIF_ISP_HIST_WINDOW_SIZE_RESERVED_V10
+            || (arg->meas_window.h_size / (CIF_ISP_HIST_COLUMN_NUM_V10 - 1)) & CIF_ISP_HIST_WINDOW_SIZE_RESERVED_V10) {
             LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
             return -1;
+        }
+        for (i = 0; i < 25; i++) {
+            if (arg->hist_weight[i] & CIF_ISP_HIST_WEIGHT_RESERVED_V10) {
+                LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
+                return -1;
+            }
+        }
+    } else {
+        if (arg->mode > CIFISP_HISTOGRAM_MODE_Y_HISTOGRAM ||
+            arg->histogram_predivider > CIF_ISP_MAX_HIST_PREDIVIDER_V10 ||
+            arg->meas_window.v_offs & CIF_ISP_HIST_WINDOW_OFFSET_RESERVED_V10 ||
+            arg->meas_window.h_offs & CIF_ISP_HIST_WINDOW_OFFSET_RESERVED_V10 ||
+            (arg->meas_window.v_size / (CIF_ISP_HIST_ROW_NUM_V12 - 1)) & CIF_ISP_HIST_WINDOW_SIZE_RESERVED_V10
+            || (arg->meas_window.h_size / (CIF_ISP_HIST_COLUMN_NUM_V12 - 1)) & CIF_ISP_HIST_WINDOW_SIZE_RESERVED_V10) {
+            LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
+            return -1;
+        }
+        for (i = 0; i < 81; i++) {
+            if (arg->hist_weight[i] & CIF_ISP_HIST_WEIGHT_RESERVED_V12) {
+                LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
+                return -1;
+            }
         }
     }
     return 0;
 }
 
-static int aec_param_check(struct cifisp_aec_config* arg)
+static int aec_param_check(struct cifisp_aec_config* arg, int isp_ver)
 {
-    if (arg->meas_window.h_offs > CIF_ISP_EXP_MAX_HOFFS ||
-        arg->meas_window.h_size > CIF_ISP_EXP_MAX_HSIZE ||
-        arg->meas_window.h_size < CIF_ISP_EXP_MIN_HSIZE ||
-        arg->meas_window.v_offs > CIF_ISP_EXP_MAX_VOFFS ||
-        arg->meas_window.v_size > CIF_ISP_EXP_MAX_VSIZE ||
-        arg->meas_window.v_size < CIF_ISP_EXP_MIN_VSIZE ||
-        arg->mode > CIFISP_EXP_MEASURING_MODE_1) {
-        LOGW("aec meas win %dx%d(%dx%d)",
-             arg->meas_window.h_size, arg->meas_window.v_size,
-             arg->meas_window.h_offs, arg->meas_window.v_offs
-             );
-        LOGW("%s:%d check error, use limit value !", __FUNCTION__, __LINE__);
-        // AE regions when zoom may not meet the limitation,
-        // so just set the regions to the limitation
-        arg->meas_window.h_size = arg->meas_window.h_size >
-            CIF_ISP_EXP_MIN_HSIZE ? arg->meas_window.h_size : CIF_ISP_EXP_MIN_HSIZE;
-        arg->meas_window.v_size = arg->meas_window.v_size >
-            CIF_ISP_EXP_MIN_VSIZE ? arg->meas_window.v_size : CIF_ISP_EXP_MIN_VSIZE;
+    if (isp_ver == 0) {
+        if (arg->meas_window.h_offs > CIF_ISP_EXP_MAX_HOFFS_V10 ||
+            arg->meas_window.h_size > CIF_ISP_EXP_MAX_HSIZE_V10 ||
+            arg->meas_window.h_size < CIF_ISP_EXP_MIN_HSIZE_V10 ||
+            arg->meas_window.v_offs > CIF_ISP_EXP_MAX_VOFFS_V10 ||
+            arg->meas_window.v_size > CIF_ISP_EXP_MAX_VSIZE_V10 ||
+            arg->meas_window.v_size < CIF_ISP_EXP_MIN_VSIZE_V10 ||
+            arg->mode > CIFISP_EXP_MEASURING_MODE_1) {
+            LOGW("aec meas win %dx%d(%dx%d)",
+                 arg->meas_window.h_size, arg->meas_window.v_size,
+                 arg->meas_window.h_offs, arg->meas_window.v_offs
+                 );
+            LOGW("%s:%d check error, use limit value !", __FUNCTION__, __LINE__);
+            // AE regions when zoom may not meet the limitation,
+            // so just set the regions to the limitation
+            arg->meas_window.h_size = arg->meas_window.h_size >
+                CIF_ISP_EXP_MIN_HSIZE_V10 ? arg->meas_window.h_size : CIF_ISP_EXP_MIN_HSIZE_V10;
+            arg->meas_window.v_size = arg->meas_window.v_size >
+                CIF_ISP_EXP_MIN_VSIZE_V10 ? arg->meas_window.v_size : CIF_ISP_EXP_MIN_VSIZE_V10;
 
-        arg->meas_window.h_size = arg->meas_window.h_size <
-            CIF_ISP_EXP_MAX_HSIZE ? arg->meas_window.h_size : CIF_ISP_EXP_MAX_HSIZE;
-        arg->meas_window.v_size = arg->meas_window.v_size <
-            CIF_ISP_EXP_MAX_VSIZE ? arg->meas_window.v_size : CIF_ISP_EXP_MAX_VSIZE;
+            arg->meas_window.h_size = arg->meas_window.h_size <
+                CIF_ISP_EXP_MAX_HSIZE_V10 ? arg->meas_window.h_size : CIF_ISP_EXP_MAX_HSIZE_V10;
+            arg->meas_window.v_size = arg->meas_window.v_size <
+                CIF_ISP_EXP_MAX_VSIZE_V10 ? arg->meas_window.v_size : CIF_ISP_EXP_MAX_VSIZE_V10;
+        }
+    } else {
+        if (arg->meas_window.h_offs > CIF_ISP_EXP_MAX_HOFFS_V12 ||
+            arg->meas_window.h_size > CIF_ISP_EXP_MAX_HSIZE_V12 ||
+            arg->meas_window.h_size < CIF_ISP_EXP_MIN_HSIZE_V12 ||
+            arg->meas_window.v_offs > CIF_ISP_EXP_MAX_VOFFS_V12 ||
+            arg->meas_window.v_size > CIF_ISP_EXP_MAX_VSIZE_V12 ||
+            arg->meas_window.v_size < CIF_ISP_EXP_MIN_VSIZE_V12 ||
+            arg->mode > CIFISP_EXP_MEASURING_MODE_1) {
+            LOGW("aec meas win %dx%d(%dx%d)",
+                 arg->meas_window.h_size, arg->meas_window.v_size,
+                 arg->meas_window.h_offs, arg->meas_window.v_offs
+                 );
+            LOGW("%s:%d check error, use limit value !", __FUNCTION__, __LINE__);
+            // AE regions when zoom may not meet the limitation,
+            // so just set the regions to the limitation
+            arg->meas_window.h_size = arg->meas_window.h_size >
+                CIF_ISP_EXP_MIN_HSIZE_V12 ? arg->meas_window.h_size : CIF_ISP_EXP_MIN_HSIZE_V12;
+            arg->meas_window.v_size = arg->meas_window.v_size >
+                CIF_ISP_EXP_MIN_VSIZE_V12 ? arg->meas_window.v_size : CIF_ISP_EXP_MIN_VSIZE_V12;
+
+            arg->meas_window.h_size = arg->meas_window.h_size <
+                CIF_ISP_EXP_MAX_HSIZE_V12 ? arg->meas_window.h_size : CIF_ISP_EXP_MAX_HSIZE_V12;
+            arg->meas_window.v_size = arg->meas_window.v_size <
+                CIF_ISP_EXP_MAX_VSIZE_V12 ? arg->meas_window.v_size : CIF_ISP_EXP_MAX_VSIZE_V12;
+        }
     }
     return 0;
 }
 
-XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg* configs)
+XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg* configs, int isp_ver)
 {
     int ret = 0;
 
@@ -336,7 +398,7 @@ XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg* configs)
             configs->module_cfg_update &= ~CIFISP_MODULE_SDG;
     }
     if (configs->module_cfg_update & CIFISP_MODULE_LSC) {
-        ret = lsc_param_check(&configs->others.lsc_config);
+        ret = lsc_param_check(&configs->others.lsc_config, isp_ver);
         if (ret < 0)
             configs->module_cfg_update &= ~CIFISP_MODULE_LSC;
     }
@@ -386,12 +448,12 @@ XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg* configs)
             configs->module_cfg_update &= ~CIFISP_MODULE_AFC;
     }
     if (configs->module_cfg_update & CIFISP_MODULE_HST) {
-        ret = hst_param_check(&configs->meas.hst_config);
+        ret = hst_param_check(&configs->meas.hst_config, isp_ver);
         if (ret < 0)
             configs->module_cfg_update &= ~CIFISP_MODULE_HST;
     }
     if (configs->module_cfg_update & CIFISP_MODULE_AEC) {
-        ret = aec_param_check(&configs->meas.aec_config);
+        ret = aec_param_check(&configs->meas.aec_config, isp_ver);
         if (ret < 0)
             configs->module_cfg_update &= ~CIFISP_MODULE_AEC;
     }

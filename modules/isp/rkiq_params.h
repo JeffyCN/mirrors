@@ -21,12 +21,7 @@
 #ifndef __RKIQ_PARAMS_H__
 #define __RKIQ_PARAMS_H__
 
-
-#if defined(RKISP_v12)
-#include "regs_v12.h"
-#elif defined(RKISP)
 #include "regs.h"
-#endif
 #include "rk_aiq.h"
 #include <xcam_defs.h>
 #include "linux/v4l2-controls.h"
@@ -40,7 +35,7 @@ struct AiqResults {
     rk_aiq_misc_isp_results miscIspResults;
 };
 
-XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg *configs);
+XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg *configs, int isp_ver);
 XCamReturn rkisp1_convert_params(struct rkisp1_isp_params_cfg* isp_cfg,
                                             struct AiqResults* aiqResults);
 XCamReturn rkisp1_convert_results(struct rkisp1_isp_params_cfg* isp_cfg,
