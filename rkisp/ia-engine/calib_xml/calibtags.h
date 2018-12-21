@@ -67,13 +67,19 @@
  * XML AWB section
  *****************************************************************************/
 #define CALIB_SENSOR_AWB_TAG                                        "AWB"
+#define CALIB_SENDOR_AWB_VALID_VERSION_NAME_TAG						"valid_version_name"
+#define CALIB_SENDOR_AWB_VERSION_10_NAME_TAG						"VERSION_10"
+#define CALIB_SENDOR_AWB_VERSION_11_NAME_TAG						"VERSION_11"
 
+#define CALIB_SENDOR_AWB_VERSION_10_TAG								"version_10_para"
+#define CALIB_SENDOR_AWB_VERSION_11_TAG								"version_11_para"
 #define CALIB_SENSOR_AWB_GLOBALS_TAG                                "globals"
 #define CALIB_SENSOR_AWB_GLOBALS_NAME_TAG                           "name"
 #define CALIB_SENSOR_AWB_GLOBALS_RESOLUTION_TAG                     "resolution"
 #define CALIB_SENSOR_AWB_GLOBALS_SENSOR_FILENAME_TAG                "sensorFilename"
 #define CALIB_SENSOR_AWB_GLOBALS_SVDMEANVALUE_TAG                   "SVDMeanValue"
 #define CALIB_SENSOR_AWB_GLOBALS_PCAMATRIX_TAG                      "PCAMatrix"
+#define CALIB_SENSOR_AWB_GLOBALS_GAIN_CLIP_ENABLE_TAG               "afWBGainClipEnable"
 #define CALIB_SENSOR_AWB_GLOBALS_CENTERLINE_TAG                     "CenterLine"
 #define CALIB_SENSOR_AWB_GLOBALS_KFACTOR_TAG                        "K_Factor"
 #define CALIB_SENSOR_AWB_GLOBALS_RG1_TAG                            "afRg1"
@@ -91,6 +97,22 @@
 #define CALIB_SENSOR_AWB_GLOBALS_CB_MIN_REGIONMIN_TAG               "afCbMinRegionMin"
 #define CALIB_SENSOR_AWB_GLOBALS_CR_MIN_REGIONMIN_TAG               "afCrMinRegionMin"
 #define CALIB_SENSOR_AWB_GLOBALS_MAX_CSUM_REGIONMIN_TAG             "afMaxCSumRegionMin"
+#define CALIB_SENSOR_AWB_GLOBALS_MINC_REGIONMAX_TAG                 "afMinCRegionMax"
+#define CALIB_SENSOR_AWB_GLOBALS_MAXY_REGIONMAX_TAG                 "afMaxYRegionMax"
+#define CALIB_SENSOR_AWB_GLOBALS_MINY_MAXG_REGIONMAX_TAG            "afMinYMaxGRegionMax"
+#define CALIB_SENSOR_AWB_GLOBALS_MINC_REGIONMIN_TAG                 "afMinCRegionMin"
+#define CALIB_SENSOR_AWB_GLOBALS_MAXY_REGIONMIN_TAG                 "afMaxYRegionMin"
+#define CALIB_SENSOR_AWB_GLOBALS_MINY_MAXG_REGIONMIN_TAG            "afMinYMaxGRegionMin"
+#define CALIB_SENSOR_AWB_GLOBALS_MAX_CSUM_BR_TAG                    "afmaxCSum_br"
+#define CALIB_SENSOR_AWB_GLOBALS_MAX_CSUM_SR_TAG                    "afmaxCSum_sr"
+#define CALIB_SENSOR_AWB_GLOBALS_MINC_BR_TAG                        "afminC_br"
+#define CALIB_SENSOR_AWB_GLOBALS_MAXY_BR_TAG                        "afMaxY_br"
+#define CALIB_SENSOR_AWB_GLOBALS_MINY_BR_TAG                        "afMinY_br"
+#define CALIB_SENSOR_AWB_GLOBALS_MINC_SR_TAG                        "afminC_sr"
+#define CALIB_SENSOR_AWB_GLOBALS_MAXY_SR_TAG                        "afMaxY_sr"
+#define CALIB_SENSOR_AWB_GLOBALS_MINY_SR_TAG                        "afMinY_sr"
+#define CALIB_SENSOR_AWB_GLOBALS_REFCB_TAG                          "afRefCb"
+#define CALIB_SENSOR_AWB_GLOBALS_REFCR_TAG                          "afRefCr"
 #define CALIB_SENSOR_AWB_GLOBALS_RGPROJ_INDOOR_MIN_TAG              "fRgProjIndoorMin"
 #define CALIB_SENSOR_AWB_GLOBALS_RGPROJ_OUTDOOR_MIN_TAG             "fRgProjOutdoorMin"
 #define CALIB_SENSOR_AWB_GLOBALS_RGPROJ_MAX_TAG                     "fRgProjMax"
@@ -143,6 +165,7 @@
 #define CALIB_SENSOR_AWB_ILLUMINATION_GMM_INV_COV_MATRIX_TAG        "invCovMatrix"
 #define CALIB_SENSOR_AWB_ILLUMINATION_GMM_GAUSSIAN_SFACTOR_TAG      "GaussianScalingFactor"
 #define CALIB_SENSOR_AWB_ILLUMINATION_GMM_TAU_TAG                   "tau"
+#define CALIB_SENSOR_AWB_ILLUMINATION_REFERENCE_GAIN_TAG            "referenceWBgain"
 #define CALIB_SENSOR_AWB_ILLUMINATION_SAT_CT_TAG                    "sat_CT"
 #define CALIB_SENSOR_AWB_ILLUMINATION_SAT_CT_GAIN_TAG               "gains"
 #define CALIB_SENSOR_AWB_ILLUMINATION_SAT_CT_SAT_TAG                "sat"
@@ -195,8 +218,14 @@
  * XML AF section
  *****************************************************************************/
 #define CALIB_SENSOR_AF_TAG                                 "AF"
+#define CALIB_SENSOR_AF_CONTRAST_AF_TAG         "contrast_af"
+#define CALIB_SENSOR_AF_LASER_AF_TAG         "laser_af"
+#define CALIB_SENSOR_AF_PDAF_TAG         "pdaf"
 
+#define CALIB_SENSOR_AF_ENABLE_TAG         "enable"
 
+#define CALIB_SENSOR_AF_LASER_AF_VCMDOT_TAG "vcmDot"
+#define CALIB_SENSOR_AF_LASER_AF_DISTANCEDOT_TAG  "distanceDot"
 
 /******************************************************************************
  * XML AEC section
@@ -227,6 +256,7 @@
 #define CALIB_SENSOR_AEC_SEMMODE_ADAPTIVE                   "ADAPTIVE"
 #define CALIB_SENSOR_AEC_GAINRANGE_TAG                      "GainRange"
 #define CALIB_SENSOR_AEC_GRIDWEIGHTS_TAG                    "GridWeights"   //cxf
+#define CALIB_SENSOR_AEC_NIHGT_GRIDWEIGHTS_TAG              "NightGridWeights"   //cxf
 #define CALIB_SENSOR_AEC_TIMEFACTOR_TAG                     "TimeFactor"   //cxf
 #define CALIB_SENSOR_AEC_MEASURINGWINWIDTHSCALE_TAG         "MeasuringWindowWidthScale"   //cxf
 #define CALIB_SENSOR_AEC_MEASURINGWINHEIGHTSCALE_TAG        "MeasuringWindowHeightScale"   //cxf
@@ -241,13 +271,14 @@
 #define CALIB_SENSOR_AEC_CAMERICISPEXPMEASURINGMODE_1       "Y"//cxf
 #define CALIB_SENSOR_AEC_CAMERICISPEXPMEASURINGMODE_2       "RGB"//cxf
 
+#if 0
 #define CALIB_SENSOR_AEC_ECMTIMEDOT_TAG                     "EcmTimeDot"
 #define CALIB_SENSOR_AEC_ECMLTIMEDOT_TAG                     "EcmLTimeDot"//zlj
 #define CALIB_SENSOR_AEC_ECMSTIMEDOT_TAG                     "EcmSTimeDot"//zlj
 #define CALIB_SENSOR_AEC_ECMGAINDOT_TAG                     "EcmGainDot"
 #define CALIB_SENSOR_AEC_ECMLGAINDOT_TAG                     "EcmLGainDot"//zlj
 #define CALIB_SENSOR_AEC_ECMSGAINDOT_TAG                     "EcmSGainDot"//zlj
-
+#endif
 
 #define CALIB_SENSOR_AEC_ECMMODE_TAG                        "EcmMode"
 #define CALIB_SENSOR_AEC_ECMMODE_1                          "MODE_1"
@@ -269,13 +300,10 @@
 
 /* Day or Night */
 #define CALIB_SENSOR_AEC_DON                  "DON"
-#define CALIB_SENSOR_AEC_DON_ENABLE               "DON_Enable"
-#define CALIB_SENSOR_AEC_DON_DAY2NIGHT_GAIN_TH        "DON_Day2Night_Gain_th"
-#define CALIB_SENSOR_AEC_DON_DAY2NIGHT_INTTIME_TH     "DON_Day2Night_Inttime_th"
-#define CALIB_SENSOR_AEC_DON_DAY2NIGHT_LUMA_TH        "DON_Day2Night_Luma_th"
-#define CALIB_SENSOR_AEC_DON_NIGHT2DAY_GAIN_TH        "DON_Night2Day_Gain_th"
-#define CALIB_SENSOR_AEC_DON_NIGHT2DAY_INTTIME_TH     "DON_Night2Day_Inttime_th"
-#define CALIB_SENSOR_AEC_DON_NIGHT2DAY_LUMA_TH        "DON_Night2Day_Luma_th"
+#define CALIB_SENSOR_AEC_DON_NIGHT_TRIGGER      "NightTrigger"
+#define CALIB_SENSOR_AEC_DON_NIGHT_MODE         "NightMode"
+#define CALIB_SENSOR_AEC_DON_DAY2NIGHT_FAC_TH   "DON_Day2Night_Fac_th"
+#define CALIB_SENSOR_AEC_DON_NIGHT2DAY_FAC_TH   "DON_Night2Day_Fac_th"
 #define CALIB_SENSOR_AEC_DON_BOUNCING_TH            "DON_Bouncing_th"
 
 #define CALIB_SENSOR_AEC_FPS_FPS_SET_CONFIG			"FpsSetConfig"
@@ -283,6 +311,41 @@
 #define CALIB_SENSOR_AEC_FPS_IS_FPS_FIX				"isFpsFix"
 #define CALIB_SENSOR_AEC_FPS_FPS_FIX_TIMEDOT		"FpsFix_TimeDot"
 
+#define CALIB_SENSOR_AEC_DYNAMIC_SETPOINT	"DynamicSetpoint"
+#define CALIB_SENSOR_AEC_DYNAMIC_SETPOINT_NAME	"name"
+#define CALIB_SENSOR_AEC_DYNAMIC_SETPOINT_ENABLE	"Enable"
+#define CALIB_SENSOR_AEC_DYNAMIC_SETPOINT_EXPVALUE 	"ExposueValue"
+#define CALIB_SENSOR_AEC_DYNAMIC_SETPOINT_DYSETPOINT 	"DySetpoint"
+
+#define CALIB_SENSOR_AEC_EXP_SEPARATE	"ExposureSeparate"
+#define CALIB_SENSOR_AEC_EXP_SEPARATE_NAME	"name"
+#define CALIB_SENSOR_AEC_EXP_SEPARATE_TIMEDOT 	"TimeDot"
+#define CALIB_SENSOR_AEC_EXP_SEPARATE_GAINDOT 	"GainDot"
+#define CALIB_SENSOR_AEC_EXP_SEPARATE_LTIMEDOT  "LTimeDot"//zlj
+#define CALIB_SENSOR_AEC_EXP_SEPARATE_STIMEDOT  "STimeDot"//zlj
+#define CALIB_SENSOR_AEC_EXP_SEPARATE_LGAINDOT  "LGainDot"//zlj
+#define CALIB_SENSOR_AEC_EXP_SEPARATE_SGAINDOT  "SGainDot"//zlj
+
+#define CALIB_SENSOR_AEC_NLSC_CONFIG 	"NLSC_Config"
+#define CALIB_SENSOR_AEC_NLSC_ENABLE	"Enable"
+#define CALIB_SENSOR_AEC_NLSC_IR_RG	"IR_rg"
+#define CALIB_SENSOR_AEC_NLSC_IR_BG	"IR_bg"
+#define CALIB_SENSOR_AEC_NLSC_MAX_DIS	"Max_Dis"
+#define CALIB_SENSOR_AEC_NLSC_COLOR2BLACK_COUNT	"Color2Black_count"
+#define CALIB_SENSOR_AEC_NLSC_COLOR2BLACK_THRESH	"Color2Black_thresh"
+#define CALIB_SENSOR_AEC_NLSC_BLACK2COLOR_COUNT	"Black2Color_count"
+#define CALIB_SENSOR_AEC_NLSC_BLACK2COLOR_THRESH	"Black2Color_thresh"
+#define CALIB_SENSOR_AEC_NLSC_BLACK2COLOR_VB_PERCENT	"Black2Color_vb_percent"
+#define CALIB_SENSOR_AEC_NLSC_COLOR2BLACK_STABLE_FPS	"Color2Black_stable_fps"
+#define CALIB_SENSOR_AEC_BACKLIGHT_CONFIG	"BackLight_Config"
+#define CALIB_SENSOR_AEC_BACKLIGHT_ENABLE	"Enable"
+#define CALIB_SENSOR_AEC_BACKLIGHT_LUMALOWTH	"LumaLowTh"
+#define CALIB_SENSOR_AEC_BACKLIGHT_LUMAHIGHTH 	"LumaHighTh"
+#define CALIB_SENSOR_AEC_BACKLIGHT_WEIGHTMINTH	"WeightMinTh"
+#define CALIB_SENSOR_AEC_BACKLIGHT_WEIGHTMAXTH 	"WeightMaxTh"
+#define CALIB_SENSOR_AEC_HIST_2_HAL	   "Hist_2_hal"
+#define CALIB_SENSOR_AEC_HIST_2_HAL_ENABLE "Enable"
+#define CALIB_SENSOR_AEC_HIST_2_HAL_LOWHISTBINTH	"LowHistBinTh"
 /*LockAE-for HDR*/
 #define CALIB_SENSOR_LOCK_AE_TAG "LockAE"
 #define CALIB_SENSOR_LOCK_AE_ENABEL	 "LockAE_enable"
@@ -385,6 +448,20 @@
 #define CALIB_SESNOR_CAC_RED_PARAMETERS_TAG                 "red_parameters"
 #define CALIB_SESNOR_CAC_BLUE_PARAMETERS_TAG                "blue_parameters"
 
+/******************************************************************************
+ * XML MFD section
+ *****************************************************************************/
+#define CALIB_SESNOR_MFD_ENABLE_TAG                         "MFD_Support"
+#define CALIB_SESNOR_MFD_GAIN_TAG                           "MFD_Gain"
+#define CALIB_SESNOR_MFD_FRAMES_TAG                         "MFD_Frames"
+
+/******************************************************************************
+ * XML UVNR section
+ *****************************************************************************/
+#define CALIB_SESNOR_UVNR_ENABLE_TAG                        "UVNR_Support"
+#define CALIB_SESNOR_UVNR_GAIN_TAG                          "UVNR_Gain"
+#define CALIB_SESNOR_UVNR_RATIO_TAG                         "UVNR_Ratio"
+#define CALIB_SESNOR_UVNR_DISTANCE_TAG                      "UVNR_Distance"
 
 
 /******************************************************************************
@@ -552,8 +629,71 @@
 #define CALIB_SENSOR_DSP_3DNR_SETTING_SRC_SHP_W44_TAG  "src_shp_w44"
 
 
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_TAG			"NEW_DSP_3DNR_Setting"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_NAME_TAG		"name"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_3DNR_ENABLE_TAG	"Enable"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_DPC_ENABLE_TAG	"dpc_enable"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_GAIN_LEVEL_TAG	"gain_level"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_YNR_SETTING_TAG	"ynr_Setting"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_YNR_ENABLE_TAG	"ynr_enable"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_TNR_ENABLE_TAG	"tnr_enable"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_IIR_ENABLE_TAG	"iir_enable"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_YNR_TIME_LEVEL_TAG		"ynr_time_level"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_YNR_SPACE_LEVEL_TAG		"ynr_space_level"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_UVNR_SETTING_TAG	"uvnr_Setting"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_UVNR_ENABLE_TAG	"uvnr_enable"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_UVNR_LEVEL_TAG	"uvnr_level"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_SHARP_SETTING_TAG	"sharp_Setting"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_SHARP_ENABLE_TAG	"sharp_enable"
+#define CALIB_SENSOR_NEW_DSP_3DNR_SETTING_SHARP_LEVEL_TAG	"sharp_level"
 
 
+
+#define CALIB_SENSOR_DPF_DEMOSAIC_LP_CONF_TAG               "Demosaic_lp_conf"
+#define CALIB_SENSOR_DPF_LP_EN_TAG                          "lp_en"
+#define CALIB_SENSOR_DPF_LP_USE_OLD_VERSION_TAG             "use_old_lp"
+#define CALIB_SENSOR_DPF_LP_LU_DIVIDED_TAG                  "lu_divided"
+#define CALIB_SENSOR_DPF_LP_GAINSARRAY_TAG                  "gainsArray"
+#define CALIB_SENSOR_DPF_LP_THH_DIVIDED0_TAG                "thH_divided0"
+#define CALIB_SENSOR_DPF_LP_THH_DIVIDED1_TAG                "thH_divided1"
+#define CALIB_SENSOR_DPF_LP_THH_DIVIDED2_TAG                "thH_divided2"
+#define CALIB_SENSOR_DPF_LP_THH_DIVIDED3_TAG                "thH_divided3"
+#define CALIB_SENSOR_DPF_LP_THH_DIVIDED4_TAG                "thH_divided4"
+#define CALIB_SENSOR_DPF_LP_THCSC_DIVIDED0_TAG              "thCSC_divided0"
+#define CALIB_SENSOR_DPF_LP_THCSC_DIVIDED1_TAG              "thCSC_divided1"
+#define CALIB_SENSOR_DPF_LP_THCSC_DIVIDED2_TAG              "thCSC_divided2"
+#define CALIB_SENSOR_DPF_LP_THCSC_DIVIDED3_TAG              "thCSC_divided3"
+#define CALIB_SENSOR_DPF_LP_THCSC_DIVIDED4_TAG              "thCSC_divided4"
+#define CALIB_SENSOR_DPF_LP_DIFF_DIVIDED0_TAG               "diff_divided0"
+#define CALIB_SENSOR_DPF_LP_DIFF_DIVIDED1_TAG               "diff_divided1"
+#define CALIB_SENSOR_DPF_LP_DIFF_DIVIDED2_TAG               "diff_divided2"
+#define CALIB_SENSOR_DPF_LP_DIFF_DIVIDED3_TAG               "diff_divided3"
+#define CALIB_SENSOR_DPF_LP_DIFF_DIVIDED4_TAG               "diff_divided4"
+#define CALIB_SENSOR_DPF_LP_VARTH_DIVIDED0_TAG              "varTh_divided0"
+#define CALIB_SENSOR_DPF_LP_VARTH_DIVIDED1_TAG              "varTh_divided1"
+#define CALIB_SENSOR_DPF_LP_VARTH_DIVIDED2_TAG              "varTh_divided2"
+#define CALIB_SENSOR_DPF_LP_VARTH_DIVIDED3_TAG              "varTh_divided3"
+#define CALIB_SENSOR_DPF_LP_VARTH_DIVIDED4_TAG              "varTh_divided4"
+#define CALIB_SENSOR_DPF_LP_THGRAD_R_FCT_TAG                "thgrad_r_fct"
+#define CALIB_SENSOR_DPF_LP_THDIFF_R_FCT_TAG                "thdiff_r_fct"
+#define CALIB_SENSOR_DPF_LP_THVAR_R_FCT_TAG                 "thvar_r_fct"
+#define CALIB_SENSOR_DPF_LP_THGRAD_B_FCT_TAG                "thgrad_b_fct"
+#define CALIB_SENSOR_DPF_LP_THDIFF_B_FCT_TAG                "thdiff_b_fct"
+#define CALIB_SENSOR_DPF_LP_THVAR_B_FCT_TAG                 "thvar_b_fct"
+#define CALIB_SENSOR_DPF_LP_SIMILARITY_TH_TAG               "similarity_th"
+#define CALIB_SENSOR_DPF_LP_TH_VAR_EN_TAG                   "th_var_en"
+#define CALIB_SENSOR_DPF_LP_TH_CSC_EN_TAG                   "th_csc_en"
+#define CALIB_SENSOR_DPF_LP_TH_DIFF_EN_TAG                  "th_diff_en"
+#define CALIB_SENSOR_DPF_LP_TH_GRAD_EN_TAG                  "th_grad_en"
+#define CALIB_SENSOR_DPF_LP_TH_GRAD_TAG                     "th_grad"
+#define CALIB_SENSOR_DPF_LP_TH_VAR_TAG                      "th_var"
+#define CALIB_SENSOR_DPF_LP_TH_DIFF_TAG                     "th_diff"
+#define CALIB_SENSOR_DPF_LP_TH_CSC_TAG                      "th_csc"
+#define CALIB_SENSOR_DPF_LP_FLAT_LEVEL_SEL_TAG              "flat_level_sel"
+#define CALIB_SENSOR_DPF_LP_PATTERN_LEVEL_SEL_TAG           "pattern_level_sel"
+#define CALIB_SENSOR_DPF_LP_EDGE_LEVEL_SEL_TAG              "edge_level_sel"
+#define CALIB_SENSOR_DPF_LP_RB_FILTER_EN                    "rb_filter_en"
+#define CALIB_SENSOR_DPF_LP_HP_FILTER_EN                    "hp_filter_en"
 
 
 
@@ -591,6 +731,39 @@
 #define CALIB_SENSOR_DPCC_REGISTER_ISP_DPCC_RG_FAC_3        "ISP_DPCC_RG_FAC_3"
 #define CALIB_SENSOR_DPCC_REGISTER_ISP_DPCC_RO_LIMITS       "ISP_DPCC_RO_LIMITS"
 #define CALIB_SENSOR_DPCC_REGISTER_ISP_DPCC_RND_OFFS        "ISP_DPCC_RND_OFFS"
+
+/******************************************************************************
+ * //werring.wu add 2018 1 19
+ * XML IESHARPEN section
+ *****************************************************************************/
+#define CALIB_SENSOR_IESHARPEN_TAG                           "IESHARPEN"
+#define CALIB_SENSOR_IESHARPEN_NAME_TAG                      "name"
+#define CALIB_SENSOR_IESHARPEN_RESOLUTION_TAG                "resolution"
+#define CALIB_SENSOR_IESHARPEN_ENABLE_TAG                    "IEsharpenEnable"
+#define CALIB_SENSOR_IESHARPEN_CORING_THR_TAG                "coring_thr"
+#define CALIB_SENSOR_IESHARPEN_FULL_RANGE_TAG                "full_range"
+#define CALIB_SENSOR_IESHARPEN_SWITCH_AVG_TAG                "switch_avg"
+#define CALIB_SENSOR_IESHARPEN_YAVG_THR_TAG                  "yavg_thr"
+#define CALIB_SENSOR_IESHARPEN_P_DELTA1_TAG                  "p_delta1"
+#define CALIB_SENSOR_IESHARPEN_P_DELTA2_TAG                  "p_delta2"
+#define CALIB_SENSOR_IESHARPEN_P_MAX_NUMBER_TAG              "pmaxnumber"
+#define CALIB_SENSOR_IESHARPEN_P_MIN_NUMBER_TAG              "pminnumber"
+#define CALIB_SENSOR_IESHARPEN_GAUSS_FLAT_COE_TAG            "gauss_flat_coe"
+#define CALIB_SENSOR_IESHARPEN_GAUSS_NOISE_COE_TAG           "gauss_noise_coe"
+#define CALIB_SENSOR_IESHARPEN_GAUSS_OTHER_COE_TAG           "gauss_other_coe"
+#define CALIB_SENSOR_IESHARPEN_L_P_GRAD_TAG                  "l_p_grad"
+#define CALIB_SENSOR_IESHARPEN_L_SHARP_FACTOR_TAG            "l_sharp_factor"
+#define CALIB_SENSOR_IESHARPEN_L_LINE1_FILTER_COE_TAG        "l_line1_filter_coe"
+#define CALIB_SENSOR_IESHARPEN_L_LINE2_FILTER_COE_TAG        "l_line2_filter_coe"
+#define CALIB_SENSOR_IESHARPEN_L_LINE3_FILTER_COE_TAG        "l_line3_filter_coe"
+#define CALIB_SENSOR_IESHARPEN_H_P_GRAD_TAG                  "h_p_grad"
+#define CALIB_SENSOR_IESHARPEN_H_SHARP_FACTOR_TAG            "h_sharp_factor"
+#define CALIB_SENSOR_IESHARPEN_H_LINE1_FILTER_COE_TAG        "h_line1_filter_coe"
+#define CALIB_SENSOR_IESHARPEN_H_LINE2_FILTER_COE_TAG        "h_line2_filter_coe"
+#define CALIB_SENSOR_IESHARPEN_H_LINE3_FILTER_COE_TAG        "h_line3_filter_coe"
+#define CALIB_SENSOR_IESHARPEN_UV_GAUSS_FLAT_COE_TAG         "uv_gauss_flat_coe"
+#define CALIB_SENSOR_IESHARPEN_UV_GAUSS_NOISE_COE_TAG        "uv_gauss_noise_coe"
+#define CALIB_SENSOR_IESHARPEN_UV_GAUSS_OTHER_COE_TAG        "uv_gauss_other_coe"
 
 
 /******************************************************************************

@@ -100,9 +100,9 @@ static int SearchResolutionByWidthHeight(List* l, void* key) {
 /******************************************************************************
  * SearchForEqualAwbGlobal
  *****************************************************************************/
-static int SearchForEqualAwbGlobal(List* l, void* key) {
-  CamCalibAwbGlobal_t* awb = (CamCalibAwbGlobal_t*)l;
-  CamCalibAwbGlobal_t* k = (CamCalibAwbGlobal_t*)key;
+static int SearchForEqualAwb_V11_Global(List* l, void* key) {
+  CamCalibAwb_V11_Global_t* awb = (CamCalibAwb_V11_Global_t*)l;
+  CamCalibAwb_V11_Global_t* k = (CamCalibAwb_V11_Global_t*)key;
 
   return ((!strncmp(awb->name, k->name, sizeof(k->name))) ? 1 : 0);
 }
@@ -110,10 +110,22 @@ static int SearchForEqualAwbGlobal(List* l, void* key) {
 
 
 /******************************************************************************
- * SearchAwbGlobalByName
+ * SearchForEqualAwb_V10_Global
  *****************************************************************************/
-static int SearchAwbGlobalByName(List* l, void* key) {
-  CamCalibAwbGlobal_t* awb = (CamCalibAwbGlobal_t*)l;
+static int SearchForEqualAwb_V10_Global(List* l, void* key) {
+  CamCalibAwb_V10_Global_t* awb = (CamCalibAwb_V10_Global_t*)l;
+  CamCalibAwb_V10_Global_t* k = (CamCalibAwb_V10_Global_t*)key;
+
+  return ((!strncmp(awb->name, k->name, sizeof(k->name))) ? 1 : 0);
+}
+
+
+
+/******************************************************************************
+ * SearchAwb_V11_GlobalByName
+ *****************************************************************************/
+static int SearchAwb_V11_GlobalByName(List* l, void* key) {
+  CamCalibAwb_V11_Global_t* awb = (CamCalibAwb_V11_Global_t*)l;
   char* k = (char*)key;
 
   return ((!strncmp(awb->name, k, sizeof(awb->name))) ? 1 : 0);
@@ -122,10 +134,31 @@ static int SearchAwbGlobalByName(List* l, void* key) {
 
 
 /******************************************************************************
- * SearchAwbGlobalByResolution
+ * SearchAwb_V10_GlobalByName
  *****************************************************************************/
-static int SearchAwbGlobalByResolution(List* l, void* key) {
-  CamCalibAwbGlobal_t* awb = (CamCalibAwbGlobal_t*)l;
+static int SearchAwb_V10_GlobalByName(List* l, void* key) {
+  CamCalibAwb_V10_Global_t* awb = (CamCalibAwb_V10_Global_t*)l;
+  char* k = (char*)key;
+
+  return ((!strncmp(awb->name, k, sizeof(awb->name))) ? 1 : 0);
+}
+
+
+
+/******************************************************************************
+ * SearchAwb_V11_GlobalByResolution
+ *****************************************************************************/
+static int SearchAwb_V11_GlobalByResolution(List* l, void* key) {
+  CamCalibAwb_V11_Global_t* awb = (CamCalibAwb_V11_Global_t*)l;
+  char* k = (char*)key;
+
+  return ((!strncmp(awb->resolution, k, sizeof(awb->resolution))) ? 1 : 0);
+}
+/******************************************************************************
+ * SearchAwb_V10_GlobalByResolution
+ *****************************************************************************/
+static int SearchAwb_V10_GlobalByResolution(List* l, void* key) {
+  CamCalibAwb_V10_Global_t* awb = (CamCalibAwb_V10_Global_t*)l;
   char* k = (char*)key;
 
   return ((!strncmp(awb->resolution, k, sizeof(awb->resolution))) ? 1 : 0);
@@ -184,9 +217,9 @@ static int SearchEcmSchemeByName(List* l, void* key) {
 /******************************************************************************
  * SearchForEqualIllumination
  *****************************************************************************/
-static int SearchForEqualIllumination(List* l, void* key) {
-  CamIlluProfile_t* illu = (CamIlluProfile_t*)l;
-  CamIlluProfile_t* k = (CamIlluProfile_t*)key;
+static int SearchForEqualAwb_V11_Illumination(List* l, void* key) {
+  CamAwb_V11_IlluProfile_t* illu = (CamAwb_V11_IlluProfile_t*)l;
+  CamAwb_V11_IlluProfile_t* k = (CamAwb_V11_IlluProfile_t*)key;
 
   return ((!strncmp(illu->name, k->name, sizeof(k->name))) ? 1 : 0);
 }
@@ -194,10 +227,31 @@ static int SearchForEqualIllumination(List* l, void* key) {
 
 
 /******************************************************************************
- * SearchIlluminationByName
+ * SearchForEqualAwb_V10_Illumination
  *****************************************************************************/
-static int SearchIlluminationByName(List* l, void* key) {
-  CamIlluProfile_t* illu = (CamIlluProfile_t*)l;
+static int SearchForEqualAwb_V10_Illumination(List* l, void* key) {
+  CamAwb_V10_IlluProfile_t* illu = (CamAwb_V10_IlluProfile_t*)l;
+  CamAwb_V10_IlluProfile_t* k = (CamAwb_V10_IlluProfile_t*)key;
+
+  return ((!strncmp(illu->name, k->name, sizeof(k->name))) ? 1 : 0);
+}
+
+
+
+/******************************************************************************
+ * SearchAwb_V11_IlluminationByName
+ *****************************************************************************/
+static int SearchAwb_V11_IlluminationByName(List* l, void* key) {
+  CamAwb_V11_IlluProfile_t* illu = (CamAwb_V11_IlluProfile_t*)l;
+  char* k = (char*)key;
+
+  return ((!strncmp(illu->name, k, sizeof(illu->name))) ? 1 : 0);
+}
+/******************************************************************************
+ * SearchAwb_V10_IlluminationByName
+ *****************************************************************************/
+static int SearchAwb_V10_IlluminationByName(List* l, void* key) {
+  CamAwb_V10_IlluProfile_t* illu = (CamAwb_V10_IlluProfile_t*)l;
   char* k = (char*)key;
 
   return ((!strncmp(illu->name, k, sizeof(illu->name))) ? 1 : 0);
@@ -368,6 +422,19 @@ static int SearchDpfProfileByResolution(List* l, void* key) {
   return ((!strncmp(dpf->resolution, k, sizeof(dpf->resolution))) ? 1 : 0);
 }
 
+static int SearchForEqualNewDsp3DNRSetting(List* l, void* key) {
+  CamNewDsp3DNRProfile_t* ecm = (CamNewDsp3DNRProfile_t*)l;
+  CamNewDsp3DNRProfile_t* k   = (CamNewDsp3DNRProfile_t*)key;
+
+  return ((!strncmp(ecm->name, k->name, sizeof(k->name))) ? 1 : 0);
+}
+
+static int SearchNewDsp3DNRSettingByName(List* l, void* key) {
+  CamNewDsp3DNRProfile_t* dsp3DNR = (CamNewDsp3DNRProfile_t*)l;
+  char* k = (char*)key;
+
+  return ((!strncmp(dsp3DNR->name, k, sizeof(dsp3DNR->name))) ? 1 : 0);
+}
 /******************************************************************************
  * SearchForEqualEcmScheme
  *****************************************************************************/
@@ -398,6 +465,34 @@ static int SearchFilterProfileByName(List* l, void* key) {
 
   return ((!strncmp(filter->name, k, sizeof(filter->name))) ? 1 : 0);
 }
+static int SearchForEqualDySetpointProfile(List* l, void* key) {
+  CamCalibAecDynamicSetpoint_t* pDySetpoint = (CamCalibAecDynamicSetpoint_t*)l;
+  CamCalibAecDynamicSetpoint_t* k   = (CamCalibAecDynamicSetpoint_t*)key;
+
+  return ((!strncmp(pDySetpoint->name, k->name, sizeof(k->name))) ? 1 : 0);
+}
+
+static int SearchDySetpointProfileByName(List* l, void* key) {
+  CamCalibAecDynamicSetpoint_t* pDySetpoint = (CamCalibAecDynamicSetpoint_t*)l;
+  char* k = (char*)key;
+
+  return ((!strncmp(pDySetpoint->name, k, sizeof(pDySetpoint->name))) ? 1 : 0);
+}
+
+static int SearchForEqualExpSeparateProfile(List* l, void* key) {
+  CamCalibAecExpSeparate_t* pExpSeparate = (CamCalibAecExpSeparate_t*)l;
+  CamCalibAecExpSeparate_t* k   = (CamCalibAecExpSeparate_t*)key;
+
+  return ((!strncmp(pExpSeparate->name, k->name, sizeof(k->name))) ? 1 : 0);
+}
+
+static int SearchExpSeparateProfileByName(List* l, void* key) {
+  CamCalibAecExpSeparate_t* pExpSeparate = (CamCalibAecExpSeparate_t*)l;
+  char* k = (char*)key;
+
+  return ((!strncmp(pExpSeparate->name, k, sizeof(pExpSeparate->name))) ? 1 : 0);
+}
+
 
 
 /******************************************************************************
@@ -436,7 +531,50 @@ static int SearchGocProfileByName(List* l, void* key) {
   return ((!strncmp(dpf->name, k, sizeof(dpf->name))) ? 1 : 0);
 }
 
+static void ReplaceLscProfile(List* l, void* content) {
+  CamLscProfile_t* oldpfl = (CamLscProfile_t*)l;
+  CamLscProfile_t* newpfl = (CamLscProfile_t*)content;
 
+  oldpfl->LscSectors = newpfl->LscSectors;
+  oldpfl->LscNo = newpfl->LscNo;
+  oldpfl->LscXo = newpfl->LscXo;
+  oldpfl->LscYo = newpfl->LscYo;
+  memcpy(&oldpfl->LscXSizeTbl[0], &newpfl->LscXSizeTbl[0], sizeof(newpfl->LscXSizeTbl));
+  memcpy(&oldpfl->LscYSizeTbl[0], &newpfl->LscYSizeTbl[0], sizeof(newpfl->LscYSizeTbl));
+  memcpy(&oldpfl->LscMatrix[0], &newpfl->LscMatrix[0], sizeof(newpfl->LscMatrix));
+}
+
+/******************************************************************************
+/******************************************************************************
+ * SearchForEqualIesharpenProfile
+ *****************************************************************************/
+static int SearchForEqualIesharpenProfile( List *l, void *key )
+{
+    CamIesharpenProfile_t *dpf = (CamIesharpenProfile_t *)l;
+    CamIesharpenProfile_t *k = (CamIesharpenProfile_t *)key;
+
+    return ( (!strncmp(dpf->name, k->name, sizeof(k->name))) ? 1 : 0 );
+}
+/******************************************************************************
+ * SearchIesharpenProfileByName
+ *****************************************************************************/
+static int SearchIesharpenProfileByName( List *l, void *key )
+{
+    CamIesharpenProfile_t *iesharpen = (CamIesharpenProfile_t *)l;
+    char *k = (char *)key;
+
+    return ( (!strncmp(iesharpen->name, k, sizeof(iesharpen->name))) ? 1 : 0 );
+}
+/******************************************************************************
+ * SearchIesharpenProfileByResolution
+ *****************************************************************************/
+static int SearchIesharpenProfileByResolution( List *l, void *key )
+{
+    CamIesharpenProfile_t *iesharpen = (CamIesharpenProfile_t*)l;
+    char *k = (char *)key;
+
+    return ( (!strncmp(iesharpen->resolution, k, sizeof(iesharpen->resolution))) ? 1 : 0 );
+}
 /******************************************************************************
  * ClearFrameRateList
  *****************************************************************************/
@@ -485,9 +623,9 @@ static void ClearResolutionList(List* l) {
 /******************************************************************************
  * ClearAwbGlobalList
  *****************************************************************************/
-static void ClearAwbGlobalList(List* l) {
+static void ClearAwb_V10_GlobalList(List* l) {
   if (!ListEmpty(l)) {
-    CamCalibAwbGlobal_t* pAwbGlobal = (CamCalibAwbGlobal_t*)ListRemoveHead(l);
+    CamCalibAwb_V10_Global_t* pAwbGlobal = (CamCalibAwb_V10_Global_t*)ListRemoveHead(l);
     while (pAwbGlobal) {
       /* 1.) free sub structures of AWB globals */
       free(pAwbGlobal->AwbClipParam.pRg1);
@@ -522,7 +660,51 @@ static void ClearAwbGlobalList(List* l) {
       free(pAwbGlobal);
 
       /* 3.) get next illumination */
-      pAwbGlobal = (CamCalibAwbGlobal_t*)ListRemoveHead(l);
+      pAwbGlobal = (CamCalibAwb_V10_Global_t*)ListRemoveHead(l);
+    }
+  }
+
+  ListInit(l);
+}
+
+
+
+/******************************************************************************
+ * ClearAwb_V11_GlobalList
+ *****************************************************************************/
+static void ClearAwb_V11_GlobalList(List* l) {
+  if (!ListEmpty(l)) {
+    CamCalibAwb_V11_Global_t* pAwbGlobal = (CamCalibAwb_V11_Global_t*)ListRemoveHead(l);
+    while (pAwbGlobal) {
+      /* 1.) free sub structures of AWB globals */
+      free(pAwbGlobal->AwbClipParam.pRg1);
+      free(pAwbGlobal->AwbClipParam.pMaxDist1);
+      free(pAwbGlobal->AwbClipParam.pRg2);
+      free(pAwbGlobal->AwbClipParam.pMaxDist2);
+
+      free(pAwbGlobal->AwbGlobalFadeParm.pGlobalFade1);
+      free(pAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance1);
+      free(pAwbGlobal->AwbGlobalFadeParm.pGlobalFade2);
+      free(pAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance2);
+
+      free(pAwbGlobal->AwbFade2Parm.pFade);
+      free(pAwbGlobal->AwbFade2Parm.pMaxCSum_br);
+      free(pAwbGlobal->AwbFade2Parm.pMaxCSum_sr);
+      free(pAwbGlobal->AwbFade2Parm.pMinC_br);
+      free(pAwbGlobal->AwbFade2Parm.pMaxY_br);
+      free(pAwbGlobal->AwbFade2Parm.pMinY_br);
+      free(pAwbGlobal->AwbFade2Parm.pMinC_sr);
+      free(pAwbGlobal->AwbFade2Parm.pMaxY_sr);
+      free(pAwbGlobal->AwbFade2Parm.pMinY_sr);
+      free(pAwbGlobal->AwbFade2Parm.pRefCb);
+      free(pAwbGlobal->AwbFade2Parm.pRefCr);
+
+
+      /* 2.) free AWB globals */
+      free(pAwbGlobal);
+
+      /* 3.) get next illumination */
+      pAwbGlobal = (CamCalibAwb_V11_Global_t*)ListRemoveHead(l);
     }
   }
 
@@ -580,9 +762,9 @@ static void ClearEcmProfileList(List* l) {
 /******************************************************************************
  * ClearIlluminationList
  *****************************************************************************/
-static void ClearIlluminationList(List* l) {
+static void ClearAwb_V11_IlluminationList(List* l) {
   if (!ListEmpty(l)) {
-    CamIlluProfile_t* pIllumination = (CamIlluProfile_t*)ListRemoveHead(l);
+    CamAwb_V11_IlluProfile_t* pIllumination = (CamAwb_V11_IlluProfile_t*)ListRemoveHead(l);
     while (pIllumination) {
       /* 1.) free sub structures of illumination */
       free(pIllumination->SaturationCurve.pSensorGain);
@@ -595,7 +777,32 @@ static void ClearIlluminationList(List* l) {
       free(pIllumination);
 
       /* 3.) get next illumination */
-      pIllumination = (CamIlluProfile_t*)ListRemoveHead(l);
+      pIllumination = (CamAwb_V11_IlluProfile_t*)ListRemoveHead(l);
+    }
+  }
+
+  ListInit(l);
+}
+
+/******************************************************************************
+ * ClearAwb_V10_IlluminationList
+ *****************************************************************************/
+static void ClearAwb_V10_IlluminationList(List* l) {
+  if (!ListEmpty(l)) {
+    CamAwb_V10_IlluProfile_t* pIllumination = (CamAwb_V10_IlluProfile_t*)ListRemoveHead(l);
+    while (pIllumination) {
+      /* 1.) free sub structures of illumination */
+      free(pIllumination->SaturationCurve.pSensorGain);
+      free(pIllumination->SaturationCurve.pSaturation);
+
+      free(pIllumination->VignettingCurve.pSensorGain);
+      free(pIllumination->VignettingCurve.pVignetting);
+
+      /* 2.) free illumination */
+      free(pIllumination);
+
+      /* 3.) get next illumination */
+      pIllumination = (CamAwb_V10_IlluProfile_t*)ListRemoveHead(l);
     }
   }
 
@@ -666,6 +873,41 @@ static void ClearCacProfileList(List* l) {
       free(pCacProfile);
       pCacProfile = (CamCacProfile_t*)ListRemoveHead(l);
     }
+  }
+
+  ListInit(l);
+}
+
+/******************************************************************************
+ * ClearDsp3DNRList
+ *****************************************************************************/
+static void ClearNewDsp3DNRList(List* l) {
+  if (!ListEmpty(l)) {
+    CamNewDsp3DNRProfile_t * pNewDsp3DNR = (CamNewDsp3DNRProfile_t*)ListRemoveHead(l);
+    while (pNewDsp3DNR) {
+	  if(pNewDsp3DNR->pgain_Level){
+		free(pNewDsp3DNR->pgain_Level);
+  	  }
+
+	  if(pNewDsp3DNR->ynr.pynr_time_weight_level){
+		free(pNewDsp3DNR->ynr.pynr_time_weight_level);
+	  }
+
+	  if(pNewDsp3DNR->ynr.pynr_spat_weight_level){
+		free(pNewDsp3DNR->ynr.pynr_spat_weight_level);
+	  }
+
+	  if(pNewDsp3DNR->uvnr.puvnr_weight_level){
+		free(pNewDsp3DNR->uvnr.puvnr_weight_level);
+	  }
+
+	  if(pNewDsp3DNR->sharp.psharp_weight_level){
+		free(pNewDsp3DNR->sharp.psharp_weight_level);
+	  }
+
+	  /* 3.) get next item */
+      pNewDsp3DNR = (CamNewDsp3DNRProfile_t*)ListRemoveHead(l);
+	}
   }
 
   ListInit(l);
@@ -761,6 +1003,74 @@ static void ClearDsp3DNRList(List* l) {
   ListInit(l);
 }
 
+/******************************************************************************
+ * ClearDsp3DNRList
+ *****************************************************************************/
+static void ClearDemosicLP(CamDemosaicLpProfile_t *pDemosaicLp) {
+	if(pDemosaicLp->diff_divided0){
+		free(pDemosaicLp->diff_divided0);
+	}
+	if(pDemosaicLp->diff_divided1){
+		free(pDemosaicLp->diff_divided1);
+	}
+	if(pDemosaicLp->diff_divided2){
+		free(pDemosaicLp->diff_divided2);
+	}
+	if(pDemosaicLp->diff_divided3){
+		free(pDemosaicLp->diff_divided3);
+	}
+	if(pDemosaicLp->diff_divided4){
+		free(pDemosaicLp->diff_divided4);
+	}
+	
+	if(pDemosaicLp->thCSC_divided0){
+		free(pDemosaicLp->thCSC_divided0);
+	}
+	if(pDemosaicLp->thCSC_divided1){
+		free(pDemosaicLp->thCSC_divided1);
+	}
+	if(pDemosaicLp->thCSC_divided2){
+		free(pDemosaicLp->thCSC_divided2);
+	}
+	if(pDemosaicLp->thCSC_divided3){
+		free(pDemosaicLp->thCSC_divided3);
+	}
+	if(pDemosaicLp->thCSC_divided4){
+		free(pDemosaicLp->thCSC_divided4);
+	}
+	
+	if(pDemosaicLp->thH_divided0){
+		free(pDemosaicLp->thH_divided0);
+	}
+	if(pDemosaicLp->thH_divided1){
+		free(pDemosaicLp->thH_divided1);
+	}
+	if(pDemosaicLp->thH_divided2){
+		free(pDemosaicLp->thH_divided2);
+	}
+	if(pDemosaicLp->thH_divided3){
+		free(pDemosaicLp->thH_divided3);
+	}
+	if(pDemosaicLp->thH_divided4){
+		free(pDemosaicLp->thH_divided4);
+	}
+	
+	if(pDemosaicLp->varTh_divided0){
+		free(pDemosaicLp->varTh_divided0);
+	}
+	if(pDemosaicLp->varTh_divided1){
+		free(pDemosaicLp->varTh_divided1);
+	}
+	if(pDemosaicLp->varTh_divided2){
+		free(pDemosaicLp->varTh_divided2);
+	}
+	if(pDemosaicLp->varTh_divided3){
+		free(pDemosaicLp->varTh_divided3);
+	}
+	if(pDemosaicLp->varTh_divided4){
+		free(pDemosaicLp->varTh_divided4);
+	}
+}
 
 
 /******************************************************************************
@@ -834,9 +1144,10 @@ static void ClearFilterList(List* l) {
 	  if(pFilter->FiltLevelRegConf.p_thresh_sh1){
 		free(pFilter->FiltLevelRegConf.p_thresh_sh1);
   	  }
-	  
-      free(pFilter);
 
+	  ClearDemosicLP(&pFilter->DemosaicLpConf);
+      free(pFilter);
+		
       /* 3.) get next item */
       pFilter = (CamFilterProfile_t*)ListRemoveHead(l);
     }
@@ -844,6 +1155,7 @@ static void ClearFilterList(List* l) {
 
   ListInit(l);
 }
+
 
 /******************************************************************************
  * ClearDpfProfileList
@@ -853,7 +1165,9 @@ static void ClearDpfProfileList(List* l) {
     CamDpfProfile_t* pDpfProfile = (CamDpfProfile_t*)ListRemoveHead(l);
     while (pDpfProfile) {
 	  ClearDsp3DNRList(&pDpfProfile->Dsp3DNRSettingProfileList);
+	  ClearNewDsp3DNRList(&pDpfProfile->newDsp3DNRProfileList);
 	  ClearFilterList(&pDpfProfile->FilterList);
+	  
       free(pDpfProfile);
       pDpfProfile = (CamDpfProfile_t*)ListRemoveHead(l);
     }
@@ -875,6 +1189,89 @@ static void ClearDpccProfileList(List* l) {
   }
 
   ListInit(l);
+}
+
+//werring.wu add iesharpen 2018 1 18
+/******************************************************************************
+ * ClearIesharpenProfileList
+ *****************************************************************************/
+static void ClearIesharpenProfileList(  List *l )
+{
+    if ( !ListEmpty( l ) )
+    {
+        CamIesharpenProfile_t *pIesharpenProfile = (CamIesharpenProfile_t*)ListRemoveHead( l );
+        while ( pIesharpenProfile )
+        {
+            if(pIesharpenProfile->gauss_flat_coe!=NULL){
+                free(pIesharpenProfile->gauss_flat_coe);
+            }
+            if(pIesharpenProfile->gauss_noise_coe!=NULL){
+                free(pIesharpenProfile->gauss_noise_coe);
+            }
+            if(pIesharpenProfile->gauss_other_coe!=NULL){
+                free(pIesharpenProfile->gauss_other_coe);
+            }
+            if(pIesharpenProfile->hgridconf.line1_filter_coe!=NULL){
+                free(pIesharpenProfile->hgridconf.line1_filter_coe);
+            }
+            if(pIesharpenProfile->hgridconf.line2_filter_coe != NULL){
+                free(pIesharpenProfile->hgridconf.line2_filter_coe);
+            }
+            if(pIesharpenProfile->hgridconf.line3_filter_coe!=NULL){
+                free(pIesharpenProfile->hgridconf.line3_filter_coe);
+            }
+            if(pIesharpenProfile->hgridconf.p_grad!=NULL){
+                free(pIesharpenProfile->hgridconf.p_grad);
+            }
+            if(pIesharpenProfile->hgridconf.sharp_factor!=NULL){
+                free(pIesharpenProfile->hgridconf.sharp_factor);
+            }
+            if(pIesharpenProfile->lgridconf.line1_filter_coe!=NULL){
+                free(pIesharpenProfile->lgridconf.line1_filter_coe);
+            }
+            if(pIesharpenProfile->lgridconf.line2_filter_coe!=NULL){
+                free(pIesharpenProfile->lgridconf.line2_filter_coe);
+            }
+            if(pIesharpenProfile->lgridconf.line3_filter_coe!=NULL){
+                free(pIesharpenProfile->lgridconf.line3_filter_coe);
+            }
+            if(pIesharpenProfile->lgridconf.p_grad!=NULL){
+                free(pIesharpenProfile->lgridconf.p_grad);
+            }
+            if(pIesharpenProfile->lgridconf.sharp_factor!=NULL){
+                free(pIesharpenProfile->lgridconf.sharp_factor);
+            }
+            if(pIesharpenProfile->pmaxnumber!=NULL){
+                free(pIesharpenProfile->pmaxnumber);
+            }
+            if(pIesharpenProfile->pminnumber!=NULL){
+                free(pIesharpenProfile->pminnumber);
+            }
+            if(pIesharpenProfile->P_delta1!=NULL){
+                free(pIesharpenProfile->P_delta1);
+            }
+            if(pIesharpenProfile->P_delta2!=NULL){
+                free(pIesharpenProfile->P_delta2);
+            }
+            if(pIesharpenProfile->uv_gauss_flat_coe!=NULL){
+                free(pIesharpenProfile->uv_gauss_flat_coe);
+            }
+            if(pIesharpenProfile->uv_gauss_noise_coe!=NULL){
+                free(pIesharpenProfile->uv_gauss_noise_coe);
+            }
+            if(pIesharpenProfile->uv_gauss_other_coe!=NULL){
+                free(pIesharpenProfile->uv_gauss_other_coe);
+            }
+            if(pIesharpenProfile->yavg_thr!=NULL){
+                free(pIesharpenProfile->yavg_thr);
+            }
+
+            free( pIesharpenProfile );
+            pIesharpenProfile = (CamIesharpenProfile_t *)ListRemoveHead( l );
+        }
+    }
+
+    ListInit( l );
 }
 
 /******************************************************************************
@@ -939,7 +1336,7 @@ static inline RESULT ValidateResolution(CamResolution_t* pResolution) {
 /******************************************************************************
  * ValidateAwbData
  *****************************************************************************/
-static inline RESULT ValidateAwbData(CamCalibAwbGlobal_t* pAwbData) {
+static inline RESULT ValidateAwb_V11_Data(CamCalibAwb_V11_Global_t* pAwbData) {
   LOGV("%s (enter)\n", __func__);
 
   if (NULL == pAwbData) {
@@ -952,6 +1349,27 @@ static inline RESULT ValidateAwbData(CamCalibAwbGlobal_t* pAwbData) {
   }
 
   LOGV("%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * ValidateAwb_V10_Data
+ *****************************************************************************/
+static inline RESULT ValidateAwb_V10_Data(CamCalibAwb_V10_Global_t* pAwbData) {
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pAwbData) {
+    return (RET_NULL_POINTER);
+  }
+
+  if ((!strlen(pAwbData->name))
+      || (!strlen(pAwbData->resolution))) {
+    return (RET_INVALID_PARM);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
 
   return (RET_SUCCESS);
 }
@@ -1012,11 +1430,50 @@ static inline RESULT ValidateEcmScheme(CamEcmScheme_t* pEcmScheme) {
   return (RET_SUCCESS);
 }
 
+/******************************************************************************
+ * ValidateEcmScheme
+ *****************************************************************************/
+static inline RESULT ValidateDySetpoint(CamCalibAecDynamicSetpoint_t* pDySetpoint) {
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pDySetpoint) {
+    return (RET_NULL_POINTER);
+  }
+
+  if (!strlen(pDySetpoint->name)) {
+    return (RET_INVALID_PARM);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
 
 /******************************************************************************
- * ValidateIllumination
+ * ValidateEcmScheme
  *****************************************************************************/
-static inline RESULT ValidateIllumination(CamIlluProfile_t* pIllumination) {
+static inline RESULT ValidateExpSeparate(CamCalibAecExpSeparate_t* pExpSeparate) {
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pExpSeparate) {
+    return (RET_NULL_POINTER);
+  }
+
+  if (!strlen(pExpSeparate->name)) {
+    return (RET_INVALID_PARM);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+
+/******************************************************************************
+ * ValidateAwb_V11_Illumination
+ *****************************************************************************/
+static inline RESULT ValidateAwb_V11_Illumination(CamAwb_V11_IlluProfile_t* pIllumination) {
   LOGV("%s (enter)\n", __func__);
 
   if (NULL == pIllumination) {
@@ -1028,6 +1485,26 @@ static inline RESULT ValidateIllumination(CamIlluProfile_t* pIllumination) {
   }
 
   LOGV("%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * ValidateAwb_V10_Illumination
+ *****************************************************************************/
+static inline RESULT ValidateAwb_V10_Illumination(CamAwb_V10_IlluProfile_t* pIllumination) {
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pIllumination) {
+    return (RET_NULL_POINTER);
+  }
+
+  if (!strlen(pIllumination->name)) {
+    return (RET_INVALID_PARM);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
 
   return (RET_SUCCESS);
 }
@@ -1145,6 +1622,21 @@ static inline RESULT ValidateDpfProfile(CamDpfProfile_t* pDpfProfile) {
   return (RET_SUCCESS);
 }
 
+static inline RESULT ValidateNewDsp3dnrSetting(CamNewDsp3DNRProfile_t* pNewDsp3dnr) {
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pNewDsp3dnr) {
+    return (RET_NULL_POINTER);
+  }
+
+  if (!strlen(pNewDsp3dnr->name)) {
+    return (RET_INVALID_PARM);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
 /******************************************************************************
  * ValidateEcmScheme
  *****************************************************************************/
@@ -1201,6 +1693,29 @@ static inline RESULT ValidateDpccProfile(CamDpccProfile_t* pDpccProfile) {
   return (RET_SUCCESS);
 }
 
+//werring.wu add 2018 1 18
+/******************************************************************************
+ * ValidateIesharpenProfile
+ *****************************************************************************/
+static inline RESULT ValidateIesharpenProfile( CamIesharpenProfile_t *pIesharpenProfile )
+{
+    LOGV("%s (enter)\n", __func__);
+
+    if ( NULL == pIesharpenProfile )
+    {
+        return ( RET_NULL_POINTER );
+    }
+
+    if ( (!strlen( pIesharpenProfile->name ))
+            || (!strlen( pIesharpenProfile->resolution )) )
+    {
+        return ( RET_INVALID_PARM );
+    }
+
+    LOGV("%s (exit)\n", __func__);
+
+    return ( RET_SUCCESS );
+}
 
 /******************************************************************************
  * ClearContext
@@ -1213,7 +1728,14 @@ static RESULT ClearContext(CamCalibDbContext_t* pCamCalibDbCtx) {
   }
 
   ClearResolutionList(&pCamCalibDbCtx->resolution);
-  ClearAwbGlobalList(&pCamCalibDbCtx->awb_global);
+  CamCalibAwbPara_t*          pAwbProfile_test=pCamCalibDbCtx->pAwbProfile;     /* AWB  profile*/
+  CamAwbPara_V11_t           Para_V11_test =pAwbProfile_test->Para_V11;
+  ClearAwb_V11_GlobalList(&pCamCalibDbCtx->pAwbProfile->Para_V11.awb_global);
+  ClearAwb_V10_GlobalList(&pCamCalibDbCtx->pAwbProfile->Para_V10.awb_global);
+  if (pCamCalibDbCtx->pAfGlobal) {
+  	free(pCamCalibDbCtx->pAfGlobal);
+    pCamCalibDbCtx->pAfGlobal = NULL;
+	}
   if (pCamCalibDbCtx->pAecGlobal) {
   	if(pCamCalibDbCtx->pAecGlobal->GainRange.pGainRange != NULL){
 		free(pCamCalibDbCtx->pAecGlobal->GainRange.pGainRange);
@@ -1221,6 +1743,11 @@ static RESULT ClearContext(CamCalibDbContext_t* pCamCalibDbCtx) {
 	if(pCamCalibDbCtx->pAecGlobal->GridWeights.pWeight){
 		free(pCamCalibDbCtx->pAecGlobal->GridWeights.pWeight);
 	}
+	if(pCamCalibDbCtx->pAecGlobal->NightGridWeights.pWeight){
+		free(pCamCalibDbCtx->pAecGlobal->NightGridWeights.pWeight);
+	}
+	ClearDySetpointList(&pCamCalibDbCtx->pAecGlobal->DySetpointList);
+	ClearExpSeparateList(&pCamCalibDbCtx->pAecGlobal->ExpSeparateList);
     free(pCamCalibDbCtx->pAecGlobal);
   }
   
@@ -1237,7 +1764,9 @@ static RESULT ClearContext(CamCalibDbContext_t* pCamCalibDbCtx) {
   if (pCamCalibDbCtx->pCprocGlobal)
     free(pCamCalibDbCtx->pCprocGlobal);
   ClearEcmProfileList(& pCamCalibDbCtx->ecm_profile);
-  ClearIlluminationList(&pCamCalibDbCtx->illumination);
+  ClearAwb_V11_IlluminationList(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination);  
+  ClearAwb_V10_IlluminationList(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination);  
+  free(pCamCalibDbCtx->pAwbProfile);
   ClearLscProfileList(&pCamCalibDbCtx->lsc_profile);
   ClearCcProfileList(&pCamCalibDbCtx->cc_profile);
   ClearBlsProfileList(&pCamCalibDbCtx->bls_profile);
@@ -1257,6 +1786,48 @@ static RESULT ClearContext(CamCalibDbContext_t* pCamCalibDbCtx) {
 /******************************************************************************
  * See header file for detailed comment.
  *****************************************************************************/
+
+/******************************************************************************
+ * ClearEcmProfileList
+ *****************************************************************************/
+void ClearDySetpointList(List* l) {
+  if (!ListEmpty(l)) {
+	CamCalibAecDynamicSetpoint_t* pDySetpoint = (CamCalibAecDynamicSetpoint_t*)ListRemoveHead(l);
+	while (pDySetpoint) {
+	  if(pDySetpoint->pDySetpoint != NULL)
+		free(pDySetpoint->pDySetpoint);
+
+	  if(pDySetpoint->pExpValue != NULL)
+		free(pDySetpoint->pExpValue);
+
+	  /* 2.) free item */
+	  free(pDySetpoint);
+
+	  /* 3.) get next item */
+	  pDySetpoint = (CamCalibAecDynamicSetpoint_t*)ListRemoveHead(l);
+	}
+  }
+
+  ListInit(l);
+}
+/******************************************************************************
+ * ClearEcmProfileList
+ *****************************************************************************/
+void ClearExpSeparateList(List* l) {
+  if (!ListEmpty(l)) {
+	CamCalibAecExpSeparate_t* pExpSeparate = (CamCalibAecExpSeparate_t*)ListRemoveHead(l);
+	while (pExpSeparate) {
+
+	  /* 2.) free item */
+	  free(pExpSeparate);
+
+	  /* 3.) get next item */
+	  pExpSeparate = (CamCalibAecExpSeparate_t*)ListRemoveHead(l);
+	}
+  }
+
+  ListInit(l);
+}
 
 /******************************************************************************
  * CamCalibDbCreate
@@ -1282,10 +1853,14 @@ RESULT CamCalibDbCreate
   }
   MEMSET(pCamCalibDbCtx, 0, sizeof(CamCalibDbContext_t));
   ListInit(&pCamCalibDbCtx->resolution);
-  ListInit(&pCamCalibDbCtx->awb_global);
+  pCamCalibDbCtx->pAwbProfile = (CamCalibAwbPara_t*)malloc(sizeof(CamCalibAwbPara_t));
+  ListInit(&pCamCalibDbCtx->pAwbProfile->Para_V11.awb_global);
+  ListInit(&pCamCalibDbCtx->pAwbProfile->Para_V10.awb_global);
   pCamCalibDbCtx->pAecGlobal = NULL;
+  pCamCalibDbCtx->pAfGlobal = NULL;
   ListInit(&pCamCalibDbCtx->ecm_profile);
-  ListInit(&pCamCalibDbCtx->illumination);
+  ListInit(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination);  
+  ListInit(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination);
   ListInit(&pCamCalibDbCtx->lsc_profile);
   ListInit(&pCamCalibDbCtx->cc_profile);
   ListInit(&pCamCalibDbCtx->cac_profile);
@@ -1771,13 +2346,13 @@ RESULT CamCalibDbGetResolutionIdxByName
 /******************************************************************************
  * CamCalibDbAddAwbGlobal
  *****************************************************************************/
-RESULT CamCalibDbAddAwbGlobal
+RESULT CamCalibDbAddAwb_V10_Global
 (
     CamCalibDbHandle_t  hCamCalibDb,
-    CamCalibAwbGlobal_t* pAddAwbGlobal
+    CamCalibAwb_V10_Global_t* pAddAwbGlobal
 ) {
   CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
-  CamCalibAwbGlobal_t* pNewAwbGlobal = NULL;
+  CamCalibAwb_V10_Global_t* pNewAwbGlobal = NULL;
 
   RESULT result;
 
@@ -1787,23 +2362,23 @@ RESULT CamCalibDbAddAwbGlobal
     return (RET_WRONG_HANDLE);
   }
 
-  result = ValidateAwbData(pAddAwbGlobal);
+  result = ValidateAwb_V10_Data(pAddAwbGlobal);
   if (result != RET_SUCCESS) {
     return (result);
   }
 
   /* check if data already exists */
-  pNewAwbGlobal = (CamCalibAwbGlobal_t*)ListSearch(&pCamCalibDbCtx->awb_global, SearchForEqualAwbGlobal, (void*)pAddAwbGlobal);
+  pNewAwbGlobal = (CamCalibAwb_V10_Global_t*)ListSearch(&pCamCalibDbCtx->pAwbProfile->Para_V10.awb_global, SearchForEqualAwb_V10_Global, (void*)pAddAwbGlobal);
   if (NULL == pNewAwbGlobal) {
     CamAwbClipParm_t*        pAwbClipParam      = NULL;
     CamAwbGlobalFadeParm_t*  pAwbGlobalFadeParm = NULL;
-    CamAwbFade2Parm_t*       pAwbFade2Parm      = NULL;
+    CamAwb_V10_Fade2Parm_t*  pAwbFade2Parm      = NULL;
 
     int32_t nArraySize1;
     int32_t nArraySize2;
 
-    pNewAwbGlobal = malloc(sizeof(CamCalibAwbGlobal_t));
-    MEMCPY(pNewAwbGlobal, pAddAwbGlobal, sizeof(CamCalibAwbGlobal_t));
+    pNewAwbGlobal = malloc(sizeof(CamCalibAwb_V10_Global_t));
+    MEMCPY(pNewAwbGlobal, pAddAwbGlobal, sizeof(CamCalibAwb_V10_Global_t));
 
     pAwbClipParam       = &pNewAwbGlobal->AwbClipParam;
     pAwbGlobalFadeParm  = &pNewAwbGlobal->AwbGlobalFadeParm;
@@ -1869,7 +2444,7 @@ RESULT CamCalibDbAddAwbGlobal
     MEMCPY(pAwbFade2Parm->pRefCr, pAddAwbGlobal->AwbFade2Parm.pRefCr, sizeof(float) *  nArraySize1);
 
     ListPrepareItem(pNewAwbGlobal);
-    ListAddTail(&pCamCalibDbCtx->awb_global, pNewAwbGlobal);
+    ListAddTail(&pCamCalibDbCtx->pAwbProfile->Para_V10.awb_global, pNewAwbGlobal);
   } else {
     return (RET_INVALID_PARM);
   }
@@ -1882,13 +2457,175 @@ RESULT CamCalibDbAddAwbGlobal
 
 
 /******************************************************************************
+ * CamCalibDbAddAwb_VersionName
+ *****************************************************************************/
+RESULT CamCalibDbAddAwb_VersionName
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CAM_AwbVersion_t vName
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamCalibAwb_V10_Global_t* pNewAwbGlobal = NULL;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+  
+  LOGV( "valid_version :%d \n", vName);
+  pCamCalibDbCtx->pAwbProfile->valid_version =	vName;
+
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+
+/******************************************************************************
+ * CamCalibDbGetAwb_VersionName
+ *****************************************************************************/
+RESULT CamCalibDbGetAwb_VersionName
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CAM_AwbVersion_t *vName
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamCalibAwb_V10_Global_t* pNewAwbGlobal = NULL;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+  
+  *vName = pCamCalibDbCtx->pAwbProfile->valid_version;
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+
+/******************************************************************************
+ * CamCalibDbAddAwb_V11_Global
+ *****************************************************************************/
+RESULT CamCalibDbAddAwb_V11_Global
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamCalibAwb_V11_Global_t* pAddAwbGlobal
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamCalibAwb_V11_Global_t* pNewAwbGlobal = NULL;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  result = ValidateAwb_V11_Data(pAddAwbGlobal);
+  if (result != RET_SUCCESS) {
+    return (result);
+  }
+
+  /* check if data already exists */
+  pNewAwbGlobal = (CamCalibAwb_V11_Global_t*)ListSearch(&pCamCalibDbCtx->pAwbProfile->Para_V11.awb_global, SearchForEqualAwb_V11_Global, (void*)pAddAwbGlobal);
+  if (NULL == pNewAwbGlobal) {
+    CamAwbClipParm_t*        pAwbClipParam      = NULL;
+    CamAwbGlobalFadeParm_t*  pAwbGlobalFadeParm = NULL;
+    CamAwb_V11_Fade2Parm_t*  pAwbFade2Parm      = NULL;
+
+    int32_t nArraySize1;
+    int32_t nArraySize2;
+
+    pNewAwbGlobal = malloc(sizeof(CamCalibAwb_V11_Global_t));
+    MEMCPY(pNewAwbGlobal, pAddAwbGlobal, sizeof(CamCalibAwb_V11_Global_t));
+
+    pAwbClipParam       = &pNewAwbGlobal->AwbClipParam;
+    pAwbGlobalFadeParm  = &pNewAwbGlobal->AwbGlobalFadeParm;
+    pAwbFade2Parm       = &pNewAwbGlobal->AwbFade2Parm;
+
+    // pAwbClipParam
+    nArraySize1 = pAddAwbGlobal->AwbClipParam.ArraySize1;
+    nArraySize2 = pAddAwbGlobal->AwbClipParam.ArraySize2;
+    pAwbClipParam->pRg1 = malloc(sizeof(float) *  nArraySize1);
+    MEMCPY(pAwbClipParam->pRg1, pAddAwbGlobal->AwbClipParam.pRg1, sizeof(float) *  nArraySize1);
+    pAwbClipParam->pMaxDist1 = malloc(sizeof(float) *  nArraySize1);
+    MEMCPY(pAwbClipParam->pMaxDist1, pAddAwbGlobal->AwbClipParam.pMaxDist1, sizeof(float) *  nArraySize1);
+    pAwbClipParam->pRg2 = malloc(sizeof(float) *  nArraySize2);
+    MEMCPY(pAwbClipParam->pRg2, pAddAwbGlobal->AwbClipParam.pRg2, sizeof(float) *  nArraySize2);
+    pAwbClipParam->pMaxDist2 = malloc(sizeof(float) *  nArraySize2);
+    MEMCPY(pAwbClipParam->pMaxDist2, pAddAwbGlobal->AwbClipParam.pMaxDist2, sizeof(float) *  nArraySize2);
+
+    // pAwbGlobalFadeParm
+    nArraySize1 = pAddAwbGlobal->AwbGlobalFadeParm.ArraySize1;
+    nArraySize2 = pAddAwbGlobal->AwbGlobalFadeParm.ArraySize2;
+    pAwbGlobalFadeParm->pGlobalFade1 = malloc(sizeof(float) *  nArraySize1);
+    MEMCPY(pAwbGlobalFadeParm->pGlobalFade1, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalFade1, sizeof(float) *  nArraySize1);
+    pAwbGlobalFadeParm->pGlobalGainDistance1 = malloc(sizeof(float) *  nArraySize1);
+    MEMCPY(pAwbGlobalFadeParm->pGlobalGainDistance1, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance1, sizeof(float) *  nArraySize1);
+    pAwbGlobalFadeParm->pGlobalFade2 = malloc(sizeof(float) *  nArraySize2);
+    MEMCPY(pAwbGlobalFadeParm->pGlobalFade2, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalFade2, sizeof(float) *  nArraySize2);
+    pAwbGlobalFadeParm->pGlobalGainDistance2 = malloc(sizeof(float) *  nArraySize2);
+    MEMCPY(pAwbGlobalFadeParm->pGlobalGainDistance2, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance2, sizeof(float) *  nArraySize2);
+
+    // pAwbFade2Parm
+    nArraySize1 = pAddAwbGlobal->AwbFade2Parm.ArraySize;
+    nArraySize2 = 0l;
+    pAwbFade2Parm->pFade                = malloc(sizeof(float) *  nArraySize1);
+    MEMCPY(pAwbFade2Parm->pFade, pAddAwbGlobal->AwbFade2Parm.pFade, sizeof(float) *  nArraySize1);
+
+    pAwbFade2Parm->pMaxCSum_br = malloc(sizeof(float) * nArraySize1);
+    MEMCPY(pAwbFade2Parm->pMaxCSum_br, pAddAwbGlobal->AwbFade2Parm.pMaxCSum_br, sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMaxCSum_sr = malloc(sizeof(float) * nArraySize1);
+    MEMCPY(pAwbFade2Parm->pMaxCSum_sr, pAddAwbGlobal->AwbFade2Parm.pMaxCSum_sr, sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMinC_br    = malloc(sizeof(float) * nArraySize1);
+    MEMCPY(pAwbFade2Parm->pMinC_br, pAddAwbGlobal->AwbFade2Parm.pMinC_br, sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMinC_sr    = malloc(sizeof(float) * nArraySize1);
+    MEMCPY(pAwbFade2Parm->pMinC_sr, pAddAwbGlobal->AwbFade2Parm.pMinC_sr, sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMaxY_br    = malloc(sizeof(float) * nArraySize1);
+    MEMCPY(pAwbFade2Parm->pMaxY_br, pAddAwbGlobal->AwbFade2Parm.pMaxY_br, sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMaxY_sr    = malloc(sizeof(float) * nArraySize1);
+    MEMCPY(pAwbFade2Parm->pMaxY_sr, pAddAwbGlobal->AwbFade2Parm.pMaxY_sr, sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMinY_br    = malloc(sizeof(float) * nArraySize1);
+    MEMCPY(pAwbFade2Parm->pMinY_br, pAddAwbGlobal->AwbFade2Parm.pMinY_br, sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMinY_sr    = malloc(sizeof(float) * nArraySize1);
+    MEMCPY(pAwbFade2Parm->pMinY_sr, pAddAwbGlobal->AwbFade2Parm.pMinY_sr, sizeof(float) *  nArraySize1);pAwbFade2Parm->pRefCb = malloc(sizeof(float) *  nArraySize1);
+    MEMCPY(pAwbFade2Parm->pRefCb, pAddAwbGlobal->AwbFade2Parm.pRefCb, sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pRefCr = malloc(sizeof(float) *  nArraySize1);
+    MEMCPY(pAwbFade2Parm->pRefCr, pAddAwbGlobal->AwbFade2Parm.pRefCr, sizeof(float) *  nArraySize1);
+
+    ListPrepareItem(pNewAwbGlobal);
+    ListAddTail(&pCamCalibDbCtx->pAwbProfile->Para_V11.awb_global, pNewAwbGlobal);
+  } else {
+    return (RET_INVALID_PARM);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+
+/******************************************************************************
  * CamCalibDbGetAwbGlobalByResolution
  *****************************************************************************/
-RESULT CamCalibDbGetAwbGlobalByResolution
+RESULT CamCalibDbGetAwb_V10_GlobalByResolution
 (
     CamCalibDbHandle_t          hCamCalibDb,
     const CamResolutionName_t   ResName,
-    CamCalibAwbGlobal_t**         pAwbGlobal
+    CamCalibAwb_V10_Global_t**         pAwbGlobal
 ) {
   CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
 
@@ -1905,13 +2642,109 @@ RESULT CamCalibDbGetAwbGlobalByResolution
   }
 
   /* search resolution by name */
-  *pAwbGlobal = (CamCalibAwbGlobal_t*)ListSearch(&pCamCalibDbCtx->awb_global, SearchAwbGlobalByResolution, (void*)ResName);
+  *pAwbGlobal = (CamCalibAwb_V10_Global_t*)ListSearch(&pCamCalibDbCtx->pAwbProfile->Para_V10.awb_global, SearchAwb_V10_GlobalByResolution, (void*)ResName);
 
   LOGV("%s (exit)\n", __func__);
 
   return (RET_SUCCESS);
 }
 
+/******************************************************************************
+ * CamCalibDbGetAwb_V11_GlobalByResolution
+ *****************************************************************************/
+RESULT CamCalibDbGetAwb_V11_GlobalByResolution
+(
+    CamCalibDbHandle_t          hCamCalibDb,
+    const CamResolutionName_t   ResName,
+    CamCalibAwb_V11_Global_t**         pAwbGlobal
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pAwbGlobal) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search resolution by name */
+  *pAwbGlobal = (CamCalibAwb_V11_Global_t*)ListSearch(&pCamCalibDbCtx->pAwbProfile->Para_V11.awb_global, SearchAwb_V11_GlobalByResolution, (void*)ResName);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+/******************************************************************************
+ * CamCalibDbAddAfGlobal
+ *****************************************************************************/
+RESULT CamCalibDbAddAfGlobal
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamCalibAfGlobal_t* pAddAfGlobal
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  RESULT result = RET_SUCCESS;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  /* check if data already exists */
+  if (NULL != pCamCalibDbCtx->pAfGlobal) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* finally allocate, copy & add data */
+  CamCalibAfGlobal_t* pNewAfGlobal = malloc(sizeof(CamCalibAfGlobal_t));
+  if (NULL == pNewAfGlobal) {
+    return (RET_OUTOFMEM);
+  }
+
+  MEMCPY(pNewAfGlobal, pAddAfGlobal, sizeof(CamCalibAfGlobal_t)); 
+
+  pCamCalibDbCtx->pAfGlobal = pNewAfGlobal;
+
+  LOGV( "%s (exit) %d\n", __func__, result);
+
+  return (RET_SUCCESS);
+}
+
+/******************************************************************************
+ * CamCalibDbGetAfGlobal
+ *****************************************************************************/
+RESULT CamCalibDbGetAfGlobal
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamCalibAfGlobal_t** ppAfGlobal
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == ppAfGlobal) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* return reference to global AEC configuration */
+  *ppAfGlobal = pCamCalibDbCtx->pAfGlobal;
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
 
 
 /******************************************************************************
@@ -1947,7 +2780,30 @@ RESULT CamCalibDbAddAecGlobal
     return (RET_OUTOFMEM);
   }
   MEMCPY(pNewAecGlobal, pAddAecGlobal, sizeof(CamCalibAecGlobal_t));
+  ListInit(&pNewAecGlobal->DySetpointList);   // clear possibly not empty schemes list in copy
+  ListInit(&pNewAecGlobal->ExpSeparateList);   // clear possibly not empty scheme
 
+  /* add already linked DySetpoint as well */
+  CamCalibAecDynamicSetpoint_t* pDySetpoint = (CamCalibAecDynamicSetpoint_t*)ListHead(&pAddAecGlobal->DySetpointList);
+  while (pDySetpoint) {
+    result = CamCalibDbAddDySetpoint(hCamCalibDb, pNewAecGlobal, pDySetpoint);
+    if (result != RET_SUCCESS) {
+      return (result);
+    }
+  
+    pDySetpoint = (CamCalibAecDynamicSetpoint_t*)pDySetpoint->p_next;
+  }
+  
+  /* add already linked ExpSeparate as well */
+  CamCalibAecExpSeparate_t* pExpSeparate = (CamCalibAecExpSeparate_t*)ListHead(&pAddAecGlobal->ExpSeparateList);
+  while (pExpSeparate) {
+    result = CamCalibDbAddExpSeparate(hCamCalibDb, pNewAecGlobal, pExpSeparate);
+    if (result != RET_SUCCESS) {
+      return (result);
+    }
+  
+    pExpSeparate = (CamCalibAecExpSeparate_t*)pExpSeparate->p_next;
+  }
   pCamCalibDbCtx->pAecGlobal = pNewAecGlobal;
 
   LOGV("%s (exit)\n", __func__);
@@ -2320,17 +3176,336 @@ RESULT CamCalibDbGetEcmSchemeByIdx
   /* search EC scheme by index */
   *ppEcmScheme = (CamEcmScheme_t*)ListGetItemByIdx(&pEcmProfile->ecm_scheme, idx);
 
-  LOGV("%s (exit)\n", __func__);
+  return (RET_SUCCESS);
+}
+
+/******************************************************************************
+ * CamCalibDbAddDySetpoint
+ *****************************************************************************/
+RESULT CamCalibDbAddDySetpoint
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t* pAecGlobal,
+    CamCalibAecDynamicSetpoint_t* pAddDySetpoint
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamCalibAecDynamicSetpoint_t* pNewDySetpoint = NULL;
+  float* pExpValue;
+  float* pDySetpoint;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pAecGlobal) {
+    return (RET_INVALID_PARM);
+  }
+
+  result = ValidateDySetpoint(pAddDySetpoint);
+  if (result != RET_SUCCESS) {
+    return (result);
+  }
+
+  /* check if data already exists */
+  pNewDySetpoint = (CamCalibAecDynamicSetpoint_t*)ListSearch(&pAecGlobal->DySetpointList, SearchForEqualDySetpointProfile, (void*)pAddDySetpoint);
+  if (NULL != pNewDySetpoint) {
+    return (RET_NOTAVAILABLE);
+  }
+
+  /* finally allocate, copy & add scheme */
+  pNewDySetpoint = malloc(sizeof(CamCalibAecDynamicSetpoint_t));
+  if (NULL == pNewDySetpoint) {
+    return (RET_OUTOFMEM);
+  }
+  MEMCPY(pNewDySetpoint, pAddDySetpoint, sizeof(CamCalibAecDynamicSetpoint_t));
+
+  if (0 != pAddDySetpoint->array_size) {
+    pDySetpoint = malloc(pAddDySetpoint->array_size * sizeof(float));
+    if (NULL == pDySetpoint) {
+      free(pNewDySetpoint);
+      return (RET_OUTOFMEM);
+    }
+    pExpValue = malloc(pAddDySetpoint->array_size * sizeof(float));
+    if (NULL == pExpValue) {
+      free(pNewDySetpoint);
+      free(pDySetpoint);
+      return (RET_OUTOFMEM);
+    }
+
+    pNewDySetpoint->pDySetpoint = pDySetpoint;
+    pNewDySetpoint->pExpValue = pExpValue;
+    MEMCPY(pNewDySetpoint->pDySetpoint, pAddDySetpoint->pDySetpoint, pAddDySetpoint->array_size * sizeof(float));
+    MEMCPY(pNewDySetpoint->pExpValue, pAddDySetpoint->pExpValue, pAddDySetpoint->array_size * sizeof(float));
+  }
+
+  ListPrepareItem(pNewDySetpoint);
+  ListAddTail(&pAecGlobal->DySetpointList, pNewDySetpoint);
+
+  LOGV( "%s (exit)\n", __func__);
 
   return (RET_SUCCESS);
 }
 
 
+/******************************************************************************
+ * CamCalibDbGetNoOfDySetpoint
+ *****************************************************************************/
+RESULT CamCalibDbGetNoOfDySetpoint
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    int32_t*                 no
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pAecGlobal) {
+    return (RET_INVALID_PARM);
+  }
+
+  if (NULL == no) {
+    return (RET_INVALID_PARM);
+  }
+
+  *no = (uint32_t)ListNoItems(&pAecGlobal->DySetpointList);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * CamCalibDbGetEcmSchemeByName
+ *****************************************************************************/
+RESULT CamCalibDbGetDySetpointByName
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    CamDynamicSetpointName_t      DySetpointName,
+    CamCalibAecDynamicSetpoint_t**          ppDySetpoint
+)
+{
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == ppDySetpoint) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search scheme by name */
+  *ppDySetpoint = (CamCalibAecDynamicSetpoint_t*)ListSearch(&pAecGlobal->DySetpointList, SearchDySetpointProfileByName, (void*)DySetpointName);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * CamCalibDbGetEcmSchemeByIdx
+ *****************************************************************************/
+RESULT CamCalibDbGetDySetpointByIdx
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    const uint32_t          idx,
+    CamCalibAecDynamicSetpoint_t**          ppDySetpoint
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pAecGlobal) {
+    return (RET_INVALID_PARM);
+  }
+
+  if (NULL == ppDySetpoint) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search EC scheme by index */
+  *ppDySetpoint = (CamCalibAecDynamicSetpoint_t*)ListGetItemByIdx(&pAecGlobal->DySetpointList, idx);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * CamCalibDbAddExpSeparate
+ *****************************************************************************/
+RESULT CamCalibDbAddExpSeparate
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t* pAecGlobal,
+    CamCalibAecExpSeparate_t* pAddExpSeparate
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamCalibAecExpSeparate_t* pNewExpSeparate = NULL;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pAecGlobal) {
+    return (RET_INVALID_PARM);
+  }
+
+  result = ValidateExpSeparate(pAddExpSeparate);
+  if (result != RET_SUCCESS) {
+    return (result);
+  }
+
+  /* check if data already exists */
+  pNewExpSeparate = (CamCalibAecExpSeparate_t*)ListSearch(&pAecGlobal->ExpSeparateList, SearchForEqualExpSeparateProfile, (void*)pAddExpSeparate);
+  if (NULL != pNewExpSeparate) {
+    return (RET_NOTAVAILABLE);
+  }
+
+  /* finally allocate, copy & add scheme */
+  pNewExpSeparate = malloc(sizeof(CamCalibAecExpSeparate_t));
+  if (NULL == pNewExpSeparate) {
+    return (RET_OUTOFMEM);
+  }
+  MEMCPY(pNewExpSeparate, pAddExpSeparate, sizeof(CamCalibAecExpSeparate_t));
+
+  ListPrepareItem(pNewExpSeparate);
+  ListAddTail(&pAecGlobal->ExpSeparateList, pNewExpSeparate);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * CamCalibDbGetNoOfExpSeparate
+ *****************************************************************************/
+RESULT CamCalibDbGetNoOfExpSeparate
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    int32_t*                 no
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pAecGlobal) {
+    return (RET_INVALID_PARM);
+  }
+
+  if (NULL == no) {
+    return (RET_INVALID_PARM);
+  }
+
+  *no = (uint32_t)ListNoItems(&pAecGlobal->ExpSeparateList);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * CamCalibDbGetExpSeparateByName
+ *****************************************************************************/
+RESULT CamCalibDbGetExpSeparateByName
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    CamExpSeparateName_t      ExpSeparateName,
+    CamCalibAecExpSeparate_t**          ppExpSeparate
+)
+{
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == ppExpSeparate) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search scheme by name */
+  *ppExpSeparate = (CamCalibAecExpSeparate_t*)ListSearch(&pAecGlobal->ExpSeparateList, SearchExpSeparateProfileByName, (void*)ExpSeparateName);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * CamCalibDbGetExpSeparateByIdx
+ *****************************************************************************/
+RESULT CamCalibDbGetExpSeparateByIdx
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    const uint32_t          idx,
+    CamCalibAecExpSeparate_t**          ppExpSeparate
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pAecGlobal) {
+    return (RET_INVALID_PARM);
+  }
+
+  if (NULL == ppExpSeparate) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search EC scheme by index */
+  *ppExpSeparate = (CamCalibAecExpSeparate_t*)ListGetItemByIdx(&pAecGlobal->ExpSeparateList, idx);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
 
 /******************************************************************************
  * CamCalibDbGetNoOfIlluminations
  *****************************************************************************/
-RESULT CamCalibDbGetNoOfIlluminations
+RESULT CamCalibDbGetNoOfAwb_V11_Illuminations
 (
     CamCalibDbHandle_t  hCamCalibDb,
     int32_t*             no
@@ -2348,7 +3523,7 @@ RESULT CamCalibDbGetNoOfIlluminations
   }
 
   /* search resolution by name */
-  *no = (uint32_t)ListNoItems(&pCamCalibDbCtx->illumination);
+  *no = (uint32_t)ListNoItems(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination);
 
   LOGV("%s (exit)\n", __func__);
 
@@ -2356,17 +3531,73 @@ RESULT CamCalibDbGetNoOfIlluminations
 }
 
 
-
 /******************************************************************************
- * CamCalibDbAddIllumination
+ * CamCalibDbGetNoOfAwb_V10_Illuminations
  *****************************************************************************/
-RESULT CamCalibDbAddIllumination
+RESULT CamCalibDbGetNoOfAwb_V10_Illuminations
 (
     CamCalibDbHandle_t  hCamCalibDb,
-    CamIlluProfile_t*    pAddIllu
+    int32_t*             no
 ) {
   CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
-  CamIlluProfile_t* pNewIllu = NULL;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == no) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search resolution by name */
+  *no = (uint32_t)ListNoItems(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * CamCalibDbGetNoOfAwbIlluminations
+ *****************************************************************************/
+RESULT CamCalibDbGetNoOfAwbIlluminations
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    int32_t*             pNo
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  RESULT result = RET_SUCCESS;
+  LOGV( "%s (enter)\n", __func__);
+  
+  switch (pCamCalibDbCtx->pAwbProfile->valid_version)
+  {
+	case CAM_AWB_VERSION_11:	  
+		// get number of availabe illumination profiles from database
+		result = CamCalibDbGetNoOfAwb_V11_Illuminations(hCamCalibDb, pNo);
+		break;
+	default :
+		// get number of availabe illumination profiles from database
+		result = CamCalibDbGetNoOfAwb_V10_Illuminations(hCamCalibDb, pNo);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (result);
+}
+
+/******************************************************************************
+ * CamCalibDbAddAwb_V11_Illumination
+ *****************************************************************************/
+RESULT CamCalibDbAddAwb_V11_Illumination
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwb_V11_IlluProfile_t*    pAddIllu
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamAwb_V11_IlluProfile_t* pNewIllu = NULL;
 
   RESULT result;
 
@@ -2376,17 +3607,17 @@ RESULT CamCalibDbAddIllumination
     return (RET_WRONG_HANDLE);
   }
 
-  result = ValidateIllumination(pAddIllu);
+  result = ValidateAwb_V11_Illumination(pAddIllu);
   if (result != RET_SUCCESS) {
     return (result);
   }
 
   /* check if resolution already exists */
-  pNewIllu = (CamIlluProfile_t*)ListSearch(&pCamCalibDbCtx->illumination, SearchForEqualIllumination, (void*)pAddIllu);
+  pNewIllu = (CamAwb_V11_IlluProfile_t*)ListSearch(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination, SearchForEqualAwb_V11_Illumination, (void*)pAddIllu);
   if (NULL == pNewIllu) {
     /* allocate and copy the illumination profile */
-    pNewIllu = (CamIlluProfile_t*)malloc(sizeof(CamIlluProfile_t));
-    MEMCPY(pNewIllu, pAddIllu, sizeof(CamIlluProfile_t));
+    pNewIllu = (CamAwb_V11_IlluProfile_t*)malloc(sizeof(CamAwb_V11_IlluProfile_t));
+    MEMCPY(pNewIllu, pAddIllu, sizeof(CamAwb_V11_IlluProfile_t));
 
     /* remove pointer from outside allocated memory,
      * we're allocating out own memory */
@@ -2419,7 +3650,7 @@ RESULT CamCalibDbAddIllumination
 
     /* add illumination to list */
     ListPrepareItem(pNewIllu);
-    ListAddTail(&pCamCalibDbCtx->illumination, pNewIllu);
+    ListAddTail(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination, pNewIllu);
   } else {
     return (RET_INVALID_PARM);
   }
@@ -2427,16 +3658,85 @@ RESULT CamCalibDbAddIllumination
   return (RET_SUCCESS);
 }
 
-
-
 /******************************************************************************
- * CamCalibDbGetIlluminationByName
+ * CamCalibDbAddAwb_V10_Illumination
  *****************************************************************************/
-RESULT CamCalibDbGetIlluminationByName
+RESULT CamCalibDbAddAwb_V10_Illumination
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwb_V10_IlluProfile_t*    pAddIllu
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamAwb_V10_IlluProfile_t* pNewIllu = NULL;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  result = ValidateAwb_V10_Illumination(pAddIllu);
+  if (result != RET_SUCCESS) {
+    return (result);
+  }
+
+  /* check if resolution already exists */
+  pNewIllu = (CamAwb_V10_IlluProfile_t*)ListSearch(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination, SearchForEqualAwb_V10_Illumination, (void*)pAddIllu);
+  if (NULL == pNewIllu) {
+    /* allocate and copy the illumination profile */
+    pNewIllu = (CamAwb_V10_IlluProfile_t*)malloc(sizeof(CamAwb_V10_IlluProfile_t));
+    MEMCPY(pNewIllu, pAddIllu, sizeof(CamAwb_V10_IlluProfile_t));
+
+    /* remove pointer from outside allocated memory,
+     * we're allocating out own memory */
+    pNewIllu->SaturationCurve.pSensorGain = NULL;
+    pNewIllu->SaturationCurve.pSaturation = NULL;
+    pNewIllu->VignettingCurve.pSensorGain = NULL;
+    pNewIllu->VignettingCurve.pVignetting = NULL;
+
+    /* allocate sub structure's of illumination profile */
+    int n_items;
+    int n_memsize;
+
+    /* saturation over gain curve */
+    n_items = pAddIllu->SaturationCurve.ArraySize;
+    n_memsize = (n_items * sizeof(float));
+    pNewIllu->SaturationCurve.ArraySize = n_items;
+    pNewIllu->SaturationCurve.pSensorGain = malloc(n_memsize);
+    pNewIllu->SaturationCurve.pSaturation = malloc(n_memsize);
+    MEMCPY(pNewIllu->SaturationCurve.pSensorGain, pAddIllu->SaturationCurve.pSensorGain, n_memsize);
+    MEMCPY(pNewIllu->SaturationCurve.pSaturation, pAddIllu->SaturationCurve.pSaturation, n_memsize);
+
+    /* vignetting over gain curve */
+    n_items = pAddIllu->VignettingCurve.ArraySize;
+    n_memsize = (n_items * sizeof(float));
+    pNewIllu->VignettingCurve.ArraySize = n_items;
+    pNewIllu->VignettingCurve.pSensorGain = malloc(n_memsize);
+    pNewIllu->VignettingCurve.pVignetting = malloc(n_memsize);
+    MEMCPY(pNewIllu->VignettingCurve.pSensorGain, pAddIllu->VignettingCurve.pSensorGain, n_memsize);
+    MEMCPY(pNewIllu->VignettingCurve.pVignetting, pAddIllu->VignettingCurve.pVignetting, n_memsize);
+
+
+    /* add illumination to list */
+    ListPrepareItem(pNewIllu);
+    ListAddTail(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination, pNewIllu);
+  } else {
+    return (RET_INVALID_PARM);
+  }
+  
+  LOGV( "%s (exit)\n", __func__);
+  return (RET_SUCCESS);
+}
+/******************************************************************************
+ * CamCalibDbGetAwb_V11_IlluminationByName
+ *****************************************************************************/
+RESULT CamCalibDbGetAwb_V11_IlluminationByName
 (
     CamCalibDbHandle_t      hCamCalibDb,
     CamIlluminationName_t   name,
-    CamIlluProfile_t**        pIllumination
+    CamAwb_V11_IlluProfile_t**        pIllumination
 ) {
   CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
 
@@ -2451,7 +3751,7 @@ RESULT CamCalibDbGetIlluminationByName
   }
 
   /* search resolution by name */
-  *pIllumination = (CamIlluProfile_t*)ListSearch(&pCamCalibDbCtx->illumination, SearchIlluminationByName, (void*)name);
+  *pIllumination = (CamAwb_V11_IlluProfile_t*)ListSearch(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination, SearchAwb_V11_IlluminationByName, (void*)name);
 
   LOGV("%s (exit)\n", __func__);
 
@@ -2461,17 +3761,17 @@ RESULT CamCalibDbGetIlluminationByName
 
 
 /******************************************************************************
- * CamCalibDbGetIlluminationByIdx
+ * CamCalibDbGetAwb_V10_IlluminationByName
  *****************************************************************************/
-RESULT CamCalibDbGetIlluminationByIdx
+RESULT CamCalibDbGetAwb_V10_IlluminationByName
 (
-    CamCalibDbHandle_t  hCamCalibDb,
-    const uint32_t      idx,
-    CamIlluProfile_t**    pIllumination
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamIlluminationName_t   name,
+    CamAwb_V10_IlluProfile_t**        pIllumination
 ) {
   CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
 
-  LOGV("%s (enter)\n", __func__);
+  LOGV( "%s (enter)\n", __func__);
 
   if (NULL == pCamCalibDbCtx) {
     return (RET_WRONG_HANDLE);
@@ -2482,9 +3782,102 @@ RESULT CamCalibDbGetIlluminationByIdx
   }
 
   /* search resolution by name */
-  *pIllumination = (CamIlluProfile_t*)ListGetItemByIdx(&pCamCalibDbCtx->illumination, idx);
+  *pIllumination = (CamAwb_V10_IlluProfile_t*)ListSearch(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination, SearchAwb_V10_IlluminationByName, (void*)name);
 
-  LOGV("%s (exit)\n", __func__);
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * CamCalibDbGetAwbIlluminationNameByIdx
+ *****************************************************************************/
+RESULT CamCalibDbGetAwbIlluminationNameByIdx
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    const uint32_t      idx,
+    char*               illName
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  RESULT result = RET_SUCCESS;
+  LOGV( "%s (enter)\n", __func__);
+  CamAwb_V11_IlluProfile_t* pIlluProfile11 = NULL;  
+  CamAwb_V10_IlluProfile_t* pIlluProfile10 = NULL;
+  switch (pCamCalibDbCtx->pAwbProfile->valid_version)
+  {
+	case CAM_AWB_VERSION_11:
+		result = CamCalibDbGetAwb_V11_IlluminationByIdx(hCamCalibDb, idx, &pIlluProfile11);
+		strcpy(illName,pIlluProfile11->name);
+		break;
+	default :
+		result = CamCalibDbGetAwb_V10_IlluminationByIdx(hCamCalibDb, idx, &pIlluProfile10);		
+		strcpy(illName,pIlluProfile10->name);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (result);
+}
+
+
+
+/******************************************************************************
+ * CamCalibDbGetAwb_V11_IlluminationByIdx
+ *****************************************************************************/
+RESULT CamCalibDbGetAwb_V11_IlluminationByIdx
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    const uint32_t      idx,
+    CamAwb_V11_IlluProfile_t**    pIllumination
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pIllumination) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search resolution by name */
+  *pIllumination = (CamAwb_V11_IlluProfile_t*)ListGetItemByIdx(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination, idx);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+
+/******************************************************************************
+ * CamCalibDbGetAwb_V10_IlluminationByIdx
+ *****************************************************************************/
+RESULT CamCalibDbGetAwb_V10_IlluminationByIdx
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    const uint32_t      idx,
+    CamAwb_V10_IlluProfile_t**    pIllumination
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pIllumination) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search resolution by name */
+  *pIllumination = (CamAwb_V10_IlluProfile_t*)ListGetItemByIdx(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination, idx);
+
+  LOGV( "%s (exit)\n", __func__);
 
   return (RET_SUCCESS);
 }
@@ -2558,12 +3951,88 @@ RESULT CamCalibDbGetLscProfileByName
   /* search resolution by name */
   *pLscProfile = (CamLscProfile_t*)ListSearch(&pCamCalibDbCtx->lsc_profile, SearchLscProfileByName, (void*)name);
 
-  LOGV("%s (exit)\n", __func__);
+  LOGV( "%s (exit)\n", __func__);
 
   return (RET_SUCCESS);
 }
 
+/******************************************************************************
+ * CamCalibDbGetLscProfileByIdx
+ *****************************************************************************/
+RESULT CamCalibDbGetLscProfileByIdx
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    const uint32_t      idx,
+    CamLscProfile_t**   pLscProfile
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
 
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pLscProfile) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search resolution by name */
+  *pLscProfile = (CamLscProfile_t*)ListGetItemByIdx(&pCamCalibDbCtx->lsc_profile, idx);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+/******************************************************************************
+ * CamCalibDbDelLscProfileByName
+ *****************************************************************************/
+RESULT CamCalibDbDelLscProfileByName
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamLscProfileName_t     name,
+    CamLscProfile_t**       pLscProfile
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  /* search resolution by name */
+  *pLscProfile = (CamLscProfile_t*)ListRemoveItem(&pCamCalibDbCtx->lsc_profile, SearchLscProfileByName, (void*)name);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+/******************************************************************************
+ * CamCalibDbReplaceLscProfileAll
+ *****************************************************************************/
+RESULT CamCalibDbReplaceLscProfileAll
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamLscProfile_t*         pLscProfile
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  /* search resolution by name */
+  ListForEach(&pCamCalibDbCtx->lsc_profile, ReplaceLscProfile, (void*)pLscProfile);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
 
 /******************************************************************************
  * CamCalibDbAddCcProfile
@@ -2606,7 +4075,78 @@ RESULT CamCalibDbAddCcProfile
   return (RET_SUCCESS);
 }
 
+/******************************************************************************
+ * CamCalibDbReplaceCcProfile
+ *****************************************************************************/
+RESULT CamCalibDbReplaceCcProfileByName
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamCcProfile_t*      pAddCc
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamCcProfile_t* pNewCc = NULL;
 
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  result = ValidateCcProfile(pAddCc);
+  if (result != RET_SUCCESS) {
+    return (result);
+  }
+
+  /* check if resolution already exists */
+  pNewCc = (CamCcProfile_t*)ListSearch(&pCamCalibDbCtx->cc_profile, SearchForEqualCcProfile, (void*)pAddCc);
+  if (NULL != pNewCc) {
+    pNewCc->CrossTalkCoeff = pAddCc->CrossTalkCoeff;
+    pNewCc->CrossTalkOffset = pAddCc->CrossTalkOffset;
+    return (RET_SUCCESS);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_NOTAVAILABLE);
+}
+
+/******************************************************************************
+ * CamCalibDbReplaceCcProfileAll
+ *****************************************************************************/
+RESULT CamCalibDbReplaceCcProfileAll
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamCcProfile_t*      pAddCc
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamCcProfile_t* pNewCc = NULL;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  result = ValidateCcProfile(pAddCc);
+  if (result != RET_SUCCESS) {
+    return (result);
+  }
+
+  pNewCc = (CamCcProfile_t*)ListHead(&pCamCalibDbCtx->cc_profile);
+  while (pNewCc) {
+    pNewCc->CrossTalkCoeff = pAddCc->CrossTalkCoeff;
+    pNewCc->CrossTalkOffset = pAddCc->CrossTalkOffset;
+    pNewCc = pNewCc->p_next;
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
 
 /******************************************************************************
  * CamCalibDbGetCcProfileByName
@@ -2847,7 +4387,90 @@ RESULT CamCalibDbGetCacProfileByResolution
   return (RET_SUCCESS);
 }
 
+/******************************************************************************
+ * CamCalibDbReplaceDpfProfile
+ *****************************************************************************/
+RESULT CamCalibDbReplaceDpfProfileAll
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*        pRepDpf
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamDpfProfile_t* pNewDpf = NULL;
+  RESULT result;
 
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  result = ValidateDpfProfile(pRepDpf);
+  if (result != RET_SUCCESS) {
+    return (result);
+  }
+
+  pNewDpf = (CamDpfProfile_t *)ListHead(&pCamCalibDbCtx->dpf_profile);
+  while (pNewDpf) {
+    pNewDpf->nll_segmentation = pRepDpf->nll_segmentation;
+    pNewDpf->nll_coeff = pRepDpf->nll_coeff;
+    pNewDpf->SigmaGreen = pRepDpf->SigmaGreen;
+    pNewDpf->SigmaRedBlue = pRepDpf->SigmaRedBlue;
+    pNewDpf->fGradient = pRepDpf->fGradient;
+    pNewDpf->fOffset = pRepDpf->fOffset;
+    pNewDpf->NfGains = pRepDpf->NfGains;
+    pNewDpf->ADPFEnable = pRepDpf->ADPFEnable;
+    pNewDpf = pNewDpf->p_next;
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * CamCalibDbReplaceDpfProfile
+ *****************************************************************************/
+RESULT CamCalibDbReplaceDpfProfile
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*        pRepDpf
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamDpfProfile_t* pNewDpf = NULL;
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  result = ValidateDpfProfile(pRepDpf);
+  if (result != RET_SUCCESS) {
+    return (result);
+  }
+
+  /* check if resolution already exists */
+  pNewDpf = (CamDpfProfile_t*)ListSearch(&pCamCalibDbCtx->dpf_profile, SearchForEqualDpfProfile, (void*)pRepDpf);
+  if (NULL != pNewDpf) {
+    pNewDpf->nll_segmentation = pRepDpf->nll_segmentation;
+    pNewDpf->nll_coeff = pRepDpf->nll_coeff;
+    pNewDpf->SigmaGreen = pRepDpf->SigmaGreen;
+    pNewDpf->SigmaRedBlue = pRepDpf->SigmaRedBlue;
+    pNewDpf->fGradient = pRepDpf->fGradient;
+    pNewDpf->fOffset = pRepDpf->fOffset;
+    pNewDpf->NfGains = pRepDpf->NfGains;
+    pNewDpf->ADPFEnable = pRepDpf->ADPFEnable;
+  } else {
+    return (RET_INVALID_PARM);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
 
 /******************************************************************************
  * CamCalibDbAddDpfProfile
@@ -2879,6 +4502,7 @@ RESULT CamCalibDbAddDpfProfile
     pNewDpf = (CamDpfProfile_t*)malloc(sizeof(CamDpfProfile_t));
     MEMCPY(pNewDpf, pAddDpf, sizeof(CamDpfProfile_t));
 	ListInit(&pNewDpf->Dsp3DNRSettingProfileList);   // clear possibly not empty schemes list in copy
+	ListInit(&pNewDpf->newDsp3DNRProfileList);   // clear possibly not empty schemes list in copy
 	ListInit(&pNewDpf->FilterList);   // clear possibly not empty schemes list in copy
 	
     ListPrepareItem(pNewDpf);
@@ -2893,6 +4517,17 @@ RESULT CamCalibDbAddDpfProfile
       }
   
       pDsp3DNR = (CamDsp3DNRSettingProfile_t*)pDsp3DNR->p_next;
+    }
+
+	/* add already linked 3dnr as well */
+    CamNewDsp3DNRProfile_t* pNewDsp3DNR = (CamNewDsp3DNRProfile_t*)ListHead(&pAddDpf->newDsp3DNRProfileList);
+    while (pNewDsp3DNR) {
+      result = CamCalibDbAddNewDsp3DNRSetting(hCamCalibDb, pNewDpf, pNewDsp3DNR);
+      if (result != RET_SUCCESS) {
+        return (result);
+      }
+  
+      pNewDsp3DNR = (CamNewDsp3DNRProfile_t*)pNewDsp3DNR->p_next;
     }
 
 	/* add already linked filter as well */
@@ -3124,6 +4759,152 @@ RESULT CamCalibDbGetFilterProfileByIdx
   return (RET_SUCCESS);
 }
 
+
+/******************************************************************************
+ * CamCalibDbAddDsp3DNRSetting
+ *****************************************************************************/
+RESULT CamCalibDbAddNewDsp3DNRSetting
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*         pDpfProfile,
+    CamNewDsp3DNRProfile_t* pAddNewDsp3DNRSetting
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamNewDsp3DNRProfile_t* pNewDsp3dnrSetting = NULL;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pDpfProfile) {
+    return (RET_INVALID_PARM);
+  }
+
+  result = ValidateNewDsp3dnrSetting(pAddNewDsp3DNRSetting);
+  if (result != RET_SUCCESS) {
+    return (result);
+  }
+
+  /* check if data already exists */
+  pNewDsp3dnrSetting = (CamNewDsp3DNRProfile_t*)ListSearch(&pDpfProfile->newDsp3DNRProfileList, SearchForEqualNewDsp3DNRSetting, (void*)pAddNewDsp3DNRSetting);
+  if (NULL != pNewDsp3dnrSetting) {
+    return (RET_NOTAVAILABLE);
+  }
+
+  /* finally allocate, copy & add scheme */
+  pNewDsp3dnrSetting = malloc(sizeof(CamNewDsp3DNRProfile_t));
+  if (NULL == pNewDsp3dnrSetting) {
+    return (RET_OUTOFMEM);
+  }
+  MEMCPY(pNewDsp3dnrSetting, pAddNewDsp3DNRSetting, sizeof(CamNewDsp3DNRProfile_t));
+
+  ListPrepareItem(pNewDsp3dnrSetting);
+  ListAddTail(&pDpfProfile->newDsp3DNRProfileList, pNewDsp3dnrSetting);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+/******************************************************************************
+ * CamCalibDbGetNoOfEcmSchemes
+ *****************************************************************************/
+RESULT CamCalibDbGetNoOfNewDsp3DNRSetting
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*         pDpfProfile,
+    int32_t*                 no
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pDpfProfile) {
+    return (RET_INVALID_PARM);
+  }
+
+  if (NULL == no) {
+    return (RET_INVALID_PARM);
+  }
+
+  *no = (uint32_t)ListNoItems(&pDpfProfile->newDsp3DNRProfileList);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+/******************************************************************************
+ * CamCalibDbGetEcmSchemeByName
+ *****************************************************************************/
+RESULT CamCalibDbGetNewDsp3DNRSettingByName
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*         pDpfProfile,
+    CamNewDsp3dnrProfileName_t      NewDsp3DNRSettingName,
+    CamNewDsp3DNRProfile_t**          ppNewDsp3DnrSetting
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == ppNewDsp3DnrSetting) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search scheme by name */
+  *ppNewDsp3DnrSetting = (CamNewDsp3DNRProfile_t*)ListSearch(&pDpfProfile->newDsp3DNRProfileList, SearchNewDsp3DNRSettingByName, (void*)NewDsp3DNRSettingName);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+/******************************************************************************
+ * CamCalibDbGetEcmSchemeByIdx
+ *****************************************************************************/
+RESULT CamCalibDbGetNewDsp3DNRByIdx
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*         pDpfProfile,
+    const uint32_t          idx,
+    CamNewDsp3DNRProfile_t**          ppNewDsp3DnrSetting
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pDpfProfile) {
+    return (RET_INVALID_PARM);
+  }
+
+  if (NULL == ppNewDsp3DnrSetting) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search EC scheme by index */
+  *ppNewDsp3DnrSetting = (CamNewDsp3DNRProfile_t*)ListGetItemByIdx(&pDpfProfile->newDsp3DNRProfileList, idx);
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
 
 
 /******************************************************************************
@@ -3379,6 +5160,123 @@ RESULT CamCalibDbGetDpccProfileByResolution
   LOGV("%s (exit)\n", __func__);
 
   return (RET_SUCCESS);
+}
+
+
+//werring.wu add 2018 1 18
+/******************************************************************************
+ * CamCalibDbAddIesharpenProfile
+ *****************************************************************************/
+RESULT CamCalibDbAddRKsharpenProfile
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamIesharpenProfile_t     *pAddIesharpen
+)
+{
+    CamCalibDbContext_t *pCamCalibDbCtx = (CamCalibDbContext_t *)hCamCalibDb;
+    CamIesharpenProfile_t *pNewIesharpen = NULL;
+
+    RESULT result;
+
+    LOGV("%s (enter)\n", __func__);
+
+    if ( NULL == pCamCalibDbCtx )
+    {
+        return ( RET_WRONG_HANDLE );
+    }
+
+    result = ValidateIesharpenProfile( pAddIesharpen );
+    if ( result != RET_SUCCESS )
+    {
+        return ( result );
+    }
+
+    /* check if resolution already exists */
+    pNewIesharpen = (CamIesharpenProfile_t *)ListSearch( &pCamCalibDbCtx->iesharpen_profile, SearchForEqualIesharpenProfile, (void *)pAddIesharpen );
+    if ( NULL == pNewIesharpen )
+    {
+        pNewIesharpen = (CamIesharpenProfile_t *)malloc( sizeof(CamIesharpenProfile_t) );
+        MEMCPY( pNewIesharpen, pAddIesharpen, sizeof(CamIesharpenProfile_t) );
+
+        ListPrepareItem( pNewIesharpen );
+        ListAddTail( &pCamCalibDbCtx->iesharpen_profile, pNewIesharpen );
+    }
+    else
+    {
+        return ( RET_INVALID_PARM );
+    }
+
+    LOGV("%s (exit)\n", __func__);
+
+    return ( RET_SUCCESS );
+}
+
+
+
+/******************************************************************************
+ * CamCalibDbGetIesharpenProfileByName
+ *****************************************************************************/
+RESULT CamCalibDbGetRKsharpenProfileByName
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamIesharpenProfileName_t name,
+    CamIesharpenProfile_t **pIesharpenProfile
+)
+{
+    CamCalibDbContext_t *pCamCalibDbCtx = (CamCalibDbContext_t *)hCamCalibDb;
+
+    LOGV("%s (enter)\n", __func__);
+
+    if ( NULL == pCamCalibDbCtx )
+    {
+        return ( RET_WRONG_HANDLE );
+    }
+
+    if (  NULL == pIesharpenProfile )
+    {
+        return ( RET_INVALID_PARM );
+    }
+
+    /* search resolution by name */
+    *pIesharpenProfile = (CamIesharpenProfile_t *)ListSearch( &pCamCalibDbCtx->iesharpen_profile, SearchIesharpenProfileByName, (void *)name );
+
+    LOGV("%s (exit)\n", __func__);
+
+    return ( RET_SUCCESS );
+}
+
+
+
+/******************************************************************************
+ * CamCalibDbGetIesharpenProfileByResolution
+ *****************************************************************************/
+RESULT CamCalibDbGetRKsharpenProfileByResolution
+(
+    CamCalibDbHandle_t          hCamCalibDb,
+    const CamResolutionName_t   ResName,
+    CamIesharpenProfile_t **pIesharpenProfile
+)
+{
+    CamCalibDbContext_t *pCamCalibDbCtx = (CamCalibDbContext_t *)hCamCalibDb;
+
+    LOGV("%s (enter)\n", __func__);
+
+    if ( NULL == pCamCalibDbCtx )
+    {
+        return ( RET_WRONG_HANDLE );
+    }
+
+    if (  NULL == pIesharpenProfile )
+    {
+        return ( RET_INVALID_PARM );
+    }
+
+    /* search resolution by name */
+    *pIesharpenProfile = (CamIesharpenProfile_t *)ListSearch( &pCamCalibDbCtx->iesharpen_profile, SearchIesharpenProfileByResolution, (void *)ResName );
+
+    LOGV("%s (exit)\n", __func__);
+
+    return ( RET_SUCCESS );
 }
 
 /******************************************************************************

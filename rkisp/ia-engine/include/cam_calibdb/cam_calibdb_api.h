@@ -47,6 +47,27 @@ typedef struct CamCalibDbContext_s* CamCalibDbHandle_t;
 
 /*****************************************************************************/
 /**
+ * @brief   This function clears AEC set point list.
+ *
+ * @param   l         Head to set point list.
+ *
+ * @return  void
+ *
+ *****************************************************************************/
+void ClearDySetpointList(List* l);
+
+/*****************************************************************************/
+/**
+ * @brief   This function clears AEC exposure separate list.
+ *
+ * @param   l         Head to exposure separate list.
+ *
+ * @return  void
+ *
+ *****************************************************************************/
+void ClearExpSeparateList(List* l);
+/*****************************************************************************/
+/**
  * @brief   The function creates and initializes a CamCalibDb instance.
  *
  * @param   pConfig             Instance configuration structure.
@@ -309,6 +330,30 @@ RESULT CamCalibDbGetResolutionIdxByName
 );
 
 
+RESULT CamCalibDbAddAwb_VersionName
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CAM_AwbVersion_t pVName
+);
+
+/*****************************************************************************/
+/**
+ * @brief   This function get AWB version name  in the CamCalibDb instance.
+ *
+ * @param   hCamCalibDb         Handle to the CamCalibDb instance.
+ * @param   vName                   AWB version name
+ *
+ * @return  Return the result of the function call.
+ * @retval  RET_PENDING         function succeed
+ * @retval  RET_WRONG_HANDLE    invalid instance handle
+ * @retval  RET_WRONG_STATE     instance is in wrong state to shutdown
+ *
+ *****************************************************************************/
+RESULT CamCalibDbGetAwb_VersionName
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CAM_AwbVersion_t *vName
+);
 
 /*****************************************************************************/
 /**
@@ -323,10 +368,15 @@ RESULT CamCalibDbGetResolutionIdxByName
  * @retval  RET_WRONG_STATE     instance is in wrong state to shutdown
  *
  *****************************************************************************/
-RESULT CamCalibDbAddAwbGlobal
+RESULT CamCalibDbAddAwb_V10_Global
 (
     CamCalibDbHandle_t  hCamCalibDb,
-    CamCalibAwbGlobal_t* pAddAwbGlobal
+    CamCalibAwb_V10_Global_t* pAddAwbGlobal
+);
+RESULT CamCalibDbAddAwb_V11_Global
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamCalibAwb_V11_Global_t* pAddAwbGlobal
 );
 
 
@@ -344,13 +394,29 @@ RESULT CamCalibDbAddAwbGlobal
  * @retval  RET_WRONG_STATE     instance is in wrong state to shutdown
  *
  *****************************************************************************/
-RESULT CamCalibDbGetAwbGlobalByResolution
+RESULT CamCalibDbGetAwb_V10_GlobalByResolution
 (
     CamCalibDbHandle_t          hCamCalibDb,
     const CamResolutionName_t   ResName,
-    CamCalibAwbGlobal_t**         pAwbGlobal
+    CamCalibAwb_V10_Global_t**  pAwbGlobal
 );
 
+RESULT CamCalibDbGetAwb_V11_GlobalByResolution
+(
+    CamCalibDbHandle_t          hCamCalibDb,
+    const CamResolutionName_t   ResName,
+    CamCalibAwb_V11_Global_t**  pAwbGlobal
+);
+RESULT CamCalibDbAddAfGlobal
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAfGlobal_t*     pAddAfGlobal
+);
+RESULT CamCalibDbGetAfGlobal
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAfGlobal_t**     ppAfGlobal
+);
 
 
 /*****************************************************************************/
@@ -623,8 +689,60 @@ RESULT CamCalibDbGetEcmSchemeByIdx
     CamEcmScheme_t**          ppEcmScheme
 );
 
+RESULT CamCalibDbAddDySetpoint
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t* pAecGlobal,
+    CamCalibAecDynamicSetpoint_t* pAddDySetpoint
+);
 
+RESULT CamCalibDbGetNoOfDySetpoint
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    int32_t*                 no
+);
 
+RESULT CamCalibDbGetDySetpointByName
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    CamDynamicSetpointName_t      DySetpointName,
+    CamCalibAecDynamicSetpoint_t**          ppDySetpoint
+);
+RESULT CamCalibDbGetDySetpointByIdx
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    const uint32_t          idx,
+    CamCalibAecDynamicSetpoint_t**          ppDySetpoint
+);
+RESULT CamCalibDbAddExpSeparate
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t* pAecGlobal,
+    CamCalibAecExpSeparate_t* pAddExpSeparate
+);
+RESULT CamCalibDbGetNoOfExpSeparate
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    int32_t*                 no
+);
+RESULT CamCalibDbGetExpSeparateByName
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    CamExpSeparateName_t      ExpSeparateName,
+    CamCalibAecExpSeparate_t**          ppExpSeparate
+);
+RESULT CamCalibDbGetExpSeparateByIdx
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamCalibAecGlobal_t*         pAecGlobal,
+    const uint32_t          idx,
+    CamCalibAecExpSeparate_t**          ppExpSeparate
+);
 /*****************************************************************************/
 /**
  * @brief   This function returns the number of added illuminations.
@@ -639,7 +757,17 @@ RESULT CamCalibDbGetEcmSchemeByIdx
  * @retval  RET_WRONG_STATE     instance is in wrong state to shutdown
  *
  *****************************************************************************/
-RESULT CamCalibDbGetNoOfIlluminations
+RESULT CamCalibDbGetNoOfAwbIlluminations
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    int32_t*             pNo
+);
+RESULT CamCalibDbGetNoOfAwb_V11_Illuminations
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    int32_t*             no
+);
+RESULT CamCalibDbGetNoOfAwb_V10_Illuminations
 (
     CamCalibDbHandle_t  hCamCalibDb,
     int32_t*             no
@@ -660,10 +788,15 @@ RESULT CamCalibDbGetNoOfIlluminations
  * @retval  RET_WRONG_STATE     instance is in wrong state to shutdown
  *
  *****************************************************************************/
-RESULT CamCalibDbAddIllumination
+RESULT CamCalibDbAddAwb_V11_Illumination
 (
     CamCalibDbHandle_t  hCamCalibDb,
-    CamIlluProfile_t*    pAddIllu
+    CamAwb_V11_IlluProfile_t*    pAddIllu
+);
+RESULT CamCalibDbAddAwb_V10_Illumination
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwb_V10_IlluProfile_t*    pAddIllu
 );
 
 
@@ -682,11 +815,17 @@ RESULT CamCalibDbAddIllumination
  * @retval  RET_WRONG_STATE     instance is in wrong state to shutdown
  *
  *****************************************************************************/
-RESULT CamCalibDbGetIlluminationByName
+RESULT CamCalibDbGetAwb_V11_IlluminationByName
 (
     CamCalibDbHandle_t      hCamCalibDb,
     CamIlluminationName_t   name,
-    CamIlluProfile_t**        pIllumination
+    CamAwb_V11_IlluProfile_t**        pIllumination
+);
+RESULT CamCalibDbGetAwb_V10_IlluminationByName
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamIlluminationName_t   name,
+    CamAwb_V10_IlluProfile_t**        pIllumination
 );
 
 
@@ -705,11 +844,23 @@ RESULT CamCalibDbGetIlluminationByName
  * @retval  RET_WRONG_STATE     instance is in wrong state to shutdown
  *
  *****************************************************************************/
-RESULT CamCalibDbGetIlluminationByIdx
+RESULT CamCalibDbGetAwbIlluminationNameByIdx
+(
+	CamCalibDbHandle_t	hCamCalibDb,
+	const uint32_t		idx,
+	char*				illName
+);
+RESULT CamCalibDbGetAwb_V11_IlluminationByIdx
 (
     CamCalibDbHandle_t  hCamCalibDb,
     const uint32_t      idx,
-    CamIlluProfile_t**    pIllumination
+    CamAwb_V11_IlluProfile_t**    pIllumination
+);
+RESULT CamCalibDbGetAwb_V10_IlluminationByIdx
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    const uint32_t      idx,
+    CamAwb_V10_IlluProfile_t**    pIllumination
 );
 
 
@@ -729,15 +880,42 @@ RESULT CamCalibDbGetLscProfileByName
     CamLscProfile_t**         pLscProfile
 );
 
+RESULT CamCalibDbGetLscProfileByIdx
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    const uint32_t      idx,
+    CamLscProfile_t**   pLscProfile
+);
 
+RESULT CamCalibDbDelLscProfileByName
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamLscProfileName_t     name,
+    CamLscProfile_t**       pLscProfile
+);
 
+RESULT CamCalibDbReplaceLscProfileAll
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamLscProfile_t*        pLscProfile
+);
 RESULT CamCalibDbAddCcProfile
 (
     CamCalibDbHandle_t  hCamCalibDb,
     CamCcProfile_t*      pAddCc
 );
 
+RESULT CamCalibDbReplaceCcProfileAll
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamCcProfile_t*      pAddCc
+);
 
+RESULT CamCalibDbReplaceCcProfileByName
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamCcProfile_t*      pAddCc
+);
 
 RESULT CamCalibDbGetCcProfileByName
 (
@@ -823,6 +1001,32 @@ RESULT CamCalibDbGetFilterProfileByIdx
     CamFilterProfile_t**          ppFilterProfile
 );
 
+RESULT CamCalibDbAddNewDsp3DNRSetting
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*         pDpfProfile,
+    CamNewDsp3DNRProfile_t* pAddNewDsp3DNRSetting
+);
+RESULT CamCalibDbGetNoOfNewDsp3DNRSetting
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*         pDpfProfile,
+    int32_t*                 no
+);
+RESULT CamCalibDbGetNewDsp3DNRSettingByName
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*         pDpfProfile,
+    CamNewDsp3dnrProfileName_t      NewDsp3DNRSettingName,
+    CamNewDsp3DNRProfile_t**          ppNewDsp3DnrSetting
+);
+RESULT CamCalibDbGetNewDsp3DNRByIdx
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*         pDpfProfile,
+    const uint32_t          idx,
+    CamNewDsp3DNRProfile_t**          ppNewDsp3DnrSetting
+);
 RESULT CamCalibDbAddDsp3DNRSetting
 (
     CamCalibDbHandle_t      hCamCalibDb,
@@ -852,6 +1056,16 @@ RESULT CamCalibDbGetDsp3DNRByIdx
     CamDpfProfile_t*         pDpfProfile,
     const uint32_t          idx,
     CamDsp3DNRSettingProfile_t**          ppDsp3DnrSetting
+);
+RESULT CamCalibDbReplaceDpfProfileAll
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*        pRepDpf
+);
+RESULT CamCalibDbReplaceDpfProfile
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamDpfProfile_t*        pRepDpf
 );
 
 RESULT CamCalibDbAddDpfProfile
@@ -892,6 +1106,26 @@ RESULT CamCalibDbGetDpccProfileByResolution
     CamCalibDbHandle_t          hCamCalibDb,
     const CamResolutionName_t   ResName,
     CamDpccProfile_t**            pDpccProfile
+);
+
+RESULT CamCalibDbAddRKsharpenProfile
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamIesharpenProfile_t     *pAddIesharpen
+);
+
+RESULT CamCalibDbGetRKsharpenProfileByName
+(
+    CamCalibDbHandle_t      hCamCalibDb,
+    CamIesharpenProfileName_t name,
+    CamIesharpenProfile_t **pIesharpenProfile
+);
+
+RESULT CamCalibDbGetRKsharpenProfileByResolution
+(
+    CamCalibDbHandle_t          hCamCalibDb,
+    const CamResolutionName_t   ResName,
+    CamIesharpenProfile_t **pIesharpenProfile
 );
 
 RESULT CamCalibDbGetSensorXmlVersion

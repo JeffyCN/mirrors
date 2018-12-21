@@ -52,19 +52,22 @@ typedef struct CamCalibDbContext_s {
   sensor_sample_id_t          sid;            /**< sensor sample id */
 
   List                        resolution;     /**< list of supported resolutions */
-  List                        awb_global;     /**< list of supported awb_globals */
+  CamCalibAwbPara_t*          pAwbProfile;     /* AWB  profile*/
+  //List                        awb_global;     /**< list of supported awb_globals */
+  CamCalibAfGlobal_t*          pAfGlobal;
   CamCalibAecGlobal_t*         pAecGlobal;    /**< AEC global settings */
   List         				  gocProfile;    /**< GOC global settings */
   CamCalibWdrGlobal_t*         pWdrGlobal;    /**< WDR global settings */
   CamCprocProfile_t*           pCprocGlobal;   /**< CPROC global settings */
   List                        ecm_profile;    /**< list of supported ECM profiles */
-  List                        illumination;   /**< list of supported illuminations */
+  //List                        illumination;   /**< list of supported illuminations */
   List                        lsc_profile;    /**< list of supported LSC profiles */
   List                        cc_profile;     /**< list of supported CC profiles */
   List                        bls_profile;    /**< list of supported BLS profiles */
   List                        cac_profile;    /**< list of supported CAC profiles */
   List                        dpf_profile;    /**< list of supported DPF profiles */
   List                        dpcc_profile;   /**< list of supported DPCC profiles */
+  List                        iesharpen_profile;/**< list of supported IE-SHARPEN profiles */
 
   CamCalibSystemData_t        system;
 } CamCalibDbContext_t;
