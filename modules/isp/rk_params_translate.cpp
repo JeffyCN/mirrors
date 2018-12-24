@@ -283,13 +283,18 @@ void ParamsTranslate::convert_to_rkisp_aec_config( XCamAeParam* aec_params,
     // bias
     config->ae_bias = (int)(aec_params->ev_shift);
 
-    config->frame_time_us_min = aec_params->exposure_time_min / 1000;
-    config->frame_time_us_max = aec_params->exposure_time_max / 1000;
-
+    if (config->mode == HAL_AE_OPERATION_MODE_AUTO) {
+        config->frame_time_ms_min = aec_params->exposure_time_min / 1000;
+        config->frame_time_ms_max = aec_params->exposure_time_max / 1000;
+    } else {
+        config->frame_time_ms_min = aec_params->manual_exposure_time;
+        config->frame_time_ms_max = aec_params->manual_exposure_time;
+        config->manual_gains = aec_params->manual_analog_gain;
+    }
     LOGI("@%s %d: aec_config, flk:%d, mode:%d, meter_mode:%d, win(%d,%d,%d,%d), bias:%d, min:%d, max:%d ", __FUNCTION__, __LINE__,
          config->flk, config->mode, config->meter_mode,
          config->win.left_hoff, config->win.top_voff, config->win.right_width, config->win.bottom_height,
-         config->ae_bias, config->frame_time_us_min, config->frame_time_us_max);
+         config->ae_bias, config->frame_time_ms_min, config->frame_time_ms_max);
 }
 
 void

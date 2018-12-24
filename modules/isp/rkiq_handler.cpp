@@ -285,7 +285,8 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
     uint16_t lines_per_frame = 0;
     int64_t manualExpTime = 1;
 
-    if (inputParams->aaaControls.ae.aeMode != ANDROID_CONTROL_AE_MODE_OFF) {
+    // return exposure time always
+    if (/*inputParams->aaaControls.ae.aeMode != ANDROID_CONTROL_AE_MODE_OFF*/1) {
 
         // Calculate frame duration from AE results and sensor descriptor
         pixels_per_line = _rkaiq_result.sensor_exposure.line_length_pixels;
@@ -304,7 +305,7 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
          * AE reports exposure in usecs but Android wants it in nsecs
          * In manual mode, use input value if delta to expResult is small.
          */
-        exposureTime = _rkaiq_result.exposure.exposure_time_us;
+        exposureTime = _rkaiq_result.exposure.exposure_time_us / 1000;
         manualExpTime = aeParams.manual_exposure_time;
 
         if (exposureTime == 0 ||
@@ -316,9 +317,13 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
             // copy input value
             exposureTime = manualExpTime;
         }
-        exposureTime = exposureTime * 1000; // to ns.
+        exposureTime = exposureTime * 1000 * 1000; // to ns.
         metadata->update(ANDROID_SENSOR_EXPOSURE_TIME,
                                          &exposureTime, 1);
+
+        int32_t ExposureGain = _rkaiq_result.exposure.analog_gain;
+        metadata->update(ANDROID_SENSOR_SENSITIVITY,
+                                         &ExposureGain, 1);
     }
 
     int32_t value = ANDROID_SENSOR_TEST_PATTERN_MODE_OFF;
@@ -329,6 +334,23 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
 
     metadata->update(ANDROID_SENSOR_TEST_PATTERN_MODE,
                                      &value, 1);
+
+    // update expousre range
+    int64_t exptime_range_us[2];
+    entry = settings->find(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE);
+    if (entry.count == 2) {
+        exptime_range_us[0] = entry.data.i64[0];
+        exptime_range_us[1] = entry.data.i64[1];
+        metadata->update(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE, exptime_range_us, 2);
+    }
+
+    int32_t sensitivity_range[2];
+    entry = settings->find(ANDROID_SENSOR_INFO_SENSITIVITY_RANGE);
+    if (entry.count == 2) {
+        sensitivity_range[0] = entry.data.i32[0];
+        sensitivity_range[1] = entry.data.i32[1];
+        metadata->update(ANDROID_SENSOR_INFO_SENSITIVITY_RANGE, sensitivity_range, 2);
+    }
 
     return XCAM_RETURN_NO_ERROR;
 }

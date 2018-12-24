@@ -342,8 +342,9 @@ struct HAL_AecCfg {
   HAL_AE_METERING_MODE meter_mode;
   HAL_Window win;
   int ae_bias;
-  int frame_time_us_min;
-  int frame_time_us_max;
+  int frame_time_ms_min;
+  int frame_time_ms_max;
+  float manual_gains;
 };
 
 struct HAL_AfcType {

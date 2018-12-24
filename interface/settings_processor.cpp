@@ -171,11 +171,11 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
         controlMode = entry.data.u8[0];
     aiqInputParams->aaaControls.controlMode = controlMode;
 
-    if (controlMode == ANDROID_CONTROL_MODE_AUTO ||
+    if (controlMode == ANDROID_CONTROL_MODE_OFF || aeMode == ANDROID_CONTROL_AE_MODE_OFF)
+        aeParams->mode = XCAM_AE_MODE_MANUAL;
+    else if (controlMode == ANDROID_CONTROL_MODE_AUTO ||
         controlMode == ANDROID_CONTROL_MODE_USE_SCENE_MODE)
         aeParams->mode = XCAM_AE_MODE_AUTO;
-    else if (controlMode == ANDROID_CONTROL_MODE_OFF || aeMode == ANDROID_CONTROL_AE_MODE_OFF)
-        aeParams->mode = XCAM_AE_MODE_MANUAL;
 
     // ******** metering_mode
     // TODO: implement the metering mode. For now the metering mode is fixed
@@ -226,8 +226,8 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
     // ******** exposure_coordinate
     rw_entry = staticMeta.find(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE);
     if (rw_entry.count == 2) {
-        aeParams->exposure_time_min = rw_entry.data.i64[0];
-        aeParams->exposure_time_max = rw_entry.data.i64[1];
+        aeParams->exposure_time_min = rw_entry.data.i64[0] / (1000 * 1000);
+        aeParams->exposure_time_max = rw_entry.data.i64[1] / (1000 * 1000);
     }
     /*
      * MANUAL AE CONTROL
@@ -237,19 +237,19 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
         //# METADATA_Control sensor.exposureTime done
         entry = settings->find(ANDROID_SENSOR_EXPOSURE_TIME);
         if (entry.count == 1) {
-            int64_t timeMicros = entry.data.i64[0] / 1000;
+            int64_t timeMicros = entry.data.i64[0] / (1000 * 1000);
             if (timeMicros > 0) {
                 /* TODO  need add exposure time limited mechanism*/
-                if (timeMicros > aeParams->exposure_time_max / 1000) {
+                if (timeMicros > aeParams->exposure_time_max) {
                     LOGE("exposure time %" PRId64 " ms is bigger than the max exposure time %" PRId64 " ms",
-                        timeMicros, aeParams->exposure_time_max / 1000);
-                    return XCAM_RETURN_ERROR_UNKNOWN;
-                } else if (timeMicros < aeParams->exposure_time_min / 1000) {
+                        timeMicros, aeParams->exposure_time_max);
+                    //return XCAM_RETURN_ERROR_UNKNOWN;
+                } else if (timeMicros < aeParams->exposure_time_min) {
                     LOGE("exposure time %" PRId64 " ms is smaller than the min exposure time %" PRId64 " ms",
-                        timeMicros, aeParams->exposure_time_min / 1000);
-                    return XCAM_RETURN_ERROR_UNKNOWN;
-                }
-                aeParams->manual_exposure_time = timeMicros;
+                        timeMicros, aeParams->exposure_time_min);
+                    //return XCAM_RETURN_ERROR_UNKNOWN;
+                } else
+                    aeParams->manual_exposure_time = timeMicros;
             } else {
                 // Don't constrain AIQ.
                 aeParams->manual_exposure_time = 0;

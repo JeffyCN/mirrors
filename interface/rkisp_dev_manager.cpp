@@ -67,6 +67,7 @@ void
 RkispDeviceManager::x3a_calculation_done (XAnalyzer *analyzer, X3aResultList &results)
 {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    int id = -1;
 
     SmartPtr<XmetaResult> meta_result;
     X3aResultList::iterator iter;
@@ -84,15 +85,13 @@ RkispDeviceManager::x3a_calculation_done (XAnalyzer *analyzer, X3aResultList &re
     }
 
     /* meta_result->dump(); */
-    int id;
     {
         SmartLock lock(_settingsMutex);
         if (!_settings.empty()) {
             id = (*_settings.begin())->reqId;
             _settings.erase(_settings.begin());
         } else {
-            LOGE("@%s %d: No settting when results comes, shoult not happen , Fix me!!", __FUNCTION__, __LINE__);
-            goto done;
+            LOGW("@%s %d: No settting when results comes!!", __FUNCTION__, __LINE__);
         }
     }
     LOGI("@%s %d: result %d has %d metadata entries", __FUNCTION__, __LINE__,
@@ -101,7 +100,8 @@ RkispDeviceManager::x3a_calculation_done (XAnalyzer *analyzer, X3aResultList &re
     rkisp_cl_frame_metadata_s cb_result;
     cb_result.id = id;
     cb_result.metas = meta_result->get_metadata_result()->getAndLock();
-    mCallbackOps->metadata_result_callback(mCallbackOps, &cb_result);
+    if (mCallbackOps)
+        mCallbackOps->metadata_result_callback(mCallbackOps, &cb_result);
     meta_result->get_metadata_result()->unlock(cb_result.metas);
 
 done:

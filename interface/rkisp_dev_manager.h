@@ -93,9 +93,10 @@ public:
     XCam::SmartPtr<AiqInputParams> getAiqInputParams()
     {
         SmartLock lock(_settingsMutex);
-        if (_settings.empty())
-            return NULL;
-        return *_settings.begin();
+        if (!_settings.empty())
+            _cur_settings = *_settings.begin();
+
+        return _cur_settings;
     }
 
     // only called one time in the func rkisp_cl_prepare@rkisp_control_loop_impl.cpp
@@ -137,6 +138,7 @@ private:
     Mutex _settingsMutex;
     // push_back when set_control_params, erase when calculationd done
     std::vector<XCam::SmartPtr<AiqInputParams>>  _settings;
+    XCam::SmartPtr<AiqInputParams>  _cur_settings;
     SettingsProcessor*            _settingsProcessor;
     static CameraMetadata staticMeta;
 
