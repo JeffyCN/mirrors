@@ -3572,7 +3572,7 @@
                             ISP_DPCC_MODE
                         </name>
                         <value index="1" type="char" size="[1 6]">
-                            0x0004
+                            0x0015
                         </value>
                     </cell>
                     <cell index="2" type="struct" size="[1 1]">
@@ -3766,7 +3766,7 @@
                             ISP_DPCC_MODE
                         </name>
                         <value index="1" type="char" size="[1 6]">
-                            0x0004
+                            0x0015
                         </value>
                     </cell>
                     <cell index="2" type="struct" size="[1 1]">
