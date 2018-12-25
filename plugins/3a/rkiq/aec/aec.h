@@ -51,9 +51,11 @@
  *  - support rk1608 HDR ae
  *  - remove unnecessary lib dependancy
  *  - do not expose the head file aec_ctrl.h
+ * v0.0.3
+ *  - sync rkisp aec demo with calibdb v0.2.0 
  */
 
-#define CONFIG_AE_LIB_VERSION "v0.0.2"
+#define CONFIG_AE_LIB_VERSION "v0.0.3"
 
 #ifdef __cplusplus
 extern "C"
@@ -129,11 +131,10 @@ typedef enum AecEcmFlickerPeriod_e {
 } AecEcmFlickerPeriod_t;
 
 typedef struct Aec_daynight_th_s {
-  float         gain_th;
-  float         time_th;
-  float         luma_th;
+  float         fac_th;
   uint8_t         holdon_times_th;
 } Aec_daynight_th_t;
+
 
 typedef struct AecInterAdjust_s{
 	uint8_t enable;
@@ -194,14 +195,12 @@ typedef struct AecConfig_s {
   float         AOE_Y_Min_th;
   float         AOE_Step_Inc;
   float         AOE_Step_Dec;
-  uint8_t         DON_Enable;
-  float         DON_Day2Night_Gain_th;
-  float         DON_Day2Night_Inttime_th;
-  float         DON_Day2Night_Luma_th;
-  float         DON_Night2Day_Gain_th;
-  float         DON_Night2Day_Inttime_th;
-  float         DON_Night2Day_Luma_th;
-  uint8_t         DON_Bouncing_th;
+
+  uint8_t       DON_Night_Trigger;
+  uint8_t       DON_Night_Mode;
+  float         DON_Day2Night_Fac_th; // yamasaki
+  float         DON_Night2Day_Fac_th; // yamasaki
+  uint8_t       DON_Bouncing_th;
 
   AecInterAdjust_t IntervalAdjStgy;
   uint8_t       Valid_GridWeights_Num;
@@ -210,7 +209,7 @@ typedef struct AecConfig_s {
   //zlj add for HdrAec GridWeights
   uint8_t       Valid_HdrGridWeights_Num;
   uint8_t       Valid_HdrGridWeights_W; /* H has the same dimension as W */
-  uint8_t       Valid_HdrHistBins_Num;
+  uint16_t       Valid_HdrHistBins_Num;
 
   //zlj add for LockAE
   uint8_t		LockAE_enable;
@@ -219,6 +218,11 @@ typedef struct AecConfig_s {
   //zlj add for HdrCtrl
   CamCalibAecHdrCtrl_t HdrCtrl;
   bool          IsHdrAeMode;
+
+  //oyyf
+  enum LIGHT_MODE LightMode;
+  CamCalibAecExpSeparate_t *pExpSeparate[LIGHT_MODE_MAX];
+  CamCalibAecDynamicSetpoint_t *pDySetpoint[LIGHT_MODE_MAX];
 } AecConfig_t;
 
 /*****************************************************************************/

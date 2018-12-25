@@ -42,9 +42,13 @@
  *  - platform independence, support rkisp v10 and v12
  * v0.0.2
  *  - remove unnecessary lib dependancy
+ * v0.0.3
+ *  - unify isp v10, v12 LSC parameter
+ * v0.0.4
+ *  - sync awb with calibdb v0.2.0
  */
 
-#define CONFIG_AWB_LIB_VERSION "v0.0.2"
+#define CONFIG_AWB_LIB_VERSION "v0.0.4"
 
 #ifdef __cplusplus
 extern "C"
@@ -227,6 +231,7 @@ typedef struct AwbRunningOutputResult_s {
  *****************************************************************************/
 typedef struct AwbInstanceConfig_s {
   AwbHandle_t                     hAwb;               /**< handle returns by AwbInit() */
+  int                             isp_ver;
 } AwbInstanceConfig_t;
 
 
