@@ -67,9 +67,12 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
  *  - unify isp v10/v12 iq files
  *  - remove RKISP_V12 macro, get isp version from
  *    driver in runtime
- */
-
-#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.4.0"
+ * v1.5.0
+ *  - fix hist/dpcc check error 
+ *  - rkisp_demo support Android 
+  */
+ 
+#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.5.0"
 
 using namespace XCam;
 class SettingsProcessor;
