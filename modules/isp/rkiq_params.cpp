@@ -40,13 +40,14 @@ static int dpcc_param_check(struct cifisp_dpcc_config* arg, int isp_ver)
 {
     unsigned int i = 0;
     struct cifisp_dpcc_methods_config* method;
+    unsigned int mode_max = arg->mode & ~CIF_ISP_DPCC_MODE_MEM_UPDATE_V12;
     // ISP v12 dpcc uses some more bits which are not used in isp v10, and
     // ISP V12 supports two dpcc modes, including a new one, and the old one
     // which is the same as V10. Because the dpcc params defined in tuning xml
     // use the V12's format for the reason compatible with V10, so we just check
     // the parpams with V12 here.
 
-    if (arg->mode > CIF_ISP_DPCC_MODE_MAX ||
+    if (mode_max > CIF_ISP_DPCC_MODE_MAX ||
         arg->output_mode > CIF_ISP_DPCC_OUTPUTMODE_MAX_V12 ||
         arg->set_use > CIF_ISP_DPCC_SETUSE_MAX) {
         LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
