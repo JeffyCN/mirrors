@@ -1774,7 +1774,7 @@ static RESULT ClearContext(CamCalibDbContext_t* pCamCalibDbCtx) {
   ClearDpfProfileList(&pCamCalibDbCtx->dpf_profile);
   ClearDpccProfileList(&pCamCalibDbCtx->dpcc_profile);
   ClearGocProfileList(&pCamCalibDbCtx->gocProfile);
-
+  ClearIesharpenProfileList(&pCamCalibDbCtx->iesharpen_profile);
   MEMSET(pCamCalibDbCtx, 0, sizeof(CamCalibDbContext_t));
 
   LOGV("%s (exit)\n", __func__);
@@ -1866,7 +1866,8 @@ RESULT CamCalibDbCreate
   ListInit(&pCamCalibDbCtx->cac_profile);
   ListInit(&pCamCalibDbCtx->dpf_profile);
   ListInit(&pCamCalibDbCtx->dpcc_profile);
-
+  ListInit(&pCamCalibDbCtx->iesharpen_profile);
+  
   *hCamCalibDb = (CamCalibDbHandle_t)pCamCalibDbCtx;
   LOGV("%s (exit)\n", __func__);
 

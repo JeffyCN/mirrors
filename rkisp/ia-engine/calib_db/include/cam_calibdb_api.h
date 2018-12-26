@@ -920,7 +920,7 @@ RESULT CamCalibDbReplaceCcProfileByName
 RESULT CamCalibDbGetCcProfileByName
 (
     CamCalibDbHandle_t      hCamCalibDb,
-    CamLscProfileName_t     name,
+    CamCcProfileName_t      name,
     CamCcProfile_t**          pCcProfile
 );
 
