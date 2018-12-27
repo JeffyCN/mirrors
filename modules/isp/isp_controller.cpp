@@ -652,7 +652,9 @@ IspController::set_3a_config (X3aIspConfig *config)
         }
         if (_is_bw_sensor) {
             /* bypass BDM/CTK/AWB gain params */
-             update_params.module_ens &= ~(CIFISP_MODULE_BDM | CIFISP_MODULE_CTK | CIFISP_MODULE_AWB_GAIN);
+             update_params.module_ens &= ~( CIFISP_MODULE_CTK | CIFISP_MODULE_AWB_GAIN);
+             /* note that BDM en bit means bypass enable actually */
+             update_params.module_ens |= CIFISP_MODULE_BDM; 
              update_params.module_en_update |= CIFISP_MODULE_BDM | CIFISP_MODULE_CTK | CIFISP_MODULE_AWB_GAIN;
              update_params.module_cfg_update &= ~(CIFISP_MODULE_BDM | CIFISP_MODULE_CTK | CIFISP_MODULE_AWB_GAIN);
         }
