@@ -121,6 +121,7 @@
 #include <sys/termios.h>
 #include <sys/ioctl.h>
 #include <limits.h>
+#include <unistd.h>
 #endif
 
 #include <string.h>
@@ -335,7 +336,7 @@ writeApName(const char* name, int len)
     char nameBuf[AP_NAME_SUFFIX_LEN] = {0};
 
     if(len < 17) {
-        return;
+        return -1;
     }
 
     if(0 != strncmp(name, "11:22:33:44:55", 17)) {
@@ -370,7 +371,7 @@ parse_bdaddr_rand(char *optarg)
 				optargtest[j] = metachar[rand()%16]; 
 			}
 		}
-		optargtest[17]="\0";
+		optargtest[17]='\0';
 		
 		writeApName(optargtest,AP_NAME_SUFFIX_LEN);
 	}
