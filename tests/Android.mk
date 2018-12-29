@@ -8,7 +8,7 @@ LOCAL_SRC_FILES +=\
 	../interface/mediactl.c \
 
 LOCAL_CPPFLAGS += -std=c++11 -Wno-error
-LOCAL_CPPFLAGS += -DLINUX
+LOCAL_CPPFLAGS += -DLINUX 
 LOCAL_CPPFLAGS += $(PRJ_CPPFLAGS)
 
 LOCAL_C_INCLUDES := \
@@ -26,8 +26,8 @@ LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/../modules/isp \
 	$(LOCAL_PATH)/../rkisp/ia-engine \
 	$(LOCAL_PATH)/../rkisp/ia-engine/include \
-	$(LOCAL_PATH)/../rkisp/ia-engine/include/linux \
-	$(LOCAL_PATH)/../rkisp/ia-engine/include/linux/media \
+    $(LOCAL_PATH)/../rkisp/ia-engine/include/linux \
+    $(LOCAL_PATH)/../rkisp/ia-engine/include/linux/media \
 	$(LOCAL_PATH)/../rkisp/isp-engine
 
 LOCAL_SHARED_LIBRARIES += libdl
@@ -48,7 +48,7 @@ include $(BUILD_EXECUTABLE)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES +=\
-	testCamDevPU.cpp
+	test_camcl.cpp
 
 LOCAL_CPPFLAGS += -std=c++11 -Wno-error
 LOCAL_CPPFLAGS += -DLINUX 
@@ -57,7 +57,6 @@ LOCAL_CPPFLAGS += $(PRJ_CPPFLAGS)
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH) \
 	$(LOCAL_PATH)/../interface \
-	$(LOCAL_PATH)/../interface_pu/include \
 	$(LOCAL_PATH)/../metadata/header_files/include \
 	$(LOCAL_PATH)/../metadata/libcamera_client/include \
 	$(LOCAL_PATH)/../metadata/libcamera_metadata/include \
@@ -70,11 +69,11 @@ LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/../modules/isp \
 	$(LOCAL_PATH)/../rkisp/ia-engine \
 	$(LOCAL_PATH)/../rkisp/ia-engine/include \
-	$(LOCAL_PATH)/../rkisp/ia-engine/include/linux \
-	$(LOCAL_PATH)/../rkisp/ia-engine/include/linux/media \
+    $(LOCAL_PATH)/../rkisp/ia-engine/include/linux \
+    $(LOCAL_PATH)/../rkisp/ia-engine/include/linux/media \
 	$(LOCAL_PATH)/../rkisp/isp-engine
 
-LOCAL_SHARED_LIBRARIES += libdl librkisp librkisp_pu
+LOCAL_SHARED_LIBRARIES += libdl librkisp
 
 ifeq ($(IS_ANDROID_OS),true)
 LOCAL_SHARED_LIBRARIES += libutils libcutils
@@ -85,6 +84,6 @@ LOCAL_STATIC_LIBRARIES += android.hardware.camera.common@1.0-helper
 endif
 endif
 
-LOCAL_MODULE:= test_isppu
+LOCAL_MODULE:= test_ispcl
 
-include $(BUILD_EXECUTABLE)
+#include $(BUILD_EXECUTABLE)
