@@ -143,7 +143,7 @@ IspController::get_format(rk_aiq_exposure_sensor_descriptor* sensor_desc)
 
     sensor_desc->isp_input_width= fmt.format.width;
     sensor_desc->isp_input_height= fmt.format.height;
-    if (fmt.format.code == MEDIA_BUS_FMT_Y18_1X8 |
+    if (fmt.format.code == MEDIA_BUS_FMT_Y8_1X8 |
         fmt.format.code == MEDIA_BUS_FMT_Y10_1X10 |
         fmt.format.code == MEDIA_BUS_FMT_Y12_1X12)
          _is_bw_sensor = true;
