@@ -84,7 +84,7 @@ public:
     RkispDeviceManager (const cl_result_callback_ops_t *cb);
     ~RkispDeviceManager ();
 
-    XCam::SmartPtr<XCam::VideoBuffer> dequeue_buffer (int32_t timeout = -1);
+    XCam::SmartPtr<XCam::VideoBuffer> dequeue_buffer ();
     void pause_dequeue ();
     void resume_dequeue ();
     XCamReturn set_control_params(const int request_frame_id,
