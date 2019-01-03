@@ -187,7 +187,7 @@ int rkisp_cl_prepare(void* cl_ctx,
     stats_dev->set_capture_mode (V4L2_CAPTURE_MODE_VIDEO);
     stats_dev->set_buf_type(V4L2_BUF_TYPE_META_CAPTURE);
     stats_dev->set_mem_type (V4L2_MEMORY_MMAP);
-    stats_dev->set_buffer_count (1);
+    stats_dev->set_buffer_count (4);
     ret = stats_dev->open ();
     if (ret == XCAM_RETURN_NO_ERROR) {
         device_manager->set_isp_stats_device (stats_dev);
@@ -206,7 +206,7 @@ int rkisp_cl_prepare(void* cl_ctx,
     param_dev->set_capture_mode (V4L2_CAPTURE_MODE_VIDEO);
     param_dev->set_buf_type(V4L2_BUF_TYPE_META_OUTPUT);
     param_dev->set_mem_type (V4L2_MEMORY_MMAP);
-    param_dev->set_buffer_count (1);
+    param_dev->set_buffer_count (4);
     ret = param_dev->open ();
     if (ret == XCAM_RETURN_NO_ERROR) {
         device_manager->set_isp_params_device (param_dev);

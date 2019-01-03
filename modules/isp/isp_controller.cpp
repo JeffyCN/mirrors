@@ -647,11 +647,29 @@ IspController::set_3a_config (X3aIspConfig *config)
 #if RKISP
     if (_isp_params_device.ptr()) {
         struct rkisp1_isp_params_cfg* isp_params;
-        struct v4l2_buffer v4l2buf = _isp_params_device->get_buffer_by_index(0);
+        SmartPtr<V4l2Buffer> v4l2buf;
         struct rkisp1_isp_params_cfg update_params;
-        int sequence = v4l2buf.sequence;
-        if (0)
-            printf("params buf.sequence: %d\n", sequence);
+        int buf_cnt = _isp_params_device->get_buffer_count();
+        int buf_queued_cnt = _isp_params_device->get_queued_bufcnt();
+        int buf_index = 0;
+
+        // use ping-pong buffer
+        //XCAM_ASSERT (buf_cnt == 2);
+        if (buf_queued_cnt == buf_cnt) {
+            /* wait params done, this may block the thread */
+            if (_is_exit)
+                return XCAM_RETURN_BYPASS;
+            if (_isp_params_device->dequeue_buffer(v4l2buf) != 0) {
+                XCAM_LOG_ERROR ("RKISP1: failed to ioctl VIDIOC_DQBUF for %d %s.\n",
+                       errno, strerror(errno));
+                return ret;
+            }
+            buf_index = v4l2buf->get_buf().index;
+        } else {
+            buf_index = buf_queued_cnt ;
+            v4l2buf = _isp_params_device->get_buffer_by_index(buf_index);
+        }
+
         memset(&update_params, 0, sizeof(struct rkisp1_isp_params_cfg));
         ret = rkisp1_convert_results(&update_params,isp_cfg, _last_aiq_results);
         if (ret != XCAM_RETURN_NO_ERROR) {
@@ -665,41 +683,27 @@ IspController::set_3a_config (X3aIspConfig *config)
              update_params.module_cfg_update &= ~CIFISP_MODULE_BDM;
         }
         gen_full_isp_params(&update_params, &_full_active_isp_params);
-        isp_params = (struct rkisp1_isp_params_cfg*)v4l2buf.m.userptr;
+        isp_params = (struct rkisp1_isp_params_cfg*)v4l2buf->get_buf().m.userptr;
         *isp_params = _full_active_isp_params;
         dump_isp_config(isp_params, isp_cfg);
 
         ret = rkisp1_check_params(isp_params, _isp_ver);
         if (ret != XCAM_RETURN_NO_ERROR) {
-            LOGE("rkisp1_check_params error\n");
+            XCAM_LOG_ERROR ("rkisp1_check_params error\n");
             return XCAM_RETURN_ERROR_PARAM;
         }
 
-        /* apply isp_params */
-        xcam_mem_clear(v4l2buf);
-        v4l2buf.type = V4L2_BUF_TYPE_META_OUTPUT;
-        v4l2buf.memory = V4L2_MEMORY_MMAP;
-
         /* params should use one buffers */
-        v4l2buf.index = 0;
-        if (_isp_params_device->io_control(VIDIOC_QBUF, &v4l2buf) != 0) {
-            printf("RKISP1: failed to ioctl VIDIOC_QBUF for %d %s.\n",
-                   errno, strerror(errno));
+        if (_isp_params_device->queue_buffer (v4l2buf) != 0) {
+            XCAM_LOG_ERROR ("RKISP1: failed to ioctl VIDIOC_QBUF for index %d, %d %s.\n",
+                   buf_index, errno, strerror(errno));
             return ret;
         }
 
-        XCAM_LOG_DEBUG ("device(%s) dequeue buffer, check exit status again[exit: %d]",
-            XCAM_STR (_isp_params_device->get_device_name()), _is_exit);
+        XCAM_LOG_DEBUG ("device(%s) queue buffer index %d, queue cnt %d, check exit status again[exit: %d]",
+            XCAM_STR (_isp_params_device->get_device_name()), buf_index, _isp_params_device->get_queued_bufcnt(), _is_exit);
         if (_is_exit)
             return XCAM_RETURN_BYPASS;
-
-        /* wait params done, this may block the thread */
-        if (_isp_params_device->io_control(VIDIOC_DQBUF, &v4l2buf) != 0) {
-            printf("RKISP1: failed to ioctl VIDIOC_DQBUF for %d %s.\n",
-                   errno, strerror(errno));
-            return ret;
-        }
-
     }
 #endif
 

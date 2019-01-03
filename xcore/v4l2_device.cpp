@@ -46,6 +46,7 @@ V4l2Device::V4l2Device (const char *name)
     , _fps_d (0)
     , _active (false)
     , _buf_count (XCAM_V4L2_DEFAULT_BUFFER_COUNT)
+    , _queued_bufcnt(0)
 {
     if (name)
         _name = strndup (name, XCAM_MAX_STR_SIZE);
@@ -475,7 +476,7 @@ V4l2Device::start (bool need_queue_bufs)
     XCAM_FAIL_RETURN (
         ERROR, ret == XCAM_RETURN_NO_ERROR, ret,
         "device(%s) start failed", XCAM_STR (_name));
-
+    _queued_bufcnt = 0;
     //alloc buffers
     ret = init_buffer_pool ();
     XCAM_FAIL_RETURN (
@@ -736,11 +737,11 @@ V4l2Device::fini_buffer_pool()
     return XCAM_RETURN_NO_ERROR;
 }
 
-const struct v4l2_buffer&
+SmartPtr<V4l2Buffer>
 V4l2Device::get_buffer_by_index (int index) {
     SmartPtr<V4l2Buffer> &buf = _buf_pool [index];
 
-    return buf->get_buf();
+    return buf;
 }
 
 XCamReturn
@@ -799,6 +800,7 @@ V4l2Device::dequeue_buffer(SmartPtr<V4l2Buffer> &buf)
     } else {
         buf->set_length (v4l2_buf.length); 
     }
+    _queued_bufcnt--;
 
     return XCAM_RETURN_NO_ERROR;
 }
@@ -820,6 +822,7 @@ V4l2Device::queue_buffer (SmartPtr<V4l2Buffer> &buf)
         XCAM_LOG_ERROR("fail to enqueue buffer index:%d.", v4l2_buf.index);
         return XCAM_RETURN_ERROR_IOCTL;
     }
+    _queued_bufcnt++;
     return XCAM_RETURN_NO_ERROR;
 }
 
