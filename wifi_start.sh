@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 WIFISSID=$1
 WIFIPWD=$2
 CONF=/userdata/cfg/wpa_supplicant.conf
