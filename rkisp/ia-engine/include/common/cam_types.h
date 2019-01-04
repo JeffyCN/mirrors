@@ -1674,15 +1674,19 @@ typedef struct CamCalibAecHdrCtrl_s{
   uint8_t   Enable;
   uint8_t	Mode;
   uint8_t	FrameNum;
-  float		DCG_Ratio;
-  float 	M2S_Ratio;
-  float 	L2M_Ratio;
+  float	    DCG_Ratio;
   Cam6x1FloatMatrix_t Lgains;
+  Cam6x1FloatMatrix_t LExpLevel;
+  Cam6x1FloatMatrix_t LSetPoint;
+  Cam6x1FloatMatrix_t TargetDarkROILuma;
   Cam6x1FloatMatrix_t Sgains;
+  Cam6x1FloatMatrix_t SExpLevel;
   Cam6x1FloatMatrix_t TargetOELuma;
-  Cam6x1FloatMatrix_t TargetLgmean;
+  Cam6x1FloatMatrix_t SSetPoint;
   float 	OETolerance;
   float		OELumaDistTh;
+  float 	M2S_Ratio;
+  float 	L2M_Ratio;
 }CamCalibAecHdrCtrl_t;
 
 /*****************************************************************************/
