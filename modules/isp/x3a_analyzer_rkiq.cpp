@@ -277,7 +277,10 @@ X3aAnalyzerRKiq::pre_3a_analyze (SmartPtr<X3aStats> &stats)
     xcam_mem_clear (sensor_mode_data);
     XCAM_ASSERT (_isp.ptr());
 
-    ret = _isp->get_sensor_mode_data (sensor_mode_data);
+    struct cifisp_stat_buffer* stats_3a = (struct cifisp_stat_buffer*)xcam_isp_stats->get_isp_stats();
+
+    ret = _isp->get_sensor_mode_data (sensor_mode_data, stats_3a->frame_id);
+
     XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret, "get sensor mode data failed");
     _sensor_mode_data = sensor_mode_data;
 

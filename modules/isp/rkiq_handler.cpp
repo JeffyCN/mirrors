@@ -200,6 +200,13 @@ AiqAeHandler::pop_result ()
         sensor.HdrGains[i] = _result.HdrGains[i];
         sensor.HdrIntTimes[i] = _result.HdrIntTimes[i];
     }
+    for (int i = 0; i < 3; i++) {
+        sensor.RegSmoothGains[i] = _result.exp_smooth_results[i].regGain;
+        sensor.RegSmoothTime[i] = _result.exp_smooth_results[i].regIntegrationTime;
+        sensor.SmoothGains[i] = _result.exp_smooth_results[i].analog_gain_code_global;
+        sensor.SmoothIntTimes[i] = _result.exp_smooth_results[i].coarse_integration_time;
+        sensor.RegSmoothFll[i] = _result.exp_smooth_results[i].LinePeriodsPerField;
+    }
     result->set_isp_config (sensor);
 
     xcam_mem_clear (exposure);

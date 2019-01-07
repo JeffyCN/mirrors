@@ -21,6 +21,7 @@
 #define XCAM_ISP_CONTROLLER_H
 
 #include <xcam_std.h>
+#include <map>
 #include "x3a_isp_config.h"
 #include <v4l2_buffer_proxy.h>
 #include <rk_aiq.h>
@@ -56,7 +57,8 @@ public:
     int get_exposure_range(rk_aiq_exposure_sensor_descriptor* sensor_desc);
     int get_format(rk_aiq_exposure_sensor_descriptor* sensor_desc);
     XCamReturn get_sensor_descriptor (rk_aiq_exposure_sensor_descriptor *sensor_desc);
-    XCamReturn get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &sensor_mode_data);
+    XCamReturn get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &sensor_mode_data,
+                                     int frame_id = -1);
     XCamReturn get_isp_parameter (struct rkisp_parm &parameters);
     XCamReturn get_frame_softime (int64_t &sof_tim);
     XCamReturn get_vcm_time (struct rk_cam_vcm_tim *vcm_tim);
@@ -109,13 +111,14 @@ private:
     int                      _max_delay;
     /* exposure syncronization */
     struct rkisp_exposure *_exposure_queue;
-    uint32_t                 _ae_stats_delay;
+    int                   _cur_apply_index;
 
     Mutex             _mutex;
     XCam::Cond        _frame_sequence_cond;
 
     struct rkisp1_isp_params_cfg _full_active_isp_params;
     int               _isp_ver;
+    std::map<int, struct rkisp_exposure> _effecting_exposure_map;
 };
 
 };

@@ -903,16 +903,20 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
         dumpAe();
 
         if(!lastAecResult.IsHdrExp){
-            if ((lastTime == -1 && lastGain == -1)
-                || (lastTime == dCfg.sensor_mode.exp_time && lastGain == dCfg.sensor_mode.gain)) {
-                aecParams = param;
-                if (aecDesc != NULL) {
-                    aecDesc->set_stats(aecContext, &mStats.aec);
-                    // manual ae should be processed even if ae is locked
-                    if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE) ||
-                        (aecCfg.AecMode == AEC_MODE_MANUAL))
-                        aecDesc->analyze_ae(aecContext, param);
-                }
+            // run ae every frame
+            aecParams = param;
+            if (aecDesc != NULL) {
+                mStats.aec.sensor_metadata.coarse_integration_time =
+                  dCfg.sensor_mode.exp_time_seconds;
+                mStats.aec.sensor_metadata.analog_gain_code_global =
+                  dCfg.sensor_mode.gains;
+                mStats.aec.sensor_metadata.regIntegrationTime =
+                  dCfg.sensor_mode.exp_time;
+                mStats.aec.sensor_metadata.regGain =
+                  dCfg.sensor_mode.gain;
+                aecDesc->set_stats(aecContext, &mStats.aec);
+                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE))
+                    aecDesc->analyze_ae(aecContext, param);
             }
         }else{ //add check exposure value between AE & 1608 Embedded data
             LOGD( "runAEC - 1608 Time_L=%d,Gain_L=%d,Time_M=%d,Gain_M=%d,Time_S=%d,Gain_S=%d\n",
@@ -1007,8 +1011,8 @@ RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, 
         MeasResult.HistBins[i] = mStats.aec.hist_bins[i];
 
     if(!lastAecResult.IsHdrExp){
-        MeasResult.fGain = lastAecResult.analog_gain_code_global;
-        MeasResult.fIntegrationTime = lastAecResult.coarse_integration_time;
+        MeasResult.fGain = dCfg.sensor_mode.gains;
+        MeasResult.fIntegrationTime = dCfg.sensor_mode.exp_time_seconds;
     }else{
         MeasResult.fGain = lastAecResult.analog_gain_code_global/lastAecResult.DCG_Ratio;
         MeasResult.fIntegrationTime = lastAecResult.coarse_integration_time;
@@ -1854,6 +1858,9 @@ RESULT CamIA10Engine::getAECResults(AecResult_t* result) {
             lastAecResult.gainFactor = result->gainFactor;
             lastAecResult.gainBias = result->gainBias;
             lastAecResult.IsHdrExp=result->IsHdrExp;
+            memcpy(lastAecResult.exp_smooth_results,
+                   result->exp_smooth_results,
+                   sizeof(result->exp_smooth_results));
             //*shd = *set;
         }
     }else{

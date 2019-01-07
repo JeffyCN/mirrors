@@ -72,6 +72,8 @@ struct CamIA10_SensorModeData {
   int exp_time;
   unsigned short gain;
   bool  is_bw_sensor;
+  float exp_time_seconds;
+  float gains;
 };
 
 

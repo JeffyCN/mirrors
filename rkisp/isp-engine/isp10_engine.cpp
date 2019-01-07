@@ -1290,8 +1290,10 @@ bool Isp10Engine::getSensorModedata
   iaCfg->fine_integration_time_max_margin = drvCfg->line_length_pck - drvCfg->fine_integration_time_max_margin;
   iaCfg->coarse_integration_time_min = drvCfg->coarse_integration_time_min;
   iaCfg->coarse_integration_time_max_margin = drvCfg->coarse_integration_time_max_margin;
-  iaCfg->gain = drvCfg->gain;
   iaCfg->exp_time = drvCfg->exp_time;
+  iaCfg->gain = drvCfg->gain;
+  iaCfg->exp_time_seconds = drvCfg->exp_time_seconds;
+  iaCfg->gains = drvCfg->gains;
   iaCfg->exposure_valid_frame = drvCfg->exposure_valid_frame[0];
   iaCfg->is_bw_sensor = drvCfg->is_bw_sensor;
 

@@ -37,8 +37,7 @@ IspController::IspController ():
     _isp_params_device(NULL),
     _isp_ioctl(NULL),
     _frame_sequence(0),
-    _frame_sof_time(0),
-    _ae_stats_delay(-1)
+    _frame_sof_time(0)
 {
     xcam_mem_clear(_last_aiq_results);
     xcam_mem_clear(_full_active_isp_params);
@@ -60,6 +59,8 @@ IspController::~IspController ()
 void IspController::exit(bool pause) {
     XCAM_LOG_DEBUG("ISP controller has exit %d", pause);
     _is_exit = pause;
+    _frame_sequence = 0;
+    _effecting_exposure_map.clear();
 }
 
 void
@@ -121,6 +122,11 @@ IspController::handle_sof(int64_t time, int frameid)
     //exposure.digital_gain = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].digital_gain;
     //exposure.frame_line_length = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].frame_line_length;
     exposure = _exposure_queue[EXPOSURE_GAIN_DELAY - 1];
+    exposure = _exposure_queue[_cur_apply_index++];
+    if (_cur_apply_index == 3) {
+        _cur_apply_index = 2;
+        LOGD("no new expoure, use the latest !");
+    }
     set_3a_exposure(exposure);
 
     return XCAM_RETURN_NO_ERROR;
@@ -271,7 +277,7 @@ IspController::get_sensor_descriptor (rk_aiq_exposure_sensor_descriptor *sensor_
 #endif
 
 XCamReturn
-IspController::get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &sensor_mode_data)
+IspController::get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &sensor_mode_data, int frame_id)
 {
     if (_is_exit)
         return XCAM_RETURN_BYPASS;
@@ -322,15 +328,42 @@ IspController::get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &s
             EXPOSURE_TIME_DELAY;
         {
             SmartLock locker (_mutex);
-            sensor_mode_data.exp_time                           =
-                _exposure_queue[0].coarse_integration_time;
-            sensor_mode_data.gain                               =
-                _exposure_queue[0].analog_gain;
-        }
-        XCAM_LOG_DEBUG("|||sensormode (%d-%d) expsync\n",
-            sensor_mode_data.exp_time,
-            sensor_mode_data.gain);
+            std::map<int, struct rkisp_exposure>::iterator it;
+            int num = _effecting_exposure_map.size();
+            int search_id = frame_id;
 
+            do {
+                it = _effecting_exposure_map.find(search_id);
+                if (it != _effecting_exposure_map.end()) {
+                    sensor_mode_data.exp_time_seconds =
+                      _effecting_exposure_map[search_id].SmoothIntTimes[0];
+                    sensor_mode_data.gains =
+                      _effecting_exposure_map[search_id].SmoothGains[0];
+                    sensor_mode_data.exp_time =
+                      _effecting_exposure_map[search_id].RegSmoothTime[0];
+                    sensor_mode_data.gain =
+                      _effecting_exposure_map[search_id].RegSmoothGains[0];
+                    break;
+                }
+            } while (--num > 0 && --search_id >=0);
+
+            if (it == _effecting_exposure_map.end()) {
+                LOGW("can't find %d expoure in effecting map.", frame_id);
+                // can't be 0, or will cause awb algo error
+                sensor_mode_data.exp_time_seconds = 0.0001f;
+                sensor_mode_data.gains = 0.0001f;
+                sensor_mode_data.exp_time =
+                  _exposure_queue[0].coarse_integration_time;
+                sensor_mode_data.gain =
+                  _exposure_queue[0].analog_gain;
+            }
+        }
+            XCAM_LOG_DEBUG("|||sensormode (%d-%d) expsync, time %f,gains %f, frame_id %d\n",
+                sensor_mode_data.exp_time ,
+                sensor_mode_data.gain,
+                sensor_mode_data.exp_time_seconds,
+                sensor_mode_data.gains,
+                frame_id);
     }
 #endif
 
@@ -404,6 +437,7 @@ IspController::get_3a_statistics (SmartPtr<X3aIspStatistics> &stats)
         else
             memcpy(isp_stats, aiq_stats,
                    sizeof(*isp_stats) - sizeof(struct cifisp_embedded_data));
+        isp_stats->frame_id = cur_frame_id;
         ret = _isp_stats_device->queue_buffer (v4l2buf);
         if (ret != XCAM_RETURN_NO_ERROR) {
             XCAM_LOG_WARNING ("queue stats buffer failed");
@@ -505,10 +539,6 @@ resync:
             if ( cur_time - _frame_sof_time < 10 * 1000 * 1000) {
                 XCAM_LOG_DEBUG("measurement late %lld for frame %d - statsync",
                     _frame_sof_time - cur_time, cur_frame_id);
-                // only one delayed stats is allowed
-                if (_ae_stats_delay != -1)
-                    XCAM_LOG_ERROR("busy ! one stats has been already dealyed !");
-                _ae_stats_delay = _frame_sequence;
             } else {
                 XCAM_LOG_ERROR(" stats comes late over 10ms than sof !");
             }
@@ -868,28 +898,56 @@ IspController::exposure_delay(struct rkisp_exposure isp_exposure)
     int i = 0;
 
     SmartLock locker (_mutex);
-    for (i = 0; i < _max_delay - 1; ++i) {
-        _exposure_queue[i] = _exposure_queue[i + 1];
+
+    if (isp_exposure.RegSmoothTime[2] != 0 &&
+        _exposure_queue[0].RegSmoothGains[2] ==
+        isp_exposure.RegSmoothGains[2] &&
+        _exposure_queue[0].RegSmoothTime[2] ==
+        isp_exposure.RegSmoothTime[2]) {
+        LOGD("exposure reg(%d,%d) haven't changed , drop it !",
+             isp_exposure.RegSmoothGains[2],
+             isp_exposure.RegSmoothTime[2]);
+
+        return ;
     }
-    _exposure_queue[_max_delay - 1] = isp_exposure;
-    for(int i=0; i<3; i++) {
-        XCAM_LOG_DEBUG("|||exp queue(%d) (%d-%d)\n",
-            i,
-            _exposure_queue[i].coarse_integration_time,
-            _exposure_queue[i].analog_gain);
-    }
-    /* if missing the sof, update immediately */
-    if (_ae_stats_delay != -1) {
-        _ae_stats_delay = -1;
-        // don't apply immediatly, this will cause exposure and stats
-        // async in rk1608 driver, the root cause is the apply timing may
-        // occur at nearly next SOF. maybe we could add more conditions for
-        // this case to avoid this bug, the conditon is like :
-        // cur_time - sof_time < LIMITATION(decided by fps)
-        if (isp_exposure.IsHdrExp)
-            return ;
-        XCAM_LOG_DEBUG ("set exposure for delay stats %u immediately !", _ae_stats_delay);
-        set_3a_exposure(isp_exposure);
+    _exposure_queue[0] = isp_exposure;
+    _cur_apply_index = 0;
+
+    isp_exposure.RegSmoothGains[0] =
+        isp_exposure.RegSmoothGains[1];
+    isp_exposure.RegSmoothTime[0] =
+        isp_exposure.RegSmoothTime[1];
+    isp_exposure.SmoothGains[0] =
+        isp_exposure.SmoothGains[1];
+    isp_exposure.SmoothIntTimes[0] =
+        isp_exposure.SmoothIntTimes[1];
+    isp_exposure.RegSmoothFll[0] =
+        isp_exposure.RegSmoothFll[1];
+    _exposure_queue[1] = isp_exposure;
+
+    if (memcmp(&_exposure_queue[0], &_exposure_queue[1], sizeof(_exposure_queue[0]) == 0))
+        _cur_apply_index++;
+
+    isp_exposure.RegSmoothGains[0] =
+        isp_exposure.RegSmoothGains[2];
+    isp_exposure.RegSmoothTime[0] =
+        isp_exposure.RegSmoothTime[2];
+    isp_exposure.SmoothGains[0] =
+        isp_exposure.SmoothGains[2];
+    isp_exposure.SmoothIntTimes[0] =
+        isp_exposure.SmoothIntTimes[2];
+    isp_exposure.RegSmoothFll[0] =
+        isp_exposure.RegSmoothFll[2];
+
+    _exposure_queue[2] = isp_exposure;
+
+    if (memcmp(&_exposure_queue[1], &_exposure_queue[2], sizeof(_exposure_queue[0]) == 0))
+        _cur_apply_index++;
+
+    // set the initial exposure before streaming
+    if (_frame_sequence < 0) {
+        set_3a_exposure(_exposure_queue[_cur_apply_index]);
+        _frame_sequence++;
     }
 }
 
@@ -919,12 +977,17 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
     if (_is_exit)
         return XCAM_RETURN_BYPASS;
 
+    if (_effecting_exposure_map.size() > 10)
+        _effecting_exposure_map.erase(_effecting_exposure_map.begin());
+    // map the exposure to corresponded effect frame id
+    _effecting_exposure_map[_frame_sequence + EXPOSURE_TIME_DELAY - 1] = isp_exposure;
+
     LOGD("----------------------------------------------");
     if (!isp_exposure.IsHdrExp)
         LOGD("|||set_3a_exposure (%d-%d) fll 0x%x expsync in sof %d\n",
-            isp_exposure.coarse_integration_time,
-            isp_exposure.analog_gain,
-            isp_exposure.frame_line_length,
+            isp_exposure.RegSmoothTime[0],
+            isp_exposure.RegSmoothGains[0],
+            isp_exposure.RegSmoothFll[0],
             _frame_sequence);
     else
         LOGD("|||set_3a_exposure timereg (%d-%d-%d), gainreg (%d-%d-%d)"
@@ -959,32 +1022,13 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
         if (!isp_exposure.IsHdrExp) {
             struct v4l2_control ctrl;
 
-            if (isp_exposure.analog_gain!= 0) {
-                memset(&ctrl, 0, sizeof(ctrl));
-                ctrl.id = V4L2_CID_ANALOGUE_GAIN;
-                ctrl.value = isp_exposure.analog_gain;
-                if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
-                    XCAM_LOG_ERROR ("failed to  set again result(val: %d)", isp_exposure.analog_gain);
-                    return XCAM_RETURN_ERROR_IOCTL;
-                }
-            }
-            if (isp_exposure.digital_gain!= 0) {
-                memset(&ctrl, 0, sizeof(ctrl));
-                ctrl.id = V4L2_CID_GAIN;
-                ctrl.value = isp_exposure.digital_gain;
-                if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
-                    XCAM_LOG_ERROR ("failed to set dgain result(val: %d)", isp_exposure.digital_gain);
-                    return XCAM_RETURN_ERROR_IOCTL;
-                }
-            }
-
             // set vts before exposure time firstly
             rk_aiq_exposure_sensor_descriptor sensor_desc;
             get_sensor_descriptor (&sensor_desc);
 
             isp_exposure.frame_line_length =
-                (sensor_desc.line_periods_per_field < isp_exposure.frame_line_length) ?
-                isp_exposure.frame_line_length : sensor_desc.line_periods_per_field;
+                (sensor_desc.line_periods_per_field < isp_exposure.RegSmoothFll[0]) ?
+                isp_exposure.RegSmoothFll[0] : sensor_desc.line_periods_per_field;
             memset(&ctrl, 0, sizeof(ctrl));
             ctrl.id = V4L2_CID_VBLANK;
             ctrl.value = isp_exposure.frame_line_length - sensor_desc.sensor_output_height;
@@ -993,12 +1037,34 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
                 return XCAM_RETURN_ERROR_IOCTL;
             }
 
+            if (isp_exposure.analog_gain!= 0) {
+                memset(&ctrl, 0, sizeof(ctrl));
+                ctrl.id = V4L2_CID_ANALOGUE_GAIN;
+                /* ctrl.value = isp_exposure.analog_gain; */
+                ctrl.value = isp_exposure.RegSmoothGains[0];
+                if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
+                    XCAM_LOG_ERROR ("failed to  set again result(val: %d)", isp_exposure.RegSmoothGains[0]);
+                    return XCAM_RETURN_ERROR_IOCTL;
+                }
+            }
+            if (isp_exposure.digital_gain!= 0) {
+                memset(&ctrl, 0, sizeof(ctrl));
+                ctrl.id = V4L2_CID_GAIN;
+                /* ctrl.value = isp_exposure.digital_gain; */
+                ctrl.value = isp_exposure.RegSmoothGains[0];
+                if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
+                    XCAM_LOG_ERROR ("failed to set dgain result(val: %d)", isp_exposure.digital_gain);
+                    return XCAM_RETURN_ERROR_IOCTL;
+                }
+            }
+
             if (isp_exposure.coarse_integration_time!= 0) {
                 memset(&ctrl, 0, sizeof(ctrl));
                 ctrl.id = V4L2_CID_EXPOSURE;
-                ctrl.value = isp_exposure.coarse_integration_time;
+                /* ctrl.value = isp_exposure.coarse_integration_time; */
+                ctrl.value = isp_exposure.RegSmoothTime[0];
                 if (_sensor_subdev->io_control(VIDIOC_S_CTRL, &ctrl) < 0) {
-                    XCAM_LOG_ERROR ("failed to set integration time result(val: %d)", isp_exposure.coarse_integration_time);
+                    XCAM_LOG_ERROR ("failed to set integration time result(val: %d)", isp_exposure.RegSmoothTime[0]);
                     return XCAM_RETURN_ERROR_IOCTL;
                 }
             }

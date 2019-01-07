@@ -53,6 +53,8 @@ struct isp_supplemental_sensor_mode_data {
   unsigned char exposure_valid_frame[2];
   int exp_time;
   unsigned short gain;
+  float exp_time_seconds;
+  float gains;
   unsigned short af_onoff;
   unsigned int vcm_max_step;
   bool  is_bw_sensor;

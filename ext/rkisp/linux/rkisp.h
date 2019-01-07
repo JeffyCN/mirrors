@@ -343,6 +343,11 @@ struct rkisp_exposure {
     unsigned int fine_integration_time;
     unsigned int analog_gain;
     unsigned int digital_gain;
+    int RegSmoothGains[3];
+    int RegSmoothTime[3];
+    float SmoothGains[3];
+    float SmoothIntTimes[3];
+    unsigned int RegSmoothFll[3];
     unsigned int shutter_speed;
     unsigned int aperture;
     // also means LinePeriodsPerField or VTS
