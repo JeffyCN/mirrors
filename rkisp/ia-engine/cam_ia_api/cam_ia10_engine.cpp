@@ -25,7 +25,8 @@ CamIA10Engine::CamIA10Engine():
     mSensorWRatio(1.0f),
     mSensorHRatio(1.0f),
     mSensorEntityName(NULL),
-    mIspVer(0)
+    mIspVer(0),
+    mXMLIspOutputType(0)
 {
     init();
     /*
@@ -141,6 +142,7 @@ RESULT CamIA10Engine::initStatic
  int isp_ver
  ) {
     RESULT result = RET_FAILURE;
+    CamCalibDbMetaData_t dbMeta;
     if (!hCamCalibDb) {
         if (calidb.CreateCalibDb(aiqb_data_file)) {
             LOGD("load tunning file success.");
@@ -154,6 +156,14 @@ RESULT CamIA10Engine::initStatic
     strcpy(g_aiqb_data_file, aiqb_data_file);
     mSensorEntityName = sensor_entity_name;
     mIspVer = isp_ver;
+
+    result = CamCalibDbGetMetaData(hCamCalibDb, &dbMeta);
+    if (result != RET_SUCCESS) {
+        LOGE("get xml db meta failed");
+        goto init_fail;
+    }
+
+    mXMLIspOutputType = dbMeta.isp_output_type;
 
     result = initAEC();
     if (result != RET_SUCCESS)
@@ -189,6 +199,12 @@ RESULT CamIA10Engine::initDynamic(struct CamIA10_DyCfg* cfg) {
     dCfg = *cfg;
 
     LOGD("init dynamic af mode: %d, shdmode: %d", dCfg.afc_cfg.mode, dCfgShd.afc_cfg.mode);
+
+    // check if BW sensor or raw used as BW mode
+    if (cfg->sensor_mode.is_bw_sensor) {
+        if (mXMLIspOutputType == isp_color_output_type)
+            LOGE("xml color type is not allowed for bw sensor !");
+    }
 
     result = updateAeConfig(cfg);
     if (result != RET_SUCCESS) {
@@ -552,12 +568,16 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
             result = awbDesc->update_awb_params(awbContext, &awbInstance);
         } //result = AwbInit(&awbInstance);
 
-        if (cfg->awb_cfg.mode != HAL_WB_AUTO) {
+        if (cfg->awb_cfg.mode != HAL_WB_AUTO ||
+            mXMLIspOutputType == isp_gray_output_type) {
+            // set ie mode to gray
             char prfName[10];
             int i, no;
             CamAwb_V10_IlluProfile_t* pIlluProfile = NULL;
             awbcfg.Mode = AWB_MODE_MANUAL;
-            if (cfg->awb_cfg.mode == HAL_WB_INCANDESCENT) {
+            if (mXMLIspOutputType == isp_gray_output_type) {
+                strcpy(prfName, "BW");
+            } else if (cfg->awb_cfg.mode == HAL_WB_INCANDESCENT) {
                 strcpy(prfName, "A");
             } else if (cfg->awb_cfg.mode == HAL_WB_DAYLIGHT) {
                 strcpy(prfName, "D65");
@@ -614,7 +634,8 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
         memset(&outresult, 0, sizeof(AwbRunningOutputResult_t));
         if (awbDesc) {
             XCamAwbParam param;
-            param.mode = XCAM_AWB_MODE_AUTO;
+            param.mode = awbcfg.Mode == AWB_MODE_MANUAL ?
+                XCAM_AWB_MODE_MANUAL : XCAM_AWB_MODE_AUTO;
             //result = awbDesc->set_stats(awbContext, NULL);
             result = awbDesc->analyze_awb(awbContext, &param);
         } //result =  AwbRun(hAwb, NULL, &outresult);
@@ -647,7 +668,8 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
         if (cfg->awb_cfg.mode != dCfgShd.awb_cfg.mode) {
             LOGI("@%s %d: AwbMode changed from %d to %d", __FUNCTION__, __LINE__, dCfgShd.awb_cfg.mode, cfg->awb_cfg.mode);
             memset(&lastAwbResult, 0x00, sizeof(lastAwbResult));
-            if (cfg->awb_cfg.mode != HAL_WB_AUTO) {
+            if (cfg->awb_cfg.mode != HAL_WB_AUTO ||
+                mXMLIspOutputType == isp_gray_output_type) {
                 char prfName[10];
                 int i, no;
                 CamAwb_V10_IlluProfile_t* pIlluProfile = NULL;
@@ -663,6 +685,8 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
                 //SNOW :6800k
                 //CANDLE:1850K
                 if (cfg->awb_cfg.mode == HAL_WB_INCANDESCENT) {
+                    strcpy(prfName, "BW");
+                } else if (cfg->awb_cfg.mode == HAL_WB_INCANDESCENT) {
                     strcpy(prfName, "A");
                 } else if (cfg->awb_cfg.mode == HAL_WB_DAYLIGHT) {
                     strcpy(prfName, "D65");
@@ -2496,6 +2520,42 @@ RESULT CamIA10Engine::getAWDRResults(AwdrResult_t* result) {
     return ret;
 }
 
+RESULT CamIA10Engine::runManIspForBW(struct CamIA10_Results* result) {
+    RESULT ret = RET_SUCCESS;
+    struct HAL_ISP_cfg_s manCfg;
+
+    memset(&manCfg, 0, sizeof(manCfg));
+
+    // check if BW sensor or raw used as BW mode
+    if (dCfg.sensor_mode.is_bw_sensor) {
+        // bypass demosaic
+        // TODO: now engine has a bug, can't control bdm enable/disable
+        // by this field, now bypass bdm in isp_controller.cpp forcely
+        result->bdm.enabled = BOOL_TRUE;
+    } else {
+        if (mXMLIspOutputType == isp_gray_output_type) {
+            struct HAL_ISP_ie_cfg_s ie_cfg;
+
+            ie_cfg.mode = HAL_EFFECT_MONO;
+            manCfg.enabled[HAL_ISP_IE_ID] = HAL_ISP_ACTIVE_SETTING;
+            manCfg.updated_mask |= HAL_ISP_IE_MASK;
+            manCfg.ie_cfg = &ie_cfg;
+            ret = cam_ia10_isp_ie_config
+                (
+                 manCfg.enabled[HAL_ISP_IE_ID],
+                 manCfg.ie_cfg,
+                 &(result->ie)
+                );
+
+            if (ret != RET_SUCCESS)
+                ALOGE("%s:config IE failed !", __FUNCTION__);
+            result->active |= CAMIA10_IE_MASK;
+        }
+    }
+
+    return ret;
+}
+
 RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Results* result) {
     RESULT ret = RET_SUCCESS;
     int width = dCfg.sensor_mode.isp_input_width;
@@ -2823,6 +2883,8 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
     if (manCfg->updated_mask & HAL_ISP_AFC_MASK) {
 
     }
+
+    runManIspForBW(result);
 
     return ret;
 }

@@ -1102,9 +1102,8 @@ bool Isp10Engine::convertIAResults(
 
       switch (ia_results->ie.mode) {
         case CAMERIC_IE_MODE_GRAYSCALE:
-          /* TODO: can't find related mode in v4l2_colorfx*/
-          //isp_cfg->configs.ie_config.effect =
-          //  ;
+          isp_cfg->configs.ie_config.effect =
+              V4L2_COLORFX_BW;
           break;
         case CAMERIC_IE_MODE_NEGATIVE:
           isp_cfg->configs.ie_config.effect =
@@ -1294,6 +1293,7 @@ bool Isp10Engine::getSensorModedata
   iaCfg->gain = drvCfg->gain;
   iaCfg->exp_time = drvCfg->exp_time;
   iaCfg->exposure_valid_frame = drvCfg->exposure_valid_frame[0];
+  iaCfg->is_bw_sensor = drvCfg->is_bw_sensor;
 
   //LOGD("%s:iaCfg->pixel_clock_freq_mhz %f",__func__,iaCfg->pixel_clock_freq_mhz );
   //LOGD("%s:iaCfg->gain %d",__func__,iaCfg->gain );

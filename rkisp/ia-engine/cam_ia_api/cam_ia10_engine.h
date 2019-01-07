@@ -150,8 +150,10 @@ class CamIA10Engine: public CamIA10EngineItf {
   RESULT initADPF();
   RESULT initAF();
   RESULT initAWDR();
+  RESULT runManIspForBW(struct CamIA10_Results* result);
   const char* mSensorEntityName;
   int mIspVer;
+  int mXMLIspOutputType;
 };
 
 #endif

@@ -288,6 +288,7 @@ IspController::get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &s
         rk_aiq_exposure_sensor_descriptor sensor_desc;
         get_sensor_descriptor (&sensor_desc);
 
+        sensor_mode_data.is_bw_sensor = _is_bw_sensor;
         sensor_mode_data.coarse_integration_time_min        =
             sensor_desc.coarse_integration_time_min;
         sensor_mode_data.coarse_integration_time_max_margin =
@@ -657,12 +658,11 @@ IspController::set_3a_config (X3aIspConfig *config)
             LOGE("rkisp1_convert_results error\n");
         }
         if (_is_bw_sensor) {
-            /* bypass BDM/CTK/AWB gain params */
-             update_params.module_ens &= ~( CIFISP_MODULE_CTK | CIFISP_MODULE_AWB_GAIN);
+             /* bypass BDM forcely */
              /* note that BDM en bit means bypass enable actually */
              update_params.module_ens |= CIFISP_MODULE_BDM; 
-             update_params.module_en_update |= CIFISP_MODULE_BDM | CIFISP_MODULE_CTK | CIFISP_MODULE_AWB_GAIN;
-             update_params.module_cfg_update &= ~(CIFISP_MODULE_BDM | CIFISP_MODULE_CTK | CIFISP_MODULE_AWB_GAIN);
+             update_params.module_en_update |= CIFISP_MODULE_BDM;
+             update_params.module_cfg_update &= ~CIFISP_MODULE_BDM;
         }
         gen_full_isp_params(&update_params, &_full_active_isp_params);
         isp_params = (struct rkisp1_isp_params_cfg*)v4l2buf.m.userptr;

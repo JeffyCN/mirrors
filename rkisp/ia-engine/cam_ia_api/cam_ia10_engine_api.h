@@ -71,6 +71,7 @@ struct CamIA10_SensorModeData {
   unsigned char exposure_valid_frame;
   int exp_time;
   unsigned short gain;
+  bool  is_bw_sensor;
 };
 
 
