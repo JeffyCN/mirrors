@@ -50,7 +50,8 @@ typedef struct CamCalibDbContext_s {
   creator_version_t           cversion;       /**< version of creation tool (matlab generator) */
   sensor_name_t               sname;          /**< sesor name */
   sensor_sample_id_t          sid;            /**< sensor sample id */
-
+  Isp_output_type_t           isp_output_type;/**<calib xml for one type of isp output*/
+  
   List                        resolution;     /**< list of supported resolutions */
   CamCalibAwbPara_t*          pAwbProfile;     /* AWB  profile*/
   //List                        awb_global;     /**< list of supported awb_globals */

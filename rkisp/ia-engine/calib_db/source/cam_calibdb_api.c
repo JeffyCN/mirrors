@@ -1955,7 +1955,7 @@ RESULT CamCalibDbSetMetaData
   strncpy(pCamCalibDbCtx->cversion, pMeta->cversion, sizeof(pCamCalibDbCtx->cversion));
   strncpy(pCamCalibDbCtx->sname, pMeta->sname, sizeof(pCamCalibDbCtx->sname));
   strncpy(pCamCalibDbCtx->sid, pMeta->sid, sizeof(pCamCalibDbCtx->sid));
-
+  pCamCalibDbCtx->isp_output_type = pMeta->isp_output_type;
   LOGV("%s (exit)\n", __func__);
 
   return (RET_SUCCESS);
@@ -1983,6 +1983,7 @@ RESULT CamCalibDbGetMetaData
   strncpy(pMeta->cversion, pCamCalibDbCtx->cversion, sizeof(pCamCalibDbCtx->cversion));
   strncpy(pMeta->sname, pCamCalibDbCtx->sname, sizeof(pCamCalibDbCtx->sname));
   strncpy(pMeta->sid, pCamCalibDbCtx->sid, sizeof(pCamCalibDbCtx->sid));
+  pMeta->isp_output_type = pCamCalibDbCtx->isp_output_type;
 
   LOGV("%s (exit)\n", __func__);
 

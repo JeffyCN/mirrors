@@ -60,6 +60,9 @@
 //v0.2.1:  XML FOR HDR
 //		  1. add SetPoint for L/Sframe
 //		  2. add Dynamic value for OEROI/DarkROI
+//v0.2.2:  XML FOR BW ISP OUTPUT
+//                 1. add isp output type configuration in XML header
+//                 2. add lsc ccm wb module cofiguration for BW illuminant in  in XML 
 
 
 
@@ -69,7 +72,7 @@
 
 
 
-#define CODE_XML_PARSE_VERSION "v0.2.1"
+#define CODE_XML_PARSE_VERSION "v0.2.2"
 
 static std::ofstream redirectOut("/dev/null");
 
@@ -1202,6 +1205,7 @@ bool CalibDb::parseEntryHeader
 
   CamCalibDbMetaData_t meta_data;
   MEMSET(&meta_data, 0, sizeof(meta_data));
+  meta_data.isp_output_type = isp_color_output_type;//default value
 
   const XMLNode* pchild = pelement->FirstChild();
   while (pchild) {
@@ -1249,6 +1253,29 @@ bool CalibDb::parseEntryHeader
     		   && (tag.isType(XmlTag::TAG_TYPE_CHAR))
                && (tag.Size() > 0)){
 	  strncpy(meta_data.code_xml_parse_version, value, sizeof(meta_data.code_xml_parse_version));
+    }else if( (tagname == CALIB_HEADER_ISP_OUTPUT_TYPE_TAG)
+    		   && (tag.isType(XmlTag::TAG_TYPE_CHAR))
+               && (tag.Size() > 0)){
+               
+	 std::string s_value(value);
+     if(s_value == CALIB_HEADER_ISP_OUTPUT_COLOR_TYPE_TAG){
+		    meta_data.isp_output_type = isp_color_output_type;
+     }else if(s_value == CALIB_HEADER_ISP_OUTPUT_GRAY_TYPE_TAG){     	
+		 	meta_data.isp_output_type = isp_gray_output_type;
+     }else if(s_value == CALIB_HEADER_ISP_OUTPUT_MIXTURE_TYPE_TAG){
+		 	meta_data.isp_output_type = isp_mixture_output_type;
+     }else{
+	     
+#if 1
+        redirectOut
+            << "parse error in isp_output_type section ("
+            << tagname
+            << ")"
+            << std::endl;
+#endif		 	
+     }	
+     
+
 	}else {
 #if 1
       redirectOut

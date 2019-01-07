@@ -56,6 +56,10 @@
 
 #define CALIB_HEADER_CODE_XML_PARSE_VERSION_TAG                     "code_xml_parse_version"
 
+ #define CALIB_HEADER_ISP_OUTPUT_TYPE_TAG                           "isp_output_type"
+ #define CALIB_HEADER_ISP_OUTPUT_COLOR_TYPE_TAG                     "color"
+ #define CALIB_HEADER_ISP_OUTPUT_GRAY_TYPE_TAG                      "gray"
+ #define CALIB_HEADER_ISP_OUTPUT_MIXTURE_TYPE_TAG                   "mixture"
 
 /******************************************************************************
  * XML sensor section
