@@ -70,9 +70,18 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
  * v1.5.0
  *  - fix hist/dpcc check error 
  *  - rkisp_demo support Android 
-  */
- 
-#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.5.0"
+ * v1.6.0
+ *  - fix some bug in last version.
+ *    - fix BDM not bypassed actually for BW sensor
+ *    - fix bug in dpcc check
+ *  - dpcc mode can be defined in tuning xml
+ *  - fix memory leak in calibdb IE sharpen
+ *  - update calibdb v0.2.1 for HDR ae and v0.2.2
+ *    for BW sensor
+ *  - add 3A controls sample code in rkisp_demo
+ */
+
+#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.6.0"
 
 using namespace XCam;
 class SettingsProcessor;
