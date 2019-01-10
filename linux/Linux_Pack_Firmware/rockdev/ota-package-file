@@ -1,0 +1,21 @@
+# NAME		Relative path
+#
+#HWDEF		HWDEF
+package-file	package-file
+bootloader	Image/MiniLoaderAll.bin
+parameter	Image/parameter.txt
+#trust       Image/trust.img
+#uboot       Image/uboot.img
+boot        Image/boot.img
+rootfs      Image/rootfs.img
+#recovery	Image/recovery.img
+#oem			Image/oem.img
+#userdata:grow    Image/userdata.img
+#misc		Image/misc.img
+# 要写入backup分区的文件就是自身（update.img）
+# SELF 是关键字，表示升级文件（update.img）自身
+# 在生成升级文件时，不加入SELF文件的内容，但在头部信息中有记录
+# 在解包升级文件时，不解包SELF文件的内容。
+#backup		RESERVED
+#update-script	update-script
+#recover-script	recover-script
