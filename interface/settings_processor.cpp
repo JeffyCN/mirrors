@@ -330,8 +330,8 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
             aeCtrl->aeTargetFpsRange[1] = entry.data.i32[1];
 
             int64_t frameDurationMax, frameDurationMin;
-            frameDurationMax = 1e9 / aeCtrl->aeTargetFpsRange[0];
-            frameDurationMin = 1e9 / aeCtrl->aeTargetFpsRange[1];
+            frameDurationMax = 1e9 / aeCtrl->aeTargetFpsRange[0] / (1000 * 1000);
+            frameDurationMin = 1e9 / aeCtrl->aeTargetFpsRange[1] / (1000 * 1000);
             if (aeParams->exposure_time_max >  frameDurationMax)
                 aeParams->exposure_time_max = frameDurationMax;
             if (aeParams->exposure_time_min <  frameDurationMin)

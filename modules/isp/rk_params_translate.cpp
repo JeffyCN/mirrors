@@ -284,8 +284,8 @@ void ParamsTranslate::convert_to_rkisp_aec_config( XCamAeParam* aec_params,
     config->ae_bias = (int)(aec_params->ev_shift);
 
     if (config->mode == HAL_AE_OPERATION_MODE_AUTO) {
-        config->frame_time_ms_min = aec_params->exposure_time_min / 1000;
-        config->frame_time_ms_max = aec_params->exposure_time_max / 1000;
+        config->frame_time_ms_min = aec_params->exposure_time_min;
+        config->frame_time_ms_max = aec_params->exposure_time_max;
     } else {
         config->frame_time_ms_min = aec_params->manual_exposure_time;
         config->frame_time_ms_max = aec_params->manual_exposure_time;
