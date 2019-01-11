@@ -321,7 +321,7 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
         metadata->update(ANDROID_SENSOR_EXPOSURE_TIME,
                                          &exposureTime, 1);
 
-        int32_t ExposureGain = _rkaiq_result.exposure.analog_gain;
+        int32_t ExposureGain = _rkaiq_result.exposure.analog_gain * 100;
         metadata->update(ANDROID_SENSOR_SENSITIVITY,
                                          &ExposureGain, 1);
     }

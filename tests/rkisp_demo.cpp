@@ -122,12 +122,12 @@ void metadata_result_callback(const struct cl_result_callback_ops *ops,
 static void construct_default_metas(CameraMetadata* metas)
 {
     int64_t exptime_range_ns[2] = {0,30*1000*1000};
-    int32_t sensitivity_range[2] = {0,16};
+    int32_t sensitivity_range[2] = {0,3200};
     uint8_t ae_mode = ANDROID_CONTROL_AE_MODE_ON;
     uint8_t control_mode = ANDROID_CONTROL_MODE_AUTO;
     uint8_t ae_lock = ANDROID_CONTROL_AE_LOCK_OFF;
     int64_t exptime_ns = 10*1000*1000;
-    int32_t sensitivity = 32;
+    int32_t sensitivity = 1600;
 
     metas->update(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE, exptime_range_ns, 2);
     metas->update(ANDROID_SENSOR_INFO_SENSITIVITY_RANGE, sensitivity_range, 2);
@@ -211,7 +211,7 @@ static int rkisp_getAeGain(void* &engine, float &gain)
     if (!entry.count)
         return -1;
 
-    gain = entry.data.i32[0];
+    gain = (float)entry.data.i32[0] / 100;
     printf("expousre gain is %f\n", gain);
 
     return 0;
@@ -229,7 +229,7 @@ static int rkisp_getAeMaxExposureGain(void* &engine, float &gain)
     if (!entry.count)
         return -1;
 
-    gain = entry.data.i32[1];
+    gain = entry.data.i32[1] / 100;
     printf("expousre max gain is %f \n", gain);
 
     return 0;
@@ -263,7 +263,7 @@ static int rkisp_setAeMaxExposureGain(void* &engine, float gain)
 
     int32_t sensitivity_range[2] = {0,0};
 
-    sensitivity_range[1] = gain;
+    sensitivity_range[1] = gain * 100;
     ctl_params->_settings_metadata.update(ANDROID_SENSOR_INFO_SENSITIVITY_RANGE,
                                           sensitivity_range, 2);
     // should update new settings id
@@ -285,8 +285,8 @@ static int rkisp_setManualGainAndTime(void* &engine, float hal_gain, float hal_t
     int64_t exptime_ns = hal_time * 1000 * 1000 * 1000;
     // set to manual mode
     uint8_t ae_mode = ANDROID_CONTROL_AE_MODE_OFF;
-    // TODO: only support integer now
-    int32_t sensitivity = hal_gain;
+    // convert to ISO100 unit
+    int32_t sensitivity = hal_gain * 100;
 
     ctl_params->_settings_metadata.update(ANDROID_SENSOR_SENSITIVITY, &sensitivity, 1);
     ctl_params->_settings_metadata.update(ANDROID_CONTROL_AE_MODE, &ae_mode, 1);

@@ -262,7 +262,7 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
             iso_min = rw_entry.data.i32[0];
             iso_max = rw_entry.data.i32[1];
         }
-        aeParams->max_analog_gain = (double)iso_max;
+        aeParams->max_analog_gain = (double)iso_max / 100;
         // ******** manual_iso
         //# METADATA_Control sensor.sensitivity done
         entry = settings->find(ANDROID_SENSOR_SENSITIVITY);
@@ -276,6 +276,7 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
                 LOGE("@%s %d: manual iso(%d) is out of range[%d,%d]", __FUNCTION__, __LINE__, iso, iso_min, iso_max);
                 aeParams->manual_analog_gain = (double)(iso_min+iso_max) / 2;
             }
+            aeParams->manual_analog_gain /= 100;
         }
         // fill target fps range, it needs to be proper in results anyway
         entry = settings->find(ANDROID_CONTROL_AE_TARGET_FPS_RANGE);
@@ -283,7 +284,7 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
             aeCtrl->aeTargetFpsRange[0] = entry.data.i32[0];
             aeCtrl->aeTargetFpsRange[1] = entry.data.i32[1];
         }
-        LOGI("@%s %d: manual iso :%d, exp time:%d", __FUNCTION__, __LINE__, (int)aeParams->manual_analog_gain, aeParams->manual_exposure_time);
+        LOGI("@%s %d: manual iso :%f, exp time:%d", __FUNCTION__, __LINE__, aeParams->manual_analog_gain, aeParams->manual_exposure_time);
 
     } else {
         /*
