@@ -140,10 +140,6 @@ class CamIA10Engine: public CamIA10EngineItf {
 
   bool_t  mWdrEnabledState;
   enum LIGHT_MODE mLightMode;
-  // sensor output resolution may be changed while reconfiging 3a,
-  // we should map the old 3a win to new one
-  float   mSensorWRatio;
-  float   mSensorHRatio;
  private:
   RESULT initAEC();
   RESULT initAWB();

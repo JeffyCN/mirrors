@@ -22,8 +22,6 @@ CamIA10Engine::CamIA10Engine():
     afContext(NULL),
     afDesc(NULL),
     afParams(NULL),
-    mSensorWRatio(1.0f),
-    mSensorHRatio(1.0f),
     mSensorEntityName(NULL),
     mIspVer(0),
     mXMLIspOutputType(0)
@@ -187,15 +185,6 @@ init_fail:
 RESULT CamIA10Engine::initDynamic(struct CamIA10_DyCfg* cfg) {
     RESULT result = RET_SUCCESS;
     mInitDynamic = true;
-    // check if sensor mode changed
-    if (dCfg.sensor_mode.isp_input_width != 0 &&
-        cfg->sensor_mode.isp_input_width != dCfg.sensor_mode.isp_input_width) {
-        mSensorWRatio = (float)(cfg->sensor_mode.isp_input_width) / dCfg.sensor_mode.isp_input_width;
-        mSensorHRatio = (float)(cfg->sensor_mode.isp_input_height) / dCfg.sensor_mode.isp_input_height;
-    } else {
-        mSensorWRatio = 1.0f;
-        mSensorHRatio = 1.0f;
-    }
     dCfg = *cfg;
 
     LOGD("init dynamic af mode: %d, shdmode: %d", dCfg.afc_cfg.mode, dCfgShd.afc_cfg.mode);
@@ -395,10 +384,10 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
         out_hOff = 0;
         out_vOff = 0;
     } else {
-        out_width = set->win.right_width * mSensorWRatio;
-        out_height = set->win.bottom_height * mSensorHRatio;
-        out_hOff = set->win.left_hoff * mSensorWRatio;
-        out_vOff = set->win.top_voff * mSensorHRatio;
+        out_width = set->win.right_width;
+        out_height = set->win.bottom_height;
+        out_hOff = set->win.left_hoff;
+        out_vOff = set->win.top_voff;
     }
 
     set->win.left_hoff = out_hOff;
@@ -658,10 +647,10 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
         awbcfg.height = cfg->sensor_mode.isp_input_height;
         if (cfg->awb_cfg.win.right_width && cfg->awb_cfg.win.bottom_height) {
             LOGD("%s: cfg awb win[%dx%d]", __FUNCTION__, cfg->awb_cfg.win.right_width, cfg->awb_cfg.win.bottom_height);
-            awbcfg.awbWin.h_offs = cfg->awb_cfg.win.left_hoff * mSensorWRatio;
-            awbcfg.awbWin.v_offs = cfg->awb_cfg.win.top_voff * mSensorHRatio;
-            awbcfg.awbWin.h_size = cfg->awb_cfg.win.right_width * mSensorHRatio;
-            awbcfg.awbWin.v_size = cfg->awb_cfg.win.bottom_height * mSensorWRatio;
+            awbcfg.awbWin.h_offs = cfg->awb_cfg.win.left_hoff;
+            awbcfg.awbWin.v_offs = cfg->awb_cfg.win.top_voff;
+            awbcfg.awbWin.h_size = cfg->awb_cfg.win.right_width;
+            awbcfg.awbWin.v_size = cfg->awb_cfg.win.bottom_height;
         } else {
             awbcfg.awbWin.h_offs = 0;
             awbcfg.awbWin.v_offs = 0;
@@ -751,11 +740,6 @@ RESULT CamIA10Engine::updateAfConfig(struct CamIA10_DyCfg* cfg) {
 
     struct HAL_AfcCfg* afset;
     afset = &dCfg.afc_cfg;
-
-    afcCfg.WindowB.h_size *= mSensorWRatio;
-    afcCfg.WindowB.v_size *= mSensorHRatio;
-    afcCfg.WindowB.h_offs *= mSensorWRatio;
-    afcCfg.WindowB.v_offs *= mSensorHRatio;
 
     if (afDesc) {
         afDesc->configure_af(afContext,
