@@ -36,7 +36,7 @@ IspController::IspController ():
     _isp_stats_device(NULL),
     _isp_params_device(NULL),
     _isp_ioctl(NULL),
-    _frame_sequence(0),
+    _frame_sequence(-(EXPOSURE_TIME_DELAY - 1)),
     _frame_sof_time(0)
 {
     xcam_mem_clear(_last_aiq_results);
@@ -59,8 +59,10 @@ IspController::~IspController ()
 void IspController::exit(bool pause) {
     XCAM_LOG_DEBUG("ISP controller has exit %d", pause);
     _is_exit = pause;
-    _frame_sequence = 0;
+    _frame_sequence = -(EXPOSURE_TIME_DELAY - 1);
     _effecting_exposure_map.clear();
+    _pending_ispparams_queue.clear();
+    _effecting_ispparm_map.clear();
 }
 
 void
@@ -128,6 +130,8 @@ IspController::handle_sof(int64_t time, int frameid)
         LOGD("no new expoure, use the latest !");
     }
     set_3a_exposure(exposure);
+
+    set_3a_config_sync();
 
     return XCAM_RETURN_NO_ERROR;
 }
@@ -661,6 +665,98 @@ IspController::gen_full_isp_params(const struct rkisp1_isp_params_cfg *update_pa
 }
 
 XCamReturn
+IspController::set_3a_config_sync ()
+{
+    struct rkisp_parameters config;
+    struct rkisp_parameters* isp_cfg = NULL;
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+
+    if (_pending_ispparams_queue.empty()) {
+        LOGD("no ispparams !");
+        return ret;
+    }
+
+    while (!_pending_ispparams_queue.empty()) {
+        config = *_pending_ispparams_queue.begin();
+        _pending_ispparams_queue.erase(_pending_ispparams_queue.begin());
+        isp_cfg = &config;
+
+#if RKISP
+        if (_isp_params_device.ptr()) {
+            struct rkisp1_isp_params_cfg* isp_params;
+            SmartPtr<V4l2Buffer> v4l2buf;
+            struct rkisp1_isp_params_cfg update_params;
+            int buf_cnt = _isp_params_device->get_buffer_count();
+            int buf_queued_cnt = _isp_params_device->get_queued_bufcnt();
+            int buf_index = 0;
+
+            // use ping-pong buffer
+            //XCAM_ASSERT (buf_cnt == 2);
+            if (buf_queued_cnt == buf_cnt) {
+                /* wait params done, this may block the thread */
+                if (_is_exit)
+                    return XCAM_RETURN_BYPASS;
+                if (_isp_params_device->dequeue_buffer(v4l2buf) != 0) {
+                    XCAM_LOG_ERROR ("RKISP1: failed to ioctl VIDIOC_DQBUF for %d %s.\n",
+                           errno, strerror(errno));
+                    return ret;
+                }
+                buf_index = v4l2buf->get_buf().index;
+            } else {
+                buf_index = buf_queued_cnt ;
+                v4l2buf = _isp_params_device->get_buffer_by_index(buf_index);
+            }
+
+            memset(&update_params, 0, sizeof(struct rkisp1_isp_params_cfg));
+            ret = rkisp1_convert_results(&update_params,isp_cfg, _last_aiq_results);
+            if (ret != XCAM_RETURN_NO_ERROR) {
+                LOGE("rkisp1_convert_results error\n");
+            }
+            if (_is_bw_sensor) {
+                 /* bypass BDM forcely */
+                 /* note that BDM en bit means bypass enable actually */
+                 update_params.module_ens |= CIFISP_MODULE_BDM; 
+                 update_params.module_en_update |= CIFISP_MODULE_BDM;
+                 update_params.module_cfg_update &= ~CIFISP_MODULE_BDM;
+            }
+            gen_full_isp_params(&update_params, &_full_active_isp_params);
+            isp_params = (struct rkisp1_isp_params_cfg*)v4l2buf->get_buf().m.userptr;
+            *isp_params = _full_active_isp_params;
+            dump_isp_config(isp_params, isp_cfg);
+
+            ret = rkisp1_check_params(isp_params, _isp_ver);
+            if (ret != XCAM_RETURN_NO_ERROR) {
+                XCAM_LOG_ERROR ("rkisp1_check_params error\n");
+                return XCAM_RETURN_ERROR_PARAM;
+            }
+
+            if (_isp_params_device->queue_buffer (v4l2buf) != 0) {
+                XCAM_LOG_ERROR ("RKISP1: failed to ioctl VIDIOC_QBUF for index %d, %d %s.\n",
+                       buf_index, errno, strerror(errno));
+                return ret;
+            }
+            XCAM_LOG_DEBUG ("device(%s) queue buffer index %d, queue cnt %d, check exit status again[exit: %d]",
+                XCAM_STR (_isp_params_device->get_device_name()), buf_index, _isp_params_device->get_queued_bufcnt(), _is_exit);
+            if (_is_exit)
+                return XCAM_RETURN_BYPASS;
+
+            if (_effecting_ispparm_map.size() > 10)
+                _effecting_ispparm_map.erase(_effecting_ispparm_map.begin());
+
+            if (_frame_sequence < 0)
+                _effecting_ispparm_map[0] = _full_active_isp_params;
+            else
+                _effecting_ispparm_map[_frame_sequence + 1] = _full_active_isp_params;
+        }
+#endif
+    }
+    XCAM_LOG_DEBUG ("   set_3a_config done\n");
+
+    return XCAM_RETURN_NO_ERROR;
+
+}
+
+XCamReturn
 IspController::set_3a_config (X3aIspConfig *config)
 {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
@@ -674,222 +770,19 @@ IspController::set_3a_config (X3aIspConfig *config)
 
     XCAM_ASSERT (isp_cfg);
 
-#if RKISP
-    if (_isp_params_device.ptr()) {
-        struct rkisp1_isp_params_cfg* isp_params;
-        SmartPtr<V4l2Buffer> v4l2buf;
-        struct rkisp1_isp_params_cfg update_params;
-        int buf_cnt = _isp_params_device->get_buffer_count();
-        int buf_queued_cnt = _isp_params_device->get_queued_bufcnt();
-        int buf_index = 0;
+    SmartLock locker (_mutex);
 
-        // use ping-pong buffer
-        //XCAM_ASSERT (buf_cnt == 2);
-        if (buf_queued_cnt == buf_cnt) {
-            /* wait params done, this may block the thread */
-            if (_is_exit)
-                return XCAM_RETURN_BYPASS;
-            if (_isp_params_device->dequeue_buffer(v4l2buf) != 0) {
-                XCAM_LOG_ERROR ("RKISP1: failed to ioctl VIDIOC_DQBUF for %d %s.\n",
-                       errno, strerror(errno));
-                return ret;
-            }
-            buf_index = v4l2buf->get_buf().index;
-        } else {
-            buf_index = buf_queued_cnt ;
-            v4l2buf = _isp_params_device->get_buffer_by_index(buf_index);
-        }
-
-        memset(&update_params, 0, sizeof(struct rkisp1_isp_params_cfg));
-        ret = rkisp1_convert_results(&update_params,isp_cfg, _last_aiq_results);
-        if (ret != XCAM_RETURN_NO_ERROR) {
-            LOGE("rkisp1_convert_results error\n");
-        }
-        if (_is_bw_sensor) {
-             /* bypass BDM forcely */
-             /* note that BDM en bit means bypass enable actually */
-             update_params.module_ens |= CIFISP_MODULE_BDM; 
-             update_params.module_en_update |= CIFISP_MODULE_BDM;
-             update_params.module_cfg_update &= ~CIFISP_MODULE_BDM;
-        }
-        gen_full_isp_params(&update_params, &_full_active_isp_params);
-        isp_params = (struct rkisp1_isp_params_cfg*)v4l2buf->get_buf().m.userptr;
-        *isp_params = _full_active_isp_params;
-        dump_isp_config(isp_params, isp_cfg);
-
-        ret = rkisp1_check_params(isp_params, _isp_ver);
-        if (ret != XCAM_RETURN_NO_ERROR) {
-            XCAM_LOG_ERROR ("rkisp1_check_params error\n");
-            return XCAM_RETURN_ERROR_PARAM;
-        }
-
-        /* params should use one buffers */
-        if (_isp_params_device->queue_buffer (v4l2buf) != 0) {
-            XCAM_LOG_ERROR ("RKISP1: failed to ioctl VIDIOC_QBUF for index %d, %d %s.\n",
-                   buf_index, errno, strerror(errno));
-            return ret;
-        }
-
-        XCAM_LOG_DEBUG ("device(%s) queue buffer index %d, queue cnt %d, check exit status again[exit: %d]",
-            XCAM_STR (_isp_params_device->get_device_name()), buf_index, _isp_params_device->get_queued_bufcnt(), _is_exit);
-        if (_is_exit)
-            return XCAM_RETURN_BYPASS;
+    if (_pending_ispparams_queue.size() > 3) {
+        XCAM_LOG_DEBUG ("too many pending isp params:%d !", _pending_ispparams_queue.size());
+        _pending_ispparams_queue.erase(_pending_ispparams_queue.begin());
     }
-#endif
+    _pending_ispparams_queue.push_back(*isp_cfg);
 
-#if RK_ISP10
-    if (_isp_ioctl.ptr()) {
+    // set initial isp params
+    if (_frame_sequence < 0)
+        set_3a_config_sync();
 
-        if (isp_cfg->active_configs & ISP_BPC_MASK) {
-            if (_isp_ioctl->setDpccCfg(
-                        isp_cfg->dpcc_config,
-                        isp_cfg->enabled[HAL_ISP_BPC_ID]) < 0) {
-                LOGE("%s: setDpccCfg failed", __func__);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_BLS_MASK) {
-            if (_isp_ioctl->setBlsCfg(
-                        isp_cfg->bls_config,
-                        isp_cfg->enabled[HAL_ISP_BLS_ID]) < 0) {
-                LOGE("%s: setBlsCfg failed", __func__);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_SDG_MASK) {
-            if (_isp_ioctl->setSdgCfg(
-                        isp_cfg->sdg_config,
-                        isp_cfg->enabled[HAL_ISP_SDG_ID]) < 0) {
-                LOGE("%s: setSdgCfg failed", __func__);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_HST_MASK) {
-            if (_isp_ioctl->setHstCfg(
-                        isp_cfg->hst_config,
-                        isp_cfg->enabled[HAL_ISP_HST_ID]) < 0) {
-                LOGE("%s: setHstCfg failed", __func__);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_LSC_MASK) {
-            if (_isp_ioctl->setLscCfg(
-                        isp_cfg->lsc_config,
-                        isp_cfg->enabled[HAL_ISP_LSC_ID]) < 0) {
-                LOGE("%s: setLscCfg failed", __func__);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_AWB_MEAS_MASK) {
-            if (_isp_ioctl->setAwbMeasCfg(
-                        isp_cfg->awb_meas_config,
-                        isp_cfg->enabled[HAL_ISP_AWB_MEAS_ID]) < 0) {
-                LOGE("%s: setAwbMeasCfg failed", __func__);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_AWB_GAIN_MASK) {
-            if (_isp_ioctl->setAwbGainCfg(
-                        isp_cfg->awb_gain_config,
-                        isp_cfg->enabled[HAL_ISP_AWB_GAIN_ID]) < 0) {
-                LOGE("%s: setAwbGainCfg failed", __func__);
-            }
-        }
-        if (isp_cfg->active_configs & ISP_FLT_MASK) {
-            if (_isp_ioctl->setFltCfg(
-                        isp_cfg->flt_config,
-                        isp_cfg->enabled[HAL_ISP_FLT_ID]) < 0) {
-                LOGE("%s: setFltCfg failed", __func__);
-            }
-        }
-        if (isp_cfg->active_configs & ISP_BDM_MASK) {
-            if (_isp_ioctl->setBdmCfg(
-                        isp_cfg->bdm_config,
-                        isp_cfg->enabled[HAL_ISP_BDM_ID]) < 0) {
-                LOGE("%s: setBdmCfg failed", __func__);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_CTK_MASK) {
-            if (_isp_ioctl->setCtkCfg(
-                        isp_cfg->ctk_config,
-                        isp_cfg->enabled[HAL_ISP_CTK_ID]) < 0) {
-                LOGE("%s: setCtkCfg failed", __func__);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_GOC_MASK) {
-            if (_isp_ioctl->setGocCfg(
-                        isp_cfg->goc_config,
-                        isp_cfg->enabled[HAL_ISP_GOC_ID]) < 0) {
-                LOGE("%s: setGocCfg failed", __func__);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_CPROC_MASK) {
-            if (_isp_ioctl->setCprocCfg(
-                        isp_cfg->cproc_config,
-                        isp_cfg->enabled[HAL_ISP_CPROC_ID]) < 0) {
-                LOGE("%s: setCprocCfg failed", __func__);
-            }
-            LOGV("%s:apply cproc config!enabled %d",
-                  __func__, isp_cfg->enabled[HAL_ISP_CPROC_ID]
-                 );
-        }
-
-        if (isp_cfg->active_configs & ISP_AEC_MASK) {
-            if (_isp_ioctl->setAecCfg(
-                        isp_cfg->aec_config,
-                        isp_cfg->enabled[HAL_ISP_AEC_ID]) < 0) {
-                LOGE("%s: setAecCfg failed", __func__);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_AFC_MASK) {
-            if (_isp_ioctl->setAfcCfg(
-                        isp_cfg->afc_config,
-                        isp_cfg->enabled[HAL_ISP_AFC_ID]) < 0) {
-                LOGE("%s: setAfcCfg failed", __func__);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_IE_MASK) {
-            if (_isp_ioctl->setIeCfg(
-                        isp_cfg->ie_config,
-                        isp_cfg->enabled[HAL_ISP_IE_ID]) < 0) {
-                LOGE("%s: setIeCfg failed", __func__);
-            }
-            LOGV("%s:apply ie config,enabled %d!", __func__,
-                  isp_cfg->enabled[HAL_ISP_IE_ID]);
-        }
-
-        if (isp_cfg->active_configs & ISP_DPF_MASK) {
-            if (!_isp_ioctl->setDpfCfg(
-                        isp_cfg->dpf_config,
-                        isp_cfg->enabled[HAL_ISP_DPF_ID])) {
-                LOGE("%s: setDpfCfg failed, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x",
-                      __func__,
-                      isp_cfg->dpf_config.gain.mode,
-                      isp_cfg->dpf_config.gain.nf_b_gain,
-                      isp_cfg->dpf_config.gain.nf_gb_gain,
-                      isp_cfg->dpf_config.gain.nf_gr_gain,
-                      isp_cfg->dpf_config.gain.nf_r_gain);
-            }
-        }
-
-        if (isp_cfg->active_configs & ISP_DPF_STRENGTH_MASK) {
-            if (_isp_ioctl->setDpfStrengthCfg(
-                        isp_cfg->dpf_strength_config,
-                        isp_cfg->enabled[HAL_ISP_DPF_STRENGTH_ID]) < 0) {
-                LOGE("%s: setDpfStrengthCfg failed", __func__);
-            }
-        }
-    }
-#endif
-
-    XCAM_LOG_DEBUG ("   set_3a_config done\n");
-
-    return XCAM_RETURN_NO_ERROR;
+    return ret;
 }
 
 void

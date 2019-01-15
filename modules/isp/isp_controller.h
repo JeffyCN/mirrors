@@ -85,6 +85,7 @@ private:
     int get_sensor_fps(float& fps);
     void gen_full_isp_params(const struct rkisp1_isp_params_cfg *update_params,
                              struct rkisp1_isp_params_cfg *full_params);
+    XCamReturn set_3a_config_sync ();
 
 private:
     volatile bool            _is_exit;
@@ -119,6 +120,8 @@ private:
     struct rkisp1_isp_params_cfg _full_active_isp_params;
     int               _isp_ver;
     std::map<int, struct rkisp_exposure> _effecting_exposure_map;
+    std::map<int, struct rkisp1_isp_params_cfg> _effecting_ispparm_map;
+    std::vector<struct rkisp_parameters> _pending_ispparams_queue;
 };
 
 };
