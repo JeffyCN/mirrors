@@ -46,9 +46,11 @@
  *  - unify isp v10, v12 LSC parameter
  * v0.0.4
  *  - sync awb with calibdb v0.2.0
+ * v0.0.5
+ *  - suport illu BW
  */
 
-#define CONFIG_AWB_LIB_VERSION "v0.0.4"
+#define CONFIG_AWB_LIB_VERSION "v0.0.5"
 
 #ifdef __cplusplus
 extern "C"

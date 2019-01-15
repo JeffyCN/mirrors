@@ -52,10 +52,16 @@
  *  - remove unnecessary lib dependancy
  *  - do not expose the head file aec_ctrl.h
  * v0.0.3
- *  - sync rkisp aec demo with calibdb v0.2.0 
+ *  - sync rkisp aec demo with calibdb v0.2.0
+ * v0.0.4
+ *  - support manual ae mode
+ * v0.0.5
+ *  - add DarkROI detection in Hdr AE
+ *  - fix some bugs of ratio calculation
+ *  - add ExpDot & Setpoint for Hdr AE
  */
 
-#define CONFIG_AE_LIB_VERSION "v0.0.3"
+#define CONFIG_AE_LIB_VERSION "v0.0.5"
 
 #ifdef __cplusplus
 extern "C"
@@ -143,6 +149,13 @@ typedef struct AecInterAdjust_s{
 	uint32_t  trigger_frame;
 }AecInterAdjust_t;
 
+typedef enum AecMode_e {
+  AEC_MODE_INVALID                    = 0,
+  AEC_MODE_MANUAL                     = 1,
+  AEC_MODE_AUTO                       = 2,
+  AEC_MODE_MAX
+} AecMode_t;
+
 /*****************************************************************************/
 /**
  *          AecConfig_t
@@ -155,7 +168,9 @@ typedef struct AecConfig_s {
   Cam9x9UCharMatrix_t         GridWeights;
   CamerIcIspHistMode_t  HistMode;
   AecMeasuringMode_t    meas_mode;
-
+  AecMode_t             AecMode;
+  float                 ManExpoSecs;
+  float                 ManGains;
   float                       SetPoint;                   /**< set point to hit by the ae control system */
   float                       ClmTolerance;
   float                       DampOverStill;              /**< damping coefficient for still image mode */
@@ -305,6 +320,7 @@ typedef struct AecResult_s {
   bool auto_adjust_fps;
   double aperture_fn;
   bool converged;
+  AecMode_t AecMode;
 
   /*zlj add for hdr result*/
   bool IsHdrExp;
