@@ -103,6 +103,11 @@ IspImageProcessor::apply_3a_results (X3aResultList &results)
         return XCAM_RETURN_ERROR_UNKNOWN;
     }
 
+    /* note:
+     * the whole 3A results may be splited several times to come, and we
+     * should only apply exposure/focus/isp result according to their own
+     * type
+     */
     if ((ret = apply_exposure_result (results)) != XCAM_RETURN_NO_ERROR) {
         XCAM_LOG_WARNING ("set 3a exposure to sensor failed");
     }
@@ -111,19 +116,9 @@ IspImageProcessor::apply_3a_results (X3aResultList &results)
         XCAM_LOG_WARNING ("set 3a focus to vcm failed");
     }
 
-    // check _3a_config
-    XCAM_ASSERT (_3a_config.ptr());
-    XCAM_ASSERT (_controller.ptr());
-    ret = _controller->set_3a_config (_3a_config.ptr());
-    if (ret != XCAM_RETURN_NO_ERROR) {
-        XCAM_LOG_WARNING ("set 3a config to isp failed");
+    if ((ret = apply_isp_result (results)) != XCAM_RETURN_NO_ERROR) {
+        XCAM_LOG_WARNING ("set isp params to isp failed");
     }
-
-    /*
-     * needn't clear old config, if there is new config, so that we can
-     * use the old config.
-     */
-    /* _3a_config->clear (); */
 
     XCAM_LOG_DEBUG ("apply_3a_results done");
 
@@ -146,18 +141,53 @@ IspImageProcessor::merge_results (X3aResultList &results)
 {
     if (results.empty())
         return XCAM_RETURN_ERROR_PARAM;
-
+#if 0
+    /* now here only process X3aIspConfig::IspAllParameters,
+     * we comment this, and do in apply_isp_result instead. 
+     */
     for (X3aResultList::iterator iter = results.begin ();
             iter != results.end ();)
     {
         SmartPtr<X3aResult> &x3a_result = *iter;
+        XCAM_LOG_DEBUG ("merge_results type %d",x3a_result->get_type ());
         if (_3a_config->attach (x3a_result, _translator.ptr())) {
             x3a_result->set_done (true);
             results.erase (iter++);
         } else
             ++iter;
     }
+#endif
     return XCAM_RETURN_NO_ERROR;
+}
+
+XCamReturn
+IspImageProcessor::apply_isp_result (X3aResultList &results)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+
+    _3a_config->clear();
+    for (X3aResultList::iterator iter = results.begin ();
+            iter != results.end ();)
+    {
+        XCAM_LOG_DEBUG ("apply_isp_result type: %d", (*iter)->get_type());
+        if ((*iter)->get_type() == X3aIspConfig::IspAllParameters) {
+            SmartPtr<X3aResult> &x3a_result = *iter;
+            if (_3a_config->attach (x3a_result, _translator.ptr())) {
+                x3a_result->set_done (true);
+                results.erase (iter++);
+            } else
+                ++iter;
+        }
+
+        if (_3a_config.ptr() && _controller.ptr()) {
+            ret = _controller->set_3a_config (_3a_config.ptr());
+            if (ret != XCAM_RETURN_NO_ERROR) {
+                XCAM_LOG_WARNING ("set 3a config to isp failed");
+            }
+        }
+    }
+
+    return ret;
 }
 
 XCamReturn

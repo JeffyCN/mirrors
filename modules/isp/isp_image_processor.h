@@ -49,7 +49,7 @@ private:
     XCamReturn merge_results (X3aResultList &results);
     XCamReturn apply_exposure_result (X3aResultList &results);
     XCamReturn apply_focus_result (X3aResultList &results);
-
+    XCamReturn apply_isp_result (X3aResultList &results);
     XCAM_DEAD_COPY (IspImageProcessor);
 
 private:
