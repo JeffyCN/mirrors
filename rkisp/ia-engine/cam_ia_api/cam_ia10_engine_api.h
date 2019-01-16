@@ -101,6 +101,9 @@ struct CamIA10_Stats {
   struct CamIA10_SensorModeData sensor_mode;
   int64_t sof_tim;
   struct rk_cam_vcm_tim vcm_tim;
+  AwbGains_t             effct_awb_gains;
+  Cam3x3FloatMatrix_t        effect_CtMatrix;
+  AwbXTalkOffset_t         effect_CtOffset;
 };
 
 typedef struct CamIA10_AWB_Result_s {
@@ -108,6 +111,9 @@ typedef struct CamIA10_AWB_Result_s {
   CamerIcGains_t awbGains;
   CamerIc3x3Matrix_t CcMatrix;
   CamerIcXTalkOffset_t CcOffset;
+  AwbGains_t             GainsAlgo;
+  Cam3x3FloatMatrix_t        CtMatrixAlgo;
+  AwbXTalkOffset_t         CtOffsetAlgo;
   CamLscMatrix_t                  LscMatrixTable;       /**< damped lsc matrix */
   CamerIcIspLscSectorConfig_t     SectorConfig;               /**< lsc grid */
   CamerIcIspAwbMeasuringMode_t    MeasMode;           /**< specifies the means measuring mode (YCbCr or RGB) */

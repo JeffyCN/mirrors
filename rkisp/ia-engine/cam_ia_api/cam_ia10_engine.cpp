@@ -1022,6 +1022,10 @@ RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, 
              lastAecResult.DCG_Ratio);
     }
 
+    MeasResult.Gains = mStats.effct_awb_gains;
+    MeasResult.CtMatrix = mStats.effect_CtMatrix;
+    MeasResult.CtOffset = mStats.effect_CtOffset;
+
     dumpAwb();
 
     if (awbDesc) {
@@ -1940,6 +1944,12 @@ void CamIA10Engine::convertAwbResult2Cameric
     awbCamicResult->awbWin      =  awbResult->awbWin;
     awbCamicResult->DoorType    =  awbResult->DoorType;
     awbCamicResult->converged =  awbResult->converged;
+    awbCamicResult->GainsAlgo =  awbResult->WbGains;
+    memcpy(awbCamicResult->CtMatrixAlgo.fCoeff, awbResult->CcMatrix.fCoeff,
+           sizeof(awbResult->CcMatrix.fCoeff));
+    // order: r,g,b
+    memcpy(&awbCamicResult->CtOffsetAlgo, awbResult->CcOffset.fCoeff,
+           sizeof(awbResult->CcOffset.fCoeff));
 }
 
 void CamIA10Engine::updateAwbResults
@@ -1956,6 +1966,10 @@ void CamIA10Engine::updateAwbResults
        newCfg->awbGains.GreenR = 200;
        newCfg->awbGains.Blue = 250;
        */
+    update->GainsAlgo = newCfg->GainsAlgo;
+    update->CtMatrixAlgo = newCfg->CtMatrixAlgo;
+    update->CtOffsetAlgo = newCfg->CtOffsetAlgo;
+
     if (newCfg->actives & AWB_RECONFIG_GAINS) {
         if ((newCfg->awbGains.Blue != old->awbGains.Blue)
             || (newCfg->awbGains.Red != old->awbGains.Red)

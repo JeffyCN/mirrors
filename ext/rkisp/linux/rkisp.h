@@ -203,6 +203,15 @@ struct rkisp_parm {
 	struct rkisp_metadata_config metadata_config;
 };
 
+struct rkisp_awb_algo {
+  float fRedGain;
+  float fGreenRGain;
+  float fGreenBGain;
+  float fBlueGain;
+  float fCtCoeff[9];
+  float fCtOffset[3];
+};
+
 struct rkisp_parameters {
   unsigned int active_configs;
   bool enabled[HAL_ISP_MODULE_MAX_ID_ID + 1];
@@ -225,6 +234,7 @@ struct rkisp_parameters {
   struct cifisp_ie_config ie_config;
   struct cifisp_dpf_config dpf_config;
   struct cifisp_dpf_strength_config dpf_strength_config;
+  struct rkisp_awb_algo awb_algo_results;
 };
 
 #if 0

@@ -1291,6 +1291,25 @@ RKiqCompositor::set_frame_softime (int64_t sof_tim)
 }
 
 bool
+RKiqCompositor::set_effect_ispparams (struct rkisp_parameters& isp_params)
+{
+    if (!_isp10_engine) {
+        XCAM_LOG_ERROR ("ISP control device is null");
+        return false;
+    }
+
+    _ia_stat.effct_awb_gains.fRed = isp_params.awb_algo_results.fRedGain;
+    _ia_stat.effct_awb_gains.fGreenR = isp_params.awb_algo_results.fGreenRGain;
+    _ia_stat.effct_awb_gains.fGreenB = isp_params.awb_algo_results.fGreenBGain;
+    _ia_stat.effct_awb_gains.fBlue = isp_params.awb_algo_results.fBlueGain;
+    memcpy(&_ia_stat.effect_CtMatrix, isp_params.awb_algo_results.fCtCoeff,
+           sizeof(isp_params.awb_algo_results.fCtCoeff));
+    memcpy(&_ia_stat.effect_CtOffset, isp_params.awb_algo_results.fCtOffset,
+           sizeof(isp_params.awb_algo_results.fCtOffset));
+
+    return true;
+}
+bool
 RKiqCompositor::set_3a_stats (SmartPtr<X3aIspStatistics> &stats)
 {
     int64_t frame_ts;
@@ -1407,6 +1426,22 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
     isp_3a_result.aec_config = _isp_cfg.configs.aec_config;
     isp_3a_result.flt_denoise_level= _isp_cfg.configs.flt_denoise_level;
     isp_3a_result.flt_sharp_level= _isp_cfg.configs.flt_sharp_level;
+
+    // copy awb algo results
+    isp_3a_result.awb_algo_results.fRedGain =
+        _ia_results.awb.GainsAlgo.fRed;
+    isp_3a_result.awb_algo_results.fGreenRGain =
+        _ia_results.awb.GainsAlgo.fGreenR;
+    isp_3a_result.awb_algo_results.fGreenBGain =
+        _ia_results.awb.GainsAlgo.fGreenB;
+    isp_3a_result.awb_algo_results.fBlueGain =
+        _ia_results.awb.GainsAlgo.fBlue;
+    memcpy(isp_3a_result.awb_algo_results.fCtCoeff,
+           _ia_results.awb.CtMatrixAlgo.fCoeff,
+           sizeof(_ia_results.awb.CtMatrixAlgo.fCoeff));
+    memcpy(isp_3a_result.awb_algo_results.fCtOffset,
+           &_ia_results.awb.CtOffsetAlgo,
+           sizeof(_ia_results.awb.CtOffsetAlgo));
 
     for (int i=0; i < HAL_ISP_MODULE_MAX_ID_ID + 1; i++) {
         isp_3a_result.enabled[i] = _isp_cfg.enabled[i];

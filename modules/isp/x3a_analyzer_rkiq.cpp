@@ -274,10 +274,17 @@ X3aAnalyzerRKiq::pre_3a_analyze (SmartPtr<X3aStats> &stats)
     struct isp_supplemental_sensor_mode_data sensor_mode_data;
     struct rk_cam_vcm_tim vcm_tim;
     int64_t sof_tim;
+    struct rkisp_parameters isp_params;
+
     xcam_mem_clear (sensor_mode_data);
+    xcam_mem_clear (isp_params);
     XCAM_ASSERT (_isp.ptr());
 
     struct cifisp_stat_buffer* stats_3a = (struct cifisp_stat_buffer*)xcam_isp_stats->get_isp_stats();
+
+    ret = _isp->get_isp_parameter (isp_params, stats_3a->frame_id);
+    XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret,
+                      "get effecting id %d isp params failed", stats_3a->frame_id);
 
     ret = _isp->get_sensor_mode_data (sensor_mode_data, stats_3a->frame_id);
 
@@ -305,6 +312,11 @@ X3aAnalyzerRKiq::pre_3a_analyze (SmartPtr<X3aStats> &stats)
 
     if (!_rkiq_compositor->set_vcm_time (&vcm_tim)) {
         XCAM_LOG_WARNING ("AIQ set vcm time failed");
+        return XCAM_RETURN_ERROR_AIQ;
+    }
+
+    if (!_rkiq_compositor->set_effect_ispparams (isp_params)) {
+        XCAM_LOG_WARNING ("AIQ set effect isp params failed");
         return XCAM_RETURN_ERROR_AIQ;
     }
 

@@ -59,7 +59,7 @@ public:
     XCamReturn get_sensor_descriptor (rk_aiq_exposure_sensor_descriptor *sensor_desc);
     XCamReturn get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &sensor_mode_data,
                                      int frame_id = -1);
-    XCamReturn get_isp_parameter (struct rkisp_parm &parameters);
+    XCamReturn get_isp_parameter (struct rkisp_parameters& parameters, int frame_id = -1);
     XCamReturn get_frame_softime (int64_t &sof_tim);
     XCamReturn get_vcm_time (struct rk_cam_vcm_tim *vcm_tim);
 
@@ -120,7 +120,11 @@ private:
     struct rkisp1_isp_params_cfg _full_active_isp_params;
     int               _isp_ver;
     std::map<int, struct rkisp_exposure> _effecting_exposure_map;
-    std::map<int, struct rkisp1_isp_params_cfg> _effecting_ispparm_map;
+    struct rkisp_effect_params {
+        struct rkisp1_isp_params_cfg isp_params;
+        struct rkisp_awb_algo awb_algo_results;
+    };
+    std::map<int, struct rkisp_effect_params> _effecting_ispparm_map;
     std::vector<struct rkisp_parameters> _pending_ispparams_queue;
 };
 

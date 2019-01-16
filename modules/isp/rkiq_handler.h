@@ -314,6 +314,7 @@ public:
     bool set_3a_stats (SmartPtr<X3aIspStatistics> &stats);
     bool set_vcm_time (struct rk_cam_vcm_tim *vcm_tim);
     bool set_frame_softime (int64_t sof_tim);
+    bool set_effect_ispparams (struct rkisp_parameters& isp_params);
 
     ia_aiq  * get_handle () {
         return _ia_handle;

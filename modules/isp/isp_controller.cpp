@@ -375,8 +375,45 @@ IspController::get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &s
 }
 
 XCamReturn
-IspController::get_isp_parameter (struct rkisp_parm &parameters)
+IspController::get_isp_parameter (struct rkisp_parameters& parameters, int frame_id)
 {
+    SmartLock locker (_mutex);
+    std::map<int, struct rkisp_effect_params>::iterator it;
+    struct rkisp_effect_params* isp_effect_params;
+    int num = _effecting_ispparm_map.size();
+    int search_id = frame_id;
+
+    if (_effecting_ispparm_map.empty()) {
+        XCAM_LOG_WARNING ("no effecting isp params !");
+        return XCAM_RETURN_ERROR_PARAM;
+    }
+
+    do {
+        it = _effecting_ispparm_map.find(search_id);
+        if (it != _effecting_ispparm_map.end()) {
+            isp_effect_params = &it->second;
+            LOGD("use isp param %d for %d",search_id, frame_id);
+            break;
+        }
+    } while (--num > 0 && --search_id >= 0);
+
+    // havn't found
+    if (it == _effecting_ispparm_map.end()) {
+        /* use the latest */
+        std::map<int, struct rkisp_effect_params>::reverse_iterator rit;
+
+        rit = _effecting_ispparm_map.rbegin();
+        isp_effect_params = &rit->second;
+        LOGW("FIXME! unpossible case. frame_id %d",frame_id);
+    }
+
+    parameters.awb_gain_config =
+        isp_effect_params->isp_params.others.awb_gain_config;
+    parameters.ctk_config =
+        isp_effect_params->isp_params.others.ctk_config;
+    parameters.awb_algo_results =
+        isp_effect_params->awb_algo_results;
+
     return XCAM_RETURN_NO_ERROR;
 }
 
@@ -672,84 +709,92 @@ IspController::set_3a_config_sync ()
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
 
     if (_pending_ispparams_queue.empty()) {
-        LOGD("no ispparams !");
+        LOGD("no new isp params !");
         return ret;
     }
 
+    // merge all pending params
     while (!_pending_ispparams_queue.empty()) {
+        struct rkisp1_isp_params_cfg update_params;
+
+        xcam_mem_clear (update_params);
+        LOGD("merge isp params num %d\n", _pending_ispparams_queue.size());
         config = *_pending_ispparams_queue.begin();
         _pending_ispparams_queue.erase(_pending_ispparams_queue.begin());
         isp_cfg = &config;
 
+        ret = rkisp1_convert_results(&update_params,isp_cfg, _last_aiq_results);
+        if (ret != XCAM_RETURN_NO_ERROR) {
+            LOGE("rkisp1_convert_results error\n");
+        }
+        if (_is_bw_sensor) {
+             /* bypass BDM forcely */
+             /* note that BDM en bit means bypass enable actually */
+             update_params.module_ens |= CIFISP_MODULE_BDM;
+             update_params.module_en_update |= CIFISP_MODULE_BDM;
+             update_params.module_cfg_update &= ~CIFISP_MODULE_BDM;
+        }
+        gen_full_isp_params(&update_params, &_full_active_isp_params);
+        dump_isp_config(&_full_active_isp_params, isp_cfg);
+
+        ret = rkisp1_check_params(&_full_active_isp_params, _isp_ver);
+        if (ret != XCAM_RETURN_NO_ERROR) {
+            XCAM_LOG_ERROR ("rkisp1_check_params error\n");
+            return XCAM_RETURN_ERROR_PARAM;
+        }
+    }
+
+    if (_effecting_ispparm_map.size() > 10)
+        _effecting_ispparm_map.erase(_effecting_ispparm_map.begin());
+
+    if (_frame_sequence < 0) {
+        _effecting_ispparm_map[0].isp_params = _full_active_isp_params;
+        _effecting_ispparm_map[0].awb_algo_results = isp_cfg->awb_algo_results;
+    } else {
+        _effecting_ispparm_map[_frame_sequence + 1].isp_params = _full_active_isp_params;
+        _effecting_ispparm_map[_frame_sequence + 1].awb_algo_results = isp_cfg->awb_algo_results;
+    }
+
 #if RKISP
-        if (_isp_params_device.ptr()) {
-            struct rkisp1_isp_params_cfg* isp_params;
-            SmartPtr<V4l2Buffer> v4l2buf;
-            struct rkisp1_isp_params_cfg update_params;
-            int buf_cnt = _isp_params_device->get_buffer_count();
-            int buf_queued_cnt = _isp_params_device->get_queued_bufcnt();
-            int buf_index = 0;
+    if (_isp_params_device.ptr()) {
+        struct rkisp1_isp_params_cfg* isp_params;
+        SmartPtr<V4l2Buffer> v4l2buf;
+        int buf_cnt = _isp_params_device->get_buffer_count();
+        int buf_queued_cnt = _isp_params_device->get_queued_bufcnt();
+        int buf_index = 0;
 
-            // use ping-pong buffer
-            //XCAM_ASSERT (buf_cnt == 2);
-            if (buf_queued_cnt == buf_cnt) {
-                /* wait params done, this may block the thread */
-                if (_is_exit)
-                    return XCAM_RETURN_BYPASS;
-                if (_isp_params_device->dequeue_buffer(v4l2buf) != 0) {
-                    XCAM_LOG_ERROR ("RKISP1: failed to ioctl VIDIOC_DQBUF for %d %s.\n",
-                           errno, strerror(errno));
-                    return ret;
-                }
-                buf_index = v4l2buf->get_buf().index;
-            } else {
-                buf_index = buf_queued_cnt ;
-                v4l2buf = _isp_params_device->get_buffer_by_index(buf_index);
-            }
-
-            memset(&update_params, 0, sizeof(struct rkisp1_isp_params_cfg));
-            ret = rkisp1_convert_results(&update_params,isp_cfg, _last_aiq_results);
-            if (ret != XCAM_RETURN_NO_ERROR) {
-                LOGE("rkisp1_convert_results error\n");
-            }
-            if (_is_bw_sensor) {
-                 /* bypass BDM forcely */
-                 /* note that BDM en bit means bypass enable actually */
-                 update_params.module_ens |= CIFISP_MODULE_BDM; 
-                 update_params.module_en_update |= CIFISP_MODULE_BDM;
-                 update_params.module_cfg_update &= ~CIFISP_MODULE_BDM;
-            }
-            gen_full_isp_params(&update_params, &_full_active_isp_params);
-            isp_params = (struct rkisp1_isp_params_cfg*)v4l2buf->get_buf().m.userptr;
-            *isp_params = _full_active_isp_params;
-            dump_isp_config(isp_params, isp_cfg);
-
-            ret = rkisp1_check_params(isp_params, _isp_ver);
-            if (ret != XCAM_RETURN_NO_ERROR) {
-                XCAM_LOG_ERROR ("rkisp1_check_params error\n");
-                return XCAM_RETURN_ERROR_PARAM;
-            }
-
-            if (_isp_params_device->queue_buffer (v4l2buf) != 0) {
-                XCAM_LOG_ERROR ("RKISP1: failed to ioctl VIDIOC_QBUF for index %d, %d %s.\n",
-                       buf_index, errno, strerror(errno));
-                return ret;
-            }
-            XCAM_LOG_DEBUG ("device(%s) queue buffer index %d, queue cnt %d, check exit status again[exit: %d]",
-                XCAM_STR (_isp_params_device->get_device_name()), buf_index, _isp_params_device->get_queued_bufcnt(), _is_exit);
+        // use ping-pong buffer
+        //XCAM_ASSERT (buf_cnt == 2);
+        if (buf_queued_cnt == buf_cnt) {
+            /* wait params done, this may block the thread */
             if (_is_exit)
                 return XCAM_RETURN_BYPASS;
-
-            if (_effecting_ispparm_map.size() > 10)
-                _effecting_ispparm_map.erase(_effecting_ispparm_map.begin());
-
-            if (_frame_sequence < 0)
-                _effecting_ispparm_map[0] = _full_active_isp_params;
-            else
-                _effecting_ispparm_map[_frame_sequence + 1] = _full_active_isp_params;
+            if (_isp_params_device->dequeue_buffer(v4l2buf) != 0) {
+                XCAM_LOG_ERROR ("RKISP1: failed to ioctl VIDIOC_DQBUF for %d %s.\n",
+                       errno, strerror(errno));
+                return ret;
+            }
+            buf_index = v4l2buf->get_buf().index;
+        } else {
+            buf_index = buf_queued_cnt ;
+            v4l2buf = _isp_params_device->get_buffer_by_index(buf_index);
         }
-#endif
+
+        isp_params = (struct rkisp1_isp_params_cfg*)v4l2buf->get_buf().m.userptr;
+        *isp_params = _full_active_isp_params;
+
+        if (_isp_params_device->queue_buffer (v4l2buf) != 0) {
+            XCAM_LOG_ERROR ("RKISP1: failed to ioctl VIDIOC_QBUF for index %d, %d %s.\n",
+                   buf_index, errno, strerror(errno));
+            return ret;
+        }
+        XCAM_LOG_DEBUG ("device(%s) queue buffer index %d, queue cnt %d, check exit status again[exit: %d]",
+            XCAM_STR (_isp_params_device->get_device_name()), buf_index, _isp_params_device->get_queued_bufcnt(), _is_exit);
+        if (_is_exit)
+            return XCAM_RETURN_BYPASS;
     }
+#endif
+
     XCAM_LOG_DEBUG ("   set_3a_config done\n");
 
     return XCAM_RETURN_NO_ERROR;
