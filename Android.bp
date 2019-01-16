@@ -1,5 +1,30 @@
+bootstrap_go_package {
+    name: "soong-librga",
+    pkgPath: "android/soong/librga",
+    deps: [
+        "blueprint",
+        "blueprint-pathtools",
+        "soong",
+        "soong-android",
+        "soong-cc",
+        "soong-genrule",
+    ],
+    srcs: [
+          "Android.go",
+    ],
+    pluginFor: ["soong_build"],
+}
+
+cc_librga {
+   name: "cc_librga_defaults"
+}
+
 cc_library_shared {
     name: "librga",
+    defaults: [
+        "cc_librga_defaults"
+    ],
+
     vendor_available: true,
 
     header_libs: [
@@ -20,7 +45,6 @@ cc_library_shared {
         "external/libdrm/include/drm",
         "hardware/libhardware/include/hardware",
         "hardware/libhardware/modules/gralloc",
-        "hardware/rockchip/libgralloc",
         "system/core/liblog/include"
     ],
 

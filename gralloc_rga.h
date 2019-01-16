@@ -17,8 +17,6 @@
 
 #ifdef ANDROID_7_DRM
 #include <hardware/gralloc.h>
-#include <gralloc_drm.h>
-#include <gralloc_drm_priv.h>
 #else
 #include <gralloc_priv.h>
 #endif
