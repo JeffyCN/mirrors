@@ -37,6 +37,8 @@ extern "C"
 {
 #endif
 
+#define AWDR_WDR_SECTION_MAX (33)
+
 #define AWDR_MASK (1 << 0)
 #define AWDR_WDR_MAXGAIN_LEVEL_MASK (1 << 1)
 
@@ -97,14 +99,35 @@ typedef struct AwdrConfig_s {
 
   CamCalibDbHandle_t      hCamCalibDb;        /**< calibration database handle */
 
-  uint16_t Wdr_MaxGain_level_RegValue;
+  uint16_t wdr_gain_max_value;
 } AwdrConfig_t;
 
 
 typedef struct AwdrResult_s {
   unsigned int actives;
 
-  uint16_t Wdr_MaxGain_level_RegValue;
+  bool_t wdr_enable;
+  uint16_t mode;
+  uint16_t wdr_block_dy[AWDR_WDR_SECTION_MAX];
+  uint16_t wdr_global_dy[AWDR_WDR_SECTION_MAX];
+  uint8_t wdr_dx[AWDR_WDR_SECTION_MAX - 1];
+  uint16_t wdr_noiseratio;
+  uint16_t wdr_bestlight;
+  uint32_t wdr_gain_off1;
+  uint16_t wdr_pym_cc;
+  uint8_t wdr_epsilon;
+  uint8_t wdr_lvl_en;
+  bool_t wdr_flt_sel;
+  bool_t wdr_gain_max_clip_enable;
+  uint8_t wdr_gain_max_value;
+  uint8_t wdr_bavg_clip;
+  bool_t wdr_nonl_segm;
+  bool_t wdr_nonl_open;
+  bool_t wdr_nonl_mode1;
+  uint32_t wdr_coe0;
+  uint32_t wdr_coe1;
+  uint32_t wdr_coe2;
+  uint32_t wdr_coe_off;
 } AwdrResult_t;
 
 

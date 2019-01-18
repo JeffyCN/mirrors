@@ -1599,10 +1599,10 @@ RESULT cam_ia10_isp_demosaicLp_config
 	demosaicLP_result->th_grad = demosaicLP_cfg->th_grad;
 
 	memcpy(demosaicLP_result->lu_divided, demosaicLP_cfg->lu_divided, sizeof(demosaicLP_result->lu_divided));
-	memcpy(demosaicLP_result->thH_divided, demosaicLP_cfg->thH_divided, sizeof(demosaicLP_result->thH_divided));
-	memcpy(demosaicLP_result->thCSC_divided, demosaicLP_cfg->thCSC_divided, sizeof(demosaicLP_result->thCSC_divided));
-	memcpy(demosaicLP_result->diff_divided, demosaicLP_cfg->diff_divided, sizeof(demosaicLP_result->diff_divided));
-	memcpy(demosaicLP_result->varTh_divided, demosaicLP_cfg->varTh_divided, sizeof(demosaicLP_result->varTh_divided));
+	memcpy(demosaicLP_result->thgrad_divided, demosaicLP_cfg->thgrad_divided, sizeof(demosaicLP_result->thgrad_divided));
+	memcpy(demosaicLP_result->thcsc_divided, demosaicLP_cfg->thcsc_divided, sizeof(demosaicLP_result->thcsc_divided));
+	memcpy(demosaicLP_result->thdiff_divided, demosaicLP_cfg->thdiff_divided, sizeof(demosaicLP_result->thdiff_divided));
+	memcpy(demosaicLP_result->thvar_divided, demosaicLP_cfg->thvar_divided, sizeof(demosaicLP_result->thvar_divided));
 	
   } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {
 	CamDpfProfile_t* pDpfProfile_t = NULL;
@@ -1663,29 +1663,29 @@ RESULT cam_ia10_isp_demosaicLp_config
 		demosaicLP_result->th_diff = pDemosaicLpConf->th_diff;
 		demosaicLP_result->th_grad = pDemosaicLpConf->th_grad;
 		
-		demosaicLP_result->thH_divided[0] = pDemosaicLpConf->thH_divided0[0];
-		demosaicLP_result->thH_divided[1] = pDemosaicLpConf->thH_divided1[0];
-		demosaicLP_result->thH_divided[2] = pDemosaicLpConf->thH_divided2[0];
-		demosaicLP_result->thH_divided[3] = pDemosaicLpConf->thH_divided3[0];
-		demosaicLP_result->thH_divided[4] = pDemosaicLpConf->thH_divided4[0];
+		demosaicLP_result->thgrad_divided[0] = pDemosaicLpConf->thH_divided0[0];
+		demosaicLP_result->thgrad_divided[1] = pDemosaicLpConf->thH_divided1[0];
+		demosaicLP_result->thgrad_divided[2] = pDemosaicLpConf->thH_divided2[0];
+		demosaicLP_result->thgrad_divided[3] = pDemosaicLpConf->thH_divided3[0];
+		demosaicLP_result->thgrad_divided[4] = pDemosaicLpConf->thH_divided4[0];
 
-		demosaicLP_result->thCSC_divided[0] = pDemosaicLpConf->thCSC_divided0[0];
-		demosaicLP_result->thCSC_divided[1] = pDemosaicLpConf->thCSC_divided1[0];
-		demosaicLP_result->thCSC_divided[2] = pDemosaicLpConf->thCSC_divided2[0];
-		demosaicLP_result->thCSC_divided[3] = pDemosaicLpConf->thCSC_divided3[0];
-		demosaicLP_result->thCSC_divided[4] = pDemosaicLpConf->thCSC_divided4[0];
+		demosaicLP_result->thcsc_divided[0] = pDemosaicLpConf->thCSC_divided0[0];
+		demosaicLP_result->thcsc_divided[1] = pDemosaicLpConf->thCSC_divided1[0];
+		demosaicLP_result->thcsc_divided[2] = pDemosaicLpConf->thCSC_divided2[0];
+		demosaicLP_result->thcsc_divided[3] = pDemosaicLpConf->thCSC_divided3[0];
+		demosaicLP_result->thcsc_divided[4] = pDemosaicLpConf->thCSC_divided4[0];
 
-		demosaicLP_result->varTh_divided[0] = pDemosaicLpConf->varTh_divided0[0];
-		demosaicLP_result->varTh_divided[1] = pDemosaicLpConf->varTh_divided1[0];
-		demosaicLP_result->varTh_divided[2] = pDemosaicLpConf->varTh_divided2[0];
-		demosaicLP_result->varTh_divided[3] = pDemosaicLpConf->varTh_divided3[0];
-		demosaicLP_result->varTh_divided[4] = pDemosaicLpConf->varTh_divided4[0];
+		demosaicLP_result->thvar_divided[0] = pDemosaicLpConf->varTh_divided0[0];
+		demosaicLP_result->thvar_divided[1] = pDemosaicLpConf->varTh_divided1[0];
+		demosaicLP_result->thvar_divided[2] = pDemosaicLpConf->varTh_divided2[0];
+		demosaicLP_result->thvar_divided[3] = pDemosaicLpConf->varTh_divided3[0];
+		demosaicLP_result->thvar_divided[4] = pDemosaicLpConf->varTh_divided4[0];
 
-		demosaicLP_result->diff_divided[0] = pDemosaicLpConf->diff_divided0[0];
-		demosaicLP_result->diff_divided[1] = pDemosaicLpConf->diff_divided1[0];
-		demosaicLP_result->diff_divided[2] = pDemosaicLpConf->diff_divided2[0];
-		demosaicLP_result->diff_divided[3] = pDemosaicLpConf->diff_divided3[0];
-		demosaicLP_result->diff_divided[4] = pDemosaicLpConf->diff_divided4[0];
+		demosaicLP_result->thdiff_divided[0] = pDemosaicLpConf->diff_divided0[0];
+		demosaicLP_result->thdiff_divided[1] = pDemosaicLpConf->diff_divided1[0];
+		demosaicLP_result->thdiff_divided[2] = pDemosaicLpConf->diff_divided2[0];
+		demosaicLP_result->thdiff_divided[3] = pDemosaicLpConf->diff_divided3[0];
+		demosaicLP_result->thdiff_divided[4] = pDemosaicLpConf->diff_divided4[0];
 		
 		demosaicLP_result->lu_divided[0] = pDemosaicLpConf->lu_divided[0];
 		demosaicLP_result->lu_divided[1] = pDemosaicLpConf->lu_divided[1];

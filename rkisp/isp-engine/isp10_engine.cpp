@@ -1428,20 +1428,20 @@ bool Isp10Engine::convertIAResults(
 				sizeof(ia_results->rkDemosaicLP.lu_divided));
 
 		memcpy(isp_cfg->configs.demosaicLp_config.thgrad_divided ,
-				ia_results->rkDemosaicLP.thH_divided,
-				sizeof(ia_results->rkDemosaicLP.thH_divided));
+				ia_results->rkDemosaicLP.thgrad_divided,
+				sizeof(ia_results->rkDemosaicLP.thgrad_divided));
 
 		memcpy(isp_cfg->configs.demosaicLp_config.thdiff_divided ,
-				ia_results->rkDemosaicLP.diff_divided,
-				sizeof(ia_results->rkDemosaicLP.diff_divided));
+				ia_results->rkDemosaicLP.thdiff_divided,
+				sizeof(ia_results->rkDemosaicLP.thdiff_divided));
 
 		memcpy(isp_cfg->configs.demosaicLp_config.thcsc_divided ,
-				ia_results->rkDemosaicLP.thCSC_divided,
-				sizeof(ia_results->rkDemosaicLP.thCSC_divided));
+				ia_results->rkDemosaicLP.thcsc_divided,
+				sizeof(ia_results->rkDemosaicLP.thcsc_divided));
 
 		memcpy(isp_cfg->configs.demosaicLp_config.thvar_divided ,
-				ia_results->rkDemosaicLP.varTh_divided,
-				sizeof(ia_results->rkDemosaicLP.varTh_divided));
+				ia_results->rkDemosaicLP.thvar_divided,
+				sizeof(ia_results->rkDemosaicLP.thvar_divided));
 		
 		isp_cfg->configs.demosaicLp_config.th_grad = ia_results->rkDemosaicLP.th_grad;
 		isp_cfg->configs.demosaicLp_config.th_diff = ia_results->rkDemosaicLP.th_diff;

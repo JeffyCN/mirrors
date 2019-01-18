@@ -1427,6 +1427,9 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
     isp_3a_result.flt_denoise_level= _isp_cfg.configs.flt_denoise_level;
     isp_3a_result.flt_sharp_level= _isp_cfg.configs.flt_sharp_level;
 
+    isp_3a_result.wdr_config = _isp_cfg.configs.wdr_config;
+    isp_3a_result.demosaiclp_config = _isp_cfg.configs.demosaicLp_config;
+    isp_3a_result.rkiesharp_config = _isp_cfg.configs.rkIESharp_config;
     // copy awb algo results
     isp_3a_result.awb_algo_results.fRedGain =
         _ia_results.awb.GainsAlgo.fRed;

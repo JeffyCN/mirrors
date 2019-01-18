@@ -286,23 +286,56 @@ typedef struct NewDsp3DnrResult_s{
 
 typedef struct RKDemosiacLpResult_s{
 	uint8_t  lp_en;
-	uint8_t  rb_filter_en;  //filter mode
-	uint8_t  hp_filter_en;	//filter mode	
+	uint8_t  rb_filter_en;
+	uint8_t  hp_filter_en;
 	uint8_t  lu_divided[4];
-	uint8_t  sw_thgrad_divided[5];
-	uint8_t  sw_thCSC_divided[5];
-	uint8_t  sw_thdiff_divided[5];
-	uint16_t sw_thVar_divided[5];
-
+	uint8_t thgrad_divided[5];
+	uint8_t thdiff_divided[5];
+	uint8_t thcsc_divided[5];
+	uint16_t thvar_divided[5];
+	uint8_t th_grad;
+	uint8_t th_diff;
+	uint8_t th_csc;
+	uint16_t th_var;
+	uint8_t th_var_en;
+	uint8_t th_csc_en;
+	uint8_t th_diff_en;
+	uint8_t th_grad_en;
+	uint8_t use_old_lp;
+	uint8_t similarity_th;
+	uint8_t flat_level_sel;
+	uint8_t pattern_level_sel;
+	uint8_t edge_level_sel;
+	uint8_t thgrad_r_fct;
+	uint8_t thdiff_r_fct;
+	uint8_t thvar_r_fct;
+	uint8_t thgrad_b_fct;
+	uint8_t thdiff_b_fct;
+	uint8_t thvar_b_fct;
+	int light_mode; 
 }RKDemosiacLpResult_t;
 
 typedef struct RKIESharpResult_s{
-	uint8_t iesharpen_en;	
-	uint32_t p_grad[4]; 
-  	uint32_t sharp_factor[5];
-  	uint32_t line1_filter_coe[6];
-  	uint32_t line2_filter_coe[9];
-  	uint32_t line3_filter_coe[6];
+	uint8_t iesharpen_en;	  // iesharpen_en 0 off, 1 on
+	uint8_t coring_thr; 		// iesharpen coring_thr is default 0
+	uint8_t full_range; 		// iesharpen full range(yuv data) 1:full_range(0-255),2:range(16-24?)
+	uint8_t switch_avg; 	  //iesharpen whether is compare center pixel with edge pixel
+	uint8_t yavg_thr[4];// Y channel is set five segments by the Matrix
+	uint8_t delta1[5];
+	uint8_t delta2[5];
+	uint8_t maxnumber[5];
+	uint8_t minnumber[5];
+	uint8_t gauss_flat_coe[9];
+	uint8_t gauss_noise_coe[9];
+	uint8_t gauss_other_coe[9];
+	uint8_t uv_gauss_flat_coe[15];
+	uint8_t uv_gauss_noise_coe[15];
+	uint8_t uv_gauss_other_coe[15];	
+	uint16_t p_grad[4]; 
+  	uint8_t sharp_factor[5];
+  	uint8_t line1_filter_coe[6];
+  	uint8_t line2_filter_coe[9];
+  	uint8_t line3_filter_coe[6];
 
 }RKIESharpResult_t;
 

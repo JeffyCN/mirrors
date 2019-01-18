@@ -628,7 +628,7 @@ IspController::gen_full_isp_params(const struct rkisp1_isp_params_cfg *update_pa
 
 	struct cifisp_isp_meas_cfg meas;
 	struct cifisp_isp_other_cfg others;
-    for (; i <= CIFISP_DPF_STRENGTH_ID; i++)
+    for (; i <= CIFISP_RK_IESHARP_ID; i++)
         if (update_params->module_en_update & (1 << i)) {
             full_params->module_en_update |= 1 << i;
             // clear old bit value
@@ -637,7 +637,7 @@ IspController::gen_full_isp_params(const struct rkisp1_isp_params_cfg *update_pa
             full_params->module_ens |= update_params->module_ens & (1 << i);
         }
 
-    for (i = 0; i <= CIFISP_DPF_STRENGTH_ID; i++) {
+    for (i = 0; i <= CIFISP_RK_IESHARP_ID; i++) {
         if (update_params->module_cfg_update & (1 << i)) {
             full_params->module_cfg_update |= 1 << i;
             switch (i) {
@@ -687,12 +687,19 @@ IspController::gen_full_isp_params(const struct rkisp1_isp_params_cfg *update_pa
                 full_params->meas.aec_config = update_params->meas.aec_config;
                 break;
             case CIFISP_WDR_ID:
+                full_params->others.wdr_config = update_params->others.wdr_config;
                 break;
             case CIFISP_DPF_ID:
                 full_params->others.dpf_config = update_params->others.dpf_config;
                 break;
             case CIFISP_DPF_STRENGTH_ID:
                 full_params->others.dpf_strength_config = update_params->others.dpf_strength_config;
+                break;
+            case CIFISP_DEMOSAICLP_ID:
+                full_params->others.demosaiclp_config = update_params->others.demosaiclp_config;
+                break;
+            case CIFISP_RK_IESHARP_ID:
+                full_params->others.rkiesharp_config = update_params->others.rkiesharp_config;
                 break;
             default:
                 break;
@@ -734,7 +741,24 @@ IspController::set_3a_config_sync ()
              update_params.module_en_update |= CIFISP_MODULE_BDM;
              update_params.module_cfg_update &= ~CIFISP_MODULE_BDM;
         }
+
+        // if _isp_ver < 2, not support rkiesharp and demosaic_lp
+        if (_isp_ver < 2) {
+             update_params.module_ens &= ~(CIFISP_MODULE_RK_IESHARP | CIFISP_MODULE_DEMOSAICLP);
+             update_params.module_en_update &= ~(CIFISP_MODULE_RK_IESHARP | CIFISP_MODULE_DEMOSAICLP);
+             update_params.module_cfg_update &= ~(CIFISP_MODULE_RK_IESHARP | CIFISP_MODULE_DEMOSAICLP);
+        }
+
         gen_full_isp_params(&update_params, &_full_active_isp_params);
+        // ie and rkiesharp can't be active concurrently, and ie has the high
+        // privilege.
+        if ((_full_active_isp_params.module_ens & CIFISP_MODULE_RK_IESHARP) &&
+            (_full_active_isp_params.module_ens & CIFISP_MODULE_IE)) {
+            _full_active_isp_params.module_ens &= ~CIFISP_MODULE_RK_IESHARP;
+            _full_active_isp_params.module_en_update |= CIFISP_MODULE_RK_IESHARP;
+            _full_active_isp_params.module_cfg_update &= ~CIFISP_MODULE_RK_IESHARP;
+        }
+
         dump_isp_config(&_full_active_isp_params, isp_cfg);
 
         ret = rkisp1_check_params(&_full_active_isp_params, _isp_ver);
@@ -863,7 +887,7 @@ IspController::exposure_delay(struct rkisp_exposure isp_exposure)
         isp_exposure.RegSmoothFll[1];
     _exposure_queue[1] = isp_exposure;
 
-    if (memcmp(&_exposure_queue[0], &_exposure_queue[1], sizeof(_exposure_queue[0]) == 0))
+    if (memcmp(&_exposure_queue[0], &_exposure_queue[1], sizeof(_exposure_queue[0])) == 0)
         _cur_apply_index++;
 
     isp_exposure.RegSmoothGains[0] =
@@ -879,7 +903,7 @@ IspController::exposure_delay(struct rkisp_exposure isp_exposure)
 
     _exposure_queue[2] = isp_exposure;
 
-    if (memcmp(&_exposure_queue[1], &_exposure_queue[2], sizeof(_exposure_queue[0]) == 0))
+    if (memcmp(&_exposure_queue[1], &_exposure_queue[2], sizeof(_exposure_queue[0])) == 0)
         _cur_apply_index++;
 
     // set the initial exposure before streaming

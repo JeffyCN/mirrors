@@ -80,7 +80,7 @@ typedef struct AwdrContext_s {
 
   //wdr max gain dynamic set with ae gain    --oyyf add
   //CamCalibWdrMaxGainLevelCurve_t *pWdrMaxGainLevelCurve;
-  uint8_t Wdr_MaxGain_level_RegValue;
+  AwdrResult_t awdr_result;
 } AwdrContext_t;
 
 

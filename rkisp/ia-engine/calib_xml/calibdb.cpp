@@ -63,9 +63,6 @@
 //v0.2.2:  XML FOR BW ISP OUTPUT
 //                 1. add isp output type configuration in XML header
 //                 2. add lsc ccm wb module cofiguration for BW illuminant in  in XML 
-
-
-
 /*************************************************************************/
 /*************************************************************************/
 
@@ -8119,11 +8116,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* yavg_thr=NULL;
-            yavg_thr = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* yavg_thr=NULL;
+            yavg_thr = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(yavg_thr != NULL);
-            MEMSET(yavg_thr,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), yavg_thr, tag.Size());
+            MEMSET(yavg_thr,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), yavg_thr, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.yavg_thr_ArraySize = no;
             iesharpen_profile.yavg_thr=yavg_thr;
@@ -8132,11 +8129,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* p_delta1=NULL;
-            p_delta1 = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* p_delta1=NULL;
+            p_delta1 = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(p_delta1 != NULL);
-            MEMSET(p_delta1,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), p_delta1, tag.Size());
+            MEMSET(p_delta1,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), p_delta1, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.P_delta1_ArraySize = no;
             iesharpen_profile.P_delta1=p_delta1;
@@ -8145,11 +8142,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* p_delta2=NULL;
-            p_delta2 = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* p_delta2=NULL;
+            p_delta2 = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(p_delta2 != NULL);
-            MEMSET(p_delta2,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), p_delta2, tag.Size());
+            MEMSET(p_delta2,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), p_delta2, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.P_delta2_ArraySize = no;
             iesharpen_profile.P_delta2=p_delta2;
@@ -8158,11 +8155,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* pmaxnumber=NULL;
-            pmaxnumber = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* pmaxnumber=NULL;
+            pmaxnumber = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(pmaxnumber != NULL);
-            MEMSET(pmaxnumber,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), pmaxnumber, tag.Size());
+            MEMSET(pmaxnumber,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), pmaxnumber, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.pmaxnumber_ArraySize = no;
             iesharpen_profile.pmaxnumber=pmaxnumber;
@@ -8171,11 +8168,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* pminnumber=NULL;
-            pminnumber = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* pminnumber=NULL;
+            pminnumber = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(pminnumber != NULL);
-            MEMSET(pminnumber,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), pminnumber, tag.Size());
+            MEMSET(pminnumber,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), pminnumber, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.pminnumber_ArraySize = no;
             iesharpen_profile.pminnumber=pminnumber;
@@ -8184,11 +8181,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* pgauss_flat_coe=NULL;
-            pgauss_flat_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* pgauss_flat_coe=NULL;
+            pgauss_flat_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(pgauss_flat_coe != NULL);
-            MEMSET(pgauss_flat_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), pgauss_flat_coe, tag.Size());
+            MEMSET(pgauss_flat_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), pgauss_flat_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.gauss_flat_coe_ArraySize = no;
             iesharpen_profile.gauss_flat_coe=pgauss_flat_coe;
@@ -8197,11 +8194,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* pgauss_noise_coe=NULL;
-            pgauss_noise_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* pgauss_noise_coe=NULL;
+            pgauss_noise_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(pgauss_noise_coe != NULL);
-            MEMSET(pgauss_noise_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), pgauss_noise_coe, tag.Size());
+            MEMSET(pgauss_noise_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), pgauss_noise_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.gauss_noise_coe_ArraySize = no;
             iesharpen_profile.gauss_noise_coe=pgauss_noise_coe;
@@ -8210,11 +8207,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* pgauss_other_coe=NULL;
-            pgauss_other_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* pgauss_other_coe=NULL;
+            pgauss_other_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(pgauss_other_coe != NULL);
-            MEMSET(pgauss_other_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), pgauss_other_coe, tag.Size());
+            MEMSET(pgauss_other_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), pgauss_other_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.gauss_other_coe_ArraySize = no;
             iesharpen_profile.gauss_other_coe=pgauss_other_coe;
@@ -8223,11 +8220,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* pl_p_grad=NULL;
-            pl_p_grad = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint16_t* pl_p_grad=NULL;
+            pl_p_grad = (uint16_t*)malloc(tag.Size()*sizeof(uint16_t));
             DCT_ASSERT(pl_p_grad != NULL);
-            MEMSET(pl_p_grad,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), pl_p_grad, tag.Size());
+            MEMSET(pl_p_grad,0,(tag.Size()*sizeof(uint16_t)));
+            int no = ParseUshortArray(tag.Value(), pl_p_grad, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.lgridconf.p_grad_ArraySize = no;
             iesharpen_profile.lgridconf.p_grad=pl_p_grad;
@@ -8236,11 +8233,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* pl_sharp_factor=NULL;
-            pl_sharp_factor = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* pl_sharp_factor=NULL;
+            pl_sharp_factor = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(pl_sharp_factor != NULL);
-            MEMSET(pl_sharp_factor,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), pl_sharp_factor, tag.Size());
+            MEMSET(pl_sharp_factor,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), pl_sharp_factor, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.lgridconf.sharp_factor_ArraySize = no;
             iesharpen_profile.lgridconf.sharp_factor=pl_sharp_factor;
@@ -8249,11 +8246,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* pl_line1_filter_coe=NULL;
-            pl_line1_filter_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* pl_line1_filter_coe=NULL;
+            pl_line1_filter_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(pl_line1_filter_coe != NULL);
-            MEMSET(pl_line1_filter_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), pl_line1_filter_coe, tag.Size());
+            MEMSET(pl_line1_filter_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), pl_line1_filter_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.lgridconf.line1_filter_coe_ArraySize = no;
             iesharpen_profile.lgridconf.line1_filter_coe=pl_line1_filter_coe;
@@ -8262,11 +8259,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* pl_line2_filter_coe=NULL;
-            pl_line2_filter_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* pl_line2_filter_coe=NULL;
+            pl_line2_filter_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(pl_line2_filter_coe != NULL);
-            MEMSET(pl_line2_filter_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), pl_line2_filter_coe, tag.Size());
+            MEMSET(pl_line2_filter_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), pl_line2_filter_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.lgridconf.line2_filter_coe_ArraySize = no;
             iesharpen_profile.lgridconf.line2_filter_coe=pl_line2_filter_coe;
@@ -8275,11 +8272,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* pl_line3_filter_coe=NULL;
-            pl_line3_filter_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* pl_line3_filter_coe=NULL;
+            pl_line3_filter_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(pl_line3_filter_coe != NULL);
-            MEMSET(pl_line3_filter_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), pl_line3_filter_coe, tag.Size());
+            MEMSET(pl_line3_filter_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), pl_line3_filter_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.lgridconf.line3_filter_coe_ArraySize = no;
             iesharpen_profile.lgridconf.line3_filter_coe=pl_line3_filter_coe;
@@ -8288,11 +8285,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* ph_p_grad=NULL;
-            ph_p_grad = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint16_t* ph_p_grad=NULL;
+            ph_p_grad = (uint16_t*)malloc(tag.Size()*sizeof(uint16_t));
             DCT_ASSERT(ph_p_grad != NULL);
-            MEMSET(ph_p_grad,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), ph_p_grad, tag.Size());
+            MEMSET(ph_p_grad,0,(tag.Size()*sizeof(uint16_t)));
+            int no = ParseUshortArray(tag.Value(), ph_p_grad, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.hgridconf.p_grad_ArraySize = no;
             iesharpen_profile.hgridconf.p_grad=ph_p_grad;
@@ -8301,11 +8298,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* ph_sharp_factor=NULL;
-            ph_sharp_factor = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* ph_sharp_factor=NULL;
+            ph_sharp_factor = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(ph_sharp_factor != NULL);
-            MEMSET(ph_sharp_factor,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), ph_sharp_factor, tag.Size());
+            MEMSET(ph_sharp_factor,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), ph_sharp_factor, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.hgridconf.sharp_factor_ArraySize = no;
             iesharpen_profile.hgridconf.sharp_factor=ph_sharp_factor;
@@ -8314,11 +8311,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* ph_line1_filter_coe=NULL;
-            ph_line1_filter_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* ph_line1_filter_coe=NULL;
+            ph_line1_filter_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(ph_line1_filter_coe != NULL);
-            MEMSET(ph_line1_filter_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), ph_line1_filter_coe, tag.Size());
+            MEMSET(ph_line1_filter_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), ph_line1_filter_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.hgridconf.line1_filter_coe_ArraySize = no;
             iesharpen_profile.hgridconf.line1_filter_coe=ph_line1_filter_coe;
@@ -8327,11 +8324,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* ph_line2_filter_coe=NULL;
-            ph_line2_filter_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* ph_line2_filter_coe=NULL;
+            ph_line2_filter_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(ph_line2_filter_coe != NULL);
-            MEMSET(ph_line2_filter_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), ph_line2_filter_coe, tag.Size());
+            MEMSET(ph_line2_filter_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), ph_line2_filter_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.hgridconf.line2_filter_coe_ArraySize = no;
             iesharpen_profile.hgridconf.line2_filter_coe=ph_line2_filter_coe;
@@ -8340,11 +8337,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* ph_line3_filter_coe=NULL;
-            ph_line3_filter_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* ph_line3_filter_coe=NULL;
+            ph_line3_filter_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(ph_line3_filter_coe != NULL);
-            MEMSET(ph_line3_filter_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), ph_line3_filter_coe, tag.Size());
+            MEMSET(ph_line3_filter_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), ph_line3_filter_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.hgridconf.line3_filter_coe_ArraySize = no;
             iesharpen_profile.hgridconf.line3_filter_coe=ph_line3_filter_coe;
@@ -8353,11 +8350,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* puv_gauss_flat_coe=NULL;
-            puv_gauss_flat_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* puv_gauss_flat_coe=NULL;
+            puv_gauss_flat_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(puv_gauss_flat_coe != NULL);
-            MEMSET(puv_gauss_flat_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), puv_gauss_flat_coe, tag.Size());
+            MEMSET(puv_gauss_flat_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), puv_gauss_flat_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.uv_gauss_flat_coe_ArraySize = no;
             iesharpen_profile.uv_gauss_flat_coe=puv_gauss_flat_coe;
@@ -8366,11 +8363,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* puv_gauss_noise_coe=NULL;
-            puv_gauss_noise_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* puv_gauss_noise_coe=NULL;
+            puv_gauss_noise_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(puv_gauss_noise_coe != NULL);
-            MEMSET(puv_gauss_noise_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), puv_gauss_noise_coe, tag.Size());
+            MEMSET(puv_gauss_noise_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), puv_gauss_noise_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.uv_gauss_noise_coe_ArraySize = no;
             iesharpen_profile.uv_gauss_noise_coe=puv_gauss_noise_coe;
@@ -8379,11 +8376,11 @@ bool CalibDb::parseEntryRKsharpen
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            uint32_t* puv_gauss_other_coe=NULL;
-            puv_gauss_other_coe = (uint32_t*)malloc(tag.Size()*sizeof(uint32_t));
+            uint8_t* puv_gauss_other_coe=NULL;
+            puv_gauss_other_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
             DCT_ASSERT(puv_gauss_other_coe != NULL);
-            MEMSET(puv_gauss_other_coe,0,(tag.Size()*sizeof(uint32_t)));
-            int no = ParseUintArray(tag.Value(), puv_gauss_other_coe, tag.Size());
+            MEMSET(puv_gauss_other_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), puv_gauss_other_coe, tag.Size());
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.uv_gauss_other_coe_ArraySize = no;
             iesharpen_profile.uv_gauss_other_coe=puv_gauss_other_coe;

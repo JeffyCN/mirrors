@@ -32,6 +32,7 @@
 #include "base/log.h"
 
 
+#define RK_IESHARP_GIAN (4.0)
 
 
 /******************************************************************************
@@ -1055,26 +1056,26 @@ static RESULT AdpfRKLpCalMatrix
 		return (RET_INVALID_PARM);
 	}
 	
-	prkDLpResult->sw_thgrad_divided[0] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thgrad_divided[1] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thgrad_divided[2] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thgrad_divided[3] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thgrad_divided[4] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thCSC_divided[0] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thCSC_divided[1] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thCSC_divided[2] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thCSC_divided[3] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thCSC_divided[4] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thdiff_divided[0] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thdiff_divided[1] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thdiff_divided[2] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thdiff_divided[3] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thdiff_divided[4] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thVar_divided[0] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thVar_divided[1] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thVar_divided[2] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thVar_divided[3] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
-	prkDLpResult->sw_thVar_divided[4] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thgrad_divided[0] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thgrad_divided[1] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thgrad_divided[2] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thgrad_divided[3] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thgrad_divided[4] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thcsc_divided[0] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thcsc_divided[1] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thcsc_divided[2] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thcsc_divided[3] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thcsc_divided[4] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thdiff_divided[0] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thdiff_divided[1] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thdiff_divided[2] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thdiff_divided[3] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thdiff_divided[4] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thvar_divided[0] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thvar_divided[1] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thvar_divided[2] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thvar_divided[3] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thvar_divided[4] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
 
 	return ( result );
 }
@@ -1106,6 +1107,9 @@ static RESULT AdpfCalcRKIESharpFilterCoe
 		LOGV("%s: pRKIEsharpResult == NULL \n", __func__);
 		return (RET_INVALID_PARM);
 	}
+
+	if(pRKIESharpProfile->sensorGain <= 0)
+		pRKIESharpProfile->sensorGain = RK_IESHARP_GIAN;
 	
 	if(fSensorGain <= pRKIESharpProfile->sensorGain){
 		pGridConf = &pRKIESharpProfile->lgridconf;
@@ -1236,6 +1240,25 @@ static RESULT AdpfApplyConfiguration
 		pAdpfCtx->RKDemosaicLpResult.lp_en = 1;
 		pAdpfCtx->RKDemosaicLpResult.rb_filter_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.rb_filter_en;
 		pAdpfCtx->RKDemosaicLpResult.hp_filter_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.hp_filter_en;
+		pAdpfCtx->RKDemosaicLpResult.th_grad = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_grad;
+		pAdpfCtx->RKDemosaicLpResult.th_diff = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_diff;
+		pAdpfCtx->RKDemosaicLpResult.th_csc = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_csc;
+		pAdpfCtx->RKDemosaicLpResult.th_var = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_var;
+		pAdpfCtx->RKDemosaicLpResult.th_grad_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_grad_en;
+		pAdpfCtx->RKDemosaicLpResult.th_diff_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_diff_en;
+		pAdpfCtx->RKDemosaicLpResult.th_csc_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_csc_en;
+		pAdpfCtx->RKDemosaicLpResult.th_var_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_var_en;		
+		pAdpfCtx->RKDemosaicLpResult.use_old_lp = pAdpfCtx->pFilterProfile->DemosaicLpConf.use_old_lp;
+		pAdpfCtx->RKDemosaicLpResult.similarity_th = pAdpfCtx->pFilterProfile->DemosaicLpConf.similarity_th;
+		pAdpfCtx->RKDemosaicLpResult.flat_level_sel = pAdpfCtx->pFilterProfile->DemosaicLpConf.flat_level_sel;
+		pAdpfCtx->RKDemosaicLpResult.pattern_level_sel = pAdpfCtx->pFilterProfile->DemosaicLpConf.pattern_level_sel;
+		pAdpfCtx->RKDemosaicLpResult.edge_level_sel = pAdpfCtx->pFilterProfile->DemosaicLpConf.edge_level_sel;
+		pAdpfCtx->RKDemosaicLpResult.thgrad_r_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thgrad_r_fct;
+		pAdpfCtx->RKDemosaicLpResult.thgrad_b_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thgrad_b_fct;
+		pAdpfCtx->RKDemosaicLpResult.thdiff_r_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thdiff_r_fct;
+		pAdpfCtx->RKDemosaicLpResult.thdiff_b_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thdiff_b_fct;
+		pAdpfCtx->RKDemosaicLpResult.thvar_r_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thvar_r_fct;
+		pAdpfCtx->RKDemosaicLpResult.thvar_b_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thvar_b_fct;
 		MEMCPY(pAdpfCtx->RKDemosaicLpResult.lu_divided, pAdpfCtx->pFilterProfile->DemosaicLpConf.lu_divided, sizeof(pAdpfCtx->RKDemosaicLpResult.lu_divided));
 		pAdpfCtx->actives |= ADPF_DEMOSAICLP_MASK;
 	}else{
@@ -1340,6 +1363,20 @@ static RESULT AdpfApplyConfiguration
         result = AdpfCalcRKIESharpFilterCoe(pAdpfCtx, pAdpfCtx->gain, &(pAdpfCtx->rkSharpenProfile), &pAdpfCtx->RKIESharpResult);
         RETURN_RESULT_IF_DIFFERENT( result, RET_SUCCESS );
 		pAdpfCtx->RKIESharpResult.iesharpen_en = 1;
+		pAdpfCtx->RKIESharpResult.coring_thr = pAdpfCtx->rkSharpenProfile.coring_thr;
+		pAdpfCtx->RKIESharpResult.full_range = pAdpfCtx->rkSharpenProfile.full_range;
+		pAdpfCtx->RKIESharpResult.switch_avg = pAdpfCtx->rkSharpenProfile.switch_avg;
+		MEMCPY(pAdpfCtx->RKIESharpResult.yavg_thr, pAdpfCtx->rkSharpenProfile.yavg_thr, sizeof(pAdpfCtx->RKIESharpResult.yavg_thr));
+		MEMCPY(pAdpfCtx->RKIESharpResult.delta1, pAdpfCtx->rkSharpenProfile.P_delta1, sizeof(pAdpfCtx->RKIESharpResult.delta1));
+		MEMCPY(pAdpfCtx->RKIESharpResult.delta2, pAdpfCtx->rkSharpenProfile.P_delta2, sizeof(pAdpfCtx->RKIESharpResult.delta2));
+		MEMCPY(pAdpfCtx->RKIESharpResult.maxnumber, pAdpfCtx->rkSharpenProfile.pmaxnumber, sizeof(pAdpfCtx->RKIESharpResult.maxnumber));
+		MEMCPY(pAdpfCtx->RKIESharpResult.minnumber, pAdpfCtx->rkSharpenProfile.pminnumber, sizeof(pAdpfCtx->RKIESharpResult.minnumber));
+		MEMCPY(pAdpfCtx->RKIESharpResult.gauss_flat_coe, pAdpfCtx->rkSharpenProfile.gauss_flat_coe, sizeof(pAdpfCtx->RKIESharpResult.gauss_flat_coe));
+		MEMCPY(pAdpfCtx->RKIESharpResult.gauss_noise_coe, pAdpfCtx->rkSharpenProfile.gauss_noise_coe, sizeof(pAdpfCtx->RKIESharpResult.gauss_noise_coe));
+		MEMCPY(pAdpfCtx->RKIESharpResult.gauss_other_coe, pAdpfCtx->rkSharpenProfile.gauss_other_coe, sizeof(pAdpfCtx->RKIESharpResult.gauss_other_coe));
+		MEMCPY(pAdpfCtx->RKIESharpResult.uv_gauss_flat_coe, pAdpfCtx->rkSharpenProfile.uv_gauss_flat_coe, sizeof(pAdpfCtx->RKIESharpResult.uv_gauss_flat_coe));
+		MEMCPY(pAdpfCtx->RKIESharpResult.uv_gauss_noise_coe, pAdpfCtx->rkSharpenProfile.uv_gauss_noise_coe, sizeof(pAdpfCtx->RKIESharpResult.uv_gauss_noise_coe));
+		MEMCPY(pAdpfCtx->RKIESharpResult.uv_gauss_other_coe, pAdpfCtx->rkSharpenProfile.uv_gauss_other_coe, sizeof(pAdpfCtx->RKIESharpResult.uv_gauss_other_coe));
 		pAdpfCtx->actives |= ADPF_RKIESHARP_MASK;
     }else{
 		pAdpfCtx->RKIESharpResult.iesharpen_en = 0;
@@ -1751,15 +1788,10 @@ RESULT AdpfRun
   	if (dgain > 0.15f || pAdpfCtx->LightMode != LightMode){
 		result = AdpfRKLpCalMatrix(pAdpfCtx, gain, &(pAdpfCtx->pFilterProfile->DemosaicLpConf), &pAdpfCtx->RKDemosaicLpResult);
 		RETURN_RESULT_IF_DIFFERENT( result, RET_SUCCESS );
-		pAdpfCtx->RKDemosaicLpResult.lp_en = 1;
-		pAdpfCtx->RKDemosaicLpResult.rb_filter_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.rb_filter_en;
-		pAdpfCtx->RKDemosaicLpResult.hp_filter_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.hp_filter_en;
 		pAdpfCtx->actives |= ADPF_DEMOSAICLP_MASK;
 	}
   }else{
 	pAdpfCtx->RKDemosaicLpResult.lp_en = 0;
-	pAdpfCtx->RKDemosaicLpResult.rb_filter_en = 0;
-	pAdpfCtx->RKDemosaicLpResult.hp_filter_en = 0;
 	pAdpfCtx->actives |= ADPF_DEMOSAICLP_MASK;
   }
 
@@ -1768,7 +1800,6 @@ RESULT AdpfRun
   	if (dgain > 0.15f || pAdpfCtx->LightMode != LightMode){
 		result = AdpfCalcRKIESharpFilterCoe(pAdpfCtx, gain, &(pAdpfCtx->rkSharpenProfile), &pAdpfCtx->RKIESharpResult);
         RETURN_RESULT_IF_DIFFERENT( result, RET_SUCCESS );
-		pAdpfCtx->RKIESharpResult.iesharpen_en = 1;
 		pAdpfCtx->actives |= ADPF_RKIESHARP_MASK;
 	}
   }else{
@@ -1841,11 +1872,11 @@ RESULT AdpfGetResult
     //pAdpfCtx->actives &= ~ADPF_DEMOSAIC_TH_MASK;	
 	LOGV( "%s: gain(%f) demosaiclp_en(%d) thgrad: %d, %d, %d, %d, %d\n", __func__, 
 		pAdpfCtx->gain, result->RKDemosaicLpResult.lp_en, 
-		result->RKDemosaicLpResult.sw_thgrad_divided[0],
-		result->RKDemosaicLpResult.sw_thgrad_divided[1],
-		result->RKDemosaicLpResult.sw_thgrad_divided[2],
-		result->RKDemosaicLpResult.sw_thgrad_divided[3],
-		result->RKDemosaicLpResult.sw_thgrad_divided[4]);
+		result->RKDemosaicLpResult.thgrad_divided[0],
+		result->RKDemosaicLpResult.thgrad_divided[1],
+		result->RKDemosaicLpResult.thgrad_divided[2],
+		result->RKDemosaicLpResult.thgrad_divided[3],
+		result->RKDemosaicLpResult.thgrad_divided[4]);
   }
 
   if(pAdpfCtx->actives & ADPF_RKIESHARP_MASK) 

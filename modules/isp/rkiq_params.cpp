@@ -392,6 +392,25 @@ static int aec_param_check(struct cifisp_aec_config* arg, int isp_ver)
     return 0;
 }
 
+static int demosaiclp_param_check(struct cifisp_demosaiclp_config* arg, int isp_ver)
+{
+    // TODO
+    return 0;
+}
+
+static int wdr_param_check(struct cifisp_wdr_config* arg, int isp_ver)
+{
+    // TODO
+    return 0;
+}
+
+static int rkiesharp_param_check(struct cifisp_rkiesharp_config* arg, int isp_ver)
+{
+    // TODO
+    return 0;
+}
+
+
 XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg* configs, int isp_ver)
 {
     int ret = 0;
@@ -470,6 +489,24 @@ XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg* configs, int isp_ve
         ret = aec_param_check(&configs->meas.aec_config, isp_ver);
         if (ret < 0)
             configs->module_cfg_update &= ~CIFISP_MODULE_AEC;
+    }
+
+    if (configs->module_cfg_update & CIFISP_MODULE_DEMOSAICLP) {
+        ret = demosaiclp_param_check(&configs->others.demosaiclp_config, isp_ver);
+        if (ret < 0)
+            configs->module_cfg_update &= ~CIFISP_MODULE_DEMOSAICLP;
+    }
+
+    if (configs->module_cfg_update & CIFISP_MODULE_RK_IESHARP) {
+        ret = rkiesharp_param_check(&configs->others.rkiesharp_config, isp_ver);
+        if (ret < 0)
+            configs->module_cfg_update &= ~CIFISP_MODULE_RK_IESHARP;
+    }
+
+    if (configs->module_cfg_update & CIFISP_MODULE_WDR) {
+        ret = wdr_param_check(&configs->others.wdr_config, isp_ver);
+        if (ret < 0)
+            configs->module_cfg_update &= ~CIFISP_MODULE_WDR;
     }
 
     if (ret < 0) {
@@ -1169,6 +1206,13 @@ XCamReturn rkisp1_convert_results(
 
     CONVERT_RET(HAL_ISP_AFC_ID,HAL_ISP_AFC_MASK,
         isp_cfg->meas.afc_config, aiq_results->afc_config, last_aiq_results.afc_config);
+
+    CONVERT_RET(HAL_ISP_DEMOSAICLP_ID,HAL_ISP_DEMOSAICLP_MASK,
+        isp_cfg->others.demosaiclp_config, aiq_results->demosaiclp_config, last_aiq_results.demosaiclp_config);
+    CONVERT_RET(HAL_ISP_RKIESHARP_ID,HAL_ISP_RK_IESHARP_MASK,
+        isp_cfg->others.rkiesharp_config, aiq_results->rkiesharp_config, last_aiq_results.rkiesharp_config);
+    CONVERT_RET(HAL_ISP_WDR_ID,HAL_ISP_WDR_MASK,
+        isp_cfg->others.wdr_config, aiq_results->wdr_config, last_aiq_results.wdr_config);
 
     last_aiq_results = *aiq_results;
 

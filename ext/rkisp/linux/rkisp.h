@@ -234,6 +234,9 @@ struct rkisp_parameters {
   struct cifisp_ie_config ie_config;
   struct cifisp_dpf_config dpf_config;
   struct cifisp_dpf_strength_config dpf_strength_config;
+  struct cifisp_wdr_config wdr_config;
+  struct cifisp_demosaiclp_config demosaiclp_config;
+  struct cifisp_rkiesharp_config rkiesharp_config;
   struct rkisp_awb_algo awb_algo_results;
 };
 

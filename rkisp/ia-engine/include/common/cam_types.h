@@ -1198,15 +1198,15 @@ typedef struct CamDpccProfile_s {
 
 typedef struct CamIesharpenGridConf_s
 {
-    uint32_t* p_grad;            //lowlight grad segment points
+    uint16_t* p_grad;            //lowlight grad segment points
     uint8_t p_grad_ArraySize;
-    uint32_t* sharp_factor;    // lowlight sharpen factor 0-64
+    uint8_t* sharp_factor;    // lowlight sharpen factor 0-64
     uint8_t sharp_factor_ArraySize;
-    uint32_t* line1_filter_coe; //prefilter the data 2x3 
+    uint8_t* line1_filter_coe; //prefilter the data 2x3 
     uint8_t line1_filter_coe_ArraySize;
-    uint32_t* line2_filter_coe;//                           3x3
+    uint8_t* line2_filter_coe;//                           3x3
     uint8_t line2_filter_coe_ArraySize;
-    uint32_t* line3_filter_coe;//                           2x3
+    uint8_t* line3_filter_coe;//                           2x3
     uint8_t line3_filter_coe_ArraySize;
 }CamIesharpenGridConf_t;
 
@@ -1219,29 +1219,29 @@ typedef struct CamIesharpenProfile_s
     uint8_t coring_thr;         // iesharpen coring_thr is default 0
     uint8_t full_range;         // iesharpen full range(yuv data) 1:full_range(0-255),2:range(16-24?)
     uint8_t switch_avg;       //iesharpen whether is compare center pixel with edge pixel
-    uint32_t* yavg_thr;// Y channel is set five segments by the Matrix
+    uint8_t* yavg_thr;// Y channel is set five segments by the Matrix
     uint8_t yavg_thr_ArraySize;
-    uint32_t* P_delta1; 
+    uint8_t* P_delta1; 
     uint8_t P_delta1_ArraySize;
-    uint32_t* P_delta2;
+    uint8_t* P_delta2;
     uint8_t P_delta2_ArraySize;
-    uint32_t* pmaxnumber;
+    uint8_t* pmaxnumber;
     uint8_t pmaxnumber_ArraySize;
-    uint32_t* pminnumber;
+    uint8_t* pminnumber;
     uint8_t pminnumber_ArraySize;
-    uint32_t* gauss_flat_coe;    // filter mask for flat 
+    uint8_t* gauss_flat_coe;    // filter mask for flat 
     uint8_t gauss_flat_coe_ArraySize;
-    uint32_t* gauss_noise_coe;//filter mask2 for noise
+    uint8_t* gauss_noise_coe;//filter mask2 for noise
     uint8_t gauss_noise_coe_ArraySize;
-    uint32_t* gauss_other_coe; //filter mask for other
+    uint8_t* gauss_other_coe; //filter mask for other
     uint8_t gauss_other_coe_ArraySize;
     CamIesharpenGridConf_t lgridconf;
     CamIesharpenGridConf_t hgridconf;
-    uint32_t* uv_gauss_flat_coe; //uv channel faussian filter 3x5 in flat point
+    uint8_t* uv_gauss_flat_coe; //uv channel faussian filter 3x5 in flat point
     uint8_t uv_gauss_flat_coe_ArraySize;
-    uint32_t* uv_gauss_noise_coe;//uv channel faussian filter 3x5 in noise point
+    uint8_t* uv_gauss_noise_coe;//uv channel faussian filter 3x5 in noise point
     uint8_t uv_gauss_noise_coe_ArraySize;
-    uint32_t* uv_gauss_other_coe;//uv channel faussian filter 3x5 in other point
+    uint8_t* uv_gauss_other_coe;//uv channel faussian filter 3x5 in other point
     uint8_t uv_gauss_other_coe_ArraySize;
 
 	float sensorGain;
