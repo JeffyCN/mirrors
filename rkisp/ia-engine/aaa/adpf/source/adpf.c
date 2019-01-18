@@ -21,6 +21,8 @@
 //#include <ebase/utl_fixfloat.h>
 #include <ebase/types.h>
 #include <ebase/builtins.h>
+#include <ebase/utl_fixfloat.h>
+
 
 #include <common/return_codes.h>
 #include <common/misc.h>
@@ -28,6 +30,7 @@
 #include "adpf.h"
 #include "adpf_ctrl.h"
 #include "base/log.h"
+
 
 
 
@@ -42,60 +45,68 @@
 #define UTL_FIX_MAX_U0800        255.499f //exactly this would be < 256 - 0.5
 #define UTL_FIX_MIN_U0800          0.0f
 
+typedef struct InterpolateCtx_s {
+  float*    pX;         /**< x-array, lookup table */
+  float*    pY;         /**< y-array         */
+  uint16_t  size;     /**< size of above arrays  */
+  float     x_i;        /**< value to find matching interval for in x-array */
+  float   y_i;        /**< result calculated from x_i, pfx and pfy */
+} InterpolateCtx_t;
 
-static uint32_t UtlFloatToFix_U0800(float fFloat) {
-  uint32_t ulFix = 0;
+static RESULT Interpolate
+(
+    InterpolateCtx_t* pInterpolationCtx
+) {
+  uint16_t n    = 0U;
+  uint16_t nMax = 0U;
 
-  DCT_ASSERT(fFloat <= UTL_FIX_MAX_U0800);
-  DCT_ASSERT(fFloat >= UTL_FIX_MIN_U0800);
+  // LOGV("%s: (enter)\n", __FUNCTION__);
 
-  // precision is 1, thus no multiplication is required
+  if (pInterpolationCtx == NULL) {
+    return (RET_NULL_POINTER);
+  }
 
-  // round
-  // no handling of negative values required
-  ulFix = (uint32_t)(fFloat + 0.5f);
+  nMax = (pInterpolationCtx->size - 1U);
 
-  //no masking of upper bits required
+  /* lower range check */
+  if (pInterpolationCtx->x_i < pInterpolationCtx->pX[0]) {
+    pInterpolationCtx->y_i = pInterpolationCtx->pY[0];
+	LOGV("%s: x_i(%f) < limit(%f), use limit instead! \n", __func__, pInterpolationCtx->x_i, pInterpolationCtx->pX[0]);
+    return (RET_SUCCESS);
+  }
 
-  return ulFix;
+  /* upper range check */
+  if (pInterpolationCtx->x_i > pInterpolationCtx->pX[nMax]) {
+    pInterpolationCtx->y_i = pInterpolationCtx->pY[nMax];
+	LOGV("%s: x_i(%f) > limit(%f), use limit instead! \n", __func__, pInterpolationCtx->x_i, pInterpolationCtx->pX[nMax]);
+    return (RET_SUCCESS);
+  }
+
+  /* find x area */
+  n = 0;
+  while ((pInterpolationCtx->x_i >= pInterpolationCtx->pX[n]) && (n <= nMax)) {
+    ++n;
+  }
+  --n;
+
+  /**
+   * If n was larger than nMax, which means f_xi lies exactly on the
+   * last interval border, we count f_xi to the last interval and
+   * have to decrease n one more time */
+  if (n == nMax) {
+    --n;
+  }
+
+  pInterpolationCtx->y_i
+    = ((pInterpolationCtx->pY[n + 1] - pInterpolationCtx->pY[n]) / (pInterpolationCtx->pX[n + 1] - pInterpolationCtx->pX[n]))
+      * (pInterpolationCtx->x_i - pInterpolationCtx->pX[n])
+      + (pInterpolationCtx->pY[n]);
+
+  // LOGV("%s: (exit)\n", __FUNCTION__);
+
+  return (RET_SUCCESS);
 }
 
-#define UTL_FIX_PRECISION_U0408  256.0f
-#define UTL_FIX_MASK_U0408       0xfff
-#define UTL_FIX_MAX_U0408          15.998f //exactly this would be < 16 - 0.5/256
-#define UTL_FIX_MIN_U0408          0.0f
-
-static uint32_t UtlFloatToFix_U0408(float fFloat) {
-  uint32_t ulFix = 0;
-
-  DCT_ASSERT(fFloat <= UTL_FIX_MAX_U0408);
-  DCT_ASSERT(fFloat >= UTL_FIX_MIN_U0408);
-
-  fFloat *= UTL_FIX_PRECISION_U0408;
-
-  // round
-  // no handling of negative values required
-  ulFix = (uint32_t)(fFloat + 0.5f);
-
-  //no masking of upper bits required
-
-  return ulFix;
-}
-
-static float UtlFixToFloat_U0408(uint32_t ulFix) {
-  float fFloat = 0;
-
-  // any value from 0x0000 to 0x0fff will do as input
-  DCT_ASSERT((ulFix & ~UTL_FIX_MASK_U0408) == 0);
-
-  // precision is not cut away here, so no rounding is necessary
-  // no handling of negative values required
-  fFloat = (float)ulFix;
-
-  fFloat /= UTL_FIX_PRECISION_U0408;
-
-  return fFloat;
-}
 
 /*****************************************************************************/
 /**
@@ -305,7 +316,7 @@ static RESULT AdpfPrepareCalibDbAccess
 
   result = CamCalibDbGetResolutionNameByWidthHeight(hCamCalibDb, width, height, &pAdpfCtx->ResName);
   if (RET_SUCCESS != result) {
-    ALOGE("%s: resolution (%dx%d@%d) not found in database\n", __func__, width, height, framerate);
+    LOGV("%s: resolution (%dx%d@%d) not found in database\n", __func__, width, height, framerate);
     return (result);
   }
   LOGV( "%s: resolution = %s\n", __func__, pAdpfCtx->ResName);
@@ -508,7 +519,7 @@ static RESULT AdpfCalculateStrength
 
   }
 
-  LOGD("%s: (gain=%f fStrength=%f, R:%u, G:%u, B:%u)\n",
+  LOGV("%s: (gain=%f fStrength=%f, R:%u, G:%u, B:%u)\n",
         __func__, fSensorGain, fStrength,
         pDynInvStrength->WeightR, pDynInvStrength->WeightG, pDynInvStrength->WeightB);
 
@@ -544,13 +555,13 @@ static RESULT AdpfCalculateDenoiseLevel
   float Dgain = fSensorGain;//Denoise level gain
   // initial check
   if (pDenoiseLevelCurve == NULL) {
-    ALOGE("%s: pDenoiseLevelCurve == NULL \n", __func__);
+    LOGV("%s: pDenoiseLevelCurve == NULL \n", __func__);
     return (RET_INVALID_PARM);
   }
 
   if (fSensorGain < 1.0f) {
 
-    ALOGE("%s: 222(enter)\n", __func__);
+    LOGV("%s: 222(enter)\n", __func__);
     return (RET_INVALID_PARM);
   }
   
@@ -626,12 +637,12 @@ static RESULT AdpfCalculateSharpeningLevel
 
   // initial check
   if (pSharpeningLevelCurve == NULL) {
-    ALOGE("%s: pSharpeningLevelCurve == NULL \n", __func__);
+    LOGV("%s: pSharpeningLevelCurve == NULL \n", __func__);
     return (RET_INVALID_PARM);
   }
 
   if (fSensorGain < 1.0f) {
-    ALOGE("%s: fSensorGain  < 1.0f  \n", __func__);
+    LOGV("%s: fSensorGain  < 1.0f  \n", __func__);
     return (RET_INVALID_PARM);
   }
   uint16_t n    = 0U;
@@ -693,12 +704,12 @@ static RESULT AdpfCalculateDemosaicThLevel
 
   // initial check
   if (pDemosaicThCurve == NULL) {
-    ALOGE("%s: pSharpeningLevelCurve == NULL \n", __func__);
+    LOGV("%s: pSharpeningLevelCurve == NULL \n", __func__);
     return (RET_INVALID_PARM);
   }
 
   if (fSensorGain < 1.0f) {
-    ALOGE("%s: fSensorGain  < 1.0f  \n", __func__);
+    LOGV("%s: fSensorGain  < 1.0f  \n", __func__);
     return (RET_INVALID_PARM);
   }
   uint16_t n    = 0U;
@@ -759,12 +770,12 @@ static RESULT AdpfCalculate3DNRResult(
   if (pCamDsp3DNRSettingProfile == NULL
       || pCamDsp3DNRSettingProfile->Enable== 0
      ) {
-    ALOGE("%s: NULL pointer \n", __func__);
+    LOGV("%s: NULL pointer \n", __func__);
     return (RET_INVALID_PARM);
   }
 
   if (fSensorGain < 1.0f || pCamDsp3DNRSettingProfile->ArraySize < 1) {
-    ALOGE("%s: INVALID_PARM fSensorGain(%f)  ArraySize(%d) \n", __func__,
+    LOGV("%s: INVALID_PARM fSensorGain(%f)  ArraySize(%d) \n", __func__,
          fSensorGain, pCamDsp3DNRSettingProfile->ArraySize);
     return (RET_INVALID_PARM);
   }
@@ -774,7 +785,7 @@ static RESULT AdpfCalculate3DNRResult(
 		|| pChrmSetting->pchrm_weight[i]==NULL 
 		 || pSharpSetting->psrc_shp_weight[i]==NULL )
 	{
-		ALOGE("%s:%d: 3dnr para NULL pointer \n", __func__, __LINE__);
+		LOGV("%s:%d: 3dnr para NULL pointer \n", __func__, __LINE__);
     	return (RET_INVALID_PARM);
 	}
   }
@@ -898,6 +909,219 @@ static RESULT AdpfCalculate3DNRResult(
 }
 
 
+static RESULT AdpfCalculateNew3DNRResult(
+    AdpfContext_t*           pAdpfCtx,
+    const float             fSensorGain,
+    CamNewDsp3DNRProfile_t* pCamNewDsp3DNRProfile,
+    NewDsp3DnrResult_t*     pNewDsp3DnrResult
+) {
+  (void) pAdpfCtx;
+  
+  LOGV( "%s: (enter) \n", __func__);
+
+  // initial check
+  if (pCamNewDsp3DNRProfile == NULL
+      || pCamNewDsp3DNRProfile->enable_3dnr == 0
+     ) {
+    LOGV( "%s: NULL pointer \n", __func__);
+    return (RET_INVALID_PARM);
+  }
+
+  if (fSensorGain < 1.0f || pCamNewDsp3DNRProfile->ArraySize < 1) {
+    LOGV( "%s: INVALID_PARM fSensorGain(%d)  ArraySize(%d) \n", __func__);
+    return (RET_INVALID_PARM);
+  }
+  
+  uint16_t n    = 0U;
+  uint16_t nMax = 0U;
+  float Dgain = fSensorGain;
+  nMax = (pCamNewDsp3DNRProfile->ArraySize - 1U);
+  /* lower range check */
+  if (Dgain < pCamNewDsp3DNRProfile->pgain_Level[0]) {
+    Dgain = pCamNewDsp3DNRProfile->pgain_Level[0];
+  }
+
+  /* upper range check */
+  if (Dgain > pCamNewDsp3DNRProfile->pgain_Level[nMax]) {
+    Dgain = pCamNewDsp3DNRProfile->pgain_Level[nMax];
+  }
+
+  /* find x area */
+  n = 0;
+  while ((Dgain >=  pCamNewDsp3DNRProfile->pgain_Level[n]) && (n <= nMax)) {
+    ++n;
+  }
+  --n;
+
+  /**
+   * If n was larger than nMax, which means fSensorGain lies exactly on the
+  * last interval border, we count fSensorGain to the last interval and
+   * have to decrease n one more time */
+  if (n == nMax) {
+    --n;
+  }
+
+  float sub1 = ABS(pCamNewDsp3DNRProfile->pgain_Level[n] - Dgain);
+  float sub2 = ABS(pCamNewDsp3DNRProfile->pgain_Level[n + 1] - Dgain);
+  n = sub1 < sub2 ? n : n + 1;
+
+  pNewDsp3DnrResult->ynr_time_weight = pCamNewDsp3DNRProfile->ynr.pynr_time_weight_level[n];
+  pNewDsp3DnrResult->ynr_spat_weight = pCamNewDsp3DNRProfile->ynr.pynr_spat_weight_level[n];
+  pNewDsp3DnrResult->uvnr_weight = pCamNewDsp3DNRProfile->uvnr.puvnr_weight_level[n];
+  pNewDsp3DnrResult->sharp_weight = pCamNewDsp3DNRProfile->sharp.psharp_weight_level[n];
+
+  LOGV( "%s: gain=%f, n=%d, ynr_time_weight:%d ynr_spat_weight:%d uvnr_weight:%d sharp_weight:%d\n", 
+  		__func__, Dgain, n,
+		pNewDsp3DnrResult->ynr_time_weight,
+		pNewDsp3DnrResult->ynr_spat_weight,
+		pNewDsp3DnrResult->uvnr_weight,
+		pNewDsp3DnrResult->sharp_weight);
+	 
+  LOGV( "%s: (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+uint16_t AdpfRKLpInterpolate
+(
+	float *src_divided,
+	float *gainArry,
+	uint8_t counts,
+	const float AECgain
+)
+{
+	uint16_t retvalue=0;
+	InterpolateCtx_t InterpolateCtx;
+
+	if(src_divided == NULL){
+		LOGV("%s: src_divided == NULL \n", __func__);
+		return (RET_INVALID_PARM);
+	}
+
+	if(gainArry == NULL){
+		LOGV("%s: gainArry == NULL \n", __func__);
+		return (RET_INVALID_PARM);
+	}
+	
+	InterpolateCtx.size = counts;
+	InterpolateCtx.x_i = AECgain;
+	InterpolateCtx.pX = gainArry;
+	InterpolateCtx.pY = src_divided;
+
+	if(counts!=0)
+	{
+		if(RET_OUTOFRANGE == Interpolate(&InterpolateCtx))
+		{
+			LOGV("%s: Interpolate :out of range!\n",__func__);
+		}
+
+		retvalue = (uint16_t)InterpolateCtx.y_i;
+	}
+
+	return(retvalue);
+
+}
+
+
+/*****************************************************************************
+*AdpfRKLpCalMatrix
+********************************************************************************/
+static RESULT AdpfRKLpCalMatrix
+(
+	AdpfContext_t*          pAdpfCtx,
+    const float             fSensorGain,
+	CamDemosaicLpProfile_t *pRKDLpConf,
+	RKDemosiacLpResult_t   *prkDLpResult
+)
+{
+    (void) pAdpfCtx;
+	uint8_t counts = 6;
+	RESULT result = RET_SUCCESS;
+
+	
+	if (pRKDLpConf == NULL) {
+		LOGV("%s: pRKDLpConf == NULL \n", __func__);
+		return (RET_INVALID_PARM);
+	}
+
+	if(fSensorGain < 1.0f)
+	{
+		LOGV( "%s: AECgain(%f) is invalid\n", __func__,fSensorGain );
+		 return ( RET_INVALID_PARM );
+	}
+
+	if (prkDLpResult == NULL) {
+		LOGV("%s: prkDLpResult == NULL \n", __func__);
+		return (RET_INVALID_PARM);
+	}
+	
+	prkDLpResult->sw_thgrad_divided[0] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thgrad_divided[1] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thgrad_divided[2] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thgrad_divided[3] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thgrad_divided[4] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thH_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thCSC_divided[0] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thCSC_divided[1] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thCSC_divided[2] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thCSC_divided[3] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thCSC_divided[4] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thCSC_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thdiff_divided[0] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thdiff_divided[1] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thdiff_divided[2] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thdiff_divided[3] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thdiff_divided[4] = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->diff_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thVar_divided[0] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided0), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thVar_divided[1] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided1), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thVar_divided[2] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thVar_divided[3] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->sw_thVar_divided[4] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
+
+	return ( result );
+}
+
+static RESULT AdpfCalcRKIESharpFilterCoe
+(
+	AdpfContext_t*           pAdpfCtx,
+    const float             fSensorGain,
+	CamIesharpenProfile_t *pRKIESharpProfile,
+	RKIESharpResult_t *pRKIEsharpResult
+)
+{
+    (void) pAdpfCtx;
+	RESULT result = RET_SUCCESS;
+   	CamIesharpenGridConf_t *pGridConf = NULL;
+
+	if (pRKIESharpProfile == NULL) {
+		LOGV("%s: pRKIESharpProfile == NULL \n", __func__);
+		return (RET_INVALID_PARM);
+	}
+
+	if (fSensorGain < 1.0f) {
+
+		LOGV("%s: sensorgain wrong(enter)\n", __func__);
+		return (RET_INVALID_PARM);
+	}
+  	
+	if (pRKIEsharpResult == NULL) {
+		LOGV("%s: pRKIEsharpResult == NULL \n", __func__);
+		return (RET_INVALID_PARM);
+	}
+	
+	if(fSensorGain <= pRKIESharpProfile->sensorGain){
+		pGridConf = &pRKIESharpProfile->lgridconf;
+	}else{
+		pGridConf = &pRKIESharpProfile->hgridconf;
+	}
+
+	MEMCPY(pRKIEsharpResult->p_grad, pGridConf->p_grad, sizeof(pRKIEsharpResult->p_grad));
+	MEMCPY(pRKIEsharpResult->sharp_factor, pGridConf->sharp_factor, sizeof(pRKIEsharpResult->sharp_factor));
+	MEMCPY(pRKIEsharpResult->line1_filter_coe, pGridConf->line1_filter_coe, sizeof(pRKIEsharpResult->line1_filter_coe));
+	MEMCPY(pRKIEsharpResult->line2_filter_coe, pGridConf->line2_filter_coe, sizeof(pRKIEsharpResult->line2_filter_coe));
+	MEMCPY(pRKIEsharpResult->line3_filter_coe, pGridConf->line3_filter_coe, sizeof(pRKIEsharpResult->line3_filter_coe));
+
+	return result;
+}
+
 /******************************************************************************
  * AdpfApplyConfiguration()
  *****************************************************************************/
@@ -923,7 +1147,7 @@ static RESULT AdpfApplyConfiguration
 
     // initial check
     if (NULL == pConfig->data.db.hCamCalibDb) {
-      ALOGE("%s:  pConfig->data.db.hCamCalibDb NULL", __func__);
+      LOGV("%s:  pConfig->data.db.hCamCalibDb NULL", __func__);
       return (RET_INVALID_PARM);
     }
 
@@ -934,14 +1158,14 @@ static RESULT AdpfApplyConfiguration
                                       pConfig->data.db.height,
                                       pConfig->data.db.framerate);
     if (result != RET_SUCCESS) {
-      ALOGE( "%s: Can't prepare database access\n",  __func__);
+      LOGV( "%s: Can't prepare database access\n",  __func__);
       return (result);
     }
 
     // get dpf-profile from calibration database
     result = CamCalibDbGetDpfProfileByResolution(pAdpfCtx->hCamCalibDb, pAdpfCtx->ResName, &pDpfProfile);
     if (result != RET_SUCCESS) {
-      ALOGE( "%s: Getting DPF profile for resolution %s from calibration database failed (%d)\n",
+      LOGV( "%s: Getting DPF profile for resolution %s from calibration database failed (%d)\n",
             __func__, pAdpfCtx->ResName, result);
       return (result);
     }
@@ -966,7 +1190,7 @@ static RESULT AdpfApplyConfiguration
 	int no_filter=0;
 	result = CamCalibDbGetNoOfFilterProfile(pAdpfCtx->hCamCalibDb, pDpfProfile, &no_filter);
 	if (result != RET_SUCCESS) {
-      ALOGE( "%s: Getting number of filter profile for resolution %s from calibration database failed (%d)\n",
+      LOGV( "%s: Getting number of filter profile for resolution %s from calibration database failed (%d)\n",
             __func__, pAdpfCtx->ResName, result);
       return (result);
     }
@@ -976,17 +1200,18 @@ static RESULT AdpfApplyConfiguration
 			CamFilterProfile_t* pFilterProfile = NULL;
 			result = CamCalibDbGetFilterProfileByIdx(pAdpfCtx->hCamCalibDb, pDpfProfile, i, &pFilterProfile);
 			if (result != RET_SUCCESS) {
-		      ALOGE( "%s: Getting idx(%d) filter profile for resolution %s from calibration database failed (%d)\n",
+		      LOGV( "%s: Getting idx(%d) filter profile for resolution %s from calibration database failed (%d)\n",
 		            __func__, i, pAdpfCtx->ResName, result);
 		      return (result);
 		    }
 		    DCT_ASSERT(NULL != pFilterProfile);
 			pAdpfCtx->FilterProfile[i] = *pFilterProfile;
 		}
+		pAdpfCtx->pFilterProfile = &(pAdpfCtx->FilterProfile[pAdpfCtx->LightMode]);
 	}
-	pAdpfCtx->pFilterProfile = &(pAdpfCtx->FilterProfile[pAdpfCtx->LightMode]);
 	
-    if (pAdpfCtx->pFilterProfile->FilterEnable >= 1.0) {
+	
+    if (pAdpfCtx->pFilterProfile && pAdpfCtx->pFilterProfile->FilterEnable >= 1.0) {
       result = AdpfCalculateDenoiseLevel(pAdpfCtx, pAdpfCtx->gain, &pAdpfCtx->pFilterProfile->DenoiseLevelCurve, &pAdpfCtx->denoise_level);
       RETURN_RESULT_IF_DIFFERENT(result, RET_SUCCESS);
       result = AdpfCalculateSharpeningLevel(pAdpfCtx, pAdpfCtx->gain, &pAdpfCtx->pFilterProfile->SharpeningLevelCurve, &pAdpfCtx->sharp_level);
@@ -1005,10 +1230,25 @@ static RESULT AdpfApplyConfiguration
 	  pAdpfCtx->actives |= ADPF_DEMOSAIC_TH_MASK;
 	}
 
+	if (pAdpfCtx->pFilterProfile && pAdpfCtx->pFilterProfile->DemosaicLpConf.lp_en >= 1) {
+		result = AdpfRKLpCalMatrix(pAdpfCtx, pAdpfCtx->gain, &(pAdpfCtx->pFilterProfile->DemosaicLpConf), &pAdpfCtx->RKDemosaicLpResult);
+		RETURN_RESULT_IF_DIFFERENT( result, RET_SUCCESS );
+		pAdpfCtx->RKDemosaicLpResult.lp_en = 1;
+		pAdpfCtx->RKDemosaicLpResult.rb_filter_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.rb_filter_en;
+		pAdpfCtx->RKDemosaicLpResult.hp_filter_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.hp_filter_en;
+		MEMCPY(pAdpfCtx->RKDemosaicLpResult.lu_divided, pAdpfCtx->pFilterProfile->DemosaicLpConf.lu_divided, sizeof(pAdpfCtx->RKDemosaicLpResult.lu_divided));
+		pAdpfCtx->actives |= ADPF_DEMOSAICLP_MASK;
+	}else{
+		pAdpfCtx->RKDemosaicLpResult.lp_en = 0;
+		pAdpfCtx->RKDemosaicLpResult.rb_filter_en = 0;
+		pAdpfCtx->RKDemosaicLpResult.hp_filter_en = 0;
+		pAdpfCtx->actives |= ADPF_DEMOSAICLP_MASK;
+	}
+		
 	int no_3dnr=0;
 	result = CamCalibDbGetNoOfDsp3DNRSetting(pAdpfCtx->hCamCalibDb, pDpfProfile, &no_3dnr);
 	if (result != RET_SUCCESS) {
-      ALOGE( "%s: Getting number of 3ndr profile for resolution %s from calibration database failed (%d)\n",
+      LOGV( "%s: Getting number of 3ndr profile for resolution %s from calibration database failed (%d)\n",
             __func__, pAdpfCtx->ResName, result);
       return (result);
     }
@@ -1018,18 +1258,17 @@ static RESULT AdpfApplyConfiguration
 			CamDsp3DNRSettingProfile_t* pDsp3dnrSetting = NULL;
 			result = CamCalibDbGetDsp3DNRByIdx(pAdpfCtx->hCamCalibDb, pDpfProfile, i, &pDsp3dnrSetting);
 			if (result != RET_SUCCESS) {
-		      ALOGE( "%s: Getting idx(%d)3ndr profile for resolution %s from calibration database failed (%d)\n",
+		      LOGV( "%s: Getting idx(%d)3ndr profile for resolution %s from calibration database failed (%d)\n",
 		            __func__, i, pAdpfCtx->ResName, result);
 		      return (result);
 		    }
 		    DCT_ASSERT(NULL != pDsp3dnrSetting);
 			pAdpfCtx->Dsp3DNRSettingProfile[i] = *pDsp3dnrSetting;
 		}
+		pAdpfCtx->pDsp3DNRSettingProfile = &(pAdpfCtx->Dsp3DNRSettingProfile[pAdpfCtx->LightMode]);
 	}
-
-	pAdpfCtx->pDsp3DNRSettingProfile = &(pAdpfCtx->Dsp3DNRSettingProfile[pAdpfCtx->LightMode]);
 	
-	if (pAdpfCtx->pDsp3DNRSettingProfile->Enable == 1) {
+	if (pAdpfCtx->pDsp3DNRSettingProfile && pAdpfCtx->pDsp3DNRSettingProfile->Enable == 1) {
 	  pAdpfCtx->Dsp3DnrResult.Enable = 1;
       pAdpfCtx->Dsp3DnrResult.luma_sp_nr_en = pAdpfCtx->pDsp3DNRSettingProfile->sDefaultLevelSetting.luma_sp_nr_en;
       pAdpfCtx->Dsp3DnrResult.luma_te_nr_en = pAdpfCtx->pDsp3DNRSettingProfile->sDefaultLevelSetting.luma_te_nr_en;
@@ -1048,6 +1287,65 @@ static RESULT AdpfApplyConfiguration
 	  pAdpfCtx->Dsp3DnrResult.shp_en = 0;
 	}
 
+	// new 3dnr para
+	int no_new_3dnr=0;
+	result = CamCalibDbGetNoOfNewDsp3DNRSetting(pAdpfCtx->hCamCalibDb, pDpfProfile, &no_new_3dnr);
+	if (result != RET_SUCCESS) {
+      LOGV(  "%s: Getting number of new 3ndr profile for resolution %s from calibration database failed (%d)\n",
+            __func__, pAdpfCtx->ResName, result);
+      return (result);
+    }
+	if(no_new_3dnr){
+		for(int i=0; i<no_new_3dnr && i<LIGHT_MODE_MAX ; i++){
+			CamNewDsp3DNRProfile_t* pNewDsp3dnrSetting = NULL;
+			result = CamCalibDbGetNewDsp3DNRByIdx(pAdpfCtx->hCamCalibDb, pDpfProfile, i, &pNewDsp3dnrSetting);
+			if (result != RET_SUCCESS) {
+		      LOGV(  "%s: Getting idx(%d) new 3ndr profile for resolution %s from calibration database failed (%d)\n",
+		            __func__, i, pAdpfCtx->ResName, result);
+		      return (result);
+		    }
+		    DCT_ASSERT(NULL != pNewDsp3dnrSetting);
+			pAdpfCtx->newDsp3DNRProfile[i] = *pNewDsp3dnrSetting;
+		}
+	}
+	pAdpfCtx->pNew3DNRProfile = &(pAdpfCtx->newDsp3DNRProfile[pAdpfCtx->LightMode]);
+	
+	if (pAdpfCtx->pNew3DNRProfile->enable_3dnr == 1) {
+	  pAdpfCtx->NewDsp3DnrResult.enable_3dnr = 1;
+      pAdpfCtx->NewDsp3DnrResult.enable_dpc = pAdpfCtx->pNew3DNRProfile->enable_dpc;
+      pAdpfCtx->NewDsp3DnrResult.enable_ynr = pAdpfCtx->pNew3DNRProfile->ynr.enable_ynr;
+      pAdpfCtx->NewDsp3DnrResult.enable_tnr = pAdpfCtx->pNew3DNRProfile->ynr.enable_tnr;
+	  pAdpfCtx->NewDsp3DnrResult.enable_iir = pAdpfCtx->pNew3DNRProfile->ynr.enable_iir;
+	  pAdpfCtx->NewDsp3DnrResult.enable_uvnr = pAdpfCtx->pNew3DNRProfile->uvnr.enable_uvnr;
+	  pAdpfCtx->NewDsp3DnrResult.enable_sharp = pAdpfCtx->pNew3DNRProfile->sharp.enable_sharp;
+      result = AdpfCalculateNew3DNRResult(pAdpfCtx, pAdpfCtx->gain, pAdpfCtx->pNew3DNRProfile, &pAdpfCtx->NewDsp3DnrResult);
+      RETURN_RESULT_IF_DIFFERENT(result, RET_SUCCESS);
+	  
+	}else{
+	  pAdpfCtx->NewDsp3DnrResult.enable_3dnr = 0;
+      pAdpfCtx->NewDsp3DnrResult.enable_dpc = 0;
+      pAdpfCtx->NewDsp3DnrResult.enable_ynr = 0;
+      pAdpfCtx->NewDsp3DnrResult.enable_tnr = 0;
+	  pAdpfCtx->NewDsp3DnrResult.enable_iir = 0;
+	  pAdpfCtx->NewDsp3DnrResult.enable_uvnr = 0;
+	  pAdpfCtx->NewDsp3DnrResult.enable_sharp = 0;
+	}
+	
+	CamIesharpenProfile_t *pRkIeSharpenProfile = NULL;
+    result = CamCalibDbGetRKsharpenProfileByResolution( pAdpfCtx->hCamCalibDb, pAdpfCtx->ResName, &pRkIeSharpenProfile );
+    if (pRkIeSharpenProfile != NULL) {
+        pAdpfCtx->rkSharpenProfile = *pRkIeSharpenProfile;
+    }
+	if(pAdpfCtx->rkSharpenProfile.iesharpen_en){
+        result = AdpfCalcRKIESharpFilterCoe(pAdpfCtx, pAdpfCtx->gain, &(pAdpfCtx->rkSharpenProfile), &pAdpfCtx->RKIESharpResult);
+        RETURN_RESULT_IF_DIFFERENT( result, RET_SUCCESS );
+		pAdpfCtx->RKIESharpResult.iesharpen_en = 1;
+		pAdpfCtx->actives |= ADPF_RKIESHARP_MASK;
+    }else{
+		pAdpfCtx->RKIESharpResult.iesharpen_en = 0;
+		pAdpfCtx->actives |= ADPF_RKIESHARP_MASK;
+    }
+	
     switch (pDpfProfile->nll_segmentation) {
       case 0U:
         pAdpfCtx->Nll.xScale = CAMERIC_NLL_SCALE_LINEAR;
@@ -1056,7 +1354,7 @@ static RESULT AdpfApplyConfiguration
         pAdpfCtx->Nll.xScale = CAMERIC_NLL_SCALE_LOGARITHMIC;
         break;
       default:
-        ALOGE( "%s: NLL x-scale not supported (%d)\n", __func__, pDpfProfile->nll_segmentation);
+        LOGV( "%s: NLL x-scale not supported (%d)\n", __func__, pDpfProfile->nll_segmentation);
         return (RET_OUTOFRANGE);
     }
 
@@ -1080,14 +1378,14 @@ static RESULT AdpfApplyConfiguration
 
     result = AdpfCalculateNllCoefficients(pAdpfCtx, pConfig->fSensorGain, &pAdpfCtx->Nll);
     if (result != RET_SUCCESS) {
-	ALOGE("%s: (enter) AdpfCalculateNllCoefficients failed\n", __func__);
+	LOGV("%s: (enter) AdpfCalculateNllCoefficients failed\n", __func__);
       return (result);
     }
     int32_t i;
     for (i = 0; i < CAMERIC_DPF_MAX_NLF_COEFFS; i++)
       pAdpfCtx->Nll.NllCoeff[i] >>= 2;
   } else {
-    ALOGE( "%s: unsupported ADPF configuration\n",  __func__);
+    LOGV( "%s: unsupported ADPF configuration\n",  __func__);
     return (RET_OUTOFRANGE);
   }
 
@@ -1106,7 +1404,7 @@ static RESULT AdpfApplyConfiguration
                                        &pAdpfCtx->DpfMode.SpatialG,
                                        &pAdpfCtx->DpfMode.SpatialRB);
   if (result != RET_SUCCESS) {
-    ALOGE( "%s: Initial calcultion of spatial weights failed (%d)\n",  __func__, result);
+    LOGV( "%s: Initial calcultion of spatial weights failed (%d)\n",  __func__, result);
     return (result);
   }
 
@@ -1122,7 +1420,7 @@ static RESULT AdpfApplyConfiguration
                                        pAdpfCtx->fDiv,
                                        &pAdpfCtx->DynInvStrength);
         if (result != RET_SUCCESS) {
-          ALOGE("%s : AdpfCalculateStrength failed",
+          LOGV("%s : AdpfCalculateStrength failed",
                 __func__);
           return (result);
         }
@@ -1131,7 +1429,7 @@ static RESULT AdpfApplyConfiguration
         pAdpfCtx->DynInvStrength = pConfig->dynInvStrength;
         break;
       default:
-        ALOGE("%s: pConfig->mode: %d isn't support",
+        LOGV("%s: pConfig->mode: %d isn't support",
               __func__, pConfig->mode);
         break;
     }
@@ -1232,7 +1530,7 @@ RESULT AdpfInit
   /* allocate auto exposure control context */
   pAdpfCtx = (AdpfContext_t*)malloc(sizeof(AdpfContext_t));
   if (NULL == pAdpfCtx) {
-    ALOGE( "%s: Can't allocate ADPF context\n",  __func__);
+    LOGV( "%s: Can't allocate ADPF context\n",  __func__);
     return (RET_OUTOFMEM);
   }
 
@@ -1318,7 +1616,7 @@ RESULT AdpfConfigure
     /* apply new configuration */
     result = AdpfApplyConfiguration(pAdpfCtx, pConfig);
     if (result != RET_SUCCESS) {
-      ALOGE( "%s: Can't configure CamerIc DPF (%d)\n",  __func__, result);
+      LOGV( "%s: Can't configure CamerIc DPF (%d)\n",  __func__, result);
       return (result);
     }
   }
@@ -1429,6 +1727,55 @@ RESULT AdpfRun
 	pAdpfCtx->actives |= ADPF_DSP_3DNR_MASK;
   }
 
+  
+  //new 3dnr para calc
+  if (pAdpfCtx->pNew3DNRProfile->enable_3dnr) {
+	 if (dgain > 0.15f || pAdpfCtx->LightMode != LightMode){
+		 result = AdpfCalculateNew3DNRResult(pAdpfCtx, gain, pAdpfCtx->pNew3DNRProfile, &pAdpfCtx->NewDsp3DnrResult);
+		 RETURN_RESULT_IF_DIFFERENT(result, RET_SUCCESS);
+		 pAdpfCtx->actives |= ADPF_NEW_DSP_3DNR_MASK;
+	 }
+   }else{
+	 pAdpfCtx->NewDsp3DnrResult.enable_3dnr = 0;
+	 pAdpfCtx->NewDsp3DnrResult.enable_dpc = 0;
+	 pAdpfCtx->NewDsp3DnrResult.enable_ynr = 0;
+	 pAdpfCtx->NewDsp3DnrResult.enable_tnr = 0;
+	 pAdpfCtx->NewDsp3DnrResult.enable_iir = 0;
+	 pAdpfCtx->NewDsp3DnrResult.enable_uvnr = 0;
+	 pAdpfCtx->NewDsp3DnrResult.enable_sharp = 0;
+	 pAdpfCtx->actives |= ADPF_NEW_DSP_3DNR_MASK;
+   }
+
+  //rk demosaic LP 
+  if (pAdpfCtx->pFilterProfile->DemosaicLpConf.lp_en == 1) {
+  	if (dgain > 0.15f || pAdpfCtx->LightMode != LightMode){
+		result = AdpfRKLpCalMatrix(pAdpfCtx, gain, &(pAdpfCtx->pFilterProfile->DemosaicLpConf), &pAdpfCtx->RKDemosaicLpResult);
+		RETURN_RESULT_IF_DIFFERENT( result, RET_SUCCESS );
+		pAdpfCtx->RKDemosaicLpResult.lp_en = 1;
+		pAdpfCtx->RKDemosaicLpResult.rb_filter_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.rb_filter_en;
+		pAdpfCtx->RKDemosaicLpResult.hp_filter_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.hp_filter_en;
+		pAdpfCtx->actives |= ADPF_DEMOSAICLP_MASK;
+	}
+  }else{
+	pAdpfCtx->RKDemosaicLpResult.lp_en = 0;
+	pAdpfCtx->RKDemosaicLpResult.rb_filter_en = 0;
+	pAdpfCtx->RKDemosaicLpResult.hp_filter_en = 0;
+	pAdpfCtx->actives |= ADPF_DEMOSAICLP_MASK;
+  }
+
+  //rk IE sharpen
+  if (pAdpfCtx->rkSharpenProfile.iesharpen_en == 1) {
+  	if (dgain > 0.15f || pAdpfCtx->LightMode != LightMode){
+		result = AdpfCalcRKIESharpFilterCoe(pAdpfCtx, gain, &(pAdpfCtx->rkSharpenProfile), &pAdpfCtx->RKIESharpResult);
+        RETURN_RESULT_IF_DIFFERENT( result, RET_SUCCESS );
+		pAdpfCtx->RKIESharpResult.iesharpen_en = 1;
+		pAdpfCtx->actives |= ADPF_RKIESHARP_MASK;
+	}
+  }else{
+	pAdpfCtx->RKIESharpResult.iesharpen_en = 0;
+	pAdpfCtx->actives |= ADPF_RKIESHARP_MASK;
+  }
+  
   if (dgain > 0.15f || pAdpfCtx->LightMode != LightMode){
   	pAdpfCtx->gain = gain;
 	pAdpfCtx->LightMode = LightMode;
@@ -1487,6 +1834,35 @@ RESULT AdpfGetResult
 		pAdpfCtx->gain, result->demosaic_th);
   }
 
+  if(pAdpfCtx->actives & ADPF_DEMOSAICLP_MASK) 
+  {
+	result->RKDemosaicLpResult = pAdpfCtx->RKDemosaicLpResult;
+	result->actives |= ADPF_DEMOSAICLP_MASK;
+    //pAdpfCtx->actives &= ~ADPF_DEMOSAIC_TH_MASK;	
+	LOGV( "%s: gain(%f) demosaiclp_en(%d) thgrad: %d, %d, %d, %d, %d\n", __func__, 
+		pAdpfCtx->gain, result->RKDemosaicLpResult.lp_en, 
+		result->RKDemosaicLpResult.sw_thgrad_divided[0],
+		result->RKDemosaicLpResult.sw_thgrad_divided[1],
+		result->RKDemosaicLpResult.sw_thgrad_divided[2],
+		result->RKDemosaicLpResult.sw_thgrad_divided[3],
+		result->RKDemosaicLpResult.sw_thgrad_divided[4]);
+  }
+
+  if(pAdpfCtx->actives & ADPF_RKIESHARP_MASK) 
+  {
+	result->RKIESharpResult = pAdpfCtx->RKIESharpResult;
+	result->actives |= ADPF_RKIESHARP_MASK;
+    //pAdpfCtx->actives &= ~ADPF_DEMOSAIC_TH_MASK;	
+	LOGV( "%s: gain(%f) rkiesharp_en(%d) thgrad: %d, %d, %d, %d, %d, %d\n", __func__, 
+		pAdpfCtx->gain, result->RKIESharpResult.iesharpen_en, 
+		result->RKIESharpResult.line1_filter_coe[0],
+		result->RKIESharpResult.line1_filter_coe[1],
+		result->RKIESharpResult.line1_filter_coe[2],
+		result->RKIESharpResult.line1_filter_coe[3],
+		result->RKIESharpResult.line1_filter_coe[4],
+		result->RKIESharpResult.line1_filter_coe[5]);
+  }
+  
   //if (pAdpfCtx->actives & ADPF_DSP_3DNR_MASK) 
   {
 	  result->Dsp3DnrResult = pAdpfCtx->Dsp3DnrResult;
@@ -1532,6 +1908,20 @@ RESULT AdpfGetResult
 	 
   }
 
+  //if (pAdpfCtx->actives & ADPF_NEW_DSP_3DNR_MASK) 
+  {
+	  result->NewDsp3DnrResult = pAdpfCtx->NewDsp3DnrResult;
+	  result->actives |= ADPF_NEW_DSP_3DNR_MASK;
+	  pAdpfCtx->actives &= ~ADPF_NEW_DSP_3DNR_MASK;
+	  LOGV( "%s: gain=%f, ynr_time_weight:%d ynr_spat_weight:%d uvnr_weight:%d sharp_weight:%d\n", 
+  		__func__, pAdpfCtx->gain,
+  		result->NewDsp3DnrResult.ynr_time_weight,
+		result->NewDsp3DnrResult.ynr_spat_weight,
+		result->NewDsp3DnrResult.uvnr_weight,
+		result->NewDsp3DnrResult.sharp_weight);
+	 
+  }
+  
   return RET_SUCCESS;
 }
 

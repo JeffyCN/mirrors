@@ -180,6 +180,28 @@ RESULT cam_ia10_isp_dpf_strength_config
     CameraIcDpfStrengthConfig_t* dpf_streng_result
 );
 
+RESULT cam_ia10_isp_demosaicLp_config
+(
+	CamCalibDbHandle_t hCamCalibDb,
+    enum HAL_ISP_ACTIVE_MODE enable_mode,
+    struct HAL_ISP_demosaiclp_cfg_s* demosaicLP_cfg,
+    uint16_t drv_width,
+    uint16_t drv_height,
+    CamerIcRKDemosaicLP_t* demosaicLP_result
+) ;
+
+RESULT cam_ia10_isp_rkIEsharp_config
+(
+	CamCalibDbHandle_t hCamCalibDb,
+    enum HAL_ISP_ACTIVE_MODE enable_mode,
+    struct HAL_ISP_RKIEsharp_cfg_s* rkIEsharp_cfg,
+    uint16_t drv_width,
+    uint16_t drv_height,
+    CamerIcRKIeSharpConfig_t* rkIEsharp_result
+) ;
+
+
+
 #ifdef __cplusplus
 }
 #endif

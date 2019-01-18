@@ -1243,6 +1243,8 @@ typedef struct CamIesharpenProfile_s
     uint8_t uv_gauss_noise_coe_ArraySize;
     uint32_t* uv_gauss_other_coe;//uv channel faussian filter 3x5 in other point
     uint8_t uv_gauss_other_coe_ArraySize;
+
+	float sensorGain;
 } CamIesharpenProfile_t;
 
 

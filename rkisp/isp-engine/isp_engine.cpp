@@ -243,6 +243,65 @@ bool IspEngine::getIAResult(struct CamIA10_Results* ia_results) {
             ia_results->active |= CAMIA10_DSP_3DNR_MASK;
         }
 
+		if ((ia_results->adpf.actives & ADPF_NEW_DSP_3DNR_MASK) &&
+	        (mNew3DnrEnabled == HAL_ISP_ACTIVE_DEFAULT)) {
+	        ia_results->active |= CAMIA10_NEW_DSP_3DNR_MASK;
+	    }
+		
+		if (ia_results->adpf.actives & ADPF_DEMOSAICLP_MASK)
+        {
+			demosaiclp_cfg.lp_en = ia_results->adpf.RKDemosaicLpResult.lp_en;
+			demosaiclp_cfg.hp_filter_en = ia_results->adpf.RKDemosaicLpResult.hp_filter_en;
+			demosaiclp_cfg.rb_filter_en = ia_results->adpf.RKDemosaicLpResult.rb_filter_en;
+			memcpy(demosaiclp_cfg.lu_divided, 
+				ia_results->adpf.RKDemosaicLpResult.lu_divided, 
+				sizeof(demosaiclp_cfg.lu_divided));
+			memcpy(demosaiclp_cfg.thCSC_divided, 
+				ia_results->adpf.RKDemosaicLpResult.sw_thCSC_divided , 
+				sizeof(demosaiclp_cfg.thCSC_divided));
+			memcpy(demosaiclp_cfg.diff_divided, 
+				ia_results->adpf.RKDemosaicLpResult.sw_thdiff_divided , 
+				sizeof(demosaiclp_cfg.diff_divided));
+			memcpy(demosaiclp_cfg.thH_divided, 
+				ia_results->adpf.RKDemosaicLpResult.sw_thgrad_divided , 
+				sizeof(demosaiclp_cfg.thH_divided));
+			memcpy(demosaiclp_cfg.varTh_divided, 
+				ia_results->adpf.RKDemosaicLpResult.sw_thVar_divided , 
+				sizeof(demosaiclp_cfg.varTh_divided));
+			mDemosaicLPEnable = HAL_ISP_ACTIVE_SETTING;
+            mDemosaicLPNeededUpdate = BOOL_TRUE;
+            runISPManual(ia_results, BOOL_FALSE);
+            ia_results->rkDemosaicLP.lp_en = demosaiclp_cfg.lp_en;
+            ia_results->active |= CAMIA10_DEMOSAICLP_MASK;
+			
+		}
+
+		if (ia_results->adpf.actives & ADPF_RKIESHARP_MASK)
+        {
+			rkIEsharp_cfg.iesharpen_en = ia_results->adpf.RKIESharpResult.iesharpen_en;
+			memcpy(rkIEsharp_cfg.p_grad, 
+				ia_results->adpf.RKIESharpResult.p_grad , 
+				sizeof(rkIEsharp_cfg.p_grad));
+			memcpy(rkIEsharp_cfg.sharp_factor, 
+				ia_results->adpf.RKIESharpResult.sharp_factor , 
+				sizeof(rkIEsharp_cfg.sharp_factor));
+			memcpy(rkIEsharp_cfg.line1_filter_coe, 
+				ia_results->adpf.RKIESharpResult.line1_filter_coe , 
+				sizeof(rkIEsharp_cfg.line1_filter_coe));
+			memcpy(rkIEsharp_cfg.line2_filter_coe, 
+				ia_results->adpf.RKIESharpResult.line2_filter_coe , 
+				sizeof(rkIEsharp_cfg.line2_filter_coe));
+			memcpy(rkIEsharp_cfg.line3_filter_coe, 
+				ia_results->adpf.RKIESharpResult.line3_filter_coe , 
+				sizeof(rkIEsharp_cfg.line3_filter_coe));
+			mrkIEsharpEnable = HAL_ISP_ACTIVE_SETTING;
+            mrkIEsharpNeededUpdate = BOOL_TRUE;
+            runISPManual(ia_results, BOOL_FALSE);
+            ia_results->rkIEsharp.iesharpen_en = rkIEsharp_cfg.iesharpen_en;
+            ia_results->active |= CAMIA10_RKIESHARP_MASK;
+			
+		}
+
     }
 
     if (mCamIAEngine->getAWDRResults(&ia_results->awdr) == RET_SUCCESS)
@@ -936,6 +995,101 @@ bool IspEngine::configureISP(const void* config)
         }
     }
 
+	if (cfg->updated_mask & HAL_ISP_3DNR_MASK) {
+	    if (cfg->enabled[HAL_ISP_3DNR_ID] && cfg->dsp_3dnr_cfg) 
+		{
+	      m3DnrNeededUpdate = BOOL_TRUE;
+	      m3DnrEnabled = HAL_ISP_ACTIVE_SETTING;
+	      dsp_3dnr_cfg = *cfg->dsp_3dnr_cfg;
+	    } 
+		else if (!cfg->enabled[HAL_ISP_3DNR_ID]) 
+    	{
+	      m3DnrNeededUpdate = BOOL_TRUE;
+	      m3DnrEnabled = HAL_ISP_ACTIVE_FALSE;
+	    } 
+		else if (cfg->enabled[HAL_ISP_3DNR_ID]) 
+	    {
+	      m3DnrNeededUpdate = BOOL_TRUE;
+	      m3DnrEnabled = HAL_ISP_ACTIVE_DEFAULT;
+	    } 
+		else 
+	    {
+	      m3DnrNeededUpdate = BOOL_FALSE;
+	      ALOGE("%s:can't config dsp 3dnr!", __func__);
+	    }
+	}
+
+	if (cfg->updated_mask & HAL_ISP_NEW_3DNR_MASK) {
+	    if (cfg->enabled[HAL_ISP_NEW_3DNR_ID] && cfg->newDsp3DNR_cfg) 
+		{
+	      mNew3DnrNeededUpdate = BOOL_TRUE;
+	      mNew3DnrEnabled = HAL_ISP_ACTIVE_SETTING;
+	      new_dsp_3dnr_cfg = *cfg->newDsp3DNR_cfg;
+	    } 
+		else if (!cfg->enabled[HAL_ISP_NEW_3DNR_ID]) 
+		{
+	      mNew3DnrNeededUpdate = BOOL_TRUE;
+	      mNew3DnrEnabled = HAL_ISP_ACTIVE_FALSE;
+	    } 
+		else if (cfg->enabled[HAL_ISP_NEW_3DNR_ID]) 
+		{
+	      mNew3DnrNeededUpdate = BOOL_TRUE;
+	      mNew3DnrEnabled = HAL_ISP_ACTIVE_DEFAULT;
+	    } 
+		else 
+		{
+	      mNew3DnrNeededUpdate = BOOL_FALSE;
+	      ALOGE("%s:can't config new dsp 3dnr!", __func__);
+	    }
+  	}
+
+	if (cfg->updated_mask & HAL_ISP_DEMOSAICLP_MASK) {
+		if (cfg->enabled[HAL_ISP_DEMOSAICLP_ID] && cfg->demosaicLP_cfg) 
+		{
+	      mDemosaicLPNeededUpdate = BOOL_TRUE;
+	      mDemosaicLPEnable = HAL_ISP_ACTIVE_SETTING;
+	      demosaiclp_cfg = *cfg->demosaicLP_cfg;
+	    } 
+		else if (!cfg->enabled[HAL_ISP_DEMOSAICLP_ID]) 
+		{
+	      mDemosaicLPNeededUpdate = BOOL_TRUE;
+	      mDemosaicLPEnable = HAL_ISP_ACTIVE_FALSE;
+	    } 
+		else if (cfg->enabled[HAL_ISP_DEMOSAICLP_ID]) 
+		{
+	      mDemosaicLPNeededUpdate = BOOL_TRUE;
+	      mDemosaicLPEnable = HAL_ISP_ACTIVE_DEFAULT;
+	    } 
+		else 
+		{
+	      mDemosaicLPNeededUpdate = BOOL_FALSE;
+	      ALOGE("%s:can't config new dsp 3dnr!", __func__);
+	    }
+	}
+
+	if (cfg->updated_mask & HAL_ISP_RK_IESHARP_MASK) {
+		if (cfg->enabled[HAL_ISP_RKIESHARP_ID] && cfg->rkIEsharp_cfg) 
+		{
+	      mrkIEsharpNeededUpdate = BOOL_TRUE;
+	      mrkIEsharpEnable = HAL_ISP_ACTIVE_SETTING;
+	      rkIEsharp_cfg = *cfg->rkIEsharp_cfg;
+	    } 
+		else if (!cfg->enabled[HAL_ISP_RKIESHARP_ID]) 
+		{
+	      mrkIEsharpNeededUpdate = BOOL_TRUE;
+	      mrkIEsharpEnable = HAL_ISP_ACTIVE_FALSE;
+	    } 
+		else if (cfg->enabled[HAL_ISP_RKIESHARP_ID]) 
+		{
+	      mrkIEsharpNeededUpdate = BOOL_TRUE;
+	      mrkIEsharpEnable = HAL_ISP_ACTIVE_DEFAULT;
+	    } 
+		else 
+		{
+	      mrkIEsharpNeededUpdate = BOOL_FALSE;
+	      ALOGE("%s:can't config new dsp 3dnr!", __func__);
+	    }
+	}
     /* should reconfig 3A algorithm ?*/
 config_end:
     osMutexUnlock(&mApiLock);
@@ -1386,6 +1540,39 @@ bool IspEngine::runISPManual(struct CamIA10_Results* ia_results, bool_t lock)
         mWdrNeededUpdate = BOOL_FALSE;
     }
 
+	if (m3DnrNeededUpdate) 
+	{
+        manCfg.dsp_3dnr_cfg = &dsp_3dnr_cfg;
+        manCfg.updated_mask |= HAL_ISP_3DNR_MASK;
+        manCfg.enabled[HAL_ISP_3DNR_ID] = m3DnrEnabled;
+        m3DnrNeededUpdate = BOOL_FALSE;
+    }
+  
+    /*new 3dnr */
+    if (mNew3DnrNeededUpdate) 
+	{
+        manCfg.newDsp3DNR_cfg = &new_dsp_3dnr_cfg;
+        manCfg.updated_mask |= HAL_ISP_NEW_3DNR_MASK;
+        manCfg.enabled[HAL_ISP_NEW_3DNR_ID] = mNew3DnrEnabled;
+        mNew3DnrNeededUpdate = BOOL_FALSE;
+    }
+  
+	if (mDemosaicLPNeededUpdate)
+	{
+		manCfg.demosaicLP_cfg = &demosaiclp_cfg;
+		manCfg.updated_mask |= HAL_ISP_DEMOSAICLP_MASK;
+		manCfg.enabled[HAL_ISP_DEMOSAICLP_ID] = mDemosaicLPEnable;
+		mDemosaicLPNeededUpdate = BOOL_FALSE;
+	}
+
+	if (mrkIEsharpNeededUpdate)
+	{
+		manCfg.rkIEsharp_cfg = &rkIEsharp_cfg;
+		manCfg.updated_mask |= HAL_ISP_RK_IESHARP_MASK;
+		manCfg.enabled[HAL_ISP_RKIESHARP_ID] = mrkIEsharpEnable;
+		mrkIEsharpNeededUpdate = BOOL_FALSE;
+	}
+
     if (lock)
         osMutexUnlock(&mApiLock);
     if (mCamIAEngine.get() &&
@@ -1648,10 +1835,72 @@ bool IspEngine::runIA(struct CamIA10_DyCfg* ia_dcfg,
                 ia_results->active |= CAMIA10_BDM_MASK;
             }
 
-            if (ia_results->adpf.actives & ADPF_DSP_3DNR_MASK)
+            if ((ia_results->adpf.actives & ADPF_DSP_3DNR_MASK) &&
+				(m3DnrEnabled == HAL_ISP_ACTIVE_DEFAULT) )
             {
                 ia_results->active |= CAMIA10_DSP_3DNR_MASK;
             }
+
+			if ((ia_results->adpf.actives & ADPF_NEW_DSP_3DNR_MASK) &&
+		        (mNew3DnrEnabled == HAL_ISP_ACTIVE_DEFAULT)) {
+		        ia_results->active |= CAMIA10_NEW_DSP_3DNR_MASK;
+		    }
+		
+			if (ia_results->adpf.actives & ADPF_DEMOSAICLP_MASK)
+	        {
+				demosaiclp_cfg.lp_en = ia_results->adpf.RKDemosaicLpResult.lp_en;
+				demosaiclp_cfg.hp_filter_en = ia_results->adpf.RKDemosaicLpResult.hp_filter_en;
+				demosaiclp_cfg.rb_filter_en = ia_results->adpf.RKDemosaicLpResult.rb_filter_en;
+
+				memcpy(demosaiclp_cfg.lu_divided, 
+					ia_results->adpf.RKDemosaicLpResult.lu_divided, 
+					sizeof(demosaiclp_cfg.lu_divided));
+				memcpy(demosaiclp_cfg.thCSC_divided, 
+					ia_results->adpf.RKDemosaicLpResult.sw_thCSC_divided , 
+					sizeof(demosaiclp_cfg.thCSC_divided));
+				memcpy(demosaiclp_cfg.diff_divided, 
+					ia_results->adpf.RKDemosaicLpResult.sw_thdiff_divided , 
+					sizeof(demosaiclp_cfg.diff_divided));
+				memcpy(demosaiclp_cfg.thH_divided, 
+					ia_results->adpf.RKDemosaicLpResult.sw_thgrad_divided , 
+					sizeof(demosaiclp_cfg.thH_divided));
+				memcpy(demosaiclp_cfg.varTh_divided, 
+					ia_results->adpf.RKDemosaicLpResult.sw_thVar_divided , 
+					sizeof(demosaiclp_cfg.varTh_divided));
+			
+				mDemosaicLPEnable = HAL_ISP_ACTIVE_SETTING;
+	            mDemosaicLPNeededUpdate = BOOL_TRUE;
+	            runISPManual(ia_results, BOOL_FALSE);
+	            ia_results->rkDemosaicLP.lp_en = 1;
+	            ia_results->active |= CAMIA10_DEMOSAICLP_MASK;
+				
+			}
+
+			if (ia_results->adpf.actives & ADPF_RKIESHARP_MASK)
+	        {
+				rkIEsharp_cfg.iesharpen_en = ia_results->adpf.RKIESharpResult.iesharpen_en;
+				memcpy(rkIEsharp_cfg.p_grad, 
+					ia_results->adpf.RKIESharpResult.p_grad , 
+					sizeof(rkIEsharp_cfg.p_grad));
+				memcpy(rkIEsharp_cfg.sharp_factor, 
+					ia_results->adpf.RKIESharpResult.sharp_factor , 
+					sizeof(rkIEsharp_cfg.sharp_factor));
+				memcpy(rkIEsharp_cfg.line1_filter_coe, 
+					ia_results->adpf.RKIESharpResult.line1_filter_coe , 
+					sizeof(rkIEsharp_cfg.line1_filter_coe));
+				memcpy(rkIEsharp_cfg.line2_filter_coe, 
+					ia_results->adpf.RKIESharpResult.line2_filter_coe , 
+					sizeof(rkIEsharp_cfg.line2_filter_coe));
+				memcpy(rkIEsharp_cfg.line3_filter_coe, 
+					ia_results->adpf.RKIESharpResult.line3_filter_coe , 
+					sizeof(rkIEsharp_cfg.line3_filter_coe));
+				mrkIEsharpEnable = HAL_ISP_ACTIVE_SETTING;
+	            mrkIEsharpNeededUpdate = BOOL_TRUE;
+	            runISPManual(ia_results, BOOL_FALSE);
+	            ia_results->rkIEsharp.iesharpen_en = 1;
+	            ia_results->active |= CAMIA10_RKIESHARP_MASK;
+				
+			}
 
         }
 

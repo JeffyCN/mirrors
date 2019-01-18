@@ -1559,6 +1559,239 @@ RESULT cam_ia10_isp_dpf_strength_config
   return result;
 }
 
+RESULT cam_ia10_isp_demosaicLp_config
+(
+	CamCalibDbHandle_t hCamCalibDb,
+    enum HAL_ISP_ACTIVE_MODE enable_mode,
+    struct HAL_ISP_demosaiclp_cfg_s* demosaicLP_cfg,
+    uint16_t drv_width,
+    uint16_t drv_height,
+    CamerIcRKDemosaicLP_t* demosaicLP_result
+) 
+{
+  RESULT result = RET_SUCCESS;
+  ISP_CHECK_NULL(demosaicLP_result);
+  if (enable_mode == HAL_ISP_ACTIVE_FALSE) {
+    demosaicLP_result->lp_en = BOOL_FALSE;
+  } else if (enable_mode == HAL_ISP_ACTIVE_SETTING) {
+	ISP_CHECK_NULL(demosaicLP_cfg);
+	demosaicLP_result->lp_en = demosaicLP_cfg->lp_en;
+	demosaicLP_result->use_old_lp = demosaicLP_cfg->use_old_lp;
+	demosaicLP_result->rb_filter_en = demosaicLP_cfg->rb_filter_en;
+	demosaicLP_result->hp_filter_en = demosaicLP_cfg->hp_filter_en;
+	demosaicLP_result->edge_level_sel = demosaicLP_cfg->edge_level_sel;
+	demosaicLP_result->flat_level_sel = demosaicLP_cfg->flat_level_sel;
+	demosaicLP_result->pattern_level_sel = demosaicLP_cfg->pattern_level_sel;
+	demosaicLP_result->th_var_en = demosaicLP_cfg->th_var_en;
+	demosaicLP_result->th_csc_en = demosaicLP_cfg->th_csc_en;
+	demosaicLP_result->th_diff_en = demosaicLP_cfg->th_diff_en;
+	demosaicLP_result->th_grad_en = demosaicLP_cfg->th_grad_en;
+	demosaicLP_result->thgrad_r_fct = demosaicLP_cfg->thgrad_r_fct;
+	demosaicLP_result->thdiff_r_fct = demosaicLP_cfg->thdiff_r_fct;
+	demosaicLP_result->thvar_r_fct = demosaicLP_cfg->thvar_r_fct;
+	demosaicLP_result->thgrad_b_fct = demosaicLP_cfg->thgrad_b_fct;
+	demosaicLP_result->thdiff_b_fct = demosaicLP_cfg->thdiff_b_fct;
+	demosaicLP_result->thvar_b_fct = demosaicLP_cfg->thvar_b_fct;
+	demosaicLP_result->similarity_th = demosaicLP_cfg->similarity_th;
+	demosaicLP_result->th_var = demosaicLP_cfg->th_var;
+	demosaicLP_result->th_csc = demosaicLP_cfg->th_csc;
+	demosaicLP_result->th_diff = demosaicLP_cfg->th_diff;
+	demosaicLP_result->th_grad = demosaicLP_cfg->th_grad;
+
+	memcpy(demosaicLP_result->lu_divided, demosaicLP_cfg->lu_divided, sizeof(demosaicLP_result->lu_divided));
+	memcpy(demosaicLP_result->thH_divided, demosaicLP_cfg->thH_divided, sizeof(demosaicLP_result->thH_divided));
+	memcpy(demosaicLP_result->thCSC_divided, demosaicLP_cfg->thCSC_divided, sizeof(demosaicLP_result->thCSC_divided));
+	memcpy(demosaicLP_result->diff_divided, demosaicLP_cfg->diff_divided, sizeof(demosaicLP_result->diff_divided));
+	memcpy(demosaicLP_result->varTh_divided, demosaicLP_cfg->varTh_divided, sizeof(demosaicLP_result->varTh_divided));
+	
+  } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {
+	CamDpfProfile_t* pDpfProfile_t = NULL;
+	CamResolutionName_t ResName;   
+	result = CamCalibDbGetResolutionNameByWidthHeight(hCamCalibDb, drv_width, drv_height, &ResName);
+	if (RET_SUCCESS != result) {
+	  LOGD("%s: resolution (%dx%d) not found in database\n", drv_width, drv_height);
+	}else{
+	  result = CamCalibDbGetDpfProfileByResolution(hCamCalibDb, ResName, &pDpfProfile_t);
+	  if (RET_SUCCESS != result) {
+	    LOGD("%s: get dpf fail (%dx%d) (%s) not found in database\n", drv_width, drv_height, ResName);
+	  } 
+	}
+
+	int no_filter;
+	CamFilterProfile_t* pFilterProfile = NULL;
+	CamDemosaicLpProfile_t *pDemosaicLpConf = NULL;
+	enum LIGHT_MODE LightMode = (enum LIGHT_MODE)demosaicLP_cfg->light_mode;
+	
+	result = CamCalibDbGetNoOfFilterProfile(hCamCalibDb, pDpfProfile_t, &no_filter);
+	
+	if(result != RET_SUCCESS){
+		LOGD("fail to get no FilterProfile, ret: %d", result);
+	}else{
+		if(no_filter > 0 && pDpfProfile_t != NULL){
+			if(LightMode <= LIGHT_MODE_MIN ||  LightMode >= LIGHT_MODE_MAX || LightMode > no_filter)
+				LightMode = LIGHT_MODE_DAY;
+		    result = CamCalibDbGetFilterProfileByIdx(hCamCalibDb, pDpfProfile_t, LightMode, &pFilterProfile);
+		    if (result != RET_SUCCESS) {
+		      LOGD("fail to get filter profile fail ret: %d", result);
+		    }else{
+				pDemosaicLpConf = &pFilterProfile->DemosaicLpConf;
+		    }
+		}
+	}
+
+	if(pDemosaicLpConf != NULL){
+		demosaicLP_result->lp_en = pDemosaicLpConf->lp_en;
+		demosaicLP_result->use_old_lp = pDemosaicLpConf->use_old_lp;
+		demosaicLP_result->rb_filter_en = pDemosaicLpConf->rb_filter_en;
+		demosaicLP_result->hp_filter_en = pDemosaicLpConf->hp_filter_en;
+		demosaicLP_result->edge_level_sel = pDemosaicLpConf->edge_level_sel;
+		demosaicLP_result->flat_level_sel = pDemosaicLpConf->flat_level_sel;
+		demosaicLP_result->pattern_level_sel = pDemosaicLpConf->pattern_level_sel;
+		demosaicLP_result->th_var_en = pDemosaicLpConf->th_var_en;
+		demosaicLP_result->th_csc_en = pDemosaicLpConf->th_csc_en;
+		demosaicLP_result->th_diff_en = pDemosaicLpConf->th_diff_en;
+		demosaicLP_result->th_grad_en = pDemosaicLpConf->th_grad_en;
+		demosaicLP_result->thgrad_r_fct = pDemosaicLpConf->thgrad_r_fct;
+		demosaicLP_result->thdiff_r_fct = pDemosaicLpConf->thdiff_r_fct;
+		demosaicLP_result->thvar_r_fct = pDemosaicLpConf->thvar_r_fct;
+		demosaicLP_result->thgrad_b_fct = pDemosaicLpConf->thgrad_b_fct;
+		demosaicLP_result->thdiff_b_fct = pDemosaicLpConf->thdiff_b_fct;
+		demosaicLP_result->thvar_b_fct = pDemosaicLpConf->thvar_b_fct;
+		demosaicLP_result->similarity_th = pDemosaicLpConf->similarity_th;
+		demosaicLP_result->th_var = pDemosaicLpConf->th_var;
+		demosaicLP_result->th_csc = pDemosaicLpConf->th_csc;
+		demosaicLP_result->th_diff = pDemosaicLpConf->th_diff;
+		demosaicLP_result->th_grad = pDemosaicLpConf->th_grad;
+		
+		demosaicLP_result->thH_divided[0] = pDemosaicLpConf->thH_divided0[0];
+		demosaicLP_result->thH_divided[1] = pDemosaicLpConf->thH_divided1[0];
+		demosaicLP_result->thH_divided[2] = pDemosaicLpConf->thH_divided2[0];
+		demosaicLP_result->thH_divided[3] = pDemosaicLpConf->thH_divided3[0];
+		demosaicLP_result->thH_divided[4] = pDemosaicLpConf->thH_divided4[0];
+
+		demosaicLP_result->thCSC_divided[0] = pDemosaicLpConf->thCSC_divided0[0];
+		demosaicLP_result->thCSC_divided[1] = pDemosaicLpConf->thCSC_divided1[0];
+		demosaicLP_result->thCSC_divided[2] = pDemosaicLpConf->thCSC_divided2[0];
+		demosaicLP_result->thCSC_divided[3] = pDemosaicLpConf->thCSC_divided3[0];
+		demosaicLP_result->thCSC_divided[4] = pDemosaicLpConf->thCSC_divided4[0];
+
+		demosaicLP_result->varTh_divided[0] = pDemosaicLpConf->varTh_divided0[0];
+		demosaicLP_result->varTh_divided[1] = pDemosaicLpConf->varTh_divided1[0];
+		demosaicLP_result->varTh_divided[2] = pDemosaicLpConf->varTh_divided2[0];
+		demosaicLP_result->varTh_divided[3] = pDemosaicLpConf->varTh_divided3[0];
+		demosaicLP_result->varTh_divided[4] = pDemosaicLpConf->varTh_divided4[0];
+
+		demosaicLP_result->diff_divided[0] = pDemosaicLpConf->diff_divided0[0];
+		demosaicLP_result->diff_divided[1] = pDemosaicLpConf->diff_divided1[0];
+		demosaicLP_result->diff_divided[2] = pDemosaicLpConf->diff_divided2[0];
+		demosaicLP_result->diff_divided[3] = pDemosaicLpConf->diff_divided3[0];
+		demosaicLP_result->diff_divided[4] = pDemosaicLpConf->diff_divided4[0];
+		
+		demosaicLP_result->lu_divided[0] = pDemosaicLpConf->lu_divided[0];
+		demosaicLP_result->lu_divided[1] = pDemosaicLpConf->lu_divided[1];
+		demosaicLP_result->lu_divided[2] = pDemosaicLpConf->lu_divided[2];
+		demosaicLP_result->lu_divided[3] = pDemosaicLpConf->lu_divided[3];
+	}else{
+		demosaicLP_result->lp_en = 0;
+		demosaicLP_result->use_old_lp = 0;
+		demosaicLP_result->rb_filter_en = 0;
+		demosaicLP_result->hp_filter_en = 0;
+	}	
+	
+  } else{
+	ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    result = RET_FAILURE;
+  }
+
+  return result;
+}
+
+RESULT cam_ia10_isp_rkIEsharp_config
+(
+	CamCalibDbHandle_t hCamCalibDb,
+    enum HAL_ISP_ACTIVE_MODE enable_mode,
+    struct HAL_ISP_RKIEsharp_cfg_s* rkIEsharp_cfg,
+    uint16_t drv_width,
+    uint16_t drv_height,
+    CamerIcRKIeSharpConfig_t* rkIEsharp_result
+) 
+{
+  RESULT result = RET_SUCCESS;
+  ISP_CHECK_NULL(rkIEsharp_result);
+  if (enable_mode == HAL_ISP_ACTIVE_FALSE) {
+    rkIEsharp_result->iesharpen_en = 0;
+  } else if (enable_mode == HAL_ISP_ACTIVE_SETTING) {
+	ISP_CHECK_NULL(rkIEsharp_cfg);
+	rkIEsharp_result->iesharpen_en = rkIEsharp_cfg->iesharpen_en;
+	rkIEsharp_result->coring_thr = rkIEsharp_cfg->coring_thr;
+	rkIEsharp_result->full_range = rkIEsharp_cfg->full_range;
+	rkIEsharp_result->switch_avg = rkIEsharp_cfg->switch_avg;
+	memcpy(rkIEsharp_result->maxnumber, rkIEsharp_cfg->maxnumber, sizeof(rkIEsharp_result->maxnumber));
+	memcpy(rkIEsharp_result->minnumber, rkIEsharp_cfg->minnumber, sizeof(rkIEsharp_result->minnumber));
+	memcpy(rkIEsharp_result->yavg_thr, rkIEsharp_cfg->yavg_thr, sizeof(rkIEsharp_result->yavg_thr));
+	memcpy(rkIEsharp_result->delta1, rkIEsharp_cfg->delta1, sizeof(rkIEsharp_result->delta1));
+	memcpy(rkIEsharp_result->delta2, rkIEsharp_cfg->delta2, sizeof(rkIEsharp_result->delta2));
+	memcpy(rkIEsharp_result->gauss_flat_coe, rkIEsharp_cfg->gauss_flat_coe, sizeof(rkIEsharp_result->gauss_flat_coe));
+	memcpy(rkIEsharp_result->gauss_noise_coe, rkIEsharp_cfg->gauss_noise_coe, sizeof(rkIEsharp_result->gauss_noise_coe));
+	memcpy(rkIEsharp_result->gauss_other_coe, rkIEsharp_cfg->gauss_other_coe, sizeof(rkIEsharp_result->gauss_other_coe));
+	memcpy(rkIEsharp_result->uv_gauss_flat_coe, rkIEsharp_cfg->uv_gauss_flat_coe, sizeof(rkIEsharp_result->uv_gauss_flat_coe));
+	memcpy(rkIEsharp_result->uv_gauss_noise_coe, rkIEsharp_cfg->uv_gauss_noise_coe, sizeof(rkIEsharp_result->uv_gauss_noise_coe));
+	memcpy(rkIEsharp_result->uv_gauss_other_coe, rkIEsharp_cfg->uv_gauss_other_coe, sizeof(rkIEsharp_result->uv_gauss_other_coe));
+	memcpy(rkIEsharp_result->p_grad, rkIEsharp_cfg->p_grad, sizeof(rkIEsharp_result->p_grad));
+	memcpy(rkIEsharp_result->sharp_factor, rkIEsharp_cfg->sharp_factor, sizeof(rkIEsharp_result->sharp_factor));
+	memcpy(rkIEsharp_result->line1_filter_coe, rkIEsharp_cfg->line1_filter_coe, sizeof(rkIEsharp_result->line1_filter_coe));
+	memcpy(rkIEsharp_result->line2_filter_coe, rkIEsharp_cfg->line2_filter_coe, sizeof(rkIEsharp_result->line2_filter_coe));
+	memcpy(rkIEsharp_result->line3_filter_coe, rkIEsharp_cfg->line3_filter_coe, sizeof(rkIEsharp_result->line3_filter_coe));
+	
+  } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {
+	CamResolutionName_t res_name = {0};
+    CamIesharpenProfile_t*        pIEsharpProfile = NULL;
+    //get configs from xml
+	
+    result = CamCalibDbGetResolutionNameByWidthHeight(hCamCalibDb, drv_width, drv_height,  &res_name);
+    if (RET_SUCCESS != result) {
+      ALOGE("%s: resolution (%dx%d) not found in database\n", __FUNCTION__, drv_width, drv_height);
+      return (result);
+    }
+    // get dpf-profile from calibration database
+    CamIesharpenProfile_t *pIesharpenProfile = NULL;
+    result = CamCalibDbGetRKsharpenProfileByResolution(hCamCalibDb, res_name, &pIesharpenProfile);
+    if (result != RET_SUCCESS) {
+      ALOGE("%s: Getting rk ie sharp profile for resolution %s from calibration database failed (%d)\n",
+            __FUNCTION__, res_name, result);
+    }
+
+	if(pIesharpenProfile != NULL){
+		rkIEsharp_result->iesharpen_en = pIesharpenProfile->iesharpen_en;
+		rkIEsharp_result->coring_thr = pIesharpenProfile->coring_thr;
+		rkIEsharp_result->full_range = pIesharpenProfile->full_range;
+		rkIEsharp_result->switch_avg = pIesharpenProfile->switch_avg;
+		memcpy(rkIEsharp_result->maxnumber, pIesharpenProfile->pmaxnumber, sizeof(rkIEsharp_result->maxnumber));
+		memcpy(rkIEsharp_result->minnumber, pIesharpenProfile->pminnumber, sizeof(rkIEsharp_result->minnumber));
+		memcpy(rkIEsharp_result->yavg_thr, pIesharpenProfile->yavg_thr, sizeof(rkIEsharp_result->yavg_thr));
+		memcpy(rkIEsharp_result->delta1, pIesharpenProfile->P_delta1, sizeof(rkIEsharp_result->delta1));
+		memcpy(rkIEsharp_result->delta2, pIesharpenProfile->P_delta2, sizeof(rkIEsharp_result->delta2));
+		memcpy(rkIEsharp_result->gauss_flat_coe, pIesharpenProfile->gauss_flat_coe, sizeof(rkIEsharp_result->gauss_flat_coe));
+		memcpy(rkIEsharp_result->gauss_noise_coe, pIesharpenProfile->gauss_noise_coe, sizeof(rkIEsharp_result->gauss_noise_coe));
+		memcpy(rkIEsharp_result->gauss_other_coe, pIesharpenProfile->gauss_other_coe, sizeof(rkIEsharp_result->gauss_other_coe));
+		memcpy(rkIEsharp_result->uv_gauss_flat_coe, pIesharpenProfile->uv_gauss_flat_coe, sizeof(rkIEsharp_result->uv_gauss_flat_coe));
+		memcpy(rkIEsharp_result->uv_gauss_noise_coe, pIesharpenProfile->uv_gauss_noise_coe, sizeof(rkIEsharp_result->uv_gauss_noise_coe));
+		memcpy(rkIEsharp_result->uv_gauss_other_coe, pIesharpenProfile->uv_gauss_other_coe, sizeof(rkIEsharp_result->uv_gauss_other_coe));
+		memcpy(rkIEsharp_result->p_grad, pIesharpenProfile->lgridconf.p_grad, sizeof(rkIEsharp_result->p_grad));
+		memcpy(rkIEsharp_result->sharp_factor, pIesharpenProfile->lgridconf.sharp_factor, sizeof(rkIEsharp_result->sharp_factor));
+		memcpy(rkIEsharp_result->line1_filter_coe, pIesharpenProfile->lgridconf.line1_filter_coe, sizeof(rkIEsharp_result->line1_filter_coe));
+		memcpy(rkIEsharp_result->line2_filter_coe, pIesharpenProfile->lgridconf.line2_filter_coe, sizeof(rkIEsharp_result->line2_filter_coe));
+		memcpy(rkIEsharp_result->line3_filter_coe, pIesharpenProfile->lgridconf.line3_filter_coe, sizeof(rkIEsharp_result->line3_filter_coe));
+	}else{
+		rkIEsharp_result->iesharpen_en = 0;
+	}
+  } else{
+	ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    result = RET_FAILURE;
+  }
+  
+  return result;
+}
 
 /*
 

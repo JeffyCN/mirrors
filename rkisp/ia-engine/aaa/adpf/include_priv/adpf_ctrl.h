@@ -100,6 +100,14 @@ typedef struct AdpfContext_s {
   CamDsp3DNRSettingProfile_t *pDsp3DNRSettingProfile;
   Dsp3DnrResult_t Dsp3DnrResult;
 
+  CamNewDsp3DNRProfile_t newDsp3DNRProfile[LIGHT_MODE_MAX];
+  CamNewDsp3DNRProfile_t *pNew3DNRProfile;
+  NewDsp3DnrResult_t NewDsp3DnrResult;
+
+  CamIesharpenProfile_t rkSharpenProfile;
+  RKDemosiacLpResult_t RKDemosaicLpResult; 
+  RKIESharpResult_t	RKIESharpResult;
+
   enum LIGHT_MODE LightMode;
 
 } AdpfContext_t;

@@ -30,6 +30,12 @@
 #define HAL_ISP_WDR_MASK  (1 << 15)
 #define HAL_ISP_DPF_MASK  (1 << 16)
 #define HAL_ISP_DPF_STRENGTH_MASK (1 << 17)
+#define HAL_ISP_DEMOSAICLP_MASK (1 << 18)
+#define HAL_ISP_RK_IESHARP_MASK  (1 << 19)
+#define HAL_ISP_3DNR_MASK  (1 << 20)
+#define HAL_ISP_NEW_3DNR_MASK  (1 << 21)
+
+
 
 #define HAL_ISP_ALL_MASK  (0xffffffff)
 
@@ -52,6 +58,10 @@ enum HAL_ISP_SUB_MODULE_ID_e {
   HAL_ISP_WDR_ID,
   HAL_ISP_DPF_ID,
   HAL_ISP_DPF_STRENGTH_ID,
+  HAL_ISP_DEMOSAICLP_ID,
+  HAL_ISP_RKIESHARP_ID,
+  HAL_ISP_3DNR_ID,
+  HAL_ISP_NEW_3DNR_ID,
   HAL_ISP_MODULE_MAX_ID_ID,
 };
 
@@ -438,6 +448,38 @@ struct HAL_ISP_sdg_cfg_s {
   uint16_t gamma_dx[HAL_ISP_SDG_SECTION_MAX];
 };
 
+struct HAL_ISP_demosaiclp_cfg_s{
+  //isp12 demosaiclp paras which belong to filter module
+  uint8_t  lp_en;
+  uint8_t  rb_filter_en;
+  uint8_t  hp_filter_en;
+  uint8_t  use_old_lp;// use old version
+  uint8_t  lu_divided[4];
+  uint8_t  thH_divided[5];
+  uint8_t  thCSC_divided[5];
+  uint8_t  diff_divided[5];
+  uint16_t varTh_divided[5];
+  uint8_t  thgrad_r_fct;
+  uint8_t  thdiff_r_fct;
+  uint8_t  thvar_r_fct;
+  uint8_t  thgrad_b_fct;
+  uint8_t  thdiff_b_fct;
+  uint8_t  thvar_b_fct;
+  uint8_t  similarity_th;
+  uint8_t  th_var_en;
+  uint8_t  th_csc_en;
+  uint8_t  th_diff_en;
+  uint8_t  th_grad_en;
+  uint16_t  th_var;
+  uint8_t  th_csc;
+  uint8_t  th_diff;
+  uint8_t  th_grad;
+  uint8_t  flat_level_sel;
+  uint8_t  pattern_level_sel;
+  uint8_t  edge_level_sel;
+  int light_mode; 
+};
+
 struct HAL_ISP_flt_cfg_s {
   uint8_t denoise_level;
   uint8_t sharp_level;
@@ -472,6 +514,29 @@ struct HAL_ISP_cproc_cfg_s {
   struct HAL_ColorProcCfg cproc;
 };
 
+struct HAL_ISP_RKIEsharp_cfg_s{
+  //isp12 rk sharpen
+  uint8_t iesharpen_en;	  // iesharpen_en 0 off, 1 on
+  uint8_t coring_thr; 		// iesharpen coring_thr is default 0
+  uint8_t full_range; 		// iesharpen full range(yuv data) 1:full_range(0-255),2:range(16-24?)
+  uint8_t switch_avg; 	  //iesharpen whether is compare center pixel with edge pixel
+  uint8_t yavg_thr[4];// Y channel is set five segments by the Matrix
+  uint8_t delta1[5];
+  uint8_t delta2[5];
+  uint8_t maxnumber[5];
+  uint8_t minnumber[5];
+  uint8_t gauss_flat_coe[9];
+  uint8_t gauss_noise_coe[9];
+  uint8_t gauss_other_coe[9];
+  uint8_t uv_gauss_flat_coe[15];
+  uint8_t uv_gauss_noise_coe[15];
+  uint8_t uv_gauss_other_coe[15];	
+  uint16_t p_grad[4]; 
+  uint8_t sharp_factor[5];
+  uint8_t line1_filter_coe[6];
+  uint8_t line2_filter_coe[9];
+  uint8_t line3_filter_coe[6];
+};
 
 struct HAL_ISP_ie_cfg_s {
   enum HAL_IAMGE_EFFECT                     mode;           /**< working mode (see @ref CamerIcIeMode_e) */
@@ -485,6 +550,7 @@ struct HAL_ISP_ie_cfg_s {
   highpass signal is defined here. The highpass signal is truncated at the defined level.
   */
   uint8_t sharp_thd;
+  
 } ;
 
 struct HAL_ISP_lsc_cfg_s {
@@ -748,6 +814,102 @@ struct HAL_ISP_DSP3DNR_cfg_s {
   } reserves;
 };
 
+struct HAL_3DnrLevelCfg {
+  unsigned char luma_sp_nr_en;
+  unsigned char luma_te_nr_en;
+  unsigned char chrm_sp_nr_en;
+  unsigned char chrm_te_nr_en;
+  unsigned char shp_en;
+  unsigned char luma_sp_nr_level;         // control the strength of spatial luma denoise
+  unsigned char luma_te_nr_level;         // control the strength of temporal luma denoise
+  unsigned char chrm_sp_nr_level;         // control the strength of spatial luma denoise
+  unsigned char chrm_te_nr_level;         // control the strength of spatial luma denoise
+  unsigned char shp_level;           // control sharpness strenth
+};
+
+struct HAL_3DnrParamCfg {
+  uint16_t noise_coef_num;
+  uint16_t noise_coef_den;
+
+  //5x5 luma spatial weight table,8bit for the center point,6bit for the other point,
+  //low 30bit is useful in w0 w1 w3 w4,6 6 8 6 6 in w2,all these weight are int type.
+  unsigned char luma_default;      // 1 use level define,0 use those parameters below
+  unsigned char luma_sp_rad;      //spatial bilateral filter size
+  unsigned char luma_te_max_bi_num;      //temporal max bilateral frame num
+  uint32_t luma_w0;            //
+  uint32_t luma_w1;
+  uint32_t luma_w2;
+  uint32_t luma_w3;
+  uint32_t luma_w4;
+
+  //5x5 chroma spatial weight table,8bit for the center point,6bit for the other point,
+  //low 30bit is useful in w0 w1 w3 w4,6 6 8 6 6 in w2,all these weight are unsigned int type.
+  unsigned char chrm_default;      // 1 use level define,0 use those parameters below
+  unsigned char chrm_sp_rad;      //chroma spatial bilateral filter size
+  unsigned char chrm_te_max_bi_num;      //temporal max bilateral frame num
+  uint32_t chrm_w0;            //
+  uint32_t chrm_w1;
+  uint32_t chrm_w2;
+  uint32_t chrm_w3;
+  uint32_t chrm_w4;
+
+  unsigned char shp_default;      // 1 use level define,0 use those parameters below
+  //5x5 sharpness weight table,8bit for the center point,6bit for the other point,
+  //low 30bit is useful in w0 w1 w3 w4,6 6 8 6 6 in w2,all these weight are int type.
+  uint32_t src_shp_w0;            //
+  uint32_t src_shp_w1;
+  uint32_t src_shp_w2;
+  uint32_t src_shp_w3;
+  uint32_t src_shp_w4;
+  //threshold from 0 to 31
+  unsigned char src_shp_thr;
+  //shift bit of  sum of weight.
+  unsigned char src_shp_div;
+  //luma sharpness enable flag
+  unsigned char src_shp_l;
+  //chroma sharpness enable flag
+  unsigned char src_shp_c;
+};
+
+struct HAL_3DnrCfg{
+  unsigned char Enable;
+  struct HAL_3DnrLevelCfg level_cfg;
+  struct HAL_3DnrParamCfg param_cfg;
+};
+
+struct HAL_New3Dnr_ynr_params_s {
+	uint32_t enable_ynr;        // Set to 1 by default
+	uint32_t enable_tnr;        // Set to 1 by default, it will be disabled when enable_ynr=0
+	uint32_t enable_iir;        // Set to 0 by default, it will be disabled when enable_ynr=0
+	uint32_t ynr_time_weight;        // Denoise weight of time, valid range: 1 - 4, default 3
+	uint32_t ynr_spat_weight;        // Denoise weight of spatial, valid range: 0 - 28, default 16
+	uint32_t reserved[4];
+};
+
+struct HAL_New3Dnr_uvnr_params_s {
+	uint32_t enable_uvnr;       // Set to 1 by default
+	uint32_t uvnr_weight;       // Denoise weight for uvnr, valid range: 4 - 16, default 12
+	uint32_t reserved[4];
+};
+
+struct HAL_New3Dnr_sharp_params_s {
+	uint32_t enable_sharp;      // Set to 1 by default, enable DSP sharpness algorithm
+	uint32_t sharp_weight;      // Sharpness weight, valid range: 0 - 4, defalut 2
+	uint32_t reserved[4];
+};
+
+struct HAL_New3DnrCfg_s {
+	uint32_t enable_3dnr;
+	
+	struct HAL_New3Dnr_ynr_params_s ynr;
+	struct HAL_New3Dnr_uvnr_params_s uvnr;
+	struct HAL_New3Dnr_sharp_params_s sharp;
+	
+	uint32_t enable_dpc;        // Set to 1 by default, enable DSP dpc algorithm
+	uint32_t reserved[4];
+};
+
+
 struct HAL_Buffer_MetaData {
   struct HAL_ISP_awb_cfg_s awb;
   struct HAL_ISP_flt_cfg_s flt;
@@ -811,6 +973,14 @@ struct HAL_ISP_cfg_s {
   struct HAL_ISP_hst_cfg_s* hst_cfg;
   /* bayer demosaic*/
   struct HAL_ISP_bdm_cfg_s* bdm_cfg;
+  /*3dnr by JiangMingJun*/
+  struct HAL_3DnrCfg* dsp_3dnr_cfg;
+  /*new 3dnr by LuoNing*/
+  struct HAL_New3DnrCfg_s* newDsp3DNR_cfg;
+  /* rk demosaicLP*/
+  struct HAL_ISP_demosaiclp_cfg_s* demosaicLP_cfg;
+  /* rk IE sharp*/
+  struct HAL_ISP_RKIEsharp_cfg_s* rkIEsharp_cfg;
   /* need updated sub modules*/
   uint32_t updated_mask;
   /* enabled */

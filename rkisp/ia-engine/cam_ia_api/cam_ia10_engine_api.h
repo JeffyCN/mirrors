@@ -42,8 +42,12 @@ using google::protobuf::internal::weak_ptr;
 #define CAMIA10_WDR_MASK  (1 << 15)
 #define CAMIA10_DPF_MASK    (1 << 16)
 #define CAMIA10_DPF_STRENGTH_MASK (1 << 17)
-#define CAMIA10_DSP_3DNR_MASK (1 << 18)
-#define CAMIA10_AEC_AFPS_MASK  (1<<19)
+#define CAMIA10_DEMOSAICLP_MASK  (1<<18)
+#define CAMIA10_RKIESHARP_MASK  (1<<19)
+#define CAMIA10_DSP_3DNR_MASK (1 << 20)
+#define CAMIA10_NEW_DSP_3DNR_MASK (1 << 21)
+#define CAMIA10_AEC_AFPS_MASK  (1<<22)
+
 
 #define CAMIA10_ALL_MASK  (0xffffffff)
 
@@ -165,6 +169,9 @@ struct CamIA10_Results {
   CamerIcIspHistConfig_t hst;
   CameraIcBdmConfig_t bdm;
   CameraIcWdrConfig_t wdr;
+  
+  CamerIcRKIeSharpConfig_t rkIEsharp;
+  CamerIcRKDemosaicLP_t rkDemosaicLP;
   /* following results are included in 3A*/
   //struct cifisp_lsc_config lsc;
   //struct cifisp_awb_gain_config awb_gain;

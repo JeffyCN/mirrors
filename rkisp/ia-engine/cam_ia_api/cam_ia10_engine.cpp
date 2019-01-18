@@ -2933,6 +2933,36 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     }
 
+	if (manCfg->updated_mask & HAL_ISP_DEMOSAICLP_MASK) {
+		ret = cam_ia10_isp_demosaicLp_config
+            (
+             hCamCalibDb,
+             manCfg->enabled[HAL_ISP_DEMOSAICLP_ID],
+             manCfg->demosaicLP_cfg,
+             width,
+             height,
+             &(result->rkDemosaicLP)
+            );
+		if (ret != RET_SUCCESS)
+            ALOGE("%s:config demosaiclp failed !", __FUNCTION__);
+		result->active |= CAMIA10_DEMOSAICLP_MASK;
+    }
+
+	if (manCfg->updated_mask & HAL_ISP_RK_IESHARP_MASK) {
+		ret = cam_ia10_isp_rkIEsharp_config
+            (
+             hCamCalibDb,
+             manCfg->enabled[HAL_ISP_RKIESHARP_ID],
+             manCfg->rkIEsharp_cfg,
+             width,
+             height,
+             &(result->rkIEsharp)
+            );
+		if (ret != RET_SUCCESS)
+            ALOGE("%s:config demosaiclp failed !", __FUNCTION__);
+		result->active |= CAMIA10_RKIESHARP_MASK;
+    }
+
     runManIspForBW(result);
     runManIspForPreIsp(result);
 

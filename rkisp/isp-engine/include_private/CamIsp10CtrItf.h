@@ -26,9 +26,15 @@ struct CamIsp10Config {
   struct cifisp_ie_config ie_config;
   struct cifisp_dpf_config dpf_config;
   struct cifisp_dpf_strength_config dpf_strength_config;
+  struct cifisp_wdr_config wdr_config;
+  struct cifisp_rkiesharp_config rkIESharp_config;
+  struct cifisp_demosaiclp_config demosaicLp_config;
   bool_t enabled[HAL_ISP_MODULE_MAX_ID_ID + 1];
   int flt_denoise_level;
   int flt_sharp_level;
+
+  Dsp3DnrResult_t Dsp3DnrSetConfig;
+  NewDsp3DnrResult_t NewDsp3DnrSetConfig;
 };
 
 struct CamIsp10ConfigSet {

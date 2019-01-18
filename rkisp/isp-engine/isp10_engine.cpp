@@ -133,6 +133,18 @@ Isp10Engine::Isp10Engine():
   mWdrNeededUpdate = BOOL_FALSE;
   mWdrEnabled = HAL_ISP_ACTIVE_FALSE;
 
+  mDemosaicLPNeededUpdate = BOOL_FALSE;
+  mDemosaicLPEnable = HAL_ISP_ACTIVE_FALSE;
+
+  mrkIEsharpNeededUpdate = BOOL_FALSE;
+  mrkIEsharpEnable = HAL_ISP_ACTIVE_FALSE;
+
+  m3DnrNeededUpdate = BOOL_FALSE;
+  m3DnrEnabled = HAL_ISP_ACTIVE_FALSE;
+
+  mNew3DnrNeededUpdate = BOOL_FALSE;
+  mNew3DnrEnabled = HAL_ISP_ACTIVE_FALSE;
+
   mCamIAEngine = getCamIA10EngineItf();
 
   //LOGD("%s: x", __func__);
@@ -366,6 +378,32 @@ bool Isp10Engine::applyIspConfig(struct CamIsp10ConfigSet* isp_cfg) {
         isp_cfg->enabled[HAL_ISP_DPF_STRENGTH_ID];
   }
 
+  if (isp_cfg->active_configs & ISP_WDR_MASK) {
+	mIspCfg.wdr_config = isp_cfg->configs.wdr_config;
+	mIspCfg.enabled[HAL_ISP_WDR_ID] =
+	  isp_cfg->enabled[HAL_ISP_WDR_ID];
+  }
+
+  if (isp_cfg->active_configs & ISP_DSP_3DNR_MASK) {
+  	mIspCfg.Dsp3DnrSetConfig = isp_cfg->configs.Dsp3DnrSetConfig;
+  }
+  
+  if (isp_cfg->active_configs & ISP_NEW_DSP_3DNR_MASK) {
+  	mIspCfg.NewDsp3DnrSetConfig = isp_cfg->configs.NewDsp3DnrSetConfig;
+  }
+  
+  if (isp_cfg->active_configs & ISP_RK_DEMOSAICLP_MASK) {
+    mIspCfg.demosaicLp_config = isp_cfg->configs.demosaicLp_config;
+	mIspCfg.enabled[HAL_ISP_DEMOSAICLP_ID] =
+	  isp_cfg->enabled[HAL_ISP_DEMOSAICLP_ID];
+  }
+  
+  if (isp_cfg->active_configs & ISP_RK_IESHARP_MASK) {
+    mIspCfg.rkIESharp_config = isp_cfg->configs.rkIESharp_config;
+	mIspCfg.enabled[HAL_ISP_RKIESHARP_ID] =
+	  isp_cfg->enabled[HAL_ISP_RKIESHARP_ID];
+  }
+  
   return true;
 }
 
@@ -1254,6 +1292,242 @@ bool Isp10Engine::convertIAResults(
                isp_cfg->configs.afc_config.afm_win[2].v_size);
 */
     }
+
+	if (ia_results->active & CAMIA10_WDR_MASK) {
+	  //CameraIcWdrConfig_t to struct cifisp_wdr_config
+	  int regi = 0, i = 0;
+	  isp_cfg->enabled[HAL_ISP_WDR_ID] = ia_results->wdr.enabled;
+	  isp_cfg->active_configs |=  ISP_WDR_MASK;
+	  if (ia_results->wdr.mode == CAMERIC_WDR_MODE_BLOCK)
+		isp_cfg->configs.wdr_config.mode =
+			CIFISP_WDR_MODE_BLOCK;
+	  else
+		isp_cfg->configs.wdr_config.mode =
+			CIFISP_WDR_MODE_GLOBAL;
+	  //TODO
+	  /*offset 0x2a00*/
+	  isp_cfg->configs.wdr_config.c_wdr[0] = 0x00000812;
+	  /* offset 0x2a04 - 0x2a10*/
+
+	  for (regi = 1; regi < 5; regi++) {
+		isp_cfg->configs.wdr_config.c_wdr[regi] = 0;
+		for (int i = 0; i < 8; i++)
+		  isp_cfg->configs.wdr_config.c_wdr[regi] |=
+			  (uint32_t)(ia_results->wdr.segment \
+						 [i + (regi - 1) * 8 ]) << (4 * i);
+	  }
+
+	  /*offset 0x2a14 - 0x2a94*/
+	  for (regi = 5; regi < 38; regi++)
+		isp_cfg->configs.wdr_config.c_wdr[regi] =
+			((uint32_t)(ia_results->wdr.wdr_block_y[regi - 5]) << 16) |
+			(uint32_t)(ia_results->wdr.wdr_global_y[regi - 5]);
+	  /*offset 0x2a98 - 0x2a9c*/
+	  isp_cfg->configs.wdr_config.c_wdr[38] = 0x0;
+	  isp_cfg->configs.wdr_config.c_wdr[39] = 0x0;
+#if 0
+      /*offset 0x2b50 - 0x2b6c*/
+      isp_cfg->configs.wdr_config.c_wdr[40] = 0x00030cf0;
+      isp_cfg->configs.wdr_config.c_wdr[41] = 0x000140d3;
+      isp_cfg->configs.wdr_config.c_wdr[42] = 0x000000cd;
+      isp_cfg->configs.wdr_config.c_wdr[43] = 0x0ccc00ee;
+      isp_cfg->configs.wdr_config.c_wdr[44] = 0x00000036;
+      isp_cfg->configs.wdr_config.c_wdr[45] = 0x000000b7;
+      isp_cfg->configs.wdr_config.c_wdr[46] = 0x00000012;
+      isp_cfg->configs.wdr_config.c_wdr[47] = 0x0;
+#else
+	  isp_cfg->configs.wdr_config.c_wdr[40] =
+		  ((uint32_t)(ia_results->wdr.wdr_pym_cc) << 16) |
+		  ((uint32_t)(ia_results->wdr.wdr_epsilon) << 8) |
+		  ((uint32_t)(ia_results->wdr.wdr_lvl_en) << 4) ;
+
+	  isp_cfg->configs.wdr_config.c_wdr[41] =
+		  ((uint32_t)(ia_results->wdr.wdr_gain_max_clip_enable) << 16) |
+		  ((uint32_t)(ia_results->wdr.wdr_gain_max_value) << 8) |
+		  ((uint32_t)(ia_results->wdr.wdr_bavg_clip) << 6) |
+		  ((uint32_t)(ia_results->wdr.wdr_nonl_segm) << 5) |
+		  ((uint32_t)(ia_results->wdr.wdr_nonl_open) << 4) |
+		  ((uint32_t)(ia_results->wdr.wdr_nonl_mode1) << 3) |
+		  ((uint32_t)(ia_results->wdr.wdr_flt_sel) << 1) |
+		  ia_results->wdr.mode ;
+
+	  isp_cfg->configs.wdr_config.c_wdr[42] = ia_results->wdr.wdr_gain_off1;
+	  isp_cfg->configs.wdr_config.c_wdr[43] =
+		  ((uint32_t)(ia_results->wdr.wdr_bestlight) << 16) |
+		  (uint32_t)(ia_results->wdr.wdr_noiseratio);
+	  isp_cfg->configs.wdr_config.c_wdr[44] = ia_results->wdr.wdr_coe0;
+	  isp_cfg->configs.wdr_config.c_wdr[45] =  ia_results->wdr.wdr_coe1;
+	  isp_cfg->configs.wdr_config.c_wdr[46] =  ia_results->wdr.wdr_coe2;
+	  isp_cfg->configs.wdr_config.c_wdr[47] =  ia_results->wdr.wdr_coe_off;
+#endif
+	  for (i = 0; i < 48; i++)
+		LOGD( "WDR[%d] = 0x%x", i, isp_cfg->configs.wdr_config.c_wdr[i]);
+
+	  LOGD( "WDR = 0x%x", ia_results->wdr.wdr_gain_max_value);
+	}
+
+	
+	if (ia_results->active & CAMIA10_DSP_3DNR_MASK) {
+	  isp_cfg->active_configs |= ISP_DSP_3DNR_MASK;
+	  isp_cfg->configs.Dsp3DnrSetConfig = ia_results->adpf.Dsp3DnrResult;
+
+	  LOGD( "ConvertIA luma_sp:%d %d luma_te:%d %d chrm_sp:%d %d chrm_te:%d %d shp:%d %d noise:(%d/%d)",
+			  isp_cfg->configs.Dsp3DnrSetConfig.luma_sp_nr_en,
+			  isp_cfg->configs.Dsp3DnrSetConfig.luma_sp_nr_level,
+			  isp_cfg->configs.Dsp3DnrSetConfig.luma_te_nr_en,
+			  isp_cfg->configs.Dsp3DnrSetConfig.luma_te_nr_level,
+			  isp_cfg->configs.Dsp3DnrSetConfig.chrm_sp_nr_en,
+			  isp_cfg->configs.Dsp3DnrSetConfig.chrm_sp_nr_level,
+			  isp_cfg->configs.Dsp3DnrSetConfig.chrm_te_nr_en,
+			  isp_cfg->configs.Dsp3DnrSetConfig.chrm_te_nr_level,
+			  isp_cfg->configs.Dsp3DnrSetConfig.shp_en,
+			  isp_cfg->configs.Dsp3DnrSetConfig.shp_level,
+			  isp_cfg->configs.Dsp3DnrSetConfig.noise_coef_num,
+			  isp_cfg->configs.Dsp3DnrSetConfig.noise_coef_den);
+
+	  LOGD( "ConvertIA setting luma:%d 0x%x  chrm:%d 0x%x shp:%d 0x%x",
+			  isp_cfg->configs.Dsp3DnrSetConfig.luma_default,
+			  isp_cfg->configs.Dsp3DnrSetConfig.luma_w2,
+			  isp_cfg->configs.Dsp3DnrSetConfig.chrm_default,
+			  isp_cfg->configs.Dsp3DnrSetConfig.chrm_w2,
+			  isp_cfg->configs.Dsp3DnrSetConfig.shp_default,
+			  isp_cfg->configs.Dsp3DnrSetConfig.src_shp_w2);
+	}
+
+	if (ia_results->active & CAMIA10_NEW_DSP_3DNR_MASK) 
+	{
+	  isp_cfg->active_configs |= ISP_NEW_DSP_3DNR_MASK;
+	  isp_cfg->configs.NewDsp3DnrSetConfig = ia_results->adpf.NewDsp3DnrResult;
+
+	  LOGD( "ConvertIA setting 3dnr_en:%d dpc_en:%d ynr_en:%d tnr_en:%d iir_en:%d uvnr_en:%d shrp_en:%d",
+			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_3dnr,
+			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_dpc,
+			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_ynr,
+			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_tnr,
+			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_iir,
+			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_uvnr,
+			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_sharp);
+		  
+	  LOGD( "ConvertIA setting ynr_time_weight:%d ynr_spat_weight:%d uvnr:%d sharp:%d ",
+			  isp_cfg->configs.NewDsp3DnrSetConfig.ynr_time_weight,
+			  isp_cfg->configs.NewDsp3DnrSetConfig.ynr_spat_weight,
+			  isp_cfg->configs.NewDsp3DnrSetConfig.uvnr_weight,
+			  isp_cfg->configs.NewDsp3DnrSetConfig.sharp_weight,
+			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_dpc);
+	}
+
+	if (ia_results->active & CAMIA10_DEMOSAICLP_MASK) 
+	{
+		isp_cfg->enabled[HAL_ISP_DEMOSAICLP_ID] = (bool_t)ia_results->rkDemosaicLP.lp_en;
+		isp_cfg->active_configs |= ISP_RK_DEMOSAICLP_MASK;
+		isp_cfg->configs.demosaicLp_config.hp_filter_en = ia_results->rkDemosaicLP.hp_filter_en;
+		isp_cfg->configs.demosaicLp_config.rb_filter_en = ia_results->rkDemosaicLP.rb_filter_en;
+		isp_cfg->configs.demosaicLp_config.use_old_lp = ia_results->rkDemosaicLP.use_old_lp;
+		memcpy(isp_cfg->configs.demosaicLp_config.lu_divided ,
+				ia_results->rkDemosaicLP.lu_divided,
+				sizeof(ia_results->rkDemosaicLP.lu_divided));
+
+		memcpy(isp_cfg->configs.demosaicLp_config.thgrad_divided ,
+				ia_results->rkDemosaicLP.thH_divided,
+				sizeof(ia_results->rkDemosaicLP.thH_divided));
+
+		memcpy(isp_cfg->configs.demosaicLp_config.thdiff_divided ,
+				ia_results->rkDemosaicLP.diff_divided,
+				sizeof(ia_results->rkDemosaicLP.diff_divided));
+
+		memcpy(isp_cfg->configs.demosaicLp_config.thcsc_divided ,
+				ia_results->rkDemosaicLP.thCSC_divided,
+				sizeof(ia_results->rkDemosaicLP.thCSC_divided));
+
+		memcpy(isp_cfg->configs.demosaicLp_config.thvar_divided ,
+				ia_results->rkDemosaicLP.varTh_divided,
+				sizeof(ia_results->rkDemosaicLP.varTh_divided));
+		
+		isp_cfg->configs.demosaicLp_config.th_grad = ia_results->rkDemosaicLP.th_grad;
+		isp_cfg->configs.demosaicLp_config.th_diff = ia_results->rkDemosaicLP.th_diff;
+		isp_cfg->configs.demosaicLp_config.th_csc = ia_results->rkDemosaicLP.th_csc;
+		isp_cfg->configs.demosaicLp_config.th_var = ia_results->rkDemosaicLP.th_var;
+		isp_cfg->configs.demosaicLp_config.th_grad_en = ia_results->rkDemosaicLP.th_grad_en;
+		isp_cfg->configs.demosaicLp_config.th_diff_en = ia_results->rkDemosaicLP.th_diff_en;
+		isp_cfg->configs.demosaicLp_config.th_csc_en = ia_results->rkDemosaicLP.th_csc_en;
+		isp_cfg->configs.demosaicLp_config.th_var_en = ia_results->rkDemosaicLP.th_var_en;
+		isp_cfg->configs.demosaicLp_config.flat_level_sel = ia_results->rkDemosaicLP.flat_level_sel;
+		isp_cfg->configs.demosaicLp_config.pattern_level_sel = ia_results->rkDemosaicLP.pattern_level_sel;
+		isp_cfg->configs.demosaicLp_config.edge_level_sel = ia_results->rkDemosaicLP.edge_level_sel;
+		isp_cfg->configs.demosaicLp_config.similarity_th = ia_results->rkDemosaicLP.similarity_th;
+		isp_cfg->configs.demosaicLp_config.thgrad_r_fct = ia_results->rkDemosaicLP.thgrad_r_fct;
+		isp_cfg->configs.demosaicLp_config.thdiff_r_fct = ia_results->rkDemosaicLP.thdiff_r_fct;
+		isp_cfg->configs.demosaicLp_config.thvar_r_fct = ia_results->rkDemosaicLP.thvar_r_fct;
+		isp_cfg->configs.demosaicLp_config.thgrad_b_fct = ia_results->rkDemosaicLP.thgrad_b_fct;
+		isp_cfg->configs.demosaicLp_config.thdiff_b_fct = ia_results->rkDemosaicLP.thdiff_b_fct;
+		isp_cfg->configs.demosaicLp_config.thvar_b_fct = ia_results->rkDemosaicLP.thvar_b_fct;			
+	}
+	
+	if (ia_results->active & CAMIA10_RKIESHARP_MASK) {
+		isp_cfg->enabled[HAL_ISP_RKIESHARP_ID] = (bool_t)ia_results->rkIEsharp.iesharpen_en;
+		isp_cfg->active_configs |= ISP_RK_IESHARP_MASK;
+		isp_cfg->configs.rkIESharp_config.coring_thr = ia_results->rkIEsharp.coring_thr; 
+		isp_cfg->configs.rkIESharp_config.full_range = ia_results->rkIEsharp.full_range; 
+		isp_cfg->configs.rkIESharp_config.switch_avg = ia_results->rkIEsharp.switch_avg; 
+		memcpy(isp_cfg->configs.rkIESharp_config.yavg_thr,
+				ia_results->rkIEsharp.yavg_thr,
+				sizeof(ia_results->rkIEsharp.yavg_thr));
+		memcpy(isp_cfg->configs.rkIESharp_config.delta1,
+				ia_results->rkIEsharp.delta1,
+				sizeof(ia_results->rkIEsharp.delta1));
+		memcpy(isp_cfg->configs.rkIESharp_config.delta2,
+				ia_results->rkIEsharp.delta2,
+				sizeof(ia_results->rkIEsharp.delta2));
+		memcpy(isp_cfg->configs.rkIESharp_config.maxnumber,
+				ia_results->rkIEsharp.maxnumber,
+				sizeof(ia_results->rkIEsharp.maxnumber));
+		memcpy(isp_cfg->configs.rkIESharp_config.minnumber,
+				ia_results->rkIEsharp.minnumber,
+				sizeof(ia_results->rkIEsharp.minnumber));
+		memcpy(isp_cfg->configs.rkIESharp_config.gauss_flat_coe,
+				ia_results->rkIEsharp.gauss_flat_coe,
+				sizeof(ia_results->rkIEsharp.gauss_flat_coe));
+
+		memcpy(isp_cfg->configs.rkIESharp_config.gauss_noise_coe,
+				ia_results->rkIEsharp.gauss_noise_coe,
+				sizeof(ia_results->rkIEsharp.gauss_noise_coe));
+		
+		memcpy(isp_cfg->configs.rkIESharp_config.gauss_other_coe,
+				ia_results->rkIEsharp.gauss_other_coe,
+				sizeof(ia_results->rkIEsharp.gauss_other_coe));
+		
+		memcpy(isp_cfg->configs.rkIESharp_config.uv_gauss_flat_coe,
+				ia_results->rkIEsharp.uv_gauss_flat_coe,
+				sizeof(ia_results->rkIEsharp.uv_gauss_flat_coe));
+
+		memcpy(isp_cfg->configs.rkIESharp_config.uv_gauss_noise_coe,
+				ia_results->rkIEsharp.uv_gauss_noise_coe,
+				sizeof(ia_results->rkIEsharp.uv_gauss_noise_coe));
+
+		memcpy(isp_cfg->configs.rkIESharp_config.uv_gauss_other_coe,
+				ia_results->rkIEsharp.uv_gauss_other_coe,
+				sizeof(ia_results->rkIEsharp.uv_gauss_other_coe));
+		
+   		memcpy(isp_cfg->configs.rkIESharp_config.grad_seq, 
+						ia_results->rkIEsharp.p_grad,
+						sizeof(ia_results->rkIEsharp.p_grad));
+		
+		memcpy(isp_cfg->configs.rkIESharp_config.sharp_factor,
+						ia_results->rkIEsharp.sharp_factor,
+						sizeof(ia_results->rkIEsharp.sharp_factor));
+		
+		memcpy(isp_cfg->configs.rkIESharp_config.line1_filter_coe,
+						ia_results->rkIEsharp.line1_filter_coe,
+						sizeof(ia_results->rkIEsharp.line1_filter_coe));
+
+		memcpy(isp_cfg->configs.rkIESharp_config.line2_filter_coe,
+						ia_results->rkIEsharp.line2_filter_coe,
+						sizeof(ia_results->rkIEsharp.line2_filter_coe));
+
+		memcpy(isp_cfg->configs.rkIESharp_config.line3_filter_coe,
+						ia_results->rkIEsharp.line3_filter_coe,
+						sizeof(ia_results->rkIEsharp.line3_filter_coe));
+	}
   }
 
   return true;

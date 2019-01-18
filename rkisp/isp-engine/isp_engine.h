@@ -144,6 +144,27 @@ protected:
     enum HAL_ISP_ACTIVE_MODE  mBdmEnabled;
     /* used for switchSubDevIrCutMode*/
     enum HAL_WB_MODE mLastWbMode;
+
+	 /* dsp 3dnr by JiangMingJun  */ 
+    struct HAL_3DnrCfg dsp_3dnr_cfg;
+    bool_t m3DnrNeededUpdate;
+    enum HAL_ISP_ACTIVE_MODE  m3DnrEnabled;
+
+	//dsp new 3dnr by LuoNing
+	struct HAL_New3DnrCfg_s new_dsp_3dnr_cfg;
+    bool_t mNew3DnrNeededUpdate;
+    enum HAL_ISP_ACTIVE_MODE  mNew3DnrEnabled;
+  
+
+	//rkisp12 demosaiclp
+	struct HAL_ISP_demosaiclp_cfg_s demosaiclp_cfg;
+	bool_t mDemosaicLPNeededUpdate;
+	enum HAL_ISP_ACTIVE_MODE mDemosaicLPEnable;
+
+	//rkisp12 rk IEsharp
+	struct HAL_ISP_RKIEsharp_cfg_s rkIEsharp_cfg;
+	bool_t mrkIEsharpNeededUpdate;
+	enum HAL_ISP_ACTIVE_MODE mrkIEsharpEnable;
 private:
 
 };

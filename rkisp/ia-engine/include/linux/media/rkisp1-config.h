@@ -31,6 +31,8 @@
 #define CIFISP_MODULE_WDR               (1 << 15)
 #define CIFISP_MODULE_DPF               (1 << 16)
 #define CIFISP_MODULE_DPF_STRENGTH      (1 << 17)
+#define CIFISP_MODULE_DEMOSAICLP		(1 << 18)
+#define CIFISP_MODULE_RK_IESHARP		(1 << 19)
 
 #define CIFISP_CTK_COEFF_MAX            0x100
 #define CIFISP_CTK_OFFSET_MAX           0x800
@@ -103,6 +105,9 @@
  */
 #define CIFISP_DPF_MAX_NLF_COEFFS      17
 #define CIFISP_DPF_MAX_SPATIAL_COEFFS  6
+
+/* WDR */
+#define CIFISP_WDR_SIZE						48
 
 /*
  * Measurement types
@@ -583,6 +588,74 @@ struct cifisp_dpf_strength_config {
 	unsigned char b;
 } __attribute__ ((packed));
 
+enum cifisp_wdr_mode {
+	CIFISP_WDR_MODE_BLOCK,
+	CIFISP_WDR_MODE_GLOBAL
+};
+
+/* Configuration used by Gamma Out correction */
+struct cifisp_wdr_config {
+	enum cifisp_wdr_mode mode;
+	unsigned int c_wdr[CIFISP_WDR_SIZE];
+} __attribute__ ((packed));
+
+
+/* rk demosiac low pass*/
+struct cifisp_demosaiclp_config {
+	unsigned char  rb_filter_en;
+	unsigned char  hp_filter_en;
+	unsigned char  lu_divided[4];
+	unsigned char thgrad_divided[5];
+	unsigned char thdiff_divided[5];
+	unsigned char thcsc_divided[5];
+	unsigned short thvar_divided[5];
+	unsigned char th_grad;
+	unsigned char th_diff;
+	unsigned char th_csc;
+	unsigned short th_var;
+	unsigned char th_var_en;
+	unsigned char th_csc_en;
+	unsigned char th_diff_en;
+	unsigned char th_grad_en;
+	unsigned char use_old_lp;
+	unsigned char similarity_th;
+	unsigned char flat_level_sel;
+	unsigned char pattern_level_sel;
+	unsigned char edge_level_sel;
+	unsigned char thgrad_r_fct;
+	unsigned char thdiff_r_fct;
+	unsigned char thvar_r_fct;
+	unsigned char thgrad_b_fct;
+	unsigned char thdiff_b_fct;
+	unsigned char thvar_b_fct;
+} __attribute__ ((packed));
+
+/**
+ * struct cifisp_rkiesharp_config - rk ie sharp
+ */
+struct cifisp_rkiesharp_config {
+	unsigned char coring_thr; 		// iesharpen coring_thr is default 0
+	unsigned char full_range; 		// iesharpen full range(yuv data) 1:full_range(0-255),2:range(16-24?)
+	unsigned char switch_avg; 	  //iesharpen whether is compare center pixel with edge pixel
+	unsigned char yavg_thr[4];
+	unsigned char delta1[5];
+	unsigned char delta2[5];
+	unsigned char maxnumber[5];
+	unsigned char minnumber[5];
+	unsigned char gauss_flat_coe[9];
+	unsigned char gauss_noise_coe[9];
+	unsigned char gauss_other_coe[9];
+	unsigned char line1_filter_coe[6];
+	unsigned char line2_filter_coe[9];
+	unsigned char line3_filter_coe[6];
+	unsigned short grad_seq[4];
+	unsigned char sharp_factor[5];
+	unsigned char uv_gauss_flat_coe[15];
+	unsigned char uv_gauss_noise_coe[15];
+	unsigned char uv_gauss_other_coe[15];
+
+} __attribute__ ((packed));
+
 /**
  * struct cifisp_isp_other_cfg - Parameters for some blocks in rockchip isp1
  *
@@ -615,6 +688,9 @@ struct cifisp_isp_other_cfg {
 	struct cifisp_dpf_strength_config dpf_strength_config;
 	struct cifisp_cproc_config cproc_config;
 	struct cifisp_ie_config ie_config;
+	struct cifisp_wdr_config wdr_config;
+	struct cifisp_demosaiclp_config demosaiclp_config;
+	struct cifisp_rkiesharp_config rkiesharp_config;
 } __attribute__ ((packed));
 
 /**
@@ -826,4 +902,6 @@ struct cifisp_last_capture_config {
 #define CIFISP_WDR_ID       15
 #define CIFISP_DPF_ID       16
 #define CIFISP_DPF_STRENGTH_ID  17
+#define CIFISP_DEMOSAICLP_ID  18
+#define CIFISP_RK_IESHARP_ID  19
 #endif /* _UAPI_RKISP1_V12_CONFIG_H */

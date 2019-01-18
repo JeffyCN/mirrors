@@ -527,6 +527,26 @@ void convert_from_rkisp_misc_result( CamIA10Engine* iqEngine,
 	  manCfg.enabled[HAL_ISP_WDR_ID] = HAL_ISP_ACTIVE_DEFAULT;
 	}
 
+	bool mDemosaicLPNeededUpdate = false;
+	struct HAL_ISP_demosaiclp_cfg_s demosaicLP_cfg;
+
+	if (mDemosaicLPNeededUpdate) {
+	  memset(&demosaicLP_cfg,	0, sizeof(struct HAL_ISP_demosaiclp_cfg_s));
+	  manCfg.demosaicLP_cfg = &demosaicLP_cfg;
+	  manCfg.updated_mask |= HAL_ISP_DEMOSAICLP_MASK;
+	  manCfg.enabled[HAL_ISP_DEMOSAICLP_ID] = HAL_ISP_ACTIVE_DEFAULT;
+	}
+
+	bool mrkIEsharpNeededUpdate = false;
+	struct HAL_ISP_RKIEsharp_cfg_s rkIESharp_cfg;
+
+	if (mrkIEsharpNeededUpdate) {
+	  memset(&rkIESharp_cfg,	0, sizeof(struct HAL_ISP_RKIEsharp_cfg_s));
+	  manCfg.rkIEsharp_cfg = &rkIESharp_cfg;
+	  manCfg.updated_mask |= HAL_ISP_RKIESHARP_MASK;
+	  manCfg.enabled[HAL_ISP_RKIESHARP_ID] = HAL_ISP_ACTIVE_DEFAULT;
+	}
+
 	iqEngine->runManISP(&manCfg, ia_results);
 
 	//-------------------apply result to HAL-------------------------

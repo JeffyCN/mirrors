@@ -28,7 +28,10 @@ using namespace std;
 #define ISP_WDR_MASK  (1 << 15)
 #define ISP_DPF_MASK  (1 << 16)
 #define ISP_DPF_STRENGTH_MASK (1 << 17)
-#define ISP_DSP_3DNR_MASK (1<<18)
+#define ISP_RK_DEMOSAICLP_MASK (1<<18)
+#define ISP_RK_IESHARP_MASK	(1<<19)
+#define ISP_DSP_3DNR_MASK (1<<20)
+#define ISP_NEW_DSP_3DNR_MASK (1<<21)
 
 #define ISP_ALL_MASK  (0xffffffff)
 
