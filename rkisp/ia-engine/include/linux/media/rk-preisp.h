@@ -107,8 +107,11 @@ struct cifisp_preisp_dspmsg_head {
 	unsigned int mesg_count;
 };
 
+#define CIFISP_PREISP_GOC_CURVE_SIZE 34
+
 typedef struct cifisp_preisp_hdr_ae_embeded_type {
 	struct cifisp_preisp_dspmsg_head head;
 	struct cifisp_preisp_hdrae_result result;
+    unsigned short cifisp_preisp_goc_curve[CIFISP_PREISP_GOC_CURVE_SIZE];
 } cifisp_preisp_hdr_ae_embeded_type_t;
 #endif /* _UAPI_RKPREISP_H */

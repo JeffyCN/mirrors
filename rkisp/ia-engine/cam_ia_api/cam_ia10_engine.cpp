@@ -2532,6 +2532,43 @@ RESULT CamIA10Engine::getAWDRResults(AwdrResult_t* result) {
     return ret;
 }
 
+RESULT CamIA10Engine::runManIspForPreIsp(struct CamIA10_Results* result) {
+    RESULT ret = RET_SUCCESS;
+
+    if (mSensorEntityName && strstr(mSensorEntityName, "1608")) {
+        struct HAL_ISP_cfg_s manCfg;
+        struct HAL_ISP_goc_cfg_s goc_cfg;
+
+        memset(&manCfg, 0, sizeof(manCfg));
+
+        memcpy(goc_cfg.gamma_y,
+               mStats.cifisp_preisp_goc_curve,
+               sizeof(goc_cfg.gamma_y));
+        goc_cfg.mode = HAL_ISP_GAMMA_SEG_MODE_LOGARITHMIC;
+        goc_cfg.used_cnt = CIFISP_PREISP_GOC_CURVE_SIZE;
+        manCfg.enabled[HAL_ISP_GOC_ID] = HAL_ISP_ACTIVE_SETTING;
+        manCfg.updated_mask |= HAL_ISP_GOC_MASK;
+        manCfg.goc_cfg = &goc_cfg;
+        if (true/*manCfg.updated_mask & HAL_ISP_GOC_MASK*/) {
+            ret = cam_ia10_isp_goc_config
+                (
+                 hCamCalibDb,
+                 manCfg.enabled[HAL_ISP_GOC_ID],
+                 manCfg.goc_cfg,
+                 &(result->goc),
+                 BOOL_FALSE,
+                 mIspVer
+                );
+
+            if (ret != RET_SUCCESS)
+                ALOGE("%s:config GOC failed !", __FUNCTION__);
+            result->active |= CAMIA10_GOC_MASK;
+        }
+    }
+
+    return ret;
+}
+
 RESULT CamIA10Engine::runManIspForBW(struct CamIA10_Results* result) {
     RESULT ret = RET_SUCCESS;
     struct HAL_ISP_cfg_s manCfg;
@@ -2897,6 +2934,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
     }
 
     runManIspForBW(result);
+    runManIspForPreIsp(result);
 
     return ret;
 }

@@ -448,6 +448,9 @@ bool Isp10Engine::convertIspStats(
             preisp_hdr_ae_stats->result.OEMeasRes.SumHistPixel;
     ia_stats->aec.fOEMeasRes.SframeMaxLuma =
             preisp_hdr_ae_stats->result.OEMeasRes.SframeMaxLuma;
+    memcpy(ia_stats->cifisp_preisp_goc_curve,
+           preisp_hdr_ae_stats->cifisp_preisp_goc_curve,
+           sizeof(ia_stats->cifisp_preisp_goc_curve));
   }
 
   if (isp_stats->meas_type & CIFISP_STAT_AWB) {

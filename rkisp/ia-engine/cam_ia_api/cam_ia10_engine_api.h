@@ -104,6 +104,7 @@ struct CamIA10_Stats {
   AwbGains_t             effct_awb_gains;
   Cam3x3FloatMatrix_t        effect_CtMatrix;
   AwbXTalkOffset_t         effect_CtOffset;
+  unsigned short cifisp_preisp_goc_curve[CIFISP_PREISP_GOC_CURVE_SIZE];
 };
 
 typedef struct CamIA10_AWB_Result_s {
