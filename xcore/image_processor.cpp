@@ -101,7 +101,19 @@ public:
     ~X3aResultsProcessThread () {}
 
     XCamReturn push_result (SmartPtr<X3aResult> &result) {
-        _queue.push (result);
+        if (result->is_first_params()) {
+            X3aResultList result_list;
+
+            result_list.push_back (result);
+
+            XCamReturn ret = _processor->process_3a_results (result_list);
+            if (ret != XCAM_RETURN_NO_ERROR) {
+                XCAM_LOG_DEBUG ("processing 3a result failed");
+            }
+        } else {
+            _queue.push (result);
+        }
+
         return XCAM_RETURN_NO_ERROR;
     }
 

@@ -41,6 +41,7 @@ protected:
         , _timestamp (timestamp)
         , _ptr (NULL)
         , _processed (false)
+        , _first_result(false)
     {}
 
 public:
@@ -54,6 +55,12 @@ public:
     }
     void set_done (bool flag) {
         _processed = flag;
+    }
+    bool is_first_params () const {
+        return _first_result;
+    }
+    void set_first_params (bool flag) {
+        _first_result = flag;
     }
     void set_timestamp (int64_t timestamp) {
         _timestamp = timestamp;
@@ -89,6 +96,7 @@ protected:
     int64_t               _timestamp;
     void                 *_ptr;
     bool                  _processed;
+    bool                  _first_result;
 };
 
 typedef std::list<SmartPtr<X3aResult>>  X3aResultList;

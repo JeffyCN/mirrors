@@ -238,6 +238,8 @@ X3aAnalyzerRKiq::configure_3a ()
         for (X3aResultList::iterator iter = first_results.begin (); iter != first_results.end (); ++iter) {
             SmartPtr<X3aResult> &isp_result = *iter;
 
+            isp_result->set_first_params (true);
+
             XCAM_LOG_INFO ("first result type: %d", isp_result->get_type());
             if (isp_result->get_type() == X3aIspConfig::IspAllParameters) {
                 SmartPtr<X3aAtomIspParametersResult> isp_3a_all =
