@@ -905,6 +905,7 @@ static void ClearNewDsp3DNRList(List* l) {
 		free(pNewDsp3DNR->sharp.psharp_weight_level);
 	  }
 
+	  free(pNewDsp3DNR);
 	  /* 3.) get next item */
       pNewDsp3DNR = (CamNewDsp3DNRProfile_t*)ListRemoveHead(l);
 	}
@@ -1007,6 +1008,15 @@ static void ClearDsp3DNRList(List* l) {
  * ClearDsp3DNRList
  *****************************************************************************/
 static void ClearDemosicLP(CamDemosaicLpProfile_t *pDemosaicLp) {
+
+	if(pDemosaicLp->lu_divided){
+		free(pDemosaicLp->lu_divided);
+	}
+
+	if(pDemosaicLp->gainsArray){
+		free(pDemosaicLp->gainsArray);
+	}
+	
 	if(pDemosaicLp->diff_divided0){
 		free(pDemosaicLp->diff_divided0);
 	}
