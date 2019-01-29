@@ -108,6 +108,7 @@ public:
 
     XCamReturn start ();
     XCamReturn stop ();
+    XCamReturn prepare ();
 
 protected:
     virtual void handle_message (const SmartPtr<XCamMessage> &msg) = 0;

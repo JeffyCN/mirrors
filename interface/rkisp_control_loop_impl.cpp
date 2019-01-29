@@ -245,6 +245,8 @@ int rkisp_cl_prepare(void* cl_ctx,
 
     device_manager->set_static_metadata (prepare_params->staticMeta);
 
+    device_manager->prepare ();
+
     device_manager->_cl_state = RKISP_CL_STATE_PREPARED;
     LOGD("--------------------------rkisp_cl_prepare done");
 

@@ -92,6 +92,10 @@ DeviceManager::DeviceManager()
 DeviceManager::~DeviceManager()
 {
     XCAM_LOG_DEBUG ("~DeviceManager destruction");
+
+    if (_3a_analyzer.ptr()) {
+        _3a_analyzer->deinit ();
+    }
 }
 
 bool
@@ -259,45 +263,21 @@ DeviceManager::start ()
     }
 
     if (_has_3a) {
-        // Initialize and start analyzer
-        uint32_t width = 0, height = 0;
-        uint32_t fps_n = 0, fps_d = 0;
-        double framerate = 30.0;
-
-        if (!_3a_analyzer.ptr()) {
-            _3a_analyzer = X3aAnalyzerManager::instance()->create_analyzer();
-            if (!_3a_analyzer.ptr()) {
-                XCAM_FAILED_STOP (ret = XCAM_RETURN_ERROR_PARAM, "create analyzer failed");
-            }
-        }
-
-        _3a_analyzer->set_sync_mode(true);
-
-        _3a_analyzer->set_isp_stats_device(_isp_stats_device.ptr());
-        _3a_analyzer->set_isp_params_device(_isp_params_device.ptr());
-        _3a_analyzer->set_video_device(_device.ptr());
-
-        if (_3a_analyzer->prepare_handlers () != XCAM_RETURN_NO_ERROR) {
-            XCAM_FAILED_STOP (ret = XCAM_RETURN_ERROR_PARAM, "prepare analyzer handler failed");
-        }
-        _3a_analyzer->set_results_callback (this);
-
-        if (_device.ptr()) {
-            _device->get_size (width, height);
-            _device->get_framerate (fps_n, fps_d);
-        }
-
-        if (fps_d)
-            framerate = (double)fps_n / (double)fps_d;
-        XCAM_LOG_INFO ("initialize analyzer width: %d, height: %d, framerate: %d",
-            width, height, framerate);
-        XCAM_FAILED_STOP (
-            ret = _3a_analyzer->init (width, height, framerate),
-            "initialize analyzer failed");
-
         XCAM_FAILED_STOP (ret = _3a_analyzer->start (), "start analyzer failed");
 
         if (_smart_analyzer.ptr()) {
+            uint32_t width = 0, height = 0;
+            uint32_t fps_n = 0, fps_d = 0;
+            double framerate = 30.0;
+
+            if (_device.ptr()) {
+                _device->get_size (width, height);
+                _device->get_framerate (fps_n, fps_d);
+            }
+
+            if (fps_d)
+                framerate = (double)fps_n / (double)fps_d;
+
             if (_smart_analyzer->prepare_handlers () != XCAM_RETURN_NO_ERROR) {
                 XCAM_LOG_INFO ("prepare smart analyzer handler failed");
             }
@@ -361,7 +341,7 @@ DeviceManager::stop ()
 
     if (_3a_analyzer.ptr()) {
         _3a_analyzer->stop ();
-        _3a_analyzer->deinit ();
+        /* _3a_analyzer->deinit (); */
     }
 
     XCAM_LOG_INFO ("Device manager 3a analyzer stopped");
@@ -397,6 +377,47 @@ DeviceManager::stop ()
 
     XCAM_LOG_DEBUG ("Device manager stopped");
     return XCAM_RETURN_NO_ERROR;
+}
+
+XCamReturn
+DeviceManager::prepare ()
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    uint32_t width = 0, height = 0;
+    uint32_t fps_n = 0, fps_d = 0;
+    double framerate = 30.0;
+
+    LOGD("-----DeviceManager::prepare");
+
+    XCAM_ASSERT (_3a_analyzer.ptr ());
+    XCAM_ASSERT (_isp_stats_device.ptr());
+    XCAM_ASSERT (_isp_params_device.ptr());
+
+    _3a_analyzer->set_sync_mode(true);
+
+    _3a_analyzer->set_isp_stats_device(_isp_stats_device.ptr());
+    _3a_analyzer->set_isp_params_device(_isp_params_device.ptr());
+    _3a_analyzer->set_video_device(_device.ptr());
+
+    if (_3a_analyzer->prepare_handlers () != XCAM_RETURN_NO_ERROR) {
+        XCAM_FAILED_STOP (ret = XCAM_RETURN_ERROR_PARAM, "prepare analyzer handler failed");
+    }
+    _3a_analyzer->set_results_callback (this);
+
+    if (_device.ptr()) {
+        _device->get_size (width, height);
+        _device->get_framerate (fps_n, fps_d);
+    }
+
+    if (fps_d)
+        framerate = (double)fps_n / (double)fps_d;
+    XCAM_LOG_INFO ("initialize analyzer width: %d, height: %d, framerate: %d",
+        width, height, framerate);
+    XCAM_FAILED_STOP (
+        ret = _3a_analyzer->init (width, height, framerate),
+        "initialize analyzer failed");
+
+    return ret;
 }
 
 XCamReturn
