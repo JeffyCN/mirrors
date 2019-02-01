@@ -697,7 +697,7 @@
                      </CC_PROFILE_LIST>
                   </aCC>
                </cell>
-	     <cell index="2" type="struct" size="[1 1]">               <name index="1" type="char" size="[1 8]">                  BW               </name>               <doorType index="1" type="char" size="[1 7]">                  Outdoor               </doorType>               <GMM index="1" type="struct" size="[1 1]">                  <invCovMatrix index="1" type="double" size="[1 4]">                     [477.211753 -262.806190 -262.806190 1630.082336 ]                  </invCovMatrix>                  <GaussianScalingFactor index="1" type="double" size="[1 1]">                     [133.995550]                  </GaussianScalingFactor>                  <tau index="1" type="double" size="[1 2]">                     [1 1]                  </tau>                  <GaussianMeanValue index="1" type="double" size="[1 2]">                     [0.095843 -0.046676]                  </GaussianMeanValue>               </GMM>               <aLSC index="1" type="cell" size="[1 2]">                  <cell index="1" type="struct" size="[1 1]">                     <resolution index="1" type="char" size="[1 9]">                        640x480                     </resolution>                     <LSC_PROFILE_LIST index="1" type="char" size="[1 32]">                        640x480_BW_100 640x480_BW_70                     </LSC_PROFILE_LIST>                  </cell>                  <cell index="2" type="struct" size="[1 1]">                     <resolution index="1" type="char" size="[1 9]">                        2592x1944                     </resolution>                     <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                        2592x1944_BW_100 2592x1944_BW_70                     </LSC_PROFILE_LIST>                  </cell>               </aLSC>               <manualWB index="1" type="double" size="[1 4]">                  [1 1 1 1]               </manualWB>               <manualccMatrix index="1" type="double" size="[3 3]">                  [1 0 0 0 1 0 0 0 1]               </manualccMatrix>               <manualccOffsets index="1" type="double" size="[1 3]">                  [0 0 0]               </manualccOffsets>               <awbType index="1" type="char" size="[1 4]">                  MANUAL               </awbType>               <sat_CT index="1" type="struct" size="[1 1]">                  <gains index="1" type="double" size="[1 4]">                     [1 2 4 8]                  </gains>                  <sat index="1" type="double" size="[1 4]">                     [100 100 100 100]                  </sat>               </sat_CT>               <vig_CT index="1" type="struct" size="[1 1]">                  <gains index="1" type="double" size="[1 4]">                     [1 2 4 8]                  </gains>                  <vig index="1" type="double" size="[1 4]">                     [100 100 100 100]                  </vig>               </vig_CT>               <aCC index="1" type="struct" size="[1 1]">                  <CC_PROFILE_LIST index="1" type="char" size="[1 14]">                     BW_100 BW_74                  </CC_PROFILE_LIST>               </aCC>            </cell>
+	     <cell index="2" type="struct" size="[1 1]">               <name index="1" type="char" size="[1 8]">                  BW               </name>               <doorType index="1" type="char" size="[1 7]">                  Outdoor               </doorType>               <GMM index="1" type="struct" size="[1 1]">                  <invCovMatrix index="1" type="double" size="[1 4]">                     [477.211753 -262.806190 -262.806190 1630.082336 ]                  </invCovMatrix>                  <GaussianScalingFactor index="1" type="double" size="[1 1]">                     [133.995550]                  </GaussianScalingFactor>                  <tau index="1" type="double" size="[1 2]">                     [1 1]                  </tau>                  <GaussianMeanValue index="1" type="double" size="[1 2]">                     [0.095843 -0.046676]                  </GaussianMeanValue>               </GMM>               <aLSC index="1" type="cell" size="[1 2]">                  <cell index="1" type="struct" size="[1 1]">                     <resolution index="1" type="char" size="[1 9]">                        1920x1080                     </resolution>                     <LSC_PROFILE_LIST index="1" type="char" size="[1 32]">                        1920x1080_BW_100 1920x1080_BW_70                     </LSC_PROFILE_LIST>                  </cell>                  <cell index="2" type="struct" size="[1 1]">                     <resolution index="1" type="char" size="[1 9]">                        640x480                     </resolution>                     <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                        640x480_BW_100 640x480_BW_70                     </LSC_PROFILE_LIST>                  </cell>               </aLSC>               <manualWB index="1" type="double" size="[1 4]">                  [1 1 1 1]               </manualWB>               <manualccMatrix index="1" type="double" size="[3 3]">                  [1 0 0 0 1 0 0 0 1]               </manualccMatrix>               <manualccOffsets index="1" type="double" size="[1 3]">                  [0 0 0]               </manualccOffsets>               <awbType index="1" type="char" size="[1 4]">                  MANUAL               </awbType>               <sat_CT index="1" type="struct" size="[1 1]">                  <gains index="1" type="double" size="[1 4]">                     [1 2 4 8]                  </gains>                  <sat index="1" type="double" size="[1 4]">                     [100 100 100 100]                  </sat>               </sat_CT>               <vig_CT index="1" type="struct" size="[1 1]">                  <gains index="1" type="double" size="[1 4]">                     [1 2 4 8]                  </gains>                  <vig index="1" type="double" size="[1 4]">                     [100 100 100 100]                  </vig>               </vig_CT>               <aCC index="1" type="struct" size="[1 1]">                  <CC_PROFILE_LIST index="1" type="char" size="[1 14]">                     BW_100 BW_74                  </CC_PROFILE_LIST>               </aCC>            </cell>
                <cell index="2" type="struct" size="[1 1]">
                   <name index="1" type="char" size="[1 3]">
                      D50
@@ -920,7 +920,7 @@
             </illumination>
 	</version_10_para>
 	<version_11_para index="1" type="struct" size="[1 1]">            <globals index="1" type="cell" size="[1 2]">               <cell index="1" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 9]">                     1920x1080                  </name>                  <resolution index="1" type="char" size="[1 9]">                     1920x1080                  </resolution>                  <CenterLine index="1" type="double" size="[1 3]">                     [-0.752198505384562 -0.658936573956273 -2.45456596704462]                  </CenterLine>                  <afWBGainClipEnable index="1" type="double" size="[1 1]">                     [1]                  </afWBGainClipEnable>                  <afRg2 index="1" type="double" size="[1 16]">                     [ 1.05000f 1.11258f 1.17711f 1.25066f 1.30927f 1.35188f 1.40809f 1.46647f 1.53775f 1.61698f 1.67514f 1.73859f 1.81432f 1.88138f 1.93567f 2.00179ff ]                  </afRg2>                  <afMaxDist2 index="1" type="double" size="[1 16]">                     [ 0.14959f 0.16073f 0.17517f 0.19640f 0.26255f 0.31866f 0.36295f 0.36676f 0.32211f 0.22931f 0.17078f 0.13027f 0.11103f 0.10332f 0.10004f 0.10915ff ]                  </afMaxDist2>                  <afRg1 index="1" type="double" size="[1 16]">                     [ 1.05000f 1.11345f 1.17690f 1.24036f 1.30381f 1.36726f 1.43071f 1.49417f 1.55762f 1.62107f 1.68452f 1.74798f 1.81143f 1.87488f 1.93833f 2.00179ff ]                  </afRg1>                  <afMaxDist1 index="1" type="double" size="[1 16]">                     [ 0.05041f 0.07005f 0.08798f 0.10464f 0.11935f 0.13241f 0.14336f 0.15186f 0.15788f 0.16092f 0.16070f 0.15668f 0.14851f 0.13535f 0.11700f 0.09085ff ]                  </afMaxDist1>                  <afGlobalFade2 index="1" type="double" size="[1 16]">                     [ 0.80000f 0.88279f 0.97737f 1.05056f 1.13603f 1.22137f 1.28817f 1.37640f 1.46031f 1.56938f 1.66258f 1.73808f 1.80153f 1.88388f 1.92541f 2.04179ff ]                  </afGlobalFade2>                  <afGlobalGainDistance2 index="1" type="double" size="[1 16]">                     [ 0.33824f 0.30681f 0.27158f 0.27450f 0.29868f 0.36689f 0.44721f 0.51157f 0.50650f 0.47425f 0.38793f 0.30635f 0.26585f 0.23153f 0.23269f 0.23066ff ]                  </afGlobalGainDistance2>                  <afGlobalFade1 index="1" type="double" size="[1 16]">                     [ 0.80000f 0.88279f 0.96557f 1.04836f 1.13114f 1.21393f 1.29671f 1.37950f 1.46229f 1.54507f 1.62786f 1.71064f 1.79343f 1.87621f 1.95900f 2.04179ff ]                  </afGlobalFade1>                  <afGlobalGainDistance1 index="1" type="double" size="[1 16]">                     [ 0.06176f 0.09319f 0.12237f 0.14998f 0.17497f 0.19764f 0.21798f 0.23463f 0.24791f 0.25686f 0.26108f 0.25951f 0.25132f 0.23500f 0.20974f 0.16934ff ]                  </afGlobalGainDistance1>                  <K_Factor index="1" type="double" size="[1 1]">                     [6.5]                  </K_Factor>                  <afFade2 index="1" type="double" size="[1 6]">                     [1 1.32 1.5 1.7 1.85 2]                  </afFade2>                  <afmaxCSum_br index="1" type="double" size="[1 6]">                     [20 15 12 12 10 10]                  </afmaxCSum_br>                  <afmaxCSum_sr index="1" type="double" size="[1 6]">                     [16 12 9 9 9 9]                  </afmaxCSum_sr>                  <afminC_br index="1" type="double" size="[1 6]">                     [20 17 15 15 14 13]                  </afminC_br>                  <afMaxY_br index="1" type="double" size="[1 6]">                     [230 230 230 230 230 230]                  </afMaxY_br>                  <afMinY_br index="1" type="double" size="[1 6]">                     [30 30 30 30 30 30]                  </afMinY_br>                  <afminC_sr index="1" type="double" size="[1 6]">                     [16 14 13 12 12 10]                  </afminC_sr>                  <afMaxY_sr index="1" type="double" size="[1 6]">                     [230 230 230 230 230 230]                  </afMaxY_sr>                  <afMinY_sr index="1" type="double" size="[1 6]">                     [30 30 30 30 30 30]                  </afMinY_sr>                  <afRefCb index="1" type="double" size="[1 6]">                     [141 137 131 127 125 121]                  </afRefCb>                  <afRefCr index="1" type="double" size="[1 6]">                     [123 127 133 137 139 143]                  </afRefCr>                  <RegionSize index="1" type="double" size="[1 1]">                     [1]                  </RegionSize>                  <RegionSizeInc index="1" type="double" size="[1 1]">                     [0.1]                  </RegionSizeInc>                  <RegionSizeDec index="1" type="double" size="[1 1]">                     [0.02]                  </RegionSizeDec>                  <fRgProjIndoorMin index="1" type="double" size="[1 1]">                     [1.05]                  </fRgProjIndoorMin>                  <fRgProjMax index="1" type="double" size="[1 1]">                     [2.0018]                  </fRgProjMax>                  <fRgProjMaxSky index="1" type="double" size="[1 1]">                     [2.0418]                  </fRgProjMaxSky>                  <fRgProjOutdoorMin index="1" type="double" size="[1 1]">                     [1.5]                  </fRgProjOutdoorMin>                  <fRgProjYellowLimitEnable index="1" type="ushort" size="[1 1]">                     [0]                  </fRgProjYellowLimitEnable>                  <fRgProjALimit index="1" type="double" size="[1 1]">                     [5]                  </fRgProjALimit>                  <fRgProjAWeight index="1" type="double" size="[1 1]">                     [0]                  </fRgProjAWeight>                  <fRgProjYellowLimit index="1" type="double" size="[1 1]">                     [1.4]                  </fRgProjYellowLimit>                  <fRgProjIllToCwfEnable index="1" type="ushort" size="[1 1]">                     [0]                  </fRgProjIllToCwfEnable>                  <fRgProjIllToCwf index="1" type="double" size="[1 1]">                     [-0.15]                  </fRgProjIllToCwf>                  <fRgProjIllToCwfWeight index="1" type="double" size="[1 1]">                     [0]                  </fRgProjIllToCwfWeight>                  <awb_clip_outdoor index="1" type="char" size="[1 3]">                     D65                  </awb_clip_outdoor>                  <IIR index="1" type="struct" size="[1 1]">                     <DampCoefAdd index="1" type="double" size="[1 1]">                        [0.05]                     </DampCoefAdd>                     <DampCoefSub index="1" type="double" size="[1 1]">                        [0.05]                     </DampCoefSub>                     <DampFilterThreshold index="1" type="double" size="[1 1]">                        [0.1]                     </DampFilterThreshold>                     <DampingCoefMin index="1" type="double" size="[1 1]">                        [0.7]                     </DampingCoefMin>                     <DampingCoefMax index="1" type="double" size="[1 1]">                        [0.9]                     </DampingCoefMax>                     <DampingCoefInit index="1" type="double" size="[1 1]">                        [0.7]                     </DampingCoefInit>                     <ExpPriorFilterSizeMax index="1" type="double" size="[1 1]">                        [50]                     </ExpPriorFilterSizeMax>                     <ExpPriorFilterSizeMin index="1" type="double" size="[1 1]">                        [1]                     </ExpPriorFilterSizeMin>                     <ExpPriorMiddle index="1" type="double" size="[1 1]">                        [0.5]                     </ExpPriorMiddle>                  </IIR>               </cell>               <cell index="2" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 9]">                     640x480                  </name>                  <resolution index="1" type="char" size="[1 9]">                     640x480                  </resolution>                  <CenterLine index="1" type="double" size="[1 3]">                     [-0.752198505384562 -0.658936573956273 -2.45456596704462]                  </CenterLine>                  <afWBGainClipEnable index="1" type="double" size="[1 1]">                     [1]                  </afWBGainClipEnable>                  <afRg2 index="1" type="double" size="[1 16]">                     [ 1.05000f 1.11258f 1.17711f 1.25066f 1.30927f 1.35188f 1.40809f 1.46647f 1.53775f 1.61698f 1.67514f 1.73859f 1.81432f 1.88138f 1.93567f 2.00179ff ]                  </afRg2>                  <afMaxDist2 index="1" type="double" size="[1 16]">                     [ 0.14959f 0.16073f 0.17517f 0.19640f 0.26255f 0.31866f 0.36295f 0.36676f 0.32211f 0.22931f 0.17078f 0.13027f 0.11103f 0.10332f 0.10004f 0.10915ff ]                  </afMaxDist2>                  <afRg1 index="1" type="double" size="[1 16]">                     [ 1.05000f 1.11345f 1.17690f 1.24036f 1.30381f 1.36726f 1.43071f 1.49417f 1.55762f 1.62107f 1.68452f 1.74798f 1.81143f 1.87488f 1.93833f 2.00179ff ]                  </afRg1>                  <afMaxDist1 index="1" type="double" size="[1 16]">                     [ 0.05041f 0.07005f 0.08798f 0.10464f 0.11935f 0.13241f 0.14336f 0.15186f 0.15788f 0.16092f 0.16070f 0.15668f 0.14851f 0.13535f 0.11700f 0.09085ff ]                  </afMaxDist1>                  <afGlobalFade2 index="1" type="double" size="[1 16]">                     [ 0.80000f 0.88279f 0.97737f 1.05056f 1.13603f 1.22137f 1.28817f 1.37640f 1.46031f 1.56938f 1.66258f 1.73808f 1.80153f 1.88388f 1.92541f 2.04179ff ]                  </afGlobalFade2>                  <afGlobalGainDistance2 index="1" type="double" size="[1 16]">                     [ 0.33824f 0.30681f 0.27158f 0.27450f 0.29868f 0.36689f 0.44721f 0.51157f 0.50650f 0.47425f 0.38793f 0.30635f 0.26585f 0.23153f 0.23269f 0.23066ff ]                  </afGlobalGainDistance2>                  <afGlobalFade1 index="1" type="double" size="[1 16]">                     [ 0.80000f 0.88279f 0.96557f 1.04836f 1.13114f 1.21393f 1.29671f 1.37950f 1.46229f 1.54507f 1.62786f 1.71064f 1.79343f 1.87621f 1.95900f 2.04179ff ]                  </afGlobalFade1>                  <afGlobalGainDistance1 index="1" type="double" size="[1 16]">                     [ 0.06176f 0.09319f 0.12237f 0.14998f 0.17497f 0.19764f 0.21798f 0.23463f 0.24791f 0.25686f 0.26108f 0.25951f 0.25132f 0.23500f 0.20974f 0.16934ff ]                  </afGlobalGainDistance1>                  <K_Factor index="1" type="double" size="[1 1]">                     [6.5]                  </K_Factor>                  <afFade2 index="1" type="double" size="[1 6]">                     [1 1.32 1.5 1.7 1.85 2]                  </afFade2>                  <afmaxCSum_br index="1" type="double" size="[1 6]">                     [20 15 12 12 10 10]                  </afmaxCSum_br>                  <afmaxCSum_sr index="1" type="double" size="[1 6]">                     [16 12 9 9 9 9]                  </afmaxCSum_sr>                  <afminC_br index="1" type="double" size="[1 6]">                     [20 17 15 15 14 13]                  </afminC_br>                  <afMaxY_br index="1" type="double" size="[1 6]">                     [230 230 230 230 230 230]                  </afMaxY_br>                  <afMinY_br index="1" type="double" size="[1 6]">                     [30 30 30 30 30 30]                  </afMinY_br>                  <afminC_sr index="1" type="double" size="[1 6]">                     [16 14 13 12 12 10]                  </afminC_sr>                  <afMaxY_sr index="1" type="double" size="[1 6]">                     [230 230 230 230 230 230]                  </afMaxY_sr>                  <afMinY_sr index="1" type="double" size="[1 6]">                     [30 30 30 30 30 30]                  </afMinY_sr>                  <afRefCb index="1" type="double" size="[1 6]">                     [141 137.5 131 127 125 121]                  </afRefCb>                  <afRefCr index="1" type="double" size="[1 6]">                     [123 126.5 133 137 139 143]                  </afRefCr>                  <RegionSize index="1" type="double" size="[1 1]">                     [1]                  </RegionSize>                  <RegionSizeInc index="1" type="double" size="[1 1]">                     [0.1]                  </RegionSizeInc>                  <RegionSizeDec index="1" type="double" size="[1 1]">                     [0.02]                  </RegionSizeDec>                  <fRgProjIndoorMin index="1" type="double" size="[1 1]">                     [1.05]                  </fRgProjIndoorMin>                  <fRgProjMax index="1" type="double" size="[1 1]">                     [2.0018]                  </fRgProjMax>                  <fRgProjMaxSky index="1" type="double" size="[1 1]">                     [2.0418]                  </fRgProjMaxSky>                  <fRgProjOutdoorMin index="1" type="double" size="[1 1]">                     [1.5]                  </fRgProjOutdoorMin>                  <fRgProjYellowLimitEnable index="1" type="ushort" size="[1 1]">                     [0]                  </fRgProjYellowLimitEnable>                  <fRgProjALimit index="1" type="double" size="[1 1]">                     [5]                  </fRgProjALimit>                  <fRgProjAWeight index="1" type="double" size="[1 1]">                     [0]                  </fRgProjAWeight>                  <fRgProjYellowLimit index="1" type="double" size="[1 1]">                     [1.4]                  </fRgProjYellowLimit>                  <fRgProjIllToCwfEnable index="1" type="ushort" size="[1 1]">                     [0]                  </fRgProjIllToCwfEnable>                  <fRgProjIllToCwf index="1" type="double" size="[1 1]">                     [-0.15]                  </fRgProjIllToCwf>                  <fRgProjIllToCwfWeight index="1" type="double" size="[1 1]">                     [0]                  </fRgProjIllToCwfWeight>                  <awb_clip_outdoor index="1" type="char" size="[1 3]">                     D65                  </awb_clip_outdoor>                  <IIR index="1" type="struct" size="[1 1]">                     <DampCoefAdd index="1" type="double" size="[1 1]">                        [0.05]                     </DampCoefAdd>                     <DampCoefSub index="1" type="double" size="[1 1]">                        [0.05]                     </DampCoefSub>                     <DampFilterThreshold index="1" type="double" size="[1 1]">                        [0.1]                     </DampFilterThreshold>                     <DampingCoefMin index="1" type="double" size="[1 1]">                        [0.7]                     </DampingCoefMin>                     <DampingCoefMax index="1" type="double" size="[1 1]">                        [0.9]                     </DampingCoefMax>                     <DampingCoefInit index="1" type="double" size="[1 1]">                        [0.7]                     </DampingCoefInit>                     <ExpPriorFilterSizeMax index="1" type="double" size="[1 1]">                        [50]                     </ExpPriorFilterSizeMax>                     <ExpPriorFilterSizeMin index="1" type="double" size="[1 1]">                        [1]                     </ExpPriorFilterSizeMin>                     <ExpPriorMiddle index="1" type="double" size="[1 1]">                        [0.5]                     </ExpPriorMiddle>                  </IIR>               </cell>            </globals>            <illumination index="1" type="cell" size="[1 5]">               <cell index="1" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 1]">                     A                  </name>                  <doorType index="1" type="char" size="[1 6]">                     Indoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                     [1.12127136788065 1 1 2.42632503376925]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           1920x1080                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 30]">                           1920x1080_A_70 1920x1080_A_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 30]">                           640x480_A_70 640x480_A_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1.12127136788065 1 1 2.42632503376925]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1.55255612620346 -0.141563243090629 -0.410992883112834 -0.425713417401405 1.59921457829979 -0.173501160898381 -0.189796691504338 -1.33750191662507 2.52729860812941]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [-65 -60 -80]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     AUTO                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 10]">                        A_74 A_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>               <cell index="2" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 3]">                     D65                  </name>                  <doorType index="1" type="char" size="[1 7]">                     Outdoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                     [1.9740304740812 1 1 1.44993934517439]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           1920x1080                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           1920x1080_D65_70 1920x1080_D65_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           640x480_D65_70 640x480_D65_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1.9740304740812 1 1 1.44993934517439]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1.76667516565289 -0.585557742454834 -0.18111742319806 -0.27743124663595 1.77202487748245 -0.494593630846499 -0.023212985708365 -0.514003963657346 1.53721694936571]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [-75 -70 -90]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     AUTO                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 14]">                        D65_74 D65_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>               <cell index="3" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 6]">                     F2_CWF                  </name>                  <doorType index="1" type="char" size="[1 6]">                     Indoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                     [1.57697084567118 1 1 2.27251944204341]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           1920x1080                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 32]">                           1920x1080_F2_CWF_70 1920x1080_F2_CWF_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 32]">                           640x480_F2_CWF_70 640x480_F2_CWF_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1.57697084567118 1 1 2.27251944204341]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1.88219408064368 -0.418978552307483 -0.463215528336201 -0.360660468234479 1.58020088815916 -0.219540419924681 -0.0766063693754369 -0.853359266691687 1.92996563606712]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [-75 -70 -90]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     AUTO                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 12]">                        F2_CWF_74 F2_CWF_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>               <cell index="4" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 8]">                     F11_TL84                  </name>                  <doorType index="1" type="char" size="[1 6]">                     Indoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                     [1.28479216681239 1 1 2.17148034110079]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           1920x1080                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           1920x1080_F11_TL84_70 1920x1080_F11_TL84_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           640x480_F11_TL84_70 640x480_F11_TL84_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1.28479216681239 1 1 2.17148034110079]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1.66247927056746 -0.270397120306693 -0.392082150260766 -0.362911054842532 1.71644056411854 -0.35352950927601 -0.114663165927083 -0.825379207881822 1.94004237380891]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [-75 -75 -90]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     AUTO                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 14]">                        F11_TL84_74 F11_TL84_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>
-	      <cell index="2" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 3]">                     BW                  </name>                  <doorType index="1" type="char" size="[1 7]">                     Outdoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                    [1.28479216681239 1 1 2.17148034110079]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           640x480_BW_70 640x480_BW_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           2592x1944                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           2592x1944_BW_70 2592x1944_BW_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1 1 1 1]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1 0 0 0 1 0 0 0 1]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [0 0 0 ]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     MANUAL                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 14]">                        BW_74 BW_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>               <cell index="2" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 3]">                     D50                  </name>                  <doorType index="1" type="char" size="[1 7]">                     Outdoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                     [1.66686004309311 1 1 1.55107334809545]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           1920x1080                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           1920x1080_D50_70 1920x1080_D50_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           640x480_D50_70 640x480_D50_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1.66686004309311 1 1 1.55107334809545]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1.82276223608526 -0.622415852146652 -0.20034638393861 -0.300004837921671 1.61927730227101 -0.319272464349334 -0.0553993764292473 -0.713426478520189 1.76882585494944]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [-283.518637267041 -266.056263502343 -280.395268604709]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     AUTO                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [70 70 70 70]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 14]">                        D50_74 D50_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>               <cell index="4" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 3]">                     D75                  </name>                  <doorType index="1" type="char" size="[1 7]">                     Outdoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                     [1.94515936756641 1 1 1.24102483601273]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           1920x1080                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           1920x1080_D75_70 1920x1080_D75_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           640x480_D75_70 640x480_D75_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1.94515936756641 1 1 1.24102483601273]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1.85634852657841 -0.614071666488722 -0.24227686008969 -0.250615358668912 1.68285581937397 -0.432240460705059 -0.0355733479736956 -0.58304875608373 1.61862210405743]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [-284.599321885703 -270.726445217627 -282.378684716886]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     AUTO                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [70 70 70 70]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 14]">                        D75_74 D75_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>               <cell index="7" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 7]">                     Horizon                  </name>                  <doorType index="1" type="char" size="[1 6]">                     Indoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                     [1 1.09343674302119 1.09343674302119 2.7625037771554]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           1920x1080                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 42]">                           1920x1080_Horizon_70 1920x1080_Horizon_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 42]">                           640x480_Horizon_70 640x480_Horizon_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1 1.09343674302119 1.09343674302119 2.7625037771554]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1.73287143461081 0.115615025113687 -0.848486459724493 -0.621058136314087 2.15074798190189 -0.529689845587802 -0.567712734044399 -1.56781740405862 3.13553013810301]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [-278.39613062092 -264.942683560877 -299.751144436008]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     AUTO                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [70 70 70 70]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 22]">                        Horizon_74 Horizon_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>            </illumination>         </version_11_para>
+	      <cell index="2" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 3]">                     BW                  </name>                  <doorType index="1" type="char" size="[1 7]">                     Outdoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                    [1.28479216681239 1 1 2.17148034110079]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           1920x1080                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           1920x1080_BW_70 1920x1080_BW_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           640x480_BW_70 640x480_BW_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1 1 1 1]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1 0 0 0 1 0 0 0 1]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [0 0 0 ]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     MANUAL                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 14]">                        BW_74 BW_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>               <cell index="2" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 3]">                     D50                  </name>                  <doorType index="1" type="char" size="[1 7]">                     Outdoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                     [1.66686004309311 1 1 1.55107334809545]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           1920x1080                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           1920x1080_D50_70 1920x1080_D50_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           640x480_D50_70 640x480_D50_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1.66686004309311 1 1 1.55107334809545]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1.82276223608526 -0.622415852146652 -0.20034638393861 -0.300004837921671 1.61927730227101 -0.319272464349334 -0.0553993764292473 -0.713426478520189 1.76882585494944]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [-283.518637267041 -266.056263502343 -280.395268604709]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     AUTO                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [70 70 70 70]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 14]">                        D50_74 D50_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>               <cell index="4" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 3]">                     D75                  </name>                  <doorType index="1" type="char" size="[1 7]">                     Outdoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                     [1.94515936756641 1 1 1.24102483601273]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           1920x1080                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           1920x1080_D75_70 1920x1080_D75_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 34]">                           640x480_D75_70 640x480_D75_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1.94515936756641 1 1 1.24102483601273]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1.85634852657841 -0.614071666488722 -0.24227686008969 -0.250615358668912 1.68285581937397 -0.432240460705059 -0.0355733479736956 -0.58304875608373 1.61862210405743]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [-284.599321885703 -270.726445217627 -282.378684716886]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     AUTO                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [70 70 70 70]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 14]">                        D75_74 D75_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>               <cell index="7" type="struct" size="[1 1]">                  <name index="1" type="char" size="[1 7]">                     Horizon                  </name>                  <doorType index="1" type="char" size="[1 6]">                     Indoor                  </doorType>                  <referenceWBgain index="1" type="double" size="[1 4]">                     [1 1.09343674302119 1.09343674302119 2.7625037771554]                  </referenceWBgain>                  <aLSC index="1" type="cell" size="[1 2]">                     <cell index="1" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           1920x1080                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 42]">                           1920x1080_Horizon_70 1920x1080_Horizon_100                        </LSC_PROFILE_LIST>                     </cell>                     <cell index="2" type="struct" size="[1 1]">                        <resolution index="1" type="char" size="[1 9]">                           640x480                        </resolution>                        <LSC_PROFILE_LIST index="1" type="char" size="[1 42]">                           640x480_Horizon_70 640x480_Horizon_100                        </LSC_PROFILE_LIST>                     </cell>                  </aLSC>                  <manualWB index="1" type="double" size="[1 4]">                     [1 1.09343674302119 1.09343674302119 2.7625037771554]                  </manualWB>                  <manualccMatrix index="1" type="double" size="[3 3]">                     [1.73287143461081 0.115615025113687 -0.848486459724493 -0.621058136314087 2.15074798190189 -0.529689845587802 -0.567712734044399 -1.56781740405862 3.13553013810301]                  </manualccMatrix>                  <manualccOffsets index="1" type="double" size="[1 3]">                     [-278.39613062092 -264.942683560877 -299.751144436008]                  </manualccOffsets>                  <awbType index="1" type="char" size="[1 4]">                     AUTO                  </awbType>                  <sat_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <sat index="1" type="double" size="[1 4]">                        [100 100 100 100]                     </sat>                  </sat_CT>                  <vig_CT index="1" type="struct" size="[1 1]">                     <gains index="1" type="double" size="[1 4]">                        [1 2 4 8]                     </gains>                     <vig index="1" type="double" size="[1 4]">                        [70 70 70 70]                     </vig>                  </vig_CT>                  <aCC index="1" type="struct" size="[1 1]">                     <CC_PROFILE_LIST index="1" type="char" size="[1 22]">                        Horizon_74 Horizon_100                     </CC_PROFILE_LIST>                  </aCC>               </cell>            </illumination>         </version_11_para>
       </AWB>
       <LSC index="1" type="cell" size="[1 32]">
          <cell index="1" type="struct" size="[1 1]">
@@ -3332,8 +3332,8 @@
                   <name index="1" type="char" size="[1 6]">
                      normal
                   </name>
-                  <Enable index="1" type="unsigned char" size="[1 1]">
-                     [1]
+                  <Enable index="1" type="double" size="[1 1]">
+                     [0]
                   </Enable>
                   <gain_level index="1" type="double" size="[1 5]">
                      [1 2 4 8 16]
@@ -3345,211 +3345,211 @@
                      [1 1 1 1 1]
                   </noise_coef_denominator>
                   <Level_Setting index="1" type="struct" size="[1 1]">
-                     <luma_sp_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <luma_sp_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </luma_sp_nr_en>
-                     <luma_sp_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <luma_sp_nr_level index="1" type="double" size="[1 5]">
                         [3 6 9 12 16]
                      </luma_sp_nr_level>
-                     <luma_te_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <luma_te_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </luma_te_nr_en>
-                     <luma_te_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <luma_te_nr_level index="1" type="double" size="[1 5]">
                         [8 8 12 12 16]
                      </luma_te_nr_level>
-                     <chrm_sp_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <chrm_sp_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_sp_nr_en>
-                     <chrm_sp_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <chrm_sp_nr_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </chrm_sp_nr_level>
-                     <chrm_te_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <chrm_te_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_te_nr_en>
-                     <chrm_te_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <chrm_te_nr_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </chrm_te_nr_level>
-                     <shp_en index="1" type="unsigned char" size="[1 1]">
+                     <shp_en index="1" type="double" size="[1 1]">
                         [1]
                      </shp_en>
-                     <shp_level index="1" type="unsigned char" size="[1 5]">
+                     <shp_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </shp_level>
                   </Level_Setting>
                   <Luma_Setting index="1" type="struct" size="[1 1]">
-                     <luma_default index="1" type="unsigned char" size="[1 1]">
+                     <luma_default index="1" type="double" size="[1 1]">
                         [1]
                      </luma_default>
-                     <luma_sp_rad index="1" type="unsigned char" size="[1 5]">
+                     <luma_sp_rad index="1" type="double" size="[1 5]">
                         [3 3 3 3 3]
                      </luma_sp_rad>
-                     <luma_te_max_bi_num index="1" type="unsigned char" size="[1 5]">
+                     <luma_te_max_bi_num index="1" type="double" size="[1 5]">
                         [0 0 0 0 0]
                      </luma_te_max_bi_num>
-                     <luma_w00 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w00 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w00>
-                     <luma_w01 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w01 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w01>
-                     <luma_w02 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w02 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w02>
-                     <luma_w03 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w03 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w03>
-                     <luma_w04 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w04 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w04>
-                     <luma_w10 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w10 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w10>
-                     <luma_w11 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w11 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w11>
-                     <luma_w12 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w12 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w12>
-                     <luma_w13 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w13 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w13>
-                     <luma_w14 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w14 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w14>
-                     <luma_w20 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w20 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w20>
-                     <luma_w21 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w21 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w21>
-                     <luma_w22 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w22 index="1" type="double" size="[1 5]">
                         [96 96 96 96 96]
                      </luma_w22>
-                     <luma_w23 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w23 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w23>
-                     <luma_w24 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w24 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w24>
-                     <luma_w30 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w30 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w30>
-                     <luma_w31 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w31 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w31>
-                     <luma_w32 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w32 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w32>
-                     <luma_w33 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w33 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w33>
-                     <luma_w34 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w34 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w34>
-                     <luma_w40 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w40 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w40>
-                     <luma_w41 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w41 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w41>
-                     <luma_w42 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w42 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w42>
-                     <luma_w43 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w43 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w43>
-                     <luma_w44 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w44 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w44>
                   </Luma_Setting>
                   <Chrm_Setting index="1" type="struct" size="[1 1]">
-                     <chrm_default index="1" type="unsigned char" size="[1 1]">
+                     <chrm_default index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_default>
-                     <chrm_sp_rad index="1" type="unsigned char" size="[1 5]">
+                     <chrm_sp_rad index="1" type="double" size="[1 5]">
                         [3 3 3 3 3]
                      </chrm_sp_rad>
-                     <chrm_te_max_bi_num index="1" type="unsigned char" size="[1 5]">
+                     <chrm_te_max_bi_num index="1" type="double" size="[1 5]">
                         [0 0 0 0 0]
                      </chrm_te_max_bi_num>
-                     <chrm_w00 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w00 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w00>
-                     <chrm_w01 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w01 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w01>
-                     <chrm_w02 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w02 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w02>
-                     <chrm_w03 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w03 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w03>
-                     <chrm_w04 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w04 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w04>
-                     <chrm_w10 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w10 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w10>
-                     <chrm_w11 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w11 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w11>
-                     <chrm_w12 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w12 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w12>
-                     <chrm_w13 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w13 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w13>
-                     <chrm_w14 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w14 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w14>
-                     <chrm_w20 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w20 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w20>
-                     <chrm_w21 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w21 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w21>
-                     <chrm_w22 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w22 index="1" type="double" size="[1 5]">
                         [80 80 80 80 80]
                      </chrm_w22>
-                     <chrm_w23 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w23 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w23>
-                     <chrm_w24 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w24 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w24>
-                     <chrm_w30 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w30 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w30>
-                     <chrm_w31 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w31 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w31>
-                     <chrm_w32 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w32 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w32>
-                     <chrm_w33 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w33 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w33>
-                     <chrm_w34 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w34 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w34>
-                     <chrm_w40 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w40 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w40>
-                     <chrm_w41 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w41 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w41>
-                     <chrm_w42 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w42 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w42>
-                     <chrm_w43 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w43 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w43>
-                     <chrm_w44 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w44 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w44>
                   </Chrm_Setting>
                   <Shp_Setting index="1" type="struct" size="[1 1]">
-                     <shp_default index="1" type="unsigned char" size="[1 1]">
+                     <shp_default index="1" type="double" size="[1 1]">
                         [1]
                      </shp_default>
                      <src_shp_thr index="1" type="double" size="[1 5]">
@@ -3645,8 +3645,8 @@
                   <name index="1" type="char" size="[1 5]">
                      night
                   </name>
-                  <Enable index="1" type="unsigned char" size="[1 1]">
-                     [1]
+                  <Enable index="1" type="double" size="[1 1]">
+                     [0]
                   </Enable>
                   <gain_level index="1" type="double" size="[1 5]">
                      [1 2 4 8 16]
@@ -3658,211 +3658,211 @@
                      [3 3 3 3 3]
                   </noise_coef_denominator>
                   <Level_Setting index="1" type="struct" size="[1 1]">
-                     <luma_sp_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <luma_sp_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </luma_sp_nr_en>
-                     <luma_sp_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <luma_sp_nr_level index="1" type="double" size="[1 5]">
                         [4 4 8 12 16]
                      </luma_sp_nr_level>
-                     <luma_te_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <luma_te_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </luma_te_nr_en>
-                     <luma_te_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <luma_te_nr_level index="1" type="double" size="[1 5]">
                         [8 8 12 12 16]
                      </luma_te_nr_level>
-                     <chrm_sp_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <chrm_sp_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_sp_nr_en>
-                     <chrm_sp_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <chrm_sp_nr_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </chrm_sp_nr_level>
-                     <chrm_te_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <chrm_te_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_te_nr_en>
-                     <chrm_te_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <chrm_te_nr_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </chrm_te_nr_level>
-                     <shp_en index="1" type="unsigned char" size="[1 1]">
+                     <shp_en index="1" type="double" size="[1 1]">
                         [1]
                      </shp_en>
-                     <shp_level index="1" type="unsigned char" size="[1 5]">
+                     <shp_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </shp_level>
                   </Level_Setting>
                   <Luma_Setting index="1" type="struct" size="[1 1]">
-                     <luma_default index="1" type="unsigned char" size="[1 1]">
+                     <luma_default index="1" type="double" size="[1 1]">
                         [1]
                      </luma_default>
-                     <luma_sp_rad index="1" type="unsigned char" size="[1 5]">
+                     <luma_sp_rad index="1" type="double" size="[1 5]">
                         [3 3 3 3 3]
                      </luma_sp_rad>
-                     <luma_te_max_bi_num index="1" type="unsigned char" size="[1 5]">
+                     <luma_te_max_bi_num index="1" type="double" size="[1 5]">
                         [0 0 0 0 0]
                      </luma_te_max_bi_num>
-                     <luma_w00 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w00 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w00>
-                     <luma_w01 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w01 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w01>
-                     <luma_w02 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w02 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w02>
-                     <luma_w03 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w03 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w03>
-                     <luma_w04 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w04 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w04>
-                     <luma_w10 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w10 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w10>
-                     <luma_w11 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w11 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w11>
-                     <luma_w12 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w12 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w12>
-                     <luma_w13 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w13 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w13>
-                     <luma_w14 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w14 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w14>
-                     <luma_w20 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w20 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w20>
-                     <luma_w21 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w21 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w21>
-                     <luma_w22 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w22 index="1" type="double" size="[1 5]">
                         [96 96 96 96 96]
                      </luma_w22>
-                     <luma_w23 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w23 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w23>
-                     <luma_w24 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w24 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w24>
-                     <luma_w30 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w30 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w30>
-                     <luma_w31 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w31 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w31>
-                     <luma_w32 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w32 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w32>
-                     <luma_w33 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w33 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w33>
-                     <luma_w34 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w34 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w34>
-                     <luma_w40 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w40 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w40>
-                     <luma_w41 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w41 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w41>
-                     <luma_w42 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w42 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w42>
-                     <luma_w43 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w43 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w43>
-                     <luma_w44 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w44 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w44>
                   </Luma_Setting>
                   <Chrm_Setting index="1" type="struct" size="[1 1]">
-                     <chrm_default index="1" type="unsigned char" size="[1 1]">
+                     <chrm_default index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_default>
-                     <chrm_sp_rad index="1" type="unsigned char" size="[1 5]">
+                     <chrm_sp_rad index="1" type="double" size="[1 5]">
                         [3 3 3 3 3]
                      </chrm_sp_rad>
-                     <chrm_te_max_bi_num index="1" type="unsigned char" size="[1 5]">
+                     <chrm_te_max_bi_num index="1" type="double" size="[1 5]">
                         [0 0 0 0 0]
                      </chrm_te_max_bi_num>
-                     <chrm_w00 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w00 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w00>
-                     <chrm_w01 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w01 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w01>
-                     <chrm_w02 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w02 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w02>
-                     <chrm_w03 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w03 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w03>
-                     <chrm_w04 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w04 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w04>
-                     <chrm_w10 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w10 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w10>
-                     <chrm_w11 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w11 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w11>
-                     <chrm_w12 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w12 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w12>
-                     <chrm_w13 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w13 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w13>
-                     <chrm_w14 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w14 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w14>
-                     <chrm_w20 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w20 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w20>
-                     <chrm_w21 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w21 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w21>
-                     <chrm_w22 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w22 index="1" type="double" size="[1 5]">
                         [80 80 80 80 80]
                      </chrm_w22>
-                     <chrm_w23 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w23 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w23>
-                     <chrm_w24 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w24 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w24>
-                     <chrm_w30 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w30 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w30>
-                     <chrm_w31 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w31 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w31>
-                     <chrm_w32 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w32 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w32>
-                     <chrm_w33 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w33 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w33>
-                     <chrm_w34 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w34 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w34>
-                     <chrm_w40 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w40 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w40>
-                     <chrm_w41 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w41 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w41>
-                     <chrm_w42 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w42 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w42>
-                     <chrm_w43 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w43 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w43>
-                     <chrm_w44 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w44 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w44>
                   </Chrm_Setting>
                   <Shp_Setting index="1" type="struct" size="[1 1]">
-                     <shp_default index="1" type="unsigned char" size="[1 1]">
+                     <shp_default index="1" type="double" size="[1 1]">
                         [1]
                      </shp_default>
                      <src_shp_thr index="1" type="double" size="[1 5]">
@@ -4416,8 +4416,8 @@
                   <name index="1" type="char" size="[1 6]">
                      normal
                   </name>
-                  <Enable index="1" type="unsigned char" size="[1 1]">
-                     [1]
+                  <Enable index="1" type="double" size="[1 1]">
+                     [0]
                   </Enable>
                   <gain_level index="1" type="double" size="[1 5]">
                      [1 2 4 8 16]
@@ -4429,211 +4429,211 @@
                      [1 1 1 1 1]
                   </noise_coef_denominator>
                   <Level_Setting index="1" type="struct" size="[1 1]">
-                     <luma_sp_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <luma_sp_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </luma_sp_nr_en>
-                     <luma_sp_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <luma_sp_nr_level index="1" type="double" size="[1 5]">
                         [3 6 9 12 16]
                      </luma_sp_nr_level>
-                     <luma_te_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <luma_te_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </luma_te_nr_en>
-                     <luma_te_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <luma_te_nr_level index="1" type="double" size="[1 5]">
                         [8 8 12 12 16]
                      </luma_te_nr_level>
-                     <chrm_sp_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <chrm_sp_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_sp_nr_en>
-                     <chrm_sp_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <chrm_sp_nr_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </chrm_sp_nr_level>
-                     <chrm_te_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <chrm_te_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_te_nr_en>
-                     <chrm_te_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <chrm_te_nr_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </chrm_te_nr_level>
-                     <shp_en index="1" type="unsigned char" size="[1 1]">
+                     <shp_en index="1" type="double" size="[1 1]">
                         [1]
                      </shp_en>
-                     <shp_level index="1" type="unsigned char" size="[1 5]">
+                     <shp_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </shp_level>
                   </Level_Setting>
                   <Luma_Setting index="1" type="struct" size="[1 1]">
-                     <luma_default index="1" type="unsigned char" size="[1 1]">
+                     <luma_default index="1" type="double" size="[1 1]">
                         [1]
                      </luma_default>
-                     <luma_sp_rad index="1" type="unsigned char" size="[1 5]">
+                     <luma_sp_rad index="1" type="double" size="[1 5]">
                         [3 3 3 3 3]
                      </luma_sp_rad>
-                     <luma_te_max_bi_num index="1" type="unsigned char" size="[1 5]">
+                     <luma_te_max_bi_num index="1" type="double" size="[1 5]">
                         [0 0 0 0 0]
                      </luma_te_max_bi_num>
-                     <luma_w00 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w00 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w00>
-                     <luma_w01 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w01 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w01>
-                     <luma_w02 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w02 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w02>
-                     <luma_w03 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w03 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w03>
-                     <luma_w04 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w04 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w04>
-                     <luma_w10 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w10 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w10>
-                     <luma_w11 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w11 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w11>
-                     <luma_w12 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w12 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w12>
-                     <luma_w13 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w13 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w13>
-                     <luma_w14 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w14 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w14>
-                     <luma_w20 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w20 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w20>
-                     <luma_w21 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w21 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w21>
-                     <luma_w22 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w22 index="1" type="double" size="[1 5]">
                         [96 96 96 96 96]
                      </luma_w22>
-                     <luma_w23 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w23 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w23>
-                     <luma_w24 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w24 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w24>
-                     <luma_w30 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w30 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w30>
-                     <luma_w31 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w31 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w31>
-                     <luma_w32 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w32 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w32>
-                     <luma_w33 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w33 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w33>
-                     <luma_w34 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w34 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w34>
-                     <luma_w40 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w40 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w40>
-                     <luma_w41 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w41 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w41>
-                     <luma_w42 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w42 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w42>
-                     <luma_w43 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w43 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w43>
-                     <luma_w44 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w44 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w44>
                   </Luma_Setting>
                   <Chrm_Setting index="1" type="struct" size="[1 1]">
-                     <chrm_default index="1" type="unsigned char" size="[1 1]">
+                     <chrm_default index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_default>
-                     <chrm_sp_rad index="1" type="unsigned char" size="[1 5]">
+                     <chrm_sp_rad index="1" type="double" size="[1 5]">
                         [3 3 3 3 3]
                      </chrm_sp_rad>
-                     <chrm_te_max_bi_num index="1" type="unsigned char" size="[1 5]">
+                     <chrm_te_max_bi_num index="1" type="double" size="[1 5]">
                         [0 0 0 0 0]
                      </chrm_te_max_bi_num>
-                     <chrm_w00 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w00 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w00>
-                     <chrm_w01 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w01 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w01>
-                     <chrm_w02 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w02 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w02>
-                     <chrm_w03 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w03 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w03>
-                     <chrm_w04 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w04 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w04>
-                     <chrm_w10 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w10 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w10>
-                     <chrm_w11 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w11 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w11>
-                     <chrm_w12 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w12 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w12>
-                     <chrm_w13 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w13 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w13>
-                     <chrm_w14 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w14 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w14>
-                     <chrm_w20 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w20 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w20>
-                     <chrm_w21 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w21 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w21>
-                     <chrm_w22 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w22 index="1" type="double" size="[1 5]">
                         [80 80 80 80 80]
                      </chrm_w22>
-                     <chrm_w23 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w23 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w23>
-                     <chrm_w24 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w24 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w24>
-                     <chrm_w30 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w30 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w30>
-                     <chrm_w31 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w31 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w31>
-                     <chrm_w32 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w32 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w32>
-                     <chrm_w33 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w33 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w33>
-                     <chrm_w34 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w34 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w34>
-                     <chrm_w40 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w40 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w40>
-                     <chrm_w41 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w41 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w41>
-                     <chrm_w42 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w42 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w42>
-                     <chrm_w43 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w43 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w43>
-                     <chrm_w44 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w44 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w44>
                   </Chrm_Setting>
                   <Shp_Setting index="1" type="struct" size="[1 1]">
-                     <shp_default index="1" type="unsigned char" size="[1 1]">
+                     <shp_default index="1" type="double" size="[1 1]">
                         [1]
                      </shp_default>
                      <src_shp_thr index="1" type="double" size="[1 5]">
@@ -4729,8 +4729,8 @@
                   <name index="1" type="char" size="[1 5]">
                      night
                   </name>
-                  <Enable index="1" type="unsigned char" size="[1 1]">
-                     [1]
+                  <Enable index="1" type="double" size="[1 1]">
+                     [0]
                   </Enable>
                   <gain_level index="1" type="double" size="[1 5]">
                      [1 2 4 8 16]
@@ -4742,211 +4742,211 @@
                      [3 3 3 3 3]
                   </noise_coef_denominator>
                   <Level_Setting index="1" type="struct" size="[1 1]">
-                     <luma_sp_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <luma_sp_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </luma_sp_nr_en>
-                     <luma_sp_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <luma_sp_nr_level index="1" type="double" size="[1 5]">
                         [4 4 8 12 16]
                      </luma_sp_nr_level>
-                     <luma_te_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <luma_te_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </luma_te_nr_en>
-                     <luma_te_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <luma_te_nr_level index="1" type="double" size="[1 5]">
                         [8 8 12 12 16]
                      </luma_te_nr_level>
-                     <chrm_sp_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <chrm_sp_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_sp_nr_en>
-                     <chrm_sp_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <chrm_sp_nr_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </chrm_sp_nr_level>
-                     <chrm_te_nr_en index="1" type="unsigned char" size="[1 1]">
+                     <chrm_te_nr_en index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_te_nr_en>
-                     <chrm_te_nr_level index="1" type="unsigned char" size="[1 5]">
+                     <chrm_te_nr_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </chrm_te_nr_level>
-                     <shp_en index="1" type="unsigned char" size="[1 1]">
+                     <shp_en index="1" type="double" size="[1 1]">
                         [1]
                      </shp_en>
-                     <shp_level index="1" type="unsigned char" size="[1 5]">
+                     <shp_level index="1" type="double" size="[1 5]">
                         [16 16 16 16 16]
                      </shp_level>
                   </Level_Setting>
                   <Luma_Setting index="1" type="struct" size="[1 1]">
-                     <luma_default index="1" type="unsigned char" size="[1 1]">
+                     <luma_default index="1" type="double" size="[1 1]">
                         [1]
                      </luma_default>
-                     <luma_sp_rad index="1" type="unsigned char" size="[1 5]">
+                     <luma_sp_rad index="1" type="double" size="[1 5]">
                         [3 3 3 3 3]
                      </luma_sp_rad>
-                     <luma_te_max_bi_num index="1" type="unsigned char" size="[1 5]">
+                     <luma_te_max_bi_num index="1" type="double" size="[1 5]">
                         [0 0 0 0 0]
                      </luma_te_max_bi_num>
-                     <luma_w00 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w00 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w00>
-                     <luma_w01 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w01 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w01>
-                     <luma_w02 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w02 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w02>
-                     <luma_w03 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w03 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w03>
-                     <luma_w04 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w04 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w04>
-                     <luma_w10 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w10 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w10>
-                     <luma_w11 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w11 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w11>
-                     <luma_w12 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w12 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w12>
-                     <luma_w13 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w13 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w13>
-                     <luma_w14 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w14 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w14>
-                     <luma_w20 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w20 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w20>
-                     <luma_w21 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w21 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w21>
-                     <luma_w22 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w22 index="1" type="double" size="[1 5]">
                         [96 96 96 96 96]
                      </luma_w22>
-                     <luma_w23 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w23 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w23>
-                     <luma_w24 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w24 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w24>
-                     <luma_w30 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w30 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w30>
-                     <luma_w31 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w31 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w31>
-                     <luma_w32 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w32 index="1" type="double" size="[1 5]">
                         [48 48 48 48 48]
                      </luma_w32>
-                     <luma_w33 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w33 index="1" type="double" size="[1 5]">
                         [30 30 30 30 30]
                      </luma_w33>
-                     <luma_w34 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w34 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w34>
-                     <luma_w40 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w40 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w40>
-                     <luma_w41 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w41 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w41>
-                     <luma_w42 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w42 index="1" type="double" size="[1 5]">
                         [12 12 12 12 12]
                      </luma_w42>
-                     <luma_w43 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w43 index="1" type="double" size="[1 5]">
                         [6 6 6 6 6]
                      </luma_w43>
-                     <luma_w44 index="1" type="unsigned char" size="[1 5]">
+                     <luma_w44 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </luma_w44>
                   </Luma_Setting>
                   <Chrm_Setting index="1" type="struct" size="[1 1]">
-                     <chrm_default index="1" type="unsigned char" size="[1 1]">
+                     <chrm_default index="1" type="double" size="[1 1]">
                         [1]
                      </chrm_default>
-                     <chrm_sp_rad index="1" type="unsigned char" size="[1 5]">
+                     <chrm_sp_rad index="1" type="double" size="[1 5]">
                         [3 3 3 3 3]
                      </chrm_sp_rad>
-                     <chrm_te_max_bi_num index="1" type="unsigned char" size="[1 5]">
+                     <chrm_te_max_bi_num index="1" type="double" size="[1 5]">
                         [0 0 0 0 0]
                      </chrm_te_max_bi_num>
-                     <chrm_w00 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w00 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w00>
-                     <chrm_w01 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w01 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w01>
-                     <chrm_w02 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w02 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w02>
-                     <chrm_w03 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w03 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w03>
-                     <chrm_w04 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w04 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w04>
-                     <chrm_w10 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w10 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w10>
-                     <chrm_w11 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w11 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w11>
-                     <chrm_w12 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w12 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w12>
-                     <chrm_w13 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w13 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w13>
-                     <chrm_w14 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w14 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w14>
-                     <chrm_w20 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w20 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w20>
-                     <chrm_w21 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w21 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w21>
-                     <chrm_w22 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w22 index="1" type="double" size="[1 5]">
                         [80 80 80 80 80]
                      </chrm_w22>
-                     <chrm_w23 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w23 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w23>
-                     <chrm_w24 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w24 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w24>
-                     <chrm_w30 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w30 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w30>
-                     <chrm_w31 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w31 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w31>
-                     <chrm_w32 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w32 index="1" type="double" size="[1 5]">
                         [25 25 25 25 25]
                      </chrm_w32>
-                     <chrm_w33 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w33 index="1" type="double" size="[1 5]">
                         [18 18 18 18 18]
                      </chrm_w33>
-                     <chrm_w34 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w34 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w34>
-                     <chrm_w40 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w40 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w40>
-                     <chrm_w41 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w41 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w41>
-                     <chrm_w42 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w42 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w42>
-                     <chrm_w43 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w43 index="1" type="double" size="[1 5]">
                         [5 5 5 5 5]
                      </chrm_w43>
-                     <chrm_w44 index="1" type="unsigned char" size="[1 5]">
+                     <chrm_w44 index="1" type="double" size="[1 5]">
                         [2 2 2 2 2]
                      </chrm_w44>
                   </Chrm_Setting>
                   <Shp_Setting index="1" type="struct" size="[1 1]">
-                     <shp_default index="1" type="unsigned char" size="[1 1]">
+                     <shp_default index="1" type="double" size="[1 1]">
                         [1]
                      </shp_default>
                      <src_shp_thr index="1" type="double" size="[1 5]">

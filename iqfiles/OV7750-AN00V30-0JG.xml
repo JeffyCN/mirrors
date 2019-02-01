@@ -2510,7 +2510,7 @@
                      normal
                   </name>
                   <Enable index="1" type="double" size="[1 1]">
-                     [1]
+                     [0]
                   </Enable>
                   <gain_level index="1" type="double" size="[1 5]">
                      [1 2 4 8 16]
@@ -2823,7 +2823,7 @@
                      night
                   </name>
                   <Enable index="1" type="double" size="[1 1]">
-                     [1]
+                     [0]
                   </Enable>
                   <gain_level index="1" type="double" size="[1 5]">
                      [1 2 4 8 16]
@@ -3328,7 +3328,7 @@
                      normal
                   </name>
                   <Enable index="1" type="double" size="[1 1]">
-                     [1]
+                     [0]
                   </Enable>
                   <gain_level index="1" type="double" size="[1 5]">
                      [1 2 4 8 16]
@@ -3641,7 +3641,7 @@
                      night
                   </name>
                   <Enable index="1" type="double" size="[1 1]">
-                     [1]
+                     [0]
                   </Enable>
                   <gain_level index="1" type="double" size="[1 5]">
                      [1 2 4 8 16]
