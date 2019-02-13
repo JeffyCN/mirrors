@@ -1210,7 +1210,7 @@ RESULT CamIA10Engine::initAF() {
     }
     hAf = afInstance.hAf;
 
-#if 0
+#if 1
     CamCalibAfGlobal_t* pAfGlobal;
     result = CamCalibDbGetAfGlobal(hCamCalibDb, &pAfGlobal);
     if (result != RET_SUCCESS) {
@@ -1222,17 +1222,84 @@ RESULT CamIA10Engine::initAF() {
     dCfg.afc_cfg.type.contrast_af = pAfGlobal->contrast_af.enable;
     dCfg.afc_cfg.type.laser_af = pAfGlobal->laser_af.enable;
     dCfg.afc_cfg.type.pdaf = pAfGlobal->pdaf.enable;
-    dCfg.afc_cfg.win_num = 1;
-    dCfg.afc_cfg.win_a.left_hoff = 512;
-    dCfg.afc_cfg.win_a.right_width = 1024;
-    dCfg.afc_cfg.win_a.top_voff = 512;
-    dCfg.afc_cfg.win_a.bottom_height = 1024;
+    dCfg.afc_cfg.win_num = pAfGlobal->Window_Num;//1;
+
+    dCfg.afc_cfg.win_a.left_hoff = pAfGlobal->WindowA.h_offs;//512;
+    dCfg.afc_cfg.win_a.right_width = pAfGlobal->WindowA.h_offs + pAfGlobal->WindowA.h_size;//1024;
+    dCfg.afc_cfg.win_a.top_voff = pAfGlobal->WindowA.v_offs;//512;
+    dCfg.afc_cfg.win_a.bottom_height = pAfGlobal->WindowA.v_offs + pAfGlobal->WindowA.v_size;//1024;
+
+    afcCfg.Afss = AfSearchStrategy_t(pAfGlobal->contrast_af.Afss);
 
     afcCfg.AfType.contrast_af = pAfGlobal->contrast_af.enable;
     afcCfg.AfType.laser_af = pAfGlobal->laser_af.enable;
     afcCfg.AfType.pdaf = pAfGlobal->pdaf.enable;
     memcpy(afcCfg.LaserAf.distanceDot, pAfGlobal->laser_af.distanceDot, sizeof(afcCfg.LaserAf.distanceDot));
     memcpy(afcCfg.LaserAf.vcmDot, pAfGlobal->laser_af.vcmDot, sizeof(afcCfg.LaserAf.vcmDot));
+
+    afcCfg.Window_Num = pAfGlobal->Window_Num;
+    memcpy(&afcCfg.WindowA, &pAfGlobal->WindowA, sizeof(afcCfg.WindowA));
+    memcpy(&afcCfg.WindowB, &pAfGlobal->WindowB, sizeof(afcCfg.WindowB));
+    memcpy(&afcCfg.WindowC, &pAfGlobal->WindowC, sizeof(afcCfg.WindowC));
+
+	afcCfg.ContrastAf.TrigThers = pAfGlobal->contrast_af.TrigThers;
+	afcCfg.ContrastAf.TrigValue = pAfGlobal->contrast_af.TrigValue;
+	afcCfg.ContrastAf.TrigFrames = pAfGlobal->contrast_af.TrigFrames;
+	afcCfg.ContrastAf.TrigAntiFlash = pAfGlobal->contrast_af.TrigAntiFlash ? BOOL_TRUE : BOOL_FALSE;
+	
+	afcCfg.ContrastAf.StableThers = pAfGlobal->contrast_af.StableThers;
+	afcCfg.ContrastAf.StableValue = pAfGlobal->contrast_af.StableValue;
+	afcCfg.ContrastAf.StableFrames = pAfGlobal->contrast_af.StableFrames;
+	afcCfg.ContrastAf.StableTime = pAfGlobal->contrast_af.StableTime;
+	
+	afcCfg.ContrastAf.OutFocusValue = pAfGlobal->contrast_af.OutFocusValue;
+	afcCfg.ContrastAf.OutFocusLuma = pAfGlobal->contrast_af.OutFocusLuma;
+	afcCfg.ContrastAf.OutFocusPos = pAfGlobal->contrast_af.OutFocusPos;
+
+    afcCfg.ContrastAf.FullSteps = pAfGlobal->contrast_af.FullSteps;
+    afcCfg.ContrastAf.FullRangeTbl = pAfGlobal->contrast_af.FullRangeTbl;
+    afcCfg.ContrastAf.FullDir = AfSearchDir_t(pAfGlobal->contrast_af.FullDir);
+    afcCfg.ContrastAf.AdaptiveSteps = pAfGlobal->contrast_af.AdaptiveSteps;
+    afcCfg.ContrastAf.AdaptRangeTbl = pAfGlobal->contrast_af.AdaptRangeTbl;
+    afcCfg.ContrastAf.AdaptiveDir = AfSearchDir_t(pAfGlobal->contrast_af.AdaptiveDir);
+
+	afcCfg.ContrastAf.FinishThersMain = pAfGlobal->contrast_af.FinishThersMain;
+	afcCfg.ContrastAf.FinishThersSub = pAfGlobal->contrast_af.FinishThersSub;
+	afcCfg.ContrastAf.FinishThersOffset = pAfGlobal->contrast_af.FinishThersOffset;
+
+
+	LOGD("Afss: %d ", afcCfg.Afss);
+	LOGD("AfType.contrast_af: %d laser_af: %d pdaf: %d ", 
+		afcCfg.AfType.contrast_af,
+		afcCfg.AfType.laser_af,
+		afcCfg.AfType.pdaf);
+	LOGD("Window_Num: %d WindowA:offs:%d %d size:%dx%d ", 
+		afcCfg.Window_Num,
+		afcCfg.WindowA.h_offs,
+		afcCfg.WindowA.v_offs,
+		afcCfg.WindowA.h_size,
+		afcCfg.WindowA.v_size);
+	LOGD("TrigThers:%f TrigValue:%d TrigFrames:%d TrigAntiFlash:%d", 
+		afcCfg.ContrastAf.TrigThers,
+		afcCfg.ContrastAf.TrigValue,
+		afcCfg.ContrastAf.TrigFrames,
+		afcCfg.ContrastAf.TrigAntiFlash);
+	LOGD("StableThers:%f StableValue:%d StableFrames:%d StableTime:%d", 
+		afcCfg.ContrastAf.StableThers,
+		afcCfg.ContrastAf.StableValue,
+		afcCfg.ContrastAf.StableFrames,
+		afcCfg.ContrastAf.StableTime);
+	LOGD("OutFocusValue:%d OutFocusLuma:%f OutFocusPos:%d", 
+		afcCfg.ContrastAf.OutFocusValue,
+		afcCfg.ContrastAf.OutFocusLuma,
+		afcCfg.ContrastAf.OutFocusPos);
+	LOGD("FullDir:%d AdaptiveDir:%d ", 
+		afcCfg.ContrastAf.FullDir,
+		afcCfg.ContrastAf.AdaptiveDir);
+	LOGD("FinishThersMain:%f FinishThersSub:%f FinishThersOffset:%d", 
+		afcCfg.ContrastAf.FinishThersMain,
+		afcCfg.ContrastAf.FinishThersSub,
+		afcCfg.ContrastAf.FinishThersOffset);
 #else
     dCfg.afc_cfg.mode = HAL_AF_MODE_AUTO;
     dCfg.afc_cfg.type.contrast_af = true;
@@ -1252,8 +1319,7 @@ RESULT CamIA10Engine::initAF() {
     memcpy(afcCfg.LaserAf.vcmDot, vcmDot, sizeof(afcCfg.LaserAf.vcmDot));
 
 #endif
-    afcCfg.Afss = AFM_FSS_ADAPTIVE_RANGE;
-    afcCfg.Window_Num = 1;
+
     if (afDesc) {
         result = afDesc->update_af_params(afContext, &afcCfg);
     }

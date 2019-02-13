@@ -67,14 +67,16 @@
 //             modify rk ie sharp parameters type
 //v0.2.4:  modify ie sharp, add gain and lap mat coe paras for control
 //            modify demosaiclp, change thgrid_r_fct....from 1 to 6 to change with the gain value
-
+//v0.2.5:  XML FOR AF
+//         1. add af window configuration in xml
+//         2. add af trigger thershold configuration in XML 
 /*************************************************************************/
 /*************************************************************************/
 
 
 
 
-#define CODE_XML_PARSE_VERSION "v0.2.4"
+#define CODE_XML_PARSE_VERSION "v0.2.5"
 
 static std::ofstream redirectOut("/dev/null");
 
@@ -1669,6 +1671,68 @@ bool CalibDb::parseEntrySensor
   return (true);
 }
 
+/******************************************************************************
+ * CalibDb::parseEntryAfWin
+ *****************************************************************************/
+bool CalibDb::parseEntryAfWin
+(
+    const XMLElement*   pelement,
+    void*                param
+) {
+
+//#ifdef DEBUG_LOG
+  redirectOut << __func__ << " (enter)" << std::endl;
+//#endif
+
+  Cam_Win* pAfwin = (Cam_Win*)param;
+
+  const XMLNode* pchild = pelement->FirstChild();
+  while (pchild) {
+    XmlTag tag = XmlTag(pchild->ToElement());
+    std::string tagname(pchild->ToElement()->Name());
+#ifdef DEBUG_LOG
+    redirectOut << "tag: " << tagname << std::endl;
+#endif
+    if ((tagname == CALIB_SENSOR_AF_H_OFFS_TAG)  
+      && (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pAfwin->h_offs, 1);
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_V_OFFS_TAG)  
+      && (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pAfwin->v_offs, 1);
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_H_SIZE_TAG)  
+      && (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pAfwin->h_size, 1);
+	  DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_V_SIZE_TAG)  
+      && (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pAfwin->v_size, 1);
+	  DCT_ASSERT((no == tag.Size()));
+    } else {
+      redirectOut
+          << "parse error in contrast af section (unknow tag: "
+          << tagname
+          << ")"
+          << std::endl;
+
+      //return (false);
+    }
+	
+
+    pchild = pchild->NextSibling();
+  }
+
+#ifdef DEBUG_LOG
+  redirectOut << __func__ << " (exit)" << std::endl;
+#endif
+
+  return (true);
+}
 
 
 /******************************************************************************
@@ -1697,6 +1761,142 @@ bool CalibDb::parseEntrySensor
       && (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
       && (tag.Size() > 0)) {
       int no = ParseUcharArray(tag.Value(), &pContrastAf->enable, 1);
+      #ifdef DEBUG_LOG
+      redirectOut << "af search strategy: " << search_strategy << std::endl;
+      #endif
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_SEARCH_STRATEGY_TAG)  
+      && (tag.isType(XmlTag::TAG_TYPE_CHAR))
+      && (tag.Size() > 0)) {
+      char* search_strategy = Toupper(tag.Value());
+      if(strcmp(search_strategy,"FULLRANGE")==0) {
+        pContrastAf->Afss = CAM_AFM_FSS_FULLRANGE;
+      } else if (strcmp(search_strategy,"HILLCLIMBING")==0) {
+        pContrastAf->Afss = CAM_AFM_FSS_HILLCLIMBING;
+      } else if (strcmp(search_strategy,"ADAPTIVE_RANGE")==0) {
+        pContrastAf->Afss = CAM_AFM_FSS_ADAPTIVE_RANGE;
+      } else {
+        pContrastAf->Afss = CAM_AFM_FSS_INVALID;
+      }
+      #ifdef DEBUG_LOG
+      redirectOut << "af search strategy: " << search_strategy << std::endl;
+      #endif
+    } else if ((tagname == CALIB_SENSOR_AF_FULL_DIR_TAG)  
+      && (tag.isType(XmlTag::TAG_TYPE_CHAR))
+      && (tag.Size() > 0)) {
+      char* search_dir = Toupper(tag.Value());
+      if(strcmp(search_dir,"POSITIVE")==0) {
+        pContrastAf->FullDir = CAM_AFM_POSITIVE_SEARCH;
+      } else if (strcmp(search_dir,"NEGATIVE")==0) {
+        pContrastAf->FullDir = CAM_AFM_NEGATIVE_SEARCH;
+      } else if (strcmp(search_dir,"ADAPTIVE")==0) {
+        pContrastAf->FullDir = CAM_AFM_ADAPTIVE_SEARCH;
+      } else {
+        pContrastAf->FullDir = CAM_AFM_ADAPTIVE_SEARCH;
+      }
+    } else if ((tagname == CALIB_SENSOR_AF_FULL_RANGE_TBL_TAG)	
+      //&& (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+      && (tag.Size() > 0)) {
+      int ArraySize     = tag.Size();
+	  pContrastAf->FullSteps = ArraySize;
+      pContrastAf->FullRangeTbl = (uint16_t *)malloc(ArraySize * sizeof(uint16_t));
+	  if(pContrastAf->FullRangeTbl == NULL){
+		std::cout << "af full range table malloc fail!" << std::endl;
+	  }
+      MEMSET( pContrastAf->FullRangeTbl, 0, (ArraySize * sizeof( uint16_t )) );
+      int no = ParseUshortArray( tag.Value(), pContrastAf->FullRangeTbl, ArraySize );
+      DCT_ASSERT( (no == ArraySize) );  
+    } else if ((tagname == CALIB_SENSOR_AF_ADAPTIVE_DIR_TAG)	
+      && (tag.Size() > 0)) {
+      char* search_dir = Toupper(tag.Value());
+      if(strcmp(search_dir,"POSITIVE")==0) {
+        pContrastAf->AdaptiveDir = CAM_AFM_POSITIVE_SEARCH;
+      } else if (strcmp(search_dir,"NEGATIVE")==0) {
+        pContrastAf->AdaptiveDir = CAM_AFM_NEGATIVE_SEARCH;
+      } else if (strcmp(search_dir,"ADAPTIVE")==0) {
+        pContrastAf->AdaptiveDir = CAM_AFM_ADAPTIVE_SEARCH;
+      } else {
+        pContrastAf->AdaptiveDir = CAM_AFM_ADAPTIVE_SEARCH;
+      }
+    } else if ((tagname == CALIB_SENSOR_AF_ADAPTIVE_RANGE_TBL_TAG)	  
+      && (tag.Size() > 0)) {
+      int ArraySize	  = tag.Size();
+      pContrastAf->AdaptiveSteps = ArraySize;
+      pContrastAf->AdaptRangeTbl = (uint16_t *)malloc(ArraySize * sizeof(uint16_t));
+      if(pContrastAf->AdaptRangeTbl == NULL){
+        std::cout << "af adaptive range table malloc fail!" << std::endl;
+      }
+      MEMSET( pContrastAf->AdaptRangeTbl, 0, (ArraySize * sizeof( uint16_t)) );
+      int no = ParseUshortArray( tag.Value(), pContrastAf->AdaptRangeTbl, ArraySize );
+      DCT_ASSERT( (no == ArraySize) );
+    } else if ((tagname == CALIB_SENSOR_AF_TRIG_THERS_TAG)  
+      && (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+      && (tag.Size() > 0)) {
+      int no = ParseFloatArray(tag.Value(), &pContrastAf->TrigThers, tag.Size());
+      redirectOut << "af trigger thershold: " << pContrastAf->TrigThers << std::endl;
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_TRIG_VALUE_TAG)  
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pContrastAf->TrigValue, tag.Size());	  
+      redirectOut << "af trigger Value: " << pContrastAf->TrigValue << std::endl;
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_TRIG_FRAMES_TAG)  
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pContrastAf->TrigFrames, tag.Size());
+      redirectOut << "af trigger frames: " << pContrastAf->TrigFrames << std::endl;
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_TRIG_ANTI_FLASH_TAG)  
+      && (tag.isType(XmlTag::TAG_TYPE_CHAR))
+      && (tag.Size() > 0)) {
+      int no = ParseUcharArray(tag.Value(), &pContrastAf->TrigAntiFlash, tag.Size());
+      redirectOut << "af trigger anti flash: " << pContrastAf->TrigAntiFlash << std::endl;
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_FINISH_THERS_MAIN_TAG)
+      && (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+      && (tag.Size() > 0)) {
+      int no = ParseFloatArray(tag.Value(), &pContrastAf->FinishThersMain, tag.Size());
+      redirectOut << "af finish thershold main: " << pContrastAf->TrigThers << std::endl;
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_FINISH_THERS_SUB_TAG)
+      && (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+      && (tag.Size() > 0)) {
+      int no = ParseFloatArray(tag.Value(), &pContrastAf->FinishThersSub, tag.Size());
+      redirectOut << "af finish thershold sub: " << pContrastAf->TrigValue << std::endl;
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_FINISH_THERS_OFFSET_TAG)
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pContrastAf->FinishThersOffset, tag.Size());
+      redirectOut << "af finish thershold offset: " << pContrastAf->TrigFrames << std::endl;
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_STABLE_THERS_TAG)  
+      && (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+      && (tag.Size() > 0)) {
+      int no = ParseFloatArray(tag.Value(), &pContrastAf->StableThers, tag.Size());
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_STABLE_VALUE_TAG)  
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pContrastAf->StableValue, tag.Size());
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_STABLE_FRAMES_TAG)  
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pContrastAf->StableFrames, tag.Size());
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_STABLE_TIME_TAG)  
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pContrastAf->StableTime, tag.Size());
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_OUT_FOCUS_VALUE_TAG)  
+      && (tag.Size() > 0)) {
+      int no = ParseFloatArray(tag.Value(), &pContrastAf->OutFocusValue, tag.Size());
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_OUT_FOCUS_LUMA_TAG)  
+      && (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pContrastAf->OutFocusLuma, tag.Size());
+      DCT_ASSERT((no == tag.Size()));
+    } else if ((tagname == CALIB_SENSOR_AF_OUT_FOCUS_POS_TAG)  
+      && (tag.Size() > 0)) {
+      int no = ParseUshortArray(tag.Value(), &pContrastAf->OutFocusPos, tag.Size());
       DCT_ASSERT((no == tag.Size()));
     } else {
       redirectOut
@@ -1828,6 +2028,7 @@ bool CalibDb::parseEntryAf
 //#endif
 
   CamCalibAfGlobal_t af_data;
+  memset(&af_data, 0, sizeof(af_data));
 
   const XMLNode* pchild = pelement->FirstChild();
   while (pchild) {
@@ -1836,7 +2037,25 @@ bool CalibDb::parseEntryAf
 #ifdef DEBUG_LOG
     redirectOut << "tag: " << tagname << std::endl;
 #endif
-    if (tagname == CALIB_SENSOR_AF_CONTRAST_AF_TAG) {
+
+    if ((tagname == CALIB_SENSOR_AF_WINDOW_NUM_TAG)
+      && (tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+      && (tag.Size() > 0)) {
+      int no = ParseUcharArray(tag.Value(), &af_data.Window_Num, 1);
+      DCT_ASSERT((no == tag.Size()));
+    } else if (tagname == CALIB_SENSOR_AF_WINDOW_A_TAG) {
+      if (!parseEntryAfWin(pchild->ToElement(), &af_data.WindowA)) {
+	    return (false);
+      }
+    } else if (tagname == CALIB_SENSOR_AF_WINDOW_B_TAG) {
+      if (!parseEntryAfWin(pchild->ToElement(), &af_data.WindowB)) {
+        return (false);
+      }
+    } else if (tagname == CALIB_SENSOR_AF_WINDOW_C_TAG) {
+      if (!parseEntryAfWin(pchild->ToElement(), &af_data.WindowC)) {
+        return (false);
+      }
+    } else if (tagname == CALIB_SENSOR_AF_CONTRAST_AF_TAG) {
       if (!parseEntryContrastAf(pchild->ToElement(), &af_data.contrast_af)) {
         return (false);
       }

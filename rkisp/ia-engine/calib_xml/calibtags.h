@@ -222,14 +222,45 @@
  * XML AF section
  *****************************************************************************/
 #define CALIB_SENSOR_AF_TAG                                 "AF"
-#define CALIB_SENSOR_AF_CONTRAST_AF_TAG         "contrast_af"
-#define CALIB_SENSOR_AF_LASER_AF_TAG         "laser_af"
-#define CALIB_SENSOR_AF_PDAF_TAG         "pdaf"
+#define CALIB_SENSOR_AF_WINDOW_NUM_TAG                      "WindowNum"
+#define CALIB_SENSOR_AF_WINDOW_A_TAG                        "WindowA"
+#define CALIB_SENSOR_AF_WINDOW_B_TAG                        "WindowB"
+#define CALIB_SENSOR_AF_WINDOW_C_TAG                        "WindowC"
+#define CALIB_SENSOR_AF_CONTRAST_AF_TAG                     "contrast_af"
+#define CALIB_SENSOR_AF_LASER_AF_TAG                        "laser_af"
+#define CALIB_SENSOR_AF_PDAF_TAG                            "pdaf"
+//WINDOW
+#define CALIB_SENSOR_AF_H_OFFS_TAG                          "h_offs"
+#define CALIB_SENSOR_AF_V_OFFS_TAG                          "v_offs"
+#define CALIB_SENSOR_AF_H_SIZE_TAG                          "h_size"
+#define CALIB_SENSOR_AF_V_SIZE_TAG                          "v_size"
+//CONTRAST
+#define CALIB_SENSOR_AF_ENABLE_TAG                          "enable"
+#define CALIB_SENSOR_AF_SEARCH_STRATEGY_TAG                 "AfSearchStrategy"
+#define CALIB_SENSOR_AF_FULL_DIR_TAG                        "FullDir"
+#define CALIB_SENSOR_AF_FULL_RANGE_TBL_TAG                  "FullRangeTbl"
+#define CALIB_SENSOR_AF_ADAPTIVE_DIR_TAG                    "AdaptiveDir"
+#define CALIB_SENSOR_AF_ADAPTIVE_RANGE_TBL_TAG              "AdaptRangeTbl"
 
-#define CALIB_SENSOR_AF_ENABLE_TAG         "enable"
+#define CALIB_SENSOR_AF_TRIG_THERS_TAG                      "TrigThers"
+#define CALIB_SENSOR_AF_TRIG_VALUE_TAG                      "TrigValue"
+#define CALIB_SENSOR_AF_TRIG_FRAMES_TAG                     "TrigFrames"
+#define CALIB_SENSOR_AF_TRIG_ANTI_FLASH_TAG                 "TrigAntiFlash"
 
-#define CALIB_SENSOR_AF_LASER_AF_VCMDOT_TAG "vcmDot"
-#define CALIB_SENSOR_AF_LASER_AF_DISTANCEDOT_TAG  "distanceDot"
+#define CALIB_SENSOR_AF_FINISH_THERS_MAIN_TAG               "FinishThersMain"
+#define CALIB_SENSOR_AF_FINISH_THERS_SUB_TAG                "FinishThersSub"
+#define CALIB_SENSOR_AF_FINISH_THERS_OFFSET_TAG             "FinishThersOffset"
+
+#define CALIB_SENSOR_AF_STABLE_THERS_TAG                    "StableThers"
+#define CALIB_SENSOR_AF_STABLE_VALUE_TAG                    "StableValue"
+#define CALIB_SENSOR_AF_STABLE_FRAMES_TAG                   "StableFrames"
+#define CALIB_SENSOR_AF_STABLE_TIME_TAG                     "StableTime"
+#define CALIB_SENSOR_AF_OUT_FOCUS_VALUE_TAG                 "OutFocusValue"
+#define CALIB_SENSOR_AF_OUT_FOCUS_LUMA_TAG                  "OutFocusLuma"
+#define CALIB_SENSOR_AF_OUT_FOCUS_POS_TAG                   "OutFocusPos"
+//LASER
+#define CALIB_SENSOR_AF_LASER_AF_VCMDOT_TAG                 "vcmDot"
+#define CALIB_SENSOR_AF_LASER_AF_DISTANCEDOT_TAG            "distanceDot"
 
 /******************************************************************************
  * XML AEC section

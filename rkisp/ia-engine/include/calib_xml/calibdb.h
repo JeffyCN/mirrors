@@ -108,6 +108,7 @@ class CalibDb {
   bool parseEntryAwb_V11_IlluminationAcc(const XMLElement*, void* param = NULL);
   
   bool parseEntryAwb_V10_IlluminationAcc(const XMLElement*, void* param = NULL);
+  bool parseEntryAfWin(const XMLElement*,void* param = NULL);
   bool parseEntryContrastAf( const XMLElement*, void *param = NULL );
   bool parseEntryLaserAf( const XMLElement*, void *param = NULL );
   bool parseEntryPdaf( const XMLElement*, void *param = NULL );

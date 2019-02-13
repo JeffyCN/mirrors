@@ -1812,9 +1812,15 @@ static RESULT ClearContext(CamCalibDbContext_t* pCamCalibDbCtx) {
   ClearAwb_V11_GlobalList(&pCamCalibDbCtx->pAwbProfile->Para_V11.awb_global);
   ClearAwb_V10_GlobalList(&pCamCalibDbCtx->pAwbProfile->Para_V10.awb_global);
   if (pCamCalibDbCtx->pAfGlobal) {
+    if(pCamCalibDbCtx->pAfGlobal->contrast_af.FullRangeTbl!= NULL){
+		free(pCamCalibDbCtx->pAfGlobal->contrast_af.FullRangeTbl);
+	}
+    if(pCamCalibDbCtx->pAfGlobal->contrast_af.AdaptRangeTbl!= NULL){
+		free(pCamCalibDbCtx->pAfGlobal->contrast_af.AdaptRangeTbl);
+	}
   	free(pCamCalibDbCtx->pAfGlobal);
     pCamCalibDbCtx->pAfGlobal = NULL;
-	}
+  }
   if (pCamCalibDbCtx->pAecGlobal) {
   	if(pCamCalibDbCtx->pAecGlobal->GainRange.pGainRange != NULL){
 		free(pCamCalibDbCtx->pAecGlobal->GainRange.pGainRange);

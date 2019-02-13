@@ -1779,8 +1779,79 @@ typedef struct CamCalibAecGlobal_s {
   CamCalibAecHdrCtrl_t HdrCtrl;
 } CamCalibAecGlobal_t;
 
+/*******************************************************************************
+ *
+ * @AF macro define
+ *
+ *******************************************************************************/
+
+
+/*******************************************************************************
+ *
+ * @struct  CamCalibAfSearchDir_t
+ *
+ * @brief   camera calibration AF search direction structure
+ *
+ *******************************************************************************/
+typedef enum CamCalibAfSearchDir_e {
+  CAM_AFM_POSITIVE_SEARCH     = 0,
+  CAM_AFM_NEGATIVE_SEARCH     = 1,
+  CAM_AFM_ADAPTIVE_SEARCH     = 2
+} CamCalibAfSearchDir_t;
+
+/*******************************************************************************
+ *
+ * @struct  AfSearchStrategy_t
+ *
+ * @brief   AF search strategy
+ *
+ *******************************************************************************/
+typedef enum CamCalibAfSS_e {
+  CAM_AFM_FSS_INVALID         = 0,
+  CAM_AFM_FSS_FULLRANGE       = 1,    /**< scan the full focus range to find the point of best focus */
+  CAM_AFM_FSS_HILLCLIMBING    = 2,    /**< use hillclimbing search */
+  CAM_AFM_FSS_ADAPTIVE_RANGE  = 3,    /**< similar to full range search, but with multiple subsequent scans
+                                         with decreasing range and step size will be performed. */
+  CAM_AFM_FSS_MAX,
+} CamCalibAfSS_t;
+
 typedef struct CamCalibContrastAf_s {
-  uint8_t enable;  
+  uint8_t                 enable;
+  CamCalibAfSS_t          Afss;                                   /**< enumeration type for search strategy */
+  CamCalibAfSearchDir_t   FullDir;
+  uint8_t                 FullSteps;
+  uint16_t*               FullRangeTbl;                           /**< full range search table*/
+  CamCalibAfSearchDir_t   AdaptiveDir;
+  uint8_t                 AdaptiveSteps;
+  uint16_t*               AdaptRangeTbl; 	                      /**< adaptive range search table*/
+  
+  float 				  TrigThers;							  /**< AF trigger threshold */
+  uint16_t				  TrigValue;							  /**< AF trigger Value */
+  uint16_t				  TrigFrames;							  /**< AF trigger status must hold frames */
+  uint8_t				  TrigAntiFlash;						  /**< AF trigger anti one or some figures flash but not target figures*/
+
+  float 				  FirstStableThers; 					  /**< first time AF stable threshold */
+  uint16_t				  FirstStableValue; 					  /**< first time AF stable value */
+  uint16_t				  FirstStableFrames;					  /**< first time AF stable status must hold frames */
+  uint16_t				  FirstStableTime;						  /**< first time AF stable status must hold time */
+
+  float 				  StableThers;							  /**< AF stable threshold */
+  uint16_t				  StableValue;							  /**< AF stable value */
+  uint16_t				  StableFrames; 						  /**< AF stable  status must hold frames */
+  uint16_t				  StableTime;							  /**< AF stable status must hold time */
+
+  float 				  FinishThersMain;						  /**< AF find clearest position main thershold*/
+  float 				  FinishThersSub;						  /**< AF find clearest position subject thershold*/
+  uint16_t				  FinishThersOffset;					  /**< AF find clearest position offset thershold*/
+
+  float   				  OutFocusValue;						  /**< out of focus vlaue*/
+  uint16_t				  OutFocusLuma; 						  /**< out of focus luma*/
+  uint16_t				  OutFocusPos;							  /**< out of focus position*/
+
+  uint16_t				  AfHyst[2][5]; 						  /**< the difference between go ahead and go back*/
+  uint16_t				  AfBackStep[5];						  /**< avoid a step is too large*/
+  
+  unsigned int			  rev[16];								  /**< reserve some char*/
 } CamCalibContrastAf_t;
 
 typedef struct CamCalibLaserAf_s {
@@ -1794,9 +1865,13 @@ typedef struct CamCalibPdaf_s {
 } CamCalibPdaf_t;
 
 typedef struct CamCalibAfGlobal_s {
+  uint8_t		       Window_Num;
+  struct Cam_Win	   WindowA;
+  struct Cam_Win	   WindowB;
+  struct Cam_Win	   WindowC;
   CamCalibContrastAf_t contrast_af;
-  CamCalibLaserAf_t laser_af;
-  CamCalibPdaf_t pdaf;
+  CamCalibLaserAf_t    laser_af;
+  CamCalibPdaf_t       pdaf;
 } CamCalibAfGlobal_t;
 typedef struct CamCalibGocProfile_s {
   void*                    p_next;
