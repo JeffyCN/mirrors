@@ -69,6 +69,7 @@ typedef struct CamCalibDbContext_s {
   List                        dpf_profile;    /**< list of supported DPF profiles */
   List                        dpcc_profile;   /**< list of supported DPCC profiles */
   List                        iesharpen_profile;/**< list of supported IE-SHARPEN profiles */
+  CamOTPGlobal_t*			  pOTPGlobal;
 
   CamCalibSystemData_t        system;
 } CamCalibDbContext_t;

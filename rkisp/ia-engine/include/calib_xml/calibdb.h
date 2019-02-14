@@ -155,6 +155,7 @@ class CalibDb {
   // parse cproc
   bool parseEntryCproc(const XMLElement*, void* param = NULL);
   bool parseEntryRKsharpen( const XMLElement*, void *param = NULL );
+  bool parseEntryOTP(const XMLElement*, void* param = NULL); 
 
   void characterDataHandler(void* userData, const char* s, int len);
 

@@ -787,6 +787,22 @@
 #define CALIB_SENSOR_CPROC_HUE_TAG                                   "hue"
 
 /******************************************************************************
+ * XML OTP INFO section
+ *****************************************************************************/
+#define CALIB_SENSOR_OTP_TAG                                       "OTP"
+#define CALIB_SENSOR_OTP_AWB_ENABLE_TAG                            "otp_awb_enable"
+#define CALIB_SENSOR_OTP_AWB_GOLDEN_R_VALUE_TAG                    "awb_golden_r_value"
+#define CALIB_SENSOR_OTP_AWB_GOLDEN_GR_VALUE_TAG                   "awb_golden_gr_value"
+#define CALIB_SENSOR_OTP_AWB_GOLDEN_GB_VALUE_TAG                   "awb_golden_gb_value"
+#define CALIB_SENSOR_OTP_AWB_GOLDEN_B_VALUE_TAG                    "awb_golden_b_value"
+#define CALIB_SENSOR_OTP_LSC_ENABLE_TAG                            "otp_lsc_enable"
+
+
+
+
+
+
+/******************************************************************************
  * XML system section
  *****************************************************************************/
 #define CALIB_SYSTEM_TAG                                            "system"

@@ -1728,6 +1728,22 @@ static inline RESULT ValidateIesharpenProfile( CamIesharpenProfile_t *pIesharpen
 }
 
 /******************************************************************************
+ * ValidateAecGlobalData
+ *****************************************************************************/
+static inline RESULT ValidateOTPGlobalData(CamOTPGlobal_t* pOTPData) {
+  LOGV("%s (enter)\n", __func__);
+
+  if (NULL == pOTPData) {
+    return (RET_NULL_POINTER);
+  }
+
+  LOGV("%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
  * ClearContext
  *****************************************************************************/
 static RESULT ClearContext(CamCalibDbContext_t* pCamCalibDbCtx) {
@@ -1773,6 +1789,11 @@ static RESULT ClearContext(CamCalibDbContext_t* pCamCalibDbCtx) {
 
   if (pCamCalibDbCtx->pCprocGlobal)
     free(pCamCalibDbCtx->pCprocGlobal);
+
+  if(pCamCalibDbCtx->pOTPGlobal){	
+	free(pCamCalibDbCtx->pOTPGlobal);
+  }
+  
   ClearEcmProfileList(& pCamCalibDbCtx->ecm_profile);
   ClearAwb_V11_IlluminationList(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination);  
   ClearAwb_V10_IlluminationList(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination);  
@@ -1868,6 +1889,7 @@ RESULT CamCalibDbCreate
   ListInit(&pCamCalibDbCtx->pAwbProfile->Para_V10.awb_global);
   pCamCalibDbCtx->pAecGlobal = NULL;
   pCamCalibDbCtx->pAfGlobal = NULL;
+  pCamCalibDbCtx->pOTPGlobal = NULL;
   ListInit(&pCamCalibDbCtx->ecm_profile);
   ListInit(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination);  
   ListInit(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination);
@@ -5622,6 +5644,75 @@ RESULT CamCalibDbGetCproc
 
   /* return reference to global cproc configuration */
   *ppAddCproc = pCamCalibDbCtx->pCprocGlobal;
+
+  LOGV("%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+
+/******************************************************************************
+ * CamCalibDbAddOTPGlobal
+ *****************************************************************************/
+RESULT CamCalibDbAddOTPGlobal
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamOTPGlobal_t* pAddOTPGlobal
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  RESULT result = RET_SUCCESS;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  result = ValidateOTPGlobalData(pAddOTPGlobal);
+  if (result != RET_SUCCESS) {
+    return (result);
+  }
+  
+  /* check if data already exists */
+  if (NULL != pCamCalibDbCtx->pOTPGlobal) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* finally allocate, copy & add data */
+  CamOTPGlobal_t* pNewOTPGlobal = (CamOTPGlobal_t*)malloc(sizeof(CamOTPGlobal_t));
+  if (NULL == pNewOTPGlobal) {
+    return (RET_OUTOFMEM);
+  }
+
+  MEMCPY(pNewOTPGlobal, pAddOTPGlobal, sizeof(CamOTPGlobal_t)); 
+
+  pCamCalibDbCtx->pOTPGlobal = pNewOTPGlobal;
+
+  LOGV( "%s (exit) %d\n", __func__, result);
+
+  return (RET_SUCCESS);
+}
+
+RESULT CamCalibDbGetOTPGlobal
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamOTPGlobal_t**   ppOTPGlobal
+){
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  RESULT result;
+
+  LOGV("%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == ppOTPGlobal) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* return reference to global cproc configuration */
+  *ppOTPGlobal = pCamCalibDbCtx->pOTPGlobal;
 
   LOGV("%s (exit)\n", __func__);
 

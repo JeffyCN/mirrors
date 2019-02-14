@@ -63,13 +63,15 @@
 //v0.2.2:  XML FOR BW ISP OUTPUT
 //                 1. add isp output type configuration in XML header
 //                 2. add lsc ccm wb module cofiguration for BW illuminant in  in XML 
+//v0.2.3:  add otp info in iq xml
+//             modify rk ie sharp parameters type
 /*************************************************************************/
 /*************************************************************************/
 
 
 
 
-#define CODE_XML_PARSE_VERSION "v0.2.2"
+#define CODE_XML_PARSE_VERSION "v0.2.3"
 
 static std::ofstream redirectOut("/dev/null");
 
@@ -1623,6 +1625,19 @@ bool CalibDb::parseEntrySensor
       } else
         CamCalibDbAddCproc(m_CalibDbHandle, &cproc);
     }else if(tagname == CALIB_SENSOR_IESHARPEN_TAG)
+    {
+        if(!parseEntryCell(pchild->ToElement(),tag.Size(),&CalibDb::parseEntryRKsharpen))
+        {
+#if 1
+        redirectOut
+            << "parse error in GOC section (unknow tag: "
+            << tagname
+            << ")"
+            << std::endl;
+#endif
+			return ( false );
+        }
+    }else if(tagname == CALIB_SENSOR_OTP_TAG)
     {
         if(!parseEntryCell(pchild->ToElement(),tag.Size(),&CalibDb::parseEntryRKsharpen))
         {
@@ -8565,5 +8580,76 @@ bool CalibDb::parseEntryCproc
   return (true);
 }
 
+
+/******************************************************************************
+ * CalibDb::parseEntryOTP
+ *****************************************************************************/
+bool CalibDb::parseEntryOTP
+(
+    const XMLElement*   pelement,
+    void*                param
+) 
+{
+#ifdef DEBUG_LOG
+  redirectOut << __func__ << " (enter)" << std::endl;
+#endif
+
+  CamOTPGlobal_t  otpProfile;
+  memset(&otpProfile, 0x00, sizeof(CamOTPGlobal_t));
+  
+  const XMLNode* pchild = pelement->FirstChild();
+  while (pchild) {
+    XmlTag tag = XmlTag(pchild->ToElement());
+    std::string tagname(pchild->ToElement()->Name());
+	
+#ifdef DEBUG_LOG
+    redirectOut << tagname << std::endl;
+#endif
+
+    if ((tagname == CALIB_SENSOR_OTP_AWB_ENABLE_TAG)
+        && (tag.Size() > 0)) {
+      int no = ParseUcharArray(tag.Value(), &otpProfile.awb.enable, 1);
+	  DCT_ASSERT((no == tag.Size()));
+    } else if (tagname == CALIB_SENSOR_OTP_AWB_GOLDEN_R_VALUE_TAG
+    	&& (tag.Size() > 0)) {
+      int no = ParseUintArray(tag.Value(), &otpProfile.awb.golden_r_value, 1);
+      DCT_ASSERT((no == tag.Size()));
+    } else if (tagname == CALIB_SENSOR_OTP_AWB_GOLDEN_GR_VALUE_TAG
+    	&& (tag.Size() > 0)) {
+      int no = ParseUintArray(tag.Value(), &otpProfile.awb.golden_gr_value, 1);
+      DCT_ASSERT((no == tag.Size()));
+    } else if (tagname == CALIB_SENSOR_OTP_AWB_GOLDEN_GB_VALUE_TAG
+    	&& (tag.Size() > 0)) {
+      int no = ParseUintArray(tag.Value(), &otpProfile.awb.golden_gb_value, 1);
+      DCT_ASSERT((no == tag.Size()));
+    } else if (tagname == CALIB_SENSOR_OTP_AWB_GOLDEN_B_VALUE_TAG
+    	&& (tag.Size() > 0)) {
+      int no = ParseUintArray(tag.Value(), &otpProfile.awb.golden_b_value, 1);
+      DCT_ASSERT((no == tag.Size()));
+    } else if (tagname == CALIB_SENSOR_OTP_LSC_ENABLE_TAG
+    	&& (tag.Size() > 0)) {
+      int no = ParseUcharArray(tag.Value(), &otpProfile.lsc.enable, 1);
+      DCT_ASSERT((no == tag.Size()));
+    } else{
+#if 1
+	  redirectOut
+	  << "parse error in otp section (unknow tag: "
+	  << tagname
+	  << ")"
+	  << std::endl;
+#endif
+	}
+
+    pchild = pchild->NextSibling();
+  }
+
+   RESULT result = CamCalibDbAddOTPGlobal(m_CalibDbHandle, &otpProfile);
+
+#ifdef DEBUG_LOG
+  redirectOut << __func__ << " (exit)" << std::endl;
+#endif
+
+  return (true);
+}
 
 

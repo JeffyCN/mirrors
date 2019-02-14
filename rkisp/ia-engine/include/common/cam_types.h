@@ -1882,6 +1882,29 @@ enum NIGHT_MODE
     WHITE_BLACK = 2  
 };
 
+typedef struct camOTPAwbInfo_s
+{
+	uint8_t  enable;
+	uint32_t golden_r_value;
+	uint32_t golden_gr_value;
+	uint32_t golden_gb_value;
+	uint32_t golden_b_value;
+	
+}camOTPAwbInfo_t;
+
+typedef struct camOTPLscInfo_s
+{
+	uint8_t  enable;
+	
+}camOTPLscInfo_t;
+
+
+typedef struct CamOTPGlobal_s{
+	camOTPAwbInfo_t awb;
+	camOTPLscInfo_t lsc;
+	
+}CamOTPGlobal_t;
+
 #ifdef __cplusplus
 }
 #endif

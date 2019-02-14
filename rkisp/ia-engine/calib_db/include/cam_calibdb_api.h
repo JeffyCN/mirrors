@@ -1189,6 +1189,18 @@ RESULT CamCalibDbGetCproc
     CamCprocProfile_t**   ppAddCproc
 );
 
+RESULT CamCalibDbAddOTPGlobal
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamOTPGlobal_t* pAddOTPGlobal
+);
+
+
+RESULT CamCalibDbGetOTPGlobal
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamOTPGlobal_t**   ppOTPGlobal
+);
 
 
 #ifdef __cplusplus
