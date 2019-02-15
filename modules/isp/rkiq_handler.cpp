@@ -1446,6 +1446,22 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
            &_ia_results.awb.CtOffsetAlgo,
            sizeof(_ia_results.awb.CtOffsetAlgo));
 
+    // copy otp info
+    isp_3a_result.otp_info_avl =
+        _ia_results.otp_info_avl;
+    isp_3a_result.awb_otp_info.enable =
+        _ia_results.otp_info.awb.enable;
+    isp_3a_result.awb_otp_info.golden_r_value =
+        _ia_results.otp_info.awb.golden_r_value;
+    isp_3a_result.awb_otp_info.golden_gr_value =
+        _ia_results.otp_info.awb.golden_gr_value;
+    isp_3a_result.awb_otp_info.golden_gb_value =
+        _ia_results.otp_info.awb.golden_gb_value;
+    isp_3a_result.awb_otp_info.golden_b_value =
+        _ia_results.otp_info.awb.golden_b_value;
+    // unsupport lsc/af otp now
+    isp_3a_result.af_otp_info.enable = 0;
+
     for (int i=0; i < HAL_ISP_MODULE_MAX_ID_ID + 1; i++) {
         isp_3a_result.enabled[i] = _isp_cfg.enabled[i];
     }

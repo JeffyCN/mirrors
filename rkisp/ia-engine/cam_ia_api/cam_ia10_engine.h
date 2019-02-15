@@ -148,9 +148,11 @@ class CamIA10Engine: public CamIA10EngineItf {
   RESULT initAWDR();
   RESULT runManIspForBW(struct CamIA10_Results* result);
   RESULT runManIspForPreIsp(struct CamIA10_Results* result);
+  RESULT runManIspForOTP(struct CamIA10_Results* result);
   const char* mSensorEntityName;
   int mIspVer;
   int mXMLIspOutputType;
+  CamOTPGlobal_t* mOTPInfo;
 };
 
 #endif

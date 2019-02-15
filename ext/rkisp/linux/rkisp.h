@@ -238,6 +238,9 @@ struct rkisp_parameters {
   struct cifisp_demosaiclp_config demosaiclp_config;
   struct cifisp_rkiesharp_config rkiesharp_config;
   struct rkisp_awb_algo awb_algo_results;
+  bool   otp_info_avl;
+  struct rkmodule_awb_cfg awb_otp_info;
+  struct rkmodule_af_cfg af_otp_info;
 };
 
 #if 0

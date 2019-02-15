@@ -172,6 +172,8 @@ struct CamIA10_Results {
   
   CamerIcRKIeSharpConfig_t rkIEsharp;
   CamerIcRKDemosaicLP_t rkDemosaicLP;
+  bool_t otp_info_avl;
+  CamOTPGlobal_t otp_info;
   /* following results are included in 3A*/
   //struct cifisp_lsc_config lsc;
   //struct cifisp_awb_gain_config awb_gain;

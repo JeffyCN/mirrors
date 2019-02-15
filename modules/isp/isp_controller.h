@@ -86,6 +86,7 @@ private:
     void gen_full_isp_params(const struct rkisp1_isp_params_cfg *update_params,
                              struct rkisp1_isp_params_cfg *full_params);
     XCamReturn set_3a_config_sync ();
+    XCamReturn apply_otp_config (struct rkisp_parameters *isp_cfg);
 
 private:
     volatile bool            _is_exit;

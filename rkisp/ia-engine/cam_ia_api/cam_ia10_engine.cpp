@@ -24,7 +24,8 @@ CamIA10Engine::CamIA10Engine():
     afParams(NULL),
     mSensorEntityName(NULL),
     mIspVer(0),
-    mXMLIspOutputType(0)
+    mXMLIspOutputType(0),
+    mOTPInfo(NULL)
 {
     init();
     /*
@@ -156,6 +157,12 @@ RESULT CamIA10Engine::initStatic
     mIspVer = isp_ver;
 
     result = CamCalibDbGetMetaData(hCamCalibDb, &dbMeta);
+    if (result != RET_SUCCESS) {
+        LOGE("get xml db meta failed");
+        goto init_fail;
+    }
+
+    result = CamCalibDbGetOTPGlobal(hCamCalibDb, &mOTPInfo);
     if (result != RET_SUCCESS) {
         LOGE("get xml db meta failed");
         goto init_fail;
@@ -2532,6 +2539,16 @@ RESULT CamIA10Engine::getAWDRResults(AwdrResult_t* result) {
     return ret;
 }
 
+RESULT CamIA10Engine::runManIspForOTP(struct CamIA10_Results* result) {
+    result->otp_info_avl = BOOL_FALSE;
+    if (mOTPInfo) {
+        result->otp_info = *mOTPInfo;
+        result->otp_info_avl = BOOL_TRUE;
+    }
+
+    return RET_SUCCESS;
+}
+
 RESULT CamIA10Engine::runManIspForPreIsp(struct CamIA10_Results* result) {
     RESULT ret = RET_SUCCESS;
 
@@ -2965,6 +2982,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     runManIspForBW(result);
     runManIspForPreIsp(result);
+    runManIspForOTP(result);
 
     return ret;
 }
