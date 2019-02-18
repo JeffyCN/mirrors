@@ -10,6 +10,8 @@
 #include "mediactl-priv.h"
 #include "mediactl.h"
 #include "v4l2subdev.h"
+#include "camera_metadata_hidden.h"
+#include "rkcamera_vendor_tags.h"
 
 #include <base/log.h>
 
@@ -25,6 +27,7 @@ using namespace XCam;
 using namespace android;
 
 CameraMetadata RkispDeviceManager::staticMeta;
+static vendor_tag_ops_t rkcamera_vendor_tag_ops_instance;
 
 typedef enum RKISP_CL_STATE_enum {
     RKISP_CL_STATE_INVALID  = -1,
@@ -46,6 +49,9 @@ int rkisp_cl_init(void** cl_ctx, const char* tuning_file_path,
         device_manager->set_has_3a(false);
         LOGD("Disable 3a, don't find IQ file");
     }
+    // set vendor ops
+    RkCamera3VendorTags::get_vendor_tag_ops(&rkcamera_vendor_tag_ops_instance);
+    set_camera_metadata_vendor_ops(&rkcamera_vendor_tag_ops_instance);
     device_manager->_cl_state = RKISP_CL_STATE_INITED;
     *cl_ctx = (void*)device_manager;
     return 0;

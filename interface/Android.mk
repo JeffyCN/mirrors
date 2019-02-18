@@ -4,6 +4,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES +=\
 	rkisp_control_loop_impl.cpp \
+	rkcamera_vendor_tags.cpp \
 	settings_processor.cpp \
 	CameraWindow.cpp \
 	rkisp_dev_manager.cpp \
@@ -56,6 +57,7 @@ LOCAL_SHARED_LIBRARIES += \
 	libcamera_metadata
 LOCAL_C_INCLUDES += \
     system/media/camera/include \
+    system/media/private/camera/include \
     frameworks/av/include
 ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
 LOCAL_PROPRIETARY_MODULE := true
