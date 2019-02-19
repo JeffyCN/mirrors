@@ -37,6 +37,7 @@ const char *rkcamera3_ext_section_names[RKCAMERA3_EXT_SECTION_END -
 
 vendor_tag_info_t rkcamera3_privatedata[RKCAMERA3_PRIVATEDATA_END - RKCAMERA3_PRIVATEDATA_START] = {
     { "privatedata_effective_driver_frame_id", TYPE_INT64 },
+    { "privatedata_frame_sof_timestamp", TYPE_INT64 },
 };
 
 vendor_tag_info_t *rkcamera3_tag_info[RKCAMERA3_EXT_SECTION_END -
@@ -47,6 +48,7 @@ vendor_tag_info_t *rkcamera3_tag_info[RKCAMERA3_EXT_SECTION_END -
 uint32_t rkcamera3_all_tags[] = {
     // rkcamera3_PRIVATEDATA
     (uint32_t)RKCAMERA3_PRIVATEDATA_EFFECTIVE_DRIVER_FRAME_ID,
+    (uint32_t)RKCAMERA3_PRIVATEDATA_FRAME_SOF_TIMESTAMP,
 };
 
 const vendor_tag_ops_t* RkCamera3VendorTags::Ops = NULL;

@@ -612,6 +612,11 @@ AiqCommonHandler::processMiscMetaResults(X3aResultList &output)
                      &effect_frame_id,
                      1);
 
+    int64_t frame_sof_ts = _aiq_compositor->get_3a_ia10_stats ().stats_sof_ts;
+    metadata->update(RKCAMERA3_PRIVATEDATA_FRAME_SOF_TIMESTAMP,
+                     &frame_sof_ts,
+                     1);
+
     return ret;
 }
 
@@ -1356,6 +1361,7 @@ RKiqCompositor::set_effect_ispparams (struct rkisp_parameters& isp_params)
            sizeof(isp_params.awb_algo_results.fCtCoeff));
     memcpy(&_ia_stat.effect_CtOffset, isp_params.awb_algo_results.fCtOffset,
            sizeof(isp_params.awb_algo_results.fCtOffset));
+    _ia_stat.stats_sof_ts = isp_params.frame_sof_ts;
 
     return true;
 }

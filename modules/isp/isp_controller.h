@@ -124,6 +124,7 @@ private:
     struct rkisp_effect_params {
         struct rkisp1_isp_params_cfg isp_params;
         struct rkisp_awb_algo awb_algo_results;
+        int64_t frame_sof_ts;
     };
     std::map<int, struct rkisp_effect_params> _effecting_ispparm_map;
     std::vector<struct rkisp_parameters> _pending_ispparams_queue;

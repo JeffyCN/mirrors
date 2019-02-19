@@ -103,7 +103,8 @@ struct CamIA10_Stats {
   CamerIcAwbMeasuringResult_t awb;
   AfMeas_t af;
   struct CamIA10_SensorModeData sensor_mode;
-  int64_t sof_tim;
+  int64_t sof_tim; // the latest sof_ts
+  int64_t stats_sof_ts; // corresponded sof ts with stats
   struct rk_cam_vcm_tim vcm_tim;
   AwbGains_t             effct_awb_gains;
   Cam3x3FloatMatrix_t        effect_CtMatrix;
