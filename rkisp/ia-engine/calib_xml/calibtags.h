@@ -774,6 +774,9 @@
 #define CALIB_SENSOR_IESHARPEN_UV_GAUSS_FLAT_COE_TAG         "uv_gauss_flat_coe"
 #define CALIB_SENSOR_IESHARPEN_UV_GAUSS_NOISE_COE_TAG        "uv_gauss_noise_coe"
 #define CALIB_SENSOR_IESHARPEN_UV_GAUSS_OTHER_COE_TAG        "uv_gauss_other_coe"
+#define CALIB_SENSOR_IESHARPEN_GAIN_DVIDE_TAG				 "gain_dvide"
+#define CALIB_SENSOR_IESHARPEN_L_LAP_MAT_COE_TAG			 "l_lap_mat_coe"
+#define CALIB_SENSOR_IESHARPEN_H_LAP_MAT_COE_TAG			 "h_lap_mat_coe"
 
 
 /******************************************************************************

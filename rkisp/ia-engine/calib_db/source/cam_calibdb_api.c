@@ -1080,6 +1080,52 @@ static void ClearDemosicLP(CamDemosaicLpProfile_t *pDemosaicLp) {
 	if(pDemosaicLp->varTh_divided4){
 		free(pDemosaicLp->varTh_divided4);
 	}
+
+	if(pDemosaicLp->thdiff_b_fct){
+		free(pDemosaicLp->thdiff_b_fct);
+	}
+	if(pDemosaicLp->thdiff_r_fct){
+		free(pDemosaicLp->thdiff_r_fct);
+	}
+	if(pDemosaicLp->thgrad_b_fct){
+		free(pDemosaicLp->thgrad_b_fct);
+	}
+	if(pDemosaicLp->thgrad_r_fct){
+		free(pDemosaicLp->thgrad_r_fct);
+	}
+	if(pDemosaicLp->thvar_b_fct){
+		free(pDemosaicLp->thvar_b_fct);
+	}
+	if(pDemosaicLp->thvar_r_fct){
+		free(pDemosaicLp->thvar_r_fct);
+	}
+
+	if(pDemosaicLp->th_grad){
+		free(pDemosaicLp->th_grad);
+	}
+	if(pDemosaicLp->th_diff){
+		free(pDemosaicLp->th_diff);
+	}
+	if(pDemosaicLp->th_var){
+		free(pDemosaicLp->th_var);
+	}
+	if(pDemosaicLp->th_csc){
+		free(pDemosaicLp->th_csc);
+	}
+
+	if(pDemosaicLp->flat_level_sel){
+		free(pDemosaicLp->flat_level_sel);
+	}
+	if(pDemosaicLp->pattern_level_sel){
+		free(pDemosaicLp->pattern_level_sel);
+	}
+	if(pDemosaicLp->edge_level_sel){
+		free(pDemosaicLp->edge_level_sel);
+	}
+	if(pDemosaicLp->similarity_th){
+		free(pDemosaicLp->similarity_th);
+	}
+
 }
 
 
@@ -1275,6 +1321,13 @@ static void ClearIesharpenProfileList(  List *l )
             if(pIesharpenProfile->yavg_thr!=NULL){
                 free(pIesharpenProfile->yavg_thr);
             }
+
+			if(pIesharpenProfile->hgridconf.lap_mat_coe){
+				free(pIesharpenProfile->hgridconf.lap_mat_coe);
+			}
+			if(pIesharpenProfile->lgridconf.lap_mat_coe){
+				free(pIesharpenProfile->lgridconf.lap_mat_coe);
+			}
 
             free( pIesharpenProfile );
             pIesharpenProfile = (CamIesharpenProfile_t *)ListRemoveHead( l );
@@ -1877,7 +1930,7 @@ RESULT CamCalibDbCreate
     return (RET_NULL_POINTER);
   }
   /* allocate control context */
-  pCamCalibDbCtx = malloc(sizeof(CamCalibDbContext_t));
+  pCamCalibDbCtx = (CamCalibDbContext_t *)malloc(sizeof(CamCalibDbContext_t));
   if (pCamCalibDbCtx == NULL) {
     ALOGE("%s (allocating control context failed)\n", __func__);
     return (RET_OUTOFMEM);
@@ -2113,7 +2166,7 @@ RESULT CamCalibDbAddFrameRate
   }
 
   /* finally allocate, copy & add scheme */
-  pNewFrameRate = malloc(sizeof(CamFrameRate_t));
+  pNewFrameRate = (CamFrameRate_t *)malloc(sizeof(CamFrameRate_t));
   if (NULL == pNewFrameRate) {
     return (RET_OUTOFMEM);
   }
@@ -2163,7 +2216,7 @@ RESULT CamCalibDbAddResolution
     return (RET_NOTAVAILABLE);
   }
 
-  pNewRes = malloc(sizeof(CamResolution_t));
+  pNewRes = (CamResolution_t *)malloc(sizeof(CamResolution_t));
   if (NULL == pNewRes) {
     return (RET_OUTOFMEM);
   }
@@ -2411,7 +2464,7 @@ RESULT CamCalibDbAddAwb_V10_Global
     int32_t nArraySize1;
     int32_t nArraySize2;
 
-    pNewAwbGlobal = malloc(sizeof(CamCalibAwb_V10_Global_t));
+    pNewAwbGlobal = (CamCalibAwb_V10_Global_t *)malloc(sizeof(CamCalibAwb_V10_Global_t));
     MEMCPY(pNewAwbGlobal, pAddAwbGlobal, sizeof(CamCalibAwb_V10_Global_t));
 
     pAwbClipParam       = &pNewAwbGlobal->AwbClipParam;
@@ -2421,60 +2474,60 @@ RESULT CamCalibDbAddAwb_V10_Global
     // pAwbClipParam
     nArraySize1 = pAddAwbGlobal->AwbClipParam.ArraySize1;
     nArraySize2 = pAddAwbGlobal->AwbClipParam.ArraySize2;
-    pAwbClipParam->pRg1 = malloc(sizeof(float) *  nArraySize1);
+    pAwbClipParam->pRg1 = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbClipParam->pRg1, pAddAwbGlobal->AwbClipParam.pRg1, sizeof(float) *  nArraySize1);
-    pAwbClipParam->pMaxDist1 = malloc(sizeof(float) *  nArraySize1);
+    pAwbClipParam->pMaxDist1 = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbClipParam->pMaxDist1, pAddAwbGlobal->AwbClipParam.pMaxDist1, sizeof(float) *  nArraySize1);
-    pAwbClipParam->pRg2 = malloc(sizeof(float) *  nArraySize2);
+    pAwbClipParam->pRg2 = (float *)malloc(sizeof(float) *  nArraySize2);
     MEMCPY(pAwbClipParam->pRg2, pAddAwbGlobal->AwbClipParam.pRg2, sizeof(float) *  nArraySize2);
-    pAwbClipParam->pMaxDist2 = malloc(sizeof(float) *  nArraySize2);
+    pAwbClipParam->pMaxDist2 = (float *)malloc(sizeof(float) *  nArraySize2);
     MEMCPY(pAwbClipParam->pMaxDist2, pAddAwbGlobal->AwbClipParam.pMaxDist2, sizeof(float) *  nArraySize2);
 
     // pAwbGlobalFadeParm
     nArraySize1 = pAddAwbGlobal->AwbGlobalFadeParm.ArraySize1;
     nArraySize2 = pAddAwbGlobal->AwbGlobalFadeParm.ArraySize2;
-    pAwbGlobalFadeParm->pGlobalFade1 = malloc(sizeof(float) *  nArraySize1);
+    pAwbGlobalFadeParm->pGlobalFade1 = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbGlobalFadeParm->pGlobalFade1, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalFade1, sizeof(float) *  nArraySize1);
-    pAwbGlobalFadeParm->pGlobalGainDistance1 = malloc(sizeof(float) *  nArraySize1);
+    pAwbGlobalFadeParm->pGlobalGainDistance1 = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbGlobalFadeParm->pGlobalGainDistance1, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance1, sizeof(float) *  nArraySize1);
-    pAwbGlobalFadeParm->pGlobalFade2 = malloc(sizeof(float) *  nArraySize2);
+    pAwbGlobalFadeParm->pGlobalFade2 = (float *)malloc(sizeof(float) *  nArraySize2);
     MEMCPY(pAwbGlobalFadeParm->pGlobalFade2, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalFade2, sizeof(float) *  nArraySize2);
-    pAwbGlobalFadeParm->pGlobalGainDistance2 = malloc(sizeof(float) *  nArraySize2);
+    pAwbGlobalFadeParm->pGlobalGainDistance2 = (float *)malloc(sizeof(float) *  nArraySize2);
     MEMCPY(pAwbGlobalFadeParm->pGlobalGainDistance2, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance2, sizeof(float) *  nArraySize2);
 
     // pAwbFade2Parm
     nArraySize1 = pAddAwbGlobal->AwbFade2Parm.ArraySize;
     nArraySize2 = 0l;
-    pAwbFade2Parm->pFade                = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pFade                = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pFade, pAddAwbGlobal->AwbFade2Parm.pFade, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pCbMinRegionMax      = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pCbMinRegionMax      = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pCbMinRegionMax, pAddAwbGlobal->AwbFade2Parm.pCbMinRegionMax, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pCrMinRegionMax      = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pCrMinRegionMax      = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pCrMinRegionMax, pAddAwbGlobal->AwbFade2Parm.pCrMinRegionMax, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMaxCSumRegionMax    = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMaxCSumRegionMax    = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pMaxCSumRegionMax, pAddAwbGlobal->AwbFade2Parm.pMaxCSumRegionMax, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pCbMinRegionMin      = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pCbMinRegionMin      = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pCbMinRegionMin, pAddAwbGlobal->AwbFade2Parm.pCbMinRegionMin, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pCrMinRegionMin      = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pCrMinRegionMin      = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pCrMinRegionMin, pAddAwbGlobal->AwbFade2Parm.pCrMinRegionMin, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMaxCSumRegionMin    = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMaxCSumRegionMin    = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pMaxCSumRegionMin, pAddAwbGlobal->AwbFade2Parm.pMaxCSumRegionMin, sizeof(float) *  nArraySize1);
 
-    pAwbFade2Parm->pMinCRegionMax = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMinCRegionMax = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pMinCRegionMax, pAddAwbGlobal->AwbFade2Parm.pMinCRegionMax, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMinCRegionMin = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMinCRegionMin = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pMinCRegionMin, pAddAwbGlobal->AwbFade2Parm.pMinCRegionMin, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMaxYRegionMax = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMaxYRegionMax = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pMaxYRegionMax, pAddAwbGlobal->AwbFade2Parm.pMaxYRegionMax, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMaxYRegionMin = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMaxYRegionMin = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pMaxYRegionMin, pAddAwbGlobal->AwbFade2Parm.pMaxYRegionMin, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMinYMaxGRegionMax = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMinYMaxGRegionMax = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pMinYMaxGRegionMax, pAddAwbGlobal->AwbFade2Parm.pMinYMaxGRegionMax, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMinYMaxGRegionMin = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMinYMaxGRegionMin = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pMinYMaxGRegionMin, pAddAwbGlobal->AwbFade2Parm.pMinYMaxGRegionMin, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pRefCb = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pRefCb = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pRefCb, pAddAwbGlobal->AwbFade2Parm.pRefCb, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pRefCr = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pRefCr = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pRefCr, pAddAwbGlobal->AwbFade2Parm.pRefCr, sizeof(float) *  nArraySize1);
 
     ListPrepareItem(pNewAwbGlobal);
@@ -2582,7 +2635,7 @@ RESULT CamCalibDbAddAwb_V11_Global
     int32_t nArraySize1;
     int32_t nArraySize2;
 
-    pNewAwbGlobal = malloc(sizeof(CamCalibAwb_V11_Global_t));
+    pNewAwbGlobal = (CamCalibAwb_V11_Global_t *)malloc(sizeof(CamCalibAwb_V11_Global_t));
     MEMCPY(pNewAwbGlobal, pAddAwbGlobal, sizeof(CamCalibAwb_V11_Global_t));
 
     pAwbClipParam       = &pNewAwbGlobal->AwbClipParam;
@@ -2592,51 +2645,52 @@ RESULT CamCalibDbAddAwb_V11_Global
     // pAwbClipParam
     nArraySize1 = pAddAwbGlobal->AwbClipParam.ArraySize1;
     nArraySize2 = pAddAwbGlobal->AwbClipParam.ArraySize2;
-    pAwbClipParam->pRg1 = malloc(sizeof(float) *  nArraySize1);
+    pAwbClipParam->pRg1 = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbClipParam->pRg1, pAddAwbGlobal->AwbClipParam.pRg1, sizeof(float) *  nArraySize1);
-    pAwbClipParam->pMaxDist1 = malloc(sizeof(float) *  nArraySize1);
+    pAwbClipParam->pMaxDist1 = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbClipParam->pMaxDist1, pAddAwbGlobal->AwbClipParam.pMaxDist1, sizeof(float) *  nArraySize1);
-    pAwbClipParam->pRg2 = malloc(sizeof(float) *  nArraySize2);
+    pAwbClipParam->pRg2 = (float *)malloc(sizeof(float) *  nArraySize2);
     MEMCPY(pAwbClipParam->pRg2, pAddAwbGlobal->AwbClipParam.pRg2, sizeof(float) *  nArraySize2);
-    pAwbClipParam->pMaxDist2 = malloc(sizeof(float) *  nArraySize2);
+    pAwbClipParam->pMaxDist2 = (float *)malloc(sizeof(float) *  nArraySize2);
     MEMCPY(pAwbClipParam->pMaxDist2, pAddAwbGlobal->AwbClipParam.pMaxDist2, sizeof(float) *  nArraySize2);
 
     // pAwbGlobalFadeParm
     nArraySize1 = pAddAwbGlobal->AwbGlobalFadeParm.ArraySize1;
     nArraySize2 = pAddAwbGlobal->AwbGlobalFadeParm.ArraySize2;
-    pAwbGlobalFadeParm->pGlobalFade1 = malloc(sizeof(float) *  nArraySize1);
+    pAwbGlobalFadeParm->pGlobalFade1 = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbGlobalFadeParm->pGlobalFade1, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalFade1, sizeof(float) *  nArraySize1);
-    pAwbGlobalFadeParm->pGlobalGainDistance1 = malloc(sizeof(float) *  nArraySize1);
+    pAwbGlobalFadeParm->pGlobalGainDistance1 = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbGlobalFadeParm->pGlobalGainDistance1, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance1, sizeof(float) *  nArraySize1);
-    pAwbGlobalFadeParm->pGlobalFade2 = malloc(sizeof(float) *  nArraySize2);
+    pAwbGlobalFadeParm->pGlobalFade2 = (float *)malloc(sizeof(float) *  nArraySize2);
     MEMCPY(pAwbGlobalFadeParm->pGlobalFade2, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalFade2, sizeof(float) *  nArraySize2);
-    pAwbGlobalFadeParm->pGlobalGainDistance2 = malloc(sizeof(float) *  nArraySize2);
+    pAwbGlobalFadeParm->pGlobalGainDistance2 = (float *)malloc(sizeof(float) *  nArraySize2);
     MEMCPY(pAwbGlobalFadeParm->pGlobalGainDistance2, pAddAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance2, sizeof(float) *  nArraySize2);
 
     // pAwbFade2Parm
     nArraySize1 = pAddAwbGlobal->AwbFade2Parm.ArraySize;
     nArraySize2 = 0l;
-    pAwbFade2Parm->pFade                = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pFade                = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pFade, pAddAwbGlobal->AwbFade2Parm.pFade, sizeof(float) *  nArraySize1);
 
-    pAwbFade2Parm->pMaxCSum_br = malloc(sizeof(float) * nArraySize1);
+    pAwbFade2Parm->pMaxCSum_br = (float *)malloc(sizeof(float) * nArraySize1);
     MEMCPY(pAwbFade2Parm->pMaxCSum_br, pAddAwbGlobal->AwbFade2Parm.pMaxCSum_br, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMaxCSum_sr = malloc(sizeof(float) * nArraySize1);
+    pAwbFade2Parm->pMaxCSum_sr = (float *)malloc(sizeof(float) * nArraySize1);
     MEMCPY(pAwbFade2Parm->pMaxCSum_sr, pAddAwbGlobal->AwbFade2Parm.pMaxCSum_sr, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMinC_br    = malloc(sizeof(float) * nArraySize1);
+    pAwbFade2Parm->pMinC_br    = (float *)malloc(sizeof(float) * nArraySize1);
     MEMCPY(pAwbFade2Parm->pMinC_br, pAddAwbGlobal->AwbFade2Parm.pMinC_br, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMinC_sr    = malloc(sizeof(float) * nArraySize1);
+    pAwbFade2Parm->pMinC_sr    = (float *)malloc(sizeof(float) * nArraySize1);
     MEMCPY(pAwbFade2Parm->pMinC_sr, pAddAwbGlobal->AwbFade2Parm.pMinC_sr, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMaxY_br    = malloc(sizeof(float) * nArraySize1);
+    pAwbFade2Parm->pMaxY_br    = (float *)malloc(sizeof(float) * nArraySize1);
     MEMCPY(pAwbFade2Parm->pMaxY_br, pAddAwbGlobal->AwbFade2Parm.pMaxY_br, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMaxY_sr    = malloc(sizeof(float) * nArraySize1);
+    pAwbFade2Parm->pMaxY_sr    = (float *)malloc(sizeof(float) * nArraySize1);
     MEMCPY(pAwbFade2Parm->pMaxY_sr, pAddAwbGlobal->AwbFade2Parm.pMaxY_sr, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMinY_br    = malloc(sizeof(float) * nArraySize1);
+    pAwbFade2Parm->pMinY_br    = (float *)malloc(sizeof(float) * nArraySize1);
     MEMCPY(pAwbFade2Parm->pMinY_br, pAddAwbGlobal->AwbFade2Parm.pMinY_br, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pMinY_sr    = malloc(sizeof(float) * nArraySize1);
-    MEMCPY(pAwbFade2Parm->pMinY_sr, pAddAwbGlobal->AwbFade2Parm.pMinY_sr, sizeof(float) *  nArraySize1);pAwbFade2Parm->pRefCb = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pMinY_sr    = (float *)malloc(sizeof(float) * nArraySize1);
+    MEMCPY(pAwbFade2Parm->pMinY_sr, pAddAwbGlobal->AwbFade2Parm.pMinY_sr, sizeof(float) *  nArraySize1);
+	pAwbFade2Parm->pRefCb = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pRefCb, pAddAwbGlobal->AwbFade2Parm.pRefCb, sizeof(float) *  nArraySize1);
-    pAwbFade2Parm->pRefCr = malloc(sizeof(float) *  nArraySize1);
+    pAwbFade2Parm->pRefCr = (float *)malloc(sizeof(float) *  nArraySize1);
     MEMCPY(pAwbFade2Parm->pRefCr, pAddAwbGlobal->AwbFade2Parm.pRefCr, sizeof(float) *  nArraySize1);
 
     ListPrepareItem(pNewAwbGlobal);
@@ -2737,7 +2791,7 @@ RESULT CamCalibDbAddAfGlobal
   }
 
   /* finally allocate, copy & add data */
-  CamCalibAfGlobal_t* pNewAfGlobal = malloc(sizeof(CamCalibAfGlobal_t));
+  CamCalibAfGlobal_t* pNewAfGlobal = (CamCalibAfGlobal_t *)malloc(sizeof(CamCalibAfGlobal_t));
   if (NULL == pNewAfGlobal) {
     return (RET_OUTOFMEM);
   }
@@ -2809,7 +2863,7 @@ RESULT CamCalibDbAddAecGlobal
   }
 
   /* finally allocate, copy & add data */
-  CamCalibAecGlobal_t* pNewAecGlobal = malloc(sizeof(CamCalibAecGlobal_t));
+  CamCalibAecGlobal_t* pNewAecGlobal = (CamCalibAecGlobal_t *)malloc(sizeof(CamCalibAecGlobal_t));
   if (NULL == pNewAecGlobal) {
     return (RET_OUTOFMEM);
   }
@@ -2908,7 +2962,7 @@ RESULT CamCalibDbAddEcmProfile
   }
 
   /* finally allocate, copy & add profile */
-  pNewEcmProfile = malloc(sizeof(CamEcmProfile_t));
+  pNewEcmProfile = (CamEcmProfile_t *)malloc(sizeof(CamEcmProfile_t));
   if (NULL == pNewEcmProfile) {
     return (RET_OUTOFMEM);
   }
@@ -3099,7 +3153,7 @@ RESULT CamCalibDbAddEcmScheme
   }
 
   /* finally allocate, copy & add scheme */
-  pNewEcmScheme = malloc(sizeof(CamEcmScheme_t));
+  pNewEcmScheme = (CamEcmScheme_t *)malloc(sizeof(CamEcmScheme_t));
   if (NULL == pNewEcmScheme) {
     return (RET_OUTOFMEM);
   }
@@ -3251,19 +3305,19 @@ RESULT CamCalibDbAddDySetpoint
   }
 
   /* finally allocate, copy & add scheme */
-  pNewDySetpoint = malloc(sizeof(CamCalibAecDynamicSetpoint_t));
+  pNewDySetpoint = (CamCalibAecDynamicSetpoint_t *)malloc(sizeof(CamCalibAecDynamicSetpoint_t));
   if (NULL == pNewDySetpoint) {
     return (RET_OUTOFMEM);
   }
   MEMCPY(pNewDySetpoint, pAddDySetpoint, sizeof(CamCalibAecDynamicSetpoint_t));
 
   if (0 != pAddDySetpoint->array_size) {
-    pDySetpoint = malloc(pAddDySetpoint->array_size * sizeof(float));
+    pDySetpoint = (float *)malloc(pAddDySetpoint->array_size * sizeof(float));
     if (NULL == pDySetpoint) {
       free(pNewDySetpoint);
       return (RET_OUTOFMEM);
     }
-    pExpValue = malloc(pAddDySetpoint->array_size * sizeof(float));
+    pExpValue = (float *)malloc(pAddDySetpoint->array_size * sizeof(float));
     if (NULL == pExpValue) {
       free(pNewDySetpoint);
       free(pDySetpoint);
@@ -3421,7 +3475,7 @@ RESULT CamCalibDbAddExpSeparate
   }
 
   /* finally allocate, copy & add scheme */
-  pNewExpSeparate = malloc(sizeof(CamCalibAecExpSeparate_t));
+  pNewExpSeparate = (CamCalibAecExpSeparate_t *)malloc(sizeof(CamCalibAecExpSeparate_t));
   if (NULL == pNewExpSeparate) {
     return (RET_OUTOFMEM);
   }
@@ -3668,8 +3722,8 @@ RESULT CamCalibDbAddAwb_V11_Illumination
     n_items = pAddIllu->SaturationCurve.ArraySize;
     n_memsize = (n_items * sizeof(float));
     pNewIllu->SaturationCurve.ArraySize = n_items;
-    pNewIllu->SaturationCurve.pSensorGain = malloc(n_memsize);
-    pNewIllu->SaturationCurve.pSaturation = malloc(n_memsize);
+    pNewIllu->SaturationCurve.pSensorGain = (float *)malloc(n_memsize);
+    pNewIllu->SaturationCurve.pSaturation = (float *)malloc(n_memsize);
     MEMCPY(pNewIllu->SaturationCurve.pSensorGain, pAddIllu->SaturationCurve.pSensorGain, n_memsize);
     MEMCPY(pNewIllu->SaturationCurve.pSaturation, pAddIllu->SaturationCurve.pSaturation, n_memsize);
 
@@ -3677,8 +3731,8 @@ RESULT CamCalibDbAddAwb_V11_Illumination
     n_items = pAddIllu->VignettingCurve.ArraySize;
     n_memsize = (n_items * sizeof(float));
     pNewIllu->VignettingCurve.ArraySize = n_items;
-    pNewIllu->VignettingCurve.pSensorGain = malloc(n_memsize);
-    pNewIllu->VignettingCurve.pVignetting = malloc(n_memsize);
+    pNewIllu->VignettingCurve.pSensorGain = (float *)malloc(n_memsize);
+    pNewIllu->VignettingCurve.pVignetting = (float *)malloc(n_memsize);
     MEMCPY(pNewIllu->VignettingCurve.pSensorGain, pAddIllu->VignettingCurve.pSensorGain, n_memsize);
     MEMCPY(pNewIllu->VignettingCurve.pVignetting, pAddIllu->VignettingCurve.pVignetting, n_memsize);
 
@@ -3738,8 +3792,8 @@ RESULT CamCalibDbAddAwb_V10_Illumination
     n_items = pAddIllu->SaturationCurve.ArraySize;
     n_memsize = (n_items * sizeof(float));
     pNewIllu->SaturationCurve.ArraySize = n_items;
-    pNewIllu->SaturationCurve.pSensorGain = malloc(n_memsize);
-    pNewIllu->SaturationCurve.pSaturation = malloc(n_memsize);
+    pNewIllu->SaturationCurve.pSensorGain = (float *)malloc(n_memsize);
+    pNewIllu->SaturationCurve.pSaturation = (float *)malloc(n_memsize);
     MEMCPY(pNewIllu->SaturationCurve.pSensorGain, pAddIllu->SaturationCurve.pSensorGain, n_memsize);
     MEMCPY(pNewIllu->SaturationCurve.pSaturation, pAddIllu->SaturationCurve.pSaturation, n_memsize);
 
@@ -3747,8 +3801,8 @@ RESULT CamCalibDbAddAwb_V10_Illumination
     n_items = pAddIllu->VignettingCurve.ArraySize;
     n_memsize = (n_items * sizeof(float));
     pNewIllu->VignettingCurve.ArraySize = n_items;
-    pNewIllu->VignettingCurve.pSensorGain = malloc(n_memsize);
-    pNewIllu->VignettingCurve.pVignetting = malloc(n_memsize);
+    pNewIllu->VignettingCurve.pSensorGain = (float *)malloc(n_memsize);
+    pNewIllu->VignettingCurve.pVignetting = (float *)malloc(n_memsize);
     MEMCPY(pNewIllu->VignettingCurve.pSensorGain, pAddIllu->VignettingCurve.pSensorGain, n_memsize);
     MEMCPY(pNewIllu->VignettingCurve.pVignetting, pAddIllu->VignettingCurve.pVignetting, n_memsize);
 
@@ -3945,7 +3999,7 @@ RESULT CamCalibDbAddLscProfile
   /* check if resolution already exists */
   pNewLsc = (CamLscProfile_t*)ListSearch(&pCamCalibDbCtx->lsc_profile, SearchForEqualLscProfile, (void*)pAddLsc);
   if (NULL == pNewLsc) {
-    pNewLsc = malloc(sizeof(CamLscProfile_t));
+    pNewLsc = (CamLscProfile_t *)malloc(sizeof(CamLscProfile_t));
     MEMCPY(pNewLsc, pAddLsc, sizeof(CamLscProfile_t));
 
     ListPrepareItem(pNewLsc);
@@ -4095,7 +4149,7 @@ RESULT CamCalibDbAddCcProfile
   /* check if resolution already exists */
   pNewCc = (CamCcProfile_t*)ListSearch(&pCamCalibDbCtx->cc_profile, SearchForEqualCcProfile, (void*)pAddCc);
   if (NULL == pNewCc) {
-    pNewCc = malloc(sizeof(CamCcProfile_t));
+    pNewCc = (CamCcProfile_t *)malloc(sizeof(CamCcProfile_t));
     MEMCPY(pNewCc, pAddCc, sizeof(CamCcProfile_t));
 
     ListPrepareItem(pNewCc);
@@ -4174,7 +4228,7 @@ RESULT CamCalibDbReplaceCcProfileAll
   while (pNewCc) {
     pNewCc->CrossTalkCoeff = pAddCc->CrossTalkCoeff;
     pNewCc->CrossTalkOffset = pAddCc->CrossTalkOffset;
-    pNewCc = pNewCc->p_next;
+    pNewCc = (CamCcProfile_t *)pNewCc->p_next;
   }
 
   LOGV( "%s (exit)\n", __func__);
@@ -4454,7 +4508,7 @@ RESULT CamCalibDbReplaceDpfProfileAll
     pNewDpf->fOffset = pRepDpf->fOffset;
     pNewDpf->NfGains = pRepDpf->NfGains;
     pNewDpf->ADPFEnable = pRepDpf->ADPFEnable;
-    pNewDpf = pNewDpf->p_next;
+    pNewDpf = (CamDpfProfile_t *)pNewDpf->p_next;
   }
 
   LOGV( "%s (exit)\n", __func__);
@@ -4683,7 +4737,7 @@ RESULT CamCalibDbAddFilterProfile
   }
 
   /* finally allocate, copy & add scheme */
-  pNewFilter = malloc(sizeof(CamFilterProfile_t));
+  pNewFilter = (CamFilterProfile_t *)malloc(sizeof(CamFilterProfile_t));
   if (NULL == pNewFilter) {
     return (RET_OUTOFMEM);
   }
@@ -4830,7 +4884,7 @@ RESULT CamCalibDbAddNewDsp3DNRSetting
   }
 
   /* finally allocate, copy & add scheme */
-  pNewDsp3dnrSetting = malloc(sizeof(CamNewDsp3DNRProfile_t));
+  pNewDsp3dnrSetting = (CamNewDsp3DNRProfile_t *)malloc(sizeof(CamNewDsp3DNRProfile_t));
   if (NULL == pNewDsp3dnrSetting) {
     return (RET_OUTOFMEM);
   }
@@ -4977,7 +5031,7 @@ RESULT CamCalibDbAddDsp3DNRSetting
   }
 
   /* finally allocate, copy & add scheme */
-  pNewDsp3dnrSetting = malloc(sizeof(CamDsp3DNRSettingProfile_t));
+  pNewDsp3dnrSetting = (CamDsp3DNRSettingProfile_t *)malloc(sizeof(CamDsp3DNRSettingProfile_t));
   if (NULL == pNewDsp3dnrSetting) {
     return (RET_OUTOFMEM);
   }
@@ -5545,7 +5599,7 @@ RESULT CamCalibDbAddWdrGlobal
   }
 
   /* finally allocate, copy & add data */
-  CamCalibWdrGlobal_t* pNewWdrGlobal = malloc(sizeof(CamCalibWdrGlobal_t));
+  CamCalibWdrGlobal_t* pNewWdrGlobal = (CamCalibWdrGlobal_t *)malloc(sizeof(CamCalibWdrGlobal_t));
   if (NULL == pNewWdrGlobal) {
     return (RET_OUTOFMEM);
   }
@@ -5611,7 +5665,7 @@ RESULT CamCalibDbAddCproc
   }
 
   /* finally allocate, copy & add data */
-  CamCprocProfile_t* pNewCprocGlobal = malloc(sizeof(CamCprocProfile_t));
+  CamCprocProfile_t* pNewCprocGlobal = (CamCprocProfile_t *)malloc(sizeof(CamCprocProfile_t));
   if (NULL == pNewCprocGlobal) {
     return (RET_OUTOFMEM);
   }
@@ -5649,7 +5703,6 @@ RESULT CamCalibDbGetCproc
 
   return (RET_SUCCESS);
 }
-
 
 /******************************************************************************
  * CamCalibDbAddOTPGlobal
@@ -5718,5 +5771,3 @@ RESULT CamCalibDbGetOTPGlobal
 
   return (RET_SUCCESS);
 }
-
-

@@ -1076,7 +1076,21 @@ static RESULT AdpfRKLpCalMatrix
 	prkDLpResult->thvar_divided[2] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided2), (pRKDLpConf->gainsArray), counts, fSensorGain);
 	prkDLpResult->thvar_divided[3] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided3), (pRKDLpConf->gainsArray), counts, fSensorGain);
 	prkDLpResult->thvar_divided[4] = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->varTh_divided4), (pRKDLpConf->gainsArray), counts, fSensorGain);
-
+	prkDLpResult->th_grad = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->th_grad), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->th_diff = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->th_diff), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->th_csc = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->th_csc), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->th_var = (uint16_t)AdpfRKLpInterpolate((pRKDLpConf->th_var), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thgrad_r_fct = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thgrad_r_fct), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thdiff_r_fct = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thdiff_r_fct), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thvar_r_fct = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thvar_r_fct), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thgrad_b_fct = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thgrad_b_fct), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thdiff_b_fct = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thdiff_b_fct), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->thvar_b_fct = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->thvar_b_fct), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->similarity_th = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->similarity_th), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->flat_level_sel= (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->flat_level_sel), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->pattern_level_sel = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->pattern_level_sel), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	prkDLpResult->edge_level_sel = (uint8_t)AdpfRKLpInterpolate((pRKDLpConf->edge_level_sel), (pRKDLpConf->gainsArray), counts, fSensorGain);
+	
 	return ( result );
 }
 
@@ -1108,10 +1122,10 @@ static RESULT AdpfCalcRKIESharpFilterCoe
 		return (RET_INVALID_PARM);
 	}
 
-	if(pRKIESharpProfile->sensorGain <= 0)
-		pRKIESharpProfile->sensorGain = RK_IESHARP_GIAN;
+	if(pRKIESharpProfile->gain_dvide<= 0)
+		pRKIESharpProfile->gain_dvide = RK_IESHARP_GIAN;
 	
-	if(fSensorGain <= pRKIESharpProfile->sensorGain){
+	if(fSensorGain <= pRKIESharpProfile->gain_dvide){
 		pGridConf = &pRKIESharpProfile->lgridconf;
 	}else{
 		pGridConf = &pRKIESharpProfile->hgridconf;
@@ -1121,7 +1135,8 @@ static RESULT AdpfCalcRKIESharpFilterCoe
 	MEMCPY(pRKIEsharpResult->sharp_factor, pGridConf->sharp_factor, sizeof(pRKIEsharpResult->sharp_factor));
 	MEMCPY(pRKIEsharpResult->line1_filter_coe, pGridConf->line1_filter_coe, sizeof(pRKIEsharpResult->line1_filter_coe));
 	MEMCPY(pRKIEsharpResult->line2_filter_coe, pGridConf->line2_filter_coe, sizeof(pRKIEsharpResult->line2_filter_coe));
-	MEMCPY(pRKIEsharpResult->line3_filter_coe, pGridConf->line3_filter_coe, sizeof(pRKIEsharpResult->line3_filter_coe));
+	MEMCPY(pRKIEsharpResult->line3_filter_coe, pGridConf->line3_filter_coe, sizeof(pRKIEsharpResult->line3_filter_coe));	
+	MEMCPY(pRKIEsharpResult->lap_mat_coe, pGridConf->lap_mat_coe, sizeof(pRKIEsharpResult->lap_mat_coe));	
 
 	return result;
 }
@@ -1240,25 +1255,11 @@ static RESULT AdpfApplyConfiguration
 		pAdpfCtx->RKDemosaicLpResult.lp_en = 1;
 		pAdpfCtx->RKDemosaicLpResult.rb_filter_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.rb_filter_en;
 		pAdpfCtx->RKDemosaicLpResult.hp_filter_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.hp_filter_en;
-		pAdpfCtx->RKDemosaicLpResult.th_grad = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_grad;
-		pAdpfCtx->RKDemosaicLpResult.th_diff = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_diff;
-		pAdpfCtx->RKDemosaicLpResult.th_csc = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_csc;
-		pAdpfCtx->RKDemosaicLpResult.th_var = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_var;
 		pAdpfCtx->RKDemosaicLpResult.th_grad_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_grad_en;
 		pAdpfCtx->RKDemosaicLpResult.th_diff_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_diff_en;
 		pAdpfCtx->RKDemosaicLpResult.th_csc_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_csc_en;
 		pAdpfCtx->RKDemosaicLpResult.th_var_en = pAdpfCtx->pFilterProfile->DemosaicLpConf.th_var_en;		
 		pAdpfCtx->RKDemosaicLpResult.use_old_lp = pAdpfCtx->pFilterProfile->DemosaicLpConf.use_old_lp;
-		pAdpfCtx->RKDemosaicLpResult.similarity_th = pAdpfCtx->pFilterProfile->DemosaicLpConf.similarity_th;
-		pAdpfCtx->RKDemosaicLpResult.flat_level_sel = pAdpfCtx->pFilterProfile->DemosaicLpConf.flat_level_sel;
-		pAdpfCtx->RKDemosaicLpResult.pattern_level_sel = pAdpfCtx->pFilterProfile->DemosaicLpConf.pattern_level_sel;
-		pAdpfCtx->RKDemosaicLpResult.edge_level_sel = pAdpfCtx->pFilterProfile->DemosaicLpConf.edge_level_sel;
-		pAdpfCtx->RKDemosaicLpResult.thgrad_r_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thgrad_r_fct;
-		pAdpfCtx->RKDemosaicLpResult.thgrad_b_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thgrad_b_fct;
-		pAdpfCtx->RKDemosaicLpResult.thdiff_r_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thdiff_r_fct;
-		pAdpfCtx->RKDemosaicLpResult.thdiff_b_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thdiff_b_fct;
-		pAdpfCtx->RKDemosaicLpResult.thvar_r_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thvar_r_fct;
-		pAdpfCtx->RKDemosaicLpResult.thvar_b_fct = pAdpfCtx->pFilterProfile->DemosaicLpConf.thvar_b_fct;
 		MEMCPY(pAdpfCtx->RKDemosaicLpResult.lu_divided, pAdpfCtx->pFilterProfile->DemosaicLpConf.lu_divided, sizeof(pAdpfCtx->RKDemosaicLpResult.lu_divided));
 		pAdpfCtx->actives |= ADPF_DEMOSAICLP_MASK;
 	}else{
@@ -1377,6 +1378,7 @@ static RESULT AdpfApplyConfiguration
 		MEMCPY(pAdpfCtx->RKIESharpResult.uv_gauss_flat_coe, pAdpfCtx->rkSharpenProfile.uv_gauss_flat_coe, sizeof(pAdpfCtx->RKIESharpResult.uv_gauss_flat_coe));
 		MEMCPY(pAdpfCtx->RKIESharpResult.uv_gauss_noise_coe, pAdpfCtx->rkSharpenProfile.uv_gauss_noise_coe, sizeof(pAdpfCtx->RKIESharpResult.uv_gauss_noise_coe));
 		MEMCPY(pAdpfCtx->RKIESharpResult.uv_gauss_other_coe, pAdpfCtx->rkSharpenProfile.uv_gauss_other_coe, sizeof(pAdpfCtx->RKIESharpResult.uv_gauss_other_coe));
+		MEMCPY(pAdpfCtx->RKIESharpResult.lap_mat_coe, pAdpfCtx->rkSharpenProfile.lgridconf.lap_mat_coe, sizeof(pAdpfCtx->RKIESharpResult.lap_mat_coe));
 		pAdpfCtx->actives |= ADPF_RKIESHARP_MASK;
     }else{
 		pAdpfCtx->RKIESharpResult.iesharpen_en = 0;

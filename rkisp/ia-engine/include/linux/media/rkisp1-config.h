@@ -653,7 +653,7 @@ struct cifisp_rkiesharp_config {
 	unsigned char uv_gauss_flat_coe[15];
 	unsigned char uv_gauss_noise_coe[15];
 	unsigned char uv_gauss_other_coe[15];
-
+	unsigned char lap_mat_coe[9];
 } __attribute__ ((packed));
 
 /**

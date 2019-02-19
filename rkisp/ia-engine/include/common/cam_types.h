@@ -960,24 +960,38 @@ typedef struct CamDemosaicLpProfile_s
 	uint8_t  varTh_divided3_ArraySize;
 	float* varTh_divided4;
 	uint8_t  varTh_divided4_ArraySize;
-	uint8_t  thgrad_r_fct;
-	uint8_t  thdiff_r_fct;
-	uint8_t  thvar_r_fct;
-	uint8_t  thgrad_b_fct;
-	uint8_t  thdiff_b_fct;
-	uint8_t  thvar_b_fct;
-	uint8_t  similarity_th;
+	float*  thgrad_r_fct;
+	uint8_t thgrad_r_fct_ArraySize;
+	float*  thdiff_r_fct;
+	uint8_t thdiff_r_fct_ArraySize;
+	float*  thvar_r_fct;
+	uint8_t thvar_r_fct_ArraySize;
+	float*  thgrad_b_fct;
+	uint8_t thgrad_b_fct_ArraySize;
+	float*  thdiff_b_fct;
+	uint8_t thdiff_b_fct_ArraySize;
+	float*  thvar_b_fct;
+	uint8_t thvar_b_fct_ArraySize;
+	float*  similarity_th;
+	uint8_t similarity_th_ArraySize;
 	uint8_t  th_var_en;
 	uint8_t  th_csc_en;
 	uint8_t  th_diff_en;
 	uint8_t  th_grad_en;
-	uint16_t  th_var;
-	uint8_t  th_csc;
-	uint8_t  th_diff;
-	uint8_t  th_grad;
-	uint8_t  flat_level_sel;
-	uint8_t  pattern_level_sel;
-	uint8_t  edge_level_sel;
+	float*  th_var;
+	uint8_t th_var_ArraySize;
+	float*  th_csc;
+	uint8_t th_csc_ArraySize;
+	float*  th_diff;
+	uint8_t th_diff_ArraySize;
+	float*  th_grad;
+	uint8_t th_grad_ArraySize;
+	float*  flat_level_sel;
+	uint8_t flat_level_sel_ArraySize;
+	float*  pattern_level_sel;
+	uint8_t pattern_level_sel_ArraySize;
+	float*  edge_level_sel;
+	uint8_t edge_level_sel_ArraySize;
 }CamDemosaicLpProfile_t;
 
 typedef struct CamFilterProfile_s{
@@ -1208,6 +1222,8 @@ typedef struct CamIesharpenGridConf_s
     uint8_t line2_filter_coe_ArraySize;
     uint8_t* line3_filter_coe;//                           2x3
     uint8_t line3_filter_coe_ArraySize;
+	uint8_t *lap_mat_coe;
+	uint8_t lap_mat_coe_ArraySize;
 }CamIesharpenGridConf_t;
 
 typedef struct CamIesharpenProfile_s
@@ -1243,8 +1259,7 @@ typedef struct CamIesharpenProfile_s
     uint8_t uv_gauss_noise_coe_ArraySize;
     uint8_t* uv_gauss_other_coe;//uv channel faussian filter 3x5 in other point
     uint8_t uv_gauss_other_coe_ArraySize;
-
-	float sensorGain;
+	float gain_dvide;
 } CamIesharpenProfile_t;
 
 

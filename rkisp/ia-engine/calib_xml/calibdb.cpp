@@ -65,13 +65,16 @@
 //                 2. add lsc ccm wb module cofiguration for BW illuminant in  in XML 
 //v0.2.3:  add otp info in iq xml
 //             modify rk ie sharp parameters type
+//v0.2.4:  modify ie sharp, add gain and lap mat coe paras for control
+//            modify demosaiclp, change thgrid_r_fct....from 1 to 6 to change with the gain value
+
 /*************************************************************************/
 /*************************************************************************/
 
 
 
 
-#define CODE_XML_PARSE_VERSION "v0.2.3"
+#define CODE_XML_PARSE_VERSION "v0.2.4"
 
 static std::ofstream redirectOut("/dev/null");
 
@@ -1639,17 +1642,10 @@ bool CalibDb::parseEntrySensor
         }
     }else if(tagname == CALIB_SENSOR_OTP_TAG)
     {
-        if(!parseEntryCell(pchild->ToElement(),tag.Size(),&CalibDb::parseEntryRKsharpen))
-        {
-#if 1
-        redirectOut
-            << "parse error in GOC section (unknow tag: "
-            << tagname
-            << ")"
-            << std::endl;
-#endif
-			return ( false );
-        }
+    	if (!parseEntryOTP(pchild->ToElement())) {
+        	return (false);
+      	}
+		
     }
 	else {
 #if 1
@@ -6825,6 +6821,20 @@ bool CalibDb::parseEntryDemosaicLPConfig
 	int n_varTh_divided2 = 0;
 	int n_varTh_divided3 = 0;
 	int n_varTh_divided4 = 0;
+	int n_thgrad_r_fct = 0;
+	int n_thdiff_r_fct = 0;
+	int n_thvar_r_fct = 0;
+	int n_thgrad_b_fct = 0;
+	int n_thdiff_b_fct = 0;
+	int n_thvar_b_fct = 0;
+	int n_similarity_th = 0;
+	int n_th_grad = 0;
+	int n_th_diff = 0;
+	int n_th_var = 0;
+	int n_th_csc = 0;
+	int n_flat_level_sel = 0;
+	int n_pattern_level_sel = 0;
+	int n_edge_level_sel = 0;
 
 #ifdef DEBUG_LOG
 	redirectOut << __func__ << " (enter)" << std::endl;
@@ -7183,50 +7193,99 @@ bool CalibDb::parseEntryDemosaicLPConfig
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->thgrad_r_fct,1);
-            DCT_ASSERT((no == 1));
+        	float* thgrad_r_fct = NULL;
+            thgrad_r_fct = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((thgrad_r_fct != NULL));
+            MEMSET(thgrad_r_fct, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), thgrad_r_fct, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_thgrad_r_fct = no;
+            pDemosaicLpConf->thgrad_r_fct = thgrad_r_fct;
     	}
         else if((tagname == CALIB_SENSOR_DPF_LP_THDIFF_R_FCT_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
-        {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->thdiff_r_fct,1);
-            DCT_ASSERT((no == 1));
+        {	
+        	float* thdiff_r_fct = NULL;
+            thdiff_r_fct = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((thdiff_r_fct != NULL));
+            MEMSET(thdiff_r_fct, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), thdiff_r_fct, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_thdiff_r_fct = no;
+            pDemosaicLpConf->thdiff_r_fct = thdiff_r_fct;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_THVAR_R_FCT_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->thvar_r_fct,1);
-            DCT_ASSERT((no == 1));
+        	float* thvar_r_fct = NULL;
+            thvar_r_fct = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((thvar_r_fct != NULL));
+            MEMSET(thvar_r_fct, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), thvar_r_fct, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_thvar_r_fct = no;
+            pDemosaicLpConf->thvar_r_fct = thvar_r_fct;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_THGRAD_B_FCT_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->thgrad_b_fct,1);
-            DCT_ASSERT((no == 1));
+        	float* thgrad_b_fct = NULL;
+            thgrad_b_fct = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((thgrad_b_fct != NULL));
+            MEMSET(thgrad_b_fct, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), thgrad_b_fct, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_thgrad_b_fct = no;
+            pDemosaicLpConf->thgrad_b_fct = thgrad_b_fct;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_THDIFF_B_FCT_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->thdiff_b_fct,1);
-            DCT_ASSERT((no == 1));
+        	float* thdiff_b_fct = NULL;
+            thdiff_b_fct = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((thdiff_b_fct != NULL));
+            MEMSET(thdiff_b_fct, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), thdiff_b_fct, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_thdiff_b_fct = no;
+            pDemosaicLpConf->thdiff_b_fct = thdiff_b_fct;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_THVAR_B_FCT_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->thvar_b_fct,1);
-            DCT_ASSERT((no == 1));
+        	float* thvar_b_fct = NULL;
+            thvar_b_fct = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((thvar_b_fct != NULL));
+            MEMSET(thvar_b_fct, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), thvar_b_fct, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_thvar_b_fct = no;
+            pDemosaicLpConf->thvar_b_fct = thvar_b_fct;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_SIMILARITY_TH_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->similarity_th,1);
-            DCT_ASSERT((no == 1));
+        	float* similarity_th = NULL;
+            similarity_th = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((similarity_th != NULL));
+            MEMSET(similarity_th, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), similarity_th, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_similarity_th = no;
+            pDemosaicLpConf->similarity_th = similarity_th;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_TH_VAR_EN_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
@@ -7260,50 +7319,99 @@ bool CalibDb::parseEntryDemosaicLPConfig
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->th_grad,1);
-            DCT_ASSERT((no == 1));
+        	float* th_grad = NULL;
+            th_grad = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((th_grad != NULL));
+            MEMSET(th_grad, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), th_grad, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_th_grad = no;
+            pDemosaicLpConf->th_grad = th_grad;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_TH_DIFF_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->th_diff,1);
-            DCT_ASSERT((no == 1));
+        	float* th_diff = NULL;
+            th_diff = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((th_diff != NULL));
+            MEMSET(th_diff, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), th_diff, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_th_diff = no;
+            pDemosaicLpConf->th_diff = th_diff;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_TH_CSC_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->th_csc,1);
-            DCT_ASSERT((no == 1));
+        	float* th_csc = NULL;
+            th_csc = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((th_csc != NULL));
+            MEMSET(th_csc, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), th_csc, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_th_csc = no;
+            pDemosaicLpConf->th_csc = th_csc;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_TH_VAR_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUshortArray(tag.Value(),&pDemosaicLpConf->th_var,1);
-            DCT_ASSERT((no == 1));
+        	float* th_var = NULL;
+            th_var = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((th_var != NULL));
+            MEMSET(th_var, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), th_var, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_th_var = no;
+            pDemosaicLpConf->th_var = th_var;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_FLAT_LEVEL_SEL_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->flat_level_sel,1);
-            DCT_ASSERT((no == 1));
+        	float* flat_level_sel = NULL;
+            flat_level_sel = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((flat_level_sel != NULL));
+            MEMSET(flat_level_sel, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), flat_level_sel, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_flat_level_sel = no;
+            pDemosaicLpConf->flat_level_sel = flat_level_sel;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_PATTERN_LEVEL_SEL_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->pattern_level_sel,1);
-            DCT_ASSERT((no == 1));
+        	float* pattern_level_sel = NULL;
+            pattern_level_sel = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((pattern_level_sel != NULL));
+            MEMSET(pattern_level_sel, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), pattern_level_sel, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_pattern_level_sel = no;
+            pDemosaicLpConf->pattern_level_sel = pattern_level_sel;
         }
         else if((tagname == CALIB_SENSOR_DPF_LP_EDGE_LEVEL_SEL_TAG)
             &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
             &&(tag.Size()>0))
         {
-            int no = ParseUcharArray(tag.Value(),&pDemosaicLpConf->edge_level_sel,1);
-            DCT_ASSERT((no == 1));
+        	float* edge_level_sel = NULL;
+            edge_level_sel = (float*)malloc(tag.Size()*sizeof(float));
+            DCT_ASSERT((edge_level_sel != NULL));
+            MEMSET(edge_level_sel, 0, (tag.Size()*sizeof(float)));
+			
+            int no = ParseFloatArray(tag.Value(), edge_level_sel, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+			n_edge_level_sel = no;
+            pDemosaicLpConf->edge_level_sel = edge_level_sel;
         }
         else
         {
@@ -7338,6 +7446,21 @@ bool CalibDb::parseEntryDemosaicLPConfig
    DCT_ASSERT(n_gains_level == n_varTh_divided2);
    DCT_ASSERT(n_gains_level == n_varTh_divided3);
    DCT_ASSERT(n_gains_level == n_varTh_divided4);
+	
+   DCT_ASSERT(n_gains_level == n_thgrad_r_fct);
+   DCT_ASSERT(n_gains_level == n_thdiff_r_fct);
+   DCT_ASSERT(n_gains_level == n_thvar_r_fct);
+   DCT_ASSERT(n_gains_level == n_thgrad_b_fct);
+   DCT_ASSERT(n_gains_level == n_thdiff_b_fct);
+   DCT_ASSERT(n_gains_level == n_thvar_b_fct);
+   DCT_ASSERT(n_gains_level == n_similarity_th);
+   DCT_ASSERT(n_gains_level == n_th_grad);
+   DCT_ASSERT(n_gains_level == n_th_diff);
+   DCT_ASSERT(n_gains_level == n_th_var);
+   DCT_ASSERT(n_gains_level == n_th_csc);
+   DCT_ASSERT(n_gains_level == n_flat_level_sel);
+   DCT_ASSERT(n_gains_level == n_pattern_level_sel);  
+   DCT_ASSERT(n_gains_level == n_edge_level_sel);
 
    pDemosaicLpConf->gainsArray_ArraySize = n_gains_level;
    pDemosaicLpConf->thCSC_divided0_ArraySize = n_gains_level;
@@ -7360,6 +7483,21 @@ bool CalibDb::parseEntryDemosaicLPConfig
    pDemosaicLpConf->varTh_divided2_ArraySize = n_gains_level;
    pDemosaicLpConf->varTh_divided3_ArraySize = n_gains_level;
    pDemosaicLpConf->varTh_divided4_ArraySize = n_gains_level;
+
+   pDemosaicLpConf->thgrad_r_fct_ArraySize = n_gains_level;
+   pDemosaicLpConf->thdiff_r_fct_ArraySize = n_gains_level;
+   pDemosaicLpConf->thvar_r_fct_ArraySize= n_gains_level;
+   pDemosaicLpConf->thgrad_b_fct_ArraySize = n_gains_level;
+   pDemosaicLpConf->thdiff_b_fct_ArraySize = n_gains_level;
+   pDemosaicLpConf->thvar_b_fct_ArraySize = n_gains_level;
+   pDemosaicLpConf->similarity_th_ArraySize = n_gains_level;
+   pDemosaicLpConf->th_grad_ArraySize= n_gains_level;
+   pDemosaicLpConf->th_diff_ArraySize= n_gains_level;
+   pDemosaicLpConf->th_var_ArraySize= n_gains_level;
+   pDemosaicLpConf->th_csc_ArraySize= n_gains_level;
+   pDemosaicLpConf->flat_level_sel_ArraySize = n_gains_level;
+   pDemosaicLpConf->pattern_level_sel_ArraySize = n_gains_level;
+   pDemosaicLpConf->edge_level_sel_ArraySize = n_gains_level;
 
 #ifdef DEBUG_LOG
   redirectOut << __func__ << " (exit)" << std::endl;
@@ -8399,6 +8537,37 @@ bool CalibDb::parseEntryRKsharpen
             DCT_ASSERT((no == tag.Size()));
             iesharpen_profile.uv_gauss_other_coe_ArraySize = no;
             iesharpen_profile.uv_gauss_other_coe=puv_gauss_other_coe;
+        }else if((tagname ==CALIB_SENSOR_IESHARPEN_GAIN_DVIDE_TAG)
+            &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+            &&(tag.Size()>0))
+        {
+            int no = ParseFloatArray(tag.Value(), &iesharpen_profile.gain_dvide, 1);
+            DCT_ASSERT((no == tag.Size()));
+        }
+		else if((tagname ==CALIB_SENSOR_IESHARPEN_L_LAP_MAT_COE_TAG)
+            &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+            &&(tag.Size()>0))
+        {
+            uint8_t* pl_lap_mat_coe=NULL;
+            pl_lap_mat_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
+            DCT_ASSERT(pl_lap_mat_coe != NULL);
+            MEMSET(pl_lap_mat_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), pl_lap_mat_coe, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+            iesharpen_profile.lgridconf.lap_mat_coe_ArraySize= no;
+            iesharpen_profile.lgridconf.lap_mat_coe = pl_lap_mat_coe;
+        }else if((tagname ==CALIB_SENSOR_IESHARPEN_H_LAP_MAT_COE_TAG)
+            &&(tag.isType(XmlTag::TAG_TYPE_DOUBLE))
+            &&(tag.Size()>0))
+        {
+            uint8_t* ph_lap_mat_coe=NULL;
+            ph_lap_mat_coe = (uint8_t*)malloc(tag.Size()*sizeof(uint8_t));
+            DCT_ASSERT(ph_lap_mat_coe != NULL);
+            MEMSET(ph_lap_mat_coe,0,(tag.Size()*sizeof(uint8_t)));
+            int no = ParseUcharArray(tag.Value(), ph_lap_mat_coe, tag.Size());
+            DCT_ASSERT((no == tag.Size()));
+            iesharpen_profile.hgridconf.lap_mat_coe_ArraySize= no;
+            iesharpen_profile.hgridconf.lap_mat_coe = ph_lap_mat_coe;
         }
         else
         {

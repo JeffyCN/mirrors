@@ -1227,22 +1227,23 @@ bool Isp10Engine::convertIAResults(
           /* TODO: can't find related mode in v4l2_colorfx*/
           //isp_cfg->configs.ie_config.effect =
           //  V4L2_COLORFX_EMBOSS;
-          isp_cfg->configs.ie_config.eff_mat_1 =
-              (uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[0])
-              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[1]) << 0x4)
-              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[2]) << 0x8)
-              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[3]) << 0xc);
-          isp_cfg->configs.ie_config.eff_mat_2 =
-              (uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[4])
-              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[5]) << 0x4)
-              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[6]) << 0x8)
-              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[7]) << 0xc);
           isp_cfg->configs.ie_config.eff_mat_3 =
-              (ia_results->ie.ModeConfig.Sharpen.coeff[8]);
-          /*not used for this effect*/
+              ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[0]) << 0x4)
+              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[1]) << 0x8)
+              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[2]) << 0xc);
           isp_cfg->configs.ie_config.eff_mat_4 =
-              0;
+              (uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[3])
+              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[4]) << 0x4)
+              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[5]) << 0x8)
+              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[6]) << 0xc);
           isp_cfg->configs.ie_config.eff_mat_5 =
+              (uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[7])
+              | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[8]) << 0x4);
+		  
+          /*not used for this effect*/
+          isp_cfg->configs.ie_config.eff_mat_1 =
+              0;
+          isp_cfg->configs.ie_config.eff_mat_2 =
               0;
           isp_cfg->configs.ie_config.color_sel =
               0;
@@ -1527,6 +1528,10 @@ bool Isp10Engine::convertIAResults(
 		memcpy(isp_cfg->configs.rkIESharp_config.line3_filter_coe,
 						ia_results->rkIEsharp.line3_filter_coe,
 						sizeof(ia_results->rkIEsharp.line3_filter_coe));
+
+		memcpy(isp_cfg->configs.rkIESharp_config.lap_mat_coe,
+				ia_results->rkIEsharp.lap_mat_coe,
+				sizeof(ia_results->rkIEsharp.lap_mat_coe));
 	}
   }
 

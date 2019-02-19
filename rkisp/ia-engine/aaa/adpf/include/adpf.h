@@ -336,7 +336,7 @@ typedef struct RKIESharpResult_s{
   	uint8_t line1_filter_coe[6];
   	uint8_t line2_filter_coe[9];
   	uint8_t line3_filter_coe[6];
-
+	uint8_t lap_mat_coe[9];
 }RKIESharpResult_t;
 
 
