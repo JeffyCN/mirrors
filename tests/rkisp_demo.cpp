@@ -21,6 +21,7 @@
 #include <linux/videodev2.h>
 #include <rkisp_control_loop.h>
 #include <rkisp_dev_manager.h>
+#include <interface/rkcamera_vendor_tags.h>
 #include "mediactl.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
@@ -162,6 +163,23 @@ static void deinit_3A_control_params()
     g_3A_control_params = NULL;
 }
 
+static int rkisp_get_meta_frame_id(void* &engine, int64_t& frame_id) {
+    struct control_params_3A* ctl_params =
+        (struct control_params_3A*)engine;
+    camera_metadata_entry entry;
+
+    SmartLock lock(ctl_params->_meta_mutex);
+
+    entry = ctl_params->_result_metadata.find(RKCAMERA3_PRIVATEDATA_EFFECTIVE_DRIVER_FRAME_ID);
+    if (!entry.count) {
+        printf("no RKCAMERA3_PRIVATEDATA_EFFECTIVE_DRIVER_FRAME_ID\n");
+        return -1;
+    }
+    frame_id = entry.data.i64[0];
+    printf("meta frame id is %" PRId64 "\n", entry.data.i64[0]);
+
+    return 0;
+}
 // convenient interfaces of 3A, compatible with cifisp
 static int rkisp_getAeTime(void* &engine, float &time)
 {
@@ -467,6 +485,7 @@ static void mainloop(void)
         unsigned int count;
         count = frame_count;
         float exptime, expgain, newexptime=0.0f;
+        int64_t frame_id;
         while (count-- > 0) {
             printf("No.%d\n",frame_count - count);        //显示当前帧数目
             // examples show how to use 3A interfaces
@@ -479,6 +498,7 @@ static void mainloop(void)
             rkisp_getAeGain((void*&)g_3A_control_params, expgain);
             rkisp_getAeMaxExposureGain((void*&)g_3A_control_params, expgain);
             rkisp_getAeMaxExposureTime((void*&)g_3A_control_params, exptime);
+            rkisp_get_meta_frame_id((void*&)g_3A_control_params, frame_id);
             read_frame(fp);
         }
         printf("\nREAD AND SAVE DONE!\n");

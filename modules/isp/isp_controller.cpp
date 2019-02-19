@@ -334,7 +334,7 @@ IspController::get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &s
             SmartLock locker (_mutex);
             std::map<int, struct rkisp_exposure>::iterator it;
             int num = _effecting_exposure_map.size();
-            int search_id = frame_id;
+            int search_id = frame_id < 0 ? 0 : frame_id;
 
             do {
                 it = _effecting_exposure_map.find(search_id);
@@ -878,7 +878,6 @@ IspController::exposure_delay(struct rkisp_exposure isp_exposure)
     int i = 0;
 
     SmartLock locker (_mutex);
-
     if (isp_exposure.RegSmoothTime[2] != 0 &&
         _exposure_queue[0].RegSmoothGains[2] ==
         isp_exposure.RegSmoothGains[2] &&
@@ -960,7 +959,10 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
     if (_effecting_exposure_map.size() > 10)
         _effecting_exposure_map.erase(_effecting_exposure_map.begin());
     // map the exposure to corresponded effect frame id
-    _effecting_exposure_map[_frame_sequence + EXPOSURE_TIME_DELAY - 1] = isp_exposure;
+    int effecting_frame_id = _frame_sequence + EXPOSURE_TIME_DELAY - 1;
+    if (effecting_frame_id < 0)
+        effecting_frame_id = 0;
+    _effecting_exposure_map[effecting_frame_id] = isp_exposure;
 
     LOGD("----------------------------------------------");
     if (!isp_exposure.IsHdrExp)

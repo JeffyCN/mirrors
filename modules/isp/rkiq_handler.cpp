@@ -22,6 +22,7 @@
 #include "rkiq_handler.h"
 #include "rk_params_translate.h"
 #include "x3a_isp_config.h"
+#include <interface/rkcamera_vendor_tags.h>
 
 #include <string.h>
 #include <math.h>
@@ -231,13 +232,17 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
     camera_metadata_entry entry;
     SmartPtr<AiqInputParams> inputParams = _aiq_compositor->getAiqInputParams();
     SmartPtr<XmetaResult> res;
+    bool is_first_param = false;
+
     for (X3aResultList::iterator iter = output.begin ();
             iter != output.end ();)
     {
+        is_first_param = (*iter)->is_first_params ();
         if ((*iter)->get_type() == XCAM_3A_METADATA_RESULT_TYPE) {
             res = (*iter).dynamic_cast_ptr<XmetaResult> ();
             break ;
         }
+
         ++iter;
         if (iter == output.end()) {
             res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
@@ -265,10 +270,19 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
 
     struct CamIA10_SensorModeData &sensor_desc = _aiq_compositor->get_sensor_mode_data();
     ParamsTranslate::convert_from_rkisp_aec_result(&_rkaiq_result, &aec_results, &sensor_desc);
+    /* exposure in sensor_desc is the actual effective, and the one in
+     * aec_results is the latest result calculated from 3a stats and
+     * will be effective in future
+     */
+    if (!is_first_param) {
+        _rkaiq_result.exposure.exposure_time_us = sensor_desc.exp_time_seconds * 1000 * 1000;
+        _rkaiq_result.exposure.analog_gain = sensor_desc.gains;
+    }
 
-    LOGD("%s exp_time=%d gain=%f", __FUNCTION__,
+    LOGD("%s exp_time=%d gain=%f, is_first_parms %d", __FUNCTION__,
             _rkaiq_result.exposure.exposure_time_us,
-            _rkaiq_result.exposure.analog_gain);
+            _rkaiq_result.exposure.analog_gain,
+            is_first_param);
 
     ret = mAeState->processResult(_rkaiq_result, *metadata,
                             inputParams->reqId);
@@ -308,6 +322,7 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
         metadata->update(ANDROID_SENSOR_FRAME_DURATION,
                                              &frameDuration, 1);
 
+#if 0
         /*
          * AE reports exposure in usecs but Android wants it in nsecs
          * In manual mode, use input value if delta to expResult is small.
@@ -325,6 +340,9 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
             exposureTime = manualExpTime;
         }
         exposureTime = exposureTime * 1000 * 1000; // to ns.
+#else
+        exposureTime = _rkaiq_result.exposure.exposure_time_us * 1000;
+#endif
         metadata->update(ANDROID_SENSOR_EXPOSURE_TIME,
                                          &exposureTime, 1);
 
@@ -563,6 +581,38 @@ AiqCommonHandler::fillTonemapCurve(CamerIcIspGocConfig_t goc, AiqInputParams* in
                      mBGammaLut,
                      mMaxCurvePoints * 2);
     return XCAM_RETURN_NO_ERROR;
+}
+
+XCamReturn
+AiqCommonHandler::processMiscMetaResults(X3aResultList &output)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    SmartPtr<XmetaResult> res;
+    camera_metadata_entry entry;
+    LOGI("@%s %d: enter", __FUNCTION__, __LINE__);
+
+    for (X3aResultList::iterator iter = output.begin ();
+            iter != output.end ();)
+    {
+        if ((*iter)->get_type() == XCAM_3A_METADATA_RESULT_TYPE) {
+            res = (*iter).dynamic_cast_ptr<XmetaResult> ();
+            break ;
+        }
+        ++iter;
+        if (iter == output.end()) {
+            res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
+            output.push_back(res);
+        }
+    }
+
+    CameraMetadata* metadata = res->get_metadata_result();
+
+    int64_t effect_frame_id = (int)(_aiq_compositor->get_3a_isp_stats().frame_id);
+    metadata->update(RKCAMERA3_PRIVATEDATA_EFFECTIVE_DRIVER_FRAME_ID,
+                     &effect_frame_id,
+                     1);
+
+    return ret;
 }
 
 XCamReturn
@@ -1168,7 +1218,7 @@ RKiqCompositor::RKiqCompositor ()
     xcam_mem_clear (_ia_dcfg);
     xcam_mem_clear (_ia_results);
     xcam_mem_clear (_isp_cfg);
-
+    _isp_stats.frame_id = -1;
     _handle_manager = new X3aHandlerManager();
 #if 1
     _ae_desc = _handle_manager->get_ae_handler_desc();
@@ -1401,6 +1451,7 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
         _ae_handler->processAeMetaResults(_ia_results.aec, results);
         _awb_handler->processAwbMetaResults(_ia_results.awb, results);
         _common_handler->processToneMapsMetaResults(_ia_results.goc, results);
+        _common_handler->processMiscMetaResults(results);
     }
 
     _isp10_engine->convertIAResults(&_isp_cfg, &_ia_results);

@@ -262,6 +262,7 @@ public:
         return _params.color_effect;
     }
     XCamReturn processToneMapsMetaResults(CamerIcIspGocConfig_t goc, X3aResultList &output);
+    XCamReturn processMiscMetaResults(X3aResultList &output);
 
 private:
     XCamReturn initTonemaps();
@@ -312,6 +313,8 @@ public:
     bool set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *sensor_mode);
     struct CamIA10_SensorModeData &get_sensor_mode_data() { return _ia_stat.sensor_mode; };
     bool set_3a_stats (SmartPtr<X3aIspStatistics> &stats);
+    struct CamIA10_Stats& get_3a_ia10_stats () { return _ia_stat; };
+    struct cifisp_stat_buffer& get_3a_isp_stats () { return _isp_stats; };
     bool set_vcm_time (struct rk_cam_vcm_tim *vcm_tim);
     bool set_frame_softime (int64_t sof_tim);
     bool set_effect_ispparams (struct rkisp_parameters& isp_params);
