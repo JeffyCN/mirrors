@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# Start/stop wifi
+#
+
+case "$1" in
+  start)
+	CONFIG=/userdata/cfg/wpa_supplicant.conf
+	echo "Starting wifi, checking driver status..."
+	[ -x /usr/bin/wifi_start.sh ] || exit 0
+	[ -f $CONFIG ] || exit 0
+	WIFI_READY=`cat /proc/net/dev | grep wlan0`
+	while [ -z "$WIFI_READY" ]
+	do
+		sleep 1
+		WIFI_READY=`cat /proc/net/dev | grep wlan0`
+		#echo "wifi ready: $WIFI_READY"
+		CNT=`expr $CNT + 1`
+		if [ $CNT -gt 100 ];then
+			echo "wifi driver is not ready. please check if /etc/init.d/S66load_wifi_modules run correctly. then run /etc/init.d/S67wifi start"
+			exit 0
+		fi
+	done
+	echo "wifi driver is ready"
+	SSID=`grep ssid /userdata/cfg/wpa_supplicant.conf | cut -d '"' -f 2`
+	PWD=`grep psk /userdata/cfg/wpa_supplicant.conf | cut -d '"' -f 2`
+	if [ x$SSID = xSSID ];then
+		echo "ssid in /userdata/cfg/wpa_supplicant.conf not valid"
+		exit 0
+	fi
+	if [ x$PWD = xPWD ];then
+		echo "passwd in /userdata/cfg/wpa_supplicant.conf not valid"
+		exit 0
+	fi
+	wifi_start.sh  $SSID $PWD
+	;;
+  stop)
+	echo "Stopping wifi..."
+	;;
+  reload|force-reload)
+	echo "Reloading reload wifi..."
+	;;
+  restart)
+	"$0" stop
+	sleep 1 # Prevent race condition: ensure dhcpcd stops before start.
+	"$0" start
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart|reload|force-reload}"
+	exit 1
+esac
