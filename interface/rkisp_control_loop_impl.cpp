@@ -23,6 +23,14 @@
 
 #define AIQ_CONTEXT_CAST(context)  ((RkispDeviceManager*)(context))
 
+#ifdef ANDROID_VERSION_ABOVE_8_X
+#define RK_3A_TUNING_FILE_PATH  "/vendor/etc/camera/rkisp1/"
+#elif defined(ANDROID_PLATEFORM)
+#define RK_3A_TUNING_FILE_PATH  "/etc/camera/rkisp1/"
+#else
+#define RK_3A_TUNING_FILE_PATH  "/etc/"
+#endif
+
 using namespace XCam;
 using namespace android;
 
@@ -41,6 +49,8 @@ int rkisp_cl_init(void** cl_ctx, const char* tuning_file_path,
                   const cl_result_callback_ops_t *callback_ops) {
     LOGD("--------------------------rkisp_cl_init");
     RkispDeviceManager *device_manager = new RkispDeviceManager(callback_ops);
+    // deprecated, use auto selected iq file
+#if 0
     if (tuning_file_path && access(tuning_file_path, F_OK) == 0) {
         device_manager->set_iq_path(tuning_file_path);
         device_manager->set_has_3a(true);
@@ -49,6 +59,7 @@ int rkisp_cl_init(void** cl_ctx, const char* tuning_file_path,
         device_manager->set_has_3a(false);
         LOGD("Disable 3a, don't find IQ file");
     }
+#endif
     // set vendor ops
     RkCamera3VendorTags::get_vendor_tag_ops(&rkcamera_vendor_tag_ops_instance);
     set_camera_metadata_vendor_ops(&rkcamera_vendor_tag_ops_instance);
@@ -79,6 +90,49 @@ static int __rkisp_get_isp_ver(V4l2Device* vdev, int* isp_ver) {
 out:
     LOGE("get isp version failed !");
     return -1;
+}
+
+static int
+__rkisp_auto_select_iqfile(const struct rkmodule_inf* mod_info, char* iqfile_name) {
+    if (!mod_info)
+        return -1;
+
+    const struct rkmodule_fac_inf* fac_inf = &mod_info->fac;
+    const struct rkmodule_base_inf* base_inf = &mod_info->base;
+    const char *sensor_name, *module_name, *lens_name;
+
+    if (!strlen(base_inf->module) || !strlen(base_inf->sensor) ||
+        !strlen(base_inf->lens)) {
+        LOGE("no camera module fac info, check the drv !");
+        return -1;
+    }
+    sensor_name = base_inf->sensor;
+    module_name = base_inf->module;
+    lens_name = base_inf->lens;
+
+    if (fac_inf->flag) {
+        if (!strlen(fac_inf->module) || !strlen(fac_inf->lens)) {
+            LOGE("no camera module fac info, check the drv !");
+            return -1;
+        }
+        // prefer to use otp info
+        module_name = fac_inf->module;
+        lens_name = fac_inf->lens;
+    }
+
+    sprintf(iqfile_name, "%s_%s_%s.xml",
+            sensor_name, module_name, lens_name);
+
+    return 0;
+}
+
+static int
+__rkisp_get_cam_module_info(V4l2SubDevice* sensor_sd, struct rkmodule_inf* mod_info) {
+    if (sensor_sd->io_control(RKMODULE_GET_MODULE_INFO, mod_info) < 0) {
+        LOGE("failed to get camera module info");
+        return -1;
+    }
+    return 0;
 }
 
 static int __rkisp_get_sensor_name(const char* vnode, char* sensor_name) {
@@ -244,6 +298,32 @@ int rkisp_cl_prepare(void* cl_ctx,
 
     SmartPtr<ImageProcessor> isp_processor = new IspImageProcessor (isp_controller, true);
     device_manager->add_image_processor (isp_processor);
+
+    struct rkmodule_inf camera_mod_info;
+    xcam_mem_clear (camera_mod_info);
+    if (__rkisp_get_cam_module_info(sensor_dev.ptr() , &camera_mod_info)) {
+            ALOGE("failed to get cam module info");
+            return -1;
+    }
+
+    char iq_file_full_name[256];
+    char iq_file_name[128];
+    xcam_mem_clear (iq_file_full_name);
+    xcam_mem_clear (iq_file_name);
+    strcpy(iq_file_full_name, RK_3A_TUNING_FILE_PATH);
+    if (__rkisp_auto_select_iqfile(&camera_mod_info, iq_file_name)) {
+        ALOGE("failed to get iq file name !");
+        return -1;
+    } else {
+        strcat(iq_file_full_name, iq_file_name);
+        if (access(iq_file_full_name, F_OK) == 0) {
+            device_manager->set_iq_path(iq_file_full_name);
+            device_manager->set_has_3a(true);
+        } else {
+            ALOGE("can't access iq file %s !", iq_file_full_name);
+            device_manager->set_has_3a(false);
+        }
+    }
 
     SmartPtr<X3aAnalyzer> aiq_analyzer =
         new X3aAnalyzerRKiq (device_manager, isp_controller, device_manager->get_iq_path());
