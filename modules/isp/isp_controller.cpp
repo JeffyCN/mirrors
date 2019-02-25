@@ -57,6 +57,7 @@ IspController::~IspController ()
 }
 
 void IspController::exit(bool pause) {
+    SmartLock locker (_mutex);
     XCAM_LOG_DEBUG("ISP controller has exit %d", pause);
     _is_exit = pause;
     _frame_sequence = -(EXPOSURE_TIME_DELAY - 1);
