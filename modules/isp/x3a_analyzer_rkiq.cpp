@@ -231,6 +231,8 @@ X3aAnalyzerRKiq::configure_3a ()
     //get_af_handler ()->analyze (first_results, true);
 
     if (!first_results.empty()) {
+        ret = _rkiq_compositor->integrate (first_results);
+        XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret, "AIQ configure_3a failed on integrate results");
         #if 1
         for (X3aResultList::iterator iter = first_results.begin (); iter != first_results.end (); ++iter) {
             SmartPtr<X3aResult> &isp_result = *iter;
@@ -248,8 +250,6 @@ X3aAnalyzerRKiq::configure_3a ()
 
         }
         #endif
-        ret = _rkiq_compositor->integrate (first_results);
-        XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret, "AIQ configure_3a failed on integrate results");
         notify_calculation_done (first_results);
     }
 
