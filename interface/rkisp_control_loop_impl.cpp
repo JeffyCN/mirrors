@@ -97,7 +97,7 @@ __rkisp_auto_select_iqfile(const struct rkmodule_inf* mod_info, char* iqfile_nam
     if (!mod_info)
         return -1;
 
-    const struct rkmodule_fac_inf* fac_inf = &mod_info->fac;
+    //const struct rkmodule_fac_inf* fac_inf = &mod_info->fac;
     const struct rkmodule_base_inf* base_inf = &mod_info->base;
     const char *sensor_name, *module_name, *lens_name;
 
@@ -110,6 +110,9 @@ __rkisp_auto_select_iqfile(const struct rkmodule_inf* mod_info, char* iqfile_nam
     module_name = base_inf->module;
     lens_name = base_inf->lens;
 
+    // not use otp info for iq file name, because otp info may contain unvalid
+    // character
+#if 0
     if (fac_inf->flag) {
         if (!strlen(fac_inf->module) || !strlen(fac_inf->lens)) {
             LOGE("no camera module fac info, check the drv !");
@@ -119,7 +122,7 @@ __rkisp_auto_select_iqfile(const struct rkmodule_inf* mod_info, char* iqfile_nam
         module_name = fac_inf->module;
         lens_name = fac_inf->lens;
     }
-
+#endif
     sprintf(iqfile_name, "%s_%s_%s.xml",
             sensor_name, module_name, lens_name);
 
