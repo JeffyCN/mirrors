@@ -413,9 +413,12 @@ DeviceManager::prepare ()
         framerate = (double)fps_n / (double)fps_d;
     XCAM_LOG_INFO ("initialize analyzer width: %d, height: %d, framerate: %d",
         width, height, framerate);
-    XCAM_FAILED_STOP (
-        ret = _3a_analyzer->init (width, height, framerate),
-        "initialize analyzer failed");
+
+    if (_has_3a) {
+        XCAM_FAILED_STOP (
+            ret = _3a_analyzer->init (width, height, framerate),
+            "initialize analyzer failed");
+    }
 
     return ret;
 }

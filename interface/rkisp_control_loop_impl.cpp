@@ -28,7 +28,7 @@
 #elif defined(ANDROID_PLATEFORM)
 #define RK_3A_TUNING_FILE_PATH  "/etc/camera/rkisp1/"
 #else
-#define RK_3A_TUNING_FILE_PATH  "/etc/"
+#define RK_3A_TUNING_FILE_PATH  "/etc/iqfiles/"
 #endif
 
 using namespace XCam;
@@ -316,7 +316,8 @@ int rkisp_cl_prepare(void* cl_ctx,
     strcpy(iq_file_full_name, RK_3A_TUNING_FILE_PATH);
     if (__rkisp_auto_select_iqfile(&camera_mod_info, iq_file_name)) {
         ALOGE("failed to get iq file name !");
-        return -1;
+        device_manager->set_has_3a(false);
+        //return -1;
     } else {
         strcat(iq_file_full_name, iq_file_name);
         if (access(iq_file_full_name, F_OK) == 0) {
