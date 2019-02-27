@@ -580,11 +580,18 @@ SettingsProcessor::fillAfInputParams(const CameraMetadata *settings,
         trigger = ANDROID_CONTROL_AF_TRIGGER_IDLE;
     }
 
-    afMode = ANDROID_CONTROL_AF_MODE_AUTO;
-    entry = settings->find(ANDROID_CONTROL_AF_MODE);
-    if (entry.count == 1) {
-        afMode = entry.data.u8[0];
+    afMode = ANDROID_CONTROL_AF_MODE_OFF;
+
+    camera_metadata_entry entry_static =
+        aiqInputParams->staticMeta->find(ANDROID_CONTROL_AF_AVAILABLE_MODES);
+
+    if (!(entry_static.count == 1 && entry_static.data.u8[0] == ANDROID_CONTROL_AF_MODE_OFF)) {
+        entry = settings->find(ANDROID_CONTROL_AF_MODE);
+        if (entry.count == 1) {
+            afMode = entry.data.u8[0];
+        }
     }
+
     if (aiqInputParams->aaaControls.controlMode == ANDROID_CONTROL_MODE_OFF)
         afMode = ANDROID_CONTROL_AF_MODE_OFF;
 
