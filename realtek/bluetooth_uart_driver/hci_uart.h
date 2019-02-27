@@ -81,14 +81,14 @@ struct hci_uart {
 	unsigned long		flags;
 	unsigned long		hdev_flags;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
 	struct work_struct	write_work;
 	struct workqueue_struct *hci_uart_wq;
-#endif
 
 	struct hci_uart_proto	*proto;
 	rwlock_t		proto_lock;	/* Stop work for proto close */
 	void			*priv;
+
+	spinlock_t		tx_lock;
 
 	struct sk_buff		*tx_skb;
 	unsigned long		tx_state;

@@ -1,0 +1,238 @@
+diff --git a/realtek/rtk_hciattach/hciattach_rtk.c b/realtek/rtk_hciattach/hciattach_rtk.c
+old mode 100644
+new mode 100755
+index b195b1b..b33040b
+--- a/realtek/rtk_hciattach/hciattach_rtk.c
++++ b/realtek/rtk_hciattach/hciattach_rtk.c
+@@ -67,6 +67,7 @@
+ #define BT_CONFIG_DIRECTORY "/lib/firmware/rtlbt/"
+ 
+ #ifdef USE_CUSTOMER_ADDRESS
++#define BT_ADDR_FROM_VENDOR_STORAGE
+ #define BT_ADDR_FILE        "/opt/bdaddr"
+ static uint8_t customer_bdaddr = 0;
+ #endif
+@@ -2216,14 +2217,13 @@ int bachk(const char *str)
+ * @param bt_addr where bt addr is stored
+ *
+ */
+-/* static void rtk_get_ram_addr(char bt_addr[0])
+- * {
+- * 	srand(time(NULL) + getpid() + getpid() * 987654 + rand());
+- * 
+- * 	RT_U32 addr = rand();
+- * 	memcpy(bt_addr, &addr, sizeof(RT_U8));
+- * }
+- */
++static void rtk_get_ram_addr(char bt_addr[0])
++{
++	srand(time(NULL) + getpid() + getpid() * 987654 + rand());
++
++	RT_U32 addr = rand();
++	memcpy(bt_addr, &addr, sizeof(RT_U8));
++}
+ 
+ /**
+ * Write the random bt addr to the file /data/misc/bluetoothd/bt_mac/btmac.txt.
+@@ -2249,6 +2249,154 @@ int bachk(const char *str)
+  * 	}
+  * }
+  */
++#ifdef BT_ADDR_FROM_VENDOR_STORAGE
++
++typedef         unsigned short      uint16;
++typedef         unsigned int        uint32;
++typedef         unsigned char       uint8;
++
++#define VENDOR_REQ_TAG          0x56524551
++#define VENDOR_READ_IO          _IOW('v', 0x01, unsigned int)
++#define VENDOR_WRITE_IO         _IOW('v', 0x02, unsigned int)
++
++#define VENDOR_ID_MAX   5
++static char *vendor_id_table[] = {
++        "VENDOR_SN_ID",
++        "VENDOR_WIFI_MAC_ID",
++        "VENDOR_LAN_MAC_ID",
++        "VENDOR_BT_MAC_ID",
++        "VENDOR_IMEI_ID",
++};
++
++#define VENDOR_SN_ID            1
++#define VENDOR_WIFI_MAC_ID      2
++#define VENDOR_LAN_MAC_ID       3
++#define VENDOR_BT_MAC_ID        4
++#define VENDOR_IMEI_ID          5
++
++#define VENDOR_STORAGE_DEBUG
++
++struct rk_vendor_req {
++        uint32 tag;
++        uint16 id;
++        uint16 len;
++        uint8 data[1024];
++};
++
++static void rknand_get_randeom_btaddr(char *bt_addr)
++{
++	int i;
++	/* No autogen BDA. Generate one now. */
++	bt_addr[4] = 0x22;
++	bt_addr[5] = 0x22;
++	for (i = 0; i < 4; i++)
++		rtk_get_ram_addr(&bt_addr[i]);
++}
++
++static void rknand_print_hex_data(uint8 *s, struct rk_vendor_req *buf, uint32 len)
++{
++        unsigned char i = 0;
++
++#ifdef VENDOR_STORAGE_DEBUG
++        fprintf(stdout, "%s\n",s);
++        fprintf(stdout, "tag = %d // id = %d // len = %d // data = 0x%p\n", buf->tag, buf->id, buf->len, buf->data);
++#endif
++
++        printf("%s: ", vendor_id_table[buf->id - 1]);
++        if (buf->id == VENDOR_SN_ID ||
++            buf->id == VENDOR_IMEI_ID) {
++                for (i = 0; i < len; i++)
++                        printf("%c", buf->data[i]);
++        } else {
++                for (i = 0; i < len; i++)
++                        printf("%02x", buf->data[i]);
++        }
++        fprintf(stdout, "\n");
++}
++
++static int vendor_storage_read(int cmd, char *buf, int buf_len)
++{
++        uint32 i;
++        int ret ;
++        uint8 p_buf[100]; /* malloc req buffer or used extern buffer */
++        struct rk_vendor_req *req;
++
++        req = (struct rk_vendor_req *)p_buf;
++        memset(p_buf, 0, 100);
++        int sys_fd = open("/dev/vendor_storage", O_RDWR, 0);
++        if(sys_fd < 0){
++                printf("vendor_storage open fail\n");
++                return -1;
++        }
++
++        req->tag = VENDOR_REQ_TAG;
++        req->id = cmd;
++        req->len = 50;
++
++        ret = ioctl(sys_fd, VENDOR_READ_IO, req);
++
++        if(ret){
++                printf("vendor read error %d\n", ret);
++                return -1;
++        }
++        close(sys_fd);
++
++        rknand_print_hex_data("vendor read:", req, req->len);
++	memcpy(buf, req->data, req->len);
++        return req->len;
++}
++static int vendor_storage_write(int cmd, char *num)
++{
++        uint32 i;
++        int ret ;
++        uint8 p_buf[100]; /* malloc req buffer or used extern buffer */
++        struct rk_vendor_req *req;
++
++        req = (struct rk_vendor_req *)p_buf;
++        int sys_fd = open("/dev/vendor_storage",O_RDWR,0);
++        if(sys_fd < 0){
++                printf("vendor_storage open fail\n");
++                return -1;
++        }
++
++        req->tag = VENDOR_REQ_TAG;
++        req->id = cmd;
++
++        if (cmd != VENDOR_SN_ID && cmd != VENDOR_IMEI_ID)
++                req->len = 6;
++        else
++                req->len = strlen(num);
++        memcpy(req->data, num, req->len);
++
++        ret = ioctl(sys_fd, VENDOR_WRITE_IO, req);
++        if(ret){
++                printf("vendor write error\n");
++                return -1;
++        }
++
++        rknand_print_hex_data("vendor write:", req, req->len);
++        return 0;
++}
++static int vendor_storage_read_bt_addr(uint8_t *tbuf)
++{
++	uint8 raw_buf[100] = {0};
++	int raw_len = 0;
++    int i;
++
++	raw_len = vendor_storage_read(VENDOR_BT_MAC_ID, raw_buf, 100);
++	if (raw_len < 0)
++		return -1;
++    for (i = 0; i < 6; i++) {
++        sprintf(tbuf + i * 3, "%02x:", raw_buf[i]);
++	}
++	tbuf[17] = '\0';
++	return 17;
++}
++static int vendor_storage_write_bt_addr(char *tbuf)
++{
++	return vendor_storage_write(VENDOR_BT_MAC_ID, tbuf);
++}
++#endif
+ #endif
+ 
+ /**
+@@ -2280,6 +2428,38 @@ int rtk_get_bt_config(struct btrtl_info *btrtl, uint8_t **config_buf,
+ 	uint8_t tbuf[BDADDR_STRING_LEN + 1];
+ 	char *str;
+ 
++#ifdef BT_ADDR_FROM_VENDOR_STORAGE
++	ret = vendor_storage_read_bt_addr(tbuf);
++	if (ret >= 0 && bachk(tbuf) < 0) {
++		ret = -1;
++		RS_ERR("vendor_storage bt addr chechk failed");
++	}
++	if (ret < 0) {
++		RS_ERR("vendor storage read bt addr failed, generate one");
++
++		rknand_get_randeom_btaddr(bt_addr);
++		vendor_storage_write_bt_addr(bt_addr);
++		customer_bdaddr = 1;
++	} else {
++		str = tbuf;
++		for (i = 5; i >= 0; i--) {
++			bt_addr[i] = (uint8_t)strtoul(str, NULL, 16);
++			str += 3;
++		}
++
++		/*reserve LAP addr from 0x9e8b00 to 0x9e8b3f, change to 0x008b** */
++		if (0x9e == bt_addr[3] && 0x8b == bt_addr[4]
++		    && (bt_addr[5] <= 0x3f)) {
++			bt_addr[3] = 0x00;
++		}
++
++		RS_DBG("BT MAC is %02x:%02x:%02x:%02x:%02x:%02x",
++		       bt_addr[5], bt_addr[4],
++		       bt_addr[3], bt_addr[2],
++		       bt_addr[1], bt_addr[0]);
++		customer_bdaddr = 1;
++	}
++#else
+ 	if (stat(BT_ADDR_FILE, &st) < 0) {
+ 		RS_INFO("Couldnt access customer BT MAC file %s",
+ 		        BT_ADDR_FILE);
+@@ -2333,6 +2513,7 @@ int rtk_get_bt_config(struct btrtl_info *btrtl, uint8_t **config_buf,
+ 		customer_bdaddr = 1;
+ 	}
+ #endif
++#endif
+ 
+ GET_CONFIG:
+ 	//ret = sprintf(bt_config_file_name, BT_CONFIG_DIRECTORY "rtlbt_config");

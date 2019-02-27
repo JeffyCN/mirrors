@@ -132,6 +132,8 @@ enum {
 	profile_max = 8
 };
 
+#define A2DP_SIGNAL	0x01
+#define A2DP_MEDIA	0x02
 //profile info data
 typedef struct {
 	struct list_head list;
@@ -140,6 +142,7 @@ typedef struct {
 	uint16_t dcid;
 	uint16_t scid;
 	uint8_t profile_index;
+	uint8_t flags;
 } rtk_prof_info, *prtk_prof_info;
 
 //profile info for each connection

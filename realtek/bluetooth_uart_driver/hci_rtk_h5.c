@@ -67,7 +67,8 @@ struct h5_struct {
 	struct sk_buff *rx_skb;
 	u8 rxseq_txack;		/* rxseq == txack. */
 	u8 rxack;		/* Last packet sent by us that the peer ack'ed */
-	struct timer_list th5;
+	struct delayed_work	retrans_work;
+	struct hci_uart		*hu;		/* Parent HCI UART */
 
 	enum {
 		H5_W4_PKT_DELIMITER,
@@ -326,7 +327,7 @@ static struct sk_buff *h5_dequeue(struct hci_uart *hu)
 				   bt_cb(skb)->pkt_type);
 		if (nskb) {
 			__skb_queue_tail(&h5->unack, skb);
-			mod_timer(&h5->th5, jiffies + HZ / 4);
+			schedule_delayed_work(&h5->retrans_work, HZ / 4);
 			spin_unlock_irqrestore(&h5->unack.lock, flags);
 			return nskb;
 		} else {
@@ -397,7 +398,7 @@ static void h5_pkt_cull(struct h5_struct *h5)
 	}
 
 	if (skb_queue_empty(&h5->unack))
-		del_timer(&h5->th5);
+		cancel_delayed_work(&h5->retrans_work);
 
 	spin_unlock_irqrestore(&h5->unack.lock, flags);
 
@@ -782,17 +783,23 @@ static int h5_recv(struct hci_uart *hu, void *data, int count)
 }
 
 /* Arrange to retransmit all messages in the relq. */
-static void h5_timed_event(unsigned long arg)
+static void h5_timed_event(struct work_struct *work)
 {
-	struct hci_uart *hu = (struct hci_uart *)arg;
-	struct h5_struct *h5 = hu->priv;
-	struct sk_buff *skb;
+	struct h5_struct *h5;
+	struct hci_uart *hu;
 	unsigned long flags;
+	struct sk_buff *skb;
 
-	BT_DBG("hu %p retransmitting %u pkts", hu, h5->unack.qlen);
+	h5 = container_of(work, struct h5_struct, retrans_work.work);
+	hu = h5->hu;
+
+	BT_WARN("hu %p retransmitting %u pkts", hu, h5->unack.qlen);
 
 	spin_lock_irqsave_nested(&h5->unack.lock, flags, SINGLE_DEPTH_NESTING);
 
+	/* Move the pkt from unack queue to the head of reliable tx queue and
+	 * roll back the tx seq number
+	 */
 	while ((skb = __skb_dequeue_tail(&h5->unack)) != NULL) {
 		h5->msgq_txseq = (h5->msgq_txseq - 1) & 0x07;
 		skb_queue_head(&h5->rel, skb);
@@ -819,9 +826,8 @@ static int h5_open(struct hci_uart *hu)
 	skb_queue_head_init(&h5->rel);
 	skb_queue_head_init(&h5->unrel);
 
-	init_timer(&h5->th5);
-	h5->th5.function = h5_timed_event;
-	h5->th5.data = (u_long) hu;
+	h5->hu = hu;
+	INIT_DELAYED_WORK(&h5->retrans_work, (void *)h5_timed_event);
 
 	h5->rx_state = H5_W4_PKT_DELIMITER;
 
@@ -837,7 +843,7 @@ static int h5_close(struct hci_uart *hu)
 
 	BT_INFO("h5_close");
 
-	del_timer_sync(&h5->th5);
+	cancel_delayed_work_sync(&h5->retrans_work);
 
 	hu->priv = NULL;
 

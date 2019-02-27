@@ -1,13 +1,16 @@
+CFLAGS := -Wall
+#CC := $(CROSS_COMPLE)gcc
 all: rtk_hciattach
+OBJS := hciattach.o hciattach_rtk.o hciattach_h4.o rtb_fwc.o
 
-rtk_hciattach: hciattach.c hciattach_rtk.o
-	$(CC) -o rtk_hciattach hciattach.c hciattach_rtk.o
+rtk_hciattach: $(OBJS)
+	$(CC) -o rtk_hciattach $(OBJS)
 
-hciattach_rtk.o:hciattach_rtk.c
-	$(CC) -c hciattach_rtk.c
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o  rtk_hciattach tags cscope.*
+	rm -f $(OBJS)  rtk_hciattach
 
 tags: FORCE
 	ctags -R
