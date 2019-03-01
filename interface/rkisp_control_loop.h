@@ -21,7 +21,8 @@
 #include <CameraMetadata.h>
 using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
 #else
-#include <camera/CameraMetadata.h>
+struct camera_metadata;
+typedef struct camera_metadata camera_metadata_t;
 #endif
 #ifdef __cplusplus
 extern "C" {

@@ -17,6 +17,7 @@
 #ifndef _RKISP_CONTROL_LOOP_IMPL_H_
 #define _RKISP_CONTROL_LOOP_IMPL_H_
 
+#include <camera/CameraMetadata.h>
 #include "rkisp_control_loop.h"
 
 #endif // _RKISP_CONTROL_LOOP_H_
