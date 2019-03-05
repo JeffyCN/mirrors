@@ -617,6 +617,10 @@ AiqCommonHandler::processMiscMetaResults(X3aResultList &output)
                      &frame_sof_ts,
                      1);
 
+    // Update reqId for the result in order to match the setting param
+    int reqId = _aiq_compositor->getAiqInputParams().ptr() ? _aiq_compositor->getAiqInputParams()->reqId : -1;
+    metadata->update(ANDROID_REQUEST_ID, &reqId, 1);
+
     return ret;
 }
 

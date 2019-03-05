@@ -295,6 +295,7 @@ X3aAnalyzerRKiq::pre_3a_analyze (SmartPtr<X3aStats> &stats)
     //ensure that the inputParams is the same one in the awb and ae anzlyer
     //function
     _rkiq_compositor->setAiqInputParams(this->getAiqInputParams());
+    LOGD("@%s : reqId %d", __FUNCTION__, this->getAiqInputParams().ptr() ? this->getAiqInputParams()->reqId : -1);
 
     ret = _isp->get_frame_softime (sof_tim);
     XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret, "get sof time failed");

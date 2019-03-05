@@ -67,6 +67,8 @@ void
 RkispDeviceManager::x3a_calculation_done (XAnalyzer *analyzer, X3aResultList &results)
 {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    CameraMetadata* metadata;
+    camera_metadata_entry entry;
     int id = -1;
 
     SmartPtr<XmetaResult> meta_result;
@@ -84,12 +86,22 @@ RkispDeviceManager::x3a_calculation_done (XAnalyzer *analyzer, X3aResultList &re
         goto done;
     }
 
+    metadata = meta_result->get_metadata_result();
+    entry = metadata->find(ANDROID_REQUEST_ID);
+    if (entry.count == 1)
+        id = entry.data.i32[0];
+
     /* meta_result->dump(); */
     {
         SmartLock lock(_settingsMutex);
         if (!_settings.empty()) {
-            id = (*_settings.begin())->reqId;
-            _settings.erase(_settings.begin());
+            // 3a algo may use the old param to calculate if the setting param
+            // comes late. in this case, just ignore the results for there no
+            // need to report twice for same reqId
+            if(id == (*_settings.begin())->reqId)
+                _settings.erase(_settings.begin());
+            else
+                goto done;
         } else {
             LOGW("@%s %d: No settting when results comes!!", __FUNCTION__, __LINE__);
         }
@@ -99,10 +111,10 @@ RkispDeviceManager::x3a_calculation_done (XAnalyzer *analyzer, X3aResultList &re
 
     rkisp_cl_frame_metadata_s cb_result;
     cb_result.id = id;
-    cb_result.metas = meta_result->get_metadata_result()->getAndLock();
+    cb_result.metas = metadata->getAndLock();
     if (mCallbackOps)
         mCallbackOps->metadata_result_callback(mCallbackOps, &cb_result);
-    meta_result->get_metadata_result()->unlock(cb_result.metas);
+    metadata->unlock(cb_result.metas);
 
 done:
     DeviceManager::x3a_calculation_done (analyzer, results);
@@ -130,16 +142,18 @@ RkispDeviceManager::set_control_params(const int request_frame_id,
     }
     XCamAeParam aeparams = inputParams->aeInputParams.aeParams;
     AeControls aectl = inputParams->aaaControls.ae;
-    LOGI("@%s %d: aeparms: mode-%d, metering_mode-%d, flicker_mode-%d,"
+    AfControls afctl = inputParams->aaaControls.af;
+    LOGI("@%s: request %d: aeparms: mode-%d, metering_mode-%d, flicker_mode-%d,"
          "ex_min-%" PRId64 ",ex_max-%" PRId64 ", manual_exp-%" PRId64 ", manual_gain-%f,"
          "aeControls: mode-%d, lock-%d, preTrigger-%d, antibanding-%d,"
-         "evCompensation-%d, fpsrange[%d, %d]", __FUNCTION__, __LINE__,
+         "evCompensation-%d, fpsrange[%d, %d]", __FUNCTION__, request_frame_id,
          aeparams.mode, aeparams.metering_mode, aeparams.flicker_mode,
          aeparams.exposure_time_min, aeparams.exposure_time_max,
          aeparams.manual_exposure_time, aeparams.manual_analog_gain,
          aectl.aeMode, aectl.aeLock, aectl.aePreCaptureTrigger,
          aectl.aeAntibanding, aectl.evCompensation,
          aectl.aeTargetFpsRange[0], aectl.aeTargetFpsRange[1]);
+    LOGI("@%s : reqId %d, afMode %d, afTrigger %d", __FUNCTION__, request_frame_id, afctl.afMode, afctl.afTrigger);
     {
         SmartLock lock(_settingsMutex);
         _settings.push_back(inputParams);
@@ -171,7 +185,7 @@ RkispDeviceManager::resume_dequeue ()
     if (_isp_stats_device.ptr() && !_isp_stats_device->is_activated())
         _isp_stats_device->start();
 
-    // for IspController 
+    // for IspController
     ispPollThread->resume();
     // sensor mode may be changed, so we should re-generate the first isp
     // configs

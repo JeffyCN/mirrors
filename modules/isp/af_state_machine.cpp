@@ -111,7 +111,7 @@ RkAFStateMachine::processTriggers(const uint8_t &afTrigger,
     mLastAfControls.afTrigger = afTrigger;
     mLastAfControls.afMode = afMode;
 
-    LOGI("%s: afMode %d", __FUNCTION__, mLastAfControls.afMode);
+    LOGI("%s: afMode %d, afTrigger %d", __FUNCTION__, mLastAfControls.afMode, afTrigger);
     return mCurrentAfMode->processTriggers(afTrigger, afMode, preCaptureId, afInputParams);
 }
 
