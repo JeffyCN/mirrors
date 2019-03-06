@@ -357,7 +357,7 @@ IspController::get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &s
                 LOGW("can't find %d expoure in effecting map.", frame_id);
                 // can't be 0, or will cause awb algo error
                 sensor_mode_data.exp_time_seconds = 0.0001f;
-                sensor_mode_data.gains = 0.0001f;
+                sensor_mode_data.gains = 1.0f;
                 sensor_mode_data.exp_time =
                   _exposure_queue[0].coarse_integration_time;
                 sensor_mode_data.gain =
