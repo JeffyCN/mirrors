@@ -832,11 +832,13 @@ IspController::set_3a_config_sync ()
 XCamReturn
 IspController::apply_otp_config (struct rkisp_parameters *isp_cfg) {
     if (isp_cfg->otp_info_avl) {
-        if (_sensor_subdev->io_control(RKMODULE_AWB_CFG, &isp_cfg->awb_otp_info) < 0) {
+        if (isp_cfg->awb_otp_info.enable &&
+            _sensor_subdev->io_control(RKMODULE_AWB_CFG, &isp_cfg->awb_otp_info) < 0) {
             XCAM_LOG_ERROR ("failed to apply camera module awb otp");
             return XCAM_RETURN_ERROR_IOCTL;
         }
-        if (_sensor_subdev->io_control(RKMODULE_AF_CFG, &isp_cfg->af_otp_info) < 0) {
+        if (isp_cfg->af_otp_info.enable &&
+            _sensor_subdev->io_control(RKMODULE_AF_CFG, &isp_cfg->af_otp_info) < 0) {
             XCAM_LOG_ERROR ("failed to apply camera module af otp");
             return XCAM_RETURN_ERROR_IOCTL;
         }
