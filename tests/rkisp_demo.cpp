@@ -74,6 +74,8 @@ static enum v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 struct buffer *buffers;
 static unsigned int n_buffers;
 static int frame_count = 5;
+static float mae_gain = 0.0f;
+static float mae_expo = 0.0f;
 FILE *fp;
 #ifdef ANDROID
 #ifdef ANDROID_VERSION_ABOVE_8_X
@@ -501,18 +503,18 @@ static int read_frame(FILE *fp)
 
 static void mainloop(void)
 {
-        unsigned int count;
-        count = frame_count;
-        float exptime, expgain, newexptime=0.0f;
+        unsigned int count = frame_count;
+        float exptime, expgain;
         int64_t frame_id, frame_sof;
+
+        if (mae_gain > 0 && mae_expo > 0)
+            rkisp_setManualGainAndTime((void*&)g_3A_control_params, mae_gain, mae_expo);
+        else
+            rkisp_setAeMode((void*&)g_3A_control_params, HAL_AE_OPERATION_MODE_AUTO);
+
         while (count-- > 0) {
             printf("No.%d\n",frame_count - count);        //显示当前帧数目
             // examples show how to use 3A interfaces
-            newexptime += 0.003f;
-            if (count > 10)
-                rkisp_setManualGainAndTime((void*&)g_3A_control_params, 8.0, newexptime);
-            else
-                rkisp_setAeMode((void*&)g_3A_control_params, HAL_AE_OPERATION_MODE_AUTO);
             rkisp_getAeTime((void*&)g_3A_control_params, exptime);
             rkisp_getAeGain((void*&)g_3A_control_params, expgain);
             rkisp_getAeMaxExposureGain((void*&)g_3A_control_params, expgain);
@@ -882,12 +884,14 @@ void parse_args(int argc, char **argv)
            {"device",   required_argument, 0, 'd' },
            {"output",   required_argument, 0, 'o' },
            {"count",    required_argument, 0, 'c' },
+           {"expo",     required_argument, 0, 'e' },
+           {"gain",     required_argument, 0, 'g' },
            {"help",     no_argument,       0, 'p' },
            {"verbose",  no_argument,       0, 'v' },
            {0,          0,                 0,  0  }
        };
 
-       c = getopt_long(argc, argv, "w:h:f:i:d:o:pv",
+       c = getopt_long(argc, argv, "w:h:f:i:d:o:c:e:g:pv",
            long_options, &option_index);
        if (c == -1)
            break;
@@ -895,6 +899,14 @@ void parse_args(int argc, char **argv)
        switch (c) {
        case 'c':
            frame_count = atoi(optarg);
+           break;
+       case 'e':
+           mae_expo = atof(optarg);
+           printf("target expo: %f\n", mae_expo);
+           break;
+       case 'g':
+           mae_gain = atof(optarg);
+           printf("target gain: %f\n", mae_gain);
            break;
        case 'w':
            width = atoi(optarg);
@@ -924,6 +936,9 @@ void parse_args(int argc, char **argv)
                   "         --iqfile, default /etc/cam_iq.xml, optional, camera IQ file\n"
                   "         --device,                          required, path of video device\n"
                   "         --output,                          required, output file path\n"
+                  "         --gain,   default 0,               optional\n"
+                  "         --expo,   default 0,               optional\n"
+                  "                   Manually AE is enable only if --gain and --expo are not zero\n"
                   "         --verbose,                         optional, print more log\n",
                   argv[0]);
            exit(-1);
