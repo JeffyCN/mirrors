@@ -104,6 +104,9 @@ RkispDeviceManager::x3a_calculation_done (XAnalyzer *analyzer, X3aResultList &re
                 goto done;
         } else {
             LOGW("@%s %d: No settting when results comes!!", __FUNCTION__, __LINE__);
+#ifdef ANDROID_PLATEFORM
+                goto done;
+#endif
         }
     }
     LOGI("@%s %d: result %d has %d metadata entries", __FUNCTION__, __LINE__,
