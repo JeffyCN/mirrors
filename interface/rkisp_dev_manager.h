@@ -79,9 +79,19 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
  *  - update calibdb v0.2.1 for HDR ae and v0.2.2
  *    for BW sensor
  *  - add 3A controls sample code in rkisp_demo
+ * v1.9.0
+ *  - support smooth ae
+ *  - support full ispv12 features
+ *  - select iq file automatically
+ *  - support sensor OTP
+ *  - support vendor tags
+ *  - iq v0.2.5
+ *  - aec lib v0.0.9
+ *  - awb lib v0.0.9
+ *  - af lib v0.2.10
  */
 
-#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.6.0"
+#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.9.0"
 
 using namespace XCam;
 class SettingsProcessor;
