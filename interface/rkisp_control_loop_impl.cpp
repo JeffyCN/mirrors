@@ -93,13 +93,17 @@ out:
 }
 
 static int
-__rkisp_auto_select_iqfile(const struct rkmodule_inf* mod_info, char* iqfile_name) {
-    if (!mod_info)
+__rkisp_auto_select_iqfile(const struct rkmodule_inf* mod_info,
+                           const char* sensor_entity_name,
+                           char* iqfile_name)
+{
+    if (!mod_info || !sensor_entity_name || !iqfile_name)
         return -1;
 
     //const struct rkmodule_fac_inf* fac_inf = &mod_info->fac;
     const struct rkmodule_base_inf* base_inf = &mod_info->base;
     const char *sensor_name, *module_name, *lens_name;
+    char sensor_name_full[32];
 
     if (!strlen(base_inf->module) || !strlen(base_inf->sensor) ||
         !strlen(base_inf->lens)) {
@@ -107,6 +111,12 @@ __rkisp_auto_select_iqfile(const struct rkmodule_inf* mod_info, char* iqfile_nam
         return -1;
     }
     sensor_name = base_inf->sensor;
+    strncpy(sensor_name_full, sensor_name, 32);
+    // To discriminate between then sensor connected to preisp and connect to
+    // ISP, add suffix "-preisp" to sensor name if connected to preisp.
+    if (strstr(sensor_entity_name, "1608")) {
+        strcat(sensor_name_full, "-preisp");
+    }
     module_name = base_inf->module;
     lens_name = base_inf->lens;
 
@@ -124,7 +134,7 @@ __rkisp_auto_select_iqfile(const struct rkmodule_inf* mod_info, char* iqfile_nam
     }
 #endif
     sprintf(iqfile_name, "%s_%s_%s.xml",
-            sensor_name, module_name, lens_name);
+            sensor_name_full, module_name, lens_name);
 
     return 0;
 }
@@ -314,7 +324,9 @@ int rkisp_cl_prepare(void* cl_ctx,
     xcam_mem_clear (iq_file_full_name);
     xcam_mem_clear (iq_file_name);
     strcpy(iq_file_full_name, RK_3A_TUNING_FILE_PATH);
-    if (__rkisp_auto_select_iqfile(&camera_mod_info, iq_file_name)) {
+    if (__rkisp_auto_select_iqfile(&camera_mod_info,
+                                   device_manager->get_sensor_entity_name(),
+                                   iq_file_name)) {
         ALOGE("failed to get iq file name !");
         device_manager->set_has_3a(false);
         //return -1;
