@@ -1246,12 +1246,12 @@ RESULT CamIA10Engine::initAF() {
 	afcCfg.ContrastAf.TrigValue = pAfGlobal->contrast_af.TrigValue;
 	afcCfg.ContrastAf.TrigFrames = pAfGlobal->contrast_af.TrigFrames;
 	afcCfg.ContrastAf.TrigAntiFlash = pAfGlobal->contrast_af.TrigAntiFlash ? BOOL_TRUE : BOOL_FALSE;
-	
+
 	afcCfg.ContrastAf.StableThers = pAfGlobal->contrast_af.StableThers;
 	afcCfg.ContrastAf.StableValue = pAfGlobal->contrast_af.StableValue;
 	afcCfg.ContrastAf.StableFrames = pAfGlobal->contrast_af.StableFrames;
 	afcCfg.ContrastAf.StableTime = pAfGlobal->contrast_af.StableTime;
-	
+
 	afcCfg.ContrastAf.OutFocusValue = pAfGlobal->contrast_af.OutFocusValue;
 	afcCfg.ContrastAf.OutFocusLuma = pAfGlobal->contrast_af.OutFocusLuma;
 	afcCfg.ContrastAf.OutFocusPos = pAfGlobal->contrast_af.OutFocusPos;
@@ -1269,34 +1269,34 @@ RESULT CamIA10Engine::initAF() {
 
 
 	LOGD("Afss: %d ", afcCfg.Afss);
-	LOGD("AfType.contrast_af: %d laser_af: %d pdaf: %d ", 
+	LOGD("AfType.contrast_af: %d laser_af: %d pdaf: %d ",
 		afcCfg.AfType.contrast_af,
 		afcCfg.AfType.laser_af,
 		afcCfg.AfType.pdaf);
-	LOGD("Window_Num: %d WindowA:offs:%d %d size:%dx%d ", 
+	LOGD("Window_Num: %d WindowA:offs:%d %d size:%dx%d ",
 		afcCfg.Window_Num,
 		afcCfg.WindowA.h_offs,
 		afcCfg.WindowA.v_offs,
 		afcCfg.WindowA.h_size,
 		afcCfg.WindowA.v_size);
-	LOGD("TrigThers:%f TrigValue:%d TrigFrames:%d TrigAntiFlash:%d", 
+	LOGD("TrigThers:%f TrigValue:%d TrigFrames:%d TrigAntiFlash:%d",
 		afcCfg.ContrastAf.TrigThers,
 		afcCfg.ContrastAf.TrigValue,
 		afcCfg.ContrastAf.TrigFrames,
 		afcCfg.ContrastAf.TrigAntiFlash);
-	LOGD("StableThers:%f StableValue:%d StableFrames:%d StableTime:%d", 
+	LOGD("StableThers:%f StableValue:%d StableFrames:%d StableTime:%d",
 		afcCfg.ContrastAf.StableThers,
 		afcCfg.ContrastAf.StableValue,
 		afcCfg.ContrastAf.StableFrames,
 		afcCfg.ContrastAf.StableTime);
-	LOGD("OutFocusValue:%d OutFocusLuma:%f OutFocusPos:%d", 
+	LOGD("OutFocusValue:%d OutFocusLuma:%f OutFocusPos:%d",
 		afcCfg.ContrastAf.OutFocusValue,
 		afcCfg.ContrastAf.OutFocusLuma,
 		afcCfg.ContrastAf.OutFocusPos);
-	LOGD("FullDir:%d AdaptiveDir:%d ", 
+	LOGD("FullDir:%d AdaptiveDir:%d ",
 		afcCfg.ContrastAf.FullDir,
 		afcCfg.ContrastAf.AdaptiveDir);
-	LOGD("FinishThersMain:%f FinishThersSub:%f FinishThersOffset:%d", 
+	LOGD("FinishThersMain:%f FinishThersSub:%f FinishThersOffset:%d",
 		afcCfg.ContrastAf.FinishThersMain,
 		afcCfg.ContrastAf.FinishThersSub,
 		afcCfg.ContrastAf.FinishThersOffset);
@@ -1621,11 +1621,34 @@ RESULT CamIA10Engine::initAEC() {
     aecCfg.StepSize = 0;
     aecCfg.HistMode = (CamerIcIspHistMode_t)(pAecGlobal->CamerIcIspHistMode);
 
-	//oyyf 
+	//oyyf
 	if( mLightMode <= LIGHT_MODE_MIN || mLightMode >= LIGHT_MODE_MAX){
   		mLightMode= LIGHT_MODE_DAY;
   	}
-	
+
+
+	int no_DySetpoint = 0;
+	ret = CamCalibDbGetNoOfDySetpoint(hCamCalibDb, pAecGlobal, &no_DySetpoint);
+	if (ret != RET_SUCCESS) {
+		ALOGD("%s: Getting number of DySetpoint profile from calib database failed (%d)\n",
+			 __FUNCTION__, ret);
+		return (ret);
+	}
+
+	if(no_DySetpoint){
+		for(int i=0; i<no_DySetpoint && i<LIGHT_MODE_MAX ; i++){
+		   CamCalibAecDynamicSetpoint_t* pDySetpointProfile = NULL;
+		   ret = CamCalibDbGetDySetpointByIdx(hCamCalibDb, pAecGlobal, i, &pDySetpointProfile);
+		   if (ret != RET_SUCCESS) {
+			 ALOGD("%s: Getting idx(%d) DySetpoint profile from calib database failed (%d)\n",
+				   __FUNCTION__, i, ret);
+			 return (ret);
+		   }
+		   DCT_ASSERT(NULL != pDySetpointProfile);
+		   aecCfg.pDySetpoint[i] = pDySetpointProfile;
+		}
+	}
+
 	int no_ExpSeparate = 0;
     ret = CamCalibDbGetNoOfExpSeparate(hCamCalibDb, pAecGlobal, &no_ExpSeparate);
     if (ret != RET_SUCCESS) {
@@ -1633,7 +1656,7 @@ RESULT CamIA10Engine::initAEC() {
             __FUNCTION__, ret);
       return (ret);
     }
-    
+
     if(no_ExpSeparate){
     	for(int i=0; i<no_ExpSeparate && i<LIGHT_MODE_MAX ; i++){
     		CamCalibAecExpSeparate_t* pExpSeparateProfile = NULL;
@@ -1649,7 +1672,7 @@ RESULT CamIA10Engine::initAEC() {
 
 		if(mLightMode > no_ExpSeparate - 1)
 			mLightMode = LIGHT_MODE_DAY;
-		
+
 		memcpy(aecCfg.EcmTimeDot.fCoeff, aecCfg.pExpSeparate[mLightMode]->ecmTimeDot.fCoeff, sizeof(aecCfg.EcmTimeDot.fCoeff));
     	memcpy(aecCfg.EcmGainDot.fCoeff, aecCfg.pExpSeparate[mLightMode]->ecmGainDot.fCoeff, sizeof(aecCfg.EcmGainDot.fCoeff));
     	memcpy(aecCfg.EcmLTimeDot.fCoeff, aecCfg.pExpSeparate[mLightMode]->ecmLTimeDot.fCoeff, sizeof(aecCfg.EcmLTimeDot.fCoeff));//zlj
@@ -1657,9 +1680,9 @@ RESULT CamIA10Engine::initAEC() {
     	memcpy(aecCfg.EcmSTimeDot.fCoeff, aecCfg.pExpSeparate[mLightMode]->ecmSTimeDot.fCoeff, sizeof(aecCfg.EcmSTimeDot.fCoeff));//zlj
     	memcpy(aecCfg.EcmSGainDot.fCoeff, aecCfg.pExpSeparate[mLightMode]->ecmSGainDot.fCoeff, sizeof(aecCfg.EcmSGainDot.fCoeff));//zlj
     }
-  
-    aecCfg.LightMode = mLightMode;	
-  
+
+    aecCfg.LightMode = mLightMode;
+
     if (aecDesc != NULL) {
         XCamAeParam aeParam;
         aeParam.mode  = XCAM_AE_MODE_AUTO;
