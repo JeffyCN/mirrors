@@ -446,26 +446,15 @@ bool IspEngine::configure(const Configuration& config)
         if ((mCamIA_DyCfg.afc_cfg.win_a.right_width == 0) ||
                 (mCamIA_DyCfg.afc_cfg.win_a.bottom_height == 0))
         {
-            int width, height, x, y;
-            int outWidth, outHeight;
+            // set default afc win to 0x0@0,0, means
+            // default win is decided by af algorithm
+            mCamIA_DyCfg.afc_cfg.win_a.left_hoff = 0;
+            mCamIA_DyCfg.afc_cfg.win_a.top_voff = 0;
+            mCamIA_DyCfg.afc_cfg.win_a.right_width = 0;
+            mCamIA_DyCfg.afc_cfg.win_a.bottom_height = 0;
 
-            outWidth =
-                config.sensor_mode.isp_input_width;
-            outHeight =
-                config.sensor_mode.isp_input_height;
-            width  = outWidth * 0.15;
-            height = outHeight * 0.15;
-            x = ( outWidth  >> 1 ) - ( width  >> 1 );
-            y = ( outHeight >> 1 ) - ( height >> 1 );
-
-            mCamIA_DyCfg.afc_cfg.win_a.left_hoff = x;
-            mCamIA_DyCfg.afc_cfg.win_a.top_voff = y;
-            mCamIA_DyCfg.afc_cfg.win_a.right_width = x + width;
-            mCamIA_DyCfg.afc_cfg.win_a.bottom_height = y + height;
             mCamIA_DyCfg.afc_cfg.win_num = 1;
             mCamIA_DyCfg.afc_cfg.mode = HAL_AF_MODE_CONTINUOUS_VIDEO;
-
-            LOGD("%s: af default win %d, %d, %d, %d", __func__, x, y, width, height);
         }
     }
 
