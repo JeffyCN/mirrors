@@ -36,7 +36,7 @@ GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-h264, "
         "width  = (int) [ 32, 1920 ], "
-        "height = (int) [ 32, 1080 ], "
+        "height = (int) [ 32, 1088 ], "
         "framerate = (fraction) [0/1, 60/1], "
         "stream-format = (string) { byte-stream }, "
         "alignment = (string) { au }, " "profile = (string) { high }")
