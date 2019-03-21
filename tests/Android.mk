@@ -5,7 +5,7 @@ include $(CLEAR_VARS)
 # add mediactl.c to avoid link librkisp.so apparently
 LOCAL_SRC_FILES +=\
 	rkisp_demo.cpp \
-	../interface/mediactl.c \
+	mediactl.c \
 
 LOCAL_CPPFLAGS += -std=c++11 -Wno-error
 LOCAL_CPPFLAGS += -DLINUX 

@@ -8,7 +8,7 @@ LOCAL_PATH:= $(CURDIR)
 include $(LOCAL_PATH)/build_system/Makefile.rules
 #include $(LOCAL_PATH)/productConfigs.mk
 
-export  BUILD_OUPUT_EXTERNAL_LIBS
+export  BUILD_OUTPUT_EXTERNAL_LIBS
 export  IS_ANDROID_OS
 export  IS_RKISP
 export  IS_RK_ISP10
@@ -35,13 +35,13 @@ endif
 
 ifeq ($(ARCH),arm)
 define SET_EVERYTHING
-	@cp -rf $(CURDIR)/ext/rkisp/usr/lib32 $(CURDIR)/ext/rkisp/usr/lib
-	@cp -rf $(CURDIR)/ext/rkisp/usr/include/glib-2.0-32 $(CURDIR)/ext/rkisp/usr/include/glib-2.0
+	@cp -rf $(CURDIR)/ext/rkisp/usr/lib32/* $(BUILD_OUTPUT_EXTERNAL_LIBS)/
+	@cp -rf $(CURDIR)/ext/rkisp/usr/include/glib-2.0-32/* $(BUILD_OUTPUT_GLIB_INC)/
 endef
 else
 define SET_EVERYTHING
-	@cp -rf $(CURDIR)/ext/rkisp/usr/lib64 $(CURDIR)/ext/rkisp/usr/lib
-	@cp -rf $(CURDIR)/ext/rkisp/usr/include/glib-2.0-64 $(CURDIR)/ext/rkisp/usr/include/glib-2.0
+	@cp -rf $(CURDIR)/ext/rkisp/usr/lib64/* $(BUILD_OUTPUT_EXTERNAL_LIBS)/
+	@cp -rf $(CURDIR)/ext/rkisp/usr/include/glib-2.0-64/* $(BUILD_OUTPUT_GLIB_INC)/
 endef
 endif
 
@@ -50,20 +50,14 @@ define BUILD_EVERYTHING
 endef
 
 define CLEAN_EVERYTHING
-	@echo "clean build objects"
-	@-rm -f `find ./ -name *.o`
-	@echo "clean build libraries"
-	@-rm -rf $(CURDIR)/ext/rkisp/usr/lib
-	@-rm -rf $(CURDIR)/ext/rkisp/usr/include/glib-2.0
-	@-rm -f `find ./ -path "./libs" -prune -name *.a`
-	@-rm -f `find ./build -name *.so`
 	@echo "clean build output directory"
-	@-rm -fr ./build
+	@-rm -rf $(BUILD_DIR)
 endef
 
 .PHONY:all
 all:
-#cp ./libs/* ./build/lib/
+	@mkdir -p $(BUILD_OUTPUT_EXTERNAL_LIBS)
+	@mkdir -p $(BUILD_OUTPUT_GLIB_INC)
 	$(SET_EVERYTHING)
 	$(BUILD_EVERYTHING)
 
