@@ -36,13 +36,9 @@ enum LOG_LEVEL {
     xcam_print_log (ERROR_LEVEL, "XCAM ERROR %s:%d: " format "\n", basename((char*)__FILE__), __LINE__, ## __VA_ARGS__)
 #endif
 
-#ifdef WARNING
 #ifndef XCAM_LOG_WARNING
 #define XCAM_LOG_WARNING(format, ...)   \
     xcam_print_log (WARNING_LEVEL, "XCAM WARNING %s:%d: " format "\n", basename((char*)__FILE__), __LINE__, ## __VA_ARGS__)
-#endif
-#else
-#define XCAM_LOG_WARNING(...)
 #endif
 
 #ifndef XCAM_LOG_INFO

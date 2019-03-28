@@ -27,6 +27,8 @@ LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/../rkisp/isp-engine
 
 LOCAL_SHARED_LIBRARIES += libdl
+LOCAL_STATIC_LIBRARIES += \
+	libisp_log \
 
 ifeq ($(IS_ANDROID_OS),true)
 LOCAL_32_BIT_ONLY := true

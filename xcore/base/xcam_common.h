@@ -113,6 +113,8 @@ format_angle (float angle)
     return angle;
 }
 
+int xcam_get_log_level();
+
 XCAM_END_DECLARE
 
 #endif //XCAM_COMMON_H

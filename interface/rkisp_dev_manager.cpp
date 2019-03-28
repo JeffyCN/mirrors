@@ -201,6 +201,7 @@ RkispDeviceManager::resume_dequeue ()
 static void xcam_init_cam_engine_lib(void) __attribute__((constructor));
 static void xcam_init_cam_engine_lib(void)
 {
+    xcam_get_log_level();
     LOGI("\n*******************************************\n"
          "        CAM ENGINE LIB VERSION IS %s"
          "\n*******************************************\n"

@@ -47,6 +47,7 @@ typedef enum RKISP_CL_STATE_enum {
 
 int rkisp_cl_init(void** cl_ctx, const char* tuning_file_path,
                   const cl_result_callback_ops_t *callback_ops) {
+    xcam_get_log_level();
     LOGD("--------------------------rkisp_cl_init");
     RkispDeviceManager *device_manager = new RkispDeviceManager(callback_ops);
     // deprecated, use auto selected iq file

@@ -28,9 +28,14 @@
 #include <stdarg.h>
 #ifdef ANDROID_OS
 #include <cutils/properties.h>
+#ifdef ALOGV
+#undef ALOGV
+#define ALOGV(...) ((void)ALOG(LOG_VERBOSE, LOG_TAG, __VA_ARGS__))
+#endif
 #endif
 
 static char log_file_name[XCAM_MAX_STR_SIZE] = {0};
+static int g_cam_engine_log_level = 0;
 
 uint32_t xcam_version ()
 {
@@ -107,6 +112,19 @@ bool xcam_get_enviroment_value(const char* variable, int* value)
     return false;
 }
 
+int xcam_get_log_level() {
+#ifdef ANDROID_OS
+    char property_value[PROPERTY_VALUE_MAX] = {0};
+
+    property_get("persist.vendor.rkisp.log", property_value, "0");
+    g_cam_engine_log_level = atoi(property_value);
+#else
+    xcam_get_enviroment_value("persist_camera_engine_log", &g_cam_engine_log_level);
+#endif
+
+    return g_cam_engine_log_level;
+}
+
 void xcam_print_log (int level, const char* format, ...) {
     char buffer[XCAM_MAX_STR_SIZE] = {0};
 
@@ -126,12 +144,7 @@ void xcam_print_log (int level, const char* format, ...) {
         return ;
     }
 #ifdef ANDROID_OS
-    char property_value[PROPERTY_VALUE_MAX] = {0};
-
-    property_get("persist.vendor.rkisp.log", property_value, "0");
-    int cam_engine_log_level = atoi(property_value);
-
-    if (level <= cam_engine_log_level) {
+    if (level <= g_cam_engine_log_level) {
         switch(level) {
         case ERROR_LEVEL:
             ALOGE("%s", buffer);
@@ -154,9 +167,7 @@ void xcam_print_log (int level, const char* format, ...) {
         }
     }
 #else
-    int cam_engine_log_level = 0;
-    xcam_get_enviroment_value("persist_camera_engine_log", &cam_engine_log_level);
-    if (level <= cam_engine_log_level)
+    if (level <= g_cam_engine_log_level)
         printf ("%s", buffer);
 #endif
 }
