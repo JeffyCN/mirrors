@@ -1578,6 +1578,7 @@ RESULT CamIA10Engine::initAEC() {
     aecCfg.IntervalAdjStgy.dluma_high_th = pAecGlobal->InterAdjustStrategy.dluma_high_th;
     aecCfg.IntervalAdjStgy.dluma_low_th = pAecGlobal->InterAdjustStrategy.dluma_low_th;
     aecCfg.IntervalAdjStgy.trigger_frame = pAecGlobal->InterAdjustStrategy.trigger_frame;
+    memcpy (&aecCfg.HdrCtrl,&pAecGlobal->HdrCtrl,sizeof(pAecGlobal->HdrCtrl));//zlj
     if (mIspVer > 0) {
         aecCfg.Valid_GridWeights_Num = 81;
         aecCfg.Valid_GridWeights_W = 9;
@@ -1588,7 +1589,8 @@ RESULT CamIA10Engine::initAEC() {
         aecCfg.Valid_HistBins_Num = 16;
     }
     //zlj add for 1608 HDR stats
-    if (mSensorEntityName && strstr(mSensorEntityName, "1608")) {
+    if (mSensorEntityName && strstr(mSensorEntityName, "1608") &&
+        aecCfg.HdrCtrl.Enable) {
         LOGD("sensor is attached to rk1608, use HDR ae !");
         aecCfg.Valid_HdrGridWeights_Num = 225;
         aecCfg.Valid_HdrGridWeights_W = 15;
@@ -1616,7 +1618,6 @@ RESULT CamIA10Engine::initAEC() {
     }
 
     memcpy(aecCfg.FpsFixTimeDot.fCoeff, pAecGlobal->FpsFixTimeDot.fCoeff, sizeof(pAecGlobal->FpsFixTimeDot.fCoeff));
-    memcpy (&aecCfg.HdrCtrl,&pAecGlobal->HdrCtrl,sizeof(pAecGlobal->HdrCtrl));//zlj
 
     aecCfg.StepSize = 0;
     aecCfg.HistMode = (CamerIcIspHistMode_t)(pAecGlobal->CamerIcIspHistMode);
@@ -2641,7 +2642,8 @@ RESULT CamIA10Engine::runManIspForOTP(struct CamIA10_Results* result) {
 RESULT CamIA10Engine::runManIspForPreIsp(struct CamIA10_Results* result) {
     RESULT ret = RET_SUCCESS;
 
-    if (mSensorEntityName && strstr(mSensorEntityName, "1608")) {
+    if (mSensorEntityName && strstr(mSensorEntityName, "1608") &&
+        aecCfg.HdrCtrl.Enable) {
         struct HAL_ISP_cfg_s manCfg;
         struct HAL_ISP_goc_cfg_s goc_cfg;
 
