@@ -77,6 +77,10 @@ static int frame_count = 5;
 static float mae_gain = 0.0f;
 static float mae_expo = 0.0f;
 FILE *fp;
+static int silent;
+
+#define DBG(...) do { if(!silent) printf(__VA_ARGS__); } while(0)
+#define ERR(...) do { fprintf(stderr, __VA_ARGS__); } while (0)
 #ifdef ANDROID
 #ifdef ANDROID_VERSION_ABOVE_8_X
 #define LIBRKISP "/vendor/lib64/librkisp.so"
@@ -115,7 +119,7 @@ void metadata_result_callback(const struct cl_result_callback_ops *ops,
     SmartLock lock(ctl_params->_meta_mutex);
     /* this will clone results to _result_metadata */
     ctl_params->_result_metadata = result->metas;
-    printf("meta callback!\n");
+    DBG("meta callback!\n");
 }
 
 /*
@@ -215,7 +219,7 @@ static int rkisp_getAeTime(void* &engine, float &time)
         return -1;
 
     time = entry.data.i64[0] / (1000.0 * 1000.0 * 1000.0);
-    printf("expousre time is %f secs\n", time);
+    DBG("expousre time is %f secs\n", time);
 
     return 0;
 }
@@ -233,7 +237,7 @@ static int rkisp_getAeMaxExposureTime(void* &engine, float &time)
         return -1;
 
     time = entry.data.i64[1] / (1000.0 * 1000.0 * 1000.0);
-    printf("expousre max time is %f secs\n", time);
+    DBG("expousre max time is %f secs\n", time);
 
     return 0;
 }
@@ -251,7 +255,7 @@ static int rkisp_getAeGain(void* &engine, float &gain)
         return -1;
 
     gain = (float)entry.data.i32[0] / 100;
-    printf("expousre gain is %f\n", gain);
+    DBG("expousre gain is %f\n", gain);
 
     return 0;
 }
@@ -269,7 +273,7 @@ static int rkisp_getAeMaxExposureGain(void* &engine, float &gain)
         return -1;
 
     gain = entry.data.i32[1] / 100;
-    printf("expousre max gain is %f \n", gain);
+    DBG("expousre max gain is %f \n", gain);
 
     return 0;
 }
@@ -367,7 +371,7 @@ static int rkisp_setAeMode(void* &engine, HAL_AE_OPERATION_MODE mode)
 
         ctl_params->_settings_metadata.update(ANDROID_CONTROL_AE_MODE, &ae_mode, 1);
     } else {
-        printf("unsupported ae mode %d", mode);
+        ERR("unsupported ae mode %d", mode);
         return -1;
     }
     ctl_params->_frame_metas.id++;
@@ -451,7 +455,7 @@ static int rkisp_get3ALocks(void* &engine, int& curLocks)
 
 static void errno_exit(const char *s)
 {
-        fprintf(stderr, "%s error %d, %s\n", s, errno, strerror(errno));
+        ERR("%s error %d, %s\n", s, errno, strerror(errno));
         exit(EXIT_FAILURE);
 }
 
@@ -466,8 +470,9 @@ static int xioctl(int fh, int request, void *arg)
 
 static void process_image(const void *p, int size)
 {
-		printf("process_image size: %d\n",size);
-        fwrite(p,size, 1, fp); 
+    DBG("process_image size: %d\n",size);
+    fwrite(p, size, 1, fp);
+    fflush(fp);
 }
 
 static int read_frame(FILE *fp)
@@ -488,10 +493,10 @@ static int read_frame(FILE *fp)
                 errno_exit("VIDIOC_DQBUF");
 
         if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == buf_type) {
-            printf("multi-planes bytesused %d\n", buf.m.planes[0].bytesused);
+            DBG("multi-planes bytesused %d\n", buf.m.planes[0].bytesused);
             process_image(buffers[buf.index].start, buf.m.planes[0].bytesused);
         } else {
-            printf("bytesused %d\n", buf.m.planes[0].bytesused);
+            DBG("bytesused %d\n", buf.m.planes[0].bytesused);
             process_image(buffers[buf.index].start, buf.bytesused);
         }
 
@@ -513,7 +518,7 @@ static void mainloop(void)
             rkisp_setAeMode((void*&)g_3A_control_params, HAL_AE_OPERATION_MODE_AUTO);
 
         while (count-- > 0) {
-            printf("No.%d\n",frame_count - count);        //显示当前帧数目
+            DBG("No.%d\n",frame_count - count);        //显示当前帧数目
             // examples show how to use 3A interfaces
             rkisp_getAeTime((void*&)g_3A_control_params, exptime);
             rkisp_getAeGain((void*&)g_3A_control_params, expgain);
@@ -523,7 +528,7 @@ static void mainloop(void)
             rkisp_get_meta_frame_sof_ts((void*&)g_3A_control_params, frame_sof);
             read_frame(fp);
         }
-        printf("\nREAD AND SAVE DONE!\n");
+        DBG("\nREAD AND SAVE DONE!\n");
 }
 
 static void stop_capturing(void)
@@ -531,7 +536,7 @@ static void stop_capturing(void)
         enum v4l2_buf_type type;
 
     	if (_RKIspFunc.stop_func != NULL) {
-    	    printf ("stop rkisp engine\n");
+    	    DBG("stop rkisp engine\n");
     	    _RKIspFunc.stop_func(_rkisp_engine);
     	}
         type = buf_type;
@@ -649,14 +654,14 @@ static void start_capturing(void)
         }
 
     	if (_RKIspFunc.start_func != NULL) {
-    	    printf ("device manager start, capture dev fd: %d\n", fd);
+    	    DBG("device manager start, capture dev fd: %d\n", fd);
     	    _RKIspFunc.start_func(_rkisp_engine);
-    	    printf ("device manager isp_init\n");
+    	    DBG("device manager isp_init\n");
 
     	    if (_rkisp_engine == NULL) {
-    	        printf ("rkisp_init engine failed\n");
+    	        ERR("rkisp_init engine failed\n");
     	    } else {
-    	        printf ("rkisp_init engine succeed\n");
+    	        DBG("rkisp_init engine succeed\n");
     	    }
     	}
         for (i = 0; i < n_buffers; ++i) {
@@ -712,7 +717,7 @@ static void init_mmap(void)
 
         if (-1 == xioctl(fd, VIDIOC_REQBUFS, &req)) {
                 if (EINVAL == errno) {
-                        fprintf(stderr, "%s does not support "
+                        ERR("%s does not support "
                                  "memory mapping\n", dev_name);
                         exit(EXIT_FAILURE);
                 } else {
@@ -721,7 +726,7 @@ static void init_mmap(void)
         }
 
         if (req.count < 2) {
-                fprintf(stderr, "Insufficient buffer memory on %s\n",
+                ERR("Insufficient buffer memory on %s\n",
                          dev_name);
                 exit(EXIT_FAILURE);
         }
@@ -729,7 +734,7 @@ static void init_mmap(void)
         buffers = (struct buffer*)calloc(req.count, sizeof(*buffers));
 
         if (!buffers) {
-                fprintf(stderr, "Out of memory\n");
+                ERR("Out of memory\n");
                 exit(EXIT_FAILURE);
         }
 
@@ -782,7 +787,7 @@ static void init_device(void)
 
         if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &cap)) {
                 if (EINVAL == errno) {
-                        fprintf(stderr, "%s is no V4L2 device\n",
+                        ERR("%s is no V4L2 device\n",
                                  dev_name);
                         exit(EXIT_FAILURE);
                 } else {
@@ -792,13 +797,13 @@ static void init_device(void)
 
         if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) &&
                 !(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE_MPLANE)) {
-            fprintf(stderr, "%s is not a video capture device, capabilities: %x\n",
+            ERR("%s is not a video capture device, capabilities: %x\n",
                          dev_name, cap.capabilities);
                 exit(EXIT_FAILURE);
         }
 
         if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
-                fprintf(stderr, "%s does not support streaming i/o\n",
+                ERR("%s does not support streaming i/o\n",
                     dev_name);
                 exit(EXIT_FAILURE);
         }
@@ -825,9 +830,9 @@ static void init_device(void)
 		//INIT RKISP
         _RKIspFunc.rkisp_handle = dlopen(LIBRKISP, RTLD_NOW);
     	if (_RKIspFunc.rkisp_handle == NULL) {
-            printf ("open %s failed\n", LIBRKISP);
+            ERR("open %s failed\n", LIBRKISP);
     	} else {
-            printf ("open %s successed\n", LIBRKISP);
+            DBG("open %s successed\n", LIBRKISP);
     	    _RKIspFunc.init_func=(rkisp_init_func)dlsym(_RKIspFunc.rkisp_handle, "rkisp_cl_init");
     	    _RKIspFunc.prepare_func=(rkisp_prepare_func)dlsym(_RKIspFunc.rkisp_handle, "rkisp_cl_prepare");
     	    _RKIspFunc.start_func=(rkisp_start_func)dlsym(_RKIspFunc.rkisp_handle, "rkisp_cl_start");
@@ -836,13 +841,13 @@ static void init_device(void)
             _RKIspFunc.set_frame_params_func=(rkisp_cl_set_frame_params_func)dlsym(_RKIspFunc.rkisp_handle,
                                                                       "rkisp_cl_set_frame_params");
     	    if (_RKIspFunc.start_func == NULL) {
-    	        printf ("func rkisp_start not found.");
+    	        ERR("func rkisp_start not found.");
     	        const char *errmsg;
     	        if ((errmsg = dlerror()) != NULL) {
-    	            printf("dlsym rkisp_start fail errmsg: %s", errmsg);
+    	            ERR("dlsym rkisp_start fail errmsg: %s", errmsg);
     	        }
     	    } else {
-                printf("dlsym rkisp_start success\n");
+                DBG("dlsym rkisp_start success\n");
     	    }
             init_3A_control_params();
     	}
@@ -862,7 +867,7 @@ static void open_device(void)
         fd = open(dev_name, O_RDWR /* required */ /*| O_NONBLOCK*/, 0);
 
         if (-1 == fd) {
-                fprintf(stderr, "Cannot open '%s': %d, %s\n",
+                ERR("Cannot open '%s': %d, %s\n",
                          dev_name, errno, strerror(errno));
                 exit(EXIT_FAILURE);
         }
@@ -887,11 +892,11 @@ void parse_args(int argc, char **argv)
            {"expo",     required_argument, 0, 'e' },
            {"gain",     required_argument, 0, 'g' },
            {"help",     no_argument,       0, 'p' },
-           {"verbose",  no_argument,       0, 'v' },
+           {"silent",   no_argument,       0, 's' },
            {0,          0,                 0,  0  }
        };
 
-       c = getopt_long(argc, argv, "w:h:f:i:d:o:c:e:g:pv",
+       c = getopt_long(argc, argv, "w:h:f:i:d:o:c:e:g:ps",
            long_options, &option_index);
        if (c == -1)
            break;
@@ -902,11 +907,11 @@ void parse_args(int argc, char **argv)
            break;
        case 'e':
            mae_expo = atof(optarg);
-           printf("target expo: %f\n", mae_expo);
+           DBG("target expo: %f\n", mae_expo);
            break;
        case 'g':
            mae_gain = atof(optarg);
-           printf("target gain: %f\n", mae_gain);
+           DBG("target gain: %f\n", mae_gain);
            break;
        case 'w':
            width = atoi(optarg);
@@ -926,30 +931,33 @@ void parse_args(int argc, char **argv)
        case 'o':
            strcpy(out_file, optarg);
            break;
+       case 's':
+           silent = 1;
+           break;
        case '?':
        case 'p':
-           printf("Usage: %s to capture rkisp1 frames\n"
+           ERR("Usage: %s to capture rkisp1 frames\n"
                   "         --width,  default 640,             optional, width of image\n"
                   "         --height, default 480,             optional, height of image\n"
                   "         --format, default NV12,            optional, fourcc of format\n"
                   "         --count,  default    5,            optional, how many frames to capture\n"
                   "         --iqfile, default /etc/cam_iq.xml, optional, camera IQ file\n"
                   "         --device,                          required, path of video device\n"
-                  "         --output,                          required, output file path\n"
+                  "         --output,                          required, output file path, if <file> is '-', then the data is written to stdout\n"
                   "         --gain,   default 0,               optional\n"
                   "         --expo,   default 0,               optional\n"
                   "                   Manually AE is enable only if --gain and --expo are not zero\n"
-                  "         --verbose,                         optional, print more log\n",
+                  "         --silent,                          optional, subpress debug log\n",
                   argv[0]);
            exit(-1);
 
        default:
-           printf("?? getopt returned character code 0%o ??\n", c);
+           ERR("?? getopt returned character code 0%o ??\n", c);
        }
    }
 
    if (strlen(out_file) == 0 || strlen(dev_name) == 0) {
-        fprintf(stderr, "arguments --output and --device are required\n");
+        ERR("arguments --output and --device are required\n");
         exit(-1);
    }
 
@@ -959,7 +967,10 @@ int main(int argc, char **argv)
 {
         parse_args(argc, argv);
 
-        if ((fp = fopen(out_file, "w")) == NULL) {
+        if (!strcmp(out_file, "-")) {
+                fp = stdout;
+                silent = 1;
+        } else if ((fp = fopen(out_file, "w")) == NULL) {
             perror("Creat file failed");
             exit(0);
         }
