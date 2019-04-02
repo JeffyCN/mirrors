@@ -316,6 +316,30 @@ int check_wireless_ready(void)
 	return 0;
 }
 
+static const char BT_TEST_FILE[] = "/userdata/bt_pcba_test";
+static int create_bt_test_file(void)
+{
+	FILE* fp;
+	char cmdline[512] = {0};
+
+	fp = fopen(BT_TEST_FILE, "wt+");
+
+	if (fp != 0) {
+		fputs("echo 0 > /sys/class/rfkill/rfkill0/state\n", fp);
+		fputs("sleep 1\n", fp);
+		fputs("echo 1 > /sys/class/rfkill/rfkill0/state\n", fp);
+		fputs("sleep 1\n", fp);
+		sprintf(cmdline, "brcm_patchram_plus1 --bd_addr_rand --enable_hci --no2bytes --use_baudrate_for_download  --tosleep  200000 --baudrate 1500000 --patchram  %s %s &\n", bt_firmware_patch, bt_tty_dev);
+		fputs(cmdline, fp);
+		fputs("sleep 1\n", fp);
+		fclose(fp);
+		system("chmod 777 /userdata/bt_pcba_test");
+		system("mount --bind /userdata/bt_pcba_test /usr/bin/bt_pcba_test");
+		return 0;
+	}
+	return -1;
+}
+
 int wifibt_load_driver(void)
 {
 	char* wifi_ko_path = NULL ;
@@ -368,6 +392,7 @@ int wifibt_load_driver(void)
 	}
 
 	//bt init
+	create_bt_test_file();
 	if (strcmp(bt_firmware_patch , "")) {
 		memset(temp, 0, 256);
 		system("echo 0 > /sys/class/rfkill/rfkill0/state");
