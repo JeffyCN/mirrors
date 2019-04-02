@@ -1828,7 +1828,7 @@ typedef struct CamCalibContrastAf_s {
   float 				  TrigThers;							  /**< AF trigger threshold */
   uint16_t				  TrigValue;							  /**< AF trigger Value */
   uint16_t				  TrigFrames;							  /**< AF trigger status must hold frames */
-  uint8_t				  TrigAntiFlash;						  /**< AF trigger anti one or some figures flash but not target figures*/
+  uint16_t				  TrigAntiFlash;						  /**< AF trigger anti one or some figures flash but not target figures*/
 
   float 				  FirstStableThers; 					  /**< first time AF stable threshold */
   uint16_t				  FirstStableValue; 					  /**< first time AF stable value */

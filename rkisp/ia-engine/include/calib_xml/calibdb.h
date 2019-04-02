@@ -46,6 +46,7 @@ struct sensor_calib_info {
   CamDpccProfile_t dpcc_profile;
   CamCalibSystemData_t system_data;
   CamCprocProfile_t cproc_profile;
+  uint32_t IQcheckSum;
 };
 
 
@@ -81,8 +82,28 @@ class CalibDb {
 
   typedef bool (CalibDb::*parseCellContent)(const XMLElement*, void* param);
 
+  bool parseCellNoElement(
+    const XMLElement*   pelement,
+    int                 noElements,
+    int					*RealNo
+  ) ;
+  
   // parse helper
   bool parseEntryCell(const XMLElement*, int, parseCellContent, void* param = NULL);
+    bool parseEntryCellForCheck(
+	const XMLElement*   pelement,
+	int                 noElements,
+	uint32_t			cur_id,
+	uint32_t	 parent_id	);
+  bool parseEntryCell
+  (
+      const XMLElement*   pelement,
+      int                 noElements,
+      parseCellContent    func,
+      void*                param,
+      uint32_t	 cur_id,
+      uint32_t	 parent_id			
+  );
 
   // parse Header
   bool parseEntryHeader(const XMLElement*, void* param = NULL);
@@ -94,11 +115,20 @@ class CalibDb {
   bool parseEntrySensor(const XMLElement*, void* param = NULL);
 
   // parse Sensor-AWB
+  bool parseEntryAwb_V10_IIR( const XMLElement*, void *param = NULL );
+  bool parseEntryAwb_V11_IIR( const XMLElement*, void *param = NULL );
   bool parseEntryAwb(const XMLElement*, void* param = NULL);
   bool parseEntryAwb_V11_Para(const XMLElement*, void* param = NULL);
   bool parseEntryAwb_V10_Para(const XMLElement*, void* param = NULL);
   bool parseEntryAwb_V11_Globals(const XMLElement*, void* param = NULL);  
   bool parseEntryAwb_V10_Globals(const XMLElement*, void* param = NULL);
+  
+  bool parseEntryAwb_V10_IlluminationGMM(const XMLElement*, void* param = NULL);
+  bool parseEntryAwb_V10_IlluminationSat(const XMLElement*, void* param = NULL);
+  bool parseEntryAwb_V11_IlluminationSat(const XMLElement*, void* param = NULL);
+  bool parseEntryAwb_V10_IlluminationVig(const XMLElement*, void* param = NULL);
+  bool parseEntryAwb_V11_IlluminationVig(const XMLElement*, void* param = NULL);
+  
   bool parseEntryAwb_V11_Illumination(const XMLElement*, void* param = NULL);
   
   bool parseEntryAwb_V10_Illumination(const XMLElement*, void* param = NULL);
@@ -108,12 +138,23 @@ class CalibDb {
   bool parseEntryAwb_V11_IlluminationAcc(const XMLElement*, void* param = NULL);
   
   bool parseEntryAwb_V10_IlluminationAcc(const XMLElement*, void* param = NULL);
-  bool parseEntryAfWin(const XMLElement*,void* param = NULL);
+  bool parseEntryAfWin( const XMLElement*, void *param = NULL, uint32_t parent_id = 0);
   bool parseEntryContrastAf( const XMLElement*, void *param = NULL );
   bool parseEntryLaserAf( const XMLElement*, void *param = NULL );
   bool parseEntryPdaf( const XMLElement*, void *param = NULL );
   bool parseEntryAf( const XMLElement*, void *param = NULL );
   // parse Sensor-AEC
+  bool parseEntryAecDON( const XMLElement*, void *param = NULL );
+  bool parseEntryAecFPSSetConfig( const XMLElement*, void *param = NULL );
+  bool parseEntryAecHist2Hal( const XMLElement*, void *param = NULL );
+  bool parseEntryAecNLSC( const XMLElement*, void *param = NULL );
+  bool parseEntryAecIntervalAdjustStrategy( const XMLElement*, void *param = NULL );
+  bool parseEntryAecBacklight( const XMLElement*, void *param = NULL );
+  bool parseEntryAecLockAE( const XMLElement*, void *param = NULL );
+  bool parseEntryAecHdrCtrlLframe( const XMLElement*, void *param = NULL );
+  bool parseEntryAecHdrCtrlSframe( const XMLElement*, void *param = NULL );
+  bool parseEntryAecHdrCtrl( const XMLElement*, void *param = NULL );
+	
   bool parseEntryAec(const XMLElement*, void* param = NULL);
   bool parseEntryAecEcm(const XMLElement*, void* param = NULL);
   bool parseEntryAecEcmPriorityScheme(const XMLElement*, void* param = NULL);
@@ -133,10 +174,23 @@ class CalibDb {
   bool parseEntryCac(const XMLElement*, void* param = NULL);
 
   bool parseEntryFilter(const XMLElement* plement, void* param = NULL);
+  bool parseEntryFilterDemosiacTH(const XMLElement* plement, void* param = NULL);
+  bool parseEntryFilterSharpLevel(const XMLElement* plement, void* param = NULL);
+  bool parseEntryFilterDenoiseLevel(const XMLElement* plement, void* param = NULL);
+  bool parseEntryFilterRegConfig(const XMLElement* plement, void* param = NULL);
 
   // parse Sensor-3dnr
+  bool parseEntry3DnrLevel(const XMLElement* plement, void* param = NULL) ;
+  bool parseEntry3DnrLuma(const XMLElement* plement, void* param = NULL) ;
+  bool parseEntry3DnrChrm(const XMLElement* plement, void* param = NULL) ;
+  bool parseEntry3DnrSharp(const XMLElement* plement, void* param = NULL) ;
   bool parseEntry3DNR(const XMLElement* , void* param = NULL);
-
+  
+  //parse new 3dnr
+  
+  bool parseEntryNew3DnrYnr(const XMLElement* , void* param = NULL);
+  bool parseEntryNew3DnrUVnr(const XMLElement* , void* param = NULL);
+  bool parseEntryNew3DnrSharp(const XMLElement* , void* param = NULL);
   bool parseEntryNew3DNR(const XMLElement* plement, void* param = NULL) ;
 
   bool parseEntryDemosaicLPConfig(const XMLElement* plement, void* param = NULL); 
@@ -150,9 +204,11 @@ class CalibDb {
   // parse Sensor-GOC
   bool parseEntryGoc(const XMLElement*, void* param = NULL);
   // parse Sensor-WDR
+  bool parseEntryWdrMaxGain(const XMLElement*, void* param = NULL);
   bool parseEntryWdr(const XMLElement*, void* param = NULL);
   // parse System
   bool parseEntrySystem(const XMLElement*, void* param = NULL);
+  bool parseEntrySystemAfps( const XMLElement*, void *param = NULL );
   // parse cproc
   bool parseEntryCproc(const XMLElement*, void* param = NULL);
   bool parseEntryRKsharpen( const XMLElement*, void *param = NULL );

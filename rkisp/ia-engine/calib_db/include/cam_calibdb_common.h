@@ -97,6 +97,10 @@ typedef char                        sensor_sample_id_t[SENSOR_SAMPLE_ID_SIZE];
 #define CODE_XML_PARSE_VERSION_SIZE       ( 20U )
 typedef char                        code_xml_parse_version_t[SENSOR_SAMPLE_ID_SIZE];
 
+#define SDK_IQ_VERIFY_SIZE       ( 20U )
+typedef char                        sdk_IQ_verify_t[SDK_IQ_VERIFY_SIZE];
+
+
 typedef enum Isp_output_type_e{
 	isp_color_output_type = 0,
 	isp_gray_output_type  = 1,	
@@ -117,6 +121,7 @@ typedef struct CamCalibDbMetaData_s {
   sensor_sample_id_t      sid;                    /**< sensor sample id */
   code_xml_parse_version_t code_xml_parse_version;
   Isp_output_type_t       isp_output_type;
+  sdk_IQ_verify_t		  sdk_iq_verify;
 } CamCalibDbMetaData_t;
 
 
