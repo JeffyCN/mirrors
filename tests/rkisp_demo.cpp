@@ -27,6 +27,13 @@
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define FMT_NUM_PLANES 1
 
+#define BUFFER_COUNT 4
+
+enum io_method {
+    IO_METHOD_MMAP,
+    IO_METHOD_USERPTR,
+};
+
 void* _rkisp_engine;
 
 typedef int (*rkisp_init_func)(void** cl_ctx, const char* tuning_file_path,
@@ -70,6 +77,8 @@ static int width = 640;
 static int height = 480;
 static int format = V4L2_PIX_FMT_NV12;
 static int fd = -1;
+static int drm_fd = -1;
+static int io = IO_METHOD_MMAP;
 static enum v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 struct buffer *buffers;
 static unsigned int n_buffers;
@@ -371,7 +380,7 @@ static int rkisp_setAeMode(void* &engine, HAL_AE_OPERATION_MODE mode)
 
         ctl_params->_settings_metadata.update(ANDROID_CONTROL_AE_MODE, &ae_mode, 1);
     } else {
-        ERR("unsupported ae mode %d", mode);
+        ERR("unsupported ae mode %d\n", mode);
         return -1;
     }
     ctl_params->_frame_metas.id++;
@@ -459,6 +468,92 @@ static void errno_exit(const char *s)
         exit(EXIT_FAILURE);
 }
 
+static int init_drm()
+{
+    int drm_fd = drmOpen("rockchip", NULL);
+    if (drm_fd < 0) {
+        ERR("failed to open rockchip drm: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    return drm_fd;
+}
+
+static void deinit_drm(int drm_fd)
+{
+    drmClose(drm_fd);
+}
+
+static void* get_drm_buf(int drm_fd, int width, int height, int bpp)
+{
+    struct drm_mode_create_dumb alloc_arg;
+    struct drm_mode_map_dumb mmap_arg;
+    struct drm_mode_destroy_dumb destory_arg;
+    int ret;
+    void *map;
+
+    CLEAR(alloc_arg);
+    alloc_arg.bpp = bpp;
+    alloc_arg.width = width;
+    alloc_arg.height = height;
+#define ROCKCHIP_BO_CONTIG  1
+#define ROCKCHIP_BO_CACHABLE (1<<1)
+    alloc_arg.flags = ROCKCHIP_BO_CONTIG | ROCKCHIP_BO_CACHABLE;
+
+    ret = drmIoctl(drm_fd, DRM_IOCTL_MODE_CREATE_DUMB, &alloc_arg);
+    if (ret) {
+        ERR("failed to create dumb buffer: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    CLEAR(mmap_arg);
+    mmap_arg.handle = alloc_arg.handle;
+
+    ret = drmIoctl(drm_fd, DRM_IOCTL_MODE_MAP_DUMB, &mmap_arg);
+    if (ret) {
+        ERR("failed to create map dumb: %s\n", strerror(errno));
+        ret = -EINVAL;
+        goto destory_dumb;
+    }
+
+    map = mmap(0, alloc_arg.size, PROT_READ | PROT_WRITE, MAP_SHARED, drm_fd, mmap_arg.offset);
+    if (map == MAP_FAILED) {
+        ERR("failed to mmap buffer: %s\n", strerror(errno));
+        ret = -EINVAL;
+        goto destory_dumb;
+    }
+
+    assert(alloc_arg.size == width * height * bpp / 8);
+
+    {
+        struct timeval before, after;
+        int i, loop = frame_count;
+        register char c;
+        char *map_test = (char *) map;
+
+        memset(map, 0xaa, alloc_arg.size);
+        gettimeofday(&before, NULL);
+
+        while (loop --)
+            c += memcmp(map_test, map_test + alloc_arg.size / 2, alloc_arg.size / 2);
+
+        gettimeofday(&after, NULL);
+
+        printf("time of memset: %ld\n", (after.tv_sec - before.tv_sec) * 1000 * 1000 + (after.tv_usec - before.tv_usec));
+        printf("%c\n", c);
+        exit(-1);
+    }
+
+destory_dumb:
+    CLEAR(destory_arg);
+    destory_arg.handle = alloc_arg.handle;
+    drmIoctl(drm_fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destory_arg);
+    if (ret)
+        return NULL;
+
+    return map;
+}
+
 static int xioctl(int fh, int request, void *arg)
 {
         int r;
@@ -478,10 +573,12 @@ static void process_image(const void *p, int size)
 static int read_frame(FILE *fp)
 {
         struct v4l2_buffer buf;
+        int i, bytesused;
+
         CLEAR(buf);
 
         buf.type = buf_type;
-        buf.memory = V4L2_MEMORY_MMAP;
+        buf.memory = (io == IO_METHOD_MMAP) ? V4L2_MEMORY_MMAP : V4L2_MEMORY_USERPTR;
 
         if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == buf_type) {
             struct v4l2_plane planes[FMT_NUM_PLANES];
@@ -492,13 +589,14 @@ static int read_frame(FILE *fp)
         if (-1 == xioctl(fd, VIDIOC_DQBUF, &buf)) 
                 errno_exit("VIDIOC_DQBUF");
 
-        if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == buf_type) {
-            DBG("multi-planes bytesused %d\n", buf.m.planes[0].bytesused);
-            process_image(buffers[buf.index].start, buf.m.planes[0].bytesused);
-        } else {
-            DBG("bytesused %d\n", buf.m.planes[0].bytesused);
-            process_image(buffers[buf.index].start, buf.bytesused);
-        }
+        i = buf.index;
+
+        if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == buf_type)
+            bytesused = buf.m.planes[0].bytesused;
+        else
+            bytesused = buf.bytesused;
+        process_image(buffers[i].start, bytesused);
+        DBG("bytesused %d\n", bytesused);
 
         if (-1 == xioctl(fd, VIDIOC_QBUF, &buf))
             errno_exit("VIDIOC_QBUF"); 
@@ -669,11 +767,21 @@ static void start_capturing(void)
 
                 CLEAR(buf);
                 buf.type = buf_type;
-                buf.memory = V4L2_MEMORY_MMAP;
+                buf.memory = (io == IO_METHOD_MMAP) ? V4L2_MEMORY_MMAP : V4L2_MEMORY_USERPTR;
                 buf.index = i;
+
+                if (io == IO_METHOD_USERPTR) {
+                    buf.m.userptr = (unsigned long)buffers[i].start;
+                    buf.length = buffers[i].length;
+                }
 
                 if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == buf_type) {
                     struct v4l2_plane planes[FMT_NUM_PLANES];
+
+                    if (io == IO_METHOD_USERPTR) {
+                        planes[0].m.userptr = (unsigned long)buffers[i].start;
+                        planes[0].length = buffers[i].length;
+                    }
                     buf.m.planes = planes;
                     buf.length = FMT_NUM_PLANES;
                 }
@@ -701,9 +809,9 @@ static void uninit_device(void)
         }
 
         dlclose(_RKIspFunc.rkisp_handle);
+        if (drm_fd != -1)
+            deinit_drm(drm_fd);
 }
-
-
 
 static void init_mmap(void)
 {
@@ -711,7 +819,7 @@ static void init_mmap(void)
 
         CLEAR(req);
 
-        req.count = 4;
+        req.count = BUFFER_COUNT;
         req.type = buf_type;
         req.memory = V4L2_MEMORY_MMAP;
 
@@ -779,6 +887,44 @@ static void init_mmap(void)
         }
 }
 
+static void init_userp(int buffer_size, int width, int height)
+{
+    struct v4l2_requestbuffers req;
+    int bpp;
+
+    CLEAR(req);
+
+    req.count  = BUFFER_COUNT;
+    req.memory = V4L2_MEMORY_USERPTR;
+    req.type = buf_type;
+
+    if (-1 == xioctl(fd, VIDIOC_REQBUFS, &req)) {
+        if (EINVAL == errno) {
+            ERR("%s does not support user pointer i/on\n", dev_name);
+            exit(EXIT_FAILURE);
+        } else {
+            errno_exit("VIDIOC_REQBUFS");
+        }
+    }
+
+    buffers = (struct buffer*)calloc(req.count, sizeof(*buffers));
+
+    if (!buffers) {
+        ERR("Out of memory\n");
+        exit(EXIT_FAILURE);
+    }
+
+    drm_fd = init_drm();
+    bpp = buffer_size * 8 / width / height;
+    for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
+        buffers[n_buffers].length = buffer_size;
+        buffers[n_buffers].start = get_drm_buf(drm_fd, width, height, bpp);
+
+        if (!buffers[n_buffers].start) {
+            exit(EXIT_FAILURE);
+        }
+    }
+}
 
 static void init_device(void)
 {
@@ -808,14 +954,12 @@ static void init_device(void)
                 exit(EXIT_FAILURE);
         }
 
-
-
-        CLEAR(fmt);
         if (cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)
             buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         else if (cap.capabilities & V4L2_CAP_VIDEO_CAPTURE_MPLANE)
             buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 
+        CLEAR(fmt);
         fmt.type = buf_type;
         fmt.fmt.pix.width = width;
         fmt.fmt.pix.height = height;
@@ -825,7 +969,10 @@ static void init_device(void)
         if (-1 == xioctl(fd, VIDIOC_S_FMT, &fmt))
                 errno_exit("VIDIOC_S_FMT");
 
-        init_mmap();
+        if (io == IO_METHOD_MMAP)
+            init_mmap();
+        else if (io == IO_METHOD_USERPTR)
+            init_userp(fmt.fmt.pix.sizeimage, width, height);
 
 		//INIT RKISP
         _RKIspFunc.rkisp_handle = dlopen(LIBRKISP, RTLD_NOW);
@@ -841,10 +988,10 @@ static void init_device(void)
             _RKIspFunc.set_frame_params_func=(rkisp_cl_set_frame_params_func)dlsym(_RKIspFunc.rkisp_handle,
                                                                       "rkisp_cl_set_frame_params");
     	    if (_RKIspFunc.start_func == NULL) {
-    	        ERR("func rkisp_start not found.");
+    	        ERR("func rkisp_start not found.\n");
     	        const char *errmsg;
     	        if ((errmsg = dlerror()) != NULL) {
-    	            ERR("dlsym rkisp_start fail errmsg: %s", errmsg);
+    	            ERR("dlsym rkisp_start fail errmsg: %s\n", errmsg);
     	        }
     	    } else {
                 DBG("dlsym rkisp_start success\n");
@@ -884,6 +1031,7 @@ void parse_args(int argc, char **argv)
        static struct option long_options[] = {
            {"width",    required_argument, 0, 'w' },
            {"height",   required_argument, 0, 'h' },
+           {"memory",   required_argument, 0, 'm' },
            {"format",   required_argument, 0, 'f' },
            {"iqfile",   required_argument, 0, 'i' },
            {"device",   required_argument, 0, 'd' },
@@ -896,7 +1044,7 @@ void parse_args(int argc, char **argv)
            {0,          0,                 0,  0  }
        };
 
-       c = getopt_long(argc, argv, "w:h:f:i:d:o:c:e:g:ps",
+       c = getopt_long(argc, argv, "w:h:m:f:i:d:o:c:e:g:ps",
            long_options, &option_index);
        if (c == -1)
            break;
@@ -908,6 +1056,12 @@ void parse_args(int argc, char **argv)
        case 'e':
            mae_expo = atof(optarg);
            DBG("target expo: %f\n", mae_expo);
+           break;
+       case 'm':
+           if (!strcmp("drm", optarg))
+               io = IO_METHOD_USERPTR;
+           else
+               io = IO_METHOD_MMAP;
            break;
        case 'g':
            mae_gain = atof(optarg);
@@ -939,6 +1093,7 @@ void parse_args(int argc, char **argv)
            ERR("Usage: %s to capture rkisp1 frames\n"
                   "         --width,  default 640,             optional, width of image\n"
                   "         --height, default 480,             optional, height of image\n"
+                  "         --memory, default mmap,            optional, use 'mmap' or 'drm' to alloc buffers\n"
                   "         --format, default NV12,            optional, fourcc of format\n"
                   "         --count,  default    5,            optional, how many frames to capture\n"
                   "         --iqfile, default /etc/cam_iq.xml, optional, camera IQ file\n"
