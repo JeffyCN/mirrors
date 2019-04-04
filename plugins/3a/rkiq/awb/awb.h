@@ -48,9 +48,21 @@
  *  - sync awb with calibdb v0.2.0
  * v0.0.5
  *  - suport illu BW
+ * v0.0.6
+ *  - change LOGMIN from 0.0001f to 0.00001f to avoid out of
+ *    range error.
+ *  - no need to destroy awb context when some not fatal
+ *    errors happen
+ * v0.0.7
+ *  - multiply wbgain by blsgain
+ * v0.0.8
+ *  - use the current effecting isp params along with the stats
+ *  - to calculate next awb params
+ * v0.0.9
+* 1) enable ALOGV/ALOGW for Android
  */
 
-#define CONFIG_AWB_LIB_VERSION "v0.0.5"
+#define CONFIG_AWB_LIB_VERSION "v0.0.9"
 
 #ifdef __cplusplus
 extern "C"
@@ -188,10 +200,10 @@ typedef struct AwbRunningInputParams_s {
   AwbMeasuringResult_t MesureResult;
   //histogram
   AWBHistBins_t HistBins;
-  //AwbGains_t             Gains;          /**< current gains from hardware */
+  AwbGains_t             Gains;          /**< current gains from hardware */
 
-  //Cam3x3FloatMatrix_t        CtMatrix;        /**< current cross talk matrix from hardware */
-  //AwbXTalkOffset_t         CtOffset;        /**< current cross talk offset from hardware */
+  Cam3x3FloatMatrix_t        CtMatrix;        /**< current cross talk matrix from hardware */
+  AwbXTalkOffset_t         CtOffset;        /**< current cross talk offset from hardware */
   float                         fGain;
   float                         fIntegrationTime;
 } AwbRunningInputParams_t;

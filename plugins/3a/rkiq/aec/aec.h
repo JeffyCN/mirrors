@@ -59,9 +59,19 @@
  *  - add DarkROI detection in Hdr AE
  *  - fix some bugs of ratio calculation
  *  - add ExpDot & Setpoint for Hdr AE
+ * v0.0.6
+ *  - run ae every frame
+ *  - split each exposure result to 3 steps, make ae
+ *    converge more smooth
+ * v0.0.7
+ *  - fix always report non-converged AE state in dark enviroment
+ * v0.0.8
+ *  - fix the min intergration time of 4[H] exposure lines
+ * v0.0.9
+ *  - enable ALOGV/ALOGW for Android 
  */
 
-#define CONFIG_AE_LIB_VERSION "v0.0.5"
+#define CONFIG_AE_LIB_VERSION "v0.0.9"
 
 #ifdef __cplusplus
 extern "C"
@@ -274,9 +284,18 @@ typedef struct Hdr_sensor_metadata_s {
 	unsigned int gain_s;
 }Hdr_sensor_metadata_t;
 
+typedef struct Sensor_metadata_s {
+    float coarse_integration_time;
+    float analog_gain_code_global;
+    float LinePeriodsPerField;
+    int regIntegrationTime;
+    int regGain;
+} Sensor_metadata_t;
+
 typedef struct AecStat_s {
   unsigned char  exp_mean[AEC_AE_MEAN_MAX];
   unsigned int   hist_bins[AEC_HIST_BIN_N_MAX];
+  Sensor_metadata_t sensor_metadata;
   /*zlj add*/
   bool   is_hdr_stats;
   struct Hdrae_stat_s oneframe[3];
@@ -303,6 +322,7 @@ typedef struct AecResult_s {
   float analog_gain_code_global;
   int regIntegrationTime;
   int regGain;
+  Sensor_metadata_t exp_smooth_results[3];
   float PixelClockFreqMHZ;
   float PixelPeriodsPerLine;
   float LinePeriodsPerField;
@@ -342,24 +362,6 @@ typedef enum AecState_e {
   AEC_STATE_LOCKED        = 4,
   AEC_STATE_MAX
 } AecState_t;
-
-
-/*****************************************************************************/
-/**
- * @brief   This typedef represents the histogram which is measured by the
- *          CamerIC ISP histogram module.
- *
- *****************************************************************************/
-typedef uint32_t CamerIcHistBins_t[AEC_HIST_BIN_N_MAX];
-typedef uint32_t CamerIcHdrHistBins_t[AEC_HDR_HIST_BIN_N_MAX];
-
-/*****************************************************************************/
-/**
- * @brief   Array type for ISP EXP measurment values.
- *
- *****************************************************************************/
-typedef uint8_t CamerIcMeanLuma_t[AEC_AE_MEAN_MAX];
-typedef uint16_t CamerIcHdrMeanLuma_t[AEC_HDR_AE_MEAN_MAX];
 
 /*****************************************************************************/
 /**

@@ -39,7 +39,7 @@
 *
 *Describe:
 * 1)you need descirbe what you do in this version;
-* 2)you nedd add keyword so that you can as possible as quickly to find the differnce.
+* 2)you need add keyword so that you can as possible as quickly to find the differnce.
 *
 *
 *
@@ -61,10 +61,40 @@
 *v0.2.1
 * 1)add af_module.h,last version is lost.
 *v0.2.2
-* remove unnecessary lib dependancy
+* 1)remove unnecessary lib dependancy
+*v0.2.3
+* 1)out of focus threshold value can config.
+* 2)frequent touch af cause error that is resovled by AfResetCmdQue.
+* 3)add quick found and AfSearchFine function in AfSearchAdaptiveRange.
+*v0.2.4
+* 1)support reset position by adaptive direction.
+* 2)add quick found case.
+* 3)tidy the AfInit.
+* 4)add TrigAntiFlash.
+*v0.2.5
+* 1)add the af parameter to iq calibration.
+* 2)exchange stable_dSharpness and dSharpness.
+* 3)fix the problem that AFM_FSSTATE_INIT can auto focus.
+*v0.2.6
+* 1)fix the warning when it complie .
+* 2)fix the bug of memory leaks.
+* 3)fix the problem of NULL pointer.
+*v0.2.7
+* 1)fix the search pointer error.
+*v0.2.8
+* 1)fix afstop stuck
+*   af interfaces such as afstop/afstart are implemented as asynchronized
+*   and based on message queue, and should be run in diffrent thread with
+*   AfProcessFrame. but now interface afstop/afstart and AfProcessFrame are
+*   running in same thread, this will cause wrong af state transition.
+*   temporarily add a flag to stop af immediatly to workaround this bug.
+*v0.2.9
+* 1) enable ALOGV/ALOGW for Android
+*v0.2.10
+* 1)remove afmCmdQue,so the system will must to be a sync thread.
 */
 
-#define CONFIG_AF_LIB_VERSION "v0.2.2"
+#define CONFIG_AF_LIB_VERSION "v0.2.10"
 
 #ifdef __cplusplus
 extern "C"
@@ -163,6 +193,19 @@ typedef enum AfState_e {
   AF_STATE_MAX
 } AfState_t;
 
+/*******************************************************************************
+ *
+ * @struct  AfSearchDir_t
+ *
+ * @brief   AF search direction structure
+ *
+ *******************************************************************************/
+typedef enum AfSearchDir_e {
+  AFM_POSITIVE_SEARCH     = 0,
+  AFM_NEGATIVE_SEARCH     = 1,
+  AFM_ADAPTIVE_SEARCH     = 2
+} AfSearchDir_t;
+
 /******************************************************************************
  *
  * @struct  AfOutputResult_s
@@ -171,8 +214,8 @@ typedef enum AfState_e {
  *
  *****************************************************************************/
 typedef struct AfOutputResult_s {
-  int32_t 		   NextLensePos;
-  uint32_t		   Window_Num;
+  int32_t          NextLensePos;
+  uint8_t          Window_Num;
   struct Cam_Win   WindowA;
   struct Cam_Win   WindowB;
   struct Cam_Win   WindowC;
@@ -195,18 +238,52 @@ typedef struct AfType_s {
 
 /*****************************************************************************
  *
- * @struct  AfConfig_t
+ * @struct  AfContrastAfCfg_t
  *
  * @brief   AF contrast af configuration structure
  *
  *****************************************************************************/
 typedef struct AfContrastAfCfg_s {
-  unsigned int rev[16];
+    AfSearchDir_t           FullDir;
+	uint8_t                 FullSteps;
+    uint16_t*               FullRangeTbl;                          /**< full range search table*/
+    AfSearchDir_t           AdaptiveDir;
+	uint8_t                 AdaptiveSteps;
+	uint16_t*               AdaptRangeTbl;                          /**< adaptive range search table*/
+
+    float                   TrigThers;                              /**< AF trigger threshold */
+    uint16_t                TrigValue;                              /**< AF trigger Value */
+    uint16_t                TrigFrames;                             /**< AF trigger status must hold frames */
+    bool_t                  TrigAntiFlash;                          /**< AF trigger anti one or some figures flash but not target figures*/
+
+    float                   FirstStableThers;                       /**< first time AF stable threshold */
+    uint16_t                FirstStableValue;                       /**< first time AF stable value */
+    uint16_t                FirstStableFrames;                      /**< first time AF stable status must hold frames */
+    uint16_t                FirstStableTime;                        /**< first time AF stable status must hold time */
+
+    float                   StableThers;                            /**< AF stable threshold */
+    uint16_t                StableValue;                            /**< AF stable value */
+    uint16_t                StableFrames;                           /**< AF stable	status must hold frames */
+    uint16_t                StableTime;                             /**< AF stable status must hold time */
+
+    float                   FirstPosSharpness;                      /**< AF first search position*/
+    float                   FinishThersMain;                        /**< AF find clearest position main thershold*/
+    float                   FinishThersSub;                         /**< AF find clearest position subject thershold*/
+    uint16_t                FinishThersOffset;                      /**< AF find clearest position offset thershold*/
+
+    uint16_t                OutFocusValue;                          /**< out of focus vlaue*/
+    float                   OutFocusLuma;                           /**< out of focus luma*/
+    uint16_t                OutFocusPos;                            /**< out of focus position*/
+
+    uint16_t                AfHyst[2][5];                           /**< the difference between go ahead and go back*/
+    uint16_t                AfBackStep[5];                          /**< avoid a step is too large*/
+
+    unsigned int            rev[16];                                /**< reserve some char*/
 } AfContrastAfCfg_t;
 
 /*****************************************************************************
  *
- * @struct  AfConfig_t
+ * @struct  AfLaserAfCfg_t
  *
  * @brief   AF laser af configuration structure
  *
@@ -218,7 +295,7 @@ typedef struct AfLaserAfCfg_s {
 
 /*****************************************************************************
  *
- * @struct  AfConfig_t
+ * @struct  AfPdafCfg_t
  *
  * @brief   AF pdaf configuration structure
  *
@@ -251,8 +328,8 @@ typedef struct AfConfig_s {
   AfContrastAfCfg_t  ContrastAf;
   AfLaserAfCfg_t     LaserAf;
   AfPdafCfg_t        Pdaf;
-  
-  uint32_t           Window_Num;
+
+  uint8_t            Window_Num;
   struct Cam_Win     WindowA;
   struct Cam_Win     WindowB;
   struct Cam_Win     WindowC;
@@ -435,7 +512,8 @@ RESULT AfStart
 RESULT AfOneShot
 (
     AfHandle_t                handle,
-    const AfSearchStrategy_t  fss
+    const AfSearchStrategy_t  fss,
+    AfMeas_t*                 pMeasResults
 );
 
 
@@ -480,13 +558,6 @@ RESULT AfStatus
     float*               sharpness
 );
 
-/******************************************************************************
- * AfMeasureCbRestart()
- *****************************************************************************/
-RESULT AfMeasureCbRestart
-(
-    AfHandle_t                  handle
-);
 
 /*****************************************************************************/
 /**
@@ -505,6 +576,15 @@ RESULT AfProcessFrame
 (
     AfHandle_t handle,
     AfMeas_t*  pMeasResults
+);
+
+/******************************************************************************
+ * AfGetSearchStrategy()
+ *****************************************************************************/
+int AfGetSearchStrategy
+(
+    AfHandle_t                          handle,
+    AfSearchStrategy_t*                 AFss
 );
 
 /*****************************************************************************/
