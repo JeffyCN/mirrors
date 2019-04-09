@@ -2,6 +2,7 @@
 #include <ebase/utl_fixfloat.h>
 #include <string.h>
 #include <base/log.h>
+#include <math.h>
 
 #define ISP_CHECK_NULL(p) \
   if(!p) { \
@@ -1025,11 +1026,11 @@ void cam_ia10_isp_map_hstw_9x9_to_5x5
     for (j = 0; j < 5; j++) {
         for (i = 0; i < 5; i++) {
            int base_v = j*1.8;
-           histw_5x5_out[5*j+i] =
+           histw_5x5_out[5*j+i] = ceilf(
                (histw_9x5[base_v*5+i]     * weights[j][0] +
                histw_9x5[(base_v+1)*5+i] * weights[j][1] +
                ((j==4) ? 0 : histw_9x5[(base_v+2)*5+i] * weights[j][2])) *
-               max_val_5x5 / max_val_9x9;
+               max_val_5x5 / max_val_9x9);
         }
     }
 }
