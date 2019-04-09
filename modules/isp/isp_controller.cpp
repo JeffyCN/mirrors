@@ -842,6 +842,11 @@ IspController::apply_otp_config (struct rkisp_parameters *isp_cfg) {
             XCAM_LOG_ERROR ("failed to apply camera module af otp");
             return XCAM_RETURN_ERROR_IOCTL;
         }
+        if (isp_cfg->lsc_otp_info.enable &&
+            _sensor_subdev->io_control(RKMODULE_LSC_CFG, &isp_cfg->lsc_otp_info) < 0) {
+            XCAM_LOG_ERROR ("failed to apply camera module af otp");
+            return XCAM_RETURN_ERROR_IOCTL;
+        }
     }
 
     return XCAM_RETURN_NO_ERROR;

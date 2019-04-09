@@ -1522,6 +1522,8 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
         _ia_results.otp_info.awb.golden_b_value;
     // unsupport lsc/af otp now
     isp_3a_result.af_otp_info.enable = 0;
+    isp_3a_result.lsc_otp_info.enable =
+        _ia_results.otp_info.lsc.enable;
 
     for (int i=0; i < HAL_ISP_MODULE_MAX_ID_ID + 1; i++) {
         isp_3a_result.enabled[i] = _isp_cfg.enabled[i];
