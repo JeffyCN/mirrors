@@ -228,7 +228,7 @@ X3aAnalyzerRKiq::configure_3a ()
     // initialize ae and awb
     get_ae_handler ()->analyze (first_results, true);
     get_awb_handler ()->analyze (first_results, true);
-    //get_af_handler ()->analyze (first_results, true);
+    get_af_handler ()->analyze (first_results, true);
 
     if (!first_results.empty()) {
         ret = _rkiq_compositor->integrate (first_results);
