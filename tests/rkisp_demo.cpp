@@ -603,9 +603,21 @@ static void start_capturing(void)
             rkisp.isp_stats_dev =
               media_get_entity_by_name (rkisp.controller, "rkisp1-statistics",
                                         strlen("rkisp1-statistics"));
-             /* assume the last enity is sensor_subdev */
+            /* TODO: Get ACTIVE subdev sensor */
             nents = media_get_entities_count (rkisp.controller);
-            rkisp.sensor_subdev = media_get_entity (rkisp.controller, nents - 1);
+            rkisp.sensor_subdev = NULL;
+            for (i = 0; i < nents; ++i) {
+                struct media_entity *e;
+                const struct media_entity_desc *ef;
+
+                e = media_get_entity(rkisp.controller, i);
+                ef = media_entity_get_info(e);
+                if (ef->type == MEDIA_ENT_T_V4L2_SUBDEV_SENSOR) {
+                    rkisp.sensor_subdev = e;
+                    break;
+                }
+            }
+            assert(rkisp.sensor_subdev);
 
             params.isp_sd_node_path = media_entity_get_devname (rkisp.isp_subdev);
             params.isp_vd_params_path = media_entity_get_devname (rkisp.isp_params_dev);
