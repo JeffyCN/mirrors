@@ -25,7 +25,6 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../rkisp/ia-engine/include/linux \
     $(LOCAL_PATH)/../rkisp/ia-engine/include/linux/media \
 	$(LOCAL_PATH)/../rkisp/isp-engine \
-	$(LOCAL_PATH)/../ext/rkisp/usr/include/drm
 
 LOCAL_SHARED_LIBRARIES += libdl libdrm
 LOCAL_STATIC_LIBRARIES += \
@@ -39,6 +38,9 @@ LOCAL_SHARED_LIBRARIES += \
 LOCAL_C_INCLUDES += \
     system/media/camera/include \
     frameworks/av/include
+LOCAL_C_INCLUDES += \
+	external/libdrm/include/drm \
+	external/libdrm
 ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
 LOCAL_PROPRIETARY_MODULE := true
 LOCAL_C_INCLUDES += \
@@ -57,6 +59,8 @@ LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../metadata/libcamera_client/include \
 	$(LOCAL_PATH)/../metadata/libcamera_metadata/include \
 	$(LOCAL_PATH)/../metadata/header_files/include/system/core/include
+LOCAL_C_INCLUDES += \
+	$(LOCAL_PATH)/../ext/rkisp/usr/include/drm
 LOCAL_STATIC_LIBRARIES += \
 	librkisp_metadata
 endif

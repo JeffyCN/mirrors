@@ -18,6 +18,13 @@
 #include <sys/ioctl.h>
 #include <dlfcn.h>
 
+#ifdef ANDROID
+#include <drm.h>
+#include <drm_mode.h>
+#include <xf86drm.h>
+#include <xf86drmMode.h>
+#endif
+
 #include <linux/videodev2.h>
 #include <rkisp_control_loop.h>
 #include <rkisp_dev_manager.h>
