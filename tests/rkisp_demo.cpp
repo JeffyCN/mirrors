@@ -525,25 +525,6 @@ static void* get_drm_buf(int drm_fd, int width, int height, int bpp)
 
     assert(alloc_arg.size == width * height * bpp / 8);
 
-    {
-        struct timeval before, after;
-        int i, loop = frame_count;
-        register char c;
-        char *map_test = (char *) map;
-
-        memset(map, 0xaa, alloc_arg.size);
-        gettimeofday(&before, NULL);
-
-        while (loop --)
-            c += memcmp(map_test, map_test + alloc_arg.size / 2, alloc_arg.size / 2);
-
-        gettimeofday(&after, NULL);
-
-        printf("time of memset: %ld\n", (after.tv_sec - before.tv_sec) * 1000 * 1000 + (after.tv_usec - before.tv_usec));
-        printf("%c\n", c);
-        exit(-1);
-    }
-
 destory_dumb:
     CLEAR(destory_arg);
     destory_arg.handle = alloc_arg.handle;
