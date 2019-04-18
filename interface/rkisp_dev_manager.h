@@ -89,9 +89,23 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
  *  - aec lib v0.0.9
  *  - awb lib v0.0.9
  *  - af lib v0.2.10
+ * v2.0.0
+ *  note: ISP drvier should be updated to v0.1.2
+ *  - calibdb v1.0.0 iq: v1.0.0 checksum: 635074
+ *    add strict tag level checking for iq xml
+ *  - support lsc otp enable control in iq xml
+ *  - fix some bugs
+ *    fix aec meas window check error
+ *    set init focus to driver before sensor streaming
+ *    fix bug of mapping hist weights error from 9x9 to 5x5
+ *  - rkisp_demo support usr_ptr memory mode, and fix some bugs
+ *  - aec lib v0.0.9
+ *  - awb lib v0.0.9
+ *  - af lib v0.2.11
+ *    fix the wrong af trigger when picture taken
  */
 
-#define CONFIG_CAM_ENGINE_LIB_VERSION "v1.9.0"
+#define CONFIG_CAM_ENGINE_LIB_VERSION "v2.0.0"
 
 using namespace XCam;
 class SettingsProcessor;
