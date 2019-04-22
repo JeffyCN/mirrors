@@ -1382,13 +1382,13 @@ RKiqCompositor::set_3a_stats (SmartPtr<X3aIspStatistics> &stats)
     }
 
     _isp_stats = *(struct cifisp_stat_buffer*)stats->get_isp_stats();
-    frame_ts = _ia_stat.sof_tim / 1000;
+    frame_ts = _ia_stat.stats_sof_ts / 1000;
     XCAM_LOG_DEBUG ("set_3a_stats meas type: %d", _isp_stats.meas_type);
 
     vcm_ts = (int64_t)_ia_stat.vcm_tim.vcm_end_t.tv_sec * 1000 * 1000 +
              (int64_t)_ia_stat.vcm_tim.vcm_end_t.tv_usec;
 
-    cur_exptime = _ae_handler->get_current_exposure_time_us();
+    cur_exptime = _ia_stat.sensor_mode.exp_time_seconds * 1000 * 1000;
 
     if (vcm_ts + cur_exptime <= frame_ts)
       _ia_stat.af.cameric.MoveStatus = AFM_VCM_MOVE_END;
