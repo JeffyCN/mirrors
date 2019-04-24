@@ -719,8 +719,18 @@ IspController::set_3a_config_sync ()
     struct rkisp_parameters* isp_cfg = NULL;
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
 
+    if (_effecting_ispparm_map.size() > 10)
+        _effecting_ispparm_map.erase(_effecting_ispparm_map.begin());
+
     if (_pending_ispparams_queue.empty()) {
         LOGD("no new isp params !");
+        // reuse last params
+        if (_frame_sequence >= 0)
+            _effecting_ispparm_map[_frame_sequence + 1] =
+                _effecting_ispparm_map[_frame_sequence];
+        else
+            LOGE("FIXME! no initial isp params !");
+
         return ret;
     }
 
@@ -771,9 +781,6 @@ IspController::set_3a_config_sync ()
             return XCAM_RETURN_ERROR_PARAM;
         }
     }
-
-    if (_effecting_ispparm_map.size() > 10)
-        _effecting_ispparm_map.erase(_effecting_ispparm_map.begin());
 
     if (_frame_sequence < 0) {
         _effecting_ispparm_map[0].isp_params = _full_active_isp_params;
