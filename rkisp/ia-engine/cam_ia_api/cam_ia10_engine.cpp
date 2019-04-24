@@ -907,6 +907,10 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
         int lastTime_S = lastAecResult.RegHdrTime[2];
         int lastGain_S = lastAecResult.RegHdrGains[2];
 
+        if (!(mStats.meas_type & CAMIA10_AEC_MASK) ||
+            !(mStats.meas_type & CAMIA10_HST_MASK)) {
+            return RET_FAILURE;
+        }
         dumpAe();
 
         if(!lastAecResult.IsHdrExp){
@@ -1033,6 +1037,9 @@ RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, 
     MeasResult.CtMatrix = mStats.effect_CtMatrix;
     MeasResult.CtOffset = mStats.effect_CtOffset;
 
+    if (!first && !(mStats.meas_type & CAMIA10_AWB_MEAS_MASK))
+        return RET_FAILURE;
+
     dumpAwb();
 
     if (awbDesc) {
@@ -1086,6 +1093,9 @@ RESULT CamIA10Engine::runAf(XCamAfParam *param, XCam3aResultFocus* result, bool 
         LOGE("af mode not set");
         return RET_FAILURE;
     }
+
+    if (!first && !(mStats.meas_type & CAMIA10_AFC_MASK))
+        return RET_FAILURE;
 
     if (shd->mode != HAL_AF_MODE_NOT_SET &&
         shd->mode != HAL_AF_MODE_FIXED) {

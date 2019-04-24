@@ -235,7 +235,7 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
     bool is_first_param = false;
 
     for (X3aResultList::iterator iter = output.begin ();
-            iter != output.end ();)
+            iter != output.end (); iter++)
     {
         is_first_param = (*iter)->is_first_params ();
         if ((*iter)->get_type() == XCAM_3A_METADATA_RESULT_TYPE) {
@@ -243,13 +243,13 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
             break ;
         }
 
-        ++iter;
-        if (iter == output.end()) {
-            res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
-            output.push_back(res);
-        }
     }
 
+    if (!res.ptr()) {
+        res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
+        XCAM_ASSERT (res.ptr());
+        output.push_back(res);
+    }
     CameraMetadata* metadata = res->get_metadata_result();
 
     XCamAeParam &aeParams = inputParams->aeInputParams.aeParams;
@@ -390,17 +390,18 @@ AiqAwbHandler::processAwbMetaResults(CamIA10_AWB_Result_t awb_results, X3aResult
     LOGI("@%s %d: enter", __FUNCTION__, __LINE__);
 
     for (X3aResultList::iterator iter = output.begin ();
-            iter != output.end ();)
+            iter != output.end (); iter++)
     {
         if ((*iter)->get_type() == XCAM_3A_METADATA_RESULT_TYPE) {
             res = (*iter).dynamic_cast_ptr<XmetaResult> ();
             break ;
         }
-        ++iter;
-        if (iter == output.end()) {
-            res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
-            output.push_back(res);
-        }
+    }
+
+    if (!res.ptr()) {
+        res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
+        XCAM_ASSERT (res.ptr());
+        output.push_back(res);
     }
 
     CameraMetadata* metadata = res->get_metadata_result();
@@ -463,17 +464,19 @@ AiqAfHandler::processAfMetaResults(XCam3aResultFocus af_results, X3aResultList &
     LOGI("@%s %d: enter", __FUNCTION__, __LINE__);
 
     for (X3aResultList::iterator iter = output.begin ();
-            iter != output.end ();)
+            iter != output.end (); iter++)
     {
+        LOGD("get_type() %x ",(*iter)->get_type());
         if ((*iter)->get_type() == XCAM_3A_METADATA_RESULT_TYPE) {
             res = (*iter).dynamic_cast_ptr<XmetaResult> ();
             break ;
         }
-        ++iter;
-        if (iter == output.end()) {
-            res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
-            output.push_back(res);
-        }
+    }
+
+    if (!res.ptr()) {
+        res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
+        XCAM_ASSERT (res.ptr());
+        output.push_back(res);
     }
 
     CameraMetadata* metadata = res->get_metadata_result();
@@ -592,17 +595,18 @@ AiqCommonHandler::processMiscMetaResults(X3aResultList &output)
     LOGI("@%s %d: enter", __FUNCTION__, __LINE__);
 
     for (X3aResultList::iterator iter = output.begin ();
-            iter != output.end ();)
+            iter != output.end (); iter++)
     {
         if ((*iter)->get_type() == XCAM_3A_METADATA_RESULT_TYPE) {
             res = (*iter).dynamic_cast_ptr<XmetaResult> ();
             break ;
         }
-        ++iter;
-        if (iter == output.end()) {
-            res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
-            output.push_back(res);
-        }
+    }
+
+    if (!res.ptr()) {
+        res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
+        XCAM_ASSERT (res.ptr());
+        output.push_back(res);
     }
 
     CameraMetadata* metadata = res->get_metadata_result();
@@ -634,17 +638,18 @@ AiqCommonHandler::processToneMapsMetaResults(CamerIcIspGocConfig_t goc, X3aResul
     LOGI("@%s %d: enter", __FUNCTION__, __LINE__);
 
     for (X3aResultList::iterator iter = output.begin ();
-            iter != output.end ();)
+            iter != output.end (); iter++)
     {
         if ((*iter)->get_type() == XCAM_3A_METADATA_RESULT_TYPE) {
             res = (*iter).dynamic_cast_ptr<XmetaResult> ();
             break ;
         }
-        ++iter;
-        if (iter == output.end()) {
-            res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
-            output.push_back(res);
-        }
+    }
+
+    if (!res.ptr()) {
+        res = new XmetaResult(XCAM_IMAGE_PROCESS_ONCE);
+        XCAM_ASSERT (res.ptr());
+        output.push_back(res);
     }
 
     CameraMetadata* metadata = res->get_metadata_result();
@@ -678,15 +683,13 @@ AiqAeHandler::analyze (X3aResultList &output, bool first)
             this->update_parameters (inputParams->aeInputParams.aeParams);
         XCamAeParam param = this->get_params_unlock ();
 
-        _aiq_compositor->_isp10_engine->runAe(&param, &_result, first);
+        if (_aiq_compositor->_isp10_engine->runAe(&param, &_result, first) != 0)
+            return XCAM_RETURN_NO_ERROR;
         result = pop_result ();
         mLastestAeresult = result;
         if (result.ptr())
             output.push_back (result);
 
-    } else {
-        if (mLastestAeresult.ptr())
-            output.push_back (mLastestAeresult);
     }
 
     return XCAM_RETURN_NO_ERROR;
@@ -1091,7 +1094,8 @@ AiqAwbHandler::analyze (X3aResultList &output, bool first)
 
         //ensure_ia_parameters();
         XCamAwbParam param = this->get_params_unlock ();
-        _aiq_compositor->_isp10_engine->runAwb(&param, &_result, first);
+        if (_aiq_compositor->_isp10_engine->runAwb(&param, &_result, first) != 0)
+            return XCAM_RETURN_NO_ERROR;
     }
 
     return XCAM_RETURN_NO_ERROR;
@@ -1154,10 +1158,9 @@ AiqAfHandler::analyze (X3aResultList &output, bool first)
                                     inputParams->afInputParams.afParams);
     }
 
-    _aiq_compositor->_isp10_engine->runAf(&param, &isp_result, first);
+    if (_aiq_compositor->_isp10_engine->runAf(&param, &isp_result, first) != 0)
+        return XCAM_RETURN_NO_ERROR;
 
-    if (inputParams.ptr())
-        processAfMetaResults(isp_result, output);
     XCAM_LOG_INFO ("AiqAfHandler, position: %d",
         isp_result.next_lens_position);
 
@@ -1220,6 +1223,7 @@ RKiqCompositor::RKiqCompositor ()
     , _width (0)
     , _height (0)
     , _isp10_engine(NULL)
+    , _all_stats_meas_types(0)
 {
     xcam_mem_clear (_frame_params);
     xcam_mem_clear (_isp_stats);
@@ -1398,9 +1402,12 @@ RKiqCompositor::set_3a_stats (SmartPtr<X3aIspStatistics> &stats)
     XCAM_LOG_DEBUG ("MoveStatus: %d, vcm_ts %lld, cur_exptime %f, frame_ts %lld",
         _ia_stat.af.cameric.MoveStatus, vcm_ts / 1000, cur_exptime / 1000, frame_ts / 1000);
 
-    /* TODO: remove this when isp driver fix the awb meas type unreported bug */
-    _isp_stats.meas_type |= CIFISP_STAT_AWB;
+    // clear old value 
+    _ia_stat.meas_type = 0;
     _isp10_engine->convertIspStats(&_isp_stats, &_ia_stat);
+    // record all stats types fore same frame before,
+    // stats of one frame may come in several times
+    _all_stats_meas_types |= _ia_stat.meas_type;
     _isp10_engine->setStatistics(&_ia_stat);
     return true;
 }
@@ -1458,10 +1465,17 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
     }
 
     if (_ae_handler && _awb_handler && _inputParams.ptr()) {
-        _ae_handler->processAeMetaResults(_ia_results.aec, results);
-        _awb_handler->processAwbMetaResults(_ia_results.awb, results);
-        _common_handler->processToneMapsMetaResults(_ia_results.goc, results);
-        _common_handler->processMiscMetaResults(results);
+        if (_all_stats_meas_types ==
+            (CAMIA10_AEC_MASK | CAMIA10_HST_MASK | CAMIA10_AWB_MEAS_MASK | CAMIA10_AFC_MASK)) {
+            LOGD("%s:%d, complete all 3A stats analysis, report results",
+                 __FUNCTION__, __LINE__);
+            _ae_handler->processAeMetaResults(_ia_results.aec, results);
+            _awb_handler->processAwbMetaResults(_ia_results.awb, results);
+            _af_handler->processAfMetaResults(_ia_results.af, results);
+            _common_handler->processToneMapsMetaResults(_ia_results.goc, results);
+            _common_handler->processMiscMetaResults(results);
+            _all_stats_meas_types = 0;
+        }
     }
 
     _isp10_engine->convertIAResults(&_isp_cfg, &_ia_results);

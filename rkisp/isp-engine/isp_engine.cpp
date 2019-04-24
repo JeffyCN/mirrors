@@ -96,7 +96,9 @@ int IspEngine::updateDynamicConfig(struct CamIA10_DyCfg* ia_dcfg)
 
 int IspEngine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
 {
-    mCamIAEngine->runAe(param, result, first);
+    int ret = mCamIAEngine->runAe(param, result, first);
+    if (ret != 0)
+        return ret;
     mCamIAEngine->runADPF();
     mCamIAEngine->runAWDR();
 

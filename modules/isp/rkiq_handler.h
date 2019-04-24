@@ -386,6 +386,7 @@ private:
     uint32_t                   _width;
     uint32_t                   _height;
     double                     _framerate;
+    uint32_t                   _all_stats_meas_types;
 };
 
 };
