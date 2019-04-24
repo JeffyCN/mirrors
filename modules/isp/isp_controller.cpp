@@ -37,7 +37,9 @@ IspController::IspController ():
     _isp_params_device(NULL),
     _isp_ioctl(NULL),
     _frame_sequence(-(EXPOSURE_TIME_DELAY - 1)),
-    _frame_sof_time(0)
+    _frame_sof_time(0),
+    _isp_acq_out_width(-1),
+    _isp_acq_out_height(-1)
 {
     xcam_mem_clear(_last_aiq_results);
     xcam_mem_clear(_full_active_isp_params);
@@ -64,6 +66,8 @@ void IspController::exit(bool pause) {
     _effecting_exposure_map.clear();
     _pending_ispparams_queue.clear();
     _effecting_ispparm_map.clear();
+    _isp_acq_out_width = -1;
+    _isp_acq_out_height = -1;
 }
 
 void
@@ -332,6 +336,12 @@ IspController::get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &s
 
         sensor_mode_data.exposure_valid_frame[0]            =
             EXPOSURE_TIME_DELAY;
+
+        _isp_acq_out_width =
+            sensor_mode_data.sensor_output_width;
+        _isp_acq_out_height =
+            sensor_mode_data.sensor_output_height;
+
         {
             SmartLock locker (_mutex);
             std::map<int, struct rkisp_exposure>::iterator it;
@@ -773,13 +783,15 @@ IspController::set_3a_config_sync ()
             _full_active_isp_params.module_cfg_update &= ~CIFISP_MODULE_RK_IESHARP;
         }
 
-        dump_isp_config(&_full_active_isp_params, isp_cfg);
-
-        ret = rkisp1_check_params(&_full_active_isp_params, _isp_ver);
+        XCAM_ASSERT (_isp_acq_out_width != -1);
+        XCAM_ASSERT (_isp_acq_out_height != -1);
+        ret = rkisp1_check_params(&_full_active_isp_params, _isp_acq_out_width,
+                                  _isp_acq_out_height, _isp_ver);
         if (ret != XCAM_RETURN_NO_ERROR) {
             XCAM_LOG_ERROR ("rkisp1_check_params error\n");
             return XCAM_RETURN_ERROR_PARAM;
         }
+        dump_isp_config(&_full_active_isp_params, isp_cfg);
     }
 
     if (_frame_sequence < 0) {

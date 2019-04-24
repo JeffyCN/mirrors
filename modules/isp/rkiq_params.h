@@ -35,7 +35,9 @@ struct AiqResults {
     rk_aiq_misc_isp_results miscIspResults;
 };
 
-XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg *configs, int isp_ver);
+XCamReturn rkisp1_check_params(struct rkisp1_isp_params_cfg *configs,
+                               int isp_acq_out_width, int isp_acq_out_height,
+                               int isp_ver);
 XCamReturn rkisp1_convert_params(struct rkisp1_isp_params_cfg* isp_cfg,
                                             struct AiqResults* aiqResults);
 XCamReturn rkisp1_convert_results(struct rkisp1_isp_params_cfg* isp_cfg,
