@@ -1,0 +1,42 @@
+#!/bin/sh
+
+case "$1" in
+	start)
+		if [ ! -d "/userdata/" ];then
+			echo "userdata is not mounted!!!"
+			exit 1
+		fi
+
+		mkdir -p /userdata/cfg
+		mkdir -p /userdata/bin
+
+		if [ ! -f "/userdata/cfg/wpa_supplicant.conf" ];then
+			echo "wpa_supplicant.conf init"
+			cp /etc/wpa_supplicant.conf /userdata/cfg/
+		fi
+
+		if [ ! -f "/userdata/bin/dnsmasq.conf" ];then
+			echo "wpa_supplicant.conf init"
+			cp /etc/dnsmasq.conf /userdata/bin/
+		fi
+
+		printf "load wifi modules: "
+		insmod /system/lib/modules/rk912.ko
+		sleep 1
+		wpa_supplicant -B -i wlan0 -c /data/cfg/wpa_supplicant.conf
+		;;
+	stop)
+
+		echo 0 > /sys/class/rfkill/rfkill0/state
+
+		;;
+	restart|reload)
+		$0 stop
+		$0 start
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		exit 1
+esac
+
+exit 0
