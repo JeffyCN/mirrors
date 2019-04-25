@@ -376,8 +376,8 @@ static int aec_param_check(struct cifisp_aec_config* arg, int isp_ver)
             arg->meas_window.v_offs > CIF_ISP_EXP_MAX_VOFFS_V10 ||
             arg->meas_window.v_size > CIF_ISP_EXP_MAX_VSIZE_V10 ||
             arg->meas_window.v_size < CIF_ISP_EXP_MIN_VSIZE_V10 ||
-            /* arg->meas_window.h_size + arg->meas_window.h_offs > g_isp_acq_out_width - 1 || */
-            /* arg->meas_window.v_size + arg->meas_window.v_offs > g_isp_acq_out_height - 3 || */
+            arg->meas_window.h_size + arg->meas_window.h_offs > g_isp_acq_out_width - 1 ||
+            arg->meas_window.v_size + arg->meas_window.v_offs > g_isp_acq_out_height - 3 ||
             arg->mode > CIFISP_EXP_MEASURING_MODE_1) {
             LOGW("aec meas win %dx%d(%dx%d)",
                  arg->meas_window.h_size, arg->meas_window.v_size,
@@ -395,10 +395,10 @@ static int aec_param_check(struct cifisp_aec_config* arg, int isp_ver)
                 CIF_ISP_EXP_MAX_HSIZE_V10 ? arg->meas_window.h_size : CIF_ISP_EXP_MAX_HSIZE_V10;
             arg->meas_window.v_size = arg->meas_window.v_size <
                 CIF_ISP_EXP_MAX_VSIZE_V10 ? arg->meas_window.v_size : CIF_ISP_EXP_MAX_VSIZE_V10;
-            /* if (arg->meas_window.h_size + arg->meas_window.h_offs > g_isp_acq_out_width - 1) */
-            /*     arg->meas_window.h_size = g_isp_acq_out_width - 1 - arg->meas_window.h_offs; */
-            /* if (arg->meas_window.v_size + arg->meas_window.v_offs > g_isp_acq_out_height - 3) */
-            /*     arg->meas_window.v_size = g_isp_acq_out_height - 3 - arg->meas_window.v_offs; */
+            if (arg->meas_window.h_size + arg->meas_window.h_offs > g_isp_acq_out_width - 1)
+                arg->meas_window.h_size = g_isp_acq_out_width - 1 - arg->meas_window.h_offs;
+            if (arg->meas_window.v_size + arg->meas_window.v_offs > g_isp_acq_out_height - 3)
+                arg->meas_window.v_size = g_isp_acq_out_height - 3 - arg->meas_window.v_offs;
         }
     } else {
         if (arg->meas_window.h_offs > CIF_ISP_EXP_MAX_HOFFS_V12 ||
@@ -407,8 +407,8 @@ static int aec_param_check(struct cifisp_aec_config* arg, int isp_ver)
             arg->meas_window.v_offs > CIF_ISP_EXP_MAX_VOFFS_V12 ||
             arg->meas_window.v_size > CIF_ISP_EXP_MAX_VSIZE_V12 ||
             arg->meas_window.v_size < CIF_ISP_EXP_MIN_VSIZE_V12 ||
-            /* arg->meas_window.h_size + arg->meas_window.h_offs >= g_isp_acq_out_width || */
-            /* arg->meas_window.v_size + arg->meas_window.v_offs >= g_isp_acq_out_height || */
+            arg->meas_window.h_size + arg->meas_window.h_offs > g_isp_acq_out_width - 1 ||
+            arg->meas_window.v_size + arg->meas_window.v_offs > g_isp_acq_out_height - 3 ||
             arg->mode > CIFISP_EXP_MEASURING_MODE_1) {
             LOGW("aec meas win %dx%d(%dx%d)",
                  arg->meas_window.h_size, arg->meas_window.v_size,
@@ -426,10 +426,10 @@ static int aec_param_check(struct cifisp_aec_config* arg, int isp_ver)
                 CIF_ISP_EXP_MAX_HSIZE_V12 ? arg->meas_window.h_size : CIF_ISP_EXP_MAX_HSIZE_V12;
             arg->meas_window.v_size = arg->meas_window.v_size <
                 CIF_ISP_EXP_MAX_VSIZE_V12 ? arg->meas_window.v_size : CIF_ISP_EXP_MAX_VSIZE_V12;
-            /* if (arg->meas_window.h_size + arg->meas_window.h_offs >= g_isp_acq_out_width) */
-            /*     arg->meas_window.h_size = g_isp_acq_out_width - 1 - arg->meas_window.h_offs; */
-            /* if (arg->meas_window.v_size + arg->meas_window.v_offs >= g_isp_acq_out_height) */
-            /*     arg->meas_window.v_size = g_isp_acq_out_height - 1 - arg->meas_window.v_offs; */
+            if (arg->meas_window.h_size + arg->meas_window.h_offs > g_isp_acq_out_width - 1)
+                arg->meas_window.h_size = g_isp_acq_out_width - 1 - arg->meas_window.h_offs;
+            if (arg->meas_window.v_size + arg->meas_window.v_offs > g_isp_acq_out_height - 3)
+                arg->meas_window.v_size = g_isp_acq_out_height - 3 - arg->meas_window.v_offs;
         }
     }
     return 0;
