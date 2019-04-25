@@ -58,7 +58,10 @@ static int setExposure(int m_cam_fd_overlay, unsigned int exposure, unsigned int
 }
 
 static int SetAutoAdjustFps(int m_cam_fd_overlay, bool auto_adjust_fps) {
-  int ret;
+#if RKISP
+    return 0;
+#else
+  int ret = 0;
   struct v4l2_control ctrl;
 
   ctrl.id = RK_V4L2_CID_AUTO_FPS;
@@ -77,8 +80,8 @@ static int SetAutoAdjustFps(int m_cam_fd_overlay, bool auto_adjust_fps) {
          __func__,
          strerror(errno));
   }
-
   return ret;
+#endif
 }
 
 Isp10Engine::Isp10Engine():

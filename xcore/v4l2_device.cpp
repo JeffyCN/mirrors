@@ -192,7 +192,9 @@ V4l2Device::open ()
     }
 #endif
     struct v4l2_capability cap;
-    query_cap(cap);
+    // only video node cay query cap
+    if (_name && strstr(_name, "video"))
+        query_cap(cap);
 
     return XCAM_RETURN_NO_ERROR;
 }

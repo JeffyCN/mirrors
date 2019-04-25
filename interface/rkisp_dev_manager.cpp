@@ -82,7 +82,6 @@ RkispDeviceManager::x3a_calculation_done (XAnalyzer *analyzer, X3aResultList &re
         }
     }
     if (iter == results.end()) {
-        LOGW("@%s %d: There is no meta result, Check it !!!", __FUNCTION__, __LINE__);
         goto done;
     }
 
