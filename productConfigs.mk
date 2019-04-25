@@ -13,7 +13,7 @@ IS_SUPPORT_DMABUF = true
 IS_BUILD_GSTREAMER_PLUGIN = true
 IS_BUILD_TEST_APP = false
 ifeq ($(ARCH),arm)
-CROSS_COMPILE ?= $(shell pwd)/../../prebuilts/gcc/linux-x86/arm/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
+CROSS_COMPILE ?= /home/zyc/toolchains/gcc-linaro-5.5.0-2017.10-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
 else
 CROSS_COMPILE ?= $(shell pwd)/../../prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
 endif
