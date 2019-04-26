@@ -220,11 +220,10 @@ RESULT CamIA10Engine::initDynamic(struct CamIA10_DyCfg* cfg) {
         goto initDynamic_end;
     }
 
+    adpfCfg.data.db.width = cfg->sensor_mode.isp_input_width;
+    adpfCfg.data.db.height = cfg->sensor_mode.isp_input_height;
+    adpfCfg.data.db.hCamCalibDb  = hCamCalibDb;
     if (!hAdpf) {
-        adpfCfg.data.db.width = cfg->sensor_mode.isp_input_width;
-        adpfCfg.data.db.height = cfg->sensor_mode.isp_input_height;
-        adpfCfg.data.db.hCamCalibDb  = hCamCalibDb;
-
         result = AdpfInit(&hAdpf, &adpfCfg);
     } else {
         result = AdpfConfigure(hAdpf, &adpfCfg);
@@ -2603,7 +2602,6 @@ RESULT CamIA10Engine::runADPF() {
             return ret;
         }
     }
-
     ret = AdpfRun(hAdpf, lastAecResult.analog_gain_code_global, mLightMode);
 
     return RET_SUCCESS;
