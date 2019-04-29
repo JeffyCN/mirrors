@@ -1750,18 +1750,21 @@ typedef struct CamCalibAecHdrCtrl_s{
   uint8_t	Mode;
   uint8_t	FrameNum;
   float	    DCG_Ratio;
-  Cam6x1FloatMatrix_t Lgains;
+  float OEROILowTh;
+  float LvLowTh;
+  float LvHightTh;
   Cam6x1FloatMatrix_t LExpLevel;
   Cam6x1FloatMatrix_t LSetPoint;
   Cam6x1FloatMatrix_t TargetDarkROILuma;
-  Cam6x1FloatMatrix_t Sgains;
+  Cam6x1FloatMatrix_t NonOEPdfTh;
+  Cam6x1FloatMatrix_t DarkPdfTh;
   Cam6x1FloatMatrix_t SExpLevel;
   Cam6x1FloatMatrix_t TargetOELuma;
   Cam6x1FloatMatrix_t SSetPoint;
   float 	OETolerance;
   float		OELumaDistTh;
-  float 	M2S_Ratio;
-  float 	L2M_Ratio;
+  Cam6x1FloatMatrix_t 	M2S_Ratio;
+  Cam6x1FloatMatrix_t 	L2M_Ratio;
 }CamCalibAecHdrCtrl_t;
 typedef struct CamCalibAecFlashCtrl_s{
 	// env trigger flash threshold

@@ -83,13 +83,17 @@
 //		  add awb flash  parameters in iq xml file.
 //v1.3.0:  add xml check & magic version code 702671
 //		  modify backlight AEC-->BackLight_Config, including 2 modes
+//v1.4.0:  add xml check & magic version code 704841
+//		  modify HdrAE params in AEC-->HdrCtrl
+//		  a:add params for BackLight prob calculation
+//		  b:modify M2S_Ratio/L2M_Ration as dynamic value
 /*************************************************************************/
 /*************************************************************************/
 
 
 
 
-#define CODE_XML_PARSE_VERSION "v1.3.0"
+#define CODE_XML_PARSE_VERSION "v1.4.0"
 
 static std::ofstream redirectOut("/dev/null");
 
@@ -2784,11 +2788,16 @@ bool CalibDb::parseEntryAecHdrCtrlLframe
 		LOGD( "%s(%d): tag: %s value:%s\n", __FUNCTION__,__LINE__,tagname.c_str(), tag.Value());
 #endif
 
-		if(XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_LGAINS_TAG_ID)){
-	      	int i = (sizeof(pAecData->HdrCtrl.Lgains) / sizeof(pAecData->HdrCtrl.Lgains.fCoeff[0]));
-	      	int no = ParseFloatArray(tag.Value(), pAecData->HdrCtrl.Lgains.fCoeff, i);
-	      	DCT_ASSERT((no == tag.Size()));
-		}else if(XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_LEXPLEVEL_TAG_ID)){
+		if(XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_OEROI_LOWTH_TAG_ID)) {
+			int no = ParseFloatArray(tag.Value(), &pAecData->HdrCtrl.OEROILowTh, tag.Size());
+			DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_LV_HIGHTH_TAG_ID)) {
+			int no = ParseFloatArray(tag.Value(), &pAecData->HdrCtrl.LvHightTh, tag.Size());
+			DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_LV_LOWTH_TAG_ID)) {
+			int no = ParseFloatArray(tag.Value(), &pAecData->HdrCtrl.LvLowTh, tag.Size());
+			DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_LEXPLEVEL_TAG_ID)){
 	      	int i = (sizeof(pAecData->HdrCtrl.LExpLevel) / sizeof(pAecData->HdrCtrl.LExpLevel.fCoeff[0]));
 	      	int no = ParseFloatArray(tag.Value(), pAecData->HdrCtrl.LExpLevel.fCoeff, i);
 	      	DCT_ASSERT((no == tag.Size()));
@@ -2800,6 +2809,22 @@ bool CalibDb::parseEntryAecHdrCtrlLframe
 	      	int i = (sizeof(pAecData->HdrCtrl.TargetDarkROILuma) / sizeof(pAecData->HdrCtrl.TargetDarkROILuma.fCoeff[0]));
 	      	int no = ParseFloatArray(tag.Value(), pAecData->HdrCtrl.TargetDarkROILuma.fCoeff, i);
 	      	DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_NONOEPDF_TH_TAG_ID)){
+	      	int i = (sizeof(pAecData->HdrCtrl.NonOEPdfTh) / sizeof(pAecData->HdrCtrl.NonOEPdfTh.fCoeff[0]));
+	      	int no = ParseFloatArray(tag.Value(), pAecData->HdrCtrl.NonOEPdfTh.fCoeff, i);
+	      	DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_DARKPDF_TH_TAG_ID)){
+	      	int i = (sizeof(pAecData->HdrCtrl.DarkPdfTh) / sizeof(pAecData->HdrCtrl.DarkPdfTh.fCoeff[0]));
+	      	int no = ParseFloatArray(tag.Value(), pAecData->HdrCtrl.DarkPdfTh.fCoeff, i);
+	      	DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_M2S_Ratio_TAG_ID)){
+	        int i = (sizeof(pAecData->HdrCtrl.M2S_Ratio) / sizeof(pAecData->HdrCtrl.M2S_Ratio.fCoeff[0]));
+	      	int no = ParseFloatArray(tag.Value(), pAecData->HdrCtrl.M2S_Ratio.fCoeff, i);
+		  DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_L2M_Ratio_TAG_ID)){
+	       int i = (sizeof(pAecData->HdrCtrl.L2M_Ratio) / sizeof(pAecData->HdrCtrl.L2M_Ratio.fCoeff[0]));
+	      	int no = ParseFloatArray(tag.Value(), pAecData->HdrCtrl.L2M_Ratio.fCoeff, i);
+		  DCT_ASSERT((no == tag.Size()));
 		}else{
 		   LOGE( "%s(%d):parse error in AEC HDRAE LframeCtrl section (unknow tag: %s)\n",
 			  __FUNCTION__,__LINE__,tagname.c_str());
@@ -2848,11 +2873,7 @@ bool CalibDb::parseEntryAecHdrCtrlSframe
 		LOGD( "%s(%d): tag: %s value:%s\n", __FUNCTION__,__LINE__,tagname.c_str(), tag.Value());
 #endif
 
-		if(XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_SGAINS_TAG_ID)){
-	      	int i = (sizeof(pAecData->HdrCtrl.Sgains) / sizeof(pAecData->HdrCtrl.Sgains.fCoeff[0]));
-	      	int no = ParseFloatArray(tag.Value(), pAecData->HdrCtrl.Sgains.fCoeff, i);
-	      	DCT_ASSERT((no == tag.Size()));
-		}else if(XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_SEXPLEVEL_TAG_ID)){
+		if(XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_SEXPLEVEL_TAG_ID)){
 	      	int i = (sizeof(pAecData->HdrCtrl.SExpLevel) / sizeof(pAecData->HdrCtrl.SExpLevel.fCoeff[0]));
 	      	int no = ParseFloatArray(tag.Value(), pAecData->HdrCtrl.SExpLevel.fCoeff, i);
 	      	DCT_ASSERT((no == tag.Size()));
@@ -2945,13 +2966,7 @@ bool CalibDb::parseEntryAecHdrCtrl
 	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_DCG_Ratio_TAG_ID)){
 	      	int no = ParseFloatArray(tag.Value(), &pAecData->HdrCtrl.DCG_Ratio, 1);
 			DCT_ASSERT((no == tag.Size()));
-	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_M2S_Ratio_TAG_ID)){
-	      int no = ParseFloatArray(tag.Value(), &pAecData->HdrCtrl.M2S_Ratio, 1);
-		  DCT_ASSERT((no == tag.Size()));
-		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_L2M_Ratio_TAG_ID)){
-	      int no = ParseFloatArray(tag.Value(), &pAecData->HdrCtrl.L2M_Ratio, 1);
-		  DCT_ASSERT((no == tag.Size()));
-		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_LFRAMECTRL_TAG_ID)){
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_LFRAMECTRL_TAG_ID)){
 	      if (!parseEntryAecHdrCtrlLframe(pchild->ToElement(), pAecData)){
 			LOGE( "%s(%d): parse error in hdr ctrl Lfrmae section\n",__FUNCTION__,__LINE__);
 			return (false);

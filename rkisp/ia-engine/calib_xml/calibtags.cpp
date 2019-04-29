@@ -514,8 +514,6 @@ uint32_t calib_sensor_aec_HDRctrl_sub_tags[] = {
 	CALIB_SENSOR_HDRCTRL_MODE_TAG_ID,
 	CALIB_SENSOR_HDRCTRL_FRAMENUM_TAG_ID,
 	CALIB_SENSOR_HDRCTRL_DCG_Ratio_TAG_ID,
-	CALIB_SENSOR_HDRCTRL_M2S_Ratio_TAG_ID,
-	CALIB_SENSOR_HDRCTRL_L2M_Ratio_TAG_ID,
 	//Lframe ctrl
 	CALIB_SENSOR_HDRCTRL_LFRAMECTRL_TAG_ID,
 	//sframe ctrl
@@ -524,15 +522,20 @@ uint32_t calib_sensor_aec_HDRctrl_sub_tags[] = {
 };
 
 uint32_t calib_sensor_aec_HDRctrl_LframeCtrl_sub_tags[] = {
-	CALIB_SENSOR_HDRCTRL_LGAINS_TAG_ID,
+	CALIB_SENSOR_HDRCTRL_OEROI_LOWTH_TAG_ID,
+	CALIB_SENSOR_HDRCTRL_LV_HIGHTH_TAG_ID,
+	CALIB_SENSOR_HDRCTRL_LV_LOWTH_TAG_ID,
 	CALIB_SENSOR_HDRCTRL_LEXPLEVEL_TAG_ID,
 	CALIB_SENSOR_HDRCTRL_LSETPOINT_TAG_ID,
 	CALIB_SENSOR_HDRCTRL_DARKLUMA_TAG_ID,
+	CALIB_SENSOR_HDRCTRL_NONOEPDF_TH_TAG_ID,
+	CALIB_SENSOR_HDRCTRL_DARKPDF_TH_TAG_ID,
+	CALIB_SENSOR_HDRCTRL_M2S_Ratio_TAG_ID,
+	CALIB_SENSOR_HDRCTRL_L2M_Ratio_TAG_ID,
 
 };
 
 uint32_t calib_sensor_aec_HDRctrl_SframeCtrl_sub_tags[] = {
-	CALIB_SENSOR_HDRCTRL_SGAINS_TAG_ID,
 	CALIB_SENSOR_HDRCTRL_SEXPLEVEL_TAG_ID,
 	CALIB_SENSOR_HDRCTRL_OETOLERANCE_TAG_ID,
 	CALIB_SENSOR_HDRCTRL_OELUMA_TAG_ID,
@@ -1927,18 +1930,19 @@ calib_tag_info_t g_calib_tag_infos[CALIB_IQ_TAG_END] = {
 	 [CALIB_SENSOR_HDRCTRL_DCG_Ratio_TAG_ID]		   =
 		{"DCGRatio", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
 		  check_tags_array_ignore, NULL},
-	 [CALIB_SENSOR_HDRCTRL_M2S_Ratio_TAG_ID]		   =
-		{"M2S_Ratio", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
-		  check_tags_array_ignore, NULL},
-	 [CALIB_SENSOR_HDRCTRL_L2M_Ratio_TAG_ID]		   =
-		{"L2M_Ratio", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
-		  check_tags_array_ignore, NULL},
+
 	// hdr aec ctrl --- Lframe ctrl
 	 [CALIB_SENSOR_HDRCTRL_LFRAMECTRL_TAG_ID]		   =
 		{"LframeCtrl", CALIB_TAG_TYPE_STRUCT, {-1, -1},
 		  check_tags_array_info(calib_sensor_aec_HDRctrl_LframeCtrl_sub_tags), NULL},
-	 [CALIB_SENSOR_HDRCTRL_LGAINS_TAG_ID]		   =
-		{"LGainLevel", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+	 [CALIB_SENSOR_HDRCTRL_OEROI_LOWTH_TAG_ID]		   =
+		{"OEROILowTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_HDRCTRL_LV_HIGHTH_TAG_ID]		   =
+		{"LvHighTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_HDRCTRL_LV_LOWTH_TAG_ID]		   =
+		{"LvLowTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
 		  check_tags_array_ignore, NULL},
 	 [CALIB_SENSOR_HDRCTRL_LEXPLEVEL_TAG_ID]		   =
 		{"LExpLevel", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
@@ -1949,14 +1953,23 @@ calib_tag_info_t g_calib_tag_infos[CALIB_IQ_TAG_END] = {
 	 [CALIB_SENSOR_HDRCTRL_DARKLUMA_TAG_ID]		   =
 		{"TargetDarkROILuma", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
 		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_HDRCTRL_NONOEPDF_TH_TAG_ID]		   =
+		{"NonOEPdfTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_HDRCTRL_DARKPDF_TH_TAG_ID]		   =
+		{"DarkPdfTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_HDRCTRL_M2S_Ratio_TAG_ID]		   =
+		{"M2S_Ratio", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_HDRCTRL_L2M_Ratio_TAG_ID]		   =
+		{"L2M_Ratio", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
 
 	 //Sframe ctrl
 	 [CALIB_SENSOR_HDRCTRL_SFRAMECTRL_TAG_ID]		   =
 		{"SframeCtrl", CALIB_TAG_TYPE_STRUCT, {-1, -1},
 		  check_tags_array_info(calib_sensor_aec_HDRctrl_SframeCtrl_sub_tags), NULL},
-	 [CALIB_SENSOR_HDRCTRL_SGAINS_TAG_ID]		   =
-		{"SGainLevel", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
-		  check_tags_array_ignore, NULL},
 	 [CALIB_SENSOR_HDRCTRL_SEXPLEVEL_TAG_ID]		   =
 		{"SExpLevel", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
 		  check_tags_array_ignore, NULL},
