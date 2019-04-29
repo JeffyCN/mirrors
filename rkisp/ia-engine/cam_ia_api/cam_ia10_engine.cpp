@@ -965,13 +965,13 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
             // run ae every frame
             aecParams = param;
             if (aecDesc != NULL) {
-                mStats.aec.sensor_metadata.coarse_integration_time =
+                mStats.aec.LinearAE_metadata.coarse_integration_time =
                   dCfg.sensor_mode.exp_time_seconds;
-                mStats.aec.sensor_metadata.analog_gain_code_global =
+                mStats.aec.LinearAE_metadata.analog_gain_code_global =
                   dCfg.sensor_mode.gains;
-                mStats.aec.sensor_metadata.regIntegrationTime =
+                mStats.aec.LinearAE_metadata.regIntegrationTime =
                   dCfg.sensor_mode.exp_time;
-                mStats.aec.sensor_metadata.regGain =
+                mStats.aec.LinearAE_metadata.regGain =
                   dCfg.sensor_mode.gain;
                 aecDesc->set_stats(aecContext, &mStats.aec);
                 if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE) &&
@@ -980,12 +980,12 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
             }
         }else{ //add check exposure value between AE & 1608 Embedded data
             LOGD( "runAEC - 1608 Time_L=%d,Gain_L=%d,Time_M=%d,Gain_M=%d,Time_S=%d,Gain_S=%d\n",
-                  mStats.aec.sensor.exp_time_l,
-                  mStats.aec.sensor.gain_l,
-                  mStats.aec.sensor.exp_time,
-                  mStats.aec.sensor.gain,
-                  mStats.aec.sensor.exp_time_s,
-                  mStats.aec.sensor.gain_s);
+                  mStats.aec.HdrAE_metadata.regTime[0],
+                  mStats.aec.HdrAE_metadata.regGain[0],
+                  mStats.aec.HdrAE_metadata.regTime[1],
+                  mStats.aec.HdrAE_metadata.regGain[1],
+                  mStats.aec.HdrAE_metadata.regTime[2],
+                  mStats.aec.HdrAE_metadata.regGain[2]);
 
             LOGD( "runAEC - aec Time_L=%d,Gain_L=%d,Time_M=%d,Gain_M=%d,Time_S=%d,Gain_S=%d\n",
                   lastTime_L,
@@ -994,20 +994,17 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
                   lastGain_M,
                   lastTime_S,
                   lastGain_S);
+			// run ae every frame
+			for(int i=0;i<3;i++) //convert current regvalue to realvalue
+			   mapSensorExpToHal(mStats.aec.HdrAE_metadata.regGain[i],mStats.aec.HdrAE_metadata.regTime[i],
+						mStats.aec.HdrAE_metadata.halGain[i],mStats.aec.HdrAE_metadata.halTime[i]);
 
-            if ((lastTime_L == -1 && lastGain_L== -1 && lastTime_M== -1 && lastGain_M== -1 &&
-                 lastTime_S == -1 && lastGain_S== -1)||
-                (lastTime_L == (int)mStats.aec.sensor.exp_time_l &&
-                 lastGain_L == (int)mStats.aec.sensor.gain_l &&
-                 lastTime_S == (int)mStats.aec.sensor.exp_time_s &&
-                 lastGain_S == (int)mStats.aec.sensor.gain_s)) {
-                aecParams = param;
-                if (aecDesc != NULL) {
-                    aecDesc->set_stats(aecContext, &mStats.aec);
-                    if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE) &&
-                        !(mLock3AForStillCap & HAL_3A_LOCKS_EXPOSURE))
-                        aecDesc->analyze_ae(aecContext, param);
-                }
+            aecParams = param;
+
+            if (aecDesc != NULL) {
+                aecDesc->set_stats(aecContext, &mStats.aec);
+                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE))
+                    aecDesc->analyze_ae(aecContext, param);
             }
         }
     } else {
@@ -2084,6 +2081,9 @@ RESULT CamIA10Engine::getAECResults(AecResult_t* result) {
             lastAecResult.RegHdrTime[2]=result->RegHdrTime[2];
             lastAecResult.IsHdrExp=result->IsHdrExp;
             lastAecResult.DCG_Ratio=result->DCG_Ratio;
+			memcpy(lastAecResult.Hdrexp_smooth_results,
+				result->Hdrexp_smooth_results,
+				sizeof(result->Hdrexp_smooth_results));
             //*shd = *set;
         }
     }

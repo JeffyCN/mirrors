@@ -209,6 +209,10 @@ AiqAeHandler::pop_result ()
         sensor.SmoothIntTimes[i] = _result.exp_smooth_results[i].coarse_integration_time;
         sensor.RegSmoothFll[i] = _result.exp_smooth_results[i].LinePeriodsPerField;
     }
+    // copy carefully, cause we use the same structures, so just easily copy
+    // here
+    memcpy(sensor.Hdrexp_smooth_setting, _result.Hdrexp_smooth_results,
+           sizeof(sensor.Hdrexp_smooth_setting));
     result->set_isp_config (sensor);
 
     xcam_mem_clear (exposure);

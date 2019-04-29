@@ -121,6 +121,8 @@ private:
     /* exposure syncronization */
     struct rkisp_exposure *_exposure_queue;
     int                   _cur_apply_index;
+    int                   _max_exp_que_len;
+    int                   _used_exp_que_len;
 
     Mutex             _mutex;
     XCam::Cond        _frame_sequence_cond;

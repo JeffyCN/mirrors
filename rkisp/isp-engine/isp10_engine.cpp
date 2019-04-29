@@ -390,23 +390,23 @@ bool Isp10Engine::applyIspConfig(struct CamIsp10ConfigSet* isp_cfg) {
   if (isp_cfg->active_configs & ISP_DSP_3DNR_MASK) {
   	mIspCfg.Dsp3DnrSetConfig = isp_cfg->configs.Dsp3DnrSetConfig;
   }
-  
+
   if (isp_cfg->active_configs & ISP_NEW_DSP_3DNR_MASK) {
   	mIspCfg.NewDsp3DnrSetConfig = isp_cfg->configs.NewDsp3DnrSetConfig;
   }
-  
+
   if (isp_cfg->active_configs & ISP_RK_DEMOSAICLP_MASK) {
     mIspCfg.demosaicLp_config = isp_cfg->configs.demosaicLp_config;
 	mIspCfg.enabled[HAL_ISP_DEMOSAICLP_ID] =
 	  isp_cfg->enabled[HAL_ISP_DEMOSAICLP_ID];
   }
-  
+
   if (isp_cfg->active_configs & ISP_RK_IESHARP_MASK) {
     mIspCfg.rkIESharp_config = isp_cfg->configs.rkIESharp_config;
 	mIspCfg.enabled[HAL_ISP_RKIESHARP_ID] =
 	  isp_cfg->enabled[HAL_ISP_RKIESHARP_ID];
   }
-  
+
   return true;
 }
 
@@ -458,17 +458,17 @@ bool Isp10Engine::convertIspStats(
     ia_stats->aec.is_hdr_stats = true;
 
     ia_stats->aec.lgmean = preisp_hdr_ae_stats->result.lgmean;
-    ia_stats->aec.sensor.exp_time_l =
+    ia_stats->aec.HdrAE_metadata.regTime[0]=
             preisp_hdr_ae_stats->result.reg_exp_time[0];
-    ia_stats->aec.sensor.exp_time =
+    ia_stats->aec.HdrAE_metadata.regTime[1] =
             preisp_hdr_ae_stats->result.reg_exp_time[1];
-    ia_stats->aec.sensor.exp_time_s =
+    ia_stats->aec.HdrAE_metadata.regTime[2] =
             preisp_hdr_ae_stats->result.reg_exp_time[2];
-    ia_stats->aec.sensor.gain_l =
+    ia_stats->aec.HdrAE_metadata.regGain[0]=
             preisp_hdr_ae_stats->result.reg_exp_gain[0];
-    ia_stats->aec.sensor.gain =
+    ia_stats->aec.HdrAE_metadata.regGain[1]=
             preisp_hdr_ae_stats->result.reg_exp_gain[1];
-    ia_stats->aec.sensor.gain_s =
+    ia_stats->aec.HdrAE_metadata.regGain[2] =
             preisp_hdr_ae_stats->result.reg_exp_gain[2];
     for (int i = 0; i < CIFISP_PREISP_HDRAE_MAXFRAMES; i++) {
         memcpy((char*)ia_stats->aec.oneframe[i].hdr_hist_bins,
@@ -1242,7 +1242,7 @@ bool Isp10Engine::convertIAResults(
           isp_cfg->configs.ie_config.eff_mat_5 =
               (uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[7])
               | ((uint16_t)(ia_results->ie.ModeConfig.Sharpen.coeff[8]) << 0x4);
-		  
+
           /*not used for this effect*/
           isp_cfg->configs.ie_config.eff_mat_1 =
               0;
@@ -1370,7 +1370,7 @@ bool Isp10Engine::convertIAResults(
 	  LOGD( "WDR = 0x%x", ia_results->wdr.wdr_gain_max_value);
 	}
 
-	
+
 	if (ia_results->active & CAMIA10_DSP_3DNR_MASK) {
 	  isp_cfg->active_configs |= ISP_DSP_3DNR_MASK;
 	  isp_cfg->configs.Dsp3DnrSetConfig = ia_results->adpf.Dsp3DnrResult;
@@ -1398,7 +1398,7 @@ bool Isp10Engine::convertIAResults(
 			  isp_cfg->configs.Dsp3DnrSetConfig.src_shp_w2);
 	}
 
-	if (ia_results->active & CAMIA10_NEW_DSP_3DNR_MASK) 
+	if (ia_results->active & CAMIA10_NEW_DSP_3DNR_MASK)
 	{
 	  isp_cfg->active_configs |= ISP_NEW_DSP_3DNR_MASK;
 	  isp_cfg->configs.NewDsp3DnrSetConfig = ia_results->adpf.NewDsp3DnrResult;
@@ -1411,7 +1411,7 @@ bool Isp10Engine::convertIAResults(
 			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_iir,
 			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_uvnr,
 			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_sharp);
-		  
+
 	  LOGD( "ConvertIA setting ynr_time_weight:%d ynr_spat_weight:%d uvnr:%d sharp:%d ",
 			  isp_cfg->configs.NewDsp3DnrSetConfig.ynr_time_weight,
 			  isp_cfg->configs.NewDsp3DnrSetConfig.ynr_spat_weight,
@@ -1420,7 +1420,7 @@ bool Isp10Engine::convertIAResults(
 			  isp_cfg->configs.NewDsp3DnrSetConfig.enable_dpc);
 	}
 
-	if (ia_results->active & CAMIA10_DEMOSAICLP_MASK) 
+	if (ia_results->active & CAMIA10_DEMOSAICLP_MASK)
 	{
 		isp_cfg->enabled[HAL_ISP_DEMOSAICLP_ID] = (bool_t)ia_results->rkDemosaicLP.lp_en;
 		isp_cfg->active_configs |= ISP_RK_DEMOSAICLP_MASK;
@@ -1446,7 +1446,7 @@ bool Isp10Engine::convertIAResults(
 		memcpy(isp_cfg->configs.demosaicLp_config.thvar_divided ,
 				ia_results->rkDemosaicLP.thvar_divided,
 				sizeof(ia_results->rkDemosaicLP.thvar_divided));
-		
+
 		isp_cfg->configs.demosaicLp_config.th_grad = ia_results->rkDemosaicLP.th_grad;
 		isp_cfg->configs.demosaicLp_config.th_diff = ia_results->rkDemosaicLP.th_diff;
 		isp_cfg->configs.demosaicLp_config.th_csc = ia_results->rkDemosaicLP.th_csc;
@@ -1464,15 +1464,15 @@ bool Isp10Engine::convertIAResults(
 		isp_cfg->configs.demosaicLp_config.thvar_r_fct = ia_results->rkDemosaicLP.thvar_r_fct;
 		isp_cfg->configs.demosaicLp_config.thgrad_b_fct = ia_results->rkDemosaicLP.thgrad_b_fct;
 		isp_cfg->configs.demosaicLp_config.thdiff_b_fct = ia_results->rkDemosaicLP.thdiff_b_fct;
-		isp_cfg->configs.demosaicLp_config.thvar_b_fct = ia_results->rkDemosaicLP.thvar_b_fct;			
+		isp_cfg->configs.demosaicLp_config.thvar_b_fct = ia_results->rkDemosaicLP.thvar_b_fct;
 	}
-	
+
 	if (ia_results->active & CAMIA10_RKIESHARP_MASK) {
 		isp_cfg->enabled[HAL_ISP_RKIESHARP_ID] = (bool_t)ia_results->rkIEsharp.iesharpen_en;
 		isp_cfg->active_configs |= ISP_RK_IESHARP_MASK;
-		isp_cfg->configs.rkIESharp_config.coring_thr = ia_results->rkIEsharp.coring_thr; 
-		isp_cfg->configs.rkIESharp_config.full_range = ia_results->rkIEsharp.full_range; 
-		isp_cfg->configs.rkIESharp_config.switch_avg = ia_results->rkIEsharp.switch_avg; 
+		isp_cfg->configs.rkIESharp_config.coring_thr = ia_results->rkIEsharp.coring_thr;
+		isp_cfg->configs.rkIESharp_config.full_range = ia_results->rkIEsharp.full_range;
+		isp_cfg->configs.rkIESharp_config.switch_avg = ia_results->rkIEsharp.switch_avg;
 		memcpy(isp_cfg->configs.rkIESharp_config.yavg_thr,
 				ia_results->rkIEsharp.yavg_thr,
 				sizeof(ia_results->rkIEsharp.yavg_thr));
@@ -1495,11 +1495,11 @@ bool Isp10Engine::convertIAResults(
 		memcpy(isp_cfg->configs.rkIESharp_config.gauss_noise_coe,
 				ia_results->rkIEsharp.gauss_noise_coe,
 				sizeof(ia_results->rkIEsharp.gauss_noise_coe));
-		
+
 		memcpy(isp_cfg->configs.rkIESharp_config.gauss_other_coe,
 				ia_results->rkIEsharp.gauss_other_coe,
 				sizeof(ia_results->rkIEsharp.gauss_other_coe));
-		
+
 		memcpy(isp_cfg->configs.rkIESharp_config.uv_gauss_flat_coe,
 				ia_results->rkIEsharp.uv_gauss_flat_coe,
 				sizeof(ia_results->rkIEsharp.uv_gauss_flat_coe));
@@ -1511,15 +1511,15 @@ bool Isp10Engine::convertIAResults(
 		memcpy(isp_cfg->configs.rkIESharp_config.uv_gauss_other_coe,
 				ia_results->rkIEsharp.uv_gauss_other_coe,
 				sizeof(ia_results->rkIEsharp.uv_gauss_other_coe));
-		
-   		memcpy(isp_cfg->configs.rkIESharp_config.grad_seq, 
+
+   		memcpy(isp_cfg->configs.rkIESharp_config.grad_seq,
 						ia_results->rkIEsharp.p_grad,
 						sizeof(ia_results->rkIEsharp.p_grad));
-		
+
 		memcpy(isp_cfg->configs.rkIESharp_config.sharp_factor,
 						ia_results->rkIEsharp.sharp_factor,
 						sizeof(ia_results->rkIEsharp.sharp_factor));
-		
+
 		memcpy(isp_cfg->configs.rkIESharp_config.line1_filter_coe,
 						ia_results->rkIEsharp.line1_filter_coe,
 						sizeof(ia_results->rkIEsharp.line1_filter_coe));

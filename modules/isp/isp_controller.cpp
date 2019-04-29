@@ -43,8 +43,10 @@ IspController::IspController ():
     xcam_mem_clear(_last_aiq_results);
     xcam_mem_clear(_full_active_isp_params);
     xcam_mem_clear(_flash_settings);
-    _max_delay = EXPOSURE_GAIN_DELAY > EXPOSURE_TIME_DELAY ?
-                    EXPOSURE_GAIN_DELAY : EXPOSURE_TIME_DELAY;
+
+    _max_delay = (EXPOSURE_GAIN_DELAY > EXPOSURE_TIME_DELAY)?
+		         (EXPOSURE_GAIN_DELAY > RKISP_HDRAE_EFFECT_FNUM ? EXPOSURE_GAIN_DELAY : RKISP_HDRAE_EFFECT_FNUM)
+                 :(EXPOSURE_TIME_DELAY > RKISP_HDRAE_EFFECT_FNUM ? EXPOSURE_TIME_DELAY : RKISP_HDRAE_EFFECT_FNUM);
 
     _exposure_queue =
         (struct rkisp_exposure *)xcam_malloc0(sizeof(struct rkisp_exposure) * _max_delay);
@@ -136,14 +138,25 @@ IspController::handle_sof(int64_t time, int frameid)
 
     char log_str[1024];
     int num = 0;
-    for(int i=0; i<EXPOSURE_TIME_DELAY; i++) {
-        num += sprintf(log_str + num, "        |||queue(%d) (%d-%d) expsync\n",
-                    i,
-                    _exposure_queue[i].coarse_integration_time,
-                    _exposure_queue[i].analog_gain);
-    }
+	if (!_exposure_queue[0].IsHdrExp){
+		for(int i=0; i<EXPOSURE_TIME_DELAY; i++) {
+	        num += sprintf(log_str + num, "      |||queue(%d) (%d-%d) expsync\n",
+	                    i,
+	                    _exposure_queue[i].coarse_integration_time,
+	                    _exposure_queue[i].analog_gain);
+	    }
+	}else{
+		for(int i=0; i<_used_exp_que_len; i++) {
+	        num += sprintf(log_str + num, "      |||queue(%d) L(%d-%d) S(%d-%d) expsync\n",
+	                    i,
+	                    _exposure_queue[i].Hdrexp_smooth_setting[0].regGain[0],
+	                    _exposure_queue[i].Hdrexp_smooth_setting[0].regTime[0],
+	                    _exposure_queue[i].Hdrexp_smooth_setting[0].regGain[2],
+	                    _exposure_queue[i].Hdrexp_smooth_setting[0].regTime[2]);
+	    }
+	}
 
-    XCAM_LOG_DEBUG("--SOF[%d]------------------expsync-statsync\n%s", frameid, log_str);
+    XCAM_LOG_DEBUG(" --SOF[%d]------------------expsync-statsync\n%s", frameid, log_str);
 
     struct rkisp_exposure exposure;
 
@@ -153,10 +166,11 @@ IspController::handle_sof(int64_t time, int frameid)
     //exposure.frame_line_length = _exposure_queue[EXPOSURE_GAIN_DELAY - 1].frame_line_length;
     exposure = _exposure_queue[EXPOSURE_GAIN_DELAY - 1];
     exposure = _exposure_queue[_cur_apply_index++];
-    if (_cur_apply_index == 3) {
-        _cur_apply_index = 2;
+    if (_cur_apply_index == _used_exp_que_len) {
+        _cur_apply_index = _used_exp_que_len-1;
         LOGD("no new expoure, use the latest !");
     }
+
     set_3a_exposure(exposure);
 
     _effecting_ispparm_map[frameid].frame_sof_ts = _frame_sof_time;
@@ -1089,54 +1103,88 @@ IspController::set_3a_config (X3aIspConfig *config, bool first)
 void
 IspController::exposure_delay(struct rkisp_exposure isp_exposure, bool first)
 {
-    int i = 0;
-
     SmartLock locker (_mutex);
-    if (!first && isp_exposure.RegSmoothTime[2] != 0 &&
-        _exposure_queue[0].RegSmoothGains[2] ==
-        isp_exposure.RegSmoothGains[2] &&
-        _exposure_queue[0].RegSmoothTime[2] ==
-        isp_exposure.RegSmoothTime[2]) {
-        LOGD("exposure reg(%d,%d) haven't changed , drop it !",
-             isp_exposure.RegSmoothGains[2],
-             isp_exposure.RegSmoothTime[2]);
+    _used_exp_que_len = isp_exposure.IsHdrExp ? RKISP_HDRAE_EFFECT_FNUM : 3;
 
-        return ;
+    if (isp_exposure.IsHdrExp) {
+        // check if destination exposure have changed
+
+        struct rkisp_HdrAE_metadata_s cur_dest_metadata;
+		memcpy (&cur_dest_metadata,
+			&_exposure_queue[0].Hdrexp_smooth_setting[_used_exp_que_len - 1],
+			sizeof(cur_dest_metadata));
+
+		struct rkisp_HdrAE_metadata_s new_dest_metadata;
+		memcpy (&new_dest_metadata,
+			&isp_exposure.Hdrexp_smooth_setting[_used_exp_que_len - 1],
+			sizeof(new_dest_metadata));
+
+        if (new_dest_metadata.regGain[0]>= 1 && new_dest_metadata.regGain[2] >= 1 &&
+			new_dest_metadata.regTime[0]>= 1 && new_dest_metadata.regTime[2] >= 1 &&
+            new_dest_metadata.regGain[0]== cur_dest_metadata.regGain[0]&&
+            new_dest_metadata.regTime[0]== cur_dest_metadata.regTime[0]&&
+            new_dest_metadata.regGain[2]== cur_dest_metadata.regGain[2]&&
+            new_dest_metadata.regTime[2]== cur_dest_metadata.regTime[2]&&
+            !first) {
+            LOGD("exposure Lreg(%d,%d) Sreg(%d,%d) haven't changed , drop it !",
+				 isp_exposure.Hdrexp_smooth_setting[_used_exp_que_len - 1].regTime[0],
+                 isp_exposure.Hdrexp_smooth_setting[_used_exp_que_len - 1].regGain[0],
+                 isp_exposure.Hdrexp_smooth_setting[_used_exp_que_len - 1].regTime[2],
+                 isp_exposure.Hdrexp_smooth_setting[_used_exp_que_len - 1].regGain[2]);
+
+            return ;
+        }
+
+        _cur_apply_index = 0;
+        for (int i = 0; i < _used_exp_que_len; i++) {
+            _exposure_queue[i] = isp_exposure;
+            _exposure_queue[i].Hdrexp_smooth_setting[0] =
+                isp_exposure.Hdrexp_smooth_setting[i];
+
+            if (i>0 & memcmp(&_exposure_queue[i], &_exposure_queue[i-1], sizeof(_exposure_queue[0])) == 0)
+                _cur_apply_index++;
+
+			LOGD("Hdr i=%d,lgain=%f,ltime=%f,sgain=%f,stime=%f cur_apply_index=%d\n",
+				i,
+				isp_exposure.Hdrexp_smooth_setting[i].halGain[0],
+				isp_exposure.Hdrexp_smooth_setting[i].halTime[0],
+				isp_exposure.Hdrexp_smooth_setting[i].halGain[2],
+				isp_exposure.Hdrexp_smooth_setting[i].halTime[2],
+				_cur_apply_index);
+        }
+
+
+    } else {
+        if (isp_exposure.RegSmoothTime[2] != 0 &&
+            _exposure_queue[0].RegSmoothGains[2] ==
+            isp_exposure.RegSmoothGains[2] &&
+            _exposure_queue[0].RegSmoothTime[2] ==
+            isp_exposure.RegSmoothTime[2] && !first) {
+            LOGD("exposure reg(%d,%d) haven't changed , drop it !",
+                 isp_exposure.RegSmoothGains[2],
+                 isp_exposure.RegSmoothTime[2]);
+
+            return ;
+        }
+        _cur_apply_index = 0;
+        for (int i = 0; i < _used_exp_que_len; i++) {
+            _exposure_queue[i] = isp_exposure;
+
+            _exposure_queue[i].RegSmoothGains[0] =
+                isp_exposure.RegSmoothGains[i];
+            _exposure_queue[i].RegSmoothTime[0] =
+                isp_exposure.RegSmoothTime[i];
+            _exposure_queue[i].SmoothGains[0] =
+                isp_exposure.SmoothGains[i];
+            _exposure_queue[i].SmoothIntTimes[0] =
+                isp_exposure.SmoothIntTimes[i];
+            _exposure_queue[i].RegSmoothFll[0] =
+                isp_exposure.RegSmoothFll[i];
+
+            if (i>0 && memcmp(&_exposure_queue[i], &_exposure_queue[i-1], sizeof(_exposure_queue[0])) == 0)
+                _cur_apply_index++;
+        }
     }
-    _exposure_queue[0] = isp_exposure;
-    _cur_apply_index = 0;
-
-    isp_exposure.RegSmoothGains[0] =
-        isp_exposure.RegSmoothGains[1];
-    isp_exposure.RegSmoothTime[0] =
-        isp_exposure.RegSmoothTime[1];
-    isp_exposure.SmoothGains[0] =
-        isp_exposure.SmoothGains[1];
-    isp_exposure.SmoothIntTimes[0] =
-        isp_exposure.SmoothIntTimes[1];
-    isp_exposure.RegSmoothFll[0] =
-        isp_exposure.RegSmoothFll[1];
-    _exposure_queue[1] = isp_exposure;
-
-    if (memcmp(&_exposure_queue[0], &_exposure_queue[1], sizeof(_exposure_queue[0])) == 0)
-        _cur_apply_index++;
-
-    isp_exposure.RegSmoothGains[0] =
-        isp_exposure.RegSmoothGains[2];
-    isp_exposure.RegSmoothTime[0] =
-        isp_exposure.RegSmoothTime[2];
-    isp_exposure.SmoothGains[0] =
-        isp_exposure.SmoothGains[2];
-    isp_exposure.SmoothIntTimes[0] =
-        isp_exposure.SmoothIntTimes[2];
-    isp_exposure.RegSmoothFll[0] =
-        isp_exposure.RegSmoothFll[2];
-
-    _exposure_queue[2] = isp_exposure;
-
-    if (memcmp(&_exposure_queue[1], &_exposure_queue[2], sizeof(_exposure_queue[0])) == 0)
-        _cur_apply_index++;
-
     // set the initial exposure before streaming
     if (_frame_sequence < 0 || first) {
         set_3a_exposure(_exposure_queue[_cur_apply_index]);
@@ -1188,9 +1236,12 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
     else
         LOGD("|||set_3a_exposure timereg (%d-%d-%d), gainreg (%d-%d-%d)"
              "fll 0x%x expsync in sof %d\n",
-            isp_exposure.RegHdrTime[0], isp_exposure.RegHdrTime[1],
-            isp_exposure.RegHdrTime[2], isp_exposure.RegHdrGains[0],
-            isp_exposure.RegHdrGains[1],isp_exposure.RegHdrGains[2],
+            isp_exposure.Hdrexp_smooth_setting[0].regTime[0],
+            isp_exposure.Hdrexp_smooth_setting[0].regTime[1],
+            isp_exposure.Hdrexp_smooth_setting[0].regTime[2],
+            isp_exposure.Hdrexp_smooth_setting[0].regGain[0],
+            isp_exposure.Hdrexp_smooth_setting[0].regGain[1],
+            isp_exposure.Hdrexp_smooth_setting[0].regGain[2],
             isp_exposure.frame_line_length, _frame_sequence);
     if (_device.ptr()) {
         struct v4l2_ext_control exp_gain[3];
@@ -1268,29 +1319,35 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
             struct preisp_hdrae_exp_s hdrae;
 
             memset(&hdrae, 0, sizeof(hdrae));
-            hdrae.long_exp_reg = isp_exposure.RegHdrTime[0];
-            hdrae.long_gain_reg = isp_exposure.RegHdrGains[0];
-            hdrae.middle_exp_reg = isp_exposure.RegHdrTime[1];
-            hdrae.middle_gain_reg = isp_exposure.RegHdrGains[1];
-            hdrae.short_exp_reg = isp_exposure.RegHdrTime[2];
-            hdrae.short_gain_reg = isp_exposure.RegHdrGains[2];
+            hdrae.long_exp_reg =
+                isp_exposure.Hdrexp_smooth_setting[0].regTime[0];
+            hdrae.long_gain_reg =
+                isp_exposure.Hdrexp_smooth_setting[0].regGain[0];
+            hdrae.middle_exp_reg =
+                isp_exposure.Hdrexp_smooth_setting[0].regTime[1];
+            hdrae.middle_gain_reg =
+                isp_exposure.Hdrexp_smooth_setting[0].regGain[1];
+            hdrae.short_exp_reg =
+                isp_exposure.Hdrexp_smooth_setting[0].regTime[2];
+            hdrae.short_gain_reg =
+                isp_exposure.Hdrexp_smooth_setting[0].regGain[2];
             memcpy(&hdrae.long_exp_val,
-                   &isp_exposure.HdrIntTimes[0],
+                   &isp_exposure.Hdrexp_smooth_setting[0].halTime[0],
                    sizeof(hdrae.long_exp_val));
             memcpy(&hdrae.long_gain_val,
-                   &isp_exposure.HdrGains[0],
+                   &isp_exposure.Hdrexp_smooth_setting[0].halGain[0],
                    sizeof(hdrae.long_gain_val));
             memcpy(&hdrae.middle_exp_val,
-                   &isp_exposure.HdrIntTimes[1],
+                   &isp_exposure.Hdrexp_smooth_setting[0].halTime[1],
                    sizeof(hdrae.middle_exp_val));
             memcpy(&hdrae.middle_gain_val,
-                   &isp_exposure.HdrGains[1],
+                   &isp_exposure.Hdrexp_smooth_setting[0].halGain[1],
                    sizeof(hdrae.middle_gain_val));
             memcpy(&hdrae.short_exp_val,
-                   &isp_exposure.HdrIntTimes[2],
+                   &isp_exposure.Hdrexp_smooth_setting[0].halTime[2],
                    sizeof(hdrae.short_exp_val));
             memcpy(&hdrae.short_gain_val,
-                   &isp_exposure.HdrGains[2],
+                   &isp_exposure.Hdrexp_smooth_setting[0].halGain[2],
                    sizeof(hdrae.short_gain_val));
 
             if (_sensor_subdev->io_control(CIFISP_CMD_SET_HDRAE_EXP, &hdrae) < 0) {
@@ -1422,6 +1479,7 @@ IspController::set_3a_fl (int fl_mode, float fl_intensity[],
 void
 IspController::dump_isp_config(struct rkisp1_isp_params_cfg* isp_params,
                             struct rkisp_parameters *isp_cfg) {
+
     XCAM_LOG_DEBUG("-------------------------------------------------------\n \
             |||set_3a_config rkisp1_isp_params_cfg size: %d, meas: %d, others: %d\n  \
                module enable mask - update: %x - %x, cfg update: %x\n \

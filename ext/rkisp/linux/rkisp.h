@@ -282,6 +282,43 @@ struct rkisp_sensor_mode_data {
 	uint8_t reserved[2];
 };
 
+
+// hdrae structs are copid from aec.h
+typedef struct rkisp_HdrAE_metadata_s {
+	unsigned int regGain[3];
+	unsigned int regTime[3];
+	float halGain[3];
+	float halTime[3];
+	float exposure[3];
+} rkisp_HdrAE_metadata_t;
+
+#define RKISP_HDRAE_EFFECT_FNUM 5
+
+struct rkisp_exposure {
+    unsigned int coarse_integration_time;
+    unsigned int fine_integration_time;
+    unsigned int analog_gain;
+    unsigned int digital_gain;
+    int RegSmoothGains[3];
+    int RegSmoothTime[3];
+    float SmoothGains[3];
+    float SmoothIntTimes[3];
+    unsigned int RegSmoothFll[3];
+    unsigned int shutter_speed;
+    unsigned int aperture;
+    // also means LinePeriodsPerField or VTS
+    unsigned int frame_line_length;
+    // for hdr
+    bool  IsHdrExp;
+    float NormalExpRatio;
+    float LongExpRatio;
+    int RegHdrGains[3];
+    int RegHdrTime[3];
+    float HdrGains[3];
+    float HdrIntTimes[3];
+    rkisp_HdrAE_metadata_t Hdrexp_smooth_setting[RKISP_HDRAE_EFFECT_FNUM];
+};
+
 struct rkisp_focus {
     int next_lens_position;
 };
@@ -465,30 +502,6 @@ struct rkisp_parameters {
   int64_t frame_sof_ts;
   USE_CASE uc;
   rkisp_flash_setting_t flash_settings;
-};
-
-struct rkisp_exposure {
-    unsigned int coarse_integration_time;
-    unsigned int fine_integration_time;
-    unsigned int analog_gain;
-    unsigned int digital_gain;
-    int RegSmoothGains[3];
-    int RegSmoothTime[3];
-    float SmoothGains[3];
-    float SmoothIntTimes[3];
-    unsigned int RegSmoothFll[3];
-    unsigned int shutter_speed;
-    unsigned int aperture;
-    // also means LinePeriodsPerField or VTS
-    unsigned int frame_line_length;
-    // for hdr
-    bool  IsHdrExp;
-    float NormalExpRatio;
-    float LongExpRatio;
-    int RegHdrGains[3];
-    int RegHdrTime[3];
-    float HdrGains[3];
-    float HdrIntTimes[3];
 };
 
 /*
