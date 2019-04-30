@@ -138,7 +138,7 @@ wifi_ko_file_name module_list[] =
 	{"RTL8189ES", RTL8189ES_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
 	{"RTL8723BS", RTL8723BS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
 	{"RTL8723CS", RTL8723CS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
-	{"RTL8723DS", RTL8723DS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8723DS", RTL8723DS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, "RTL8723DS"},
 	{"RTL8812AU", RTL8812AU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
 	{"RTL8189FS", RTL8189FS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
 	{"RTL8822BE", RTL8822BE_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
@@ -317,7 +317,7 @@ int check_wireless_ready(void)
 }
 
 static const char BT_TEST_FILE[] = "/userdata/bt_pcba_test";
-static int create_bt_test_file(void)
+static int create_bt_test_file_for_brcm(void)
 {
 	FILE* fp;
 	char cmdline[512] = {0};
@@ -337,6 +337,35 @@ static int create_bt_test_file(void)
 		system("mount --bind /userdata/bt_pcba_test /usr/bin/bt_pcba_test");
 		return 0;
 	}
+	return -1;
+}
+
+static int create_bt_test_file_for_rtl(void)
+{
+	FILE* fp;
+	char cmdline[512] = {0};
+
+	fp = fopen(BT_TEST_FILE, "wt+");
+
+	if (fp != 0) {
+		fputs("echo 0 > /sys/class/rfkill/rfkill0/state\n", fp);
+		fputs("sleep 1\n", fp);
+		fputs("echo 1 > /sys/class/rfkill/rfkill0/state\n", fp);
+		fputs("sleep 1\n", fp);
+
+		fputs("insmod /usr/lib/modules/hci_uart.ko\n", fp);
+		fputs("sleep 1\n", fp);
+
+		sprintf(cmdline, "rtk_hciattach -n -s 115200 %s rtk_h5 &\n", bt_tty_dev);
+		fputs(cmdline, fp);
+		fputs("sleep 1\n", fp);
+
+		fclose(fp);
+		system("chmod 777 /userdata/bt_pcba_test");
+		system("mount --bind /userdata/bt_pcba_test /usr/bin/bt_pcba_test");
+		return 0;
+	}
+
 	return -1;
 }
 
@@ -392,8 +421,8 @@ int wifibt_load_driver(void)
 	}
 
 	//bt init
-	create_bt_test_file();
-	if (strcmp(bt_firmware_patch , "")) {
+	if (strstr(bt_firmware_patch , "system")) {
+		create_bt_test_file_for_brcm();
 		memset(temp, 0, 256);
 		system("echo 0 > /sys/class/rfkill/rfkill0/state");
 		usleep(2);
@@ -406,6 +435,20 @@ int wifibt_load_driver(void)
 			printf("bt_init: %s failed \n", temp);
 			return -1;
 		}
+	} else if (strstr(bt_firmware_patch , "RTL")) {
+		create_bt_test_file_for_rtl();
+		system("echo 0 > /sys/class/rfkill/rfkill0/state");
+		usleep(5000);
+		system("echo 1 > /sys/class/rfkill/rfkill0/state\n");
+		usleep(5000);
+
+		system("insmod /usr/lib/modules/hci_uart.ko\n");
+		usleep(5000);
+
+		memset(temp, 0, 256);
+		sprintf(temp, "rtk_hciattach -n -s 115200 %s rtk_h5 &", bt_tty_dev);
+		system(temp);
+		usleep(5000);
 	}
 
 	return 0;
