@@ -11,6 +11,10 @@
 #include "linux/media/rk-isp-config.h"
 #include <common/cam_types.h>
 #include <cam_types.h>
+#include <map>
+#include <string>
+
+static std::map<string, CalibDb*> g_CalibDbHandlesMap;
 
 CamIA10Engine::CamIA10Engine():
     aecContext(NULL),
@@ -143,12 +147,24 @@ RESULT CamIA10Engine::initStatic
     RESULT result = RET_FAILURE;
     CamCalibDbMetaData_t dbMeta;
     if (!hCamCalibDb) {
-        if (calidb.CreateCalibDb(aiqb_data_file)) {
-            LOGD("load tunning file success.");
-            hCamCalibDb = calidb.GetCalibDbHandle();
+        std::string iq_file_str(aiqb_data_file);
+        std::map<string, CalibDb*>::iterator it;
+        it = g_CalibDbHandlesMap.find(iq_file_str);
+        if (it != g_CalibDbHandlesMap.end()) {
+            CalibDb* calibdb_p = it->second;
+            hCamCalibDb = calibdb_p->GetCalibDbHandle();
+            LOGD("use cached calibdb for %s !", aiqb_data_file);
         } else {
-            LOGD("load tunning file failed(%s)", aiqb_data_file);
-            goto init_fail;
+            CalibDb* calibdb_p = new CalibDb();
+            if (calibdb_p->CreateCalibDb(aiqb_data_file)) {
+                LOGD("create calibdb from %s success.", aiqb_data_file);
+                hCamCalibDb = calibdb_p->GetCalibDbHandle();
+                g_CalibDbHandlesMap[iq_file_str] = calibdb_p;
+            } else {
+                LOGE("create calibdb from %s failed", aiqb_data_file);
+                delete calibdb_p;
+                goto init_fail;
+            }
         }
     }
 

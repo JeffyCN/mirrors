@@ -97,7 +97,6 @@ class CamIA10Engine: public CamIA10EngineItf {
   );
 
   int mFrameId = 0;
-  CalibDb calidb;
   CamCalibDbHandle_t  hCamCalibDb;
   bool mInitDynamic;
   struct CamIA10_DyCfg  dCfg;
