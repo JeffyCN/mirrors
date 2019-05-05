@@ -222,22 +222,37 @@ V4l2Device::io_control (int cmd, void *arg)
 }
 
 int
-V4l2Device::poll_event (int timeout_msec)
+V4l2Device::poll_event (int timeout_msec, int stop_fd)
 {
-    struct pollfd poll_fd;
+    int num_fds = stop_fd == -1 ? 1 : 2;
+    struct pollfd poll_fds[num_fds];
     int ret = 0;
 
     XCAM_ASSERT (_fd > 0);
 
-    xcam_mem_clear (poll_fd);
-    poll_fd.fd = _fd;
-    poll_fd.events = (POLLPRI | POLLIN | POLLERR | POLLNVAL | POLLHUP);
+    memset(poll_fds, 0, sizeof(poll_fds));
+    poll_fds[0].fd = _fd;
+    poll_fds[0].events = (POLLPRI | POLLIN | POLLERR | POLLNVAL | POLLHUP);
 
-    ret = poll (&poll_fd, 1, timeout_msec);
-    if (ret > 0 && (poll_fd.revents & (POLLERR | POLLNVAL | POLLHUP))) {
+    if (stop_fd != -1) {
+        poll_fds[1].fd = stop_fd;
+        poll_fds[1].events = POLLPRI | POLLIN;
+        poll_fds[1].revents = 0;
+    }
+
+    ret = poll (poll_fds, num_fds, timeout_msec);
+    if (stop_fd != -1) {
+        if ((poll_fds[1].revents & POLLIN) || (poll_fds[1].revents & POLLPRI)) {
+            XCAM_LOG_DEBUG ("%s: Poll returning from flush", __FUNCTION__);
+            return POLL_STOP_RET;
+        }
+    }
+
+    if (ret > 0 && (poll_fds[0].revents & (POLLERR | POLLNVAL | POLLHUP))) {
         XCAM_LOG_DEBUG ("v4l2 subdev(%s) polled error", XCAM_STR(_name));
         return -1;
     }
+
     return ret;
 
 }

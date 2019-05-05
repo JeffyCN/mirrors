@@ -82,6 +82,8 @@ private:
     virtual XCamReturn init_3a_stats_pool ();
     virtual XCamReturn capture_3a_stats (SmartPtr<X3aStats> &stats);
     virtual XCamReturn notify_sof (int64_t time, int frameid);
+    XCamReturn create_stop_fds ();
+    void destroy_stop_fds ();
 
 private:
     XCAM_DEAD_COPY (PollThread);
@@ -104,6 +106,9 @@ private:
 
     //frame syncronization
     int frameid;
+    int _3a_stats_poll_stop_fd[2];
+    int _event_poll_stop_fd[2];
+    int _capture_poll_stop_fd[2];
 };
 
 };
