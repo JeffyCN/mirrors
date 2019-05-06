@@ -139,7 +139,7 @@ void xcam_print_log (int level, const char* format, ...) {
             fwrite (buffer, sizeof (buffer[0]), strlen (buffer), p_file);
             fclose (p_file);
         } else {
-            printf("error! can't open log file !\n");
+            fprintf(stderr, "error! can't open log file !\n");
         }
         return ;
     }
@@ -167,8 +167,12 @@ void xcam_print_log (int level, const char* format, ...) {
         }
     }
 #else
-    if (level <= g_cam_engine_log_level)
-        printf ("%s", buffer);
+    if (level <= g_cam_engine_log_level) {
+        if (level <= WARNING_LEVEL)
+            fprintf(stderr, "%s", buffer);
+        else
+            fprintf(stdout, "%s", buffer);
+    }
 #endif
 }
 
