@@ -46,7 +46,7 @@ struct sensor_calib_info {
   CamDpccProfile_t dpcc_profile;
   CamCalibSystemData_t system_data;
   CamCprocProfile_t cproc_profile;
-  uint32_t IQcheckSum;
+  uint32_t IQMagicVerCode;
 };
 
 

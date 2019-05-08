@@ -72,10 +72,10 @@
 //v0.2.5:  XML FOR AF
 //         1. add af window configuration in xml
 //         2. add af trigger thershold configuration in XML 
-//v1.0.0:  add xml check & checksum 635074
+//v1.0.0:  add xml check & magic version code 635075
 //		  start from this version, like va.b.c
-//			a: show the big version
-//                b: show the little version
+//			a: show the big change version
+//                b: show the little change version
 //	             c: show that the content of xml is not changed, but fix some parse bugs.
 /*************************************************************************/
 /*************************************************************************/
@@ -1031,13 +1031,13 @@ CalibDb::CalibDb
 (
 ) {
   m_CalibDbHandle = NULL;
-  uint32_t checksum = calib_check_calc_checksum();
+  uint32_t MagicVerCode = calib_check_calc_checksum();
   LOGI("\n***************************************************************\n"
-         "  Calibdb Version IS:%s   CheckSum IS %u"
+         "  Calibdb Version IS:%s   Magic Version Code IS %u"
          "\n***************************************************************\n"
-         , CODE_XML_PARSE_VERSION, checksum);
+         , CODE_XML_PARSE_VERSION, MagicVerCode);
 
-  m_CalibInfo.IQcheckSum = checksum;
+  m_CalibInfo.IQMagicVerCode = MagicVerCode;
 }
 
 
