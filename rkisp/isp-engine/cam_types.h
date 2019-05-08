@@ -369,6 +369,7 @@ struct HAL_AfcType {
 struct HAL_AfcCfg {
   HAL_AF_MODE mode;
   struct HAL_AfcType type;
+  bool af_lock;
   bool_t oneshot_trigger;
   unsigned int win_num;
   HAL_Window win_a;

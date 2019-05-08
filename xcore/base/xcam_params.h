@@ -79,6 +79,7 @@ typedef struct _XCamAfParam {
     XCamAfManualParams   manual_focus_parameters;               /*!< Optional. Manual focus parameters (manual lens position, manual focusing distance). Used only if
                                                                           focus mode 'rk_aiq_af_operation_mode_manual' is used. */
     bool                 trigger_new_search;                    /*!< TRUE if new AF search is needed, FALSE otherwise. Host is responsible for flag cleaning. */
+	bool                 focus_lock;                            /*!< Mandatory. User setting to lock af. */
 } XCamAfParam;
 
 typedef struct _XCamCommonParam {

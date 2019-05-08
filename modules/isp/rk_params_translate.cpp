@@ -390,7 +390,7 @@ ParamsTranslate::convert_to_rkisp_af_config(XCamAfParam* af_params,
 		af_params->trigger_new_search ? BOOL_TRUE : BOOL_FALSE;
     /* config->win_num = af_params->focus_rect_cnt; */
     config->win_num = 1;
-
+	config->af_lock = af_params->focus_lock;
     config->win_a.left_hoff = af_params->focus_rect[0].left_hoff;
     config->win_a.top_voff= af_params->focus_rect[0].top_voff;
     config->win_a.right_width = af_params->focus_rect[0].right_width;

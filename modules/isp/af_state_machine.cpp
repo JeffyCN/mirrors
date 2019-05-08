@@ -225,6 +225,7 @@ RkAfModeBase::processTriggers(const uint8_t &afTrigger,
 {
     /* UNUSED(afInputParams); */
     /* UNUSED(preCaptureId); */
+    afInputParams.focus_lock = false;
 
     if (afTrigger == ANDROID_CONTROL_AF_TRIGGER_START) {
         resetTrigger(systemTime() / 1000);
@@ -243,9 +244,10 @@ RkAfModeBase::updateResult(CameraMetadata& results)
 {
 
     //# METADATA_Dynamic control.afMode done
-    LOGI("%s afMode = %s state = %s", __FUNCTION__,
+    LOGI("%s afMode = %s state = %s trigger:%d", __FUNCTION__,
             META_CONTROL2STR(afMode, mLastAfControls.afMode),
-            META_CONTROL2STR(afState, mCurrentAfState));
+            META_CONTROL2STR(afState, mCurrentAfState),
+            mLastAfControls.afTrigger);
     results.update(ANDROID_CONTROL_AF_MODE, &mLastAfControls.afMode, 1);
     //# METADATA_Dynamic control.afTrigger done
     results.update(ANDROID_CONTROL_AF_TRIGGER, &mLastAfControls.afTrigger, 1);
@@ -312,6 +314,7 @@ RkAFModeOff::processTriggers(const uint8_t &afTrigger,
     /* UNUSED(preCaptureId); */
     mLastAfControls.afTrigger = afTrigger;
     mLastAfControls.afMode = afMode;
+	afInputParams.focus_lock = true;
     return XCAM_RETURN_NO_ERROR;
 }
 
@@ -363,6 +366,8 @@ RkAFModeAuto::processTriggers(const uint8_t &afTrigger,
         case ANDROID_CONTROL_AF_STATE_INACTIVE:
         case ANDROID_CONTROL_AF_STATE_FOCUSED_LOCKED:
         case ANDROID_CONTROL_AF_STATE_NOT_FOCUSED_LOCKED:
+        afInputParams.focus_lock = true;
+        #if 0//todo AF_MODE_MACRO is not supportted.
             if (mLastActiveTriggerTime > 0) {
                 // For a new scan upon a new active (START) trigger.
                 afInputParams.focus_mode = AF_MODE_AUTO;
@@ -373,6 +378,9 @@ RkAFModeAuto::processTriggers(const uint8_t &afTrigger,
                 /* TODO  which mode?*/
                 afInputParams.focus_mode = AF_MODE_MACRO;
             }
+        #else
+            afInputParams.focus_mode = AF_MODE_AUTO;
+        #endif
             break;
         default:
             LOGW("Unknown state in AF state machine: %d", mCurrentAfState);
@@ -394,9 +402,11 @@ RkAFModeAuto::processTriggers(const uint8_t &afTrigger,
     // Override AF state if we just got an AF TRIGGER Start
     // This is only valid for the AUTO/MACRO state machine
     if (mLastAfControls.afTrigger == ANDROID_CONTROL_AF_TRIGGER_START) {
+        afInputParams.focus_lock = false;
         mCurrentAfState = ANDROID_CONTROL_AF_STATE_ACTIVE_SCAN;
         LOGI("@%s AF state ACTIVE_SCAN (trigger start)", __PRETTY_FUNCTION__);
     } else if (mLastAfControls.afTrigger == ANDROID_CONTROL_AF_TRIGGER_CANCEL) {
+        afInputParams.focus_lock = true;
         mCurrentAfState = ANDROID_CONTROL_AF_STATE_INACTIVE;
         LOGI("@%s AF state INACTIVE (trigger cancel)", __PRETTY_FUNCTION__);
     }
@@ -467,6 +477,7 @@ RkAFModeContinuousPicture::processTriggers(const uint8_t &afTrigger,
     if (mCurrentAfState == ANDROID_CONTROL_AF_STATE_NOT_FOCUSED_LOCKED ||
         mCurrentAfState == ANDROID_CONTROL_AF_STATE_FOCUSED_LOCKED) {
         afInputParams.trigger_new_search = false;
+        afInputParams.focus_lock = true;
     } else {
     // In normal situation we do not need to use this. But let us start AF once
     // after cancel, as CTS2 robustness test does not wait for long and
@@ -474,6 +485,7 @@ RkAFModeContinuousPicture::processTriggers(const uint8_t &afTrigger,
     // (see android.control.afState documentation)
         afInputParams.trigger_new_search =
                 (afTrigger == ANDROID_CONTROL_AF_TRIGGER_CANCEL);
+        afInputParams.focus_lock = false;
     }
 
     // Override AF state if we just got an AF TRIGGER CANCEL
@@ -509,11 +521,15 @@ RkAFModeContinuousPicture::processTriggers(const uint8_t &afTrigger,
      * RkAFStateMachine::processTriggers)
      */
     if (mLastAfControls.afTrigger == ANDROID_CONTROL_AF_TRIGGER_START) {
-        if (mCurrentAfState == ANDROID_CONTROL_AF_STATE_PASSIVE_FOCUSED)
+        if (mCurrentAfState == ANDROID_CONTROL_AF_STATE_PASSIVE_FOCUSED){
             mCurrentAfState = ANDROID_CONTROL_AF_STATE_FOCUSED_LOCKED;
+            afInputParams.focus_lock = true;
+        }
         else if (mCurrentAfState == ANDROID_CONTROL_AF_STATE_PASSIVE_UNFOCUSED ||
-                 mCurrentAfState == ANDROID_CONTROL_AF_STATE_PASSIVE_SCAN)
+                 mCurrentAfState == ANDROID_CONTROL_AF_STATE_PASSIVE_SCAN){
             mCurrentAfState = ANDROID_CONTROL_AF_STATE_NOT_FOCUSED_LOCKED;
+            afInputParams.focus_lock = true;
+        }
     }
 
     return XCAM_RETURN_NO_ERROR;

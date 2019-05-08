@@ -1160,10 +1160,11 @@ RESULT CamIA10Engine::runAf(XCamAfParam *param, XCam3aResultFocus* result, bool 
                 param.focus_rect[2].right_width = set->win_c.right_width;
                 param.focus_rect[2].bottom_height = set->win_c.bottom_height;
 
+				param.focus_lock = set->af_lock;
                 param.trigger_new_search = set->oneshot_trigger;
                 ret = afDesc->set_stats(afContext, &mStats.af);
 
-                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_FOCUS) && !mLock3AForStillCap)
+                if (!mLock3AForStillCap)
                     ret = afDesc->analyze_af(afContext, &param);
             }//AfProcessFrame(hAf, &mStats.af);
 
@@ -1269,7 +1270,7 @@ RESULT CamIA10Engine::initAF() {
         return result;
     }
 
-    dCfg.afc_cfg.mode = HAL_AF_MODE_AUTO;
+    dCfg.afc_cfg.mode = HAL_AF_MODE_CONTINUOUS_PICTURE;
     dCfg.afc_cfg.type.contrast_af = pAfGlobal->contrast_af.enable;
     dCfg.afc_cfg.type.laser_af = pAfGlobal->laser_af.enable;
     dCfg.afc_cfg.type.pdaf = pAfGlobal->pdaf.enable;
@@ -2562,6 +2563,7 @@ RESULT CamIA10Engine::runAF(HAL_AfcCfg* config) {
                 param.focus_rect[2].right_width = set->win_c.right_width;
                 param.focus_rect[2].bottom_height = set->win_c.bottom_height;
 
+				param.focus_lock = set->af_lock;
                 param.trigger_new_search = set->oneshot_trigger;
                 result = afDesc->set_stats(afContext, &mStats.af);
                 result = afDesc->analyze_af(afContext, &param);

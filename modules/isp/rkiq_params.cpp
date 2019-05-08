@@ -287,7 +287,7 @@ static int afm_param_check(struct cifisp_afc_config* arg)
 {
     int i;
     if (arg->num_afm_win > CIFISP_AFM_MAX_WINDOWS || arg->thres & CIF_ISP_AFM_THRES_RESERVED || arg->var_shift & CIF_ISP_AFM_VAR_SHIFT_RESERVED) {
-        LOGE("%s:%d check error !", __FUNCTION__, __LINE__);
+        LOGE("%s:%d check error ! win_num:%d thres:%d shift:%d", __FUNCTION__, __LINE__,arg->num_afm_win,arg->thres,arg->var_shift);
         return -1;
     }
     for (i = 0; i < arg->num_afm_win; i++) {

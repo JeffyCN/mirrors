@@ -456,7 +456,7 @@ bool IspEngine::configure(const Configuration& config)
             mCamIA_DyCfg.afc_cfg.win_a.bottom_height = 0;
 
             mCamIA_DyCfg.afc_cfg.win_num = 1;
-            mCamIA_DyCfg.afc_cfg.mode = HAL_AF_MODE_CONTINUOUS_VIDEO;
+            mCamIA_DyCfg.afc_cfg.mode = HAL_AF_MODE_CONTINUOUS_PICTURE;
         }
     }
 
