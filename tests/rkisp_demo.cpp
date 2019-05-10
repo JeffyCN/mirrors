@@ -194,11 +194,11 @@ static int rkisp_get_meta_frame_id(void* &engine, int64_t& frame_id) {
 
     entry = ctl_params->_result_metadata.find(RKCAMERA3_PRIVATEDATA_EFFECTIVE_DRIVER_FRAME_ID);
     if (!entry.count) {
-        printf("no RKCAMERA3_PRIVATEDATA_EFFECTIVE_DRIVER_FRAME_ID\n");
+        DBG("no RKCAMERA3_PRIVATEDATA_EFFECTIVE_DRIVER_FRAME_ID\n");
         return -1;
     }
     frame_id = entry.data.i64[0];
-    printf("meta frame id is %" PRId64 "\n", entry.data.i64[0]);
+    DBG("meta frame id is %" PRId64 "\n", entry.data.i64[0]);
 
     return 0;
 }
@@ -212,11 +212,11 @@ static int rkisp_get_meta_frame_sof_ts(void* &engine, int64_t& sof_ts) {
 
     entry = ctl_params->_result_metadata.find(RKCAMERA3_PRIVATEDATA_FRAME_SOF_TIMESTAMP);
     if (!entry.count) {
-        printf("no RKCAMERA3_PRIVATEDATA_FRAME_SOF_TIMESTAMP\n");
+        DBG("no RKCAMERA3_PRIVATEDATA_FRAME_SOF_TIMESTAMP\n");
         return -1;
     }
     sof_ts = entry.data.i64[0];
-    printf("meta frame timestamp is %" PRId64 "\n", entry.data.i64[0]);
+    DBG("meta frame timestamp is %" PRId64 "\n", entry.data.i64[0]);
 
     return 0;
 }
