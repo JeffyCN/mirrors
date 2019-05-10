@@ -669,10 +669,6 @@ AiqAeHandler::analyze (X3aResultList &output, bool first)
         bool forceAeRun = _latestInputParams.aeInputParams.aeParams.ev_shift !=
             inputParams->aeInputParams.aeParams.ev_shift;
 
-        // process state when the request is actually processed
-        mAeState->processState(inputParams->aaaControls.controlMode,
-                               inputParams->aaaControls.ae);
-
         _latestInputParams = *inputParams.ptr();
     }
 
@@ -1081,10 +1077,6 @@ AiqAwbHandler::analyze (X3aResultList &output, bool first)
 
     if (inputParams.ptr()) {
         bool forceAwbRun = (inputParams->reqId == 0);
-
-        // process state when the request is actually processed
-        mAwbState->processState(inputParams->aaaControls.controlMode,
-                               inputParams->aaaControls.awb);
     }
 
     if (forceAwbRun || mAwbState->getState() != ANDROID_CONTROL_AWB_STATE_LOCKED) {
@@ -1151,12 +1143,6 @@ AiqAfHandler::analyze (X3aResultList &output, bool first)
     XCam3aResultFocus isp_result;
     xcam_mem_clear(isp_result);
     XCamAfParam param = this->get_params_unlock();
-    SmartPtr<AiqInputParams> inputParams = _aiq_compositor->getAiqInputParams();
-    if (inputParams.ptr()) {
-        mAfState->processTriggers(inputParams->aaaControls.af.afTrigger,
-                                    inputParams->aaaControls.af.afMode, 0,
-                                    inputParams->afInputParams.afParams);
-    }
 
     if (_aiq_compositor->_isp10_engine->runAf(&param, &isp_result, first) != 0)
         return XCAM_RETURN_NO_ERROR;
@@ -1224,6 +1210,8 @@ RKiqCompositor::RKiqCompositor ()
     , _height (0)
     , _isp10_engine(NULL)
     , _all_stats_meas_types(0)
+    , _delay_still_capture(false)
+    , _capture_to_preview_delay(0)
 {
     xcam_mem_clear (_frame_params);
     xcam_mem_clear (_isp_stats);
@@ -1292,6 +1280,63 @@ RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *
         return false;
     }
 
+    if (_ae_handler && _inputParams.ptr()) {
+        uint8_t new_aestate = _ae_handler->mAeState->getState();
+        enum USE_CASE cur_usecase = _ia_dcfg.uc;
+        enum USE_CASE new_usecase = _ia_dcfg.uc;
+        AiqFrameUseCase frameUseCase = _inputParams->frameUseCase;
+
+        if (new_aestate == ANDROID_CONTROL_AE_STATE_PRECAPTURE &&
+            _inputParams->aeInputParams.aeParams.flash_mode != AE_FLASH_MODE_TORCH) {
+            new_usecase = UC_PRE_CAPTRUE;
+            if (frameUseCase == AIQ_FRAME_USECASE_STILL_CAPTURE)
+                _delay_still_capture = true;
+        } else {
+            switch (cur_usecase ) {
+            case UC_PREVIEW:
+                // TODO: preview to capture directly, don't change usecase now
+                /* if (frameUseCase == AIQ_FRAME_USECASE_STILL_CAPTURE) */
+                /*     new_usecase = UC_CAPTURE; */
+                if (frameUseCase == AIQ_FRAME_USECASE_VIDEO_RECORDING)
+                    new_usecase = UC_RECORDING;
+                break;
+            case UC_PRE_CAPTRUE:
+                if ((new_aestate == ANDROID_CONTROL_AE_STATE_CONVERGED ||
+                    new_aestate == ANDROID_CONTROL_AE_STATE_LOCKED ||
+                    new_aestate == ANDROID_CONTROL_AE_STATE_FLASH_REQUIRED) &&
+                    (frameUseCase == AIQ_FRAME_USECASE_STILL_CAPTURE ||
+                     _delay_still_capture)) {
+                    _delay_still_capture = false;
+                    new_usecase = UC_CAPTURE;
+                }
+                // cancel precap
+                if (new_aestate == ANDROID_CONTROL_AE_STATE_INACTIVE)
+                    new_usecase = UC_PREVIEW;
+                break;
+            case UC_CAPTURE:
+                // TODO: HAL should notify engine it has pick the right frame
+                // to encode jpeg, now set an safe delayed frame to ensure the
+                // HAL could capture the well exposured frame
+                if (_capture_to_preview_delay++ > 20) {
+                    _capture_to_preview_delay = 0;
+                    new_usecase = UC_PREVIEW;
+                }
+                break;
+            case UC_RECORDING:
+                if (frameUseCase == AIQ_FRAME_USECASE_PREVIEW)
+                    new_usecase = UC_PREVIEW;
+                break;
+            case UC_RAW:
+                break;
+            default:
+                new_usecase = UC_PREVIEW;
+                LOGE("wrong usecase %d", cur_usecase);
+            }
+        }
+        LOGD("usecase %d -> %d, frameUseCase %d, new_aestate %d",
+             cur_usecase, new_usecase, frameUseCase, new_aestate);
+        _ia_dcfg.uc = new_usecase;
+    }
     _isp10_engine->getSensorModedata(sensor_mode,  &_ia_dcfg.sensor_mode);
     if (_inputParams.ptr()) {
         ParamsTranslate::convert_to_rkisp_awb_config(&_inputParams->awbInputParams.awbParams,
@@ -1301,6 +1346,17 @@ RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *
         ParamsTranslate::convert_to_rkisp_af_config(&_inputParams->afInputParams.afParams,
                                                      &_ia_dcfg.afc_cfg, &_ia_dcfg.sensor_mode);
         AAAControls *aaaControls = &_inputParams->aaaControls;
+        // update flash mode
+        XCamAeParam* aeParam = &_inputParams->aeInputParams.aeParams;
+
+        if (aeParam->flash_mode == AE_FLASH_MODE_AUTO)
+            _ia_dcfg.flash_mode = HAL_FLASH_AUTO;
+        else if (aeParam->flash_mode == AE_FLASH_MODE_ON)
+            _ia_dcfg.flash_mode = HAL_FLASH_ON;
+        else if (aeParam->flash_mode == AE_FLASH_MODE_TORCH)
+            _ia_dcfg.flash_mode = HAL_FLASH_TORCH;
+        else
+            _ia_dcfg.flash_mode = HAL_FLASH_OFF;
         // update ae lock
         _ia_dcfg.aaa_locks &= ~HAL_3A_LOCKS_EXPOSURE;
         _ia_dcfg.aaa_locks |= aaaControls->ae.aeLock ? HAL_3A_LOCKS_EXPOSURE : 0;
@@ -1373,6 +1429,37 @@ RKiqCompositor::set_effect_ispparams (struct rkisp_parameters& isp_params)
 
     return true;
 }
+
+bool
+RKiqCompositor::set_flash_status_info (rkisp_flash_setting_t& flash_info) {
+    _ia_stat.uc = flash_info.uc;
+    _ia_stat.flash_status.strobe = flash_info.strobe;
+    _ia_stat.flash_status.flash_timeout_ms = flash_info.timeout_ms;
+    _ia_stat.flash_status.effect_ts = flash_info.effect_ts;
+    switch (flash_info.flash_mode) {
+    case RKISP_FLASH_MODE_OFF :
+        _ia_stat.flash_status.flash_mode = HAL_FLASH_OFF ;
+        break;
+    case RKISP_FLASH_MODE_TORCH:
+        _ia_stat.flash_status.flash_mode = HAL_FLASH_TORCH;
+        break;
+    case RKISP_FLASH_MODE_FLASH_PRE:
+        _ia_stat.flash_status.flash_mode = HAL_FLASH_PRE;
+        break;
+    case RKISP_FLASH_MODE_FLASH_MAIN:
+        _ia_stat.flash_status.flash_mode = HAL_FLASH_MAIN;
+        break;
+    case RKISP_FLASH_MODE_FLASH:
+        _ia_stat.flash_status.flash_mode = HAL_FLASH_ON;
+        break;
+    default:
+        LOGE("not support flash mode %d", flash_info.flash_mode);
+    }
+    // set frame status in set_3a_stats
+
+    return true;
+}
+
 bool
 RKiqCompositor::set_3a_stats (SmartPtr<X3aIspStatistics> &stats)
 {
@@ -1402,6 +1489,29 @@ RKiqCompositor::set_3a_stats (SmartPtr<X3aIspStatistics> &stats)
     XCAM_LOG_DEBUG ("MoveStatus: %d, vcm_ts %lld, cur_exptime %f, frame_ts %lld",
         _ia_stat.af.cameric.MoveStatus, vcm_ts / 1000, cur_exptime / 1000, frame_ts / 1000);
 
+    //set flash frame status
+    if ((_ia_stat.uc == UC_PRE_CAPTRUE || _ia_stat.uc == UC_CAPTURE) &&
+        (_ia_stat.flash_status.flash_mode == HAL_FLASH_PRE ||
+         _ia_stat.flash_status.flash_mode == HAL_FLASH_MAIN)) {
+
+        if(_ia_stat.flash_status.flash_mode == HAL_FLASH_PRE ) {
+            if (_ia_stat.flash_status.effect_ts + cur_exptime <= frame_ts)
+                _ia_stat.frame_status = CAMIA10_FRAME_STATUS_FLASH_EXPOSED;
+            else
+                _ia_stat.frame_status = CAMIA10_FRAME_STATUS_FLASH_PARTIAL;
+        } else if (_ia_stat.flash_status.flash_mode == HAL_FLASH_MAIN) {
+            if ((_ia_stat.flash_status.effect_ts + cur_exptime <= frame_ts) &&
+               (frame_ts < _ia_stat.flash_status.effect_ts + _ia_stat.flash_status.flash_timeout_ms * 1000))
+                _ia_stat.frame_status = CAMIA10_FRAME_STATUS_FLASH_EXPOSED;
+            else
+                _ia_stat.frame_status = CAMIA10_FRAME_STATUS_FLASH_PARTIAL;
+
+        }
+        XCAM_LOG_DEBUG ("stats id %d,frame_status: %d, effect_ts %lld, cur_exptime %f, frame_ts %lld",
+            _isp_stats.frame_id,  _ia_stat.frame_status,
+            _ia_stat.flash_status.effect_ts / 1000, cur_exptime / 1000, frame_ts / 1000);
+    } else
+        _ia_stat.frame_status = CAMIA10_FRAME_STATUS_OK;
     // clear old value 
     _ia_stat.meas_type = 0;
     _isp10_engine->convertIspStats(&_isp_stats, &_ia_stat);
@@ -1445,6 +1555,19 @@ XCamReturn
 RKiqCompositor::limit_nr_levels (struct rkisp_parameters *isp_param)
 {
     return XCAM_RETURN_NO_ERROR;
+}
+
+void RKiqCompositor::pre_process_3A_states()
+{
+    if (_ae_handler && _awb_handler && _af_handler && _inputParams.ptr()) {
+        _ae_handler->mAeState->processState(_inputParams->aaaControls.controlMode,
+                                            _inputParams->aaaControls.ae);
+        _awb_handler->mAwbState->processState(_inputParams->aaaControls.controlMode,
+                                              _inputParams->aaaControls.awb);
+        _af_handler->mAfState->processTriggers(_inputParams->aaaControls.af.afTrigger,
+                                               _inputParams->aaaControls.af.afMode, 0,
+                                               _inputParams->afInputParams.afParams);
+    }
 }
 
 XCamReturn RKiqCompositor::integrate (X3aResultList &results)
@@ -1538,6 +1661,34 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
     isp_3a_result.af_otp_info.enable = 0;
     isp_3a_result.lsc_otp_info.enable =
         _ia_results.otp_info.lsc.enable;
+
+    // update flash settings
+    rkisp_flash_setting_t* flash_set = &isp_3a_result.flash_settings;
+    CamIA10_flash_setting_t* flash_result = &_ia_results.flash;
+    isp_3a_result.uc = _ia_results.uc;
+    flash_set->uc = _ia_results.uc;
+    switch (flash_result->flash_mode) {
+    case HAL_FLASH_OFF :
+        flash_set->flash_mode = RKISP_FLASH_MODE_OFF;
+        break;
+    case HAL_FLASH_TORCH:
+        flash_set->flash_mode = RKISP_FLASH_MODE_TORCH;
+        break;
+    case HAL_FLASH_PRE:
+        flash_set->flash_mode = RKISP_FLASH_MODE_FLASH_PRE;
+        break;
+    case HAL_FLASH_MAIN:
+        flash_set->flash_mode = RKISP_FLASH_MODE_FLASH_MAIN;
+        break;
+    case HAL_FLASH_ON:
+        flash_set->flash_mode = RKISP_FLASH_MODE_FLASH;
+        break;
+    default:
+        LOGE("not support flash mode %d", flash_result->flash_mode);
+    }
+
+    flash_set->strobe = flash_result->strobe;
+    flash_set->timeout_ms = flash_result->flash_timeout_ms;
 
     for (int i=0; i < HAL_ISP_MODULE_MAX_ID_ID + 1; i++) {
         isp_3a_result.enabled[i] = _isp_cfg.enabled[i];

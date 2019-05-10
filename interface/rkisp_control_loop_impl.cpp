@@ -214,6 +214,7 @@ int rkisp_cl_prepare(void* cl_ctx,
     SmartPtr<V4l2SubDevice> isp_dev = NULL;
     SmartPtr<V4l2SubDevice> sensor_dev = NULL;
     SmartPtr<V4l2SubDevice> vcm_dev = NULL;
+    SmartPtr<V4l2SubDevice> fl_dev = NULL;
     SmartPtr<V4l2Device> stats_dev = NULL;
     SmartPtr<V4l2Device> param_dev = NULL;
 
@@ -226,12 +227,13 @@ int rkisp_cl_prepare(void* cl_ctx,
              __FUNCTION__, device_manager->_cl_state);
         return 0;
     }
-	LOGD("rkisp_cl_prepare, isp: %s, sensor: %s, stats: %s, params: %s, lens: %s",
+	LOGD("rkisp_cl_prepare, isp: %s, sensor: %s, stats: %s, params: %s, lens: %s, fl: %s",
         prepare_params->isp_sd_node_path,
         prepare_params->sensor_sd_node_path,
         prepare_params->isp_vd_stats_path,
         prepare_params->isp_vd_params_path,
-        prepare_params->lens_sd_node_path);
+        prepare_params->lens_sd_node_path,
+        prepare_params->flashlight_sd_node_path);
 
     isp_dev = new V4l2SubDevice (prepare_params->isp_sd_node_path);
     ret = isp_dev->open ();
@@ -293,7 +295,16 @@ int rkisp_cl_prepare(void* cl_ctx,
         vcm_dev = new V4l2SubDevice(prepare_params->lens_sd_node_path);
         ret = vcm_dev->open ();
         if (ret != XCAM_RETURN_NO_ERROR) {
-            ALOGE("failed to open isp subdev");
+            ALOGE("failed to open lens subdev");
+            return -1;
+        }
+    }
+
+    if (prepare_params->flashlight_sd_node_path) {
+        fl_dev = new V4l2SubDevice(prepare_params->flashlight_sd_node_path);
+        ret = fl_dev->open ();
+        if (ret != XCAM_RETURN_NO_ERROR) {
+            ALOGE("failed to open flashlight subdev");
             return -1;
         }
     }
@@ -305,6 +316,8 @@ int rkisp_cl_prepare(void* cl_ctx,
     isp_controller->set_isp_ver(isp_ver);
     if (vcm_dev.ptr())
         isp_controller->set_vcm_subdev(vcm_dev);
+    if (fl_dev.ptr())
+        isp_controller->set_fl_subdev(fl_dev);
 
     SmartPtr<IspPollThread> isp_poll_thread = new IspPollThread ();
     isp_poll_thread->set_isp_controller (isp_controller);

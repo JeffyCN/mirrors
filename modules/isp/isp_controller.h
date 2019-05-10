@@ -45,6 +45,7 @@ public:
 
     void set_sensor_subdev (SmartPtr<V4l2SubDevice> &subdev);
     void set_vcm_subdev (SmartPtr<V4l2SubDevice> &subdev);
+    void set_fl_subdev (SmartPtr<V4l2SubDevice> &subdev);
     void set_isp_stats_device(SmartPtr<V4l2Device> &dev);
     void set_isp_params_device(SmartPtr<V4l2Device> &dev);
     void set_isp_ver(int isp_ver) { _isp_ver = isp_ver; }
@@ -60,6 +61,7 @@ public:
     XCamReturn get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &sensor_mode_data,
                                      int frame_id = -1);
     XCamReturn get_isp_parameter (struct rkisp_parameters& parameters, int frame_id = -1);
+    XCamReturn get_flash_status (rkisp_flash_setting_t& flash_settings, int frame_id = -1);
     XCamReturn get_frame_softime (int64_t &sof_tim);
     XCamReturn get_vcm_time (struct rk_cam_vcm_tim *vcm_tim);
 
@@ -87,6 +89,7 @@ private:
                              struct rkisp1_isp_params_cfg *full_params);
     XCamReturn set_3a_config_sync ();
     XCamReturn apply_otp_config (struct rkisp_parameters *isp_cfg);
+    XCamReturn set_3a_fl (int fl_mode, int fl_intensity, int fl_timeout, int fl_on);
 
 private:
     volatile bool            _is_exit;
@@ -103,6 +106,7 @@ private:
     SmartPtr<V4l2Device>     _isp_params_device;
 
     SmartPtr<V4l2SubDevice>  _vcm_device;
+    SmartPtr<V4l2SubDevice>  _fl_device;
     bool                     _is_bw_sensor;
     /* frame sync */
 #define EXPOSURE_GAIN_DELAY 3
@@ -125,6 +129,7 @@ private:
         struct rkisp1_isp_params_cfg isp_params;
         struct rkisp_awb_algo awb_algo_results;
         int64_t frame_sof_ts;
+        rkisp_flash_setting_t flash_settings;
     };
     std::map<int, struct rkisp_effect_params> _effecting_ispparm_map;
     std::vector<struct rkisp_parameters> _pending_ispparams_queue;

@@ -90,8 +90,8 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
  *  - awb lib v0.0.9
  *  - af lib v0.2.10
  * v2.0.0
- *  note: ISP drvier should be updated to v0.1.2
- *  - calibdb v1.0.0 iq: v1.0.0 checksum: 635074
+ *  note: ISP drvier should be updated to v0.1.3
+ *  - calibdb v1.0.0 iq: v1.0.0 checksum: 635075
  *    add strict tag level checking for iq xml
  *  - support lsc otp enable control in iq xml
  *  - fix some bugs
@@ -100,12 +100,16 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
  *    fix bug of mapping hist weights error from 9x9 to 5x5
  *  - rkisp_demo support usr_ptr memory mode, and fix some bugs
  *  - aec lib v0.0.9
- *  - awb lib v0.0.9
- *  - af lib v0.2.11
+ *  - awb lib v0.0.b
+ *  - af lib v0.2.14
  *    fix the wrong af trigger when picture taken
+ * v2.0.1
+ *  - support flashlight and precapture
+ *  - ae lib v0.0.a
+ *  - calibdb v1.1.0 iq: v1.1.0 checksum: 677941 
  */
 
-#define CONFIG_CAM_ENGINE_LIB_VERSION "v2.0.0"
+#define CONFIG_CAM_ENGINE_LIB_VERSION "v2.0.1"
 
 using namespace XCam;
 class SettingsProcessor;

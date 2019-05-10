@@ -8,6 +8,7 @@
 #include <rk_vcm_head.h>
 #include <rk-preisp.h>
 #include <rk-camera-module.h>
+#include <rk-flash.h>
 // for old isp driver ported from sofia
 #else
 #ifdef RK_ISP10

@@ -98,6 +98,12 @@ typedef struct _AfInputParams {
     /* AfInputParams()                    { CLEAR(*this); } */
 } AfInputParams;
 
+typedef enum {
+   AIQ_FRAME_USECASE_PREVIEW,
+   AIQ_FRAME_USECASE_STILL_CAPTURE,
+   AIQ_FRAME_USECASE_VIDEO_RECORDING,
+} AiqFrameUseCase;
+
 typedef struct _AiqInputParams {
     _AiqInputParams &operator=(const _AiqInputParams &other);
     unsigned int    reqId;
@@ -109,6 +115,7 @@ typedef struct _AiqInputParams {
     CameraMetadata* staticMeta;
     int sensorOutputWidth;
     int sensorOutputHeight;
+    AiqFrameUseCase frameUseCase;
     void init();
     _AiqInputParams();
     ~_AiqInputParams() {}

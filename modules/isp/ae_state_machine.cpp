@@ -229,10 +229,10 @@ RkAEModeAuto::processState(const uint8_t &controlMode,
             case ANDROID_CONTROL_AE_STATE_INACTIVE:
             case ANDROID_CONTROL_AE_STATE_CONVERGED:
             case ANDROID_CONTROL_AE_STATE_PRECAPTURE:
+            case ANDROID_CONTROL_AE_STATE_FLASH_REQUIRED:
                 if (aeControls.aePreCaptureTrigger ==
                         ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_START)
                     mCurrentAeState = ANDROID_CONTROL_AE_STATE_PRECAPTURE;
-
                 if (aeControls.aePreCaptureTrigger ==
                         ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL)
                     mCurrentAeState = ANDROID_CONTROL_AE_STATE_INACTIVE;

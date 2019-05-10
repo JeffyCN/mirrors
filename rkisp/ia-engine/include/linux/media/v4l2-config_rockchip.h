@@ -58,6 +58,8 @@ struct isp_supplemental_sensor_mode_data {
   unsigned short af_onoff;
   unsigned int vcm_max_step;
   bool  is_bw_sensor;
+  int flash_mode;
+  int use_case;
 };
 
 

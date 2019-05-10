@@ -25,7 +25,6 @@
 
 #include <linux/rkisp.h>
 #include <rkiq_params.h>
-
 namespace XCam {
 
 IspController::IspController ():
@@ -89,6 +88,11 @@ IspController::set_sensor_subdev (SmartPtr<V4l2SubDevice> &subdev) {
 void
 IspController::set_vcm_subdev(SmartPtr<V4l2SubDevice> &subdev) {
     _vcm_device = subdev;
+};
+
+void
+IspController::set_fl_subdev(SmartPtr<V4l2SubDevice> &subdev) {
+    _fl_device = subdev;
 };
 
 void
@@ -285,6 +289,48 @@ IspController::get_sensor_descriptor (rk_aiq_exposure_sensor_descriptor *sensor_
     return XCAM_RETURN_NO_ERROR;
 }
 #endif
+
+XCamReturn
+IspController::get_flash_status (rkisp_flash_setting_t& flash_settings, int frame_id)
+{
+
+    SmartLock locker (_mutex);
+
+    if (_is_exit)
+        return XCAM_RETURN_BYPASS;
+
+    std::map<int, struct rkisp_effect_params>::iterator it;
+    int num = _effecting_ispparm_map.size();
+    int search_id = frame_id < 0 ? 0 : frame_id;
+
+    do {
+        it = _effecting_ispparm_map.find(search_id);
+        if (it != _effecting_ispparm_map.end()) {
+            flash_settings =
+              _effecting_ispparm_map[search_id].flash_settings;
+            break;
+        }
+    } while (--num > 0 && --search_id >=0);
+
+    if (it == _effecting_ispparm_map.end()) {
+        LOGW("can't find %d flash settings in effecting map.", frame_id);
+    }
+
+    if (_fl_device.ptr()) {
+        struct timeval flash_time;
+
+        if (_fl_device->io_control (RK_VIDIOC_FLASH_TIMEINFO , &flash_time) < 0) {
+            XCAM_LOG_ERROR (" get RK_VIDIOC_FLASH_TIMEINFO failed. cmd = 0x%x", RK_VIDIOC_FLASH_TIMEINFO);
+            /* return XCAM_RETURN_ERROR_IOCTL; */
+        }
+        flash_settings.effect_ts = (int64_t)flash_time.tv_sec * 1000 * 1000 +
+                                   (int64_t)flash_time.tv_usec;
+        XCAM_LOG_DEBUG("frameid %d, get RK_VIDIOC_FLASH_TIMEINFO flash ts %lld",
+            frame_id, flash_settings.effect_ts);
+    }
+
+	return XCAM_RETURN_NO_ERROR;
+}
 
 XCamReturn
 IspController::get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &sensor_mode_data, int frame_id)
@@ -727,6 +773,7 @@ IspController::set_3a_config_sync ()
 {
     struct rkisp_parameters config;
     struct rkisp_parameters* isp_cfg = NULL;
+    rkisp_flash_setting_t* flash_settings = NULL;
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
 
     if (_effecting_ispparm_map.size() > 10)
@@ -735,10 +782,13 @@ IspController::set_3a_config_sync ()
     if (_pending_ispparams_queue.empty()) {
         LOGD("no new isp params !");
         // reuse last params
-        if (_frame_sequence >= 0)
+        if (_frame_sequence >= 0) {
             _effecting_ispparm_map[_frame_sequence + 1] =
                 _effecting_ispparm_map[_frame_sequence];
-        else
+            if (_frame_sequence > 0)
+                _effecting_ispparm_map[_frame_sequence].flash_settings =
+                    _effecting_ispparm_map[_frame_sequence - 1].flash_settings;
+        } else
             LOGE("FIXME! no initial isp params !");
 
         return ret;
@@ -794,12 +844,29 @@ IspController::set_3a_config_sync ()
         dump_isp_config(&_full_active_isp_params, isp_cfg);
     }
 
+    // set flash if needed
+    flash_settings = &isp_cfg->flash_settings;
+    std::map<int, struct rkisp_effect_params>::iterator it;
+    it = _effecting_ispparm_map.find(_frame_sequence - 1);
+    if (it != _effecting_ispparm_map.end()) {
+        rkisp_flash_setting_t* old_flash_settings = NULL;
+        old_flash_settings = &_effecting_ispparm_map[_frame_sequence - 1].flash_settings;
+        if ((old_flash_settings->flash_mode != flash_settings->flash_mode) ||
+            (old_flash_settings->strobe != flash_settings->strobe))
+            set_3a_fl(flash_settings->flash_mode, 100,
+                      flash_settings->timeout_ms, flash_settings->strobe);
+    } else
+        set_3a_fl(flash_settings->flash_mode, 100,
+                  flash_settings->timeout_ms, flash_settings->strobe);
+
     if (_frame_sequence < 0) {
         _effecting_ispparm_map[0].isp_params = _full_active_isp_params;
         _effecting_ispparm_map[0].awb_algo_results = isp_cfg->awb_algo_results;
+        _effecting_ispparm_map[0].flash_settings = *flash_settings;
     } else {
         _effecting_ispparm_map[_frame_sequence + 1].isp_params = _full_active_isp_params;
         _effecting_ispparm_map[_frame_sequence + 1].awb_algo_results = isp_cfg->awb_algo_results;
+        _effecting_ispparm_map[_frame_sequence].flash_settings = *flash_settings;
     }
 
 #if RKISP
@@ -1145,11 +1212,60 @@ IspController::set_3a_focus (X3aIspFocusResult *res)
     return XCAM_RETURN_NO_ERROR;
 }
 
+XCamReturn
+IspController::set_3a_fl (int fl_mode, int fl_intensity,
+                          int fl_timeout, int fl_on)
+{
+    struct v4l2_control control;
+    int fl_v4l_mode;
+
+#define set_fl_contol_to_dev(control_id,val) \
+        xcam_mem_clear (control); \
+        control.id = control_id; \
+        control.value = val; \
+        if (_fl_device.ptr()) { \
+            if (_fl_device->io_control (VIDIOC_S_CTRL, &control) < 0) { \
+                XCAM_LOG_ERROR (" set fl %s to %d failed", #control_id, val); \
+                return XCAM_RETURN_ERROR_IOCTL; \
+            } \
+            XCAM_LOG_DEBUG (" sof seq %d, set fl %s to %d, success", _frame_sequence, #control_id, val); \
+        } \
+
+    if (fl_mode == RKISP_FLASH_MODE_OFF)
+        fl_v4l_mode = V4L2_FLASH_LED_MODE_NONE;
+    else if (fl_mode == RKISP_FLASH_MODE_FLASH || fl_mode == RKISP_FLASH_MODE_FLASH_MAIN)
+        fl_v4l_mode = V4L2_FLASH_LED_MODE_FLASH;
+    else if (fl_mode == RKISP_FLASH_MODE_FLASH_PRE || fl_mode ==  RKISP_FLASH_MODE_TORCH)
+        fl_v4l_mode = V4L2_FLASH_LED_MODE_TORCH;
+    else {
+        XCAM_LOG_ERROR (" set fl to mode  %d failed", fl_mode);
+        return XCAM_RETURN_ERROR_PARAM;
+    }
+
+    if (fl_v4l_mode == V4L2_FLASH_LED_MODE_NONE) {
+        set_fl_contol_to_dev(V4L2_CID_FLASH_LED_MODE, V4L2_FLASH_LED_MODE_NONE);
+    } else if (fl_v4l_mode == V4L2_FLASH_LED_MODE_FLASH) {
+        set_fl_contol_to_dev(V4L2_CID_FLASH_LED_MODE, V4L2_FLASH_LED_MODE_FLASH);
+        set_fl_contol_to_dev(V4L2_CID_FLASH_TIMEOUT, fl_timeout * 1000);
+        // TODO: should query intensity range before setting
+        /* set_fl_contol_to_dev(V4L2_CID_FLASH_INTENSITY, fl_intensity); */
+        set_fl_contol_to_dev(fl_on ? V4L2_CID_FLASH_STROBE : V4L2_CID_FLASH_STROBE_STOP, 0);
+    } else if (fl_v4l_mode == V4L2_FLASH_LED_MODE_TORCH) {
+        // TODO: should query intensity range before setting
+        /* set_fl_contol_to_dev(V4L2_CID_FLASH_TORCH_INTENSITY, fl_intensity); */
+        set_fl_contol_to_dev(V4L2_CID_FLASH_LED_MODE, V4L2_FLASH_LED_MODE_TORCH);
+    } else {
+        XCAM_LOG_ERROR ("|||set_3a_fl error fl mode %d", fl_mode);
+        return XCAM_RETURN_ERROR_PARAM;
+    }
+
+    return XCAM_RETURN_NO_ERROR;
+}
+
 #if RKISP
 void
 IspController::dump_isp_config(struct rkisp1_isp_params_cfg* isp_params,
                             struct rkisp_parameters *isp_cfg) {
-    
     XCAM_LOG_DEBUG("-------------------------------------------------------\n \
             |||set_3a_config rkisp1_isp_params_cfg size: %d, meas: %d, others: %d\n  \
                module enable mask - update: %x - %x, cfg update: %x\n \

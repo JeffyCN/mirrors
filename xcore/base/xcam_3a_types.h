@@ -41,6 +41,13 @@ typedef enum  {
 } XCamMode;
 
 typedef enum {
+    AE_FLASH_MODE_OFF,
+    AE_FLASH_MODE_ON,
+    AE_FLASH_MODE_AUTO,
+    AE_FLASH_MODE_TORCH,
+} XCamAeFlashMode;
+
+typedef enum {
     XCAM_AE_MODE_NOT_SET = -1,
     XCAM_AE_MODE_AUTO,
     XCAM_AE_MODE_MANUAL,

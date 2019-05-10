@@ -230,6 +230,7 @@ protected:
 class AiqAfHandler
     : public AfHandler
 {
+    friend class RKiqCompositor;
 public:
     explicit AiqAfHandler (SmartPtr<RKiqCompositor> &aiq_compositor);
     ~AiqAfHandler () {}
@@ -288,6 +289,7 @@ public:
     void set_awb_handler (SmartPtr<AiqAwbHandler> &handler);
     void set_af_handler (SmartPtr<AiqAfHandler> &handler);
     void set_common_handler (SmartPtr<AiqCommonHandler> &handler);
+    void pre_process_3A_states();
 
     void set_frame_use (ia_aiq_frame_use value) {
         _frame_use = value;
@@ -318,6 +320,7 @@ public:
     bool set_vcm_time (struct rk_cam_vcm_tim *vcm_tim);
     bool set_frame_softime (int64_t sof_tim);
     bool set_effect_ispparams (struct rkisp_parameters& isp_params);
+    bool set_flash_status_info (rkisp_flash_setting_t& flash_info);
 
     ia_aiq  * get_handle () {
         return _ia_handle;
@@ -387,6 +390,8 @@ private:
     uint32_t                   _height;
     double                     _framerate;
     uint32_t                   _all_stats_meas_types;
+    bool _delay_still_capture;
+    int32_t _capture_to_preview_delay;
 };
 
 };

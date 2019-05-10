@@ -80,7 +80,6 @@ struct CamIA10_SensorModeData {
   float gains;
 };
 
-
 struct CamIA10_DyCfg {
   /*application can set */
   USE_CASE uc;
@@ -97,6 +96,22 @@ struct CamIA10_DyCfg {
   int len_pos;
 };
 
+typedef enum {
+	CAMIA10_FRAME_STATUS_OK,
+	CAMIA10_FRAME_STATUS_CORRUPTED,
+	CAMIA10_FRAME_STATUS_FLASH_EXPOSED,
+	CAMIA10_FRAME_STATUS_FLASH_PARTIAL,
+	CAMIA10_FRAME_STATUS_FLASH_FAILED,
+} CamIA10_frame_status;
+
+typedef struct {
+  HAL_FLASH_MODE flash_mode;
+  int flash_timeout_ms;
+  int flash_power;
+  bool strobe;
+  int64_t effect_ts;
+} CamIA10_flash_setting_t;
+
 struct CamIA10_Stats {
   unsigned int meas_type;
   AecStat_t aec;
@@ -110,6 +125,9 @@ struct CamIA10_Stats {
   Cam3x3FloatMatrix_t        effect_CtMatrix;
   AwbXTalkOffset_t         effect_CtOffset;
   unsigned short cifisp_preisp_goc_curve[CIFISP_PREISP_GOC_CURVE_SIZE];
+  USE_CASE uc;
+  CamIA10_frame_status frame_status;
+  CamIA10_flash_setting_t flash_status;
 };
 
 typedef struct CamIA10_AWB_Result_s {
@@ -175,6 +193,8 @@ struct CamIA10_Results {
   CamerIcRKDemosaicLP_t rkDemosaicLP;
   bool_t otp_info_avl;
   CamOTPGlobal_t otp_info;
+  USE_CASE uc;
+  CamIA10_flash_setting_t flash;
   /* following results are included in 3A*/
   //struct cifisp_lsc_config lsc;
   //struct cifisp_awb_gain_config awb_gain;

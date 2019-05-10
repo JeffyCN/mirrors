@@ -93,6 +93,7 @@ RESULT CamIA10Engine::init() {
         lastAecResult.RegHdrGains[i]=-1;
         lastAecResult.RegHdrTime[i]=-1;
     }
+    mLock3AForStillCap = false;
 
     return 0;
 }
@@ -431,6 +432,29 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
          aecCfg.LinePeriodsPerField,
          aecCfg.PixelClockFreqMHZ);
 
+    CamIA10_frame_status frame_status = mStats.frame_status;
+	HAL_FLASH_MODE flash_mode = mStats.flash_status.flash_mode;
+ 	AecFlashMode_t flashModeState = lastAecResult.flashModeState;
+	bool require_flash = lastAecResult.require_flash;
+	
+    if(dCfg.uc == UC_PREVIEW || dCfg.uc == UC_RECORDING ){
+        aecCfg.flashModeSetting = AEC_FLASH_FLASHOFF;
+    }else if ((dCfg.uc == UC_PRE_CAPTRUE
+    	&& require_flash == true
+        && flashModeState == AEC_FLASH_FLASHOFF)
+        || flashModeState == AEC_FLASH_PREFLASH) {
+        aecCfg.flashModeSetting = AEC_FLASH_PREFLASH;
+    } else if ((dCfg.uc == UC_CAPTURE && flashModeState == AEC_FLASH_PREFLASH)
+    			|| flashModeState == AEC_FLASH_MAINFLASH) {
+        aecCfg.flashModeSetting = AEC_FLASH_MAINFLASH;
+    }else{
+		aecCfg.flashModeSetting = AEC_FLASH_FLASHOFF;
+    }
+
+	LOGD("%s(%d):uc:%d last flast:%d now:%d flash_mode:%d\n",
+		__FUNCTION__, __LINE__,
+		dCfg.uc, flashModeState, aecCfg.flashModeSetting, flash_mode);
+	
     if ((set->win.left_hoff != shd->win.left_hoff) ||
         (set->win.top_voff != shd->win.top_voff) ||
         (set->win.right_width != shd->win.right_width) ||
@@ -441,7 +465,8 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
         (set->ae_bias != shd->ae_bias)||
         (set->frame_time_ms_min != shd->frame_time_ms_min)||
         (set->frame_time_ms_max != shd->frame_time_ms_max)||
-        mLightMode != cfg->LightMode) {
+        mLightMode != cfg->LightMode
+        || (aecCfg.flashModeSetting != flashModeState)) {
         //cifisp_histogram_mode mode = CIFISP_HISTOGRAM_MODE_RGB_COMBINED;
         cam_ia10_isp_hst_update_stepSize(
                                          aecCfg.HistMode,
@@ -909,7 +934,8 @@ RESULT CamIA10Engine::setStatistics(struct CamIA10_Stats* stats) {
 RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
 {
     RESULT ret = RET_SUCCESS;
-
+	mStats.aec.frame_status = (AecFrameStatus_t)(mStats.frame_status);
+	
     if (!first) {
         int lastTime = lastAecResult.regIntegrationTime;
         int lastGain = lastAecResult.regGain;
@@ -941,7 +967,7 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
                 mStats.aec.sensor_metadata.regGain =
                   dCfg.sensor_mode.gain;
                 aecDesc->set_stats(aecContext, &mStats.aec);
-                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE))
+                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE) && !mLock3AForStillCap)
                     aecDesc->analyze_ae(aecContext, param);
             }
         }else{ //add check exposure value between AE & 1608 Embedded data
@@ -970,7 +996,7 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
                 aecParams = param;
                 if (aecDesc != NULL) {
                     aecDesc->set_stats(aecContext, &mStats.aec);
-                    if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE))
+                    if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE) && !mLock3AForStillCap)
                         aecDesc->analyze_ae(aecContext, param);
                 }
             }
@@ -1061,7 +1087,7 @@ RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, 
         ret = awbDesc->set_stats(awbContext, first ? NULL : &MeasResult);
         if (first)
             awbDesc->update_awb_params(awbContext, &awbcfg);
-        if (!(dCfg.aaa_locks & HAL_3A_LOCKS_WB))
+        if (!(dCfg.aaa_locks & HAL_3A_LOCKS_WB) && !mLock3AForStillCap)
             ret = awbDesc->analyze_awb(awbContext, param);
         ret = awbDesc->get_results(awbContext, &retOuput);
     }
@@ -1137,7 +1163,7 @@ RESULT CamIA10Engine::runAf(XCamAfParam *param, XCam3aResultFocus* result, bool 
                 param.trigger_new_search = set->oneshot_trigger;
                 ret = afDesc->set_stats(afContext, &mStats.af);
 
-                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_FOCUS))
+                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_FOCUS) && !mLock3AForStillCap)
                     ret = afDesc->analyze_af(afContext, &param);
             }//AfProcessFrame(hAf, &mStats.af);
 
@@ -1709,6 +1735,7 @@ RESULT CamIA10Engine::initAEC() {
 
     aecCfg.LightMode = mLightMode;
 
+	memcpy(&aecCfg.flash_config, &pAecGlobal->flashCtrl, sizeof(pAecGlobal->flashCtrl));
     if (aecDesc != NULL) {
         XCamAeParam aeParam;
         aeParam.mode  = XCAM_AE_MODE_AUTO;
@@ -1725,6 +1752,7 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
     int lastTime = lastAecResult.regIntegrationTime;
     int lastGain = lastAecResult.regGain;
 
+	mStats.aec.frame_status = (AecFrameStatus_t)mStats.frame_status;
 #if 0
     LOGD("   ");
     if (!mInitDynamic) {
@@ -1932,10 +1960,11 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
         }
 
     } else {
+    
         if ((lastTime == -1 && lastGain == -1)
             || (lastTime == dCfg.sensor_mode.exp_time && lastGain == dCfg.sensor_mode.gain)) {
             if (aecDesc != NULL) {
-                aecDesc->set_stats(aecContext, &mStats.aec);
+                aecDesc->set_stats(aecContext, &mStats.aec);		
 
                 XCamAeParam aeParam;
                 aeParam.mode  = XCAM_AE_MODE_AUTO;
@@ -2027,6 +2056,22 @@ RESULT CamIA10Engine::getAECResults(AecResult_t* result) {
         result->actives |= CAMIA10_AEC_AFPS_MASK;
     }
 
+    // make sure well exposed frame, runManIspForFlash function will
+    // control flash on/off according the converge state
+    if ((dCfg.uc == UC_PRE_CAPTRUE)  
+		&& result->flashModeState != AEC_FLASH_PREFLASH
+		&& result->require_flash == true){
+        result->converged = false;
+    }
+
+	lastAecResult.flashModeState = result->flashModeState;
+	lastAecResult.require_flash = result->require_flash;
+	
+	LOGD("%s(%d): aec converge:%d uc:%d flash:%d re_flash:%d\n",
+		__FUNCTION__, __LINE__,
+		result->converged, dCfg.uc, 
+		result->flashModeState, 
+		result->require_flash);
     //LOGD("set offset: %d-%d, size: %d-%d", set->win.left_hoff, set->win.top_voff, set->win.right_width, set->win.bottom_height);
     //LOGD("ret offset: %d-%d, size: %d-%d", result->meas_win.h_offs, result->meas_win.v_offs, result->meas_win.h_size, result->meas_win.v_size);
     //LOGD("sensor_mode size: %d-%d", dCfg.sensor_mode.isp_input_width, dCfg.sensor_mode.isp_input_height);
@@ -2737,6 +2782,87 @@ RESULT CamIA10Engine::runManIspForBW(struct CamIA10_Results* result) {
     return ret;
 }
 
+#define CAMIA_DEFAULT_FLASH_TIMEOUT_MS 500
+// just for update result flash settings, avoid to define flash setting
+// in AecResult_t which defined in aec.h
+RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
+    RESULT ret = RET_SUCCESS;
+    bool has_main_flash =
+        aecCfg.flash_config.flashlight_ratio < 1.0f ? true : false;
+    CamIA10_flash_setting_t* flash_setting = &result->flash;
+    /* CamIA10_flash_setting_t* stats_flash = &mStats.flash_status; */
+    CamIA10_frame_status frame_status = mStats.frame_status;
+    bool aec_converged = result->aec.converged;
+
+    result->uc = dCfg.uc;
+
+    if (dCfg.flash_mode == HAL_FLASH_TORCH) {
+        // check if usecase is correct, shouldn't be
+        // UC_PRE_CAPTRUE or UC_CAPTURE
+        mLock3AForStillCap = false;
+        flash_setting->flash_mode = HAL_FLASH_TORCH;
+        // TODO: set torch power
+    } else {
+        if (result->aec.flashModeState == AEC_FLASH_PREFLASH ||
+            result->aec.flashModeState == AEC_FLASH_MAINFLASH ) {
+          CamIA10_flash_setting_t* flash_setting = &result->flash;
+
+          switch (result->uc) {
+          case UC_PRE_CAPTRUE:
+              if (aec_converged &&
+                  frame_status == CAMIA10_FRAME_STATUS_FLASH_EXPOSED) {
+                  // if there is no real main flash, keep preflash on now
+                  if (has_main_flash)
+                      flash_setting->flash_mode = HAL_FLASH_OFF;
+                  // lock 3a after preflash state converged, and
+                  // updateAeConfig will change aec mode to mainflash if needed
+                  mLock3AForStillCap = true;
+              } else {
+                  flash_setting->flash_mode = HAL_FLASH_PRE;
+              }
+              break;
+          case UC_CAPTURE:
+              mLock3AForStillCap = false;
+              if (has_main_flash) {
+                  flash_setting->flash_mode = HAL_FLASH_MAIN;
+                  flash_setting->flash_timeout_ms = CAMIA_DEFAULT_FLASH_TIMEOUT_MS;
+                  flash_setting->strobe = true;
+              } else {
+                  flash_setting->flash_mode = HAL_FLASH_PRE;
+              }
+              break;
+          case UC_PREVIEW:
+          default:
+              flash_setting->strobe = false;
+              flash_setting->flash_mode = HAL_FLASH_OFF;
+              break;
+          }
+        } else {
+            mLock3AForStillCap = false;
+            if ((dCfg.flash_mode == HAL_FLASH_ON) && (result->uc == UC_CAPTURE)) {
+                if (has_main_flash) {
+                  flash_setting->flash_mode = HAL_FLASH_MAIN;
+                  flash_setting->flash_timeout_ms = CAMIA_DEFAULT_FLASH_TIMEOUT_MS;
+                  flash_setting->strobe = true;
+                } else {
+                  flash_setting->flash_mode = HAL_FLASH_PRE;
+                }
+            } else {
+              flash_setting->strobe = false;
+              flash_setting->flash_mode = HAL_FLASH_OFF;
+            }
+        }
+    }
+
+    LOGD("usecase %d, frame_status %d, aec_converged %d, mLock3AForStillCap %d,"
+         "cfg flash_mode %d, convert flash_mode %d, strobe %d",
+         result->uc, frame_status, aec_converged, mLock3AForStillCap,
+         dCfg.flash_mode, flash_setting->flash_mode,
+         flash_setting->strobe);
+
+    return ret;
+}
+
 RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Results* result) {
     RESULT ret = RET_SUCCESS;
     int width = dCfg.sensor_mode.isp_input_width;
@@ -3098,6 +3224,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
     runManIspForBW(result);
     runManIspForPreIsp(result);
     runManIspForOTP(result);
+    runManIspForFlash(result);
 
     return ret;
 }

@@ -48,6 +48,7 @@ typedef struct _XCamAeParam {
 
     /*ev*/
     double                  ev_shift;
+    XCamAeFlashMode         flash_mode;
 } XCamAeParam;
 
 typedef struct _XCamAwbParam {

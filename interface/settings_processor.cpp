@@ -166,6 +166,24 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
         aeMode = entry.data.u8[0];
     aeCtrl->aeMode = aeMode;
 
+    uint8_t flash_mode = ANDROID_FLASH_MODE_OFF;
+    entry = settings->find(ANDROID_FLASH_MODE);
+    if (entry.count == 1) {
+        flash_mode = entry.data.u8[0];
+    }
+
+    // if aemode is *_flash, overide the flash mode of ANDROID_FLASH_MODE
+    if (aeMode == ANDROID_CONTROL_AE_MODE_ON_AUTO_FLASH)
+        aeParams->flash_mode = AE_FLASH_MODE_AUTO;
+    else if (aeMode == ANDROID_CONTROL_AE_MODE_ON_ALWAYS_FLASH)
+        aeParams->flash_mode = AE_FLASH_MODE_ON;
+    else if (flash_mode  == ANDROID_FLASH_MODE_TORCH)
+        aeParams->flash_mode = AE_FLASH_MODE_TORCH;
+    else if (flash_mode  == ANDROID_FLASH_MODE_SINGLE)
+        aeParams->flash_mode = AE_FLASH_MODE_ON;
+    else
+        aeParams->flash_mode = AE_FLASH_MODE_OFF;
+
     entry = settings->find(ANDROID_CONTROL_MODE);
     if (entry.count == 1)
         controlMode = entry.data.u8[0];
@@ -704,6 +722,26 @@ XCamReturn
 SettingsProcessor::processRequestSettings(const CameraMetadata &settings,
                              AiqInputParams &aiqparams) {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
+
+    // get use case
+    aiqparams.frameUseCase = AIQ_FRAME_USECASE_PREVIEW;
+    camera_metadata_ro_entry entry = settings.find(ANDROID_CONTROL_CAPTURE_INTENT);
+    camera_metadata_entry_t rw_entry;
+    if (entry.count == 1) {
+        switch (entry.data.u8[0]) {
+            case ANDROID_CONTROL_CAPTURE_INTENT_PREVIEW:
+                aiqparams.frameUseCase = AIQ_FRAME_USECASE_PREVIEW;
+                break;
+            case ANDROID_CONTROL_CAPTURE_INTENT_STILL_CAPTURE:
+                aiqparams.frameUseCase = AIQ_FRAME_USECASE_STILL_CAPTURE;
+                break;
+            case ANDROID_CONTROL_CAPTURE_INTENT_VIDEO_RECORD:
+                aiqparams.frameUseCase = AIQ_FRAME_USECASE_VIDEO_RECORDING;
+                break;
+            default :
+                break;
+        }
+    }
 
     if ((ret = processAeSettings(settings, aiqparams)) != XCAM_RETURN_NO_ERROR)
         return ret;

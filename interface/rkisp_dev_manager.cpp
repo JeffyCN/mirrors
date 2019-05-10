@@ -156,6 +156,8 @@ RkispDeviceManager::set_control_params(const int request_frame_id,
          aectl.aeAntibanding, aectl.evCompensation,
          aectl.aeTargetFpsRange[0], aectl.aeTargetFpsRange[1]);
     LOGI("@%s : reqId %d, afMode %d, afTrigger %d", __FUNCTION__, request_frame_id, afctl.afMode, afctl.afTrigger);
+    LOGI("@%s : reqId %d, frame usecase %d, flash_mode %d",
+         __FUNCTION__, request_frame_id, inputParams->frameUseCase, aeparams.flash_mode);
     {
         SmartLock lock(_settingsMutex);
         _settings.push_back(inputParams);

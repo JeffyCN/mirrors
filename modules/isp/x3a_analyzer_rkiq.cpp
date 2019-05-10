@@ -296,7 +296,7 @@ X3aAnalyzerRKiq::pre_3a_analyze (SmartPtr<X3aStats> &stats)
     //function
     _rkiq_compositor->setAiqInputParams(this->getAiqInputParams());
     LOGD("@%s : reqId %d", __FUNCTION__, this->getAiqInputParams().ptr() ? this->getAiqInputParams()->reqId : -1);
-
+    _rkiq_compositor->pre_process_3A_states();
     ret = _isp->get_frame_softime (sof_tim);
     XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret, "get sof time failed");
     ret = _isp->get_vcm_time (&vcm_tim);
@@ -319,6 +319,15 @@ X3aAnalyzerRKiq::pre_3a_analyze (SmartPtr<X3aStats> &stats)
 
     if (!_rkiq_compositor->set_effect_ispparams (isp_params)) {
         XCAM_LOG_WARNING ("AIQ set effect isp params failed");
+        return XCAM_RETURN_ERROR_AIQ;
+    }
+
+    rkisp_flash_setting_t flash_settings;
+    ret = _isp->get_flash_status (flash_settings, stats_3a->frame_id);
+    XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret, "get flash setting failed");
+
+    if (!_rkiq_compositor->set_flash_status_info (flash_settings)) {
+        XCAM_LOG_WARNING ("AIQ set effect flash info failed");
         return XCAM_RETURN_ERROR_AIQ;
     }
 
