@@ -64,11 +64,9 @@
  * 1) mdoify awb converged threshold
   *2) only awb is converged and wp number bigger than threshold ,then 
         enter AwbSetValues function to update awb value to IC register.
- * v0.0.b
-     While Few white pixels  ,CC process should be disable to try to get more white pixles 
  */
 
-#define CONFIG_AWB_LIB_VERSION "v0.0.b"
+#define CONFIG_AWB_LIB_VERSION "v0.0.a"
 
 #ifdef __cplusplus
 extern "C"
