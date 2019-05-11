@@ -154,7 +154,7 @@ class CalibDb {
   bool parseEntryAecHdrCtrlLframe( const XMLElement*, void *param = NULL );
   bool parseEntryAecHdrCtrlSframe( const XMLElement*, void *param = NULL );
   bool parseEntryAecHdrCtrl( const XMLElement*, void *param = NULL );
-	
+  bool parseEntryAecFlashCtrl( const XMLElement*, void *param = NULL );
   bool parseEntryAec(const XMLElement*, void* param = NULL);
   bool parseEntryAecEcm(const XMLElement*, void* param = NULL);
   bool parseEntryAecEcmPriorityScheme(const XMLElement*, void* param = NULL);

@@ -77,13 +77,16 @@
 //			a: show the big change version
 //                b: show the little change version
 //	             c: show that the content of xml is not changed, but fix some parse bugs.
+//v1.1.0:  add xml check & magic version code 675496
+//		  add flash ctrl parameters in iq xml file.
+
 /*************************************************************************/
 /*************************************************************************/
 
 
 
 
-#define CODE_XML_PARSE_VERSION "v1.0.0"
+#define CODE_XML_PARSE_VERSION "v1.1.0"
 
 static std::ofstream redirectOut("/dev/null");
 
@@ -1916,6 +1919,7 @@ bool CalibDb::parseEntryAfWin
       pContrastAf->AdaptRangeTbl = (uint16_t *)malloc(ArraySize * sizeof(uint16_t));
       if(pContrastAf->AdaptRangeTbl == NULL){
 		LOGE("%s(%d): af adaptive range table malloc fail! \n",  __FUNCTION__,__LINE__ );
+		return false;
       }
       MEMSET( pContrastAf->AdaptRangeTbl, 0, (ArraySize * sizeof( uint16_t)) );
       int no = ParseUshortArray( tag.Value(), pContrastAf->AdaptRangeTbl, ArraySize );
@@ -2196,6 +2200,7 @@ bool CalibDb::parseEntryAecDON
         } else {
 		  LOGE( "%s(%d):parse error in AEC DON section (unknow tag: %s)\n",
 				  __FUNCTION__,__LINE__,tagname.c_str());
+		  return false;
         }
 		
         pchild = pchild->NextSibling();
@@ -2644,6 +2649,7 @@ bool CalibDb::parseEntryAecHdrCtrlLframe
 		}else{
 		   LOGE( "%s(%d):parse error in AEC HDRAE LframeCtrl section (unknow tag: %s)\n",
 			  __FUNCTION__,__LINE__,tagname.c_str());
+		   return false;
     	}
 		
 		pchild = pchild->NextSibling();
@@ -2777,6 +2783,7 @@ bool CalibDb::parseEntryAecHdrCtrl
 	      } else {
 	        pAecData->HdrCtrl.Mode= AEC_HDR_MODE_INVALID;
 			LOGE("%s(%d): invalid AEC HdrMode: %s \n", __FUNCTION__, __LINE__, s_value.c_str());
+			return false;
 	      }
     	}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_HDRCTRL_FRAMENUM_TAG_ID)){
 	      	int no = ParseUcharArray(tag.Value(), &pAecData->HdrCtrl.FrameNum, 1);
@@ -2803,6 +2810,7 @@ bool CalibDb::parseEntryAecHdrCtrl
 		}else {
 		  LOGE( "%s(%d):parse error in AEC HdrCtrl section (unknow tag: %s)\n",
 				  __FUNCTION__,__LINE__,tagname.c_str());
+		  return false;
         }
 		
 		pchild = pchild->NextSibling();
@@ -2818,6 +2826,123 @@ bool CalibDb::parseEntryAecHdrCtrl
 
 }
 
+bool CalibDb::parseEntryAecFlashCtrl
+(
+    const XMLElement*   pelement,
+    void*                param
+)
+{
+#ifdef DEBUG_LOG
+	LOGD( "%s(%d): (enter)\n", __FUNCTION__,__LINE__);
+#endif
+	
+	CamCalibAecGlobal_t *pAecData= (CamCalibAecGlobal_t *)param;
+	if(NULL == pAecData){
+		LOGE("%s(%d): Invalid pointer (exit)\n", __FUNCTION__,__LINE__);
+		return false;
+	}
+	
+	XML_CHECK_START(CALIB_SENSOR_FLASHCTRL_TAG_ID, CALIB_SENSOR_AEC_TAG_ID);
+	
+	const XMLNode* pchild = pelement->FirstChild();
+	while (pchild) {
+		XmlTag tag = XmlTag(pchild->ToElement());
+		std::string tagname(pchild->ToElement()->Name());
+		XML_CHECK_WHILE_SUBTAG_MARK((char *)(tagname.c_str()), tag.Type(), tag.Size());
+		
+#ifdef DEBUG_LOG
+		LOGD( "%s(%d): tag:%s \n value:%s\n", __FUNCTION__,__LINE__,tagname.c_str(), tag.Value());
+#endif
+
+		if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_FLASH_TRIGGER_TH_TAG_ID)){
+			int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.flash_trigger_th, 1);
+			DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_CURRENT_PCT_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_current_pct, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_MAINFLASH_CURRENT_PCT_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.mainflash_current_pct, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_FLASHLIGHT_RATIO_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.flashlight_ratio, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_EN_TAG_ID)){
+	      	int no = ParseUcharArray(tag.Value(), &pAecData->flashCtrl.preflash_startup_en, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_EXP_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_startup_exp, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_DIFFH_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_startup_diffH, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_DIFFL_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_startup_diffL, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_FACH_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_startup_facH, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_FACL_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_startup_facL, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_MEANLUMA_TH_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_startup_meanluma_th, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_AFFECT_LIMIT_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_startup_affect_limit, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_EXP_SEPARATE_MODE_TAG_ID)){
+	       	char* value = Toupper(tag.Value());
+	      	std::string s_value(value);
+#ifdef DEBUG_LOG
+		    LOGD( "%s(%d): value: %s\n", __FUNCTION__,__LINE__,value);
+		  	LOGD( "%s(%d): s_value: %s\n", __FUNCTION__,__LINE__,s_value.c_str());
+#endif
+ 		  	if (s_value == CALIB_SENSOR_EXP_SEPARATE_MODE_USE_GAIN_FIRST) {
+ 		    	pAecData->flashCtrl.exp_separate_mode = EXP_SEPARATE_MODE_USE_GAIN_FIRST;
+ 		  	} else if (s_value == CALIB_SENSOR_EXP_SEPARATE_MODE_USE_TIME_FIRST) {
+ 		    	pAecData->flashCtrl.exp_separate_mode = EXP_SEPARATE_MODE_USE_TIME_FIRST;
+ 		  	} else if (s_value == CALIB_SENSOR_EXP_SEPARATE_MODE_USE_IQ_FIRST) {
+ 		    	pAecData->flashCtrl.exp_separate_mode = EXP_SEPARATE_MODE_USE_IQ;
+ 		  	} else if (s_value == CALIB_SENSOR_EXP_SEPARATE_MODE_USE_SETTING_FIRST) {
+ 		    	pAecData->flashCtrl.exp_separate_mode = EXP_SEPARATE_MODE_USE_SETTING;
+ 		  	} else {
+ 		    	pAecData->flashCtrl.exp_separate_mode= EXP_SEPARATE_MODE_INVALID;
+ 				LOGE("%s(%d): invalid flash exp separate mode: %s \n", __FUNCTION__, __LINE__, s_value.c_str());
+				return false;
+ 		  	}
+			
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_DUMP_OVERTGT_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_dump_overTgt, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_DUMP_UNDERTGT_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_dump_underTgt, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_DUMP_OVEREXP_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_dump_overExp, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_MEANLUMA_OE_THL_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_meanluma_OE_thL, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_PREFLASH_MEANLUMA_OE_THH_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->flashCtrl.preflash_meanluma_OE_thH, 1);
+			DCT_ASSERT((no == tag.Size()));
+	    }else{
+			LOGE( "%s(%d):parse error in AEC FlashCtrl section (unknow tag: %s)\n",
+				  __FUNCTION__,__LINE__,tagname.c_str());
+		  	return false;
+	    }
+
+		pchild = pchild->NextSibling();
+	}
+
+	XML_CHECK_END();
+
+#ifdef DEBUG_LOG
+    LOGD( "%s(%d): (exit)\n", __FUNCTION__,__LINE__);
+#endif	
+
+	return true;
+}
 /******************************************************************************
  * CalibDb::parseEntryAec
  *****************************************************************************/
@@ -2860,6 +2985,7 @@ bool CalibDb::parseEntryAec
 	  aec_data.GainRange.pGainRange = (float *)malloc(i*sizeof(float));
 	  if(aec_data.GainRange.pGainRange == NULL){
 		LOGD( "%s(%d): aec gain range malloc fail!\n", __FUNCTION__, __LINE__);
+		return false;
 	  }
       int no = ParseFloatArray(tag.Value(), aec_data.GainRange.pGainRange, i);
       DCT_ASSERT((no == tag.Size()));
@@ -2875,6 +3001,7 @@ bool CalibDb::parseEntryAec
       pWeight = (uint8_t *)malloc(arraySize * sizeof(uint8_t));
 	  if(pWeight == NULL){
 		LOGE( "%s(%d): aec gridWeight malloc fail!\n", __FUNCTION__, __LINE__);
+		return false;
 	  }
       MEMSET( pWeight, 0, (arraySize * sizeof( uint8_t )) );
       int no = ParseUcharArray( tag.Value(), pWeight, arraySize );
@@ -2889,6 +3016,7 @@ bool CalibDb::parseEntryAec
       pNightWeight = (uint8_t *)malloc(nightArraySize * sizeof(uint8_t));
 	  if(pNightWeight == NULL){
 		LOGE( "%s(%d): aec gridWeight malloc fail!\n", __FUNCTION__, __LINE__);
+		return false;
 	  }
       MEMSET( pNightWeight, 0, (nightArraySize * sizeof( uint8_t )) );
       int no = ParseUcharArray( tag.Value(), pNightWeight, nightArraySize );
@@ -2937,6 +3065,7 @@ bool CalibDb::parseEntryAec
       } else {
         aec_data.CamerIcIspHistMode = CAM_HIST_MODE_INVALID;
 		LOGE( "%s(%d): invalid AEC CamerIcIspHistMode: %s\n", __FUNCTION__,__LINE__,s_value.c_str());
+		return false;
       }
     }
     else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_CAMERICISPEXPMEASURINGMODE_TAG_ID)){
@@ -2974,6 +3103,7 @@ bool CalibDb::parseEntryAec
       } else {
         aec_data.CamerIcIspExpMeasuringMode = CAM_EXP_MEASURING_MODE_INVALID;
 		LOGE( "%s(%d): invalid CamerIcIspExpMeasuringMode: %s\n", __FUNCTION__,__LINE__,s_value.c_str());
+		return false;
       }
     }
     else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_CLM_TOLERANCE_TAG_ID)){
@@ -3089,6 +3219,11 @@ bool CalibDb::parseEntryAec
 	else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_HIST_2_HAL_TAG_ID)){
 	  if (!parseEntryAecHist2Hal(pchild->ToElement(), &aec_data)){
 		LOGE( "%s(%d): parse error in aec hist2Hal section\n",__FUNCTION__,__LINE__);
+		return (false);
+	  }
+	}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_FLASHCTRL_TAG_ID)){
+	  if (!parseEntryAecFlashCtrl(pchild->ToElement(), &aec_data)){
+		LOGE( "%s(%d): parse error in aec flashctrl section\n",__FUNCTION__,__LINE__);
 		return (false);
 	  }
 	}
@@ -3332,8 +3467,13 @@ bool CalibDb::parseAECDySetpoint
 	      DCT_ASSERT((no == tag.Size()));
 		  nDysetpoint = no;
   	  }
+	}else if(XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_DYNAMIC_SETPOINT_FILTER_FAC_TAG_ID))
+	{
+		int no = ParseFloatArray(tag.Value(), &pDySetpointFile->filter_fac, 1);
+		DCT_ASSERT((no == 1));
 	}else{
 		LOGE( "%s(%d): parse error inDynamic Setpoint (%s)\n", __FUNCTION__,__LINE__,tagname.c_str());
+		return false;
 	}
 	
 	pchild = pchild->NextSibling();
@@ -5049,6 +5189,7 @@ bool CalibDb::parseEntryAwb_V10_Illumination
         illu.DoorType = CAM_DOOR_TYPE_OUTDOOR;
       } else {
         LOGE( "%s(%d): invalid illumination doortype (%s)\n", __FUNCTION__,__LINE__,s_value.c_str());
+		return false;
       }
     } else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AWB_V10_ILLUMINATION_AWB_TYPE_TAG_ID)){
       char* value = Toupper(tag.Value());
@@ -5062,6 +5203,7 @@ bool CalibDb::parseEntryAwb_V10_Illumination
         illu.AwbType = CAM_AWB_TYPE_AUTO;
       } else {
         LOGE( "%s(%d): invalid AWB type (%s)\n", __FUNCTION__,__LINE__,s_value.c_str());
+		return false;
       }
     } else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AWB_V10_ILLUMINATION_MANUAL_WB_TAG_ID)){
       int i = (sizeof(illu.ComponentGain) / sizeof(illu.ComponentGain.fCoeff[0]));
@@ -5878,6 +6020,7 @@ bool CalibDb::parseEntryFilterDemosiacTH
           LOGE( "%s(%d): parse error in filter demosaicTH section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
+		  return false;
 		}		
         pchild = pchild->NextSibling();
 	}
@@ -5960,6 +6103,7 @@ bool CalibDb::parseEntryFilterSharpLevel
           LOGE( "%s(%d): parse error in filter SharpLevel section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
+		  return false;
 		}
 		
         pchild = pchild->NextSibling();
@@ -6044,6 +6188,7 @@ bool CalibDb::parseEntryFilterDenoiseLevel
           LOGE( "%s(%d): parse error in filter DenoiseLevel section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
+		  return false;
 		}		
         pchild = pchild->NextSibling();
 	}
@@ -6344,6 +6489,7 @@ bool CalibDb::parseEntryFilterRegConfig
         	LOGE( "%s(%d): parse error in filter level reg conf section (unknow tag: %s)\n", 
         	__FUNCTION__,__LINE__,tagname.c_str());
 #endif
+			return false;
 		}		
 		pchild = pchild->NextSibling();
 	}
@@ -6434,6 +6580,7 @@ bool CalibDb::parseEntryFilter
       LOGE( "%s(%d): parse error in filter section (unknow tag: %s)\n", 
         	__FUNCTION__,__LINE__,tagname.c_str());
 #endif
+	  return false;
 	}	
 	pchild = pchild->NextSibling();
   }
@@ -6520,6 +6667,7 @@ bool CalibDb::parseEntryNew3DnrYnr
           LOGE( "%s(%d): parse error in new 3dnr ynr section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
+		  return false;
 		}		
         pchild = pchild->NextSibling();
 	}
@@ -6586,6 +6734,7 @@ bool CalibDb::parseEntryNew3DnrUVnr
           LOGE( "%s(%d): parse error in new 3dnr ynr section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
+		  return false;
 		}		
         pchild = pchild->NextSibling();
 	}
@@ -6652,6 +6801,7 @@ bool CalibDb::parseEntryNew3DnrSharp
           LOGE( "%s(%d): parse error in new 3dnr ynr section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
+	 	  return false;
 		}		
         pchild = pchild->NextSibling();
 	}
@@ -6754,7 +6904,7 @@ bool CalibDb::parseEntryNew3DNR
 	   LOGD( "%s(%d): parse error in new 3dnr ynr section (unknow tag: %s)\n", 
 	   __FUNCTION__,__LINE__,tagname.c_str());
 #endif
-
+	   return false;
 	 }	 
 	 pchild = pchild->NextSibling();
 
@@ -6888,6 +7038,7 @@ bool CalibDb::parseEntry3DnrLevel
           LOGD( "%s(%d): parse error in new 3dnr ynr section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
+		  return false;
 		}		
         pchild = pchild->NextSibling();
     }
@@ -6995,6 +7146,7 @@ bool CalibDb::parseEntry3DnrLuma
           LOGE( "%s(%d): parse error in new 3dnr ynr section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
+		  return false;
 		}		
         pchild = pchild->NextSibling();
     }
@@ -7100,6 +7252,7 @@ bool CalibDb::parseEntry3DnrChrm
           LOGE( "%s(%d): parse error in new 3dnr ynr section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
+		  return false;
 		}		
         pchild = pchild->NextSibling();
     }
@@ -7228,6 +7381,7 @@ bool CalibDb::parseEntry3DnrSharp
           LOGE( "%s(%d): parse error in new 3dnr ynr section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
+		  return false;
 		}		
         pchild = pchild->NextSibling();
     }
@@ -7359,6 +7513,7 @@ bool CalibDb::parseEntry3DNR
     LOGE( "%s(%d): parse error in filter section (unknow tag: %s)\n", 
         	__FUNCTION__,__LINE__,tagname.c_str());
 #endif
+	  return false;
 	}	
 	pchild = pchild->NextSibling();
  }
@@ -8141,6 +8296,7 @@ bool CalibDb::parseEntryDpf
 		LOGE( "%s(%d): parse error in dpf section (unknow tag: %s)\n", 
 			__FUNCTION__,__LINE__,tagname.c_str());
 #endif	
+		return false;
     }	
     pchild = pchild->NextSibling();
   }
@@ -8422,6 +8578,7 @@ bool CalibDb::parseEntryGoc
       DCT_ASSERT((no == tag.Size()));
     }else{
 		LOGE( "%s(%d): unknown GOC register (%s)\n", __FUNCTION__,__LINE__,tagname.c_str());
+		return false;
     }
 	
     pchild = pchild->NextSibling();
@@ -8663,6 +8820,7 @@ bool CalibDb::parseEntryWdr
 	  LOGE( "%s(%d): parse error in rk ie sharp section (unknow tag: %s)\n", 
 	  		__FUNCTION__,__LINE__,tagname.c_str());
 #endif
+	  return false;
     }
 	
     pchild = pchild->NextSibling();
@@ -9186,7 +9344,7 @@ bool CalibDb::parseEntryCproc
       LOGE( "%s(%d): parse error in cproc section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
-
+	  return false;
 	}	
     pchild = pchild->NextSibling();
   }
@@ -9255,6 +9413,7 @@ bool CalibDb::parseEntryOTP
 	  LOGE( "%s(%d): parse error in cproc section (unknow tag: %s)\n", 
           __FUNCTION__,__LINE__,tagname.c_str());
 #endif
+	  return false;
 	}    
     pchild = pchild->NextSibling();
   }

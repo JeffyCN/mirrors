@@ -388,6 +388,7 @@ uint32_t calib_sensor_aec_sub_tags[] = {
 	CALIB_SENSOR_AEC_HIST_2_HAL_TAG_ID, 
 	CALIB_SENSOR_LOCK_AE_TAG_ID, 
 	CALIB_SENSOR_HDRCTRL_TAG_ID, 
+	CALIB_SENSOR_FLASHCTRL_TAG_ID,
 };
 
 uint32_t calib_sensor_aec_ecm_sub_tags[] = {                                                            
@@ -406,6 +407,7 @@ uint32_t calib_sensor_aec_dynamic_setpoint_sub_tags[] = {
 	CALIB_SENSOR_AEC_DYNAMIC_SETPOINT_ENABLE_TAG_ID,		
 	CALIB_SENSOR_AEC_DYNAMIC_SETPOINT_EXPVALUE_TAG_ID,		
 	CALIB_SENSOR_AEC_DYNAMIC_SETPOINT_DYSETPOINT_TAG_ID,	              
+	CALIB_SENSOR_AEC_DYNAMIC_SETPOINT_FILTER_FAC_TAG_ID,
 };
 
 
@@ -507,6 +509,26 @@ uint32_t calib_sensor_aec_HDRctrl_SframeCtrl_sub_tags[] = {
 	CALIB_SENSOR_HDRCTRL_OELUMADIST_TAG_ID, 	
 };
 
+uint32_t calib_sensor_aec_flashctrl_sub_tags[] = {  
+	CALIB_SENSOR_FLASHCTRL_FLASH_TRIGGER_TH_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_CURRENT_PCT_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_MAINFLASH_CURRENT_PCT_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_FLASHLIGHT_RATIO_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_EN_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_EXP_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_DIFFH_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_DIFFL_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_FACH_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_FACL_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_MEANLUMA_TH_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_AFFECT_LIMIT_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_EXP_SEPARATE_MODE_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_DUMP_OVERTGT_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_DUMP_UNDERTGT_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_DUMP_OVEREXP_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_MEANLUMA_OE_THL_TAG_ID,
+	CALIB_SENSOR_FLASHCTRL_PREFLASH_MEANLUMA_OE_THH_TAG_ID, 
+};
 
 
 uint32_t calib_sensor_bls_sub_tags[] = {  
@@ -1598,6 +1620,9 @@ calib_tag_info_t g_calib_tag_infos[CALIB_IQ_TAG_END] = {
 	 [CALIB_SENSOR_AEC_DYNAMIC_SETPOINT_DYSETPOINT_TAG_ID]		  =
 		{"DySetpoint", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
 		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_AEC_DYNAMIC_SETPOINT_FILTER_FAC_TAG_ID]		  =
+		{"filter_fac", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
 
 	//exposure separate
 	 [CALIB_SENSOR_AEC_EXP_SEPARATE_TAG_ID]		   =
@@ -1841,6 +1866,63 @@ calib_tag_info_t g_calib_tag_infos[CALIB_IQ_TAG_END] = {
 		{"OELumaDistTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
 		  check_tags_array_ignore, NULL},
 
+	 [CALIB_SENSOR_FLASHCTRL_TAG_ID]		   =
+		{"FlashCtrl", CALIB_TAG_TYPE_STRUCT, {-1, -1},
+		  check_tags_array_info(calib_sensor_aec_flashctrl_sub_tags), NULL},
+	 [CALIB_SENSOR_FLASHCTRL_FLASH_TRIGGER_TH_TAG_ID]		   =
+		{"flash_trriger_th", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_CURRENT_PCT_TAG_ID]		   =
+		{"preflash_current_pct", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_MAINFLASH_CURRENT_PCT_TAG_ID]		   =
+		{"mainflash_current_pct", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_FLASHLIGHT_RATIO_TAG_ID]		   =
+		{"flashlight_ratio", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_EN_TAG_ID]		   =
+		{"preflash_startup_enable", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_EXP_TAG_ID]		   =
+		{"preflash_startup_exp", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_DIFFH_TAG_ID]		   =
+		{"preflash_startup_diffH", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_DIFFL_TAG_ID]		   =
+		{"preflash_startup_diffL", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_FACH_TAG_ID]		   =
+		{"preflash_startup_facH", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_FACL_TAG_ID]		   =
+		{"preflash_startup_facL", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_MEANLUMA_TH_TAG_ID]		   =
+		{"preflash_startup_meanluma_th", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_STARTUP_AFFECT_LIMIT_TAG_ID]		   =
+		{"preflash_startup_affect_limit", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_EXP_SEPARATE_MODE_TAG_ID]		   =
+		{"exp_separate_mode", CALIB_TAG_TYPE_CHAR, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_DUMP_OVERTGT_TAG_ID]		   =
+		{"preflash_dump_overTgt", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_DUMP_UNDERTGT_TAG_ID]		   =
+		{"preflash_dump_underTgt", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_DUMP_OVEREXP_TAG_ID]		   =
+		{"preflash_dump_overExp", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_MEANLUMA_OE_THL_TAG_ID]		   =
+		{"preflash_meanluma_OE_thL", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_FLASHCTRL_PREFLASH_MEANLUMA_OE_THH_TAG_ID]		   =
+		{"preflash_meanluma_OE_thH", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
 
 	//bls
 	 [CALIB_SENSOR_BLS_TAG_ID]		   =

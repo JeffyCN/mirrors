@@ -1577,6 +1577,14 @@ typedef enum AecHdrMode_e {
 } AecHdrMode_t;
 
 
+typedef enum EXP_SEPARATE_MODE_E{
+	EXP_SEPARATE_MODE_INVALID = 0,
+	EXP_SEPARATE_MODE_USE_TIME_FIRST,
+	EXP_SEPARATE_MODE_USE_GAIN_FIRST,	
+	EXP_SEPARATE_MODE_USE_IQ,
+	EXP_SEPARATE_MODE_USE_SETTING,
+	EXP_SEPARATE_MODE_MAX,
+}EXP_SEPARATE_MODE_T;
 /*****************************************************************************/
 /**
  * @brief   Matrix coefficients
@@ -1648,6 +1656,7 @@ typedef struct CamCalibAecDynamicSetpoint_s{
   float* pExpValue;
   float* pDySetpoint;
   int	array_size;
+  float filter_fac;
 }CamCalibAecDynamicSetpoint_t;
 
 
@@ -1705,6 +1714,39 @@ typedef struct CamCalibAecHdrCtrl_s{
   float 	M2S_Ratio;
   float 	L2M_Ratio;
 }CamCalibAecHdrCtrl_t;
+typedef struct CamCalibAecFlashCtrl_s{
+	// env trigger flash threshold
+	float flash_trigger_th;
+
+	//the percentage of max flash current for preflash & main flash
+	float preflash_current_pct;
+	float mainflash_current_pct;
+	float flashlight_ratio;
+
+	//init exp value for preflash on 18% gray chart of 100% fov at a distance of 10 cm in a 0-5 lux enviroment
+	uint8_t preflash_startup_en;
+	float preflash_startup_exp;
+	float preflash_startup_diffH;
+	float preflash_startup_diffL;
+	float preflash_startup_facH;
+	float preflash_startup_facL;
+	float preflash_startup_meanluma_th;
+	float preflash_startup_affect_limit;
+
+    //ROI changing or weight changing?
+	//TODO
+	
+	//exp separate mode
+	EXP_SEPARATE_MODE_T exp_separate_mode;
+
+	//dump coef
+	float preflash_dump_overTgt;
+	float preflash_dump_underTgt;
+	float preflash_dump_overExp;
+	float preflash_meanluma_OE_thH;
+	float preflash_meanluma_OE_thL;
+	
+}CamCalibAecFlashCtrl_t;
 
 /*****************************************************************************/
 /**
@@ -1777,6 +1819,9 @@ typedef struct CamCalibAecGlobal_s {
   Cam3x1FloatMatrix_t TimeValue;
   /*zlj add for HdrCtrl*/
   CamCalibAecHdrCtrl_t HdrCtrl;
+
+  //oyyf add for flash ctrl
+  CamCalibAecFlashCtrl_t flashCtrl;
 } CamCalibAecGlobal_t;
 
 /*******************************************************************************
