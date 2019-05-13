@@ -19,3 +19,29 @@ v2.57更新内容:
 
 v2.58更新内容:
 1.fix "wait for maskrom failed" bug
+
+v2.59:
+1.sync with v1.15 upgradelib for fix sparse download bug
+
+v2.61:
+1.add select and unselect all of download items
+
+v2.62:
+1.support eraselba
+2.modify procedure of download progress show
+
+v2.63:
+1.support no reset when only download loader
+2.support rk gpt parsing
+
+v2.64:
+1.fix upgrade update.img with more than 16 items
+
+v2.65:
+1.add automatic configuration after close the program
+
+v2.66:
+1.fix testdevice bug when device is lowerformat
+
+v2.67:
+handle fill chunk 0 case when download sparse
