@@ -39,7 +39,7 @@
 /******************************************************************************
  * XML tag name type
  *****************************************************************************/
- 
+
 //isp output is color, gray or mixture
 #define CALIB_HEADER_ISP_OUTPUT_COLOR_TYPE_TAG					   "color"
 #define CALIB_HEADER_ISP_OUTPUT_GRAY_TYPE_TAG					   "gray"
@@ -117,7 +117,7 @@
 
 
 // should expand non leaf node's tags
-typedef enum CALIB_IQ_TAG_ID_E 
+typedef enum CALIB_IQ_TAG_ID_E
 {
 	/******************************************************************************
 	* XML main section
@@ -163,10 +163,9 @@ typedef enum CALIB_IQ_TAG_ID_E
 	CALIB_SENSOR_AWB_VALID_VERSION_NAME_TAG_ID,
 	CALIB_SENSOR_AWB_VERSION_10_TAG_ID,
 
-
 	/******************************************************************************
 	* XML sensor AWB V10 golbal tag
-	*****************************************************************************/ 
+	*****************************************************************************/
 	CALIB_SENSOR_AWB_V10_GLOBALS_TAG_ID,
 	CALIB_SENSOR_AWB_V10_GLOBALS_NAME_TAG_ID,
 	CALIB_SENSOR_AWB_V10_GLOBALS_RESOLUTION_TAG_ID,
@@ -216,7 +215,7 @@ typedef enum CALIB_IQ_TAG_ID_E
 
 	/******************************************************************************
 	* XML sensor AWB v10 IIR tag
-	*****************************************************************************/ 
+	*****************************************************************************/
 	CALIB_SENSOR_AWB_V10_GLOBALS_IIR_ID,
 	CALIB_SENSOR_AWB_V10_GLOBALS_IIR_DAMP_COEF_ADD_TAG_ID,
 	CALIB_SENSOR_AWB_V10_GLOBALS_IIR_DAMP_COEF_SUB_TAG_ID,
@@ -230,7 +229,7 @@ typedef enum CALIB_IQ_TAG_ID_E
 
 	/******************************************************************************
 	* XML sensor AWB  V10 ILLUMINATION tag
-	*****************************************************************************/ 
+	*****************************************************************************/
 	CALIB_SENSOR_AWB_V10_ILLUMINATION_TAG_ID,
 	CALIB_SENSOR_AWB_V10_ILLUMINATION_NAME_TAG_ID,
 	CALIB_SENSOR_AWB_V10_ILLUMINATION_DOOR_TYPE_TAG_ID,
@@ -276,9 +275,26 @@ typedef enum CALIB_IQ_TAG_ID_E
 
 	/******************************************************************************
 	* XML sensor AWB  V11 ILLUMINATION tag
-	*****************************************************************************/ 
+	*****************************************************************************/
 	CALIB_SENSOR_AWB_V11_ILLUMINATION_TAG_ID,
 	CALIB_SENSOR_AWB_V11_ILLUMINATION_REFERENCE_GAIN_TAG_ID,
+
+    CALIB_SENSOR_AWB_FLASH_PARA_TAG_ID,
+    /******************************************************************************
+         * XML sensor AWB  FLASH PARA tag
+         *****************************************************************************/
+    CALIB_SENSOR_AWB_FLASH_FLASHTYPE_TAG_ID,
+    CALIB_SENSOR_AWB_FLASH_LVVALUES_TAG_ID,
+    CALIB_SENSOR_AWB_FLASH_PREFLASHWEIGHTS1_TAG_ID,
+    CALIB_SENSOR_AWB_FLASH_LVFLASHTH1_TAG_ID,
+    CALIB_SENSOR_AWB_FLASH_LVVALRATIO_TAG_ID,
+    CALIB_SENSOR_AWB_FLASH_PREFLASHWEIGHTS2_TAG_ID,
+    CALIB_SENSOR_AWB_FLASH_LVFLASHTH2_TAG_ID,
+    CALIB_SENSOR_AWB_FLASH_LVVALRATIO3_TAG_ID,
+    CALIB_SENSOR_AWB_FLASH_MAINFLASHWEIGHTS_TAG_ID,
+    CALIB_SENSOR_AWB_FLASH_LVVALUEIIRSIZE_TAG_ID,
+    CALIB_SENSOR_AWB_FLASH_DAMPFACTOR_TAG_ID,
+    CALIB_SENSOR_AWB_FLASH_AECCONVERGETH_TAG_ID,
 
 
 	/******************************************************************************
@@ -328,23 +344,23 @@ typedef enum CALIB_IQ_TAG_ID_E
 	CALIB_SENSOR_AF_V_OFFS_TAG_ID,
 	CALIB_SENSOR_AF_H_SIZE_TAG_ID,
 	CALIB_SENSOR_AF_V_SIZE_TAG_ID,
-	//CONTRAST 
+	//CONTRAST
 	CALIB_SENSOR_AF_CONTRAST_ENABLE_TAG_ID,
 	CALIB_SENSOR_AF_SEARCH_STRATEGY_TAG_ID,
 	CALIB_SENSOR_AF_FULL_DIR_TAG_ID,
 	CALIB_SENSOR_AF_FULL_RANGE_TBL_TAG_ID,
 	CALIB_SENSOR_AF_ADAPTIVE_DIR_TAG_ID,
 	CALIB_SENSOR_AF_ADAPTIVE_RANGE_TBL_TAG_ID,
-	
+
 	CALIB_SENSOR_AF_TRIG_THERS_TAG_ID,
 	CALIB_SENSOR_AF_TRIG_VALUE_TAG_ID,
 	CALIB_SENSOR_AF_TRIG_FRAMES_TAG_ID,
 	CALIB_SENSOR_AF_TRIG_ANTI_FLASH_TAG_ID,
-	
+
 	CALIB_SENSOR_AF_FINISH_THERS_MAIN_TAG_ID,
 	CALIB_SENSOR_AF_FINISH_THERS_SUB_TAG_ID,
 	CALIB_SENSOR_AF_FINISH_THERS_OFFSET_TAG_ID,
-	
+
 	CALIB_SENSOR_AF_STABLE_THERS_TAG_ID,
 	CALIB_SENSOR_AF_STABLE_VALUE_TAG_ID,
 	CALIB_SENSOR_AF_STABLE_FRAMES_TAG_ID,
@@ -352,7 +368,7 @@ typedef enum CALIB_IQ_TAG_ID_E
 	CALIB_SENSOR_AF_OUT_FOCUS_VALUE_TAG_ID,
 	CALIB_SENSOR_AF_OUT_FOCUS_LUMA_TAG_ID,
 	CALIB_SENSOR_AF_OUT_FOCUS_POS_TAG_ID,
-	//LASER 
+	//LASER
 	CALIB_SENSOR_AF_LASERAF_ENABLE_TAG_ID,
 	CALIB_SENSOR_AF_LASER_AF_VCMDOT_TAG_ID,
 	CALIB_SENSOR_AF_LASER_AF_DISTANCEDOT_TAG_ID,
@@ -378,7 +394,7 @@ typedef enum CALIB_IQ_TAG_ID_E
 	CALIB_SENSOR_AEC_ECM_SCHEME_NAME_TAG_ID,
 	CALIB_SENSOR_AEC_ECM_SCHEME_OFFSETT0FAC_TAG_ID,
 	CALIB_SENSOR_AEC_ECM_SCHEME_SLOPEA0_TAG_ID,
-	
+
 	CALIB_SENSOR_AEC_GAINRANGE_TAG_ID,
 	CALIB_SENSOR_AEC_GRIDWEIGHTS_TAG_ID,
 	CALIB_SENSOR_AEC_NIHGT_GRIDWEIGHTS_TAG_ID,
@@ -925,12 +941,12 @@ extern calib_tag_info_t g_calib_tag_infos[CALIB_IQ_TAG_END];
 
 uint32_t calib_check_calc_checksum();
 
-int calib_check_getID_by_name(char* tag_name, 
-									CALIB_IQ_TAG_ID_T parent_tag_id, 
+int calib_check_getID_by_name(char* tag_name,
+									CALIB_IQ_TAG_ID_T parent_tag_id,
 									CALIB_IQ_TAG_ID_T *tag_id );
 
-int calib_check_cell_set_size(CALIB_IQ_TAG_ID_T tag_id, 
-									CALIB_IQ_TAG_ID_T parent_tag_id, 
+int calib_check_cell_set_size(CALIB_IQ_TAG_ID_T tag_id,
+									CALIB_IQ_TAG_ID_T parent_tag_id,
 									int size);
 
 int calib_check_tag_attrs(CALIB_IQ_TAG_ID_T tag_id,
@@ -938,7 +954,7 @@ int calib_check_tag_attrs(CALIB_IQ_TAG_ID_T tag_id,
                           int size,
                           CALIB_IQ_TAG_ID_T parent_tag_id);
 
-int calib_check_nonleaf_tag_start(CALIB_IQ_TAG_ID_T tag_id, 
+int calib_check_nonleaf_tag_start(CALIB_IQ_TAG_ID_T tag_id,
 										CALIB_IQ_TAG_ID_T parent_tag_id);
 int calib_check_tag_mark(CALIB_IQ_TAG_ID_T tag_id,
                          CALIB_IQ_TAG_ID_T parent_tag_id);

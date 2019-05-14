@@ -5,7 +5,7 @@
  * transcribed, or translated into any language or computer format, in any form
  * or by any means without written permission of:
  * Fuzhou Rockchip Electronics Co.Ltd .
- * 
+ *
  *
  *****************************************************************************/
 /**
@@ -950,14 +950,14 @@ static void ClearDsp3DNRList(List* l) {
 	  if(pDsp3DNR->sDefaultLevelSetting.pshp_level){
 		free(pDsp3DNR->sDefaultLevelSetting.pshp_level);
   	  }
-	  
+
 	  if(pDsp3DNR->sLumaSetting.pluma_sp_rad){
 		free(pDsp3DNR->sLumaSetting.pluma_sp_rad);
   	  }
 	  if(pDsp3DNR->sLumaSetting.pluma_te_max_bi_num){
 		free(pDsp3DNR->sLumaSetting.pluma_te_max_bi_num);
   	  }
-	  
+
 
 	  if(pDsp3DNR->sChrmSetting.pchrm_sp_rad){
 		free(pDsp3DNR->sChrmSetting.pchrm_sp_rad);
@@ -965,8 +965,8 @@ static void ClearDsp3DNRList(List* l) {
 	  if(pDsp3DNR->sChrmSetting.pchrm_te_max_bi_num){
 		free(pDsp3DNR->sChrmSetting.pchrm_te_max_bi_num);
   	  }
-	 
-  
+
+
 	  if(pDsp3DNR->sSharpSetting.psrc_shp_c){
 		free(pDsp3DNR->sSharpSetting.psrc_shp_c);
   	  }
@@ -979,7 +979,7 @@ static void ClearDsp3DNRList(List* l) {
 	  if(pDsp3DNR->sSharpSetting.psrc_shp_thr){
 		free(pDsp3DNR->sSharpSetting.psrc_shp_thr);
   	  }
-	
+
 
 	  for(int i=0; i<CAM_CALIBDB_3DNR_WEIGHT_NUM; i++){
 		if(pDsp3DNR->sLumaSetting.pluma_weight[i]){
@@ -989,7 +989,7 @@ static void ClearDsp3DNRList(List* l) {
 		if(pDsp3DNR->sChrmSetting.pchrm_weight[i]){
 		  	free(pDsp3DNR->sChrmSetting.pchrm_weight[i]);
   	    }
-		
+
 		if(pDsp3DNR->sSharpSetting.psrc_shp_weight[i]){
 		   free(pDsp3DNR->sSharpSetting.psrc_shp_weight[i]);
 		}
@@ -1016,7 +1016,7 @@ static void ClearDemosicLP(CamDemosaicLpProfile_t *pDemosaicLp) {
 	if(pDemosaicLp->gainsArray){
 		free(pDemosaicLp->gainsArray);
 	}
-	
+
 	if(pDemosaicLp->diff_divided0){
 		free(pDemosaicLp->diff_divided0);
 	}
@@ -1032,7 +1032,7 @@ static void ClearDemosicLP(CamDemosaicLpProfile_t *pDemosaicLp) {
 	if(pDemosaicLp->diff_divided4){
 		free(pDemosaicLp->diff_divided4);
 	}
-	
+
 	if(pDemosaicLp->thCSC_divided0){
 		free(pDemosaicLp->thCSC_divided0);
 	}
@@ -1048,7 +1048,7 @@ static void ClearDemosicLP(CamDemosaicLpProfile_t *pDemosaicLp) {
 	if(pDemosaicLp->thCSC_divided4){
 		free(pDemosaicLp->thCSC_divided4);
 	}
-	
+
 	if(pDemosaicLp->thH_divided0){
 		free(pDemosaicLp->thH_divided0);
 	}
@@ -1064,7 +1064,7 @@ static void ClearDemosicLP(CamDemosaicLpProfile_t *pDemosaicLp) {
 	if(pDemosaicLp->thH_divided4){
 		free(pDemosaicLp->thH_divided4);
 	}
-	
+
 	if(pDemosaicLp->varTh_divided0){
 		free(pDemosaicLp->varTh_divided0);
 	}
@@ -1146,7 +1146,7 @@ static void ClearFilterList(List* l) {
 	  if(pFilter->DemosaicThCurve.pThlevel){
 		free(pFilter->DemosaicThCurve.pThlevel);
   	  }
-	   
+
 	  if(pFilter->DenoiseLevelCurve.pSensorGain){
 		free(pFilter->DenoiseLevelCurve.pSensorGain);
   	  }
@@ -1203,7 +1203,7 @@ static void ClearFilterList(List* l) {
 
 	  ClearDemosicLP(&pFilter->DemosaicLpConf);
       free(pFilter);
-		
+
       /* 3.) get next item */
       pFilter = (CamFilterProfile_t*)ListRemoveHead(l);
     }
@@ -1223,7 +1223,7 @@ static void ClearDpfProfileList(List* l) {
 	  ClearDsp3DNRList(&pDpfProfile->Dsp3DNRSettingProfileList);
 	  ClearNewDsp3DNRList(&pDpfProfile->newDsp3DNRProfileList);
 	  ClearFilterList(&pDpfProfile->FilterList);
-	  
+
       free(pDpfProfile);
       pDpfProfile = (CamDpfProfile_t*)ListRemoveHead(l);
     }
@@ -1835,7 +1835,7 @@ static RESULT ClearContext(CamCalibDbContext_t* pCamCalibDbCtx) {
 	ClearExpSeparateList(&pCamCalibDbCtx->pAecGlobal->ExpSeparateList);
     free(pCamCalibDbCtx->pAecGlobal);
   }
-  
+
   if (pCamCalibDbCtx->pWdrGlobal) {
     if (pCamCalibDbCtx->pWdrGlobal->wdr_MaxGain_Level_curve.pfMaxGain_level != NULL) {
       free(pCamCalibDbCtx->pWdrGlobal->wdr_MaxGain_Level_curve.pfMaxGain_level);
@@ -1849,13 +1849,13 @@ static RESULT ClearContext(CamCalibDbContext_t* pCamCalibDbCtx) {
   if (pCamCalibDbCtx->pCprocGlobal)
     free(pCamCalibDbCtx->pCprocGlobal);
 
-  if(pCamCalibDbCtx->pOTPGlobal){	
+  if(pCamCalibDbCtx->pOTPGlobal){
 	free(pCamCalibDbCtx->pOTPGlobal);
   }
-  
+
   ClearEcmProfileList(& pCamCalibDbCtx->ecm_profile);
-  ClearAwb_V11_IlluminationList(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination);  
-  ClearAwb_V10_IlluminationList(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination);  
+  ClearAwb_V11_IlluminationList(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination);
+  ClearAwb_V10_IlluminationList(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination);
   free(pCamCalibDbCtx->pAwbProfile);
   ClearLscProfileList(&pCamCalibDbCtx->lsc_profile);
   ClearCcProfileList(&pCamCalibDbCtx->cc_profile);
@@ -1950,7 +1950,7 @@ RESULT CamCalibDbCreate
   pCamCalibDbCtx->pAfGlobal = NULL;
   pCamCalibDbCtx->pOTPGlobal = NULL;
   ListInit(&pCamCalibDbCtx->ecm_profile);
-  ListInit(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination);  
+  ListInit(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination);
   ListInit(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination);
   ListInit(&pCamCalibDbCtx->lsc_profile);
   ListInit(&pCamCalibDbCtx->cc_profile);
@@ -1958,7 +1958,7 @@ RESULT CamCalibDbCreate
   ListInit(&pCamCalibDbCtx->dpf_profile);
   ListInit(&pCamCalibDbCtx->dpcc_profile);
   ListInit(&pCamCalibDbCtx->iesharpen_profile);
-  
+
   *hCamCalibDb = (CamCalibDbHandle_t)pCamCalibDbCtx;
   LOGV("%s (exit)\n", __func__);
 
@@ -2567,7 +2567,7 @@ RESULT CamCalibDbAddAwb_VersionName
   if (NULL == pCamCalibDbCtx) {
     return (RET_WRONG_HANDLE);
   }
-  
+
   LOGV( "valid_version :%d \n", vName);
   pCamCalibDbCtx->pAwbProfile->valid_version =	vName;
 
@@ -2577,6 +2577,53 @@ RESULT CamCalibDbAddAwb_VersionName
   return (RET_SUCCESS);
 }
 
+
+
+/******************************************************************************
+ * CamCalibDbGetAwb_FlashProfiles
+ *****************************************************************************/
+RESULT CamCalibDbGetAwb_FlashProfiles
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwbPara_Flash_t **flash
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+  *flash = &pCamCalibDbCtx->pAwbProfile->Para_Flash;
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
+
+/******************************************************************************
+ * CamCalibDbGetAwb_FlashProfiles
+ *****************************************************************************/
+RESULT CamCalibDbAddAwb_FlashProfiles
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwbPara_Flash_t  flash
+) {
+    CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+
+    LOGV( "%s (enter)\n", __func__);
+
+    if (NULL == pCamCalibDbCtx) {
+      return (RET_WRONG_HANDLE);
+    }
+
+    MEMCPY(&pCamCalibDbCtx->pAwbProfile->Para_Flash,&flash,sizeof(CamAwbPara_Flash_t));
+
+    return (RET_SUCCESS);
+    LOGV( "%s (exit)\n", __func__);
+}
 
 
 /******************************************************************************
@@ -2597,7 +2644,7 @@ RESULT CamCalibDbGetAwb_VersionName
   if (NULL == pCamCalibDbCtx) {
     return (RET_WRONG_HANDLE);
   }
-  
+
   *vName = pCamCalibDbCtx->pAwbProfile->valid_version;
 
   LOGV( "%s (exit)\n", __func__);
@@ -2802,7 +2849,7 @@ RESULT CamCalibDbAddAfGlobal
     return (RET_OUTOFMEM);
   }
 
-  MEMCPY(pNewAfGlobal, pAddAfGlobal, sizeof(CamCalibAfGlobal_t)); 
+  MEMCPY(pNewAfGlobal, pAddAfGlobal, sizeof(CamCalibAfGlobal_t));
 
   pCamCalibDbCtx->pAfGlobal = pNewAfGlobal;
 
@@ -2884,10 +2931,10 @@ RESULT CamCalibDbAddAecGlobal
     if (result != RET_SUCCESS) {
       return (result);
     }
-  
+
     pDySetpoint = (CamCalibAecDynamicSetpoint_t*)pDySetpoint->p_next;
   }
-  
+
   /* add already linked ExpSeparate as well */
   CamCalibAecExpSeparate_t* pExpSeparate = (CamCalibAecExpSeparate_t*)ListHead(&pAddAecGlobal->ExpSeparateList);
   while (pExpSeparate) {
@@ -2895,7 +2942,7 @@ RESULT CamCalibDbAddAecGlobal
     if (result != RET_SUCCESS) {
       return (result);
     }
-  
+
     pExpSeparate = (CamCalibAecExpSeparate_t*)pExpSeparate->p_next;
   }
   pCamCalibDbCtx->pAecGlobal = pNewAecGlobal;
@@ -3665,10 +3712,10 @@ RESULT CamCalibDbGetNoOfAwbIlluminations
   CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
   RESULT result = RET_SUCCESS;
   LOGV( "%s (enter)\n", __func__);
-  
+
   switch (pCamCalibDbCtx->pAwbProfile->valid_version)
   {
-	case CAM_AWB_VERSION_11:	  
+	case CAM_AWB_VERSION_11:
 		// get number of availabe illumination profiles from database
 		result = CamCalibDbGetNoOfAwb_V11_Illuminations(hCamCalibDb, pNo);
 		break;
@@ -3819,7 +3866,7 @@ RESULT CamCalibDbAddAwb_V10_Illumination
   } else {
     return (RET_INVALID_PARM);
   }
-  
+
   LOGV( "%s (exit)\n", __func__);
   return (RET_SUCCESS);
 }
@@ -3896,7 +3943,7 @@ RESULT CamCalibDbGetAwbIlluminationNameByIdx
   CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
   RESULT result = RET_SUCCESS;
   LOGV( "%s (enter)\n", __func__);
-  CamAwb_V11_IlluProfile_t* pIlluProfile11 = NULL;  
+  CamAwb_V11_IlluProfile_t* pIlluProfile11 = NULL;
   CamAwb_V10_IlluProfile_t* pIlluProfile10 = NULL;
   switch (pCamCalibDbCtx->pAwbProfile->valid_version)
   {
@@ -3905,7 +3952,7 @@ RESULT CamCalibDbGetAwbIlluminationNameByIdx
 		strcpy(illName,pIlluProfile11->name);
 		break;
 	default :
-		result = CamCalibDbGetAwb_V10_IlluminationByIdx(hCamCalibDb, idx, &pIlluProfile10);		
+		result = CamCalibDbGetAwb_V10_IlluminationByIdx(hCamCalibDb, idx, &pIlluProfile10);
 		strcpy(illName,pIlluProfile10->name);
   }
 
@@ -4598,7 +4645,7 @@ RESULT CamCalibDbAddDpfProfile
 	ListInit(&pNewDpf->Dsp3DNRSettingProfileList);   // clear possibly not empty schemes list in copy
 	ListInit(&pNewDpf->newDsp3DNRProfileList);   // clear possibly not empty schemes list in copy
 	ListInit(&pNewDpf->FilterList);   // clear possibly not empty schemes list in copy
-	
+
     ListPrepareItem(pNewDpf);
     ListAddTail(&pCamCalibDbCtx->dpf_profile, pNewDpf);
 
@@ -4609,7 +4656,7 @@ RESULT CamCalibDbAddDpfProfile
       if (result != RET_SUCCESS) {
         return (result);
       }
-  
+
       pDsp3DNR = (CamDsp3DNRSettingProfile_t*)pDsp3DNR->p_next;
     }
 
@@ -4620,7 +4667,7 @@ RESULT CamCalibDbAddDpfProfile
       if (result != RET_SUCCESS) {
         return (result);
       }
-  
+
       pNewDsp3DNR = (CamNewDsp3DNRProfile_t*)pNewDsp3DNR->p_next;
     }
 
@@ -4631,7 +4678,7 @@ RESULT CamCalibDbAddDpfProfile
       if (result != RET_SUCCESS) {
         return (result);
       }
-  
+
       pFilter = (CamFilterProfile_t*)pFilter->p_next;
     }
   } else {
@@ -5424,7 +5471,7 @@ static inline RESULT ValidateGocProfileData(CamCalibGocProfile_t* pGocData) {
   if (!strlen(pGocData->name)) {
     return (RET_INVALID_PARM);
   }
-  
+
   LOGV("%s (exit)\n", __func__);
 
   return (RET_SUCCESS);
@@ -5452,7 +5499,7 @@ RESULT CamCalibDbAddGocProfile
   if (result != RET_SUCCESS) {
     return (result);
   }
-  
+
   pNewGoc = (CamCalibGocProfile_t*)ListSearch(&pCamCalibDbCtx->gocProfile, SearchForEqualGocProfile, (void*)pAddGocProfile);
   if (NULL == pNewGoc) {
    pNewGoc = (CamCalibGocProfile_t*)malloc(sizeof(CamCalibGocProfile_t));
@@ -5513,22 +5560,22 @@ RESULT CamCalibDbGetGocProfileByName
     CamCalibGocProfile_t** ppGocProfile
 ){
    CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
- 
+
    LOGV("%s (enter)\n", __func__);
- 
+
    if (NULL == pCamCalibDbCtx) {
  	return (RET_WRONG_HANDLE);
    }
- 
+
    if (NULL == ppGocProfile) {
  	return (RET_INVALID_PARM);
    }
- 
+
    /* search resolution by name */
    *ppGocProfile = (CamCalibGocProfile_t*)ListSearch(&pCamCalibDbCtx->gocProfile, SearchGocProfileByName, (void*)name);
- 
+
    LOGV("%s (exit)\n", __func__);
- 
+
    return (RET_SUCCESS);
 }
 
@@ -5731,7 +5778,7 @@ RESULT CamCalibDbAddOTPGlobal
   if (result != RET_SUCCESS) {
     return (result);
   }
-  
+
   /* check if data already exists */
   if (NULL != pCamCalibDbCtx->pOTPGlobal) {
     return (RET_INVALID_PARM);
@@ -5743,7 +5790,7 @@ RESULT CamCalibDbAddOTPGlobal
     return (RET_OUTOFMEM);
   }
 
-  MEMCPY(pNewOTPGlobal, pAddOTPGlobal, sizeof(CamOTPGlobal_t)); 
+  MEMCPY(pNewOTPGlobal, pAddOTPGlobal, sizeof(CamOTPGlobal_t));
 
   pCamCalibDbCtx->pOTPGlobal = pNewOTPGlobal;
 

@@ -667,7 +667,7 @@ typedef struct CamAwb_V11_IlluProfile_s {
   //Cam2x2FloatMatrix_t         CovarianceMatrix;       /**< */
   //Cam1x1FloatMatrix_t         GaussFactor;            /**< */
   //Cam2x1FloatMatrix_t         Threshold;              /**< */
-  
+
   /* from awb calibration data */
   Cam1x4FloatMatrix_t         referenceWBgain;        /**< */
 
@@ -1103,11 +1103,11 @@ typedef struct CamNewDsp3DNRSharpParams_s{
 typedef struct CamNewDsp3DNRProfile_s {
 	void*                    p_next;
 	CamNewDsp3dnrProfileName_t name;
-	
+
 	CamNewDsp3DNRYnrParams_t ynr;
 	CamNewDsp3DNRUvnrParams_t uvnr;
 	CamNewDsp3DNRSharpParams_t sharp;
-	
+
 	uint32_t enable_dpc;        // Set to 1 by default, enable DSP dpc algorithm
 	uint32_t reserved[4];
 
@@ -1169,7 +1169,7 @@ typedef struct CamDpfProfile_s {
 
   CamMfdProfile_t         Mfd;                /**< mfd struct*/
   CamUvnrProfile_t        Uvnr;               /**< uvnr struct*/
-  
+
 } CamDpfProfile_t;
 
 
@@ -1216,7 +1216,7 @@ typedef struct CamIesharpenGridConf_s
     uint8_t p_grad_ArraySize;
     uint8_t* sharp_factor;    // lowlight sharpen factor 0-64
     uint8_t sharp_factor_ArraySize;
-    uint8_t* line1_filter_coe; //prefilter the data 2x3 
+    uint8_t* line1_filter_coe; //prefilter the data 2x3
     uint8_t line1_filter_coe_ArraySize;
     uint8_t* line2_filter_coe;//                           3x3
     uint8_t line2_filter_coe_ArraySize;
@@ -1237,7 +1237,7 @@ typedef struct CamIesharpenProfile_s
     uint8_t switch_avg;       //iesharpen whether is compare center pixel with edge pixel
     uint8_t* yavg_thr;// Y channel is set five segments by the Matrix
     uint8_t yavg_thr_ArraySize;
-    uint8_t* P_delta1; 
+    uint8_t* P_delta1;
     uint8_t P_delta1_ArraySize;
     uint8_t* P_delta2;
     uint8_t P_delta2_ArraySize;
@@ -1245,7 +1245,7 @@ typedef struct CamIesharpenProfile_s
     uint8_t pmaxnumber_ArraySize;
     uint8_t* pminnumber;
     uint8_t pminnumber_ArraySize;
-    uint8_t* gauss_flat_coe;    // filter mask for flat 
+    uint8_t* gauss_flat_coe;    // filter mask for flat
     uint8_t gauss_flat_coe_ArraySize;
     uint8_t* gauss_noise_coe;//filter mask2 for noise
     uint8_t gauss_noise_coe_ArraySize;
@@ -1439,6 +1439,7 @@ typedef struct CamCalibAwb_V11_Global_s {
   float                   fRegionSizeDec;
 
   CamCalibIIR_t           IIR;
+
 } CamCalibAwb_V11_Global_t;
 
 /*****************************************************************************/
@@ -1489,8 +1490,8 @@ typedef struct CamCalibAwb_V10_Global_s {
  */
 /*****************************************************************************/
 typedef struct CamAwbPara_V11_s{
-	List						awb_global; 	/**< list of supported awb_globals */
-	List						illumination;	/**< list of supported illuminations */
+  List                    awb_global;     /**< list of supported awb_globals */
+  List                    illumination;    /**< list of supported illuminations */
 
 }CamAwbPara_V11_t;
 
@@ -1500,19 +1501,43 @@ typedef struct CamAwbPara_V11_s{
  */
 /*****************************************************************************/
 typedef struct CamAwbPara_V10_s{
-	List						awb_global; 	/**< list of supported awb_globals */
-	List						illumination;	/**< list of supported illuminations */
+  List                    awb_global;     /**< list of supported awb_globals */
+  List                    illumination;    /**< list of supported illuminations */
 
 }CamAwbPara_V10_t;
+
+typedef enum CamAwbPara_Flash_Type_e{
+  FLASH_TYPE_NONE = 0,                      /*none flash light, or disable awb flash stategy*/
+  FLASH_TYPE_SCT,                           /*only one LED used in flash lighting*/
+  FLASH_TYPE_TCT,                           /*two LED used in flash lighting ,one with low CT,the other with high CT*/
+  FLASH_TYPE_MAX
+}CamAwbPara_Flash_Type_t;
+
+typedef struct CamAwbPara_Flash_s{
+  CamAwbPara_Flash_Type_t FlashType;
+  float                   LvValues[2];
+  float                   PreFlshWeighs1[2];
+  float                   LvFlashTh1;
+  float                   LvValRatio[2];
+  float                   PreFlshWeighs2[2];
+  float                   LvFlashTh2;
+  float                   LvValRatio3[2];
+  float                   MainFlshWeighs[2];
+  int                     LvValueIIRSize;
+  int                     PreFLashIllIndex;
+  float                   dampfactor;
+  float                   AeConvergeTh;
+}CamAwbPara_Flash_t;
 /*****************************************************************************/
 /**
  * @brief   AWB profile
  */
 /*****************************************************************************/
 typedef struct CamCalibAwbPara_s{
-	CAM_AwbVersion_t valid_version;
-	CamAwbPara_V10_t Para_V10;
-	CamAwbPara_V11_t Para_V11;
+  CAM_AwbVersion_t valid_version;
+  CamAwbPara_V10_t Para_V10;
+  CamAwbPara_V11_t Para_V11;
+  CamAwbPara_Flash_t Para_Flash;
 }CamCalibAwbPara_t;
 
 
@@ -1580,7 +1605,7 @@ typedef enum AecHdrMode_e {
 typedef enum EXP_SEPARATE_MODE_E{
 	EXP_SEPARATE_MODE_INVALID = 0,
 	EXP_SEPARATE_MODE_USE_TIME_FIRST,
-	EXP_SEPARATE_MODE_USE_GAIN_FIRST,	
+	EXP_SEPARATE_MODE_USE_GAIN_FIRST,
 	EXP_SEPARATE_MODE_USE_IQ,
 	EXP_SEPARATE_MODE_USE_SETTING,
 	EXP_SEPARATE_MODE_MAX,
@@ -1735,7 +1760,7 @@ typedef struct CamCalibAecFlashCtrl_s{
 
     //ROI changing or weight changing?
 	//TODO
-	
+
 	//exp separate mode
 	EXP_SEPARATE_MODE_T exp_separate_mode;
 
@@ -1745,7 +1770,7 @@ typedef struct CamCalibAecFlashCtrl_s{
 	float preflash_dump_overExp;
 	float preflash_meanluma_OE_thH;
 	float preflash_meanluma_OE_thL;
-	
+
 }CamCalibAecFlashCtrl_t;
 
 /*****************************************************************************/
@@ -1869,7 +1894,7 @@ typedef struct CamCalibContrastAf_s {
   CamCalibAfSearchDir_t   AdaptiveDir;
   uint8_t                 AdaptiveSteps;
   uint16_t*               AdaptRangeTbl; 	                      /**< adaptive range search table*/
-  
+
   float 				  TrigThers;							  /**< AF trigger threshold */
   uint16_t				  TrigValue;							  /**< AF trigger Value */
   uint16_t				  TrigFrames;							  /**< AF trigger status must hold frames */
@@ -1895,7 +1920,7 @@ typedef struct CamCalibContrastAf_s {
 
   uint16_t				  AfHyst[2][5]; 						  /**< the difference between go ahead and go back*/
   uint16_t				  AfBackStep[5];						  /**< avoid a step is too large*/
-  
+
   unsigned int			  rev[16];								  /**< reserve some char*/
 } CamCalibContrastAf_t;
 
@@ -1906,7 +1931,7 @@ typedef struct CamCalibLaserAf_s {
 } CamCalibLaserAf_t;
 
 typedef struct CamCalibPdaf_s {
-  uint8_t enable;  
+  uint8_t enable;
 } CamCalibPdaf_t;
 
 typedef struct CamCalibAfGlobal_s {
@@ -2014,7 +2039,7 @@ enum NIGHT_TRIGGER_MODE
 enum NIGHT_MODE
 {
     NORMAL = 1,
-    WHITE_BLACK = 2  
+    WHITE_BLACK = 2
 };
 
 typedef struct camOTPAwbInfo_s
@@ -2024,20 +2049,20 @@ typedef struct camOTPAwbInfo_s
 	uint32_t golden_gr_value;
 	uint32_t golden_gb_value;
 	uint32_t golden_b_value;
-	
+
 }camOTPAwbInfo_t;
 
 typedef struct camOTPLscInfo_s
 {
 	uint8_t  enable;
-	
+
 }camOTPLscInfo_t;
 
 
 typedef struct CamOTPGlobal_s{
 	camOTPAwbInfo_t awb;
 	camOTPLscInfo_t lsc;
-	
+
 }CamOTPGlobal_t;
 
 #ifdef __cplusplus

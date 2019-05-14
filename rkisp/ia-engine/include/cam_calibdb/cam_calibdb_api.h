@@ -5,7 +5,7 @@
  * transcribed, or translated into any language or computer format, in any form
  * or by any means without written permission of:
  * Fuzhou Rockchip Electronics Co.Ltd .
- * 
+ *
  *
  *****************************************************************************/
 /**
@@ -329,6 +329,18 @@ RESULT CamCalibDbGetResolutionIdxByName
     int32_t*                     pIdx
 );
 
+
+RESULT CamCalibDbGetAwb_FlashProfiles
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwbPara_Flash_t **flash
+);
+
+RESULT CamCalibDbAddAwb_FlashProfiles
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwbPara_Flash_t  flash
+) ;
 
 RESULT CamCalibDbAddAwb_VersionName
 (
