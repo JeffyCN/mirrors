@@ -99,9 +99,11 @@
 *v0.2.13
 * 1)fix the bug that AfmPosTbl init is wrog,so quick found will set a wrong position.
 * 2)fix the bug tha continue focus will trigger frequently.
+*v0.2.14
+* 1)fix the bug that maxSharpnessPos is null,so that searchfine run out free.
 */
 
-#define CONFIG_AF_LIB_VERSION "v0.2.13"
+#define CONFIG_AF_LIB_VERSION "v0.2.14"
 
 #ifdef __cplusplus
 extern "C"

@@ -64,9 +64,11 @@
  * 1) mdoify awb converged threshold
   *2) only awb is converged and wp number bigger than threshold ,then 
         enter AwbSetValues function to update awb value to IC register.
+ * v0.0.b
+ * 1) fix output wrong ccoffset when awb converged
  */
 
-#define CONFIG_AWB_LIB_VERSION "v0.0.a"
+#define CONFIG_AWB_LIB_VERSION "v0.0.b"
 
 #ifdef __cplusplus
 extern "C"
