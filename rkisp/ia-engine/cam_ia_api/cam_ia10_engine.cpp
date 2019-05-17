@@ -442,10 +442,10 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
     }else if ((dCfg.uc == UC_PRE_CAPTRUE
     	&& require_flash == true
         && flashModeState == AEC_FLASH_FLASHOFF)
-        || flashModeState == AEC_FLASH_PREFLASH) {
+        || (dCfg.uc == UC_PRE_CAPTRUE && flashModeState == AEC_FLASH_PREFLASH)) {
         aecCfg.flashModeSetting = AEC_FLASH_PREFLASH;
     } else if ((dCfg.uc == UC_CAPTURE && flashModeState == AEC_FLASH_PREFLASH)
-    			|| flashModeState == AEC_FLASH_MAINFLASH) {
+        || (dCfg.uc == UC_CAPTURE && flashModeState == AEC_FLASH_MAINFLASH)) {
         aecCfg.flashModeSetting = AEC_FLASH_MAINFLASH;
     }else{
 		aecCfg.flashModeSetting = AEC_FLASH_FLASHOFF;
@@ -2788,7 +2788,7 @@ RESULT CamIA10Engine::runManIspForBW(struct CamIA10_Results* result) {
 RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
     RESULT ret = RET_SUCCESS;
     bool has_main_flash =
-        aecCfg.flash_config.flashlight_ratio < 1.0f ? true : false;
+        aecCfg.flash_config.flashlight_ratio > 1.0f ? true : false;
     CamIA10_flash_setting_t* flash_setting = &result->flash;
     /* CamIA10_flash_setting_t* stats_flash = &mStats.flash_status; */
     CamIA10_frame_status frame_status = mStats.frame_status;
