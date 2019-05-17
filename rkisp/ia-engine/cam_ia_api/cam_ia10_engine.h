@@ -43,16 +43,18 @@ class CamIA10Engine: public CamIA10EngineItf {
 
   virtual RESULT runAWB(HAL_AwbCfg* config = NULL);
   virtual RESULT getAWBResults(CamIA10_AWB_Result_t* result);
-
+  virtual void   tuningToolConfigAwbParams(AwbConfig_t* awbParams);
   virtual RESULT runADPF();
   virtual RESULT getADPFResults(AdpfResult_t* result);
-
+  virtual void   tuningToolForceConfigDpf();
   virtual RESULT runAF(HAL_AfcCfg* config = NULL);
   virtual RESULT getAFResults(XCam3aResultFocus* result);
 
   virtual RESULT runAWDR();
   virtual RESULT getAWDRResults(AwdrResult_t* result);
-
+  virtual RESULT getCalibdbHandle(CamCalibDbHandle_t *handle);
+  virtual uint32_t getCalibdbMagicVerCode();
+  virtual RESULT clearStatic();
   /* manual ISP configs*/
   virtual RESULT runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Results* result);
   virtual void mapSensorExpToHal(
@@ -98,6 +100,7 @@ class CamIA10Engine: public CamIA10EngineItf {
 
   int mFrameId = 0;
   CamCalibDbHandle_t  hCamCalibDb;
+  uint32_t magicVerCode;
   bool mInitDynamic;
   struct CamIA10_DyCfg  dCfg;
   struct CamIA10_DyCfg  dCfgShd;

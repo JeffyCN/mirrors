@@ -44,7 +44,7 @@ public:
     SmartPtr<AiqInputParams> getAiqInputParams () { XCAM_ASSERT (_device_manager); return _device_manager->getAiqInputParams(); }
     struct isp_supplemental_sensor_mode_data* getSensorModeData () { return &_sensor_mode_data; }
     ~X3aAnalyzerRKiq ();
-
+    XCamReturn restart();
 private:
 
     XCAM_DEAD_COPY (X3aAnalyzerRKiq);

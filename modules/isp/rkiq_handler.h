@@ -263,8 +263,21 @@ public:
         return _params.color_effect;
     }
     XCamReturn processToneMapsMetaResults(CamerIcIspGocConfig_t goc, X3aResultList &output);
-    XCamReturn processMiscMetaResults(X3aResultList &output, bool first = false);
-
+    XCamReturn processMiscMetaResults(struct CamIA10_Results &ia10_results, X3aResultList &output, bool first = false);
+    void processTuningToolModuleInfoMetaResults(CameraMetadata* metadata);
+    void processTuningToolSensorInfoMetaResults(CameraMetadata* metadata);
+    void processTuningToolProtocolInfoMetaResults(CameraMetadata* metadata);
+    void processTuningToolBlsMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
+    void processTuningToolLscMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
+    void processTuningToolCcmMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
+    void processTuningToolAwbMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
+    void processTuningToolAwbWpMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
+    void processTuningToolAwbCurvMetaResults(CameraMetadata* metadata);
+    void processTuningToolAwbRefGainMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
+    void processTuningToolGocMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
+    void processTuningToolCprocMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
+    void processTuningToolDpfMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
+    void processTuningToolFltMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
 private:
     XCamReturn initTonemaps();
     XCamReturn fillTonemapCurve(CamerIcIspGocConfig_t goc, AiqInputParams* inputParams, CameraMetadata* metadata);
@@ -287,6 +300,7 @@ private:
 protected:
     SmartPtr<RKiqCompositor>     _aiq_compositor;
     ia_aiq_gbce_results        *_gbce_result;
+    char                       _iq_name[100];
 };
 
 class RKiqCompositor {
@@ -316,6 +330,11 @@ public:
     }
     double get_framerate () {
         return _framerate;
+    }
+    void set_iq_name(char *iq_name)
+    {
+        if(iq_name)
+           strcpy(_common_handler->_iq_name, iq_name);
     }
     bool open (ia_binary_data &cpf);
     void close ();
@@ -358,10 +377,23 @@ private:
     double calculate_value_by_factor (double factor, double min, double mid, double max);
 
     XCAM_DEAD_COPY (RKiqCompositor);
-
+    void tuning_tool_set_bls();
+    void tuning_tool_set_lsc();
+    void tuning_tool_set_ccm(CamIA10_AWB_Result_t &awb_results);
+    void tuning_tool_set_awb();
+    void tuning_tool_set_awb_wp();
+    void tuning_tool_set_awb_curve();
+    void tuning_tool_set_awb_refgain();
+    void tuning_tool_set_goc();
+    void tuning_tool_set_cproc();
+    void tuning_tool_set_dpf();
+    void tuning_tool_set_flt();
+    void tuning_tool_restart_engine();
+    void tuning_tool_process(struct CamIA10_Results &ia10_results);
 public:
     Isp10Engine* _isp10_engine;
-
+    struct rkisp_parameters    tool_isp_params;
+    bool                       _tuning_flag;
 private:
     SmartPtr<X3aHandlerManager> _handle_manager;
     XCamAEDescription* _ae_desc;
@@ -402,6 +434,11 @@ private:
     bool _delay_still_capture;
     int32_t _capture_to_preview_delay;
     rkisp_flash_setting_t _flash_old_setting;
+    char                       _iq_name[64];
+    bool                       _flt_en_for_tool;
+    bool                       _ctk_en_for_tool;
+    bool                       _dpf_en_for_tool;
+    struct CamIA10_Results     _results_for_tool = {0};
     // processed request id
     unsigned int    _procReqId;
 };

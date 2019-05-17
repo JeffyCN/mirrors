@@ -1525,6 +1525,7 @@ RESULT cam_ia10_isp_dpf_config
     dpf_result->enabled = BOOL_FALSE;
   } else if (enable_mode == HAL_ISP_ACTIVE_SETTING) {
     ISP_CHECK_NULL(dpf_cfg);
+    dpf_result->enabled = BOOL_TRUE;
   } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {
     dpf_result->enabled = BOOL_FALSE;
   } else {

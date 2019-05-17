@@ -163,6 +163,8 @@ RESULT CamIA10Engine::initStatic
                 LOGD("create calibdb from %s success.", aiqb_data_file);
                 hCamCalibDb = calibdb_p->GetCalibDbHandle();
                 g_CalibDbHandlesMap[iq_file_str] = calibdb_p;
+                struct sensor_calib_info* pCalib_info = calibdb_p->GetCalibDbInfo();
+                magicVerCode = pCalib_info->IQMagicVerCode;
             } else {
                 LOGE("create calibdb from %s failed", aiqb_data_file);
                 delete calibdb_p;
@@ -2174,6 +2176,20 @@ void CamIA10Engine::convertAwbResult2Cameric
     // order: r,g,b
     memcpy(&awbCamicResult->CtOffsetAlgo, awbResult->CcOffset.fCoeff,
            sizeof(awbResult->CcOffset.fCoeff));
+    strcpy(awbCamicResult->CcNameUp, awbResult->CcNameUp);
+    strcpy(awbCamicResult->CcNameDn, awbResult->CcNameDn);
+    strcpy(awbCamicResult->LscNameUp, awbResult->LscNameUp);
+    strcpy(awbCamicResult->LscNameDn, awbResult->LscNameDn);
+    awbCamicResult->forceWbGainFlag = awbResult->forceWbGainFlag;
+    awbCamicResult->forceWbGains = awbResult->forceWbGains;
+    awbCamicResult->forceIlluFlag = awbResult->forceIlluFlag;
+    strcpy(awbCamicResult->forceIllName, awbResult->forceIllName);
+    awbCamicResult->RgProj = awbResult->RgProj;
+    awbCamicResult->WbGainsOverG = awbResult->WbGainsOverG;
+    awbCamicResult->WbClippedGainsOverG = awbResult->WbClippedGainsOverG;
+    awbCamicResult->RegionSize = awbResult->RegionSize;
+    awbCamicResult->refWbgain = awbResult->refWbgain;
+    memcpy(awbCamicResult->curIllName, awbResult->curIllName, sizeof(awbResult->curIllName));
 }
 
 void CamIA10Engine::updateAwbResults
@@ -2273,8 +2289,33 @@ void CamIA10Engine::updateAwbResults
     /* fixed */
     update->DoorType = newCfg->DoorType;
     update->converged = newCfg->converged;
+    memcpy(update->CcNameUp, newCfg->CcNameUp, sizeof(newCfg->CcNameUp));
+    memcpy(update->CcNameDn, newCfg->CcNameDn, sizeof(newCfg->CcNameDn));
+    memcpy(update->LscNameUp, newCfg->LscNameUp, sizeof(newCfg->LscNameUp));
+    memcpy(update->LscNameDn, newCfg->LscNameDn, sizeof(newCfg->LscNameDn));
+    update->forceWbGainFlag = newCfg->forceWbGainFlag;
+    update->forceWbGains = newCfg->forceWbGains;
+    update->forceIlluFlag = newCfg->forceIlluFlag;
+    memcpy(update->forceIllName, newCfg->forceIllName, sizeof(newCfg->forceIllName));
+    update->RgProj = newCfg->RgProj;
+    update->WbGainsOverG = newCfg->WbGainsOverG;
+    update->WbClippedGainsOverG = newCfg->WbClippedGainsOverG;
+    update->RegionSize = newCfg->RegionSize;
+    update->refWbgain = newCfg->refWbgain;
+    memcpy(update->curIllName, newCfg->curIllName, sizeof(newCfg->curIllName));
     //LOGD("%s:%d,update awb config actives %d \n",__func__,__LINE__,update->actives );
 }
+
+ void CamIA10Engine::tuningToolConfigAwbParams(AwbConfig_t* awbParams) {
+     if (awbDesc) {
+        if(awbParams){
+            awbDesc->update_awb_params(awbContext, awbParams);
+        }else{
+            awbcfg.awbTuning.forceUpdateAwb = AWB_TUNING_ENABLE;
+            awbDesc->update_awb_params(awbContext, &awbcfg);
+        }
+     }
+ }
 
 RESULT CamIA10Engine::runAWB(HAL_AwbCfg* awbHalCfg) {
     RESULT result = RET_SUCCESS;
@@ -2745,6 +2786,12 @@ RESULT CamIA10Engine::getADPFResults(AdpfResult_t* result) {
     return ret;
 }
 
+void CamIA10Engine::tuningToolForceConfigDpf()
+{
+    adpfCfg.type = ADPF_USE_CALIB_DATABASE;
+    AdpfForceConfigure(hAdpf, &adpfCfg);
+}
+
 RESULT CamIA10Engine::initAWDR() {
     RESULT result = RET_FAILURE;
 
@@ -2765,6 +2812,30 @@ RESULT CamIA10Engine::getAWDRResults(AwdrResult_t* result) {
     ret = AwdrGetResult(hAwdr, result);
 
     return ret;
+}
+
+RESULT CamIA10Engine::getCalibdbHandle(CamCalibDbHandle_t *handle){
+    RESULT ret = RET_FAILURE;
+    *handle = hCamCalibDb;
+    return ret;
+}
+
+RESULT CamIA10Engine::clearStatic(){
+    RESULT ret = RET_FAILURE;
+
+    std::map<string, CalibDb*>::iterator it;
+    for (it=g_CalibDbHandlesMap.begin(); it != g_CalibDbHandlesMap.end(); it++) {
+        CalibDb* calibdb_p = it->second;
+        if(calibdb_p)
+            delete calibdb_p;
+    }
+    g_CalibDbHandlesMap.clear();
+    hCamCalibDb = NULL;
+    return ret;
+}
+
+uint32_t CamIA10Engine::getCalibdbMagicVerCode(){
+    return magicVerCode;
 }
 
 RESULT CamIA10Engine::runManIspForOTP(struct CamIA10_Results* result) {

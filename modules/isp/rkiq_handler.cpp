@@ -23,6 +23,7 @@
 #include "rk_params_translate.h"
 #include "x3a_isp_config.h"
 #include <interface/rkcamera_vendor_tags.h>
+#include "ebase/utl_fixfloat.h"
 
 #include <string.h>
 #include <math.h>
@@ -602,8 +603,24 @@ AiqCommonHandler::fillTonemapCurve(CamerIcIspGocConfig_t goc, AiqInputParams* in
     return XCAM_RETURN_NO_ERROR;
 }
 
+static char *strupr(char *str)
+{
+    char *orign=str;
+    for (; *str!='\0'; str++)
+        *str = toupper(*str);
+    return orign;
+}
+
+static char *strlowr(char *str)
+{
+    char *orign=str;
+    for (; *str!='\0'; str++)
+        *str = tolower(*str);
+    return orign;
+}
+
 XCamReturn
-AiqCommonHandler::processMiscMetaResults(X3aResultList &output, bool first)
+AiqCommonHandler::processMiscMetaResults(struct CamIA10_Results &ia10_results, X3aResultList &output, bool first)
 {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
     SmartPtr<XmetaResult> res;
@@ -636,7 +653,23 @@ AiqCommonHandler::processMiscMetaResults(X3aResultList &output, bool first)
     metadata->update(RKCAMERA3_PRIVATEDATA_FRAME_SOF_TIMESTAMP,
                      &frame_sof_ts,
                      1);
-
+    int en = _aiq_compositor->getAiqInputParams().ptr() ? _aiq_compositor->getAiqInputParams()->tuningFlag : 0;
+    if(en){
+        processTuningToolModuleInfoMetaResults(metadata);
+        processTuningToolSensorInfoMetaResults(metadata);
+        processTuningToolProtocolInfoMetaResults(metadata);
+        processTuningToolBlsMetaResults(metadata, ia10_results);
+        processTuningToolLscMetaResults(metadata, ia10_results);
+        processTuningToolCcmMetaResults(metadata, ia10_results);
+        processTuningToolAwbMetaResults(metadata, ia10_results);
+        processTuningToolAwbWpMetaResults(metadata, ia10_results);
+        processTuningToolAwbCurvMetaResults(metadata);
+        processTuningToolAwbRefGainMetaResults(metadata, ia10_results);
+        processTuningToolGocMetaResults(metadata, ia10_results);
+        processTuningToolCprocMetaResults(metadata, ia10_results);
+        processTuningToolDpfMetaResults(metadata, ia10_results);
+        processTuningToolFltMetaResults(metadata, ia10_results);
+    }
     // Update reqId for the result in order to match the setting param
     int reqId = _aiq_compositor->getAiqInputParams().ptr() ? _aiq_compositor->getAiqInputParams()->reqId : -1;
     metadata->update(ANDROID_REQUEST_ID, &reqId, 1);
@@ -694,6 +727,579 @@ AiqCommonHandler::processMiscMetaResults(X3aResultList &output, bool first)
     }
 
     return ret;
+}
+
+void
+AiqCommonHandler::processTuningToolModuleInfoMetaResults(CameraMetadata* metadata)
+{
+     uint8_t moduleinfo[234], otpInfo, *pchr;
+     char sensornam[32], modulenam[32], lensnam[32], *pstr,*pstart, *pend;
+     CamCalibDbHandle_t hCalib;
+     CamOTPGlobal_t *pCamOtp = NULL;
+
+     memset(sensornam,0,sizeof(sensornam));
+     memset(modulenam,0,sizeof(modulenam));
+     memset(lensnam,0,sizeof(lensnam));
+     memset(moduleinfo, 0, sizeof(moduleinfo));
+     pchr = moduleinfo;
+     memcpy(pchr, _iq_name, strlen(_iq_name));
+     pchr += 64;
+     pstr = strdup(_iq_name);
+     pstart = strrchr(pstr,'/');
+     pend = strrchr(pstr,'.');
+     if(pstart == NULL || pend == NULL){
+        return;
+     }
+     *pend = 0;
+     sscanf(pstart+1,"%[^_]_%[^_]_%s",sensornam,modulenam,lensnam);
+     memcpy(pchr, sensornam, sizeof(sensornam));
+     pchr += sizeof(sensornam);
+     memcpy(pchr, modulenam, sizeof(modulenam));
+     pchr += sizeof(modulenam);
+     memcpy(pchr, lensnam, sizeof(lensnam));
+     pchr += sizeof(lensnam);
+     _aiq_compositor->_isp10_engine->getCalibdbHandle(&hCalib);
+     CamCalibDbGetOTPGlobal(hCalib, &pCamOtp);
+     if(pCamOtp)
+         otpInfo = pCamOtp->awb.enable | pCamOtp->lsc.enable<<1;
+     else
+        otpInfo = 0;
+     *pchr = otpInfo;
+     metadata->update(RKCAMERA3_PRIVATEDATA_ISP_MODULE_INFO,(uint8_t*)moduleinfo,sizeof(moduleinfo));
+}
+
+void
+AiqCommonHandler::processTuningToolProtocolInfoMetaResults(CameraMetadata* metadata)
+{
+     uint8_t protocolinfo[4];
+     uint32_t magicCode;
+     magicCode = _aiq_compositor->_isp10_engine->getCalibdbMagicVerCode();
+     memset(protocolinfo, 0, sizeof(protocolinfo));
+     memcpy(protocolinfo, &magicCode, sizeof(magicCode));
+     metadata->update(RKCAMERA3_PRIVATEDATA_ISP_PROTOCOL_INFO,(uint8_t*)protocolinfo,sizeof(protocolinfo));
+}
+
+void
+AiqCommonHandler::processTuningToolSensorInfoMetaResults(CameraMetadata* metadata)
+{
+    CamCalibDbHandle_t hCalib;
+    CamCalibDbMetaData_t meta;
+    struct CamIA10_SensorModeData &sensor_desc = _aiq_compositor->get_sensor_mode_data();
+    uint8_t sensor_info[12];
+    short tempval;
+
+    memset(sensor_info, 0, sizeof(sensor_info));
+    sensor_info[0] = 0;//mirror flip
+    tempval = (short)((sensor_desc.line_periods_per_field)&0xffff);
+    memcpy(&sensor_info[1],&tempval,2);
+    tempval = (short)((sensor_desc.pixel_periods_per_line)&0xffff);
+    memcpy(&sensor_info[3],&tempval,2);
+    memcpy(&sensor_info[5], &sensor_desc.pixel_clock_freq_mhz, 4);
+    sensor_info[9] = 1;//bining or full
+    _aiq_compositor->_isp10_engine->getCalibdbHandle(&hCalib);
+    CamCalibDbGetMetaData(hCalib, &meta);
+    if(meta.isp_output_type == isp_gray_output_type)
+        sensor_info[10] = 0;
+    else
+        sensor_info[10] = 1;
+    metadata->update(RKCAMERA3_PRIVATEDATA_ISP_SENSOR_INFO,(uint8_t*)sensor_info,sizeof(sensor_info));
+
+}
+
+void
+AiqCommonHandler::processTuningToolBlsMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results)
+{
+    uint8_t blc_param[30];
+    uint8_t *pbuf;
+    memset(blc_param, 0, sizeof(blc_param));
+    pbuf = blc_param;
+    blc_param[0] = ia10_results.bls.enabled;
+    pbuf++;
+    blc_param[1] = _aiq_compositor->tool_isp_params.bls_config.enable_auto;
+    pbuf++;
+    if(blc_param[1]){
+        if(_aiq_compositor->tool_isp_params.bls_config.en_windows == 0)
+            blc_param[2] = 1;
+        else if(_aiq_compositor->tool_isp_params.bls_config.en_windows == 1)
+            blc_param[2] = 2;
+    }else{
+        blc_param[2] = 0;
+    }
+
+    pbuf++;
+
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.bls_window1.h_offs, 2);
+    pbuf += 2;
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.bls_window1.v_offs, 2);
+    pbuf += 2;
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.bls_window1.h_size, 2);
+    pbuf += 2;
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.bls_window1.v_size, 2);
+    pbuf += 2;
+
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.bls_window2.h_offs, 2);
+    pbuf += 2;
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.bls_window2.v_offs, 2);
+    pbuf += 2;
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.bls_window2.h_size, 2);
+    pbuf += 2;
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.bls_window2.v_size, 2);
+    pbuf += 2;
+
+    *pbuf = _aiq_compositor->tool_isp_params.bls_config.bls_samples;
+    pbuf++;
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.fixed_val.b,2);
+    pbuf += 2;
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.fixed_val.gb,2);
+    pbuf += 2;
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.fixed_val.gr,2);
+    pbuf += 2;
+    memcpy(pbuf, &_aiq_compositor->tool_isp_params.bls_config.fixed_val.r,2);
+    metadata->update(RKCAMERA3_PRIVATEDATA_ISP_BLS,(uint8_t*)blc_param,sizeof(blc_param));
+
+}
+
+void
+AiqCommonHandler::processTuningToolLscMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results)
+{
+     CamLscProfileName_t lscProfileName;
+     CamLscProfile_t *plsc = NULL;
+     uint8_t lsc_param[2404], *pbuf;
+
+    CamCalibDbHandle_t hCalib;
+    _aiq_compositor->_isp10_engine->getCalibdbHandle(&hCalib);
+    memset(lsc_param, 0, sizeof(lsc_param));
+
+    pbuf = lsc_param;
+    if (strcmp((char*)ia10_results.awb.LscNameUp, "null"))
+        strcpy((char*)lscProfileName, (char*)ia10_results.awb.LscNameUp);
+    else if (strcmp((char*)ia10_results.awb.LscNameDn, "null"))
+        strcpy((char*)lscProfileName, (char*)ia10_results.awb.LscNameDn);
+
+    CamCalibDbGetLscProfileByName(hCalib, lscProfileName, &plsc);
+    if (plsc != NULL)
+    {
+        pbuf[0] = ia10_results.lsc_enabled;
+        pbuf++;
+        memcpy(pbuf, ia10_results.awb.LscNameUp, sizeof(ia10_results.awb.LscNameUp));
+        pbuf += sizeof(plsc->name);
+        memcpy(pbuf, ia10_results.awb.LscNameDn, sizeof(ia10_results.awb.LscNameDn));
+        pbuf += sizeof(plsc->name);
+        *((uint16_t*)pbuf) = plsc->LscSectors;
+        pbuf += 2;
+        *((uint16_t*)pbuf) = plsc->LscNo;
+        pbuf += 2;
+        *((uint16_t*)pbuf) = plsc->LscXo;
+        pbuf += 2;
+        *((uint16_t*)pbuf) = plsc->LscYo;
+        pbuf += 2;
+        memcpy(pbuf, plsc->LscXSizeTbl, sizeof(plsc->LscXSizeTbl));
+        pbuf += sizeof(plsc->LscXSizeTbl);
+        memcpy(pbuf, plsc->LscYSizeTbl, sizeof(plsc->LscYSizeTbl));
+        pbuf += sizeof(plsc->LscYSizeTbl);
+        memcpy(pbuf, plsc->LscMatrix, sizeof(plsc->LscMatrix));
+        metadata->update(RKCAMERA3_PRIVATEDATA_ISP_LSC_GET, (uint8_t*)lsc_param, sizeof(lsc_param));
+    }
+}
+
+void
+AiqCommonHandler::processTuningToolCcmMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results)
+{
+    uint8_t ccm_param[100], *pbuf;
+
+    memset(ccm_param, 0, sizeof(ccm_param));
+    pbuf = ccm_param;
+    //pbuf[0] = ia10_results.ctk_enabled;
+    pbuf++;
+    memcpy(pbuf, ia10_results.awb.CcNameUp, sizeof(ia10_results.awb.CcNameUp));
+    pbuf += sizeof(ia10_results.awb.CcNameUp);
+    memcpy(pbuf, ia10_results.awb.CcNameDn, sizeof(ia10_results.awb.CcNameDn));
+    pbuf += sizeof(ia10_results.awb.CcNameDn);
+#if 0
+    float fVal[12];
+
+    fVal[0] = UtlFixToFloat_S0407(ia10_results.awb.CcMatrix.Coeff[0]);
+    memcpy(pbuf, &fVal[0], sizeof(fVal[0]));
+    pbuf += sizeof(fVal[0]);
+    fVal[1] = UtlFixToFloat_S0407(ia10_results.awb.CcMatrix.Coeff[1]);
+    memcpy(pbuf, &fVal[1], sizeof(fVal[1]));
+    pbuf += sizeof(fVal[1]);
+    fVal[2] = UtlFixToFloat_S0407(ia10_results.awb.CcMatrix.Coeff[2]);
+    memcpy(pbuf, &fVal[2], sizeof(fVal[2]));
+    pbuf += sizeof(fVal[2]);
+    fVal[3] = UtlFixToFloat_S0407(ia10_results.awb.CcMatrix.Coeff[3]);
+    memcpy(pbuf, &fVal[3], sizeof(fVal[3]));
+    pbuf += sizeof(fVal[3]);
+    fVal[4] = UtlFixToFloat_S0407(ia10_results.awb.CcMatrix.Coeff[4]);
+    memcpy(pbuf, &fVal[4], sizeof(fVal[4]));
+    pbuf += sizeof(fVal[4]);
+    fVal[5] = UtlFixToFloat_S0407(ia10_results.awb.CcMatrix.Coeff[5]);
+    memcpy(pbuf, &fVal[5], sizeof(fVal[5]));
+    pbuf += sizeof(fVal[5]);
+    fVal[6] = UtlFixToFloat_S0407(ia10_results.awb.CcMatrix.Coeff[6]);
+    memcpy(pbuf, &fVal[6], sizeof(fVal[6]));
+    pbuf += sizeof(fVal[6]);
+    fVal[7] = UtlFixToFloat_S0407(ia10_results.awb.CcMatrix.Coeff[7]);
+    memcpy(pbuf, &fVal[7], sizeof(fVal[7]));
+    pbuf += sizeof(fVal[7]);
+    fVal[8] = UtlFixToFloat_S0407(ia10_results.awb.CcMatrix.Coeff[8]);
+    memcpy(pbuf, &fVal[8], sizeof(fVal[8]));
+    pbuf += sizeof(fVal[8]);
+    fVal[9] = UtlFixToFloat_S1200(ia10_results.awb.CcOffset.Red);
+    memcpy(pbuf, &fVal[9], sizeof(fVal[9]));
+    pbuf += sizeof(fVal[9]);
+    fVal[10] = UtlFixToFloat_S1200(ia10_results.awb.CcOffset.Green);
+    memcpy(pbuf, &fVal[10], sizeof(fVal[10]));
+    pbuf += sizeof(fVal[10]);
+    fVal[11] = UtlFixToFloat_S1200(ia10_results.awb.CcOffset.Blue);
+    memcpy(pbuf, &fVal[11], sizeof(fVal[11]));
+    pbuf += sizeof(fVal[11]);
+    if((fVal[0]==1.0) && (fVal[1]==0.0) && (fVal[2]==0.0) && (fVal[3]==0.0) &&
+       (fVal[4]==1.0) && (fVal[5]==0.0) && (fVal[6]==0.0) && (fVal[7]==0.0) && (fVal[8]==1.0))
+    {
+        ccm_param[0] = 0;
+    }else{
+        ccm_param[0] = 1;
+    }
+
+#else
+    CamCcProfile_t*  pCcProfile = NULL;
+    CamCalibDbHandle_t hCalib;
+    CamCcProfileName_t  name;
+    float *fVal;
+
+    if(strcmp(ia10_results.awb.CcNameUp, "null"))
+        strcpy(name, ia10_results.awb.CcNameUp);
+    else if(strcmp(ia10_results.awb.CcNameDn, "null"))
+        strcpy(name, ia10_results.awb.CcNameDn);
+
+    _aiq_compositor->_isp10_engine->getCalibdbHandle(&hCalib);
+    CamCalibDbGetCcProfileByName(hCalib, name, &pCcProfile);
+    if(pCcProfile){
+        memcpy(pbuf, pCcProfile->CrossTalkCoeff.fCoeff, sizeof(pCcProfile->CrossTalkCoeff.fCoeff));
+        pbuf += sizeof(pCcProfile->CrossTalkCoeff.fCoeff);
+        memcpy(pbuf, pCcProfile->CrossTalkOffset.fCoeff, sizeof(pCcProfile->CrossTalkOffset.fCoeff));
+        pbuf += sizeof(pCcProfile->CrossTalkOffset.fCoeff);
+        fVal = pCcProfile->CrossTalkCoeff.fCoeff;
+        if((fVal[0]==1.0) && (fVal[1]==0.0) && (fVal[2]==0.0) && (fVal[3]==0.0) &&
+           (fVal[4]==1.0) && (fVal[5]==0.0) && (fVal[6]==0.0) && (fVal[7]==0.0) && (fVal[8]==1.0))
+        {
+            ccm_param[0] = 0;
+        }else{
+            ccm_param[0] = 1;
+        }
+    }
+#endif
+
+    metadata->update(RKCAMERA3_PRIVATEDATA_ISP_CCM_GET, (uint8_t*)ccm_param, sizeof(ccm_param));
+}
+
+void
+AiqCommonHandler::processTuningToolAwbMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results)
+{
+    uint8_t awb_param[39], *pbuf;
+
+    memset(awb_param, 0, sizeof(awb_param));
+    pbuf = awb_param;
+    *pbuf++ = (ia10_results.awb.forceWbGainFlag==BOOL_TRUE) ? 0 : 1;
+    memcpy(pbuf, &ia10_results.awb.forceWbGains, sizeof(ia10_results.awb.forceWbGains));
+    pbuf += sizeof(ia10_results.awb.forceWbGains);
+    *pbuf++ = (ia10_results.awb.forceIlluFlag==BOOL_TRUE) ? 1 : 0;
+    strcpy((char*)pbuf, ia10_results.awb.forceIllName);
+    metadata->update(RKCAMERA3_PRIVATEDATA_ISP_AWB_GET, (uint8_t*)awb_param, sizeof(awb_param));
+}
+
+void
+AiqCommonHandler::processTuningToolAwbWpMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results)
+{
+    struct cifisp_stat_buffer& isp_stat = _aiq_compositor->get_3a_isp_stats();
+
+    uint8_t awb_wp[53], *pbuf;
+    short tempval;
+    memset(awb_wp, 0, sizeof(awb_wp));
+    pbuf = awb_wp;
+    *((uint16_t *)pbuf) = _aiq_compositor->tool_isp_params.awb_meas_config.awb_wnd.h_offs;
+    pbuf += 2;
+    *((uint16_t *)pbuf) = _aiq_compositor->tool_isp_params.awb_meas_config.awb_wnd.v_offs;
+    pbuf += 2;
+    *((uint16_t *)pbuf) = _aiq_compositor->tool_isp_params.awb_meas_config.awb_wnd.h_size;
+    pbuf += 2;
+    *((uint16_t *)pbuf) = _aiq_compositor->tool_isp_params.awb_meas_config.awb_wnd.v_size;
+    pbuf += 2;
+    if(_aiq_compositor->tool_isp_params.awb_meas_config.awb_mode == CIFISP_AWB_MODE_RGB)
+        *pbuf++ = 0;
+    else if(_aiq_compositor->tool_isp_params.awb_meas_config.awb_mode == CIFISP_AWB_MODE_YCBCR)
+        *pbuf++ = 1;
+    else
+        *pbuf++ = 1;
+    memcpy(pbuf, &isp_stat.params.awb.awb_mean[0].cnt, sizeof(isp_stat.params.awb.awb_mean[0].cnt));
+    pbuf += sizeof(isp_stat.params.awb.awb_mean[0].cnt);
+    *pbuf++ = isp_stat.params.awb.awb_mean[0].mean_y_or_g;//mean y_g
+    *pbuf++ = isp_stat.params.awb.awb_mean[0].mean_cb_or_b;//mean cb
+    *pbuf++ = isp_stat.params.awb.awb_mean[0].mean_cr_or_r;//mean cr
+    tempval = isp_stat.params.awb.awb_mean[0].mean_cr_or_r;
+    memcpy(pbuf, &tempval, sizeof(tempval));
+    pbuf += sizeof(tempval);
+    tempval = isp_stat.params.awb.awb_mean[0].mean_cb_or_b;
+    memcpy(pbuf, &tempval, sizeof(tempval));
+    pbuf += sizeof(tempval);
+    tempval = isp_stat.params.awb.awb_mean[0].mean_y_or_g;
+    memcpy(pbuf, &tempval, sizeof(tempval));
+    pbuf += sizeof(tempval);
+    *pbuf++ = _aiq_compositor->tool_isp_params.awb_meas_config.awb_ref_cr;
+    *pbuf++ = _aiq_compositor->tool_isp_params.awb_meas_config.awb_ref_cb;
+    *pbuf++ = _aiq_compositor->tool_isp_params.awb_meas_config.min_y;
+    *pbuf++ = _aiq_compositor->tool_isp_params.awb_meas_config.max_y;
+    *pbuf++ = _aiq_compositor->tool_isp_params.awb_meas_config.min_c;
+    *pbuf++ = _aiq_compositor->tool_isp_params.awb_meas_config.max_csum;
+    memcpy(pbuf, &ia10_results.awb.RgProj, 4);//RgProj
+    pbuf += 4;
+    memcpy(pbuf, &ia10_results.awb.RegionSize, 4);//RegionSize
+    pbuf += 4;
+    memcpy(pbuf, &ia10_results.awb.WbClippedGainsOverG.GainROverG, 4);//wbClipGainOver.GainROverG
+    pbuf += 4;
+    memcpy(pbuf, &ia10_results.awb.WbGainsOverG.GainROverG, 4);//wbGainOver.GainROverG
+    pbuf += 4;
+    memcpy(pbuf, &ia10_results.awb.WbClippedGainsOverG.GainBOverG, 4);//wbClipGainOver.GainBOverG
+    pbuf += 4;
+    memcpy(pbuf, &ia10_results.awb.WbGainsOverG.GainBOverG, 4);//wbGainOver.GainBOverG
+    metadata->update(RKCAMERA3_PRIVATEDATA_ISP_AWB_WP, (uint8_t*)awb_wp, sizeof(awb_wp));
+}
+
+void
+AiqCommonHandler::processTuningToolAwbCurvMetaResults(CameraMetadata* metadata)
+{
+    uint8_t awb_cur[530], *pbuf;
+    CamCalibDbHandle_t hCalib;
+    CamCalibAwb_V11_Global_t* pAwbGlobal;
+    char cur_resolution[15];
+
+    memset(awb_cur, 0, sizeof(awb_cur));
+    pbuf = awb_cur;
+    _aiq_compositor->_isp10_engine->getCalibdbHandle(&hCalib);
+    struct CamIA10_SensorModeData &sensor_mode = _aiq_compositor->get_sensor_mode_data();
+    sprintf(cur_resolution,"%dx%d",sensor_mode.sensor_output_width,sensor_mode.sensor_output_height);
+
+    CamCalibDbGetAwb_V11_GlobalByResolution(hCalib, cur_resolution, &pAwbGlobal);
+    if (pAwbGlobal){
+        memcpy(pbuf,  &pAwbGlobal->CenterLine, sizeof(pAwbGlobal->CenterLine));
+        pbuf += sizeof(pAwbGlobal->CenterLine);
+        *((float*)pbuf) = pAwbGlobal->KFactor.fCoeff[0];
+        pbuf += 4;
+        memcpy(pbuf, pAwbGlobal->AwbClipParam.pRg1, pAwbGlobal->AwbClipParam.ArraySize1*4);
+        pbuf += pAwbGlobal->AwbClipParam.ArraySize1*4;
+        memcpy(pbuf, pAwbGlobal->AwbClipParam.pMaxDist1, pAwbGlobal->AwbClipParam.ArraySize1*4);
+        pbuf += pAwbGlobal->AwbClipParam.ArraySize1*4;
+        memcpy(pbuf, pAwbGlobal->AwbClipParam.pRg2, pAwbGlobal->AwbClipParam.ArraySize2*4);
+        pbuf += pAwbGlobal->AwbClipParam.ArraySize2*4;
+        memcpy(pbuf, pAwbGlobal->AwbClipParam.pMaxDist2, pAwbGlobal->AwbClipParam.ArraySize2*4);
+        pbuf += pAwbGlobal->AwbClipParam.ArraySize2*4;
+        memcpy(pbuf, pAwbGlobal->AwbGlobalFadeParm.pGlobalFade1, pAwbGlobal->AwbGlobalFadeParm.ArraySize1*4);
+        pbuf += pAwbGlobal->AwbGlobalFadeParm.ArraySize1*4;
+        memcpy(pbuf, pAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance1, pAwbGlobal->AwbGlobalFadeParm.ArraySize1*4);
+        pbuf += pAwbGlobal->AwbGlobalFadeParm.ArraySize1*4;
+        memcpy(pbuf, pAwbGlobal->AwbGlobalFadeParm.pGlobalFade2, pAwbGlobal->AwbGlobalFadeParm.ArraySize2*4);
+        pbuf += pAwbGlobal->AwbGlobalFadeParm.ArraySize2*4;
+        memcpy(pbuf, pAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance2, pAwbGlobal->AwbGlobalFadeParm.ArraySize2*4);
+        pbuf += pAwbGlobal->AwbGlobalFadeParm.ArraySize2*4;
+        metadata->update(RKCAMERA3_PRIVATEDATA_ISP_AWB_CURV, (uint8_t*)awb_cur, sizeof(awb_cur));
+    }
+}
+
+void
+AiqCommonHandler::processTuningToolAwbRefGainMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results)
+{
+    uint8_t awb_ref_gain_param[38], *pbuf;
+
+    memset(awb_ref_gain_param, 0, sizeof(awb_ref_gain_param));
+    pbuf = awb_ref_gain_param;
+    memcpy(pbuf, &ia10_results.awb.curIllName, sizeof(ia10_results.awb.curIllName));
+    pbuf += sizeof(ia10_results.awb.curIllName);
+    memcpy(pbuf, &ia10_results.awb.refWbgain, sizeof(ia10_results.awb.refWbgain));
+    metadata->update(RKCAMERA3_PRIVATEDATA_ISP_AWB_REFGAIN, (uint8_t*)awb_ref_gain_param, sizeof(awb_ref_gain_param));
+}
+
+void
+AiqCommonHandler::processTuningToolGocMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results)
+{
+    CamGOCProfileName_t goc_name[2] =
+    {
+        "normal",
+        "night"
+    };
+    uint8_t  goc_param[92], *pbuf;
+    CamCalibDbHandle_t hCalib;
+    CamGOCProfileName_t name;
+    CamCalibGocProfile_t* pGocProfile;
+    memset(goc_param, 0, sizeof(goc_param));
+    _aiq_compositor->_isp10_engine->getCalibdbHandle(&hCalib);
+    for (uint8_t i=0; i<2; i++) {
+        pbuf = goc_param;
+        CamCalibDbGetGocProfileByName(hCalib, strupr(goc_name[i]), &pGocProfile);
+        if (pGocProfile){
+            pbuf[0] = (uint8_t)ia10_results.goc.enabled;
+            pbuf++;
+            memcpy(pbuf, pGocProfile->name, sizeof(pGocProfile->name));
+            pbuf += sizeof(pGocProfile->name);
+            *pbuf++ = (uint8_t)ia10_results.wdr.enabled;//wdr status;
+            *pbuf++ = (uint8_t)pGocProfile->def_cfg_mode;
+            memcpy(pbuf, pGocProfile->GammaY, sizeof(pGocProfile->GammaY));
+            metadata->update(RKCAMERA3_PRIVATEDATA_ISP_GOC_NORMAL+i,(uint8_t*)goc_param,sizeof(goc_param));
+        }
+    }
+
+}
+
+void
+AiqCommonHandler::processTuningToolCprocMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results)
+{
+    uint8_t cproc_param[16], *pbuf;
+    float temp;
+    uint32_t temp32;
+    memset(cproc_param, 0, sizeof(cproc_param));
+    pbuf = cproc_param;
+    *pbuf++ = ia10_results.cproc.enabled;
+    *pbuf++ = 0;
+    temp = ((float)ia10_results.cproc.contrast)/128.0f;
+    memcpy(pbuf, &temp, 4);
+    pbuf += 4;
+    temp = ((float)((ia10_results.cproc.hue) * 90) / 128.0f);
+    memcpy(pbuf, &temp, 4);
+    pbuf += 4;
+    temp = ((float)ia10_results.cproc.saturation)/128.0f;
+    memcpy(pbuf, &temp, 4);
+    pbuf += 4;
+    temp32 = (uint32_t)(ia10_results.cproc.brightness);
+    if ((temp32 & 0x0080) == 0) {
+        *pbuf = ia10_results.cproc.brightness;
+    } else {
+        temp32 |= ~0x0080;
+        temp32--;
+        temp32 = ~temp32;
+        temp = (float)temp32;
+        temp = -temp;
+        *pbuf = (int8_t)temp;
+    }
+    metadata->update(RKCAMERA3_PRIVATEDATA_ISP_CPROC_PREVIEW,(uint8_t*)cproc_param,sizeof(cproc_param));
+}
+
+void
+AiqCommonHandler::processTuningToolDpfMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results)
+{
+    uint8_t dpf_param[85], *pbuf;
+    CamDpfProfile_t*  pDpfProfile;
+    CamCalibDbHandle_t hCalib;
+    char cur_resolution[20];
+    struct CamIA10_SensorModeData &sensor_mode = _aiq_compositor->get_sensor_mode_data();
+
+    sprintf(cur_resolution,"%dx%d",sensor_mode.sensor_output_width,sensor_mode.sensor_output_height);
+    _aiq_compositor->_isp10_engine->getCalibdbHandle(&hCalib);
+    memset(dpf_param, 0, sizeof(dpf_param));
+
+    pbuf = dpf_param;
+    CamCalibDbGetDpfProfileByResolution(hCalib, strlowr(cur_resolution), &pDpfProfile);
+    if (pDpfProfile) {
+        memcpy(pbuf, pDpfProfile->resolution, sizeof(pDpfProfile->resolution));
+        pbuf += 20;
+        *pbuf++ = ia10_results.adpf_enabled;//pDpfProfile->ADPFEnable;
+        *pbuf++ = pDpfProfile->nll_segmentation;
+        memcpy(pbuf, pDpfProfile->nll_coeff.uCoeff, sizeof(pDpfProfile->nll_coeff));
+        pbuf += sizeof(pDpfProfile->nll_coeff);
+        *((uint16_t *)pbuf) = pDpfProfile->SigmaGreen;
+        pbuf +=2;
+        *((uint16_t *)pbuf) = pDpfProfile->SigmaRedBlue;
+        pbuf +=2;
+        memcpy(pbuf, &pDpfProfile->fGradient, 4);
+        pbuf +=4;
+        memcpy(pbuf, &pDpfProfile->fOffset, 4);
+        pbuf +=4;
+        memcpy(pbuf, &pDpfProfile->NfGains.fCoeff[0], 4);
+        pbuf +=4;
+        memcpy(pbuf, &pDpfProfile->NfGains.fCoeff[1], 4);
+        pbuf +=4;
+        memcpy(pbuf, &pDpfProfile->NfGains.fCoeff[2], 4);
+        pbuf +=4;
+        memcpy(pbuf, &pDpfProfile->NfGains.fCoeff[3], 4);
+        metadata->update(RKCAMERA3_PRIVATEDATA_ISP_DPF_GET,(uint8_t*)dpf_param,sizeof(dpf_param));
+    }
+}
+
+void
+AiqCommonHandler::processTuningToolFltMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results)
+{
+    CamFilterProfileName_t flt_name[2] = {"normal","night"};
+    uint8_t flt_param[250], *pbuf;
+    CamFilterProfile_t* pFilterProfile;
+    CamDpfProfile_t*    pDpfProfile;
+    CamCalibDbHandle_t  hCalib;
+    _aiq_compositor->_isp10_engine->getCalibdbHandle(&hCalib);
+    char cur_resolution[20];
+    struct CamIA10_SensorModeData &sensor_mode = _aiq_compositor->get_sensor_mode_data();
+    memset(cur_resolution, 0, sizeof(cur_resolution));
+    sprintf(cur_resolution,"%dx%d",sensor_mode.sensor_output_width,sensor_mode.sensor_output_height);
+
+    CamCalibDbGetDpfProfileByResolution(hCalib, strlowr(cur_resolution), &pDpfProfile);
+    if (pDpfProfile) {
+        for(int i=0; i<2; i++) {
+            pbuf = flt_param;
+            memset(flt_param, 0, sizeof(flt_param));
+            CamCalibDbGetFilterProfileByName(hCalib, pDpfProfile, strupr(flt_name[i]), &pFilterProfile);
+            if (pFilterProfile) {
+                memcpy(pbuf, cur_resolution, sizeof(cur_resolution));
+                pbuf += sizeof(cur_resolution);
+                *pbuf++ = ia10_results.flt.enabled;
+
+                *pbuf++ = (uint8_t)pFilterProfile->DenoiseLevelCurve.pSensorGain[0];
+                *pbuf++ = (uint8_t)pFilterProfile->DenoiseLevelCurve.pSensorGain[1];
+                *pbuf++ = (uint8_t)pFilterProfile->DenoiseLevelCurve.pSensorGain[2];
+                *pbuf++ = (uint8_t)pFilterProfile->DenoiseLevelCurve.pSensorGain[3];
+                *pbuf++ = (uint8_t)pFilterProfile->DenoiseLevelCurve.pSensorGain[4];
+                *pbuf++ = ((uint8_t)pFilterProfile->DenoiseLevelCurve.pDlevel[0]-1);
+                *pbuf++ = ((uint8_t)pFilterProfile->DenoiseLevelCurve.pDlevel[1]-1);
+                *pbuf++ = ((uint8_t)pFilterProfile->DenoiseLevelCurve.pDlevel[2]-1);
+                *pbuf++ = ((uint8_t)pFilterProfile->DenoiseLevelCurve.pDlevel[3]-1);
+                *pbuf++ = ((uint8_t)pFilterProfile->DenoiseLevelCurve.pDlevel[4]-1);
+                *pbuf++ = (uint8_t)pFilterProfile->SharpeningLevelCurve.pSensorGain[0];
+                *pbuf++ = (uint8_t)pFilterProfile->SharpeningLevelCurve.pSensorGain[1];
+                *pbuf++ = (uint8_t)pFilterProfile->SharpeningLevelCurve.pSensorGain[2];
+                *pbuf++ = (uint8_t)pFilterProfile->SharpeningLevelCurve.pSensorGain[3];
+                *pbuf++ = (uint8_t)pFilterProfile->SharpeningLevelCurve.pSensorGain[4];
+                *pbuf++ = ((uint8_t)pFilterProfile->SharpeningLevelCurve.pSlevel[0]-1);
+                *pbuf++ = ((uint8_t)pFilterProfile->SharpeningLevelCurve.pSlevel[1]-1);
+                *pbuf++ = ((uint8_t)pFilterProfile->SharpeningLevelCurve.pSlevel[2]-1);
+                *pbuf++ = ((uint8_t)pFilterProfile->SharpeningLevelCurve.pSlevel[3]-1);
+                *pbuf++ = ((uint8_t)pFilterProfile->SharpeningLevelCurve.pSlevel[4]-1);
+                *pbuf++ = pFilterProfile->FiltLevelRegConf.FiltLevelRegConfEnable;
+
+                memcpy(pbuf, pFilterProfile->FiltLevelRegConf.p_FiltLevel,pFilterProfile->FiltLevelRegConf.ArraySize);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_grn_stage1,pFilterProfile->FiltLevelRegConf.ArraySize);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_chr_h_mode,pFilterProfile->FiltLevelRegConf.ArraySize);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_chr_v_mode,pFilterProfile->FiltLevelRegConf.ArraySize);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_thresh_bl0,pFilterProfile->FiltLevelRegConf.ArraySize*4);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize*4;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_thresh_bl1,pFilterProfile->FiltLevelRegConf.ArraySize*4);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize*4;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_thresh_sh0,pFilterProfile->FiltLevelRegConf.ArraySize*4);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize*4;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_thresh_sh1,pFilterProfile->FiltLevelRegConf.ArraySize*4);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize*4;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_fac_sh1,pFilterProfile->FiltLevelRegConf.ArraySize*4);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize*4;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_fac_sh0,pFilterProfile->FiltLevelRegConf.ArraySize*4);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize*4;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_fac_mid,pFilterProfile->FiltLevelRegConf.ArraySize*4);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize*4;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_fac_bl0,pFilterProfile->FiltLevelRegConf.ArraySize*4);
+                pbuf += pFilterProfile->FiltLevelRegConf.ArraySize*4;
+                memcpy(pbuf,pFilterProfile->FiltLevelRegConf.p_fac_bl1,pFilterProfile->FiltLevelRegConf.ArraySize*4);
+                metadata->update(RKCAMERA3_PRIVATEDATA_ISP_FLT_NORMAL+i, (uint8_t*)flt_param, sizeof(flt_param));
+            }
+        }
+    }
 }
 
 XCamReturn
@@ -1282,6 +1888,10 @@ RKiqCompositor::RKiqCompositor ()
     , _all_stats_meas_types(0)
     , _delay_still_capture(false)
     , _capture_to_preview_delay(0)
+    ,_flt_en_for_tool(false)
+    ,_ctk_en_for_tool(false)
+    ,_dpf_en_for_tool(false)
+    ,_tuning_flag(false)
     ,_procReqId(-1)
 {
     xcam_mem_clear (_frame_params);
@@ -1522,6 +2132,7 @@ RKiqCompositor::set_effect_ispparams (struct rkisp_parameters& isp_params)
     memcpy(&_ia_stat.effect_CtOffset, isp_params.awb_algo_results.fCtOffset,
            sizeof(isp_params.awb_algo_results.fCtOffset));
     _ia_stat.stats_sof_ts = isp_params.frame_sof_ts;
+    memcpy(&tool_isp_params,&isp_params, sizeof(struct rkisp_parameters));
 
     return true;
 }
@@ -1676,6 +2287,589 @@ void RKiqCompositor::pre_process_3A_states()
     }
 }
 
+void RKiqCompositor::tuning_tool_set_bls()
+{
+    struct HAL_ISP_cfg_s cfg;
+    struct HAL_ISP_bls_cfg_s isp_bls_cfg;
+
+    if(_inputParams.ptr() && _inputParams->blsInputParams.updateFlag){
+        if(_inputParams->blsInputParams.enable){
+            //now using fixed mode,so no need modify win
+            memset(&cfg, 0, sizeof(cfg));
+            cfg.bls_cfg = &isp_bls_cfg;
+            cfg.bls_cfg->fixed_blue = _inputParams->blsInputParams.fixedVal.fixed_b;
+            cfg.bls_cfg->fixed_greenB = _inputParams->blsInputParams.fixedVal.fixed_gb;
+            cfg.bls_cfg->fixed_greenR = _inputParams->blsInputParams.fixedVal.fixed_gr;
+            cfg.bls_cfg->fixed_red = _inputParams->blsInputParams.fixedVal.fixed_r;
+            LOGV("bls: %d,%d,%d,%d",cfg.bls_cfg->fixed_blue,cfg.bls_cfg->fixed_greenB,cfg.bls_cfg->fixed_greenR,cfg.bls_cfg->fixed_red);
+            cfg.updated_mask = HAL_ISP_BLS_MASK;
+            cfg.enabled[HAL_ISP_BLS_ID] = HAL_ISP_ACTIVE_SETTING;
+            _isp10_engine->configureISP(&cfg);
+        }else{
+            struct HAL_ISP_cfg_s cfg;
+            memset(&cfg,0,sizeof(cfg));
+            cfg.updated_mask = HAL_ISP_BLS_MASK;
+            cfg.enabled[HAL_ISP_BLS_ID] = HAL_ISP_ACTIVE_FALSE;
+            _isp10_engine->configureISP(&cfg);
+        }
+    }
+}
+
+void RKiqCompositor::tuning_tool_set_lsc()
+{
+    CamLscProfile_t lscprofile;
+    CamCalibDbHandle_t hCalib;
+
+    if(_inputParams.ptr() && _inputParams->lscInputParams.updateFlag){
+        if(_inputParams->lscInputParams.on){
+            _isp10_engine->getCalibdbHandle(&hCalib);
+            memcpy(lscprofile.name,_inputParams->lscInputParams.LscName,sizeof(lscprofile.name));
+            lscprofile.LscSectors = _inputParams->lscInputParams.LscSectors;
+            lscprofile.LscNo = _inputParams->lscInputParams.LscNo;
+            lscprofile.LscXo = _inputParams->lscInputParams.LscXo;
+            lscprofile.LscYo = _inputParams->lscInputParams.LscYo;
+            memcpy(lscprofile.LscXSizeTbl,_inputParams->lscInputParams.LscXSizeTbl,sizeof(lscprofile.LscXSizeTbl));
+            memcpy(lscprofile.LscYSizeTbl,_inputParams->lscInputParams.LscYSizeTbl,sizeof(lscprofile.LscYSizeTbl));
+            memcpy(lscprofile.LscMatrix,_inputParams->lscInputParams.LscMatrix,sizeof(lscprofile.LscMatrix));
+            if (0==strcasecmp(lscprofile.name, "all")){
+                CamCalibDbReplaceLscProfileAll(hCalib, &lscprofile);
+            }else{
+                CamLscProfile_t *plsc = NULL;
+                CamCalibDbGetLscProfileByName(hCalib, lscprofile.name, &plsc);
+                if(plsc){
+                    plsc->LscSectors = lscprofile.LscSectors;
+                    plsc->LscNo = lscprofile.LscNo;
+                    plsc->LscXo = lscprofile.LscXo;
+                    plsc->LscYo = lscprofile.LscYo;
+                    memcpy(plsc->LscXSizeTbl,lscprofile.LscXSizeTbl,sizeof(lscprofile.LscXSizeTbl));
+                    memcpy(plsc->LscYSizeTbl,lscprofile.LscYSizeTbl,sizeof(lscprofile.LscYSizeTbl));
+                    memcpy(plsc->LscMatrix,lscprofile.LscMatrix,sizeof(lscprofile.LscMatrix));
+                }
+            }
+            struct HAL_ISP_cfg_s cfg;
+            memset(&cfg, 0, sizeof(cfg));
+            cfg.updated_mask = HAL_ISP_LSC_MASK;
+            cfg.enabled[HAL_ISP_LSC_ID] = HAL_ISP_ACTIVE_DEFAULT;
+            _isp10_engine->configureISP(&cfg);
+            _isp10_engine->setTuningToolAwbParams(NULL);
+        }else{
+            struct HAL_ISP_cfg_s cfg;
+            memset(&cfg, 0, sizeof(cfg));
+            cfg.updated_mask = HAL_ISP_LSC_MASK;
+            cfg.enabled[HAL_ISP_LSC_ID] = HAL_ISP_ACTIVE_FALSE;
+            _isp10_engine->configureISP(&cfg);
+        }
+    }
+}
+
+void RKiqCompositor::tuning_tool_set_ccm(CamIA10_AWB_Result_t &awb_results)
+{
+    CamCcProfile_t ccProfile;
+    CamAwb_V11_IlluProfile_t illum;
+    CamCalibDbHandle_t hCalib;
+    char ill_name[20];
+    int saturation;
+    if(_inputParams.ptr() && _inputParams->ccmInputParams.updateFlag){
+        if(_inputParams->ccmInputParams.on){
+            memset(&ccProfile,0, sizeof(ccProfile));
+            memcpy(ccProfile.name,_inputParams->ccmInputParams.name,sizeof(ccProfile.name));
+            memcpy(ccProfile.CrossTalkCoeff.fCoeff,_inputParams->ccmInputParams.matrix,sizeof(ccProfile.CrossTalkCoeff));
+            memcpy(ccProfile.CrossTalkOffset.fCoeff,_inputParams->ccmInputParams.offsets,sizeof(ccProfile.CrossTalkOffset));
+            illum.CrossTalkCoeff = ccProfile.CrossTalkCoeff;
+            illum.CrossTalkOffset = ccProfile.CrossTalkOffset;
+            _isp10_engine->getCalibdbHandle(&hCalib);
+
+            if(0==strcasecmp(ccProfile.name, "all")){
+                ccProfile.saturation = 100.0;
+                CamCalibDbReplaceCcProfileAll(hCalib, &ccProfile);
+                CamCalibDbReplaceAwb_V11_IlluminationAll(hCalib, &illum);
+            }else{
+               memset(ill_name, 0, sizeof(ill_name));
+               sscanf((const char *)ccProfile.name, "%[A-Z,a-z,0-9]_%d", ill_name, &saturation);
+               ccProfile.saturation = (float)(saturation);
+               strcpy(illum.name, ill_name);
+               CamCalibDbReplaceCcProfileByName(hCalib, &ccProfile);
+               CamCalibDbReplaceAwb_V11_IlluminationByName(hCalib, &illum);
+            }
+            #if 0
+            struct HAL_ISP_cfg_s cfg;
+            struct HAL_ISP_ctk_cfg_s ctk_cfg;
+            memset(&cfg, 0, sizeof(cfg));
+            cfg.ctk_cfg = &ctk_cfg;
+            cfg.ctk_cfg->coeff0 = ccProfile.CrossTalkCoeff.fCoeff[0];
+            cfg.ctk_cfg->coeff1 = ccProfile.CrossTalkCoeff.fCoeff[1];
+            cfg.ctk_cfg->coeff2 = ccProfile.CrossTalkCoeff.fCoeff[2];
+            cfg.ctk_cfg->coeff3 = ccProfile.CrossTalkCoeff.fCoeff[3];
+            cfg.ctk_cfg->coeff4 = ccProfile.CrossTalkCoeff.fCoeff[4];
+            cfg.ctk_cfg->coeff5 = ccProfile.CrossTalkCoeff.fCoeff[5];
+            cfg.ctk_cfg->coeff6 = ccProfile.CrossTalkCoeff.fCoeff[6];
+            cfg.ctk_cfg->coeff7 = ccProfile.CrossTalkCoeff.fCoeff[7];
+            cfg.ctk_cfg->coeff8 = ccProfile.CrossTalkCoeff.fCoeff[8];
+            cfg.ctk_cfg->ct_offset_r = ccProfile.CrossTalkOffset.fCoeff[0];
+            cfg.ctk_cfg->ct_offset_g = ccProfile.CrossTalkOffset.fCoeff[1];
+            cfg.ctk_cfg->ct_offset_b = ccProfile.CrossTalkOffset.fCoeff[2];
+            for(int i=0; i<9; i++){
+                _results_for_tool.awb.CcMatrix.Coeff[i] = UtlFloatToFix_S0407(ccProfile.CrossTalkCoeff.fCoeff[i]);
+             }
+            _results_for_tool.awb.CcOffset.Red = UtlFloatToFix_S1200(ccProfile.CrossTalkOffset.fCoeff[0]);
+            _results_for_tool.awb.CcOffset.Green = UtlFloatToFix_S1200(ccProfile.CrossTalkOffset.fCoeff[1]);
+            _results_for_tool.awb.CcOffset.Blue = UtlFloatToFix_S1200(ccProfile.CrossTalkOffset.fCoeff[2]);
+            cfg.updated_mask = HAL_ISP_CTK_MASK;
+            cfg.enabled[HAL_ISP_CTK_ID] = HAL_ISP_ACTIVE_SETTING;
+            _isp10_engine->configureISP(&cfg);
+            _isp10_engine->setTuningToolAwbParams(NULL);
+            #else
+            for(int i=0; i<9; i++){
+                _results_for_tool.awb.CcMatrix.Coeff[i] = UtlFloatToFix_S0407(ccProfile.CrossTalkCoeff.fCoeff[i]);
+             }
+            _results_for_tool.awb.CcOffset.Red = UtlFloatToFix_S1200(ccProfile.CrossTalkOffset.fCoeff[0]);
+            _results_for_tool.awb.CcOffset.Green = UtlFloatToFix_S1200(ccProfile.CrossTalkOffset.fCoeff[1]);
+            _results_for_tool.awb.CcOffset.Blue = UtlFloatToFix_S1200(ccProfile.CrossTalkOffset.fCoeff[2]);
+
+
+            struct HAL_ISP_cfg_s cfg;
+            memset(&cfg, 0, sizeof(cfg));
+            cfg.updated_mask = HAL_ISP_CTK_MASK;
+            cfg.enabled[HAL_ISP_CTK_ID] = HAL_ISP_ACTIVE_DEFAULT;
+            _isp10_engine->configureISP(&cfg);
+            _isp10_engine->setTuningToolAwbParams(NULL);
+            #endif
+            _ctk_en_for_tool = true;
+
+        }
+    }
+    if(_ctk_en_for_tool){
+    #if 1
+        for(int i=0; i<9; i++){
+           _ia_results.awb.CcMatrix.Coeff[i] = _results_for_tool.awb.CcMatrix.Coeff[i];
+        }
+        _ia_results.awb.CcOffset.Red = _results_for_tool.awb.CcOffset.Red;
+        _ia_results.awb.CcOffset.Green = _results_for_tool.awb.CcOffset.Green;
+        _ia_results.awb.CcOffset.Blue = _results_for_tool.awb.CcOffset.Blue;
+    #else
+        struct HAL_ISP_cfg_s cfg;
+        struct HAL_ISP_ctk_cfg_s ctk_cfg;
+        memset(&cfg, 0, sizeof(cfg));
+        cfg.ctk_cfg = &ctk_cfg;
+        cfg.ctk_cfg->coeff0 = _results_for_tool.awb.CcMatrix.Coeff[0];
+        cfg.ctk_cfg->coeff1 = _results_for_tool.awb.CcMatrix.Coeff[1];
+        cfg.ctk_cfg->coeff2 = _results_for_tool.awb.CcMatrix.Coeff[2];
+        cfg.ctk_cfg->coeff3 = _results_for_tool.awb.CcMatrix.Coeff[3];
+        cfg.ctk_cfg->coeff4 = _results_for_tool.awb.CcMatrix.Coeff[4];
+        cfg.ctk_cfg->coeff5 = _results_for_tool.awb.CcMatrix.Coeff[5];
+        cfg.ctk_cfg->coeff6 = _results_for_tool.awb.CcMatrix.Coeff[6];
+        cfg.ctk_cfg->coeff7 = _results_for_tool.awb.CcMatrix.Coeff[7];
+        cfg.ctk_cfg->coeff8 = _results_for_tool.awb.CcMatrix.Coeff[8];
+        cfg.ctk_cfg->ct_offset_r = _results_for_tool.awb.CcOffset.Red;
+        cfg.ctk_cfg->ct_offset_g = _results_for_tool.awb.CcOffset.Green;
+        cfg.ctk_cfg->ct_offset_b = _results_for_tool.awb.CcOffset.Blue;
+        cfg.updated_mask = HAL_ISP_CTK_MASK;
+        cfg.enabled[HAL_ISP_CTK_ID] = HAL_ISP_ACTIVE_SETTING;
+        _isp10_engine->configureISP(&cfg);
+    #endif
+    }
+}
+
+void RKiqCompositor::tuning_tool_set_awb()
+{
+    struct HAL_ISP_cfg_s cfg;
+    struct HAL_ISP_awb_gain_cfg_s awb_gian;
+    AwbInstanceConfig_t temp;
+
+    if(_inputParams.ptr() && _inputParams->awbToolInputParams.updateFlag){
+            AwbConfig_t awbParam;
+            memset(&awbParam, 0, sizeof(awbParam));
+            if(_inputParams->awbToolInputParams.on){
+                awbParam.awbTuning.forceGainEnable = BOOL_FALSE;
+                awbParam.awbTuning.forceIlluEnable = BOOL_FALSE;
+            }else{
+                awbParam.awbTuning.forceGainEnable = BOOL_TRUE;
+                if(_inputParams->awbToolInputParams.lock_ill)
+                    awbParam.awbTuning.forceIlluEnable = BOOL_TRUE;
+                else
+                    awbParam.awbTuning.forceIlluEnable = BOOL_FALSE;
+            }
+            awbParam.awbTuning.forceGains.fBlue = _inputParams->awbToolInputParams.b_gain;
+            awbParam.awbTuning.forceGains.fGreenB = _inputParams->awbToolInputParams.gb_gain;
+            awbParam.awbTuning.forceGains.fGreenR = _inputParams->awbToolInputParams.gr_gain;
+            awbParam.awbTuning.forceGains.fRed = _inputParams->awbToolInputParams.r_gain;
+            strcpy(awbParam.awbTuning.ill_name,_inputParams->awbToolInputParams.ill_name);
+            awbParam.awbTuning.forceGainSet = AWB_TUNING_ENABLE;
+            _isp10_engine->setTuningToolAwbParams(&awbParam);
+    }
+}
+
+void RKiqCompositor::tuning_tool_set_awb_wp()
+{
+    struct HAL_ISP_cfg_s cfg;
+    struct HAL_ISP_awb_meas_cfg_s awb_meas;
+    CamCalibAwb_V11_Global_t *pAwbGlobal=NULL;
+    CamCalibDbHandle_t hCalib;
+    char cur_resolution[15];
+    AwbConfig_t awbParam;
+    if(_inputParams.ptr() && _inputParams->awbWpInputParams.updateFlag){
+        CAM_AwbVersion_t vName;
+        _isp10_engine->getCalibdbHandle(&hCalib);
+        CamCalibDbGetAwb_VersionName(hCalib, &vName);
+        if(vName != CAM_AWB_VERSION_11)
+            return;
+        memset(&awbParam, 0, sizeof(awbParam));
+        awbParam.awbTuning.forceMeasuredFlag = BOOL_TRUE;
+        awbParam.awbTuning.forceMeasuredMeans.NoWhitePixel = _inputParams->awbWpInputParams.cnt;
+        awbParam.awbTuning.forceMeasuredMeans.MeanCr__R = _inputParams->awbWpInputParams.mean_cr;
+        awbParam.awbTuning.forceMeasuredMeans.MeanCb__B = _inputParams->awbWpInputParams.mean_cb;
+        awbParam.awbTuning.forceMeasuredMeans.MeanY__G = _inputParams->awbWpInputParams.mean_y;
+        awbParam.awbTuning.forceMeasSet = AWB_TUNING_ENABLE;
+        _isp10_engine->setTuningToolAwbParams(&awbParam);
+        LOGD("awb_wp set enter");
+        struct CamIA10_SensorModeData &sensor_mode = get_sensor_mode_data();
+        sprintf(cur_resolution,"%dx%d",sensor_mode.sensor_output_width,sensor_mode.sensor_output_height);
+        CamCalibDbGetAwb_V11_GlobalByResolution(hCalib, cur_resolution, &pAwbGlobal);
+        if(pAwbGlobal){
+            for (int i = 0; i < HAL_ISP_AWBFADE2PARM_LEN; i++) {
+              pAwbGlobal->AwbFade2Parm.pFade[i] = _inputParams->awbWpInputParams.afFade[i];
+              #if 1
+                pAwbGlobal->AwbFade2Parm.pMaxCSum_br[i] = _inputParams->awbWpInputParams.afmaxCSum_br[i];
+                pAwbGlobal->AwbFade2Parm.pMaxCSum_sr[i] = _inputParams->awbWpInputParams.afmaxCSum_sr[i];
+                pAwbGlobal->AwbFade2Parm.pMinC_br[i] = _inputParams->awbWpInputParams.afminC_br[i];
+                pAwbGlobal->AwbFade2Parm.pMaxY_br[i] = _inputParams->awbWpInputParams.afMaxY_br[i];
+                pAwbGlobal->AwbFade2Parm.pMinY_br[i] = _inputParams->awbWpInputParams.afMinY_br[i];
+                pAwbGlobal->AwbFade2Parm.pMinC_sr[i] = _inputParams->awbWpInputParams.afminC_sr[i];
+                pAwbGlobal->AwbFade2Parm.pMaxY_sr[i] = _inputParams->awbWpInputParams.afMaxY_sr[i];
+                pAwbGlobal->AwbFade2Parm.pMinY_sr[i] = _inputParams->awbWpInputParams.afMinY_sr[i];
+              #else
+                pAwbGlobal->AwbFade2Parm.pCbMinRegionMax[i] = _inputParams->awbWpInputParams.afCbMinRegionMax[i];
+                pAwbGlobal->AwbFade2Parm.pCrMinRegionMax[i] = _inputParams->awbWpInputParams.afCrMinRegionMax[i];
+                pAwbGlobal->AwbFade2Parm.pMaxCSumRegionMax[i] = _inputParams->awbWpInputParams.afMaxCSumRegionMax[i];
+                pAwbGlobal->AwbFade2Parm.pCbMinRegionMin[i] = _inputParams->awbWpInputParams.afCbMinRegionMin[i];
+                pAwbGlobal->AwbFade2Parm.pCrMinRegionMin[i] = _inputParams->awbWpInputParams.afCrMinRegionMin[i];
+                pAwbGlobal->AwbFade2Parm.pMaxCSumRegionMin[i] = _inputParams->awbWpInputParams.afMaxCSumRegionMin[i];
+                pAwbGlobal->AwbFade2Parm.pMinCRegionMax[i] = _inputParams->awbWpInputParams.afMinCRegionMax[i];
+                pAwbGlobal->AwbFade2Parm.pMinCRegionMin[i] = _inputParams->awbWpInputParams.afMinCRegionMin[i];
+                pAwbGlobal->AwbFade2Parm.pMaxYRegionMax[i] = _inputParams->awbWpInputParams.afMaxYRegionMax[i];
+                pAwbGlobal->AwbFade2Parm.pMaxYRegionMin[i] = _inputParams->awbWpInputParams.afMaxYRegionMin[i];
+                pAwbGlobal->AwbFade2Parm.pMinYMaxGRegionMax[i] = _inputParams->awbWpInputParams.afMinYMaxGRegionMax[i];
+                pAwbGlobal->AwbFade2Parm.pMinYMaxGRegionMin[i] = _inputParams->awbWpInputParams.afMinYMaxGRegionMin[i];
+              #endif
+              pAwbGlobal->AwbFade2Parm.pRefCb[i] = _inputParams->awbWpInputParams.afRefCb[i];
+              pAwbGlobal->AwbFade2Parm.pRefCr[i] = _inputParams->awbWpInputParams.afRefCr[i];
+            }
+            pAwbGlobal->fRgProjIndoorMin = _inputParams->awbWpInputParams.fRgProjIndoorMin;
+            pAwbGlobal->fRgProjOutdoorMin = _inputParams->awbWpInputParams.fRgProjOutdoorMin;
+            pAwbGlobal->fRgProjMax = _inputParams->awbWpInputParams.fRgProjMax;
+            pAwbGlobal->fRgProjMaxSky = _inputParams->awbWpInputParams.fRgProjMaxSky;
+            pAwbGlobal->fRgProjALimit = _inputParams->awbWpInputParams.fRgProjALimit;
+            pAwbGlobal->fRgProjAWeight = _inputParams->awbWpInputParams.fRgProjAWeight;
+            pAwbGlobal->fRgProjYellowLimitEnable = _inputParams->awbWpInputParams.fRgProjYellowLimitEnable;
+            pAwbGlobal->fRgProjYellowLimit = _inputParams->awbWpInputParams.fRgProjYellowLimit;
+            pAwbGlobal->fRgProjIllToCwfEnable = _inputParams->awbWpInputParams.fRgProjIllToCwfEnable;
+            pAwbGlobal->fRgProjIllToCwf = _inputParams->awbWpInputParams.fRgProjIllToCwf;
+            pAwbGlobal->fRgProjIllToCwfWeight = _inputParams->awbWpInputParams.fRgProjIllToCwfWeight;
+            pAwbGlobal->fRegionSize = _inputParams->awbWpInputParams.fRegionSize;
+            pAwbGlobal->fRegionSizeInc = _inputParams->awbWpInputParams.fRegionSizeInc;
+            pAwbGlobal->fRegionSizeDec = _inputParams->awbWpInputParams.fRegionSizeDec;
+        }
+        #if 0
+        memset(&cfg, 0, sizeof(cfg));
+        cfg.updated_mask = HAL_ISP_AWB_MEAS_MASK;
+        cfg.enabled[HAL_ISP_AWB_MEAS_ID] = HAL_ISP_ACTIVE_DEFAULT;
+        _isp10_engine->configureISP(&cfg);
+        #else
+        _isp10_engine->setTuningToolAwbParams(NULL);
+        #endif
+        memset(&cfg, 0, sizeof(cfg));
+        cfg.awb_cfg = &awb_meas;
+        awb_meas.win.left_hoff = _inputParams->awbWpInputParams.win_h_offs;
+        awb_meas.win.top_voff = _inputParams->awbWpInputParams.win_v_offs;
+        awb_meas.win.right_width = _inputParams->awbWpInputParams.win_width;
+        awb_meas.win.bottom_height = _inputParams->awbWpInputParams.win_height;
+        awb_meas.mode = (enum HAL_ISP_AWB_MEASURING_MODE_e)_inputParams->awbWpInputParams.awb_mode;
+        if(_inputParams->awbWpInputParams.awb_mode == 0){
+            awb_meas.mode = HAL_ISP_AWB_MEASURING_MODE_RGB;
+        }else if(_inputParams->awbWpInputParams.awb_mode == 1){
+            awb_meas.mode = HAL_ISP_AWB_MEASURING_MODE_YCBCR;
+        }else{
+            awb_meas.mode = HAL_ISP_AWB_MEASURING_MODE_YCBCR;
+        }
+        cfg.updated_mask = HAL_ISP_AWB_MEAS_MASK;
+        cfg.enabled[HAL_ISP_AWB_MEAS_ID] = HAL_ISP_ACTIVE_SETTING;
+        _isp10_engine->configureISP(&cfg);
+    }
+}
+
+void RKiqCompositor::tuning_tool_set_awb_curve()
+{
+    CamCalibAwb_V11_Global_t *pAwbGlobal=NULL;
+    CamCalibDbHandle_t hCalib;
+    char cur_resolution[20];
+
+    if(_inputParams.ptr() && _inputParams->awbCurveInputParams.updateFlag){
+        struct CamIA10_SensorModeData &sensor_mode = get_sensor_mode_data();
+        sprintf(cur_resolution,"%dx%d",sensor_mode.sensor_output_width,sensor_mode.sensor_output_height);
+        _isp10_engine->getCalibdbHandle(&hCalib);
+        CamCalibDbGetAwb_V11_GlobalByResolution(hCalib, cur_resolution, &pAwbGlobal);
+        if(pAwbGlobal){
+            LOGD("set awb curve enter");
+            pAwbGlobal->CenterLine.f_N0_Rg = _inputParams->awbCurveInputParams.f_N0_Rg;
+            pAwbGlobal->CenterLine.f_N0_Bg = _inputParams->awbCurveInputParams.f_N0_Bg;
+            pAwbGlobal->CenterLine.f_d = _inputParams->awbCurveInputParams.f_d;
+            pAwbGlobal->KFactor.fCoeff[0] = _inputParams->awbCurveInputParams.Kfactor;
+            for (int i = 0; i < pAwbGlobal->AwbClipParam.ArraySize1; i++) {
+              pAwbGlobal->AwbClipParam.pRg1[i] = _inputParams->awbCurveInputParams.afRg1[i];
+              pAwbGlobal->AwbClipParam.pMaxDist1[i] = _inputParams->awbCurveInputParams.afMaxDist1[i];
+            }
+            for (int i = 0; i < pAwbGlobal->AwbClipParam.ArraySize2; i++) {
+              pAwbGlobal->AwbClipParam.pRg2[i] = _inputParams->awbCurveInputParams.afRg2[i];
+              pAwbGlobal->AwbClipParam.pMaxDist2[i] = _inputParams->awbCurveInputParams.afMaxDist2[i];
+            }
+            for (int i = 0; i < pAwbGlobal->AwbGlobalFadeParm.ArraySize1; i++) {
+              pAwbGlobal->AwbGlobalFadeParm.pGlobalFade1[i] = _inputParams->awbCurveInputParams.afGlobalFade1[i];
+              pAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance1[i] = _inputParams->awbCurveInputParams.afGlobalGainDistance1[i];
+            }
+            for (int i = 0; i < pAwbGlobal->AwbGlobalFadeParm.ArraySize2; i++) {
+              pAwbGlobal->AwbGlobalFadeParm.pGlobalFade2[i] = _inputParams->awbCurveInputParams.afGlobalFade2[i];
+              pAwbGlobal->AwbGlobalFadeParm.pGlobalGainDistance2[i] = _inputParams->awbCurveInputParams.afGlobalGainDistance2[i];
+            }
+        }
+        struct HAL_ISP_cfg_s cfg;
+        memset(&cfg, 0, sizeof(cfg));
+        cfg.updated_mask = HAL_ISP_AWB_MEAS_MASK;
+        cfg.enabled[HAL_ISP_AWB_MEAS_ID] = HAL_ISP_ACTIVE_DEFAULT;
+        _isp10_engine->configureISP(&cfg);
+        _isp10_engine->setTuningToolAwbParams(NULL);
+    }
+}
+
+void RKiqCompositor::tuning_tool_set_awb_refgain()
+{
+    CamCalibDbHandle_t hCalib;
+    CamIlluminationName_t illuname;
+    CamAwb_V11_IlluProfile_t *pIllumination = NULL;
+    if(_inputParams.ptr() && _inputParams->awbRefGainInputParams.updateFlag){
+        CAM_AwbVersion_t vName;
+        _isp10_engine->getCalibdbHandle(&hCalib);
+        CamCalibDbGetAwb_VersionName(hCalib, &vName);
+        if(vName != CAM_AWB_VERSION_11)
+            return;
+
+        memcpy(illuname, _inputParams->awbRefGainInputParams.ill_name,sizeof(illuname));
+        CamCalibDbGetAwb_V11_IlluminationByName(hCalib, illuname, &pIllumination);
+        if(pIllumination){
+            pIllumination->referenceWBgain.fCoeff[0] = _inputParams->awbRefGainInputParams.refRGain;
+            pIllumination->referenceWBgain.fCoeff[1] = _inputParams->awbRefGainInputParams.refGrGain;
+            pIllumination->referenceWBgain.fCoeff[2] = _inputParams->awbRefGainInputParams.refGbGain;
+            pIllumination->referenceWBgain.fCoeff[3] = _inputParams->awbRefGainInputParams.refBGain;
+            _isp10_engine->setTuningToolAwbParams(NULL);
+        }
+    }
+
+}
+
+void RKiqCompositor::tuning_tool_set_goc()
+{
+    CamCalibGocProfile_t *pGocProfile;
+    CamGOCProfileName_t goc_name;
+    CamCalibDbHandle_t hCalib;
+
+    if(_inputParams.ptr() && _inputParams->gocInputParams.updateFlag){
+        if(_inputParams->gocInputParams.on){
+            memcpy(goc_name, _inputParams->gocInputParams.scene_name,sizeof(goc_name));
+            _isp10_engine->getCalibdbHandle(&hCalib);
+            CamCalibDbGetGocProfileByName(hCalib, goc_name, &pGocProfile);
+            pGocProfile->def_cfg_mode = _inputParams->gocInputParams.cfg_mode;
+            memcpy(pGocProfile->GammaY, _inputParams->gocInputParams.gamma_y, 34*2);
+            struct HAL_ISP_cfg_s cfg;
+            memset(&cfg, 0, sizeof(cfg));
+            cfg.updated_mask = HAL_ISP_GOC_MASK;
+            cfg.enabled[HAL_ISP_GOC_ID] = HAL_ISP_ACTIVE_DEFAULT;
+            _isp10_engine->configureISP(&cfg);
+        }else{
+            struct HAL_ISP_cfg_s cfg;
+            struct HAL_ISP_goc_cfg_s goc_cfg;
+            memset(&cfg, 0, sizeof(cfg));
+            cfg.goc_cfg = &goc_cfg;
+            cfg.goc_cfg->used_cnt = 34;
+            cfg.updated_mask = HAL_ISP_GOC_MASK;
+            cfg.enabled[HAL_ISP_GOC_ID] = HAL_ISP_ACTIVE_FALSE;
+            _isp10_engine->configureISP(&cfg);
+        }
+    }
+}
+
+void RKiqCompositor::tuning_tool_set_cproc()
+{
+    if(_inputParams.ptr() && _inputParams->cprocInputParams.updateFlag){
+        if(_inputParams->cprocInputParams.on){
+            struct HAL_ISP_cfg_s cfg;
+            struct HAL_ISP_cproc_cfg_s isp_cproc_cfg;
+            memset(&cfg, 0, sizeof(cfg));
+            cfg.cproc_cfg = &isp_cproc_cfg;
+            isp_cproc_cfg.use_case = (enum USE_CASE)_inputParams->cprocInputParams.mode;
+            isp_cproc_cfg.cproc.brightness = _inputParams->cprocInputParams.cproc_brightness;
+            isp_cproc_cfg.cproc.contrast = _inputParams->cprocInputParams.cproc_contrast;
+            isp_cproc_cfg.cproc.hue = _inputParams->cprocInputParams.cproc_hue;
+            isp_cproc_cfg.cproc.saturation = _inputParams->cprocInputParams.cproc_saturation;
+            isp_cproc_cfg.range = HAL_ISP_COLOR_RANGE_OUT_FULL_RANGE;
+            cfg.updated_mask = HAL_ISP_CPROC_MASK;
+            cfg.enabled[HAL_ISP_CPROC_ID] = HAL_ISP_ACTIVE_SETTING;
+            _isp10_engine->configureISP(&cfg);
+        }else{
+            struct HAL_ISP_cfg_s cfg;
+            memset(&cfg, 0, sizeof(cfg));
+            cfg.updated_mask = HAL_ISP_CPROC_MASK;
+            cfg.enabled[HAL_ISP_CPROC_ID] = HAL_ISP_ACTIVE_FALSE;
+            _isp10_engine->configureISP(&cfg);
+        }
+    }
+}
+
+void RKiqCompositor::tuning_tool_set_dpf()
+{
+    CamDpfProfile_t *pDpfProfile=NULL;
+    CamCalibDbHandle_t hCalib;
+    CamDpfProfileName_t dpf_name;
+    if(_inputParams.ptr() && _inputParams->adpfInputParams.updateFlag){
+        if(_inputParams->adpfInputParams.dpf_enable)
+        {
+            memcpy(dpf_name, _inputParams->adpfInputParams.dpf_name,sizeof(dpf_name));
+            _isp10_engine->getCalibdbHandle(&hCalib);
+            CamCalibDbGetDpfProfileByName(hCalib, strupr(dpf_name), &pDpfProfile);
+            if(pDpfProfile){
+                pDpfProfile->ADPFEnable = _inputParams->adpfInputParams.dpf_enable;
+                pDpfProfile->nll_segmentation = _inputParams->adpfInputParams.nll_segment;
+                memcpy(pDpfProfile->nll_coeff.uCoeff,_inputParams->adpfInputParams.nll_coeff, 34);
+                pDpfProfile->SigmaGreen = _inputParams->adpfInputParams.sigma_green;
+                pDpfProfile->SigmaRedBlue = _inputParams->adpfInputParams.sigma_redblue;
+                pDpfProfile->fGradient = _inputParams->adpfInputParams.gradient;
+                pDpfProfile->fOffset = _inputParams->adpfInputParams.offset;
+                pDpfProfile->NfGains.fCoeff[0] = _inputParams->adpfInputParams.fRed;
+                pDpfProfile->NfGains.fCoeff[1] = _inputParams->adpfInputParams.fGreenR;
+                pDpfProfile->NfGains.fCoeff[2] = _inputParams->adpfInputParams.fGreenB;
+                pDpfProfile->NfGains.fCoeff[3] = _inputParams->adpfInputParams.fBlue;
+
+                struct HAL_ISP_cfg_s cfg;
+                struct HAL_ISP_dpf_cfg_s dpf_cfg;
+                memset(&cfg, 0, sizeof(cfg));
+                cfg.dpf_cfg = &dpf_cfg;
+                cfg.updated_mask = HAL_ISP_DPF_MASK;
+                cfg.enabled[HAL_ISP_DPF_ID] = HAL_ISP_ACTIVE_SETTING;
+                _isp10_engine->configureISP(&cfg);
+                _isp10_engine->setTuningToolAdpfParams();
+            }
+            _dpf_en_for_tool = false;
+        }
+        else{
+            _dpf_en_for_tool = true;
+        }
+    }
+    if(_dpf_en_for_tool){
+        struct HAL_ISP_cfg_s cfg;
+        memset(&cfg, 0, sizeof(cfg));
+        cfg.updated_mask = HAL_ISP_DPF_MASK;
+        cfg.enabled[HAL_ISP_DPF_ID] = HAL_ISP_ACTIVE_FALSE;
+        _isp10_engine->configureISP(&cfg);
+    }
+}
+
+void RKiqCompositor::tuning_tool_set_flt()
+{
+    CamDpfProfile_t *pDpfProfile=NULL;
+    CamFilterProfile_t *pFilterProfile=NULL;
+    CamCalibDbHandle_t hCalib;
+    CamFilterProfileName_t filt_name[]={"NORMAL","NIGHT"};
+    CamDpfProfileName_t dpf_name;
+    if(_inputParams.ptr() && _inputParams->fltInputParams.updateFlag){
+        if(_inputParams->fltInputParams.filter_enable){
+        memcpy(dpf_name, _inputParams->fltInputParams.filter_name,sizeof(dpf_name));
+        _isp10_engine->getCalibdbHandle(&hCalib);
+        CamCalibDbGetDpfProfileByName(hCalib, strupr(dpf_name), &pDpfProfile);
+        if(pDpfProfile){
+            if(_inputParams->fltInputParams.scene_mode==0){
+                CamCalibDbGetFilterProfileByName(hCalib, pDpfProfile, filt_name[0], &pFilterProfile);
+            }else{
+                CamCalibDbGetFilterProfileByName(hCalib, pDpfProfile, filt_name[1], &pFilterProfile);
+            }
+
+            if(pFilterProfile){
+                pFilterProfile->FilterEnable = _inputParams->fltInputParams.filter_enable;
+                for(int i=0; i<5; i++)
+                {
+                    pFilterProfile->DenoiseLevelCurve.pSensorGain[i] = (float)_inputParams->fltInputParams.denoise_gain[i];
+                    pFilterProfile->DenoiseLevelCurve.pDlevel[i] = (CamerIcIspFltDeNoiseLevel_t)(_inputParams->fltInputParams.denoise_level[i]+1);
+                }
+                for(int i=0; i<5; i++)
+                {
+                    pFilterProfile->SharpeningLevelCurve.pSensorGain[i] = (float)_inputParams->fltInputParams.sharp_gain[i];
+                    pFilterProfile->SharpeningLevelCurve.pSlevel[i] = (CamerIcIspFltSharpeningLevel_t)(_inputParams->fltInputParams.sharp_level[i]+1);
+                }
+                for(int i=0; i<pFilterProfile->FiltLevelRegConf.ArraySize; i++){
+                    if (pFilterProfile->FiltLevelRegConf.p_FiltLevel[i] == _inputParams->fltInputParams.level){
+                        pFilterProfile->FiltLevelRegConf.FiltLevelRegConfEnable = _inputParams->fltInputParams.level_conf_enable;
+                        pFilterProfile->FiltLevelRegConf.p_grn_stage1[i] = _inputParams->fltInputParams.level_conf.grn_stage1;
+                        pFilterProfile->FiltLevelRegConf.p_chr_h_mode[i] = _inputParams->fltInputParams.level_conf.chr_h_mode;
+                        pFilterProfile->FiltLevelRegConf.p_chr_v_mode[i] = _inputParams->fltInputParams.level_conf.chr_v_mode;
+                        pFilterProfile->FiltLevelRegConf.p_thresh_bl0[i] = _inputParams->fltInputParams.level_conf.thresh_bl0;
+                        pFilterProfile->FiltLevelRegConf.p_thresh_bl1[i] = _inputParams->fltInputParams.level_conf.thresh_bl1;
+                        pFilterProfile->FiltLevelRegConf.p_thresh_sh0[i] = _inputParams->fltInputParams.level_conf.thresh_sh0;
+                        pFilterProfile->FiltLevelRegConf.p_thresh_sh1[i] = _inputParams->fltInputParams.level_conf.thresh_sh1;
+                        pFilterProfile->FiltLevelRegConf.p_fac_sh0[i] = _inputParams->fltInputParams.level_conf.fac_sh0;
+                        pFilterProfile->FiltLevelRegConf.p_fac_sh1[i] = _inputParams->fltInputParams.level_conf.fac_sh1;
+                        pFilterProfile->FiltLevelRegConf.p_fac_mid[i] = _inputParams->fltInputParams.level_conf.fac_mid;
+                        pFilterProfile->FiltLevelRegConf.p_fac_bl0[i] = _inputParams->fltInputParams.level_conf.fac_bl0;
+                        pFilterProfile->FiltLevelRegConf.p_fac_bl1[i] = _inputParams->fltInputParams.level_conf.fac_bl1;
+
+                        break;
+                    }
+                }
+                #if 0
+                struct HAL_ISP_cfg_s cfg;
+                memset(&cfg, 0, sizeof(cfg));
+                cfg.updated_mask = HAL_ISP_FLT_MASK;
+                cfg.enabled[HAL_ISP_FLT_ID] = HAL_ISP_ACTIVE_DEFAULT;
+                _isp10_engine->configureISP(&cfg);
+                #endif
+                _isp10_engine->setTuningToolAdpfParams();
+                }
+            }
+            _flt_en_for_tool = false;
+        }else{
+            _flt_en_for_tool = true;
+        }
+    }
+    if(_flt_en_for_tool){
+        struct HAL_ISP_cfg_s cfg;
+        memset(&cfg, 0, sizeof(cfg));
+        cfg.updated_mask = HAL_ISP_FLT_MASK;
+        cfg.enabled[HAL_ISP_FLT_ID] = HAL_ISP_ACTIVE_FALSE;
+        _isp10_engine->configureISP(&cfg);
+    }
+}
+
+void RKiqCompositor::tuning_tool_restart_engine()
+{
+    if(_inputParams.ptr() && _inputParams->restartInputParams.updateFlag){
+        if(_inputParams->restartInputParams.on){
+            _awb_handler->_analyzer->restart();
+        }
+    }
+}
+
+void RKiqCompositor::tuning_tool_process(struct CamIA10_Results &ia10_results)
+{
+    tuning_tool_set_bls();
+    tuning_tool_set_lsc();
+    tuning_tool_set_ccm(ia10_results.awb);
+    tuning_tool_set_awb();
+    tuning_tool_set_awb_wp();
+    tuning_tool_set_awb_curve();
+    tuning_tool_set_awb_refgain();
+    tuning_tool_set_goc();
+    tuning_tool_set_cproc();
+    tuning_tool_set_dpf();
+    tuning_tool_set_flt();
+    tuning_tool_restart_engine();
+}
+
 XCamReturn RKiqCompositor::integrate (X3aResultList &results, bool first)
 {
     SmartPtr<X3aResult> isp_results;
@@ -1688,7 +2882,7 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results, bool first)
 
     //_isp10_engine->runIA(&_ia_dcfg, &_ia_stat, &_ia_results);
     _isp10_engine->getIAResult(&_ia_results);
-
+    tuning_tool_process(_ia_results);
     if (!_isp10_engine->runISPManual(&_ia_results, BOOL_TRUE)) {
         XCAM_LOG_ERROR("%s:run ISP manual failed!", __func__);
     }
@@ -1703,7 +2897,7 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results, bool first)
             _awb_handler->processAwbMetaResults(_ia_results.awb, results);
             _af_handler->processAfMetaResults(_ia_results.af, results);
             _common_handler->processToneMapsMetaResults(_ia_results.goc, results);
-            _common_handler->processMiscMetaResults(results, first);
+            _common_handler->processMiscMetaResults(_ia_results, results, first);
             _all_stats_meas_types = 0;
         }
     }

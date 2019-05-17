@@ -1397,8 +1397,9 @@ static RESULT AdpfApplyConfiguration
         return (RET_OUTOFRANGE);
     }
 
-    for (int32_t i = 0; i < CAMERIC_DPF_MAX_NLF_COEFFS; i++)
+    for (int32_t i = 0; i < CAMERIC_DPF_MAX_NLF_COEFFS; i++){
       pAdpfCtx->Nll.NllCoeff[i] = (pDpfProfile->nll_coeff.uCoeff[i] >> 2);
+    }
 
   } else if (pConfig->type == ADPF_USE_DEFAULT_CONFIG) {
     // initialize Adpf context with values from calibration database
@@ -1446,7 +1447,6 @@ static RESULT AdpfApplyConfiguration
     LOGV( "%s: Initial calcultion of spatial weights failed (%d)\n",  __func__, result);
     return (result);
   }
-
   if (pAdpfCtx->ADPFEnable) {
     switch (pConfig->mode) {
       case ADPF_MODE_CONTROL_BY_GAIN:
@@ -1651,7 +1651,11 @@ RESULT AdpfConfigure
   if (pConfig->fSensorGain == 0.0)
     pConfig->fSensorGain = 1.0f;
 
-  if (memcmp(pConfig, &pAdpfCtx->Config, sizeof(AdpfConfig_t)))  {
+  if (pAdpfCtx->forceApplyConfigure || memcmp(pConfig, &pAdpfCtx->Config, sizeof(AdpfConfig_t)))  {
+    if(pAdpfCtx->forceApplyConfigure){
+        pConfig->type = ADPF_USE_CALIB_DATABASE;
+        pAdpfCtx->forceApplyConfigure = false;
+    }
     /* apply new configuration */
     result = AdpfApplyConfiguration(pAdpfCtx, pConfig);
     if (result != RET_SUCCESS) {
@@ -1958,4 +1962,17 @@ RESULT AdpfGetResult
   return RET_SUCCESS;
 }
 
+RESULT AdpfForceConfigure
+(
+    AdpfHandle_t    handle,
+    AdpfConfig_t*   pConfig
+) {
+    AdpfContext_t* pAdpfCtx = (AdpfContext_t*)handle;
+
+    if (pAdpfCtx == NULL) {
+      return (RET_WRONG_HANDLE);
+    }
+    pAdpfCtx->forceApplyConfigure = true;
+    return (RET_SUCCESS);
+}
 

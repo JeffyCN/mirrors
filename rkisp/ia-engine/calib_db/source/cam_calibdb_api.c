@@ -83,6 +83,14 @@ static int SearchResolutionByName(List* l, void* key) {
   return ((!strncmp(res->name, k, strlen(res->name))) ? 1 : 0);
 }
 
+/******************************************************************************
+ * SearchResolutionByIdx
+ *****************************************************************************/
+static int SearchResolutionByIdx(List* l, void* key) {
+    uint32_t id = *((uint32_t*)key);
+    CamResolution_t* res = (CamResolution_t*)l;
+    return ((res->id == id) ? 1 : 0);
+}
 
 
 /******************************************************************************
@@ -104,7 +112,7 @@ static int SearchForEqualAwb_V11_Global(List* l, void* key) {
   CamCalibAwb_V11_Global_t* awb = (CamCalibAwb_V11_Global_t*)l;
   CamCalibAwb_V11_Global_t* k = (CamCalibAwb_V11_Global_t*)key;
 
-  return ((!strncmp(awb->name, k->name, sizeof(k->name))) ? 1 : 0);
+  return ((!strncasecmp(awb->name, k->name, sizeof(k->name))) ? 1 : 0);
 }
 
 
@@ -116,7 +124,7 @@ static int SearchForEqualAwb_V10_Global(List* l, void* key) {
   CamCalibAwb_V10_Global_t* awb = (CamCalibAwb_V10_Global_t*)l;
   CamCalibAwb_V10_Global_t* k = (CamCalibAwb_V10_Global_t*)key;
 
-  return ((!strncmp(awb->name, k->name, sizeof(k->name))) ? 1 : 0);
+  return ((!strncasecmp(awb->name, k->name, sizeof(k->name))) ? 1 : 0);
 }
 
 
@@ -128,7 +136,7 @@ static int SearchAwb_V11_GlobalByName(List* l, void* key) {
   CamCalibAwb_V11_Global_t* awb = (CamCalibAwb_V11_Global_t*)l;
   char* k = (char*)key;
 
-  return ((!strncmp(awb->name, k, sizeof(awb->name))) ? 1 : 0);
+  return ((!strncasecmp(awb->name, k, sizeof(awb->name))) ? 1 : 0);
 }
 
 
@@ -140,7 +148,7 @@ static int SearchAwb_V10_GlobalByName(List* l, void* key) {
   CamCalibAwb_V10_Global_t* awb = (CamCalibAwb_V10_Global_t*)l;
   char* k = (char*)key;
 
-  return ((!strncmp(awb->name, k, sizeof(awb->name))) ? 1 : 0);
+  return ((!strncasecmp(awb->name, k, sizeof(awb->name))) ? 1 : 0);
 }
 
 
@@ -152,7 +160,7 @@ static int SearchAwb_V11_GlobalByResolution(List* l, void* key) {
   CamCalibAwb_V11_Global_t* awb = (CamCalibAwb_V11_Global_t*)l;
   char* k = (char*)key;
 
-  return ((!strncmp(awb->resolution, k, sizeof(awb->resolution))) ? 1 : 0);
+  return ((!strncasecmp(awb->resolution, k, sizeof(awb->resolution))) ? 1 : 0);
 }
 /******************************************************************************
  * SearchAwb_V10_GlobalByResolution
@@ -161,7 +169,7 @@ static int SearchAwb_V10_GlobalByResolution(List* l, void* key) {
   CamCalibAwb_V10_Global_t* awb = (CamCalibAwb_V10_Global_t*)l;
   char* k = (char*)key;
 
-  return ((!strncmp(awb->resolution, k, sizeof(awb->resolution))) ? 1 : 0);
+  return ((!strncasecmp(awb->resolution, k, sizeof(awb->resolution))) ? 1 : 0);
 }
 
 
@@ -257,6 +265,15 @@ static int SearchAwb_V10_IlluminationByName(List* l, void* key) {
   return ((!strncmp(illu->name, k, sizeof(illu->name))) ? 1 : 0);
 }
 
+/******************************************************************************
+ * SearchForEqualIllumination
+ *****************************************************************************/
+static int SearchForEqualIllumination(List* l, void* key) {
+  CamAwb_V10_IlluProfile_t* illu = (CamAwb_V10_IlluProfile_t*)l;
+  CamAwb_V10_IlluProfile_t* k = (CamAwb_V10_IlluProfile_t*)key;
+
+  return ((!strncmp(illu->name, k->name, sizeof(k->name))) ? 1 : 0);
+}
 
 
 /******************************************************************************
@@ -278,7 +295,7 @@ static int SearchLscProfileByName(List* l, void* key) {
   CamLscProfile_t* lsc = (CamLscProfile_t*)l;
   char* k = (char*)key;
 
-  return ((!strncmp(lsc->name, k, sizeof(lsc->name))) ? 1 : 0);
+  return ((!strncasecmp(lsc->name, k, sizeof(lsc->name))) ? 1 : 0);
 }
 
 
@@ -289,7 +306,7 @@ static int SearchForEqualCcProfile(List* l, void* key) {
   CamCcProfile_t* cc = (CamCcProfile_t*)l;
   CamCcProfile_t* k = (CamCcProfile_t*)key;
 
-  return ((!strncmp(cc->name, k->name, sizeof(k->name))) ? 1 : 0);
+  return ((!strncasecmp(cc->name, k->name, sizeof(k->name))) ? 1 : 0);
 }
 
 
@@ -301,7 +318,7 @@ static int SearchCcProfileByName(List* l, void* key) {
   CamCcProfile_t* cc = (CamCcProfile_t*)l;
   char* k = (char*)key;
 
-  return ((!strncmp(cc->name, k, sizeof(cc->name))) ? 1 : 0);
+  return ((!strncasecmp(cc->name, k, sizeof(cc->name))) ? 1 : 0);
 }
 
 
@@ -407,7 +424,7 @@ static int SearchDpfProfileByName(List* l, void* key) {
   CamDpfProfile_t* dpf = (CamDpfProfile_t*)l;
   char* k = (char*)key;
 
-  return ((!strncmp(dpf->name, k, sizeof(dpf->name))) ? 1 : 0);
+  return ((!strncasecmp(dpf->name, k, sizeof(dpf->name))) ? 1 : 0);
 }
 
 
@@ -463,7 +480,7 @@ static int SearchFilterProfileByName(List* l, void* key) {
   CamFilterProfile_t* filter = (CamFilterProfile_t*)l;
   char* k = (char*)key;
 
-  return ((!strncmp(filter->name, k, sizeof(filter->name))) ? 1 : 0);
+  return ((!strncasecmp(filter->name, k, sizeof(filter->name))) ? 1 : 0);
 }
 static int SearchForEqualDySetpointProfile(List* l, void* key) {
   CamCalibAecDynamicSetpoint_t* pDySetpoint = (CamCalibAecDynamicSetpoint_t*)l;
@@ -528,7 +545,7 @@ static int SearchGocProfileByName(List* l, void* key) {
   CamCalibGocProfile_t* dpf = (CamCalibGocProfile_t*)l;
   char* k = (char*)key;
 
-  return ((!strncmp(dpf->name, k, sizeof(dpf->name))) ? 1 : 0);
+  return ((!strncasecmp(dpf->name, k, sizeof(dpf->name))) ? 1 : 0);
 }
 
 static void ReplaceLscProfile(List* l, void* content) {
@@ -2434,6 +2451,38 @@ RESULT CamCalibDbGetResolutionIdxByName
   return (RET_SUCCESS);
 }
 
+/******************************************************************************
+ * CamCalibDbGetResolutionNameByIdx
+ *****************************************************************************/
+RESULT CamCalibDbGetResolutionNameByIdx
+(
+    CamCalibDbHandle_t          hCamCalibDb,
+    int32_t                     idx,
+    const CamResolutionName_t*  pName
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamResolution_t*     pResolution;
+
+  RESULT result = RET_SUCCESS;
+
+  LOGV("%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  if (NULL == pName) {
+    return (RET_INVALID_PARM);
+  }
+
+  /* search resolution by name */
+  pResolution = (CamResolution_t*)ListSearch(&pCamCalibDbCtx->resolution, SearchResolutionByIdx, (void*)&idx);
+  strncpy((char*)pName, (char*)pResolution->name, sizeof(CamResolutionName_t));
+
+  LOGV("%s: (exit)\n", __func__);
+
+  return (RET_SUCCESS);
+}
 
 
 /******************************************************************************
@@ -4023,7 +4072,121 @@ RESULT CamCalibDbGetAwb_V10_IlluminationByIdx
   return (RET_SUCCESS);
 }
 
+/******************************************************************************
+ * CamCalibDbReplaceIlluminationAll
+ *****************************************************************************/
+RESULT CamCalibDbReplaceAwb_V10_IlluminationAll
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwb_V10_IlluProfile_t    *pIllumination
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamAwb_V10_IlluProfile_t* pNewIllum = NULL;
 
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+  pNewIllum = (CamAwb_V10_IlluProfile_t*)ListHead(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination);
+  while (pNewIllum) {
+    pNewIllum->CrossTalkCoeff = pIllumination->CrossTalkCoeff;
+    pNewIllum->CrossTalkOffset = pIllumination->CrossTalkOffset;
+    pNewIllum = pNewIllum->p_next;
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+  return (RET_SUCCESS);
+}
+
+RESULT CamCalibDbReplaceAwb_V11_IlluminationAll
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwb_V11_IlluProfile_t    *pIllumination
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamAwb_V11_IlluProfile_t* pNewIllum = NULL;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+  pNewIllum = (CamAwb_V11_IlluProfile_t*)ListHead(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination);
+  while (pNewIllum) {
+    pNewIllum->CrossTalkCoeff = pIllumination->CrossTalkCoeff;
+    pNewIllum->CrossTalkOffset = pIllumination->CrossTalkOffset;
+    pNewIllum = pNewIllum->p_next;
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+  return (RET_SUCCESS);
+}
+
+/******************************************************************************
+ * CamCalibDbReplaceIlluminationByName
+ *****************************************************************************/
+RESULT CamCalibDbReplaceAwb_V10_IlluminationByName
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwb_V10_IlluProfile_t    *pIllumination
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamAwb_V10_IlluProfile_t* pNewIllum = NULL;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  pNewIllum = (CamAwb_V10_IlluProfile_t*)ListSearch(&pCamCalibDbCtx->pAwbProfile->Para_V10.illumination, SearchForEqualIllumination, (void*)pIllumination);
+
+  if (NULL != pNewIllum) {
+    pNewIllum->CrossTalkCoeff = pIllumination->CrossTalkCoeff;
+    pNewIllum->CrossTalkOffset = pIllumination->CrossTalkOffset;
+    return (RET_SUCCESS);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_NOTAVAILABLE);
+}
+
+RESULT CamCalibDbReplaceAwb_V11_IlluminationByName
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwb_V11_IlluProfile_t    *pIllumination
+) {
+  CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;
+  CamAwb_V11_IlluProfile_t* pNewIllum = NULL;
+
+  RESULT result;
+
+  LOGV( "%s (enter)\n", __func__);
+
+  if (NULL == pCamCalibDbCtx) {
+    return (RET_WRONG_HANDLE);
+  }
+
+  pNewIllum = (CamAwb_V11_IlluProfile_t*)ListSearch(&pCamCalibDbCtx->pAwbProfile->Para_V11.illumination, SearchForEqualIllumination, (void*)pIllumination);
+
+  if (NULL != pNewIllum) {
+    pNewIllum->CrossTalkCoeff = pIllumination->CrossTalkCoeff;
+    pNewIllum->CrossTalkOffset = pIllumination->CrossTalkOffset;
+    return (RET_SUCCESS);
+  }
+
+  LOGV( "%s (exit)\n", __func__);
+
+  return (RET_NOTAVAILABLE);
+}
 
 /******************************************************************************
  * CamCalibDbAddLscProfile
@@ -4295,7 +4458,7 @@ RESULT CamCalibDbReplaceCcProfileAll
 RESULT CamCalibDbGetCcProfileByName
 (
     CamCalibDbHandle_t      hCamCalibDb,
-    CamLscProfileName_t     name,
+    CamCcProfileName_t      name,
     CamCcProfile_t**          pCcProfile
 ) {
   CamCalibDbContext_t* pCamCalibDbCtx = (CamCalibDbContext_t*)hCamCalibDb;

@@ -28,6 +28,7 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
 #else
 #include <camera/CameraMetadata.h>
 #endif
+#include <rkcamera_vendor_tags.h>
 #include "rkaiq.h"
 #include "CameraWindow.h"
 
@@ -53,12 +54,41 @@ private:
                                AiqInputParams &aiqparams);
     XCamReturn processAfSettings(const CameraMetadata &settings,
                                AiqInputParams &aiqparams);
+    XCamReturn processTuningParamsSettings(const CameraMetadata &settings,
+                               AiqInputParams &aiqparams);
     XCamReturn fillAeInputParams(const CameraMetadata *settings,
                                  AiqInputParams *aiqInputParams);
     XCamReturn fillAwbInputParams(const CameraMetadata *settings,
                                  AiqInputParams *aiqInputParams);
     XCamReturn fillAfInputParams(const CameraMetadata *settings,
                                  AiqInputParams *aiqInputParams);
+    XCamReturn fillBlsInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillLscInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillCcmInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillAwbToolInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillToolAwbInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillAwbWhitePointInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillAwbCurvInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillAwbRefGainInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillGocInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillCprocInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillAdpfInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn fillFltInputParams(const CameraMetadata *settings,
+                                 AiqInputParams *aiqInputParams);
+    XCamReturn restartInputParams(const CameraMetadata *settings, AiqInputParams *aiqInputParams);
+    XCamReturn tuningFlagInputParams(const CameraMetadata *settings, AiqInputParams *aiqInputParams);
+
     void parseMeteringRegion(const CameraMetadata *settings,
                              int tagId, CameraWindow *meteringWindow);
     void convertCoordinates(CameraWindow *region,

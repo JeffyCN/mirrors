@@ -564,6 +564,10 @@ IspController::get_isp_parameter (struct rkisp_parameters& parameters, int frame
         isp_effect_params->awb_algo_results;
     parameters.frame_sof_ts =
         isp_effect_params->frame_sof_ts;
+    parameters.bls_config =
+        isp_effect_params->isp_params.others.bls_config;
+    parameters.awb_meas_config =
+        isp_effect_params->isp_params.meas.awb_meas_config;
 
     return XCAM_RETURN_NO_ERROR;
 }

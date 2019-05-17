@@ -329,6 +329,12 @@ RESULT CamCalibDbGetResolutionIdxByName
     int32_t*                     pIdx
 );
 
+RESULT CamCalibDbGetResolutionNameByIdx
+(
+    CamCalibDbHandle_t          hCamCalibDb,
+    int32_t                     idx,
+    const CamResolutionName_t*  pName
+);
 
 RESULT CamCalibDbGetAwb_FlashProfiles
 (
@@ -875,7 +881,29 @@ RESULT CamCalibDbGetAwb_V10_IlluminationByIdx
     CamAwb_V10_IlluProfile_t**    pIllumination
 );
 
+RESULT CamCalibDbReplaceAwb_V10_IlluminationAll
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwb_V10_IlluProfile_t    *pIllumination
+);
 
+RESULT CamCalibDbReplaceAwb_V11_IlluminationAll
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwb_V11_IlluProfile_t    *pIllumination
+);
+
+RESULT CamCalibDbReplaceAwb_V10_IlluminationByName
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwb_V10_IlluProfile_t    *pIllumination
+);
+
+RESULT CamCalibDbReplaceAwb_V11_IlluminationByName
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    CamAwb_V11_IlluProfile_t    *pIllumination
+);
 
 RESULT CamCalibDbAddLscProfile
 (

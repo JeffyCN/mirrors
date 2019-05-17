@@ -109,7 +109,7 @@ typedef struct AdpfContext_s {
   RKIESharpResult_t	RKIESharpResult;
 
   enum LIGHT_MODE LightMode;
-
+  bool forceApplyConfigure;
 } AdpfContext_t;
 
 

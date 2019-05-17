@@ -149,6 +149,20 @@ typedef struct CamIA10_AWB_Result_s {
   bool           converged;
   int32_t DomIlluIdx;
   int err_code;
+  CamCcProfileName_t              CcNameUp;
+  CamCcProfileName_t              CcNameDn;
+  CamLscProfileName_t             LscNameUp;
+  CamLscProfileName_t             LscNameDn;
+  bool_t                          forceWbGainFlag;
+  AwbGains_t                      forceWbGains;
+  bool_t                          forceIlluFlag;
+  CamIlluminationName_t           forceIllName;
+  float                           RgProj;
+  WbGainsOverG_t                  WbGainsOverG;
+  WbGainsOverG_t                  WbClippedGainsOverG;
+  float                           RegionSize;
+  Cam1x4FloatMatrix_t             refWbgain;
+  CamIlluminationName_t           curIllName;
 } CamIA10_AWB_Result_t;
 
 typedef struct CamIA10_AFC_Result_s {
@@ -231,15 +245,19 @@ class CamIA10EngineItf {
 
   virtual RESULT runAWB(HAL_AwbCfg* config = NULL) = 0;
   virtual RESULT getAWBResults(CamIA10_AWB_Result_t* result) = 0;
-
+  virtual void   tuningToolConfigAwbParams(AwbConfig_t* awbParams) = 0;
   virtual RESULT runADPF() = 0;
   virtual RESULT getADPFResults(AdpfResult_t* result) = 0;
+  virtual void   tuningToolForceConfigDpf() = 0;
 
   virtual RESULT runAF(HAL_AfcCfg* config = NULL) = 0;
   virtual RESULT getAFResults(XCam3aResultFocus* result) = 0;
 
   virtual RESULT runAWDR() = 0;
   virtual RESULT getAWDRResults(AwdrResult_t* result) = 0;
+  virtual RESULT getCalibdbHandle(CamCalibDbHandle_t * handle) = 0;
+  virtual uint32_t getCalibdbMagicVerCode() = 0;
+  virtual RESULT clearStatic() = 0;
   /* manual ISP configs*/
   virtual RESULT runManISP(
       struct HAL_ISP_cfg_s* manCfg,

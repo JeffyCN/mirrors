@@ -4764,7 +4764,15 @@ bool CalibDb::parseEntryAwb_V10_Globals
   return (true);
 }
 
-
+static void strtrim(char *p, int size)
+{
+    for(int i=0; i<size; i++){
+        if((p[i] ==  10) || (p[i] ==  32)){
+            p[i] = 0;
+            break;
+        }
+    }
+}
 
 
 
@@ -5182,6 +5190,7 @@ bool CalibDb::parseEntryAwb_V10_Illumination
     if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AWB_V10_ILLUMINATION_NAME_TAG_ID)){
       char* value = Toupper(tag.Value());
       strncpy(illu.name, value, sizeof(illu.name));
+      strtrim(illu.name,sizeof(illu.name));
 #ifdef DEBUG_LOG
       LOGE( "%s(%d): tag: %s\n", __FUNCTION__,__LINE__,value);
 #endif
@@ -5314,6 +5323,7 @@ bool CalibDb::parseEntryAwb_V11_Illumination
     if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AWB_V10_ILLUMINATION_NAME_TAG_ID)){
       char* value = Toupper(tag.Value());
       strncpy(illu.name, value, sizeof(illu.name));
+      strtrim(illu.name,sizeof(illu.name));
 #ifdef DEBUG_LOG
  	  LOGD( "%s(%d): tag: %s\n", __FUNCTION__,__LINE__,value);
 #endif

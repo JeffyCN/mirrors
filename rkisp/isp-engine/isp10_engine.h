@@ -70,7 +70,23 @@ class Isp10Engine: public IspEngine {
       struct isp_supplemental_sensor_mode_data* drvCfg,
       CamIA10_SensorModeData* iaCfg
   );
-
+  virtual void getCalibdbHandle(CamCalibDbHandle_t *handle)
+  {
+      mCamIAEngine->getCalibdbHandle(handle);
+  }
+  virtual uint32_t getCalibdbMagicVerCode()
+  {
+      return mCamIAEngine->getCalibdbMagicVerCode();
+  }
+  virtual void setTuningToolAwbParams(AwbConfig_t* paramm)
+  {
+      mCamIAEngine->tuningToolConfigAwbParams(paramm);
+  }
+  virtual void setTuningToolAdpfParams()
+  {
+      mCamIAEngine->tuningToolForceConfigDpf();
+  }
+  virtual void clearStatic();
  protected:
   virtual bool initISPStream(const char* ispDev);
 #if 1

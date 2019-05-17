@@ -150,6 +150,7 @@ X3aAnalyzerRKiq::internal_init (uint32_t width, uint32_t height, double framerat
     _rkiq_compositor->set_size (width, height);
     _rkiq_compositor->set_framerate (framerate);
     _rkiq_compositor->init_dynamic_config();
+    _rkiq_compositor->set_iq_name(_cpf_path);
 
     return XCAM_RETURN_NO_ERROR;
 
@@ -170,6 +171,46 @@ X3aAnalyzerRKiq::internal_deinit ()
         _isp_ctrl_dev = NULL;
     }
     return XCAM_RETURN_NO_ERROR;
+}
+
+XCamReturn X3aAnalyzerRKiq::restart()
+{
+    XCamReturn ret;
+    _isp_ctrl_dev->clearStatic();
+
+    if (_isp_ctrl_dev) {
+        _isp_ctrl_dev->deInit();
+        delete _isp_ctrl_dev;
+        _isp_ctrl_dev = NULL;
+    }
+
+    struct isp_supplemental_sensor_mode_data sensor_mode_data;
+    _isp_ctrl_dev = new Isp10Engine();
+
+    _rkiq_compositor->set_isp_ctrl_device(_isp_ctrl_dev);
+    if (!_device) {
+        XCAM_LOG_WARNING("no capture device.\n");
+    }
+
+    XCAM_LOG_INFO ("ready get sensor mode succc.");
+    ret = _isp->get_sensor_mode_data (sensor_mode_data);
+    XCAM_FAIL_RETURN (WARNING, ret == XCAM_RETURN_NO_ERROR, ret, "get sensor mode data failed");
+
+    XCAM_LOG_INFO ("init get sensor mode succc.");
+    configIsp(_isp_ctrl_dev, &sensor_mode_data);
+
+    //init _isp_ctrl_dev
+    if (_device) {
+        _isp_ctrl_dev->setISPDeviceFd(_isp_stats_device->get_fd());
+    }
+
+    _isp_ctrl_dev->init(_cpf_path, _device_manager->get_sensor_entity_name(),
+                        _device_manager->get_isp_ver(),
+                        /*_device->get_fd()*/0);
+
+    _rkiq_compositor->init_dynamic_config();
+    return XCAM_RETURN_NO_ERROR;
+
 }
 
 XCamReturn

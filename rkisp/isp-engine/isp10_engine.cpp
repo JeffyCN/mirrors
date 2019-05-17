@@ -1691,3 +1691,14 @@ bool Isp10Engine::threadLoop() {
   return true;
 }
 
+void Isp10Engine::clearStatic() {
+    if (mCamIAEngine == NULL) {
+      ALOGE("%s: getCamIA10EngineItf failed!",
+            __func__);
+      return;
+    }
+
+    mCamIAEngine->clearStatic();
+
+}
+

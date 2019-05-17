@@ -494,6 +494,12 @@ RESULT AdpfGetResult
     AdpfResult_t*  result
 );
 
+RESULT AdpfForceConfigure
+(
+    AdpfHandle_t    handle,
+    AdpfConfig_t*   pConfig
+);
+
 #ifdef __cplusplus
 }
 #endif

@@ -19,11 +19,24 @@
 using namespace XCam;
 _AiqInputParams::_AiqInputParams():
     reqId(0)
+    ,tuningFlag(0)
 {
     memset(&aeInputParams, 0, sizeof(AeInputParams));
     memset(&awbInputParams, 0, sizeof(AwbInputParams));
     memset(&afInputParams, 0, sizeof(AfInputParams));
     memset(&aaaControls, 0, sizeof(AAAControls));
+    memset(&blsInputParams, 0, sizeof(blsInputParams));
+    memset(&lscInputParams, 0, sizeof(lscInputParams));
+    memset(&ccmInputParams, 0, sizeof(ccmInputParams));
+    memset(&awbToolInputParams, 0, sizeof(awbToolInputParams));
+    memset(&awbWpInputParams, 0, sizeof(awbWpInputParams));
+    memset(&awbCurveInputParams, 0, sizeof(awbCurveInputParams));
+    memset(&awbRefGainInputParams, 0, sizeof(awbRefGainInputParams));
+    memset(&gocInputParams, 0, sizeof(gocInputParams));
+    memset(&cprocInputParams, 0, sizeof(cprocInputParams));
+    memset(&adpfInputParams, 0, sizeof(adpfInputParams));
+    memset(&fltInputParams, 0, sizeof(fltInputParams));
+    memset(&restartInputParams, 0, sizeof(restartInputParams));
     aeInputParams.aiqParams = this;
     awbInputParams.aiqParams = this;
     afInputParams.aiqParams = this;
@@ -40,10 +53,24 @@ _AiqInputParams &_AiqInputParams::operator=(const _AiqInputParams &other)
         return *this;
 
     this->reqId = other.reqId;
+    this->tuningFlag = other.tuningFlag;
     memcpy(&this->aeInputParams, &other.aeInputParams, sizeof(AeInputParams));
     memcpy(&this->awbInputParams, &other.awbInputParams, sizeof(AwbInputParams));
     memcpy(&this->afInputParams, &other.afInputParams, sizeof(AfInputParams));
     memcpy(&this->aaaControls, &other.aaaControls, sizeof(AAAControls));
+    memcpy(&this->blsInputParams, &other.blsInputParams, sizeof(blsInputParams));
+    memcpy(&this->lscInputParams, &other.lscInputParams, sizeof(lscInputParams));
+    memcpy(&this->ccmInputParams, &other.ccmInputParams, sizeof(ccmInputParams));
+    memcpy(&this->awbToolInputParams, &other.awbToolInputParams, sizeof(awbToolInputParams));
+    memcpy(&this->awbWpInputParams, &other.awbWpInputParams, sizeof(awbWpInputParams));
+    memcpy(&this->awbCurveInputParams, &other.awbCurveInputParams, sizeof(awbCurveInputParams));
+    memcpy(&this->awbRefGainInputParams, &other.awbRefGainInputParams, sizeof(awbRefGainInputParams));
+    memcpy(&this->gocInputParams, &other.gocInputParams, sizeof(gocInputParams));
+    memcpy(&this->cprocInputParams, &other.cprocInputParams, sizeof(cprocInputParams));
+    memcpy(&this->adpfInputParams, &other.adpfInputParams, sizeof(adpfInputParams));
+    memcpy(&this->fltInputParams, &other.fltInputParams, sizeof(fltInputParams));
+    memcpy(&this->restartInputParams, &other.restartInputParams, sizeof(restartInputParams));
+
     this->aeInputParams.aiqParams = this;
     this->awbInputParams.aiqParams = this;
     this->afInputParams.aiqParams = this;

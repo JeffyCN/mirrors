@@ -693,6 +693,451 @@ SettingsProcessor::fillAfInputParams(const CameraMetadata *settings,
 }
 
 XCamReturn
+SettingsProcessor::fillBlsInputParams(const CameraMetadata *settings,
+                                    AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_BLS_SET);
+    if(!entry.count){
+        aiqInputParams->blsInputParams.updateFlag = 0;
+    }else{
+        aiqInputParams->blsInputParams.updateFlag = 1;
+        aiqInputParams->blsInputParams.enable = entry.data.u8[0];
+        aiqInputParams->blsInputParams.mode = entry.data.u8[1];
+        aiqInputParams->blsInputParams.winEnable = entry.data.u8[2];
+        memcpy(aiqInputParams->blsInputParams.win, &entry.data.u8[3], 16);
+        aiqInputParams->blsInputParams.samples = entry.data.u8[19];
+        memcpy(&aiqInputParams->blsInputParams.fixedVal, &entry.data.u8[20], 8);
+    }
+    return ret;
+}
+
+
+XCamReturn
+SettingsProcessor::fillLscInputParams(const CameraMetadata *settings,
+                                    AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_LSC_SET);
+    if(!entry.count){
+        aiqInputParams->lscInputParams.updateFlag = 0;
+    }else{
+        aiqInputParams->lscInputParams.updateFlag = 1;
+        aiqInputParams->lscInputParams.on = entry.data.u8[0];
+        memcpy(aiqInputParams->lscInputParams.LscName, &entry.data.u8[1], HAL_ISP_LSC_NAME_LEN);
+        memcpy(&aiqInputParams->lscInputParams.LscSectors, &entry.data.u8[26], 2);
+        memcpy(&aiqInputParams->lscInputParams.LscNo, &entry.data.u8[28], 2);
+        memcpy(&aiqInputParams->lscInputParams.LscXo, &entry.data.u8[30], 2);
+        memcpy(&aiqInputParams->lscInputParams.LscYo, &entry.data.u8[32], 2);
+        memcpy(aiqInputParams->lscInputParams.LscXSizeTbl, &entry.data.u8[34], 16);
+        memcpy(aiqInputParams->lscInputParams.LscYSizeTbl, &entry.data.u8[50], 16);
+        memcpy(aiqInputParams->lscInputParams.LscMatrix, &entry.data.u8[66], 2312);
+    }
+    return ret;
+}
+
+XCamReturn
+SettingsProcessor::fillCcmInputParams(const CameraMetadata *settings,
+                                    AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_CCM_SET);
+    if(!entry.count){
+        aiqInputParams->ccmInputParams.updateFlag = 0;
+    }else{
+        aiqInputParams->ccmInputParams.updateFlag = 1;
+        aiqInputParams->ccmInputParams.on = entry.data.u8[0];
+        memcpy(aiqInputParams->ccmInputParams.name, &entry.data.u8[1], 20);
+        memcpy(&aiqInputParams->ccmInputParams.matrix, &entry.data.u8[21], 36);
+        memcpy(&aiqInputParams->ccmInputParams.offsets, &entry.data.u8[57], 12);
+    }
+    return ret;
+}
+
+XCamReturn
+SettingsProcessor::fillAwbToolInputParams(const CameraMetadata *settings,
+                                    AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_AWB_SET);
+    if(!entry.count){
+        aiqInputParams->awbToolInputParams.updateFlag = 0;
+    }else{
+        aiqInputParams->awbToolInputParams.updateFlag = 1;
+        aiqInputParams->awbToolInputParams.on = entry.data.u8[0];
+        memcpy(&aiqInputParams->awbToolInputParams.r_gain, &entry.data.u8[1], 4);
+        memcpy(&aiqInputParams->awbToolInputParams.gr_gain, &entry.data.u8[5], 4);
+        memcpy(&aiqInputParams->awbToolInputParams.gb_gain, &entry.data.u8[9], 4);
+        memcpy(&aiqInputParams->awbToolInputParams.b_gain, &entry.data.u8[13], 4);
+        aiqInputParams->awbToolInputParams.lock_ill = entry.data.u8[17];
+        memcpy(aiqInputParams->awbToolInputParams.ill_name, &entry.data.u8[18], HAL_ISP_ILL_NAME_LEN);
+    }
+    return ret;
+}
+
+XCamReturn
+SettingsProcessor::fillAwbWhitePointInputParams(const CameraMetadata *settings,
+                                    AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_AWB_WP_SET);
+    if(!entry.count){
+        aiqInputParams->awbWpInputParams.updateFlag = 0;
+    }else{
+        aiqInputParams->awbWpInputParams.updateFlag = 1;
+        const uint8_t *pchr = NULL;
+        pchr = &entry.data.u8[0];
+        memcpy(&aiqInputParams->awbWpInputParams.win_h_offs, pchr, 2);
+        pchr += 2;
+        memcpy(&aiqInputParams->awbWpInputParams.win_v_offs, pchr, 2);
+        pchr += 2;
+        memcpy(&aiqInputParams->awbWpInputParams.win_width, pchr, 2);
+        pchr += 2;
+        memcpy(&aiqInputParams->awbWpInputParams.win_height, pchr, 2);
+        pchr += 2;
+        aiqInputParams->awbWpInputParams.awb_mode = *pchr++;
+        memcpy(&aiqInputParams->awbWpInputParams.afFade, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        #if 1//awb_v11
+        memcpy(&aiqInputParams->awbWpInputParams.afmaxCSum_br, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afmaxCSum_sr, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afminC_br, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afminC_sr, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMaxY_br, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMaxY_sr, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMinY_br, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMinY_sr, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        #else//awb_v10
+        memcpy(&aiqInputParams->awbWpInputParams.afCbMinRegionMax, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afCrMinRegionMax, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMaxCSumRegionMax, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afCbMinRegionMin, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afCrMinRegionMin, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMaxCSumRegionMin, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMinCRegionMax, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMinCRegionMin, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMaxYRegionMax, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMaxYRegionMin, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMinYMaxGRegionMax, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afMinYMaxGRegionMin, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        #endif
+        memcpy(&aiqInputParams->awbWpInputParams.afRefCb, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.afRefCr, pchr, HAL_ISP_AWBFADE2PARM_LEN*4);
+        pchr += HAL_ISP_AWBFADE2PARM_LEN*4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRgProjIndoorMin, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRgProjOutdoorMin, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRgProjMax, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRgProjMaxSky, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRgProjALimit, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRgProjAWeight, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRgProjYellowLimitEnable, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRgProjYellowLimit, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRgProjIllToCwfEnable, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRgProjIllToCwf, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRgProjIllToCwfWeight, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRegionSize, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRegionSizeInc, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.fRegionSizeDec, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.cnt, pchr, 4);
+        pchr += 4;
+        aiqInputParams->awbWpInputParams.mean_y = *pchr++;
+        aiqInputParams->awbWpInputParams.mean_cb = *pchr++;
+        aiqInputParams->awbWpInputParams.mean_cr = *pchr++;
+        memcpy(&aiqInputParams->awbWpInputParams.mean_r, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.mean_b, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbWpInputParams.mean_g, pchr, 4);
+    }
+    return ret;
+}
+
+XCamReturn
+SettingsProcessor::fillAwbCurvInputParams(const CameraMetadata *settings,
+                                    AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_AWB_CURV_SET);
+    if(!entry.count){
+        aiqInputParams->awbCurveInputParams.updateFlag = 0;
+    }else{
+        const uint8_t *pchr = NULL;
+        pchr = &entry.data.u8[0];
+        aiqInputParams->awbCurveInputParams.updateFlag = 1;
+        memcpy(&aiqInputParams->awbCurveInputParams.f_N0_Rg, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbCurveInputParams.f_N0_Bg, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbCurveInputParams.f_d, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbCurveInputParams.Kfactor, pchr, 4);
+        pchr += 4;
+        memcpy(aiqInputParams->awbCurveInputParams.afRg1, pchr, HAL_ISP_AWBCLIPPARM_LEN*4);
+        pchr += HAL_ISP_AWBCLIPPARM_LEN*4;
+        memcpy(aiqInputParams->awbCurveInputParams.afMaxDist1, pchr, HAL_ISP_AWBCLIPPARM_LEN*4);
+        pchr += HAL_ISP_AWBCLIPPARM_LEN*4;
+        memcpy(aiqInputParams->awbCurveInputParams.afRg2, pchr, HAL_ISP_AWBCLIPPARM_LEN*4);
+        pchr += HAL_ISP_AWBCLIPPARM_LEN*4;
+        memcpy(aiqInputParams->awbCurveInputParams.afMaxDist2, pchr, HAL_ISP_AWBCLIPPARM_LEN*4);
+        pchr += HAL_ISP_AWBCLIPPARM_LEN*4;
+        memcpy(aiqInputParams->awbCurveInputParams.afGlobalFade1, pchr, HAL_ISP_AWBCLIPPARM_LEN*4);
+        pchr += HAL_ISP_AWBCLIPPARM_LEN*4;
+        memcpy(aiqInputParams->awbCurveInputParams.afGlobalGainDistance1, pchr, HAL_ISP_AWBCLIPPARM_LEN*4);
+        pchr += HAL_ISP_AWBCLIPPARM_LEN*4;
+        memcpy(aiqInputParams->awbCurveInputParams.afGlobalFade2, pchr, HAL_ISP_AWBCLIPPARM_LEN*4);
+        pchr += HAL_ISP_AWBCLIPPARM_LEN*4;
+        memcpy(aiqInputParams->awbCurveInputParams.afGlobalGainDistance2, pchr, HAL_ISP_AWBCLIPPARM_LEN*4);
+    }
+    return ret;
+}
+
+XCamReturn
+SettingsProcessor::fillAwbRefGainInputParams(const CameraMetadata *settings,
+                                    AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_AWB_REFGAIN_SET);
+    if(!entry.count){
+        aiqInputParams->awbRefGainInputParams.updateFlag = 0;
+    }else{
+        const uint8_t *pchr = NULL;
+        pchr = &entry.data.u8[0];
+        aiqInputParams->awbRefGainInputParams.updateFlag = 1;
+        memcpy(&aiqInputParams->awbRefGainInputParams.ill_name, pchr, HAL_ISP_ILL_NAME_LEN);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbRefGainInputParams.refRGain, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbRefGainInputParams.refGrGain, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbRefGainInputParams.refGbGain, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->awbRefGainInputParams.refBGain, pchr, 4);
+    }
+    return ret;
+}
+
+XCamReturn
+SettingsProcessor::fillGocInputParams(const CameraMetadata *settings,
+                                    AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_GOC_SET);
+    if(!entry.count){
+        aiqInputParams->gocInputParams.updateFlag = 0;
+    }else{
+        const uint8_t *pchr = NULL;
+        pchr = &entry.data.u8[0];
+        aiqInputParams->gocInputParams.updateFlag = 1;
+        aiqInputParams->gocInputParams.on = *pchr;
+        pchr++;
+        memcpy(&aiqInputParams->gocInputParams.scene_name, pchr, sizeof(aiqInputParams->gocInputParams.scene_name));
+        pchr += sizeof(aiqInputParams->gocInputParams.scene_name);
+        aiqInputParams->gocInputParams.wdr_status = *pchr;
+        pchr++;
+        aiqInputParams->gocInputParams.cfg_mode = *pchr;
+        pchr++;
+        memcpy(&aiqInputParams->gocInputParams.gamma_y, pchr, sizeof(aiqInputParams->gocInputParams.gamma_y));
+    }
+    return ret;
+}
+
+XCamReturn
+SettingsProcessor::fillCprocInputParams(const CameraMetadata *settings,
+                                    AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_CPROC_SET);
+    if(!entry.count){
+        aiqInputParams->cprocInputParams.updateFlag = 0;
+    }else{
+        const uint8_t *pchr = NULL;
+        pchr = &entry.data.u8[0];
+        aiqInputParams->cprocInputParams.updateFlag = 1;
+        aiqInputParams->cprocInputParams.on = *pchr;
+        pchr++;
+        aiqInputParams->cprocInputParams.mode = *pchr;
+        pchr++;
+        memcpy(&aiqInputParams->cprocInputParams.cproc_contrast, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->cprocInputParams.cproc_hue, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->cprocInputParams.cproc_saturation, pchr,4);
+        pchr += 4;
+        aiqInputParams->cprocInputParams.cproc_brightness = *pchr;
+        LOGV("%f,%f,%f,%d",aiqInputParams->cprocInputParams.cproc_contrast,aiqInputParams->cprocInputParams.cproc_hue,aiqInputParams->cprocInputParams.cproc_saturation,
+        aiqInputParams->cprocInputParams.cproc_brightness);
+    }
+    return ret;
+}
+
+XCamReturn
+SettingsProcessor::fillAdpfInputParams(const CameraMetadata *settings,
+                                    AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_DPF_SET);
+    if(!entry.count){
+        aiqInputParams->adpfInputParams.updateFlag = 0;
+    }else{
+        const uint8_t *pchr = NULL;
+        pchr = &entry.data.u8[0];
+        aiqInputParams->adpfInputParams.updateFlag = 1;
+        memcpy(aiqInputParams->adpfInputParams.dpf_name, pchr, 20);
+        pchr += 20;
+        aiqInputParams->adpfInputParams.dpf_enable = *pchr;
+        pchr++;
+        aiqInputParams->adpfInputParams.nll_segment = *pchr;
+        pchr++;
+        memcpy(aiqInputParams->adpfInputParams.nll_coeff, pchr, 17*2);
+        pchr += 34;
+        memcpy(&aiqInputParams->adpfInputParams.sigma_green, pchr, 2);
+        pchr += 2;
+        memcpy(&aiqInputParams->adpfInputParams.sigma_redblue, pchr, 2);
+        pchr += 2;
+        memcpy(&aiqInputParams->adpfInputParams.gradient, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->adpfInputParams.offset, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->adpfInputParams.fRed, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->adpfInputParams.fGreenR, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->adpfInputParams.fGreenB, pchr, 4);
+        pchr += 4;
+        memcpy(&aiqInputParams->adpfInputParams.fBlue, pchr, 4);
+    }
+    return ret;
+}
+
+XCamReturn
+SettingsProcessor::fillFltInputParams(const CameraMetadata *settings,
+                                    AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_FLT_SET);
+    if(!entry.count){
+        aiqInputParams->fltInputParams.updateFlag = 0;
+    }else{
+        const uint8_t *pchr = NULL;
+        pchr = &entry.data.u8[0];
+        aiqInputParams->fltInputParams.updateFlag = 1;
+        memcpy(aiqInputParams->fltInputParams.filter_name, pchr, 20);
+        pchr += 20;
+        aiqInputParams->fltInputParams.scene_mode = *pchr;
+        pchr++;
+        aiqInputParams->fltInputParams.filter_enable = *pchr;
+        LOGV("%d",aiqInputParams->fltInputParams.filter_enable);
+        pchr++;
+        memcpy(aiqInputParams->fltInputParams.denoise_gain, pchr, 5);
+        LOGV("%d,%d,%d,%d,%d",aiqInputParams->fltInputParams.denoise_gain[0],aiqInputParams->fltInputParams.denoise_gain[1],aiqInputParams->fltInputParams.denoise_gain[2],
+                              aiqInputParams->fltInputParams.denoise_gain[3],aiqInputParams->fltInputParams.denoise_gain[4]);
+        pchr += 5;
+        memcpy(aiqInputParams->fltInputParams.denoise_level, pchr, 5);
+        pchr += 5;
+        memcpy(aiqInputParams->fltInputParams.sharp_gain, pchr, 5);
+        pchr += 5;
+        memcpy(aiqInputParams->fltInputParams.sharp_level, pchr, 5);
+        pchr += 5;
+        aiqInputParams->fltInputParams.level_conf_enable = *pchr;
+        pchr++;
+        aiqInputParams->fltInputParams.level = *pchr;
+        LOGV("en:%d,level:%d",aiqInputParams->fltInputParams.level_conf_enable,aiqInputParams->fltInputParams.level);
+        pchr++;
+        memcpy(&aiqInputParams->fltInputParams.level_conf, pchr, 39);
+        LOGV("%d %d %d",aiqInputParams->fltInputParams.level_conf.grn_stage1,aiqInputParams->fltInputParams.level_conf.fac_sh1,aiqInputParams->fltInputParams.level_conf.fac_bl1);
+    }
+    return ret;
+}
+
+XCamReturn
+SettingsProcessor::restartInputParams(const CameraMetadata *settings, AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_ISP_RESTART);
+    if(!entry.count){
+        aiqInputParams->restartInputParams.updateFlag = 0;
+    }else{
+        aiqInputParams->restartInputParams.updateFlag = 1;
+        aiqInputParams->restartInputParams.on = entry.data.u8[0];
+    }
+    return ret;
+}
+
+XCamReturn
+SettingsProcessor::tuningFlagInputParams(const CameraMetadata *settings, AiqInputParams *aiqInputParams)
+{
+    XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    camera_metadata_ro_entry entry;
+
+    entry = settings->find(RKCAMERA3_PRIVATEDATA_TUNING_FLAG);
+    if(!entry.count){
+        aiqInputParams->tuningFlag = 0;
+    }else{
+         aiqInputParams->tuningFlag = entry.data.u8[0];
+    }
+    return ret;
+}
+
+XCamReturn
 SettingsProcessor::processAeSettings(const CameraMetadata &settings,
                              AiqInputParams &aiqparams) {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
@@ -717,6 +1162,41 @@ SettingsProcessor::processAfSettings(const CameraMetadata &settings,
     ret = fillAfInputParams(&settings, &aiqparams);
 
     return ret;
+}
+
+XCamReturn
+SettingsProcessor::processTuningParamsSettings(const CameraMetadata &settings,
+                            AiqInputParams &aiqparams) {
+  XCamReturn ret = XCAM_RETURN_NO_ERROR;
+
+  if((ret = fillBlsInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = fillLscInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = fillCcmInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = fillAwbToolInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = fillAwbWhitePointInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = fillAwbCurvInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = fillAwbRefGainInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = fillGocInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = fillCprocInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = fillAdpfInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = fillFltInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = restartInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+  if((ret = tuningFlagInputParams(&settings, &aiqparams)) != XCAM_RETURN_NO_ERROR)
+    return ret;
+
+  return ret;
 }
 
 XCamReturn
@@ -767,6 +1247,8 @@ SettingsProcessor::processRequestSettings(const CameraMetadata &settings,
         return ret;
 
     if ((ret = processAfSettings(settings, aiqparams)) != XCAM_RETURN_NO_ERROR)
+        return ret;
+    if ((ret = processTuningParamsSettings(settings, aiqparams)) != XCAM_RETURN_NO_ERROR)
         return ret;
     return ret;
 }
