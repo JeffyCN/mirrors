@@ -55,6 +55,8 @@ IspController::~IspController ()
 {
     XCAM_LOG_DEBUG ("~IspController destruction");
     free(_exposure_queue);
+    if (_fl_device.ptr())
+        set_3a_fl (RKISP_FLASH_MODE_OFF, 0, 0, 0);
 }
 
 void IspController::exit(bool pause) {
