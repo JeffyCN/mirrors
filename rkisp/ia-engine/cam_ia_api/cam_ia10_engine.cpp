@@ -1087,7 +1087,7 @@ RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, 
         ret = awbDesc->set_stats(awbContext, first ? NULL : &MeasResult);
         if (first)
             awbDesc->update_awb_params(awbContext, &awbcfg);
-        if (!(dCfg.aaa_locks & HAL_3A_LOCKS_WB) && !mLock3AForStillCap)
+        if (!((dCfg.aaa_locks & HAL_3A_LOCKS_WB) && !mLock3AForStillCap) || first)
             ret = awbDesc->analyze_awb(awbContext, param);
         ret = awbDesc->get_results(awbContext, &retOuput);
     }
@@ -2809,8 +2809,9 @@ RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
 
           switch (result->uc) {
           case UC_PRE_CAPTRUE:
-              if (aec_converged &&
-                  frame_status == CAMIA10_FRAME_STATUS_FLASH_EXPOSED) {
+              if ((aec_converged &&
+                  frame_status == CAMIA10_FRAME_STATUS_FLASH_EXPOSED) ||
+                  mLock3AForStillCap) {
                   // if there is no real main flash, keep preflash on now
                   if (has_main_flash)
                       flash_setting->flash_mode = HAL_FLASH_OFF;

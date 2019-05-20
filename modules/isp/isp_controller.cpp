@@ -848,18 +848,22 @@ IspController::set_3a_config_sync ()
 
     // set flash if needed
     flash_settings = &isp_cfg->flash_settings;
-    std::map<int, struct rkisp_effect_params>::iterator it;
-    it = _effecting_ispparm_map.find(_frame_sequence - 1);
-    if (it != _effecting_ispparm_map.end()) {
-        rkisp_flash_setting_t* old_flash_settings = NULL;
-        old_flash_settings = &_effecting_ispparm_map[_frame_sequence - 1].flash_settings;
-        if ((old_flash_settings->flash_mode != flash_settings->flash_mode) ||
-            (old_flash_settings->strobe != flash_settings->strobe))
+    // capture case may switch the resolution, and we should not change
+    // the flash status
+    if (!(_frame_sequence < 0 && flash_settings->uc == UC_CAPTURE)) {
+        std::map<int, struct rkisp_effect_params>::iterator it;
+        it = _effecting_ispparm_map.find(_frame_sequence - 1);
+        if (it != _effecting_ispparm_map.end()) {
+            rkisp_flash_setting_t* old_flash_settings = NULL;
+            old_flash_settings = &_effecting_ispparm_map[_frame_sequence - 1].flash_settings;
+            if ((old_flash_settings->flash_mode != flash_settings->flash_mode) ||
+                (old_flash_settings->strobe != flash_settings->strobe))
+                set_3a_fl(flash_settings->flash_mode, 100,
+                          flash_settings->timeout_ms, flash_settings->strobe);
+        } else
             set_3a_fl(flash_settings->flash_mode, 100,
                       flash_settings->timeout_ms, flash_settings->strobe);
-    } else
-        set_3a_fl(flash_settings->flash_mode, 100,
-                  flash_settings->timeout_ms, flash_settings->strobe);
+    }
 
     if (_frame_sequence < 0) {
         _effecting_ispparm_map[0].isp_params = _full_active_isp_params;
