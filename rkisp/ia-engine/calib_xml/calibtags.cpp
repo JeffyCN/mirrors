@@ -2964,6 +2964,12 @@ uint32_t calib_check_calc_checksum(){
 		tag_info = &(g_calib_tag_infos[i]);
 		
 		//add name
+		if(tag_info->name == NULL){
+			LOGE("%s(%d): pls init the taginfo in g_calib_tag_infos first, id:%d, Assert!\n",
+				__FUNCTION__, __LINE__, i);
+			DCT_ASSERT(false);		
+		}
+		
 		length = strlen(tag_info->name); 
 		for(j=0; j<length; j++){
 			value = (uint32_t)(tag_info->name[j]);
