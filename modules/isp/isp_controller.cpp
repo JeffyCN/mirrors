@@ -42,6 +42,7 @@ IspController::IspController ():
 {
     xcam_mem_clear(_last_aiq_results);
     xcam_mem_clear(_full_active_isp_params);
+    xcam_mem_clear(_flash_settings);
     _max_delay = EXPOSURE_GAIN_DELAY > EXPOSURE_TIME_DELAY ?
                     EXPOSURE_GAIN_DELAY : EXPOSURE_TIME_DELAY;
 
@@ -864,22 +865,13 @@ IspController::set_3a_config_sync ()
 
     // set flash if needed
     flash_settings = &isp_cfg->flash_settings;
-    // capture case may switch the resolution, and we should not change
-    // the flash status
-    if (!(_frame_sequence < 0 && flash_settings->uc == UC_CAPTURE)) {
-        std::map<int, struct rkisp_effect_params>::iterator it;
-        it = _effecting_ispparm_map.find(_frame_sequence - 1);
-        if (it != _effecting_ispparm_map.end()) {
-            rkisp_flash_setting_t* old_flash_settings = NULL;
-            old_flash_settings = &_effecting_ispparm_map[_frame_sequence - 1].flash_settings;
-            if ((old_flash_settings->flash_mode != flash_settings->flash_mode) ||
-                (old_flash_settings->strobe != flash_settings->strobe))
-                set_3a_fl(flash_settings->flash_mode, 100,
-                          flash_settings->timeout_ms, flash_settings->strobe);
-        } else
-            set_3a_fl(flash_settings->flash_mode, 100,
-                      flash_settings->timeout_ms, flash_settings->strobe);
-    }
+    rkisp_flash_setting_t* old_flash_settings = &_flash_settings;
+    if ((old_flash_settings->flash_mode != flash_settings->flash_mode) ||
+        (old_flash_settings->strobe != flash_settings->strobe))
+        set_3a_fl(flash_settings->flash_mode, 100,
+                  flash_settings->timeout_ms, flash_settings->strobe);
+
+    _flash_settings = *flash_settings;
 
     if (_frame_sequence < 0) {
         _effecting_ispparm_map[0].isp_params = _full_active_isp_params;

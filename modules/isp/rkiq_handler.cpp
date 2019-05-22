@@ -1273,7 +1273,8 @@ void RKiqCompositor::set_isp_ctrl_device(Isp10Engine* dev) {
 }
 
 bool
-RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *sensor_mode)
+RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *sensor_mode,
+                                      bool first)
 {
     if (!_isp10_engine) {
         XCAM_LOG_ERROR ("ISP control device is null");
@@ -1305,7 +1306,7 @@ RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *
                     new_aestate == ANDROID_CONTROL_AE_STATE_LOCKED ||
                     new_aestate == ANDROID_CONTROL_AE_STATE_FLASH_REQUIRED) &&
                     (frameUseCase == AIQ_FRAME_USECASE_STILL_CAPTURE ||
-                     _delay_still_capture)) {
+                     first || _delay_still_capture)) {
                     _delay_still_capture = false;
                     new_usecase = UC_CAPTURE;
                 }

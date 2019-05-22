@@ -192,7 +192,7 @@ X3aAnalyzerRKiq::configure_3a ()
 
     /* update the initial settings from user */
     _rkiq_compositor->setAiqInputParams(this->getAiqInputParams());
-    if (!_rkiq_compositor->set_sensor_mode_data (&_sensor_mode_data)) {
+    if (!_rkiq_compositor->set_sensor_mode_data (&_sensor_mode_data, true)) {
         XCAM_LOG_WARNING ("AIQ configure 3a failed");
         return XCAM_RETURN_ERROR_AIQ;
     }

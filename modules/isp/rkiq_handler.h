@@ -312,7 +312,7 @@ public:
     void close ();
 
     bool init_dynamic_config ();
-    bool set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *sensor_mode);
+    bool set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *sensor_mode, bool first = false);
     struct CamIA10_SensorModeData &get_sensor_mode_data() { return _ia_stat.sensor_mode; };
     bool set_3a_stats (SmartPtr<X3aIspStatistics> &stats);
     struct CamIA10_Stats& get_3a_ia10_stats () { return _ia_stat; };

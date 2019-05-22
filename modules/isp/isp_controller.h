@@ -135,6 +135,7 @@ private:
     std::vector<struct rkisp_parameters> _pending_ispparams_queue;
     int _isp_acq_out_width;
     int _isp_acq_out_height;
+    rkisp_flash_setting_t _flash_settings;
 };
 
 };
