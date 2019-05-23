@@ -1495,12 +1495,14 @@ RKiqCompositor::set_3a_stats (SmartPtr<X3aIspStatistics> &stats)
          _ia_stat.flash_status.flash_mode == HAL_FLASH_MAIN)) {
 
         if(_ia_stat.flash_status.flash_mode == HAL_FLASH_PRE ) {
-            if (_ia_stat.flash_status.effect_ts + cur_exptime <= frame_ts)
+            if (_ia_stat.flash_status.effect_ts > 0 &&
+                (_ia_stat.flash_status.effect_ts + cur_exptime <= frame_ts))
                 _ia_stat.frame_status = CAMIA10_FRAME_STATUS_FLASH_EXPOSED;
             else
                 _ia_stat.frame_status = CAMIA10_FRAME_STATUS_FLASH_PARTIAL;
         } else if (_ia_stat.flash_status.flash_mode == HAL_FLASH_MAIN) {
-            if ((_ia_stat.flash_status.effect_ts + cur_exptime <= frame_ts) &&
+            if (_ia_stat.flash_status.effect_ts > 0 &&
+                (_ia_stat.flash_status.effect_ts + cur_exptime <= frame_ts) &&
                (frame_ts < _ia_stat.flash_status.effect_ts + _ia_stat.flash_status.flash_timeout_ms * 1000))
                 _ia_stat.frame_status = CAMIA10_FRAME_STATUS_FLASH_EXPOSED;
             else
