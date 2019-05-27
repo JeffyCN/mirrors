@@ -170,8 +170,10 @@ IspImageProcessor::apply_isp_result (X3aResultList &results)
             iter != results.end ();)
     {
         XCAM_LOG_DEBUG ("apply_isp_result type: %d", (*iter)->get_type());
+        bool first = false;
         if ((*iter)->get_type() == X3aIspConfig::IspAllParameters) {
             SmartPtr<X3aResult> &x3a_result = *iter;
+            first = x3a_result->is_first_params();
             if (_3a_config->attach (x3a_result, _translator.ptr())) {
                 x3a_result->set_done (true);
                 results.erase (iter++);
@@ -180,7 +182,7 @@ IspImageProcessor::apply_isp_result (X3aResultList &results)
         }
 
         if (_3a_config.ptr() && _controller.ptr()) {
-            ret = _controller->set_3a_config (_3a_config.ptr());
+            ret = _controller->set_3a_config (_3a_config.ptr(), first);
             if (ret != XCAM_RETURN_NO_ERROR) {
                 XCAM_LOG_WARNING ("set 3a config to isp failed");
             }
@@ -205,7 +207,7 @@ IspImageProcessor::apply_exposure_result (X3aResultList &results)
             if (!res.ptr ()) {
                 XCAM_LOG_WARNING ("isp 3a exposure result is null");
             } else {
-                _controller->push_3a_exposure (res.ptr ());
+                _controller->push_3a_exposure (res.ptr (), res->is_first_params());
                 if (!_sync) {
                     if((ret = _controller->set_3a_exposure (res.ptr ())) != XCAM_RETURN_NO_ERROR) {
                         XCAM_LOG_WARNING ("set 3a exposure to sensor failed");
@@ -254,7 +256,7 @@ IspImageProcessor::apply_focus_result (X3aResultList &results)
             if (!res.ptr ()) {
                 XCAM_LOG_WARNING ("isp 3a exposure result is null");
             } else {
-                _controller->set_3a_focus(res.ptr());
+                _controller->set_3a_focus(res.ptr(), res->is_first_params());
                 res->set_done (true);
             }
             results.erase (iter++);

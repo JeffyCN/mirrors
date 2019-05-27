@@ -47,7 +47,8 @@ protected:
     virtual bool loop () {
         XCamReturn ret = _poll->poll_isp_stats_loop ();
 
-        if (ret == XCAM_RETURN_NO_ERROR || ret == XCAM_RETURN_ERROR_TIMEOUT)
+        if (ret == XCAM_RETURN_NO_ERROR || ret == XCAM_RETURN_ERROR_TIMEOUT ||
+            XCAM_RETURN_BYPASS)
             return true;
         return false;
     }

@@ -66,16 +66,16 @@ public:
     XCamReturn get_vcm_time (struct rk_cam_vcm_tim *vcm_tim);
 
     XCamReturn get_3a_statistics (SmartPtr<X3aIspStatistics> &stats);
-    XCamReturn set_3a_config (X3aIspConfig *config);
+    XCamReturn set_3a_config (X3aIspConfig *config, bool first = false);
 
-    void push_3a_exposure (X3aIspExposureResult *res);
-    void push_3a_exposure (struct rkisp_exposure isp_exposure);
+    void push_3a_exposure (X3aIspExposureResult *res, bool first = false);
+    void push_3a_exposure (struct rkisp_exposure isp_exposure, bool first = false);
 
     XCamReturn set_3a_exposure (X3aIspExposureResult *res);
     XCamReturn set_3a_exposure (struct rkisp_exposure isp_exposure);
-    XCamReturn set_3a_focus (X3aIspFocusResult *res);
+    XCamReturn set_3a_focus (X3aIspFocusResult *res, bool first = false);
 
-    void exposure_delay(struct rkisp_exposure isp_exposure);
+    void exposure_delay(struct rkisp_exposure isp_exposure, bool first = false);
 #if RKISP
     void dump_isp_config(struct rkisp1_isp_params_cfg* isp_params,
                                 struct rkisp_parameters *isp_cfg);

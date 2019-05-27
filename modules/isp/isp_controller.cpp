@@ -112,7 +112,16 @@ XCamReturn
 IspController::handle_sof(int64_t time, int frameid)
 {
     SmartLock locker (_mutex);
+    if (_is_exit)
+        return XCAM_RETURN_BYPASS;
+
     _frame_sequence_cond.signal();
+
+    // TODO: sometimes may receive one unexpected sof event when
+    // IspController::exit(true) and exit(false), maybe isp driver
+    // has bug
+    if (_frame_sequence < 0 && frameid != 0)
+        return XCAM_RETURN_BYPASS;
 
     _frame_sof_time = time;
     _frame_sequence = frameid;
@@ -479,6 +488,11 @@ IspController::get_isp_parameter (struct rkisp_parameters& parameters, int frame
     return XCAM_RETURN_NO_ERROR;
 }
 
+// TODO: I don't know why the first 2 AEC mean luma stats
+// are incorrect(may be the isp driver bug), just ignore the
+// first 2 stats now
+#define RKISP_SKIP_STATS_NUM 2
+
 XCamReturn
 IspController::get_3a_statistics (SmartPtr<X3aIspStatistics> &stats)
 {
@@ -625,7 +639,6 @@ IspController::get_3a_statistics (SmartPtr<X3aIspStatistics> &stats)
             _frame_sequence, cur_frame_id,
             _frame_sof_time, cur_time,
             cur_time - _frame_sof_time);
-
 resync:
         if (_frame_sequence < cur_frame_id) {
             // impossible case
@@ -646,6 +659,9 @@ resync:
                 XCAM_LOG_ERROR(" stats comes late over 10ms than sof !");
             }
         }
+
+        if (cur_frame_id < RKISP_SKIP_STATS_NUM)
+            return XCAM_RETURN_BYPASS;
     }
 #endif
 
@@ -945,7 +961,7 @@ IspController::apply_otp_config (struct rkisp_parameters *isp_cfg) {
 }
 
 XCamReturn
-IspController::set_3a_config (X3aIspConfig *config)
+IspController::set_3a_config (X3aIspConfig *config, bool first)
 {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
 
@@ -967,7 +983,7 @@ IspController::set_3a_config (X3aIspConfig *config)
     _pending_ispparams_queue.push_back(*isp_cfg);
 
     // set initial isp params
-    if (_frame_sequence < 0) {
+    if (_frame_sequence < 0 || first) {
         set_3a_config_sync();
         apply_otp_config (isp_cfg);
     }
@@ -976,12 +992,12 @@ IspController::set_3a_config (X3aIspConfig *config)
 }
 
 void
-IspController::exposure_delay(struct rkisp_exposure isp_exposure)
+IspController::exposure_delay(struct rkisp_exposure isp_exposure, bool first)
 {
     int i = 0;
 
     SmartLock locker (_mutex);
-    if (isp_exposure.RegSmoothTime[2] != 0 &&
+    if (!first && isp_exposure.RegSmoothTime[2] != 0 &&
         _exposure_queue[0].RegSmoothGains[2] ==
         isp_exposure.RegSmoothGains[2] &&
         _exposure_queue[0].RegSmoothTime[2] ==
@@ -1027,23 +1043,23 @@ IspController::exposure_delay(struct rkisp_exposure isp_exposure)
         _cur_apply_index++;
 
     // set the initial exposure before streaming
-    if (_frame_sequence < 0) {
+    if (_frame_sequence < 0 || first) {
         set_3a_exposure(_exposure_queue[_cur_apply_index]);
         _frame_sequence++;
     }
 }
 
 void
-IspController::push_3a_exposure (X3aIspExposureResult *res)
+IspController::push_3a_exposure (X3aIspExposureResult *res, bool first)
 {
     const struct rkisp_exposure &exposure = res->get_isp_config ();
-    push_3a_exposure(exposure);
+    push_3a_exposure(exposure, first);
 }
 
 void
-IspController::push_3a_exposure (struct rkisp_exposure isp_exposure)
+IspController::push_3a_exposure (struct rkisp_exposure isp_exposure, bool first)
 {
-    exposure_delay(isp_exposure);
+    exposure_delay(isp_exposure, first);
 }
 
 XCamReturn
@@ -1195,7 +1211,7 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
 }
 
 XCamReturn
-IspController::set_3a_focus (X3aIspFocusResult *res)
+IspController::set_3a_focus (X3aIspFocusResult *res, bool first)
 {
     const struct rkisp_focus &focus = res->get_isp_config ();
 
