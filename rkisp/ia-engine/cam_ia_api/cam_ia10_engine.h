@@ -135,6 +135,7 @@ class CamIA10Engine: public CamIA10EngineItf {
   CamIA10_AWB_Result_t curAwbResult;
   AecResult_t      lastAecResult;
   AecResult_t      curAecResult;
+  XCam3aResultFocus lastAfResult;
   bool_t mStatisticsUpdated;
 
   bool_t  mWdrEnabledState;

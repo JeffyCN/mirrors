@@ -220,7 +220,7 @@ typedef struct
     rk_aiq_window afm_win[RK_AIQ_AFM_MAX_WINDOWS];
     unsigned int  thres;
     unsigned int  var_shift;
-} rk_aiq_afc_cfg;
+} rk_aiq_af_cfg;
 
 typedef struct
 {
@@ -867,12 +867,23 @@ typedef struct
  */
 typedef struct
 {
-    rk_aiq_afc_cfg afc_config;
+    rk_aiq_af_cfg afc_config;
     rk_aiq_af_status status;                           /*!< Focus status */
     unsigned short current_focus_distance;             /*!< Current focusing distance in mm */
     int next_lens_position;                            /*!< Next lens position */
     bool final_lens_position_reached;                  /*!< Lens has reached the final lens position */
 } rk_aiq_af_results;
+
+/*!
+ * \brief Autofocus scene flash  states
+ */
+typedef enum
+{
+	rk_aiq_af_flash_scene_off,          /*!< Focus in flash scene is in idle state*/
+	rk_aiq_af_flash_scene_search,       /*!< Focus in flash scene is in search state */
+	rk_aiq_af_flash_scene_success,      /*!< Focus in flash scene has success */
+	rk_aiq_af_flash_scene_fail,         /*!< Focus in flash scene has fail*/
+} rk_aiq_af_flash_scene;
 
 /*!
  * \brief Results from GBCE.

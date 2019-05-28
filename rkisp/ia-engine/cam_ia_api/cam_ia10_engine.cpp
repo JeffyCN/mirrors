@@ -65,6 +65,7 @@ RESULT CamIA10Engine::init() {
     memset(&curAwbResult, 0, sizeof(curAwbResult));
     memset(&curAecResult, 0, sizeof(curAecResult));
     memset(&lastAecResult, 0, sizeof(lastAecResult));
+    memset(&lastAfResult, 0, sizeof(lastAfResult));
     memset(&adpfCfg, 0, sizeof(adpfCfg));
     memset(&awbcfg, 0, sizeof(awbcfg));
     memset(&aecCfg, 0, sizeof(aecCfg));
@@ -1175,10 +1176,32 @@ RESULT CamIA10Engine::runAf(XCamAfParam *param, XCam3aResultFocus* result, bool 
 
                 param.focus_lock = set->af_lock;
                 param.trigger_new_search = set->oneshot_trigger;
-                ret = afDesc->set_stats(afContext, &mStats.af);
+                MEMCPY(&mStats.af.exp_win,&lastAecResult.meas_win,sizeof(lastAecResult.meas_win));
+                MEMCPY(&mStats.af.exp_mean,&mStats.aec.exp_mean,sizeof(mStats.aec.exp_mean));
+                MEMCPY(&mStats.af.exp_weight,&lastAecResult.GridWeights,sizeof(lastAecResult.GridWeights));//TODO
+                mStats.af.exp_MeanLuma = lastAecResult.MeanLuma;
+                mStats.af.exp_winNum = aecCfg.Valid_GridWeights_Num;
+                mStats.af.exp_converged = mAeAlgoConvRst;
+                mStats.af.uc = AfUseCase_t(dCfg.uc);
+                mStats.af.exp_flash_state = AfExpFlahsState_t(lastAecResult.flashModeState);
+                mStats.af.frame_status = (AfFrameStatus_t)mStats.frame_status;
+                LOGD("lastAecResult:win:%d %d %dx%d num:%d converged:%d",
+                    lastAecResult.meas_win.h_offs,
+                    lastAecResult.meas_win.v_offs,
+                    lastAecResult.meas_win.h_size,
+                    lastAecResult.meas_win.v_size,
+                    aecCfg.Valid_GridWeights_Num,
+                    lastAecResult.converged);
 
-                if (!mLock3AForStillCap)
-                    ret = afDesc->analyze_af(afContext, &param);
+                LOGD("mStats:win:%d %d %dx%d num:%d converged:%d",
+                    mStats.af.exp_win.h_offs,
+                    mStats.af.exp_win.v_offs,
+                    mStats.af.exp_win.h_size,
+                    mStats.af.exp_win.v_size,
+                    mStats.af.exp_winNum,
+                    mStats.af.exp_converged);
+                ret = afDesc->set_stats(afContext, &mStats.af);
+                ret = afDesc->analyze_af(afContext, &param);
             }//AfProcessFrame(hAf, &mStats.af);
 
             if ((ret != RET_SUCCESS) && (ret != RET_CANCELED))
@@ -2065,6 +2088,11 @@ RESULT CamIA10Engine::getAECResults(AecResult_t* result) {
     result->meas_win.h_size = set->win.right_width;
     result->meas_win.v_size = set->win.bottom_height;
 
+    lastAecResult.meas_win.h_offs = set->win.left_hoff;
+    lastAecResult.meas_win.v_offs = set->win.top_voff;
+    lastAecResult.meas_win.h_size = set->win.right_width;
+    lastAecResult.meas_win.v_size = set->win.bottom_height;
+    lastAecResult.converged = result->converged;
     if(lastAecResult.auto_adjust_fps != result->auto_adjust_fps || (result->actives & AEC_AFPS_MASK) ) {
         lastAecResult.auto_adjust_fps = result->auto_adjust_fps;
         result->actives |= CAMIA10_AEC_AFPS_MASK;
@@ -2077,7 +2105,8 @@ RESULT CamIA10Engine::getAECResults(AecResult_t* result) {
         && result->flashModeState != AEC_FLASH_PREFLASH
         && result->require_flash == true)
         ||*/(result->flashModeState == AEC_FLASH_PREFLASH
-        && curAwbResult.converged == false)){
+        && curAwbResult.converged == false &&
+        && lastAfResult.af_flash_converged != true)) {
         result->converged = false;
     }
 
@@ -2086,14 +2115,15 @@ RESULT CamIA10Engine::getAECResults(AecResult_t* result) {
     lastAecResult.converged = result->converged;
     lastAecResult.MeanLuma =result->MeanLuma;
     LOGD("%s(%d): reported aec converge:%d, mAeAlgoConvRst:%d,"
-         "awb converge:%d, uc:%d flash:%d re_flash:%d\n",
+         "awb converge:%d, uc:%d flash:%d re_flash:%d af flash converged:%d\n",
         __FUNCTION__, __LINE__,
         result->converged,
         mAeAlgoConvRst,
         curAwbResult.converged,
         dCfg.uc,
         result->flashModeState,
-        result->require_flash);
+        result->require_flash,
+        lastAfResult.af_flash_converged);
     //LOGD("set offset: %d-%d, size: %d-%d", set->win.left_hoff, set->win.top_voff, set->win.right_width, set->win.bottom_height);
     //LOGD("ret offset: %d-%d, size: %d-%d", result->meas_win.h_offs, result->meas_win.v_offs, result->meas_win.h_size, result->meas_win.v_size);
     //LOGD("sensor_mode size: %d-%d", dCfg.sensor_mode.isp_input_width, dCfg.sensor_mode.isp_input_height);
@@ -2613,6 +2643,7 @@ RESULT CamIA10Engine::getAFResults(XCam3aResultFocus* result) {
     if (afDesc) {
         afDesc->get_results(afContext, result);
     }
+    MEMCPY(&lastAfResult,result,sizeof(XCam3aResultFocus));
 #if 0
     uint32_t max_pixel_cnt;
     uint32_t tshift = 0U;
@@ -2849,7 +2880,7 @@ RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
                   frame_status == CAMIA10_FRAME_STATUS_FLASH_EXPOSED) ||
                   (mLock3AForStillCap & HAL_3A_LOCKS_EXPOSURE)) {
                   // if there is no real main flash, keep preflash on now
-                  if (has_main_flash && awb_converged)
+                  if (has_main_flash && awb_converged && lastAfResult.af_flash_converged)
                       flash_setting->flash_mode = HAL_FLASH_OFF;
                   // lock 3a after preflash state converged, and
                   // updateAeConfig will change aec mode to mainflash if needed

@@ -179,12 +179,13 @@ typedef struct _XCam3aResultFocus {
     XCam3aResultHead head;
 
     /* data */
-    rk_aiq_afc_cfg afc_config;
+    rk_aiq_af_cfg afc_config;
     rk_aiq_af_status status;                           /*!< Focus status */
     unsigned short current_focus_distance;             /*!< Current focusing distance in mm */
     int next_lens_position;                            /*!< Next lens position */
     bool final_lens_position_reached;                  /*!< Lens has reached the final lens position */
-
+    rk_aiq_af_flash_scene af_flash_scene;
+    bool af_flash_converged;
 } XCam3aResultFocus;
 
 typedef struct _XCam3aResultDemosaic {
