@@ -214,7 +214,7 @@ int rkisp_cl_prepare(void* cl_ctx,
     SmartPtr<V4l2SubDevice> isp_dev = NULL;
     SmartPtr<V4l2SubDevice> sensor_dev = NULL;
     SmartPtr<V4l2SubDevice> vcm_dev = NULL;
-    SmartPtr<V4l2SubDevice> fl_dev = NULL;
+    SmartPtr<V4l2SubDevice> fl_dev[RKISP_SENSOR_ATTACHED_FLASH_MAX_NUM];
     SmartPtr<V4l2Device> stats_dev = NULL;
     SmartPtr<V4l2Device> param_dev = NULL;
 
@@ -227,13 +227,15 @@ int rkisp_cl_prepare(void* cl_ctx,
              __FUNCTION__, device_manager->_cl_state);
         return 0;
     }
-	LOGD("rkisp_cl_prepare, isp: %s, sensor: %s, stats: %s, params: %s, lens: %s, fl: %s",
+	LOGD("rkisp_cl_prepare, isp: %s, sensor: %s, stats: %s, params: %s, lens: %s, "
+         "fl 0: %s, fl 1: %s",
         prepare_params->isp_sd_node_path,
         prepare_params->sensor_sd_node_path,
         prepare_params->isp_vd_stats_path,
         prepare_params->isp_vd_params_path,
         prepare_params->lens_sd_node_path,
-        prepare_params->flashlight_sd_node_path);
+        prepare_params->flashlight_sd_node_path[0],
+        prepare_params->flashlight_sd_node_path[1]);
 
     isp_dev = new V4l2SubDevice (prepare_params->isp_sd_node_path);
     ret = isp_dev->open ();
@@ -300,13 +302,16 @@ int rkisp_cl_prepare(void* cl_ctx,
         }
     }
 
-    if (prepare_params->flashlight_sd_node_path) {
-        fl_dev = new V4l2SubDevice(prepare_params->flashlight_sd_node_path);
-        ret = fl_dev->open ();
-        if (ret != XCAM_RETURN_NO_ERROR) {
-            ALOGE("failed to open flashlight subdev");
-            return -1;
-        }
+    for (int i = 0; i < RKISP_SENSOR_ATTACHED_FLASH_MAX_NUM; i++) {
+        if (prepare_params->flashlight_sd_node_path[i]) {
+            fl_dev[i] = new V4l2SubDevice(prepare_params->flashlight_sd_node_path[i]);
+            ret = fl_dev[i]->open ();
+            if (ret != XCAM_RETURN_NO_ERROR) {
+                ALOGE("failed to open flashlight subdev");
+                return -1;
+            }
+        } else
+            fl_dev[i] = nullptr;
     }
 
     SmartPtr<IspController> isp_controller = new IspController ();
@@ -316,8 +321,7 @@ int rkisp_cl_prepare(void* cl_ctx,
     isp_controller->set_isp_ver(isp_ver);
     if (vcm_dev.ptr())
         isp_controller->set_vcm_subdev(vcm_dev);
-    if (fl_dev.ptr())
-        isp_controller->set_fl_subdev(fl_dev);
+    isp_controller->set_fl_subdev(fl_dev);
 
     SmartPtr<IspPollThread> isp_poll_thread = new IspPollThread ();
     isp_poll_thread->set_isp_controller (isp_controller);

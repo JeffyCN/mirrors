@@ -2802,6 +2802,8 @@ RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
         mLock3AForStillCap = false;
         flash_setting->flash_mode = HAL_FLASH_TORCH;
         // TODO: set torch power
+        for (int i = 0; i < CAMIA10_FLASH_NUM_MAX; i++)
+          flash_setting->flash_power[i] = 10000;
     } else {
         if (result->aec.flashModeState == AEC_FLASH_PREFLASH ||
             result->aec.flashModeState == AEC_FLASH_MAINFLASH ) {
@@ -2820,6 +2822,9 @@ RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
                   mLock3AForStillCap = true;
               } else {
                   flash_setting->flash_mode = HAL_FLASH_PRE;
+                  // TODO: set power
+                  for (int i = 0; i < CAMIA10_FLASH_NUM_MAX; i++)
+                      flash_setting->flash_power[i] = 10000;
               }
               break;
           case UC_CAPTURE:
@@ -2848,6 +2853,9 @@ RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
                 } else {
                   flash_setting->flash_mode = HAL_FLASH_PRE;
                 }
+              // TODO: set power
+              for (int i = 0; i < CAMIA10_FLASH_NUM_MAX; i++)
+                  flash_setting->flash_power[i] = 10000;
             } else {
               flash_setting->strobe = false;
               flash_setting->flash_mode = HAL_FLASH_OFF;

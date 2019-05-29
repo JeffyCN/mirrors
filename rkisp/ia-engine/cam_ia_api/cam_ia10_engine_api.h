@@ -104,10 +104,11 @@ typedef enum {
 	CAMIA10_FRAME_STATUS_FLASH_FAILED,
 } CamIA10_frame_status;
 
+#define CAMIA10_FLASH_NUM_MAX 2
 typedef struct {
   HAL_FLASH_MODE flash_mode;
   int flash_timeout_ms;
-  int flash_power;
+  int flash_power[CAMIA10_FLASH_NUM_MAX];
   bool strobe;
   int64_t effect_ts;
 } CamIA10_flash_setting_t;

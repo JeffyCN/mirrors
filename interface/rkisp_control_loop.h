@@ -28,6 +28,7 @@ typedef struct camera_metadata camera_metadata_t;
 extern "C" {
 #endif
 
+#define RKISP_SENSOR_ATTACHED_FLASH_MAX_NUM 2
 /*
  * This file is exposed by rkisp control loop(using rkisp CL instead below) library.
  * rkisp CL is the interfaces aggregation to control the ISP, sensor, lens,
@@ -74,7 +75,7 @@ struct rkisp_cl_prepare_params_s {
   // lens subdev node path
   const char* lens_sd_node_path;
   // flashlight subdev node path
-  const char* flashlight_sd_node_path;
+  const char* flashlight_sd_node_path[RKISP_SENSOR_ATTACHED_FLASH_MAX_NUM];
   // static metadata
   const camera_metadata_t *staticMeta;
   // TODO: sensor mode descriptor and others

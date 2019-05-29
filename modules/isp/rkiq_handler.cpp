@@ -1692,6 +1692,8 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
 
     flash_set->strobe = flash_result->strobe;
     flash_set->timeout_ms = flash_result->flash_timeout_ms;
+    for (int i = 0; i < CAMIA10_FLASH_NUM_MAX; i ++)
+        flash_set->power[i] = flash_result->flash_power[i];
 
     for (int i=0; i < HAL_ISP_MODULE_MAX_ID_ID + 1; i++) {
         isp_3a_result.enabled[i] = _isp_cfg.enabled[i];

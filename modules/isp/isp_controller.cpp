@@ -56,8 +56,8 @@ IspController::~IspController ()
 {
     XCAM_LOG_DEBUG ("~IspController destruction");
     free(_exposure_queue);
-    if (_fl_device.ptr())
-        set_3a_fl (RKISP_FLASH_MODE_OFF, 0, 0, 0);
+    int power[2] = {0, 0};
+    set_3a_fl (RKISP_FLASH_MODE_OFF, power, 0, 0);
 }
 
 void IspController::exit(bool pause) {
@@ -94,8 +94,15 @@ IspController::set_vcm_subdev(SmartPtr<V4l2SubDevice> &subdev) {
 };
 
 void
-IspController::set_fl_subdev(SmartPtr<V4l2SubDevice> &subdev) {
-    _fl_device = subdev;
+IspController::set_fl_subdev(SmartPtr<V4l2SubDevice> subdev[]) {
+    _active_fl_num = 0;
+
+    for (int i = 0; i < ISP_CONTRLLER_FLASH_MAX_NUM; i++) {
+        _fl_device[i] = subdev[i];
+        if (_fl_device[i].ptr())
+            _active_fl_num++;
+    }
+    get_flash_info ();
 };
 
 void
@@ -328,10 +335,10 @@ IspController::get_flash_status (rkisp_flash_setting_t& flash_settings, int fram
         LOGW("can't find %d flash settings in effecting map.", frame_id);
     }
 
-    if (_fl_device.ptr()) {
+    if (_fl_device[0].ptr()) {
         struct timeval flash_time;
 
-        if (_fl_device->io_control (RK_VIDIOC_FLASH_TIMEINFO , &flash_time) < 0) {
+        if (_fl_device[0]->io_control (RK_VIDIOC_FLASH_TIMEINFO , &flash_time) < 0) {
             XCAM_LOG_ERROR (" get RK_VIDIOC_FLASH_TIMEINFO failed. cmd = 0x%x", RK_VIDIOC_FLASH_TIMEINFO);
             /* return XCAM_RETURN_ERROR_IOCTL; */
         }
@@ -339,6 +346,78 @@ IspController::get_flash_status (rkisp_flash_setting_t& flash_settings, int fram
                                    (int64_t)flash_time.tv_usec;
         XCAM_LOG_DEBUG("frameid %d, get RK_VIDIOC_FLASH_TIMEINFO flash ts %lld",
             frame_id, flash_settings.effect_ts);
+    }
+
+    // for the following case:
+    // 1) set to flash mode
+    // 2) one flash power set to 0
+    // then we can't get the effect ts from the node which power set to 0
+    if (_fl_device[1].ptr() && flash_settings.effect_ts == 0 &&
+        flash_settings.power[0] != flash_settings.power[1]) {
+        struct timeval flash_time;
+
+        if (_fl_device[1]->io_control (RK_VIDIOC_FLASH_TIMEINFO , &flash_time) < 0) {
+            XCAM_LOG_ERROR (" get RK_VIDIOC_FLASH_TIMEINFO failed. cmd = 0x%x", RK_VIDIOC_FLASH_TIMEINFO);
+            /* return XCAM_RETURN_ERROR_IOCTL; */
+        }
+        flash_settings.effect_ts = (int64_t)flash_time.tv_sec * 1000 * 1000 +
+                                   (int64_t)flash_time.tv_usec;
+        XCAM_LOG_DEBUG("frameid %d, get RK_VIDIOC_FLASH_TIMEINFO flash ts %lld",
+            frame_id, flash_settings.effect_ts);
+    }
+
+	return XCAM_RETURN_NO_ERROR;
+}
+
+int
+IspController::get_flash_info ()
+{
+    struct v4l2_queryctrl ctrl;
+    int flash_power, torch_power;
+    SmartPtr<V4l2SubDevice> fl_device;
+
+    for (int i = 0; i < _active_fl_num; i++) {
+        fl_device = _fl_device[i];
+
+        memset(&ctrl, 0, sizeof(ctrl));
+        ctrl.id = V4L2_CID_FLASH_INTENSITY;
+        if (fl_device->io_control(VIDIOC_QUERYCTRL, &ctrl) < 0) {
+            XCAM_LOG_ERROR ("query V4L2_CID_FLASH_INTENSITY failed. cmd = 0x%x",
+                            V4L2_CID_FLASH_INTENSITY);
+            return -errno;
+        }
+
+        _v4l_flash_info[i].flash_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MIN] =
+               ctrl.minimum;
+        _v4l_flash_info[i].flash_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX] =
+               ctrl.maximum;
+        _v4l_flash_info[i].flash_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_DEFAULT] =
+               ctrl.default_value;
+        _v4l_flash_info[i].flash_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_STEP] =
+               ctrl.step;
+
+        XCAM_LOG_DEBUG("fl_dev[%d], flash power range:[%d,%d]",
+                       i, ctrl.minimum, ctrl.maximum);
+
+        memset(&ctrl, 0, sizeof(ctrl));
+        ctrl.id = V4L2_CID_FLASH_TORCH_INTENSITY;
+        if (fl_device->io_control(VIDIOC_QUERYCTRL, &ctrl) < 0) {
+            XCAM_LOG_ERROR ("query V4L2_CID_FLASH_TORCH_INTENSITY failed. cmd = 0x%x",
+                            V4L2_CID_FLASH_TORCH_INTENSITY);
+            return -errno;
+        }
+
+        _v4l_flash_info[i].torch_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MIN] =
+               ctrl.minimum;
+        _v4l_flash_info[i].torch_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX] =
+               ctrl.maximum;
+        _v4l_flash_info[i].torch_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_DEFAULT] =
+               ctrl.default_value;
+        _v4l_flash_info[i].torch_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_STEP] =
+               ctrl.step;
+
+        XCAM_LOG_DEBUG("fl_dev[%d], torch power range:[%d,%d]",
+                       i, ctrl.minimum, ctrl.maximum);
     }
 
 	return XCAM_RETURN_NO_ERROR;
@@ -867,9 +946,13 @@ IspController::set_3a_config_sync ()
     flash_settings = &isp_cfg->flash_settings;
     rkisp_flash_setting_t* old_flash_settings = &_flash_settings;
     if ((old_flash_settings->flash_mode != flash_settings->flash_mode) ||
-        (old_flash_settings->strobe != flash_settings->strobe))
-        set_3a_fl(flash_settings->flash_mode, 100,
+        (old_flash_settings->strobe != flash_settings->strobe) ||
+        (old_flash_settings->power[0] != flash_settings->power[0]) ||
+        (old_flash_settings->power[1] != flash_settings->power[1])
+        ) {
+        set_3a_fl(flash_settings->flash_mode, flash_settings->power,
                   flash_settings->timeout_ms, flash_settings->strobe);
+    }
 
     _flash_settings = *flash_settings;
 
@@ -1227,23 +1310,24 @@ IspController::set_3a_focus (X3aIspFocusResult *res, bool first)
 }
 
 XCamReturn
-IspController::set_3a_fl (int fl_mode, int fl_intensity,
+IspController::set_3a_fl (int fl_mode, int fl_intensity[],
                           int fl_timeout, int fl_on)
 {
     struct v4l2_control control;
     int fl_v4l_mode;
-
-#define set_fl_contol_to_dev(control_id,val) \
-        xcam_mem_clear (control); \
-        control.id = control_id; \
-        control.value = val; \
-        if (_fl_device.ptr()) { \
-            if (_fl_device->io_control (VIDIOC_S_CTRL, &control) < 0) { \
+    int i = 0;
+#define set_fl_contol_to_dev(fl_dev,control_id,val) \
+        {\
+            xcam_mem_clear (control); \
+            control.id = control_id; \
+            control.value = val; \
+            if (fl_dev->io_control (VIDIOC_S_CTRL, &control) < 0) { \
                 XCAM_LOG_ERROR (" set fl %s to %d failed", #control_id, val); \
                 return XCAM_RETURN_ERROR_IOCTL; \
             } \
-            XCAM_LOG_DEBUG (" sof seq %d, set fl %s to %d, success", _frame_sequence, #control_id, val); \
-        } \
+            XCAM_LOG_DEBUG (" sof seq %d, set fl %p, cid %s to %d, success",\
+                            _frame_sequence, fl_dev.ptr(), #control_id, val); \
+        }\
 
     if (fl_mode == RKISP_FLASH_MODE_OFF)
         fl_v4l_mode = V4L2_FLASH_LED_MODE_NONE;
@@ -1256,18 +1340,40 @@ IspController::set_3a_fl (int fl_mode, int fl_intensity,
         return XCAM_RETURN_ERROR_PARAM;
     }
 
+    SmartPtr<V4l2SubDevice> fl_device;
+
     if (fl_v4l_mode == V4L2_FLASH_LED_MODE_NONE) {
-        set_fl_contol_to_dev(V4L2_CID_FLASH_LED_MODE, V4L2_FLASH_LED_MODE_NONE);
+        for (i = 0; i < _active_fl_num; i++) {
+            fl_device = _fl_device[i];
+            set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_LED_MODE, V4L2_FLASH_LED_MODE_NONE);
+        }
     } else if (fl_v4l_mode == V4L2_FLASH_LED_MODE_FLASH) {
-        set_fl_contol_to_dev(V4L2_CID_FLASH_LED_MODE, V4L2_FLASH_LED_MODE_FLASH);
-        set_fl_contol_to_dev(V4L2_CID_FLASH_TIMEOUT, fl_timeout * 1000);
-        // TODO: should query intensity range before setting
-        /* set_fl_contol_to_dev(V4L2_CID_FLASH_INTENSITY, fl_intensity); */
-        set_fl_contol_to_dev(fl_on ? V4L2_CID_FLASH_STROBE : V4L2_CID_FLASH_STROBE_STOP, 0);
+        for (i = 0; i < _active_fl_num; i++) {
+            fl_device = _fl_device[i];
+            set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_LED_MODE, V4L2_FLASH_LED_MODE_FLASH);
+            set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_TIMEOUT, fl_timeout * 1000);
+            if (_v4l_flash_info[i].flash_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_STEP] ==
+                _v4l_flash_info[i].flash_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX]) {
+                set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_INTENSITY,
+                                     _v4l_flash_info[i].flash_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX]);
+            } else {
+                set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_INTENSITY, fl_intensity[i]);
+            }
+            set_fl_contol_to_dev(fl_device,
+                                 fl_on ? V4L2_CID_FLASH_STROBE : V4L2_CID_FLASH_STROBE_STOP, 0);
+        }
     } else if (fl_v4l_mode == V4L2_FLASH_LED_MODE_TORCH) {
-        // TODO: should query intensity range before setting
-        /* set_fl_contol_to_dev(V4L2_CID_FLASH_TORCH_INTENSITY, fl_intensity); */
-        set_fl_contol_to_dev(V4L2_CID_FLASH_LED_MODE, V4L2_FLASH_LED_MODE_TORCH);
+        for (i = 0; i < _active_fl_num; i++) {
+            fl_device = _fl_device[i];
+            if (_v4l_flash_info[i].torch_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_STEP] ==
+                _v4l_flash_info[i].torch_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX]) {
+                set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_INTENSITY,
+                                     _v4l_flash_info[i].torch_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX]);
+            } else {
+                set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_TORCH_INTENSITY, fl_intensity[i]);
+            }
+            set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_LED_MODE, V4L2_FLASH_LED_MODE_TORCH);
+        }
     } else {
         XCAM_LOG_ERROR ("|||set_3a_fl error fl mode %d", fl_mode);
         return XCAM_RETURN_ERROR_PARAM;
