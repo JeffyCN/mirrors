@@ -1334,8 +1334,8 @@ RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *
                 LOGE("wrong usecase %d", cur_usecase);
             }
         }
-        LOGD("usecase %d -> %d, frameUseCase %d, new_aestate %d",
-             cur_usecase, new_usecase, frameUseCase, new_aestate);
+        LOGD("stats id %d, usecase %d -> %d, frameUseCase %d, new_aestate %d",
+             _isp_stats.frame_id, cur_usecase, new_usecase, frameUseCase, new_aestate);
         _ia_dcfg.uc = new_usecase;
     }
     _isp10_engine->getSensorModedata(sensor_mode,  &_ia_dcfg.sensor_mode);
@@ -1422,6 +1422,7 @@ RKiqCompositor::set_effect_ispparams (struct rkisp_parameters& isp_params)
     _ia_stat.effct_awb_gains.fGreenR = isp_params.awb_algo_results.fGreenRGain;
     _ia_stat.effct_awb_gains.fGreenB = isp_params.awb_algo_results.fGreenBGain;
     _ia_stat.effct_awb_gains.fBlue = isp_params.awb_algo_results.fBlueGain;
+    _ia_stat.effect_DomIlluIdx = isp_params.awb_algo_results.DomIlluIdx;
     memcpy(&_ia_stat.effect_CtMatrix, isp_params.awb_algo_results.fCtCoeff,
            sizeof(isp_params.awb_algo_results.fCtCoeff));
     memcpy(&_ia_stat.effect_CtOffset, isp_params.awb_algo_results.fCtOffset,
@@ -1640,6 +1641,8 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
         _ia_results.awb.GainsAlgo.fGreenB;
     isp_3a_result.awb_algo_results.fBlueGain =
         _ia_results.awb.GainsAlgo.fBlue;
+    isp_3a_result.awb_algo_results.DomIlluIdx =
+        _ia_results.awb.DomIlluIdx;
     memcpy(isp_3a_result.awb_algo_results.fCtCoeff,
            _ia_results.awb.CtMatrixAlgo.fCoeff,
            sizeof(_ia_results.awb.CtMatrixAlgo.fCoeff));

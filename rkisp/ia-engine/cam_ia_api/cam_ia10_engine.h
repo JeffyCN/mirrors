@@ -153,7 +153,12 @@ class CamIA10Engine: public CamIA10EngineItf {
   int mIspVer;
   int mXMLIspOutputType;
   CamOTPGlobal_t* mOTPInfo;
-  bool mLock3AForStillCap;
+  int mLock3AForStillCap;
+  // ae algo converged result may be different from the
+  // reported to upper layer, for flash still capture usecase
+  // we should report ae converged statet after both ae and awb
+  // converged
+  bool mAeAlgoConvRst;
 };
 
 #endif

@@ -90,7 +90,7 @@ private:
     XCamReturn set_3a_config_sync ();
     XCamReturn apply_otp_config (struct rkisp_parameters *isp_cfg);
 #define ISP_CONTRLLER_FLASH_MAX_NUM 2
-    XCamReturn set_3a_fl (int fl_mode, int fl_intensity[ISP_CONTRLLER_FLASH_MAX_NUM],
+    XCamReturn set_3a_fl (int fl_mode, float fl_intensity[ISP_CONTRLLER_FLASH_MAX_NUM],
                           int fl_timeout, int fl_on);
     int get_flash_info ();
 

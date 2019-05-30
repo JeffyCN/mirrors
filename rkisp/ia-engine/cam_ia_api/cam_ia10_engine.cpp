@@ -93,7 +93,8 @@ RESULT CamIA10Engine::init() {
         lastAecResult.RegHdrGains[i]=-1;
         lastAecResult.RegHdrTime[i]=-1;
     }
-    mLock3AForStillCap = false;
+    mLock3AForStillCap = 0;
+    mAeAlgoConvRst = false;
 
     return 0;
 }
@@ -433,14 +434,13 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
          aecCfg.PixelClockFreqMHZ);
 
     CamIA10_frame_status frame_status = mStats.frame_status;
-	HAL_FLASH_MODE flash_mode = mStats.flash_status.flash_mode;
+    HAL_FLASH_MODE flash_mode = mStats.flash_status.flash_mode;
  	AecFlashMode_t flashModeState = lastAecResult.flashModeState;
-	bool require_flash = lastAecResult.require_flash;
-	
+    bool require_flash = lastAecResult.require_flash;
     if(dCfg.uc == UC_PREVIEW || dCfg.uc == UC_RECORDING ){
         aecCfg.flashModeSetting = AEC_FLASH_FLASHOFF;
     }else if ((dCfg.uc == UC_PRE_CAPTRUE
-    	&& require_flash == true
+        && (require_flash == true || dCfg.flash_mode == HAL_FLASH_ON)
         && flashModeState == AEC_FLASH_FLASHOFF)
         || (dCfg.uc == UC_PRE_CAPTRUE && flashModeState == AEC_FLASH_PREFLASH)) {
         aecCfg.flashModeSetting = AEC_FLASH_PREFLASH;
@@ -448,13 +448,13 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
         || (dCfg.uc == UC_CAPTURE && flashModeState == AEC_FLASH_MAINFLASH)) {
         aecCfg.flashModeSetting = AEC_FLASH_MAINFLASH;
     }else{
-		aecCfg.flashModeSetting = AEC_FLASH_FLASHOFF;
+        aecCfg.flashModeSetting = AEC_FLASH_FLASHOFF;
     }
 
-	LOGD("%s(%d):uc:%d last flast:%d now:%d flash_mode:%d\n",
-		__FUNCTION__, __LINE__,
-		dCfg.uc, flashModeState, aecCfg.flashModeSetting, flash_mode);
-	
+    LOGD("%s (%d):uc:%d last flast:%d now:%d flash_mode:%d\n",
+        __FUNCTION__, __LINE__,
+        dCfg.uc, flashModeState, aecCfg.flashModeSetting, flash_mode);
+
     if ((set->win.left_hoff != shd->win.left_hoff) ||
         (set->win.top_voff != shd->win.top_voff) ||
         (set->win.right_width != shd->win.right_width) ||
@@ -659,7 +659,6 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
         awbcfg.awbWin.v_offs = 0;
         awbcfg.awbWin.h_size = cfg->sensor_mode.isp_input_width;
         awbcfg.awbWin.v_size = cfg->sensor_mode.isp_input_height;
-
         if (awbDesc) {
             result = awbDesc->update_awb_params(awbContext, &awbcfg);
         } //result = AwbConfigure(hAwb, &awbcfg);
@@ -706,7 +705,8 @@ RESULT CamIA10Engine::updateAwbConfig(struct CamIA10_DyCfg* cfg) {
         }
         LOGD("%s: update awb win[%dx%d]", __FUNCTION__, awbcfg.awbWin.h_size, awbcfg.awbWin.v_size);
         //mode change ?
-        if (cfg->awb_cfg.mode != dCfgShd.awb_cfg.mode) {
+
+       if (cfg->awb_cfg.mode != dCfgShd.awb_cfg.mode){
             LOGI("@%s %d: AwbMode changed from %d to %d", __FUNCTION__, __LINE__, dCfgShd.awb_cfg.mode, cfg->awb_cfg.mode);
             memset(&lastAwbResult, 0x00, sizeof(lastAwbResult));
             if (cfg->awb_cfg.mode != HAL_WB_AUTO ||
@@ -934,8 +934,8 @@ RESULT CamIA10Engine::setStatistics(struct CamIA10_Stats* stats) {
 RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
 {
     RESULT ret = RET_SUCCESS;
-	mStats.aec.frame_status = (AecFrameStatus_t)(mStats.frame_status);
-	
+    mStats.aec.frame_status = (AecFrameStatus_t)(mStats.frame_status);
+
     if (!first) {
         int lastTime = lastAecResult.regIntegrationTime;
         int lastGain = lastAecResult.regGain;
@@ -967,7 +967,8 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
                 mStats.aec.sensor_metadata.regGain =
                   dCfg.sensor_mode.gain;
                 aecDesc->set_stats(aecContext, &mStats.aec);
-                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE) && !mLock3AForStillCap)
+                if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE) &&
+                    !(mLock3AForStillCap & HAL_3A_LOCKS_EXPOSURE))
                     aecDesc->analyze_ae(aecContext, param);
             }
         }else{ //add check exposure value between AE & 1608 Embedded data
@@ -996,7 +997,8 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
                 aecParams = param;
                 if (aecDesc != NULL) {
                     aecDesc->set_stats(aecContext, &mStats.aec);
-                    if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE) && !mLock3AForStillCap)
+                    if (!(dCfg.aaa_locks & HAL_3A_LOCKS_EXPOSURE) &&
+                        !(mLock3AForStillCap & HAL_3A_LOCKS_EXPOSURE))
                         aecDesc->analyze_ae(aecContext, param);
                 }
             }
@@ -1009,6 +1011,7 @@ RESULT CamIA10Engine::runAe(XCamAeParam *param, AecResult_t* result, bool first)
         }
     }
     getAECResults(result);
+
 
     return 0;
 }
@@ -1077,17 +1080,27 @@ RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, 
     MeasResult.Gains = mStats.effct_awb_gains;
     MeasResult.CtMatrix = mStats.effect_CtMatrix;
     MeasResult.CtOffset = mStats.effect_CtOffset;
+//for flash
+    MeasResult.meanLuma = lastAecResult.MeanLuma;
+    MeasResult.aeConverge = mAeAlgoConvRst;
+    MeasResult.DominateIlluProfileIdx =  mStats.effect_DomIlluIdx;
+    MeasResult.flashModeSetting = (AwbFlashState_t)aecCfg.flashModeSetting;
+    MeasResult.frame_status = (AwbFrameStatus_t)mStats.frame_status;
 
     if (!first && !(mStats.meas_type & CAMIA10_AWB_MEAS_MASK))
         return RET_FAILURE;
 
     dumpAwb();
 
+    LOGD("%s:(%d) cxf222 lock:%d first:%d 3alocks:%d\n",
+        __FUNCTION__, __LINE__, mLock3AForStillCap, first, dCfg.aaa_locks);
+
     if (awbDesc) {
         ret = awbDesc->set_stats(awbContext, first ? NULL : &MeasResult);
         if (first)
             awbDesc->update_awb_params(awbContext, &awbcfg);
-        if (!((dCfg.aaa_locks & HAL_3A_LOCKS_WB) && !mLock3AForStillCap) || first)
+        if ((!(dCfg.aaa_locks & HAL_3A_LOCKS_WB) &&
+             !(mLock3AForStillCap & HAL_3A_LOCKS_WB)) || first)
             ret = awbDesc->analyze_awb(awbContext, param);
         ret = awbDesc->get_results(awbContext, &retOuput);
     }
@@ -1160,7 +1173,7 @@ RESULT CamIA10Engine::runAf(XCamAfParam *param, XCam3aResultFocus* result, bool 
                 param.focus_rect[2].right_width = set->win_c.right_width;
                 param.focus_rect[2].bottom_height = set->win_c.bottom_height;
 
-				param.focus_lock = set->af_lock;
+                param.focus_lock = set->af_lock;
                 param.trigger_new_search = set->oneshot_trigger;
                 ret = afDesc->set_stats(afContext, &mStats.af);
 
@@ -1294,19 +1307,19 @@ RESULT CamIA10Engine::initAF() {
     memcpy(&afcCfg.WindowB, &pAfGlobal->WindowB, sizeof(afcCfg.WindowB));
     memcpy(&afcCfg.WindowC, &pAfGlobal->WindowC, sizeof(afcCfg.WindowC));
 
-	afcCfg.ContrastAf.TrigThers = pAfGlobal->contrast_af.TrigThers;
-	afcCfg.ContrastAf.TrigValue = pAfGlobal->contrast_af.TrigValue;
-	afcCfg.ContrastAf.TrigFrames = pAfGlobal->contrast_af.TrigFrames;
-	afcCfg.ContrastAf.TrigAntiFlash = pAfGlobal->contrast_af.TrigAntiFlash ? BOOL_TRUE : BOOL_FALSE;
+    afcCfg.ContrastAf.TrigThers = pAfGlobal->contrast_af.TrigThers;
+    afcCfg.ContrastAf.TrigValue = pAfGlobal->contrast_af.TrigValue;
+    afcCfg.ContrastAf.TrigFrames = pAfGlobal->contrast_af.TrigFrames;
+    afcCfg.ContrastAf.TrigAntiFlash = pAfGlobal->contrast_af.TrigAntiFlash ? BOOL_TRUE : BOOL_FALSE;
 
-	afcCfg.ContrastAf.StableThers = pAfGlobal->contrast_af.StableThers;
-	afcCfg.ContrastAf.StableValue = pAfGlobal->contrast_af.StableValue;
-	afcCfg.ContrastAf.StableFrames = pAfGlobal->contrast_af.StableFrames;
-	afcCfg.ContrastAf.StableTime = pAfGlobal->contrast_af.StableTime;
+    afcCfg.ContrastAf.StableThers = pAfGlobal->contrast_af.StableThers;
+    afcCfg.ContrastAf.StableValue = pAfGlobal->contrast_af.StableValue;
+    afcCfg.ContrastAf.StableFrames = pAfGlobal->contrast_af.StableFrames;
+    afcCfg.ContrastAf.StableTime = pAfGlobal->contrast_af.StableTime;
 
-	afcCfg.ContrastAf.OutFocusValue = pAfGlobal->contrast_af.OutFocusValue;
-	afcCfg.ContrastAf.OutFocusLuma = pAfGlobal->contrast_af.OutFocusLuma;
-	afcCfg.ContrastAf.OutFocusPos = pAfGlobal->contrast_af.OutFocusPos;
+    afcCfg.ContrastAf.OutFocusValue = pAfGlobal->contrast_af.OutFocusValue;
+    afcCfg.ContrastAf.OutFocusLuma = pAfGlobal->contrast_af.OutFocusLuma;
+    afcCfg.ContrastAf.OutFocusPos = pAfGlobal->contrast_af.OutFocusPos;
 
     afcCfg.ContrastAf.FullSteps = pAfGlobal->contrast_af.FullSteps;
     afcCfg.ContrastAf.FullRangeTbl = pAfGlobal->contrast_af.FullRangeTbl;
@@ -1315,43 +1328,43 @@ RESULT CamIA10Engine::initAF() {
     afcCfg.ContrastAf.AdaptRangeTbl = pAfGlobal->contrast_af.AdaptRangeTbl;
     afcCfg.ContrastAf.AdaptiveDir = AfSearchDir_t(pAfGlobal->contrast_af.AdaptiveDir);
 
-	afcCfg.ContrastAf.FinishThersMain = pAfGlobal->contrast_af.FinishThersMain;
-	afcCfg.ContrastAf.FinishThersSub = pAfGlobal->contrast_af.FinishThersSub;
-	afcCfg.ContrastAf.FinishThersOffset = pAfGlobal->contrast_af.FinishThersOffset;
+    afcCfg.ContrastAf.FinishThersMain = pAfGlobal->contrast_af.FinishThersMain;
+    afcCfg.ContrastAf.FinishThersSub = pAfGlobal->contrast_af.FinishThersSub;
+    afcCfg.ContrastAf.FinishThersOffset = pAfGlobal->contrast_af.FinishThersOffset;
 
 
-	LOGD("Afss: %d ", afcCfg.Afss);
-	LOGD("AfType.contrast_af: %d laser_af: %d pdaf: %d ",
-		afcCfg.AfType.contrast_af,
-		afcCfg.AfType.laser_af,
-		afcCfg.AfType.pdaf);
-	LOGD("Window_Num: %d WindowA:offs:%d %d size:%dx%d ",
-		afcCfg.Window_Num,
-		afcCfg.WindowA.h_offs,
-		afcCfg.WindowA.v_offs,
-		afcCfg.WindowA.h_size,
-		afcCfg.WindowA.v_size);
-	LOGD("TrigThers:%f TrigValue:%d TrigFrames:%d TrigAntiFlash:%d",
-		afcCfg.ContrastAf.TrigThers,
-		afcCfg.ContrastAf.TrigValue,
-		afcCfg.ContrastAf.TrigFrames,
-		afcCfg.ContrastAf.TrigAntiFlash);
-	LOGD("StableThers:%f StableValue:%d StableFrames:%d StableTime:%d",
-		afcCfg.ContrastAf.StableThers,
-		afcCfg.ContrastAf.StableValue,
-		afcCfg.ContrastAf.StableFrames,
-		afcCfg.ContrastAf.StableTime);
-	LOGD("OutFocusValue:%d OutFocusLuma:%f OutFocusPos:%d",
-		afcCfg.ContrastAf.OutFocusValue,
-		afcCfg.ContrastAf.OutFocusLuma,
-		afcCfg.ContrastAf.OutFocusPos);
-	LOGD("FullDir:%d AdaptiveDir:%d ",
-		afcCfg.ContrastAf.FullDir,
-		afcCfg.ContrastAf.AdaptiveDir);
-	LOGD("FinishThersMain:%f FinishThersSub:%f FinishThersOffset:%d",
-		afcCfg.ContrastAf.FinishThersMain,
-		afcCfg.ContrastAf.FinishThersSub,
-		afcCfg.ContrastAf.FinishThersOffset);
+    LOGD("Afss: %d ", afcCfg.Afss);
+    LOGD("AfType.contrast_af: %d laser_af: %d pdaf: %d ",
+        afcCfg.AfType.contrast_af,
+        afcCfg.AfType.laser_af,
+        afcCfg.AfType.pdaf);
+    LOGD("Window_Num: %d WindowA:offs:%d %d size:%dx%d ",
+        afcCfg.Window_Num,
+        afcCfg.WindowA.h_offs,
+        afcCfg.WindowA.v_offs,
+        afcCfg.WindowA.h_size,
+        afcCfg.WindowA.v_size);
+    LOGD("TrigThers:%f TrigValue:%d TrigFrames:%d TrigAntiFlash:%d",
+        afcCfg.ContrastAf.TrigThers,
+        afcCfg.ContrastAf.TrigValue,
+        afcCfg.ContrastAf.TrigFrames,
+        afcCfg.ContrastAf.TrigAntiFlash);
+    LOGD("StableThers:%f StableValue:%d StableFrames:%d StableTime:%d",
+        afcCfg.ContrastAf.StableThers,
+        afcCfg.ContrastAf.StableValue,
+        afcCfg.ContrastAf.StableFrames,
+        afcCfg.ContrastAf.StableTime);
+    LOGD("OutFocusValue:%d OutFocusLuma:%f OutFocusPos:%d",
+        afcCfg.ContrastAf.OutFocusValue,
+        afcCfg.ContrastAf.OutFocusLuma,
+        afcCfg.ContrastAf.OutFocusPos);
+    LOGD("FullDir:%d AdaptiveDir:%d ",
+        afcCfg.ContrastAf.FullDir,
+        afcCfg.ContrastAf.AdaptiveDir);
+    LOGD("FinishThersMain:%f FinishThersSub:%f FinishThersOffset:%d",
+        afcCfg.ContrastAf.FinishThersMain,
+        afcCfg.ContrastAf.FinishThersSub,
+        afcCfg.ContrastAf.FinishThersOffset);
 #else
     dCfg.afc_cfg.mode = HAL_AF_MODE_AUTO;
     dCfg.afc_cfg.type.contrast_af = true;
@@ -1674,35 +1687,35 @@ RESULT CamIA10Engine::initAEC() {
     aecCfg.StepSize = 0;
     aecCfg.HistMode = (CamerIcIspHistMode_t)(pAecGlobal->CamerIcIspHistMode);
 
-	//oyyf
-	if( mLightMode <= LIGHT_MODE_MIN || mLightMode >= LIGHT_MODE_MAX){
-  		mLightMode= LIGHT_MODE_DAY;
-  	}
+    //oyyf
+    if( mLightMode <= LIGHT_MODE_MIN || mLightMode >= LIGHT_MODE_MAX){
+        mLightMode= LIGHT_MODE_DAY;
+    }
 
 
-	int no_DySetpoint = 0;
-	ret = CamCalibDbGetNoOfDySetpoint(hCamCalibDb, pAecGlobal, &no_DySetpoint);
-	if (ret != RET_SUCCESS) {
-		ALOGD("%s: Getting number of DySetpoint profile from calib database failed (%d)\n",
-			 __FUNCTION__, ret);
-		return (ret);
-	}
+    int no_DySetpoint = 0;
+    ret = CamCalibDbGetNoOfDySetpoint(hCamCalibDb, pAecGlobal, &no_DySetpoint);
+    if (ret != RET_SUCCESS) {
+        ALOGD("%s: Getting number of DySetpoint profile from calib database failed (%d)\n",
+             __FUNCTION__, ret);
+        return (ret);
+    }
 
-	if(no_DySetpoint){
-		for(int i=0; i<no_DySetpoint && i<LIGHT_MODE_MAX ; i++){
-		   CamCalibAecDynamicSetpoint_t* pDySetpointProfile = NULL;
-		   ret = CamCalibDbGetDySetpointByIdx(hCamCalibDb, pAecGlobal, i, &pDySetpointProfile);
-		   if (ret != RET_SUCCESS) {
-			 ALOGD("%s: Getting idx(%d) DySetpoint profile from calib database failed (%d)\n",
-				   __FUNCTION__, i, ret);
-			 return (ret);
-		   }
-		   DCT_ASSERT(NULL != pDySetpointProfile);
-		   aecCfg.pDySetpoint[i] = pDySetpointProfile;
-		}
-	}
+    if(no_DySetpoint){
+        for(int i=0; i<no_DySetpoint && i<LIGHT_MODE_MAX ; i++){
+           CamCalibAecDynamicSetpoint_t* pDySetpointProfile = NULL;
+           ret = CamCalibDbGetDySetpointByIdx(hCamCalibDb, pAecGlobal, i, &pDySetpointProfile);
+           if (ret != RET_SUCCESS) {
+             ALOGD("%s: Getting idx(%d) DySetpoint profile from calib database failed (%d)\n",
+                   __FUNCTION__, i, ret);
+             return (ret);
+           }
+           DCT_ASSERT(NULL != pDySetpointProfile);
+           aecCfg.pDySetpoint[i] = pDySetpointProfile;
+        }
+    }
 
-	int no_ExpSeparate = 0;
+    int no_ExpSeparate = 0;
     ret = CamCalibDbGetNoOfExpSeparate(hCamCalibDb, pAecGlobal, &no_ExpSeparate);
     if (ret != RET_SUCCESS) {
       ALOGD("%s: Getting number of DySetpoint profile from calib database failed (%d)\n",
@@ -1723,10 +1736,10 @@ RESULT CamIA10Engine::initAEC() {
     		aecCfg.pExpSeparate[i] = pExpSeparateProfile;
     	}
 
-		if(mLightMode > no_ExpSeparate - 1)
-			mLightMode = LIGHT_MODE_DAY;
+        if(mLightMode > no_ExpSeparate - 1)
+            mLightMode = LIGHT_MODE_DAY;
 
-		memcpy(aecCfg.EcmTimeDot.fCoeff, aecCfg.pExpSeparate[mLightMode]->ecmTimeDot.fCoeff, sizeof(aecCfg.EcmTimeDot.fCoeff));
+        memcpy(aecCfg.EcmTimeDot.fCoeff, aecCfg.pExpSeparate[mLightMode]->ecmTimeDot.fCoeff, sizeof(aecCfg.EcmTimeDot.fCoeff));
     	memcpy(aecCfg.EcmGainDot.fCoeff, aecCfg.pExpSeparate[mLightMode]->ecmGainDot.fCoeff, sizeof(aecCfg.EcmGainDot.fCoeff));
     	memcpy(aecCfg.EcmLTimeDot.fCoeff, aecCfg.pExpSeparate[mLightMode]->ecmLTimeDot.fCoeff, sizeof(aecCfg.EcmLTimeDot.fCoeff));//zlj
     	memcpy(aecCfg.EcmLGainDot.fCoeff, aecCfg.pExpSeparate[mLightMode]->ecmLGainDot.fCoeff, sizeof(aecCfg.EcmLGainDot.fCoeff));//zlj
@@ -1736,7 +1749,7 @@ RESULT CamIA10Engine::initAEC() {
 
     aecCfg.LightMode = mLightMode;
 
-	memcpy(&aecCfg.flash_config, &pAecGlobal->flashCtrl, sizeof(pAecGlobal->flashCtrl));
+    memcpy(&aecCfg.flash_config, &pAecGlobal->flashCtrl, sizeof(pAecGlobal->flashCtrl));
     if (aecDesc != NULL) {
         XCamAeParam aeParam;
         aeParam.mode  = XCAM_AE_MODE_AUTO;
@@ -1753,7 +1766,7 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
     int lastTime = lastAecResult.regIntegrationTime;
     int lastGain = lastAecResult.regGain;
 
-	mStats.aec.frame_status = (AecFrameStatus_t)mStats.frame_status;
+mStats.aec.frame_status = (AecFrameStatus_t)mStats.frame_status;
 #if 0
     LOGD("   ");
     if (!mInitDynamic) {
@@ -1961,11 +1974,11 @@ RESULT CamIA10Engine::runAEC(HAL_AecCfg* config) {
         }
 
     } else {
-    
+
         if ((lastTime == -1 && lastGain == -1)
             || (lastTime == dCfg.sensor_mode.exp_time && lastGain == dCfg.sensor_mode.gain)) {
             if (aecDesc != NULL) {
-                aecDesc->set_stats(aecContext, &mStats.aec);		
+                aecDesc->set_stats(aecContext, &mStats.aec);
 
                 XCamAeParam aeParam;
                 aeParam.mode  = XCAM_AE_MODE_AUTO;
@@ -2059,20 +2072,28 @@ RESULT CamIA10Engine::getAECResults(AecResult_t* result) {
 
     // make sure well exposed frame, runManIspForFlash function will
     // control flash on/off according the converge state
-    if ((dCfg.uc == UC_PRE_CAPTRUE)  
-		&& result->flashModeState != AEC_FLASH_PREFLASH
-		&& result->require_flash == true){
+    mAeAlgoConvRst = result->converged;
+    if (/*((dCfg.uc == UC_PRE_CAPTRUE)
+        && result->flashModeState != AEC_FLASH_PREFLASH
+        && result->require_flash == true)
+        ||*/(result->flashModeState == AEC_FLASH_PREFLASH
+        && curAwbResult.converged == false)){
         result->converged = false;
     }
 
-	lastAecResult.flashModeState = result->flashModeState;
-	lastAecResult.require_flash = result->require_flash;
-	
-	LOGD("%s(%d): aec converge:%d uc:%d flash:%d re_flash:%d\n",
-		__FUNCTION__, __LINE__,
-		result->converged, dCfg.uc, 
-		result->flashModeState, 
-		result->require_flash);
+    lastAecResult.flashModeState = result->flashModeState;
+    lastAecResult.require_flash = result->require_flash;
+    lastAecResult.converged = result->converged;
+    lastAecResult.MeanLuma =result->MeanLuma;
+    LOGD("%s(%d): reported aec converge:%d, mAeAlgoConvRst:%d,"
+         "awb converge:%d, uc:%d flash:%d re_flash:%d\n",
+        __FUNCTION__, __LINE__,
+        result->converged,
+        mAeAlgoConvRst,
+        curAwbResult.converged,
+        dCfg.uc,
+        result->flashModeState,
+        result->require_flash);
     //LOGD("set offset: %d-%d, size: %d-%d", set->win.left_hoff, set->win.top_voff, set->win.right_width, set->win.bottom_height);
     //LOGD("ret offset: %d-%d, size: %d-%d", result->meas_win.h_offs, result->meas_win.v_offs, result->meas_win.h_size, result->meas_win.v_size);
     //LOGD("sensor_mode size: %d-%d", dCfg.sensor_mode.isp_input_width, dCfg.sensor_mode.isp_input_height);
@@ -2113,6 +2134,7 @@ void CamIA10Engine::convertAwbResult2Cameric
     awbCamicResult->DoorType    =  awbResult->DoorType;
     awbCamicResult->converged =  awbResult->converged;
     awbCamicResult->GainsAlgo =  awbResult->WbGains;
+    awbCamicResult->DomIlluIdx =  awbResult->DominateIlluProfileIdx;
     memcpy(awbCamicResult->CtMatrixAlgo.fCoeff, awbResult->CcMatrix.fCoeff,
            sizeof(awbResult->CcMatrix.fCoeff));
     // order: r,g,b
@@ -2137,6 +2159,7 @@ void CamIA10Engine::updateAwbResults
     update->GainsAlgo = newCfg->GainsAlgo;
     update->CtMatrixAlgo = newCfg->CtMatrixAlgo;
     update->CtOffsetAlgo = newCfg->CtOffsetAlgo;
+    update->DomIlluIdx = newCfg->DomIlluIdx;
 
     if (newCfg->actives & AWB_RECONFIG_GAINS) {
         if ((newCfg->awbGains.Blue != old->awbGains.Blue)
@@ -2221,6 +2244,7 @@ void CamIA10Engine::updateAwbResults
 
 RESULT CamIA10Engine::runAWB(HAL_AwbCfg* awbHalCfg) {
     RESULT result = RET_SUCCESS;
+
     //convert statics to awb algorithm
     AwbRunningInputParams_t MeasResult;
     AwbRunningOutputResult_t retOuput;
@@ -2408,6 +2432,14 @@ RESULT CamIA10Engine::runAWB(HAL_AwbCfg* awbHalCfg) {
         MeasResult.HistBins[i] = mStats.aec.hist_bins[i];
     MeasResult.fGain = lastAecResult.analog_gain_code_global;
     MeasResult.fIntegrationTime = lastAecResult.coarse_integration_time;
+//for flash
+    MeasResult.meanLuma = lastAecResult.MeanLuma;
+    MeasResult.aeConverge = lastAecResult.converged;
+    MeasResult.flashModeSetting = (AwbFlashState_t)aecCfg.flashModeSetting;
+    MeasResult.frame_status = (AwbFrameStatus_t)mStats.frame_status;
+    LOGD("%s: %d  flashModeSetting(%d) aeConverge(%d) meanLuma(%f) frame_status(%f)\n",__FUNCTION__, __LINE__,
+        MeasResult.flashModeSetting,MeasResult.aeConverge,MeasResult.meanLuma,MeasResult.frame_status);
+
     if (awbDesc) {
         XCamAwbParam param;
         param.mode = XCAM_AWB_MODE_AUTO;
@@ -2563,7 +2595,7 @@ RESULT CamIA10Engine::runAF(HAL_AfcCfg* config) {
                 param.focus_rect[2].right_width = set->win_c.right_width;
                 param.focus_rect[2].bottom_height = set->win_c.bottom_height;
 
-				param.focus_lock = set->af_lock;
+                param.focus_lock = set->af_lock;
                 param.trigger_new_search = set->oneshot_trigger;
                 result = afDesc->set_stats(afContext, &mStats.af);
                 result = afDesc->analyze_af(afContext, &param);
@@ -2794,18 +2826,18 @@ RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
     CamIA10_flash_setting_t* flash_setting = &result->flash;
     /* CamIA10_flash_setting_t* stats_flash = &mStats.flash_status; */
     CamIA10_frame_status frame_status = mStats.frame_status;
-    bool aec_converged = result->aec.converged;
-
+    bool aec_converged = mAeAlgoConvRst;
+    bool awb_converged = result->awb.converged;
     result->uc = dCfg.uc;
 
     if (dCfg.flash_mode == HAL_FLASH_TORCH) {
         // check if usecase is correct, shouldn't be
         // UC_PRE_CAPTRUE or UC_CAPTURE
-        mLock3AForStillCap = false;
+        mLock3AForStillCap = 0;
         flash_setting->flash_mode = HAL_FLASH_TORCH;
         // TODO: set torch power
         for (int i = 0; i < CAMIA10_FLASH_NUM_MAX; i++)
-          flash_setting->flash_power[i] = 10000;
+          flash_setting->flash_power[i] = result->aec.preflash_power_pct;
     } else {
         if (result->aec.flashModeState == AEC_FLASH_PREFLASH ||
             result->aec.flashModeState == AEC_FLASH_MAINFLASH ) {
@@ -2815,26 +2847,30 @@ RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
           case UC_PRE_CAPTRUE:
               if ((aec_converged &&
                   frame_status == CAMIA10_FRAME_STATUS_FLASH_EXPOSED) ||
-                  mLock3AForStillCap) {
+                  (mLock3AForStillCap & HAL_3A_LOCKS_EXPOSURE)) {
                   // if there is no real main flash, keep preflash on now
-                  if (has_main_flash)
+                  if (has_main_flash && awb_converged)
                       flash_setting->flash_mode = HAL_FLASH_OFF;
                   // lock 3a after preflash state converged, and
                   // updateAeConfig will change aec mode to mainflash if needed
-                  mLock3AForStillCap = true;
+                  mLock3AForStillCap |= HAL_3A_LOCKS_EXPOSURE;
+                  if (awb_converged)
+                      mLock3AForStillCap |= HAL_3A_LOCKS_WB;
               } else {
                   flash_setting->flash_mode = HAL_FLASH_PRE;
                   // TODO: set power
                   for (int i = 0; i < CAMIA10_FLASH_NUM_MAX; i++)
-                      flash_setting->flash_power[i] = 10000;
+                      flash_setting->flash_power[i] = result->aec.preflash_power_pct;
               }
               break;
           case UC_CAPTURE:
-              mLock3AForStillCap = false;
+              mLock3AForStillCap = 0;
               if (has_main_flash) {
                   flash_setting->flash_mode = HAL_FLASH_MAIN;
                   flash_setting->flash_timeout_ms = CAMIA_DEFAULT_FLASH_TIMEOUT_MS;
                   flash_setting->strobe = true;
+                  for (int i = 0; i < CAMIA10_FLASH_NUM_MAX; i++)
+                      flash_setting->flash_power[i] = result->aec.mainflash_power_pct;
               } else {
                   flash_setting->flash_mode = HAL_FLASH_PRE;
               }
@@ -2846,7 +2882,7 @@ RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
               break;
           }
         } else {
-            mLock3AForStillCap = false;
+            mLock3AForStillCap = 0;
             if ((dCfg.flash_mode == HAL_FLASH_ON) && (result->uc == UC_CAPTURE)) {
                 if (has_main_flash) {
                   flash_setting->flash_mode = HAL_FLASH_MAIN;
@@ -2857,7 +2893,7 @@ RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
                 }
               // TODO: set power
               for (int i = 0; i < CAMIA10_FLASH_NUM_MAX; i++)
-                  flash_setting->flash_power[i] = 10000;
+                  flash_setting->flash_power[i] = result->aec.preflash_power_pct;
             } else {
               flash_setting->strobe = false;
               flash_setting->flash_mode = HAL_FLASH_OFF;
@@ -2865,11 +2901,13 @@ RESULT CamIA10Engine::runManIspForFlash(struct CamIA10_Results* result) {
         }
     }
 
-    LOGD("usecase %d, frame_status %d, aec_converged %d, mLock3AForStillCap %d,"
-         "cfg flash_mode %d, convert flash_mode %d, strobe %d",
-         result->uc, frame_status, aec_converged, mLock3AForStillCap,
+    LOGD(" usecase %d, frame_status %d, reported aec_converge %d,awb_converged %d, mLock3AForStillCap %d,"
+         "cfg flash_mode %d, convert flash_mode %d, strobe %d, pFalsh_pct:%f mFlash_pct:%f",
+         result->uc, frame_status, aec_converged, awb_converged,mLock3AForStillCap,
          dCfg.flash_mode, flash_setting->flash_mode,
-         flash_setting->strobe);
+         flash_setting->strobe,
+         result->aec.preflash_power_pct,
+         result->aec.mainflash_power_pct);
 
     return ret;
 }
@@ -3202,8 +3240,8 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
 
     }
 
-	if (manCfg->updated_mask & HAL_ISP_DEMOSAICLP_MASK) {
-		ret = cam_ia10_isp_demosaicLp_config
+    if (manCfg->updated_mask & HAL_ISP_DEMOSAICLP_MASK) {
+        ret = cam_ia10_isp_demosaicLp_config
             (
              hCamCalibDb,
              manCfg->enabled[HAL_ISP_DEMOSAICLP_ID],
@@ -3212,13 +3250,13 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
              height,
              &(result->rkDemosaicLP)
             );
-		if (ret != RET_SUCCESS)
+        if (ret != RET_SUCCESS)
             ALOGE("%s:config demosaiclp failed !", __FUNCTION__);
-		result->active |= CAMIA10_DEMOSAICLP_MASK;
+        result->active |= CAMIA10_DEMOSAICLP_MASK;
     }
 
-	if (manCfg->updated_mask & HAL_ISP_RK_IESHARP_MASK) {
-		ret = cam_ia10_isp_rkIEsharp_config
+    if (manCfg->updated_mask & HAL_ISP_RK_IESHARP_MASK) {
+        ret = cam_ia10_isp_rkIEsharp_config
             (
              hCamCalibDb,
              manCfg->enabled[HAL_ISP_RKIESHARP_ID],
@@ -3227,9 +3265,9 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
              height,
              &(result->rkIEsharp)
             );
-		if (ret != RET_SUCCESS)
+        if (ret != RET_SUCCESS)
             ALOGE("%s:config demosaiclp failed !", __FUNCTION__);
-		result->active |= CAMIA10_RKIESHARP_MASK;
+        result->active |= CAMIA10_RKIESHARP_MASK;
     }
 
     runManIspForBW(result);

@@ -46,7 +46,7 @@ IspController::IspController ():
     _max_delay = EXPOSURE_GAIN_DELAY > EXPOSURE_TIME_DELAY ?
                     EXPOSURE_GAIN_DELAY : EXPOSURE_TIME_DELAY;
 
-    _exposure_queue = 
+    _exposure_queue =
         (struct rkisp_exposure *)xcam_malloc0(sizeof(struct rkisp_exposure) * _max_delay);
 
     XCAM_LOG_DEBUG ("IspController construction");
@@ -56,7 +56,7 @@ IspController::~IspController ()
 {
     XCAM_LOG_DEBUG ("~IspController destruction");
     free(_exposure_queue);
-    int power[2] = {0, 0};
+    float power[2] = {0.0f, 0.0f};
     set_3a_fl (RKISP_FLASH_MODE_OFF, power, 0, 0);
 }
 
@@ -366,7 +366,7 @@ IspController::get_flash_status (rkisp_flash_setting_t& flash_settings, int fram
             frame_id, flash_settings.effect_ts);
     }
 
-	return XCAM_RETURN_NO_ERROR;
+    return XCAM_RETURN_NO_ERROR;
 }
 
 int
@@ -420,7 +420,7 @@ IspController::get_flash_info ()
                        i, ctrl.minimum, ctrl.maximum);
     }
 
-	return XCAM_RETURN_NO_ERROR;
+    return XCAM_RETURN_NO_ERROR;
 }
 
 XCamReturn
@@ -520,7 +520,7 @@ IspController::get_sensor_mode_data (struct isp_supplemental_sensor_mode_data &s
     }
 #endif
 
-	return XCAM_RETURN_NO_ERROR;
+    return XCAM_RETURN_NO_ERROR;
 }
 
 XCamReturn
@@ -780,12 +780,13 @@ IspController::gen_full_isp_params(const struct rkisp1_isp_params_cfg *update_pa
     XCAM_ASSERT (full_params);
     int i = 0;
 
-	unsigned int module_en_update;
-	unsigned int module_ens;
-	unsigned int module_cfg_update;
+    unsigned int module_en_update;
+    unsigned int module_ens;
+    unsigned int module_cfg_update;
 
-	struct cifisp_isp_meas_cfg meas;
-	struct cifisp_isp_other_cfg others;
+    struct cifisp_isp_meas_cfg meas;
+    struct cifisp_isp_other_cfg others;
+
     for (; i <= CIFISP_RK_IESHARP_ID; i++)
         if (update_params->module_en_update & (1 << i)) {
             full_params->module_en_update |= 1 << i;
@@ -873,6 +874,7 @@ IspController::set_3a_config_sync ()
     struct rkisp_parameters* isp_cfg = NULL;
     rkisp_flash_setting_t* flash_settings = NULL;
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
+    static bool delay_flash_strobe = false;
 
     if (_effecting_ispparm_map.size() > 10)
         _effecting_ispparm_map.erase(_effecting_ispparm_map.begin());
@@ -883,6 +885,15 @@ IspController::set_3a_config_sync ()
         if (_frame_sequence >= 0) {
             _effecting_ispparm_map[_frame_sequence + 1] =
                 _effecting_ispparm_map[_frame_sequence];
+
+            if (delay_flash_strobe) {
+                rkisp_flash_setting_t* flash_settings = &_flash_settings;
+                delay_flash_strobe = false;
+                flash_settings->strobe = true;
+                set_3a_fl(flash_settings->flash_mode, flash_settings->power,
+                          flash_settings->timeout_ms, flash_settings->strobe);
+            }
+
             if (_frame_sequence > 0)
                 _effecting_ispparm_map[_frame_sequence].flash_settings =
                     _effecting_ispparm_map[_frame_sequence - 1].flash_settings;
@@ -950,8 +961,13 @@ IspController::set_3a_config_sync ()
         (old_flash_settings->power[0] != flash_settings->power[0]) ||
         (old_flash_settings->power[1] != flash_settings->power[1])
         ) {
-        set_3a_fl(flash_settings->flash_mode, flash_settings->power,
-                  flash_settings->timeout_ms, flash_settings->strobe);
+        if (_frame_sequence < 0 && flash_settings->strobe &&
+            !delay_flash_strobe) {
+            flash_settings->strobe = false;
+            delay_flash_strobe = true;
+        } else
+            set_3a_fl(flash_settings->flash_mode, flash_settings->power,
+                      flash_settings->timeout_ms, flash_settings->strobe);
     }
 
     _flash_settings = *flash_settings;
@@ -1310,7 +1326,7 @@ IspController::set_3a_focus (X3aIspFocusResult *res, bool first)
 }
 
 XCamReturn
-IspController::set_3a_fl (int fl_mode, int fl_intensity[],
+IspController::set_3a_fl (int fl_mode, float fl_intensity[],
                           int fl_timeout, int fl_on)
 {
     struct v4l2_control control;
@@ -1357,7 +1373,13 @@ IspController::set_3a_fl (int fl_mode, int fl_intensity[],
                 set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_INTENSITY,
                                      _v4l_flash_info[i].flash_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX]);
             } else {
-                set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_INTENSITY, fl_intensity[i]);
+                int flash_power =
+                        fl_intensity[i] * (_v4l_flash_info[i].flash_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX]);
+                set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_INTENSITY, flash_power);
+                XCAM_LOG_DEBUG("set flash: flash:%f max:%d set:%d\n",
+                               fl_intensity[i],
+                               _v4l_flash_info[i].flash_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX],
+                               flash_power);
             }
         }
 
@@ -1374,7 +1396,13 @@ IspController::set_3a_fl (int fl_mode, int fl_intensity[],
                 set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_INTENSITY,
                                      _v4l_flash_info[i].torch_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX]);
             } else {
-                set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_TORCH_INTENSITY, fl_intensity[i]);
+                int torch_power =
+                        fl_intensity[i] * (_v4l_flash_info[i].torch_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX]);
+                set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_TORCH_INTENSITY, torch_power);
+                XCAM_LOG_DEBUG("set flash: torch:%f max:%d set:%d\n",
+                               fl_intensity[i],
+                               _v4l_flash_info[i].torch_power_info[RKISP_V4L_FLASH_QUERY_TYPE_E_MAX],
+                               torch_power);
             }
             set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_LED_MODE, V4L2_FLASH_LED_MODE_TORCH);
         }
@@ -1402,16 +1430,16 @@ IspController::dump_isp_config(struct rkisp1_isp_params_cfg* isp_params,
         sizeof (struct rkisp1_isp_params_cfg),
         sizeof (struct cifisp_isp_meas_cfg),
         sizeof (struct cifisp_isp_other_cfg),
-        
+
         isp_params->module_ens,
         isp_params->module_en_update,
         isp_params->module_cfg_update,
-        
+
         isp_cfg->awb_gain_config.gain_red,
         isp_cfg->awb_gain_config.gain_blue,
         isp_cfg->awb_gain_config.gain_green_b,
         isp_cfg->awb_gain_config.gain_green_r,
-        
+
         isp_params->others.ctk_config.coeff0,
         isp_params->others.ctk_config.coeff1,
         isp_params->others.ctk_config.coeff2,

@@ -108,7 +108,7 @@ typedef enum {
 typedef struct {
   HAL_FLASH_MODE flash_mode;
   int flash_timeout_ms;
-  int flash_power[CAMIA10_FLASH_NUM_MAX];
+  float flash_power[CAMIA10_FLASH_NUM_MAX];
   bool strobe;
   int64_t effect_ts;
 } CamIA10_flash_setting_t;
@@ -125,6 +125,7 @@ struct CamIA10_Stats {
   AwbGains_t             effct_awb_gains;
   Cam3x3FloatMatrix_t        effect_CtMatrix;
   AwbXTalkOffset_t         effect_CtOffset;
+  int32_t effect_DomIlluIdx;
   unsigned short cifisp_preisp_goc_curve[CIFISP_PREISP_GOC_CURVE_SIZE];
   USE_CASE uc;
   CamIA10_frame_status frame_status;
@@ -146,6 +147,7 @@ typedef struct CamIA10_AWB_Result_s {
   Cam_Win_t           awbWin;
   uint8_t                 DoorType;
   bool           converged;
+  int32_t DomIlluIdx;
   int err_code;
 } CamIA10_AWB_Result_t;
 

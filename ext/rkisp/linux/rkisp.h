@@ -210,6 +210,7 @@ struct rkisp_awb_algo {
   float fBlueGain;
   float fCtCoeff[9];
   float fCtOffset[3];
+  int32_t DomIlluIdx;
 };
 
 struct rkisp_makernote_info {
@@ -424,7 +425,7 @@ struct rkisp_acc_fw_load {
 typedef struct rkisp_flash_setting_s {
     enum rkisp_flash_mode flash_mode;
     enum rkisp_frame_status frame_status;
-    int power[CAMIA10_FLASH_NUM_MAX];
+    float power[CAMIA10_FLASH_NUM_MAX];
     bool strobe;
     int timeout_ms;
     int64_t effect_ts;
