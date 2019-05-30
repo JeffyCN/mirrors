@@ -1359,6 +1359,10 @@ IspController::set_3a_fl (int fl_mode, int fl_intensity[],
             } else {
                 set_fl_contol_to_dev(fl_device, V4L2_CID_FLASH_INTENSITY, fl_intensity[i]);
             }
+        }
+
+        // shoude flash on all finally
+        for (i = 0; i < _active_fl_num; i++) {
             set_fl_contol_to_dev(fl_device,
                                  fl_on ? V4L2_CID_FLASH_STROBE : V4L2_CID_FLASH_STROBE_STOP, 0);
         }
