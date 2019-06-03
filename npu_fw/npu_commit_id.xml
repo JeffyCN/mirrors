@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  
+  <project name="android/rk/u-boot" path="npu/u-boot" revision="6999767bb24a1de9544f7d5740cd5bb7069de68b" upstream="next-dev"/>
+  <project name="linux/buildroot/dl" path="npu/buildroot/dl" revision="8ff89187627615be855a76f9a35673860810eb2e" upstream="master"/>
+  </project>
+  <project name="linux/device/rockchip" path="npu/device/rockchip" revision="af9e6c72b480e6c2333d61462630981ac2925794" upstream="master">
+    <linkfile dest="npu/mkfirmware.sh" src="common/mkfirmware.sh"/>
+    <linkfile dest="npu/build.sh" src="common/build.sh"/>
+    <linkfile dest="npu/rkflash.sh" src="common/rkflash.sh"/>
+    <linkfile dest="npu/device/rockchip/.BoardConfig.mk" src="rk3399pro-npu/BoardConfig.mk"/>
+  </project>
+  <project name="linux/external/powermanager" path="npu/external/powermanager" revision="17921d6b75395df5478613973e58916a6cf7c7ad" upstream="master"/>
+  <project name="linux/external/rknpu" path="npu/external/rknpu" revision="dc2e96d8352194656d1c3ae20831c5289bdf8906" upstream="master"/>
+  <project name="rk/kernel" path="npu/kernel" revision="675523fe4ea1d62205bbc29e208f889c6c962385" upstream="develop-4.4"/>
+  <project name="rk/prebuilts/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu" path="npu/prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu" revision="f96f76d6be89a6e28d4dac1f233f9aca9921f69b" upstream="master"/>
+  </project>
+  <project name="rk/rk1108/buildroot" path="npu/buildroot" revision="6efd86bfa0e369726f0ee6b7b03af871561c6a5c" upstream="rockchip/2018.02-rc3">
+    <linkfile dest="npu/Makefile" src="build/Makefile"/>
+    <linkfile dest="npu/envsetup.sh" src="build/envsetup.sh"/>
+  </project>
+  <project name="rk/rkbin" path="npu/rkbin" revision="e4c1476079064ccf743742515a6b4893218b159e" upstream="master"/>
+</manifest>
