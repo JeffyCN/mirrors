@@ -14,7 +14,7 @@ def challenge_verify():
 	try:
 		challenge_file = open(sys.argv[1], 'rb')
 		product_id_file = open(sys.argv[2], 'rb')
-		challenge_random_file = open('atx_unlock_challenge.bin', 'wb')
+		challenge_random_file = open('unlock_challenge.bin', 'wb')
 		challenge_data = challenge_file.read(52)
 		product_id_data = product_id_file.read(16)
 		product_id_hash = sha256(product_id_data).digest()

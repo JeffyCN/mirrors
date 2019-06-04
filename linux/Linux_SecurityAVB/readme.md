@@ -1,10 +1,10 @@
 # **AVB Reference**
 
-发布版本：2.1
+发布版本：2.2
 
 作者邮箱：jason.zhu@rock-chips.com
 
-日期：2019.05.22
+日期：2019.06.03
 
 文件密级：公开资料
 
@@ -41,7 +41,8 @@
 | 2018.06.27 | V1.2   | Zain.Wong | 增加 key生成描述 |
 | 2018.11.16 | V1.3   | Zain.Wong | 增加 uboot 配置说明， 兼容rk3326 |
 | 2019.01.28 | v2.0   | Zain.Wong | 同步 uboot 更改，增加 3399 配置 |
-| 2019.05.22 | v2.1   | Zain.Wong | 增加 3328 支持，并区分 OTP/EFUSE atx 烧写命令 |
+| 2019.05.22 | v2.1   | Zain.Wong | 增加 3328 支持，并区分 OTP/EFUSE avb 烧写命令 |
+| 2019.06.03 | v2.2   | Zain.Wong | 修复一些不恰当的说明 |
 
 [TOC]
 
@@ -68,7 +69,7 @@ SEC=1
 
 2.2. uboot
 
-   uboot需要fastboot和optee支持。
+ uboot需要fastboot和optee支持。
 
 ```
 CONFIG_OPTEE_CLIENT=y
@@ -76,7 +77,7 @@ CONFIG_OPTEE_V1=y	#rk312x/rk322x/rk3288/rk3228H/rk3368/rk3399 与V2互斥
 CONFIG_OPTEE_V2=y	#rk3308/rk3326 与V1互斥
 ```
 
-​	avb开启需要在config文件中配置
+​avb开启需要在config文件中配置
 
 ```
 CONFIG_AVB_LIBAVB=y
@@ -92,12 +93,12 @@ CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION=y	#rpmb无法使用时打开，默认
 CONFIG_ROCKCHIP_PRELOADER_PUB_KEY=y #efuse 安全方案需要打开
 ```
 
-​	固件，ATX及hash需要通过fastboot烧写，所以需要在config文件中配置
+​固件，certificate及hash需要通过fastboot烧写，所以需要在config文件中配置
 
 ```
 CONFIG_FASTBOOT=y
-CONFIG_FASTBOOT_BUF_ADDR=0x800800
-CONFIG_FASTBOOT_BUF_SIZE=0x04000000
+CONFIG_FASTBOOT_BUF_ADDR=0x800800	#各芯片平台不同
+CONFIG_FASTBOOT_BUF_SIZE=0x04000000	#各芯片平台不同
 CONFIG_FASTBOOT_FLASH=y
 CONFIG_FASTBOOT_FLASH_MMC_DEV=0
 ```
@@ -106,12 +107,11 @@ CONFIG_FASTBOOT_FLASH_MMC_DEV=0
 
 2.3. parameter
 
-AVB需要添加vbmeta分区，用来存放固件签名信息。内容加密存放。大小1M，位置无关。
+AVB需要添加vbmeta分区，用来存放固件签名信息。大小1M，位置无关。
 
 AVB需要system分区，在buildroot上，即rootfs分区，需要将rootfs改名为system，如果使用了uuid，同时修改uuid分区名。
 
-如果存储介质使用flash，还需要另外添加security分区，用来存放操作信息。内容同样加密存放。大小4M，位置无关。
-（emmc无需添加该分区，emmc操作信息存放在物理rpmb分区）
+如果存储介质使用flash，还需要另外添加security分区，用来存放操作信息。内容加密存放。大小4M，位置无关。emmc无需添加该分区，emmc操作信息存放在物理rpmb分区
 
 以下是avb parameter例子：
 ~~~
@@ -127,89 +127,58 @@ avb ab parameter:
 
 ## 3 . Key
 
+AVB中包含以下4把key：
+Product RootKey (PRK)：avb的root key
+ProductIntermediate Key (PIK)：中间key，中介作用
+ProductSigning Key (PSK)：用于签固件的key
+ProductUnlock Key (PUK)：用于解锁设备
+
 **该目录下已经有一套测试的证书和key，如果需要新的key和证书，可以按下面步骤自行生成。
 请妥善保管生成的文件，否则加锁之后将无法解锁，机子将无法刷机。**
 
-谷歌定义的avb需要用到的keys定义如下：
-
-1. Product RootKey (PRK)：
-    所有的key校验或派生都依据此key，谷歌提供保管。如果只用到avb，而没有用到需
-要谷歌认证的服务，可以由厂商自己生成。
-2. ProductIntermediate Key (PIK)：
-    中间key，中介作用，谷歌提供保管。如果只用到avb，而没有用到需要谷歌
-认证的服务，可以由厂商自己生成。
-3. ProductSigning Key (PSK)：
-    用于签固件的key，谷歌提供保管。如果只用到avb，而没有用到需要谷歌认证的服
-务，可以由厂商自己生成。
-4. ProductUnlock Key (PUK)：
-    用于解锁设备，谷歌提供保管。如果只用到avb，而没有用到需要谷歌认证的服
-务，可以由厂商自己生成。
-
-ATX：Android Things Extension for validating public key metadata。
-ATX permanent attributes保存设备的device id及Product RootKey (PRK)的公钥。
-vbmeta保存ProductIntermediate Key (PIK)证书，ProductSigning Key (PSK)证书。
-三把keys及证书生成。
-
 ~~~
-    openssl genpkey ‐algorithm RSA ‐pkeyopt rsa_keygen_bits:4096 ‐outform PEM ‐out
-testkey_atx_prk.pem
-
-    openssl genpkey ‐algorithm RSA ‐pkeyopt rsa_keygen_bits:4096 ‐outform PEM ‐out
-testkey_atx_psk.pem
-
-    openssl genpkey ‐algorithm RSA ‐pkeyopt rsa_keygen_bits:4096 ‐outform PEM ‐out
-testkey_atx_pik.pem
-
-    python avbtool make_atx_certificate ‐‐output=atx_pik_certificate.bin ‐‐subject=temp.bin ‐‐
-subject_key=testkey_atx_pik.pem ‐‐subject_is_intermediate_authority ‐‐subject_key_version 42 ‐‐
-authority_key=testkey_atx_prk.pem
-
-    python avbtool make_atx_certificate ‐‐output=atx_psk_certificate.bin ‐‐
-subject=atx_product_id.bin ‐‐subject_key=testkey_atx_psk.pem ‐‐subject_key_version 42 ‐‐
-authority_key=testkey_atx_pik.pem
-
-    python avbtool make_atx_metadata ‐‐output=atx_metadata.bin ‐‐
-intermediate_key_certificate=atx_pik_certificate.bin ‐‐
-product_key_certificate=atx_psk_certificate.bin
+    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -outform PEM -out testkey_prk.pem
+    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -outform PEM -out testkey_psk.pem
+    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -outform PEM -out testkey_pik.pem
+    touch temp.bin
+    python avbtool make_atx_certificate --output=pik_certificate.bin --subject=temp.bin --subject_key=testkey_pik.pem --subject_is_intermediate_authority --subject_key_version 42 --authority_key=testkey_prk.pem
+    echo "RKXXXX_nnnnnnnn" > product_id.bin
+    python avbtool make_atx_certificate --output=psk_certificate.bin --subject=product_id.bin --subject_key=testkey_psk.pem --subject_key_version 42 --authority_key=testkey_pik.pem
+    python avbtool make_atx_metadata --output=metadata.bin --intermediate_key_certificate=pik_certificate.bin --product_key_certificate=psk_certificate.bin
 ~~~
 
 其中temp.bin需要自己创建的临时文件，新建temp.bin即可，无需填写数据。
-atx_permanent_attributes.bin生成：
+product_id.bin需要自己定义，占16字节，可作为产品ID定义。
+permanent_attributes.bin生成：
 
 ~~~
-    python avbtool make_atx_permanent_attributes ‐‐output=atx_permanent_attributes.bin ‐‐
-product_id=atx_product_id.bin ‐‐root_authority_key=testkey_atx_prk.pem
+    python avbtool make_atx_permanent_attributes --output=permanent_attributes.bin --product_id=product_id.bin --root_authority_key=testkey_prk.pem
 ~~~
-
-其中atx_product_id.bin需要自己定义，占16字节，可作为产品ID定义。
 
 PUK生成：
 ~~~
-  openssl genpkey ‐algorithm RSA ‐pkeyopt rsa_keygen_bits:4096 ‐outform PEM ‐out
-testkey_atx_puk.pem
+    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -outform PEM -out testkey_puk.pem
 ~~~
 
-atx_puk_certificate.bin atx_permanent_attributes.bin为设备解锁的证书，
+puk_certificate.bin permanent_attributes.bin为设备解锁的证书，
 生成过程需要用到PrivateKey.pem，该key为烧录进efuse/otp的key
 (参考Rockchip-Secure-Boot-Application-Note-V1.9), 其生成过程如下：
 ~~~
-python avbtool make_atx_certificate ‐‐output=atx_puk_certificate.bin
-‐‐subject=atx_product_id.bin ‐‐subject_key=testkey_atx_puk.pem
-‐‐usage=com.google.android.things.vboot.unlock
-‐‐subject_key_version 42 ‐‐authority_key=testkey_atx_pik.pem
+    python avbtool make_atx_certificate --output=puk_certificate.bin --subject=product_id.bin --subject_key=testkey_puk.pem --usage=com.google.android.things.vboot.unlock --subject_key_version 42 --authority_key=testkey_pik.pem
 ~~~
 
-针对efuse设备，还需要另外生成 atx_permanent_attributes_cer.bin（otp设备可以跳过）
+针对efuse设备，还需要另外生成 permanent_attributes_cer.bin（otp设备可以跳过）
 ~~~
-openssl dgst -sha256 -out atx_permanent_attributes_cer.bin -sign PrivateKey.pem atx_permanent_attributes.bin
+    openssl dgst -sha256 -out permanent_attributes_cer.bin -sign PrivateKey.pem permanent_attributes.bin
 ~~~
 
 ## 4 . 修改脚本
+
 签名脚本为make_vbmeta.sh
 给固件签名的格式为：
 
 ~~~
-python avbtool add_hash_footer --image <IMG> --partition_size <SIZE> --partition_name <PARTITION> --key testkey_atx_psk.pem --algorithm SHA512_RSA4096
+python avbtool add_hash_footer --image <IMG> --partition_size <SIZE> --partition_name <PARTITION> --key testkey_psk.pem --algorithm SHA512_RSA4096
 ~~~
 
 IMG 为签名固件
@@ -219,13 +188,13 @@ PARTITION = boot / recovery
 签名完成后，用签名过的文件生成vbmeta.img
 基本格式：
 ~~~
-python avbtool make_vbmeta_image --public_key_metadata atx_metadata.bin --include_descriptors_from_image <IMG> SHA256_RSA4096 --rollback_index 0 --key testkey_atx_psk.pem  --output vbmeta.img
+python avbtool make_vbmeta_image --public_key_metadata metadata.bin --include_descriptors_from_image <IMG> --algorithm SHA256_RSA4096 --rollback_index 0 --key testkey_psk.pem  --output vbmeta.img
 ~~~
 
 --include_descriptors_from_image <IMG> 该字段可以多次使用，即有多少个加密过的文件，就添加多少个 --include_descriptors_from_image。
 例如：
 ```
-python avbtool make_vbmeta_image --public_key_metadata atx_metadata.bin --include_descriptors_from_image boot.img --include_descriptors_from_image recovery.img--algorithm SHA256_RSA4096 --rollback_index 0 --key testkey_atx_psk.pem  --output vbmeta.img
+python avbtool make_vbmeta_image --public_key_metadata metadata.bin --include_descriptors_from_image boot.img --include_descriptors_from_image recovery.img --algorithm SHA256_RSA4096 --rollback_index 0 --key testkey_psk.pem  --output vbmeta.img
 ```
 
 可按照上述规则自行修改make_vbmeta.sh脚本
@@ -235,7 +204,7 @@ python avbtool make_vbmeta_image --public_key_metadata atx_metadata.bin --includ
 1. 把boot.img/recovery.img放到这个目录下
 2. 运行make_vbmeta.sh,生成vbmeta.bin和加密过的boot.img/recovery.img
 3. 替换固件:
-   uboot.img, trust.img, MiniloaderAll.bin替换成上一个步骤中，uboot生成的3个固件。
+   uboot.img, trust.img, MiniloaderAll.bin替换成新配置uboot生成的3个固件。
    boot.img使用该目录下生成的加密固件。
    vbmeta.bin提取出来。
    parameter.txt 按 2.3 中规则修改
@@ -243,24 +212,27 @@ python avbtool make_vbmeta_image --public_key_metadata atx_metadata.bin --includ
    如果使用的windows工具，请在工具中添加vbmeta分区（security分区视parameter而定），地址不填。
    然后重新加载parameter，工具会自行更新地址。
    如果security/rpmb中avb数据为空，uboot会直接进fastboot，等待fastboot对应信息写入（跳过5）
-       需要使用fastboot成功lock住设备，然后重启才能进boot
-5. 使能atx校验：
-   启动系统，在设备端console里面输入reboot fastboot（或在uboot console下，输入fastboot usb 0），进入fastboot模式 （重启使用fastboot reboot）
-   此时设备端串口将无法输入，说明进入fastboot成功。
+   需要使用fastboot成功lock住设备，然后重启才能进boot
+5. 下载之后，设备默认处于unlock状态，此时固件还是会校验，但是不会阻拦系统启动，只会报错。
 
 ## 5 . avb lock & unlock
 
-​	锁定设备：
+AVB 只有在lock状态下，才会真正阻拦非签名固件的启动。
+首先，需要将设备进入到fastboot模式，大致有3种途径：
 
-   电脑端输入（可能需要管理员权限）
+1. 启动到系统中，运行reboot fastboot
+2. 进入到uboot 命令行中，输入fastboot usb 0
+3. 如果有fastboot按键，通过fastboot按键进入fastboot模式。
+
+   然后PC 通过fastboot命令操作（可能需要管理员权限）
 
 pub_key 烧写
 ~~~
-sudo ./fastboot stage atx_permanent_attributes.bin
+sudo ./fastboot stage permanent_attributes.bin
 sudo ./fastboot oem fuse at-perm-attr
 
 # EFUSE only， skip this step if used OTP
-sudo ./fastboot stage atx_permanent_attributes_cer.bin
+sudo ./fastboot stage permanent_attributes_cer.bin
 sudo ./fastboot oem fuse at-rsa-perm-attr
 ~~~
 
@@ -270,27 +242,27 @@ sudo ./fastboot oem at-lock-vboot
 sudo ./fastboot reboot
 ~~~
 
-​	解锁设备步骤：
+​解锁设备步骤：
 
 1. 设备进入fastboot模式，电脑端输入
 
 ```
 sudo ./fastboot oem at-get-vboot-unlock-challenge
-sudo ./fastboot get_staged raw_atx_unlock_challenge.bin
+sudo ./fastboot get_staged raw_unlock_challenge.bin
 ```
 
-2. raw_atx_unlock_challenge.bin放进本文件夹内，运行
+2. raw_unlock_challenge.bin放进本文件夹内，运行
 
 ```
 ./make_unlock.sh
 ```
 
-​	生成atx_unlock_credential.bin。
+​生成unlock_credential.bin。
 
 3. 电脑端输入
 
 ```
-sudo ./fastboot stage atx_unlock_credential.bin
+sudo ./fastboot stage unlock_credential.bin
 sudo ./fastboot oem at-unlock-vboot
 ```
 
