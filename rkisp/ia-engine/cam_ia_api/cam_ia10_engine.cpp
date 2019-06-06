@@ -2105,7 +2105,7 @@ RESULT CamIA10Engine::getAECResults(AecResult_t* result) {
         && result->flashModeState != AEC_FLASH_PREFLASH
         && result->require_flash == true)
         ||*/(result->flashModeState == AEC_FLASH_PREFLASH
-        && curAwbResult.converged == false &&
+        && curAwbResult.converged == false
         && lastAfResult.af_flash_converged != true)) {
         result->converged = false;
     }
