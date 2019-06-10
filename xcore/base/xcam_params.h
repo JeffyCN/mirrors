@@ -36,11 +36,11 @@ typedef struct _XCamAeParam {
     /* speed, default 1.0 */
     double                  speed;
 
-    /* exposure limitation */
+    /* exposure limitation, unit ns */
     uint64_t                exposure_time_min, exposure_time_max;
     double                  max_analog_gain;
 
-    /* exposure manual values */
+    /* exposure manual values, unit ns */
     uint64_t                manual_exposure_time;
     double                  manual_analog_gain;
 

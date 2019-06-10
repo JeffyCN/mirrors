@@ -464,8 +464,8 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
         (set->mode != shd->mode) ||
         (set->flk != shd->flk) ||
         (set->ae_bias != shd->ae_bias)||
-        (set->frame_time_ms_min != shd->frame_time_ms_min)||
-        (set->frame_time_ms_max != shd->frame_time_ms_max)||
+        (set->frame_time_ns_min != shd->frame_time_ns_min)||
+        (set->frame_time_ns_max != shd->frame_time_ns_max)||
         mLightMode != cfg->LightMode
         || (aecCfg.flashModeSetting != flashModeState)) {
         //cifisp_histogram_mode mode = CIFISP_HISTOGRAM_MODE_RGB_COMBINED;
@@ -545,19 +545,19 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
 
             mLightMode = cfg->LightMode;
 #if 1
-            if (set->frame_time_ms_min != 0 && set->frame_time_ms_max != 0) {
+            if (set->frame_time_ns_min != 0 && set->frame_time_ns_max != 0) {
                 aecCfg.FpsSetEnable = true;
                 aecCfg.isFpsFix = false;
                 int ecmCnt = sizeof(aecCfg.EcmTimeDot.fCoeff) / sizeof (float);
 
                 for (int i = 1; i < ecmCnt - 3; i++) {
-                    aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ms_min / 1000;
+                    aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ns_min / (1000 * 1000 * 1000);
                 }
                 for (int i = ecmCnt - 3; i < ecmCnt; i++) {
-                    aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ms_max / 1000;
+                    aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ns_max / (1000 * 1000 * 1000);
                 }
-                aecCfg.MinFrameDuration = (float)set->frame_time_ms_min / 1000;
-                aecCfg.MaxFrameDuration = (float)set->frame_time_ms_max / 1000;
+                aecCfg.MinFrameDuration = (float)set->frame_time_ns_min / (1000 * 1000 * 1000);
+                aecCfg.MaxFrameDuration = (float)set->frame_time_ns_max / (1000 * 1000 * 1000);
                 LOGD("sensor param (%d)=[%f-%f-%f-%f-%f-%f] vts: %f, vtsMax: %d, pclk: %f, hts: %f\n",
                      ecmCnt,
                      aecCfg.EcmTimeDot.fCoeff[0],
@@ -576,7 +576,7 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
         switch (set->mode) {
             case HAL_AE_OPERATION_MODE_MANUAL:
                aecCfg.AecMode = AEC_MODE_MANUAL;
-               aecCfg.ManExpoSecs = (float)set->frame_time_ms_min / 1000.0f;
+               aecCfg.ManExpoSecs = (float)set->frame_time_ns_min / (1000 * 1000 * 1000);
                aecCfg.ManGains = set->manual_gains;
                break;
             case HAL_AE_OPERATION_MODE_AUTO:
@@ -1834,7 +1834,7 @@ mStats.aec.frame_status = (AecFrameStatus_t)mStats.frame_status;
             (set->mode != shd->mode) ||
             (set->flk != shd->flk) ||
             (set->ae_bias != shd->ae_bias) ||
-            (set->frame_time_ms_min != shd->frame_time_ms_min) /*||
+            (set->frame_time_ns_min != shd->frame_time_ns_min) /*||
                                                                  mLightMode != cfg->LightMode*/) {
             //cifisp_histogram_mode mode = CIFISP_HISTOGRAM_MODE_RGB_COMBINED;
             cam_ia10_isp_hst_update_stepSize(
@@ -1928,16 +1928,16 @@ mStats.aec.frame_status = (AecFrameStatus_t)mStats.frame_status;
 
                 //if (set->frame_time_us_min != -1 && set->frame_time_us_max != -1)
                 {
-                    if (set->frame_time_ms_min != -1 && set->frame_time_ms_max != -1) {
+                    if (set->frame_time_ns_min != -1 && set->frame_time_ns_max != -1) {
                         aecCfg.FpsSetEnable = true;
                         aecCfg.isFpsFix = true;
                         int ecmCnt = sizeof(aecCfg.EcmTimeDot.fCoeff) / sizeof (float);
 
                         for (int i = 1; i < ecmCnt - 3; i++) {
-                            aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ms_min / 1000;
+                            aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ns_min / (1000 * 1000 * 1000);
                         }
                         for (int i = ecmCnt - 3; i < ecmCnt; i++) {
-                            aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ms_max / 1000;
+                            aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ns_max / (1000 * 1000 * 1000);
                         }
                         LOGD("sensor param (%d)=[%f-%f-%f-%f-%f-%f] vts: %f, vtsMax: %d, pclk: %f, hts: %f\n",
                              ecmCnt,

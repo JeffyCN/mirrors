@@ -244,8 +244,8 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
     // ******** exposure_coordinate
     rw_entry = staticMeta.find(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE);
     if (rw_entry.count == 2) {
-        aeParams->exposure_time_min = rw_entry.data.i64[0] / (1000 * 1000);
-        aeParams->exposure_time_max = rw_entry.data.i64[1] / (1000 * 1000);
+        aeParams->exposure_time_min = rw_entry.data.i64[0];
+        aeParams->exposure_time_max = rw_entry.data.i64[1];
     }
     /*
      * MANUAL AE CONTROL
@@ -255,19 +255,19 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
         //# METADATA_Control sensor.exposureTime done
         entry = settings->find(ANDROID_SENSOR_EXPOSURE_TIME);
         if (entry.count == 1) {
-            int64_t timeMicros = entry.data.i64[0] / (1000 * 1000);
-            if (timeMicros > 0) {
+            int64_t timens = entry.data.i64[0];
+            if (timens > 0) {
                 /* TODO  need add exposure time limited mechanism*/
-                if (timeMicros > aeParams->exposure_time_max) {
+                if (timens > aeParams->exposure_time_max) {
                     LOGE("exposure time %" PRId64 " ms is bigger than the max exposure time %" PRId64 " ms",
-                        timeMicros, aeParams->exposure_time_max);
+                        timens, aeParams->exposure_time_max);
                     //return XCAM_RETURN_ERROR_UNKNOWN;
-                } else if (timeMicros < aeParams->exposure_time_min) {
+                } else if (timens < aeParams->exposure_time_min) {
                     LOGE("exposure time %" PRId64 " ms is smaller than the min exposure time %" PRId64 " ms",
-                        timeMicros, aeParams->exposure_time_min);
+                        timens, aeParams->exposure_time_min);
                     //return XCAM_RETURN_ERROR_UNKNOWN;
                 } else
-                    aeParams->manual_exposure_time = timeMicros;
+                    aeParams->manual_exposure_time = timens;
             } else {
                 // Don't constrain AIQ.
                 aeParams->manual_exposure_time = 0;
@@ -349,8 +349,8 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
             aeCtrl->aeTargetFpsRange[1] = entry.data.i32[1];
 
             int64_t frameDurationMax, frameDurationMin;
-            frameDurationMax = 1e9 / aeCtrl->aeTargetFpsRange[0] / (1000 * 1000);
-            frameDurationMin = 1e9 / aeCtrl->aeTargetFpsRange[1] / (1000 * 1000);
+            frameDurationMax = 1e9 / aeCtrl->aeTargetFpsRange[0];
+            frameDurationMin = 1e9 / aeCtrl->aeTargetFpsRange[1];
             if (aeParams->exposure_time_max >  frameDurationMax)
                 aeParams->exposure_time_max = frameDurationMax;
             if (aeParams->exposure_time_min <  frameDurationMin)
