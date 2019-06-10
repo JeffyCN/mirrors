@@ -625,6 +625,40 @@ AiqCommonHandler::processMiscMetaResults(X3aResultList &output)
     int reqId = _aiq_compositor->getAiqInputParams().ptr() ? _aiq_compositor->getAiqInputParams()->reqId : -1;
     metadata->update(ANDROID_REQUEST_ID, &reqId, 1);
 
+    // update flash states
+    CameraMetadata* staticMeta  =
+        _aiq_compositor->getAiqInputParams()->staticMeta;
+    entry = staticMeta->find(ANDROID_FLASH_INFO_AVAILABLE);
+    if (entry.count == 1) {
+        if (entry.data.u8[0] == ANDROID_FLASH_INFO_AVAILABLE_TRUE) {
+            const CameraMetadata* settings  =
+                &_aiq_compositor->getAiqInputParams()->settings;
+            uint8_t flash_mode = ANDROID_FLASH_MODE_OFF;
+            camera_metadata_ro_entry entry_flash =
+                settings->find(ANDROID_FLASH_MODE);
+
+            if (entry_flash.count == 1) {
+                flash_mode = entry_flash.data.u8[0];
+            }
+            metadata->update(ANDROID_FLASH_MODE, &flash_mode, 1);
+
+            uint8_t flashState = ANDROID_FLASH_STATE_READY;
+
+            struct CamIA10_Stats& camia10_stats =
+                _aiq_compositor->get_3a_ia10_stats ();
+
+            if (camia10_stats.frame_status == CAMIA10_FRAME_STATUS_FLASH_EXPOSED ||
+                camia10_stats.flash_status.flash_mode == HAL_FLASH_TORCH ||
+                /* CTS required */
+                flash_mode == ANDROID_FLASH_MODE_SINGLE||
+                flash_mode == ANDROID_FLASH_MODE_TORCH)
+                flashState = ANDROID_FLASH_STATE_FIRED;
+            else if (camia10_stats.frame_status == CAMIA10_FRAME_STATUS_FLASH_PARTIAL)
+                flashState = ANDROID_FLASH_STATE_PARTIAL;
+            metadata->update(ANDROID_FLASH_STATE, &flashState, 1);
+        }
+    }
+
     return ret;
 }
 
