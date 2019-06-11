@@ -18,7 +18,7 @@
 //#include <ebase/trace.h>
 #include <ebase/builtins.h>
 #include <ebase/dct_assert.h>
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 #include "cam_calibdb_api.h"
 #include "cam_calibdb.h"
@@ -1938,7 +1938,7 @@ RESULT CamCalibDbCreate
   /* allocate control context */
   pCamCalibDbCtx = (CamCalibDbContext_t *)malloc(sizeof(CamCalibDbContext_t));
   if (pCamCalibDbCtx == NULL) {
-    ALOGE("%s (allocating control context failed)\n", __func__);
+    LOGE("%s (allocating control context failed)\n", __func__);
     return (RET_OUTOFMEM);
   }
   MEMSET(pCamCalibDbCtx, 0, sizeof(CamCalibDbContext_t));
@@ -5508,7 +5508,7 @@ RESULT CamCalibDbAddGocProfile
      ListPrepareItem(pNewGoc);
      ListAddTail(&pCamCalibDbCtx->gocProfile, pNewGoc);
    }else{
-     ALOGE("%s malloc fail\n", __func__);
+     LOGE("%s malloc fail\n", __func__);
 	 return (RET_INVALID_PARM);
    }
   } else {

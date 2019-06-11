@@ -26,7 +26,7 @@
 #include "calib_xml/calibdb.h"
 #include "calibtags.h"
 #include "xmltags.h"
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 
 #include   <fstream>

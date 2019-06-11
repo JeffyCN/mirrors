@@ -20,7 +20,7 @@
 
 #include "settings_processor.h"
 #include "rkisp_dev_manager.h"
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 SettingsProcessor::SettingsProcessor()
 {

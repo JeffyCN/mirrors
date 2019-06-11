@@ -35,7 +35,7 @@
 #define MSG_LOG(...) fprintf(stdout, __VA_ARGS__); fprintf(stdout, "\n");
 #define MSG_ERR(...) fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n");
 #endif
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 /*
  * Checks the validity of the pointer

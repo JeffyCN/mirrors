@@ -29,7 +29,7 @@
 
 #include "adpf.h"
 #include "adpf_ctrl.h"
-#include "base/log.h"
+#include "base/xcam_log.h"
 
 
 #define RK_IESHARP_GIAN (4.0)
@@ -1707,7 +1707,7 @@ RESULT AdpfRun
   }
 
   if(LightMode <= LIGHT_MODE_MIN || LightMode >= LIGHT_MODE_MAX ){
-	ALOGW( "%s: light mode %d is wrong, so use day mode instead\n",
+	LOGW( "%s: light mode %d is wrong, so use day mode instead\n",
          __func__, LightMode);
 	LightMode = LIGHT_MODE_DAY;
   }

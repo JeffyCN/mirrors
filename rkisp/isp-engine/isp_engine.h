@@ -5,7 +5,7 @@
 #include <cam_ia_api/cam_ia10_engine_api.h>
 #include <sys/poll.h>
 #include <base/xcam_3a_description.h>
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 using namespace std;
 

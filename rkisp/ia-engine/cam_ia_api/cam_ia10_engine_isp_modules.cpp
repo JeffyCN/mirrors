@@ -1,12 +1,12 @@
 #include "cam_ia10_engine_isp_modules.h"
 #include <ebase/utl_fixfloat.h>
 #include <string.h>
-#include <base/log.h>
+#include <base/xcam_log.h>
 #include <math.h>
 
 #define ISP_CHECK_NULL(p) \
   if(!p) { \
-    ALOGE("%s:%s is NULL!",__func__,#p);\
+    LOGE("%s:%s is NULL!",__func__,#p);\
     return RET_FAILURE;\
   }
 
@@ -41,13 +41,13 @@ RESULT cam_ia10_isp_bls_config
     bls_result->enabled = BOOL_TRUE;
     result = CamCalibDbGetResolutionNameByWidthHeight(hCamCalibDb, width, height,  &res_name);
     if (RET_SUCCESS != result) {
-      ALOGE("%s: resolution (%dx%d) not found in database\n", __FUNCTION__, width, height);
+      LOGE("%s: resolution (%dx%d) not found in database\n", __FUNCTION__, width, height);
       return (result);
     }
     // get BLS calibration profile from database
     result = CamCalibDbGetBlsProfileByResolution(hCamCalibDb, res_name, &pBlsProfile);
     if (result != RET_SUCCESS) {
-      ALOGE("%s: BLS profile %s not available (%d)\n", __FUNCTION__, res_name, result);
+      LOGE("%s: BLS profile %s not available (%d)\n", __FUNCTION__, res_name, result);
       return (result);
     }
     DCT_ASSERT(NULL != pBlsProfile);
@@ -60,7 +60,7 @@ RESULT cam_ia10_isp_bls_config
     //bls_result->Window1
     //bls_result->Window2
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -117,13 +117,13 @@ RESULT cam_ia10_isp_dpcc_config
     dpcc_result->enabled = BOOL_TRUE;
     result = CamCalibDbGetResolutionNameByWidthHeight(hCamCalibDb, width, height,  &res_name);
     if (RET_SUCCESS != result) {
-      ALOGE("%s: resolution (%dx%d) not found in database\n", __FUNCTION__, width, height);
+      LOGE("%s: resolution (%dx%d) not found in database\n", __FUNCTION__, width, height);
       return (result);
     }
     // get dpf-profile from calibration database
     result = CamCalibDbGetDpccProfileByResolution(hCamCalibDb, res_name, &pDpccProfile);
     if (result != RET_SUCCESS) {
-      ALOGE("%s: Getting DPCC profile for resolution %s from calibration database failed (%d)\n",
+      LOGE("%s: Getting DPCC profile for resolution %s from calibration database failed (%d)\n",
             __FUNCTION__, res_name, result);
       return (result);
     }
@@ -157,7 +157,7 @@ RESULT cam_ia10_isp_dpcc_config
     dpcc_result->isp_dpcc_ro_limits       = pDpccProfile->isp_dpcc_ro_limits;
     dpcc_result->isp_dpcc_rnd_offs        = pDpccProfile->isp_dpcc_rnd_offs;
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -216,7 +216,7 @@ RESULT cam_ia10_isp_sdg_config
     }
 
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -598,7 +598,7 @@ RESULT cam_ia10_isp_flt_config
     struct HAL_ISP_flt_cfg_s flt_default_cfg = {2, 5, 0};
     cam_ia10_isp_flt_config(hCamCalibDb, HAL_ISP_ACTIVE_SETTING, &flt_default_cfg, drv_width, drv_height, flt_result);
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -733,7 +733,7 @@ RESULT cam_ia10_isp_goc_config
                                      &goc_def_cfg, goc_result,
                                      WDR_enable_mode, isp_ver);
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -766,7 +766,7 @@ RESULT cam_ia10_isp_cproc_config
       cproc_result->hue = (uint8_t)((cproc_cfg->cproc.hue) * 128.0f / 90.0f);
 #if 0
     //ignore sharpness,sharpness was set in flt module
-    ALOGE("%s:set  cproc use_case %d, ct=%f,hue=%f,bt=%d,st=%f", __func__,
+    LOGE("%s:set  cproc use_case %d, ct=%f,hue=%f,bt=%d,st=%f", __func__,
           cproc_cfg->use_case,
           cproc_cfg->cproc.contrast,
           cproc_cfg->cproc.hue,
@@ -780,7 +780,7 @@ RESULT cam_ia10_isp_cproc_config
 
     result = CamCalibDbGetCproc(hCamCalibDb, &cproc_profile);
     if (result != RET_SUCCESS) {
-      ALOGE("fail to get cproc_profile, ret: %d", result);
+      LOGE("fail to get cproc_profile, ret: %d", result);
     }
     if (cproc_profile != NULL) {
       if (cproc_cfg) {
@@ -794,7 +794,7 @@ RESULT cam_ia10_isp_cproc_config
           cproc_data = &cproc_profile->cproc[CAM_CPROC_USECASE_VIDEO];
           range = HAL_ISP_COLOR_RANGE_OUT_BT601;
         } else
-          ALOGE("%s:error uscase %d !", __func__, cproc_cfg->use_case);
+          LOGE("%s:error uscase %d !", __func__, cproc_cfg->use_case);
         if (cproc_data) {
           cproc_result->enabled = BOOL_TRUE;
           cproc_result->LumaIn = (CamerIcCprocLuminanceRangeIn_t)(range);
@@ -808,7 +808,7 @@ RESULT cam_ia10_isp_cproc_config
 		  else
 			cproc_result->hue = (uint8_t)((cproc_cfg->cproc.hue) * 128.0f / 90.0f);
 #if 0
-          ALOGE("%s:set xml cproc use_case %d, ct=%f,hue=%f,bt=%d,st=%f", __func__,
+          LOGE("%s:set xml cproc use_case %d, ct=%f,hue=%f,bt=%d,st=%f", __func__,
                 cproc_cfg->use_case,
                 cproc_data->cproc_contrast,
                 cproc_data->cproc_hue,
@@ -817,17 +817,17 @@ RESULT cam_ia10_isp_cproc_config
 #endif
         }
       } else {
-        ALOGE("%s:cproc_cfg is NULL!", __func__);
+        LOGE("%s:cproc_cfg is NULL!", __func__);
         cproc_result->enabled = BOOL_FALSE;
       }
 
     } else {
-      ALOGE("%s:cproc profile doesn't exist!", __func__);
+      LOGE("%s:cproc profile doesn't exist!", __func__);
       cproc_result->enabled = BOOL_FALSE;
     }
 
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -905,7 +905,7 @@ RESULT cam_ia10_isp_ie_config
   } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {
     ie_result->enabled = BOOL_FALSE;
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -964,7 +964,7 @@ RESULT cam_ia10_isp_hst_update_stepSize
     }
 
     default: {
-      ALOGE("%s: Invalid histogram mode (%d) selected\n", __func__, mode);
+      LOGE("%s: Invalid histogram mode (%d) selected\n", __func__, mode);
       return (RET_OUTOFRANGE);
     }
   }
@@ -977,7 +977,7 @@ RESULT cam_ia10_isp_hst_update_stepSize
     }
   }
 
-  //ALOGE("%s: (exit) StepSize=%d\n", __func__, *StepSize);
+  //LOGE("%s: (exit) StepSize=%d\n", __func__, *StepSize);
 
   return (RET_SUCCESS);
 }
@@ -1081,7 +1081,7 @@ RESULT cam_ia10_isp_hst_config
     for (; ind < CAMERIC_ISP_HIST_GRID_ITEMS; ind++)
       hst_result->Weights[ind] = 0x10;
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -1126,7 +1126,7 @@ RESULT cam_ia10_isp_lsc_config
     //controlled by awb algorithm
     lsc_result->enabled = BOOL_FALSE;
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -1168,7 +1168,7 @@ RESULT cam_ia10_isp_awb_gain_config
     awb_gain_result->awb_gain_result->Blue    = UtlFloatToFix_U0208(1.0f);
 #endif
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -1226,7 +1226,7 @@ RESULT cam_ia10_isp_ctk_config
       ctk_result->ctk_offset_result->Red = UtlFloatToFix_S1200((float)(ctk_cfg->ct_offset_r));
     }
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -1274,7 +1274,7 @@ RESULT cam_ia10_isp_awb_meas_config
     //controlled by awb algorithm
     awb_meas_result->enabled = BOOL_FALSE;
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -1312,7 +1312,7 @@ RESULT cam_ia10_isp_aec_config
     *(aec_result->aec_meas_mode) = 1;
     memset(aec_result->meas_win, 0, sizeof(struct Cam_Win));
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -1339,7 +1339,7 @@ RESULT cam_ia10_isp_bdm_config
     bdm_result->enabled = BOOL_TRUE;
     bdm_result->demosaic_th = 4;
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -1506,7 +1506,7 @@ RESULT cam_ia10_isp_wdr_config
       wdr_result->wdr_coe_off = pWdrGlobal->wdr_coe_off;
     }
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -1528,7 +1528,7 @@ RESULT cam_ia10_isp_dpf_config
   } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {
     dpf_result->enabled = BOOL_FALSE;
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -1554,7 +1554,7 @@ RESULT cam_ia10_isp_dpf_strength_config
   } else if (enable_mode == HAL_ISP_ACTIVE_DEFAULT) {
     dpf_streng_result->enabled = BOOL_FALSE;
   } else {
-    ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+    LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   return result;
@@ -1700,7 +1700,7 @@ RESULT cam_ia10_isp_demosaicLp_config
 	}	
 	
   } else{
-	ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+	LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
 
@@ -1751,14 +1751,14 @@ RESULT cam_ia10_isp_rkIEsharp_config
 	
     result = CamCalibDbGetResolutionNameByWidthHeight(hCamCalibDb, drv_width, drv_height,  &res_name);
     if (RET_SUCCESS != result) {
-      ALOGE("%s: resolution (%dx%d) not found in database\n", __FUNCTION__, drv_width, drv_height);
+      LOGE("%s: resolution (%dx%d) not found in database\n", __FUNCTION__, drv_width, drv_height);
       return (result);
     }
     // get dpf-profile from calibration database
     CamIesharpenProfile_t *pIesharpenProfile = NULL;
     result = CamCalibDbGetRKsharpenProfileByResolution(hCamCalibDb, res_name, &pIesharpenProfile);
     if (result != RET_SUCCESS) {
-      ALOGE("%s: Getting rk ie sharp profile for resolution %s from calibration database failed (%d)\n",
+      LOGE("%s: Getting rk ie sharp profile for resolution %s from calibration database failed (%d)\n",
             __FUNCTION__, res_name, result);
     }
 
@@ -1787,7 +1787,7 @@ RESULT cam_ia10_isp_rkIEsharp_config
 		rkIEsharp_result->iesharpen_en = 0;
 	}
   } else{
-	ALOGE("%s:error enable mode %d!", __func__, enable_mode);
+	LOGE("%s:error enable mode %d!", __func__, enable_mode);
     result = RET_FAILURE;
   }
   

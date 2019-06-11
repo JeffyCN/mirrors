@@ -19,7 +19,7 @@
 
 #include <math.h>
 #include "CameraWindow.h"
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 /******************************************************************************
  * CAMERA WINDOW OPERATIONS

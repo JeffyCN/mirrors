@@ -18,7 +18,7 @@
 
 // Camera dependencies
 #include "rkcamera_vendor_tags.h"
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 enum rkcamera3_ext_tags rkcamera3_ext3_section_bounds[RKCAMERA3_EXT_SECTION_END -
     VENDOR_SECTION] = {
@@ -225,7 +225,7 @@ int RkCamera3VendorTags::get_tag_type(
                 const vendor_tag_ops_t *ops,
                 uint32_t tag)
 {
-    LOGD("E");
+    //LOGD("E");
     int ret;
     uint32_t section = tag >> 16;
     uint32_t section_index = section - VENDOR_SECTION;
@@ -241,8 +241,8 @@ int RkCamera3VendorTags::get_tag_type(
     else
         ret = -1;
 
-    LOGD("tag type for tag %d is %d", tag, ret);
-    LOGD("X");
+    LOGD("tag type for tag %u is %d", tag, ret);
+    //LOGD("X");
 done:
     return ret;
 }

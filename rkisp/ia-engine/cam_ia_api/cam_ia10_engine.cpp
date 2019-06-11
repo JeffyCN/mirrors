@@ -3,7 +3,7 @@
 #include <ebase/builtins.h>
 #include <ebase/utl_fixfloat.h>
 #include <calib_xml/calibdb.h>
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 #include "cam_ia10_engine.h"
 #include "cam_ia10_engine_isp_modules.h"
@@ -251,7 +251,7 @@ RESULT CamIA10Engine::initDynamic(struct CamIA10_DyCfg* cfg) {
     }
     //mLightMode = cfg->LightMode;
 
-    //ALOGE("%s: 222 lightmode:%d!", __func__, cfg->LightMode);
+    //LOGE("%s: 222 lightmode:%d!", __func__, cfg->LightMode);
 
     if (!hAwdr) {
         awdrCfg.hCamCalibDb = hCamCalibDb;
@@ -530,7 +530,7 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
         } else if (set->meter_mode == HAL_AE_METERING_MODE_AVERAGE) {
             memset(aecCfg.GridWeights.uCoeff, 0x01, sizeof(aecCfg.GridWeights.uCoeff));
         } else
-            ALOGE("%s:not support %d metering mode!", __func__, set->meter_mode);
+            LOGE("%s:not support %d metering mode!", __func__, set->meter_mode);
 
         //set ae bias
         {
@@ -827,20 +827,20 @@ RESULT CamIA10Engine::updateAfConfig(struct CamIA10_DyCfg* cfg) {
                 afset->mode == HAL_AF_MODE_CONTINUOUS_PICTURE) {
                 result = AfStart(hAf, AFM_FSS_ADAPTIVE_RANGE);
                 if (result != RET_SUCCESS) {
-                    ALOGE("%s: AfStart failure!", __func__);
+                    LOGE("%s: AfStart failure!", __func__);
                     goto updateAfConfig_end;
                 }
             } else if (afset->mode == HAL_AF_MODE_AUTO) {
                 result = AfOneShot(hAf, AFM_FSS_ADAPTIVE_RANGE);
                 if (result != RET_SUCCESS) {
-                    ALOGE("%s: AfOneShot failure!", __func__);
+                    LOGE("%s: AfOneShot failure!", __func__);
                     goto updateAfConfig_end;
                 }
             } else if (afset->mode == HAL_AF_MODE_FIXED ||
                        afset->mode == HAL_AF_MODE_NOT_SET) {
                 result = AfStop(hAf);
                 if (result != RET_SUCCESS) {
-                    ALOGE("%s: AfStop failure!", __func__);
+                    LOGE("%s: AfStop failure!", __func__);
                     goto updateAfConfig_end;
                 }
             }
@@ -851,7 +851,7 @@ RESULT CamIA10Engine::updateAfConfig(struct CamIA10_DyCfg* cfg) {
             afset->oneshot_trigger = BOOL_FALSE;
             result = AfOneShot(hAf, AFM_FSS_ADAPTIVE_RANGE);
             if (result != RET_SUCCESS) {
-                ALOGE("%s: AfOneShot failure!", __func__);
+                LOGE("%s: AfOneShot failure!", __func__);
                 goto updateAfConfig_end;
             }
         }
@@ -902,7 +902,7 @@ RESULT CamIA10Engine::updateAfConfig(struct CamIA10_DyCfg* cfg) {
 
             result = AfReConfigure(hAf, &afcCfg);
             if (result != RET_SUCCESS) {
-                ALOGE("%s: AfReConfigure failure! result %d", __func__, result);
+                LOGE("%s: AfReConfigure failure! result %d", __func__, result);
                 goto updateAfConfig_end;
             }
 
@@ -1023,15 +1023,15 @@ void CamIA10Engine::dumpAe()
     int lastTime = lastAecResult.regIntegrationTime;
     int lastGain = lastAecResult.regGain;
 
-    ALOGI("   ");
+    LOGI("   ");
     if (!mInitDynamic) {
-        ALOGI("cccccc check type (%d) runAEC - check exp time=[%d-%d], sensor=[%d-%d]\n",
+        LOGI("cccccc check type (%d) runAEC - check exp time=[%d-%d], sensor=[%d-%d]\n",
               mStats.meas_type,
               lastTime, mStats.sensor_mode.exp_time,
               lastGain, mStats.sensor_mode.gain
              );
     } else {
-        ALOGI("cccccc check type (%d) runAEC - check exp time=[%d-%d], sensor=[%d-%d]\n",
+        LOGI("cccccc check type (%d) runAEC - check exp time=[%d-%d], sensor=[%d-%d]\n",
               mStats.meas_type,
               lastTime, dCfg.sensor_mode.exp_time,
               lastGain, dCfg.sensor_mode.gain
@@ -1040,13 +1040,13 @@ void CamIA10Engine::dumpAe()
 
     unsigned char* expmean = mStats.aec.exp_mean;
     for (int i=0; i<25; i+=5) {
-        ALOGI("--runAEC-EXPO=[%d-%d-%d-%d-%d]",
+        LOGI("--runAEC-EXPO=[%d-%d-%d-%d-%d]",
               expmean[i], expmean[i+1], expmean[i+2], expmean[i+3], expmean[i+4]);
     }
 
     unsigned int* hist = mStats.aec.hist_bins;
     for (int i=0; i<16; i+=4) {
-        ALOGI("--runAEC-hist=[%d-%d-%d-%d]",
+        LOGI("--runAEC-hist=[%d-%d-%d-%d]",
               hist[i], hist[i+1], hist[i+2], hist[i+3]);
     }
 #endif
@@ -1120,17 +1120,17 @@ RESULT CamIA10Engine::runAwb(XCamAwbParam *param, CamIA10_AWB_Result_t* result, 
 void CamIA10Engine::dumpAwb()
 {
 #if 0
-    ALOGI("");
-    ALOGI("--AWB Statistics");
+    LOGI("");
+    LOGI("--AWB Statistics");
     unsigned int* hist = (unsigned int*)MeasResult.HistBins;
     for (int i=0; i<AWB_HIST_NUM_BINS; i+=4) {
-        ALOGI("--runAwb-hist=[%d-%d-%d-%d]",
+        LOGI("--runAwb-hist=[%d-%d-%d-%d]",
               hist[i], hist[i+1], hist[i+2], hist[i+3]);
     }
-    ALOGI("  NoWhitePixel: %d", MeasResult.MesureResult.NoWhitePixel);
-    ALOGI("  MeanCr__R: %f", MeasResult.MesureResult.MeanCr__R);
-    ALOGI("  MeanY__G: %f", MeasResult.MesureResult.MeanY__G);
-    ALOGI("  MeanCb__B: %f", MeasResult.MesureResult.MeanCb__B);
+    LOGI("  NoWhitePixel: %d", MeasResult.MesureResult.NoWhitePixel);
+    LOGI("  MeanCr__R: %f", MeasResult.MesureResult.MeanCr__R);
+    LOGI("  MeanY__G: %f", MeasResult.MesureResult.MeanY__G);
+    LOGI("  MeanCb__B: %f", MeasResult.MesureResult.MeanCb__B);
 #endif
 }
 
@@ -1205,7 +1205,7 @@ RESULT CamIA10Engine::runAf(XCamAfParam *param, XCam3aResultFocus* result, bool 
             }//AfProcessFrame(hAf, &mStats.af);
 
             if ((ret != RET_SUCCESS) && (ret != RET_CANCELED))
-                ALOGE( "%s AfProcessFrame: %d", __func__, ret );
+                LOGE( "%s AfProcessFrame: %d", __func__, ret );
         } else {
             LOGE("af handle is null");
         }
@@ -1244,7 +1244,7 @@ void CamIA10Engine::setExternalAFHandlerDesc(XCamAFDescription* desc) {
         afDesc->create_context(&context);
         afContext = context;
     } else {
-        ALOGI("Camera ia engine got a null af handler description.");
+        LOGI("Camera ia engine got a null af handler description.");
     }
 }
 
@@ -1302,7 +1302,7 @@ RESULT CamIA10Engine::initAF() {
     CamCalibAfGlobal_t* pAfGlobal;
     result = CamCalibDbGetAfGlobal(hCamCalibDb, &pAfGlobal);
     if (result != RET_SUCCESS) {
-        ALOGE("fail to get pAfGlobal, ret: %d", result);
+        LOGE("fail to get pAfGlobal, ret: %d", result);
         return result;
     }
 
@@ -1424,21 +1424,21 @@ end:
 }
 /*
    RESULT CamHwItfFocusSet(void* handle, const uint32_t AbsStep) {
-   ALOGE("%s", __func__);
+   LOGE("%s", __func__);
    return 0;
    }
 
    RESULT CamHwItfFocusGet(void* handle, uint32_t* pAbsStep) {
-   ALOGE("%s", __func__);
+   LOGE("%s", __func__);
    return 0;
    }
 
    RESULT CamHwItfInitMotoDrive(void* handle) {
-   ALOGE("%s", __func__);
+   LOGE("%s", __func__);
    return 0;
    }
    RESULT CamHwItfSetupMotoDrive(void* handle, uint32_t* pMaxStep) {
-   ALOGE("%s", __func__);
+   LOGE("%s", __func__);
    return 0;
    }
 
@@ -1490,7 +1490,7 @@ void CamIA10Engine::mapSensorExpToHal
 
     int *revert_gain_array = (int *)malloc((size/7*2) * sizeof(int));
     if(revert_gain_array == NULL) {
-        ALOGE("%s: malloc fail", __func__);
+        LOGE("%s: malloc fail", __func__);
         return;
     }
 
@@ -1520,7 +1520,7 @@ void CamIA10Engine::mapSensorExpToHal
     }
 
     if(i > (size/7)) {
-        ALOGE("GAIN OUT OF RANGE: lasttime-gain: %d-%d", sensorInttime, sensorGain);
+        LOGE("GAIN OUT OF RANGE: lasttime-gain: %d-%d", sensorInttime, sensorGain);
         C1 = 16;
         C0 = 0;
         M0 = 1;
@@ -1599,7 +1599,7 @@ void CamIA10Engine::mapHalExpToSensor
     }
 
     if (C1 == -1) {
-        ALOGE("GAIN OUT OF RANGE: lasttime-gain: %f-%f", hal_time, hal_gain);
+        LOGE("GAIN OUT OF RANGE: lasttime-gain: %f-%f", hal_time, hal_gain);
         C1 = 16;
         C0 = 0;
         M0 = 1;
@@ -1719,7 +1719,7 @@ RESULT CamIA10Engine::initAEC() {
     int no_DySetpoint = 0;
     ret = CamCalibDbGetNoOfDySetpoint(hCamCalibDb, pAecGlobal, &no_DySetpoint);
     if (ret != RET_SUCCESS) {
-        ALOGD("%s: Getting number of DySetpoint profile from calib database failed (%d)\n",
+        LOGD("%s: Getting number of DySetpoint profile from calib database failed (%d)\n",
              __FUNCTION__, ret);
         return (ret);
     }
@@ -1729,7 +1729,7 @@ RESULT CamIA10Engine::initAEC() {
            CamCalibAecDynamicSetpoint_t* pDySetpointProfile = NULL;
            ret = CamCalibDbGetDySetpointByIdx(hCamCalibDb, pAecGlobal, i, &pDySetpointProfile);
            if (ret != RET_SUCCESS) {
-             ALOGD("%s: Getting idx(%d) DySetpoint profile from calib database failed (%d)\n",
+             LOGD("%s: Getting idx(%d) DySetpoint profile from calib database failed (%d)\n",
                    __FUNCTION__, i, ret);
              return (ret);
            }
@@ -1741,7 +1741,7 @@ RESULT CamIA10Engine::initAEC() {
     int no_ExpSeparate = 0;
     ret = CamCalibDbGetNoOfExpSeparate(hCamCalibDb, pAecGlobal, &no_ExpSeparate);
     if (ret != RET_SUCCESS) {
-      ALOGD("%s: Getting number of DySetpoint profile from calib database failed (%d)\n",
+      LOGD("%s: Getting number of DySetpoint profile from calib database failed (%d)\n",
             __FUNCTION__, ret);
       return (ret);
     }
@@ -1751,7 +1751,7 @@ RESULT CamIA10Engine::initAEC() {
     		CamCalibAecExpSeparate_t* pExpSeparateProfile = NULL;
     		ret = CamCalibDbGetExpSeparateByIdx(hCamCalibDb, pAecGlobal, i, &pExpSeparateProfile);
     		if (ret != RET_SUCCESS) {
-    	      ALOGD("%s: Getting idx(%d) ExpSeparate profile from calib database failed (%d)\n",
+    	      LOGD("%s: Getting idx(%d) ExpSeparate profile from calib database failed (%d)\n",
     	            __FUNCTION__, i, ret);
     	      return (ret);
     	    }
@@ -1793,13 +1793,13 @@ mStats.aec.frame_status = (AecFrameStatus_t)mStats.frame_status;
 #if 0
     LOGD("   ");
     if (!mInitDynamic) {
-        ALOGI("cccccc check type (%d) runAEC - check exp time=[%d-%d], sensor=[%d-%d]\n",
+        LOGI("cccccc check type (%d) runAEC - check exp time=[%d-%d], sensor=[%d-%d]\n",
               mStats.meas_type,
               lastTime, mStats.sensor_mode.exp_time,
               lastGain, mStats.sensor_mode.gain
              );
     } else {
-        ALOGI("cccccc check type (%d) runAEC - check exp time=[%d-%d], sensor=[%d-%d]\n",
+        LOGI("cccccc check type (%d) runAEC - check exp time=[%d-%d], sensor=[%d-%d]\n",
               mStats.meas_type,
               lastTime, dCfg.sensor_mode.exp_time,
               lastGain, dCfg.sensor_mode.gain
@@ -1808,13 +1808,13 @@ mStats.aec.frame_status = (AecFrameStatus_t)mStats.frame_status;
 
     unsigned char* expmean = mStats.aec.exp_mean;
     for (int i=0; i<25; i+=5) {
-        ALOGI("--runAEC-EXPO=[%d-%d-%d-%d-%d]",
+        LOGI("--runAEC-EXPO=[%d-%d-%d-%d-%d]",
               expmean[i], expmean[i+1], expmean[i+2], expmean[i+3], expmean[i+4]);
     }
 
     unsigned int* hist = mStats.aec.hist_bins;
     for (int i=0; i<16; i+=4) {
-        ALOGI("--runAEC-hist=[%d-%d-%d-%d]",
+        LOGI("--runAEC-hist=[%d-%d-%d-%d]",
               hist[i], hist[i+1], hist[i+2], hist[i+3]);
     }
 #endif
@@ -1909,7 +1909,7 @@ mStats.aec.frame_status = (AecFrameStatus_t)mStats.frame_status;
             } else if (set->meter_mode == HAL_AE_METERING_MODE_AVERAGE) {
                 memset(aecCfg.GridWeights.uCoeff, 0x01, sizeof(aecCfg.GridWeights.uCoeff));
             } else
-                ALOGE("%s:not support %d metering mode!", __func__, set->meter_mode);
+                LOGE("%s:not support %d metering mode!", __func__, set->meter_mode);
 
             //set ae bias
             {
@@ -2127,7 +2127,7 @@ RESULT CamIA10Engine::getAECResults(AecResult_t* result) {
     //LOGD("set offset: %d-%d, size: %d-%d", set->win.left_hoff, set->win.top_voff, set->win.right_width, set->win.bottom_height);
     //LOGD("ret offset: %d-%d, size: %d-%d", result->meas_win.h_offs, result->meas_win.v_offs, result->meas_win.h_size, result->meas_win.v_size);
     //LOGD("sensor_mode size: %d-%d", dCfg.sensor_mode.isp_input_width, dCfg.sensor_mode.isp_input_height);
-    //ALOGI("AEC time-gain=[%f-%f], regtime-gain=[%d-%d]",result->coarse_integration_time, result->analog_gain_code_global,result->regIntegrationTime ,result->regGain);
+    //LOGI("AEC time-gain=[%f-%f], regtime-gain=[%d-%d]",result->coarse_integration_time, result->analog_gain_code_global,result->regIntegrationTime ,result->regGain);
 
     return RET_SUCCESS;
 }
@@ -2632,7 +2632,7 @@ RESULT CamIA10Engine::runAF(HAL_AfcCfg* config) {
             }//AfProcessFrame(hAf, &mStats.af);
 
             if ((result != RET_SUCCESS) && (result != RET_CANCELED))
-                ALOGE( "%s AfProcessFrame: %d", __func__, result );
+                LOGE( "%s AfProcessFrame: %d", __func__, result );
         }
     }
     return result;
@@ -2803,7 +2803,7 @@ RESULT CamIA10Engine::runManIspForPreIsp(struct CamIA10_Results* result) {
                 );
 
             if (ret != RET_SUCCESS)
-                ALOGE("%s:config GOC failed !", __FUNCTION__);
+                LOGE("%s:config GOC failed !", __FUNCTION__);
             result->active |= CAMIA10_GOC_MASK;
         }
     }
@@ -2839,7 +2839,7 @@ RESULT CamIA10Engine::runManIspForBW(struct CamIA10_Results* result) {
                 );
 
             if (ret != RET_SUCCESS)
-                ALOGE("%s:config IE failed !", __FUNCTION__);
+                LOGE("%s:config IE failed !", __FUNCTION__);
             result->active |= CAMIA10_IE_MASK;
         }
     }
@@ -2981,7 +2981,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
         }
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config AWB Meas failed !", __FUNCTION__);
+            LOGE("%s:config AWB Meas failed !", __FUNCTION__);
         result->active |= CAMIA10_AWB_MEAS_MASK;
         result->awb_meas_enabled = awb_meas_result.enabled;
     }
@@ -2998,7 +2998,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config DPCC failed !", __FUNCTION__);
+            LOGE("%s:config DPCC failed !", __FUNCTION__);
         result->active |= CAMIA10_BPC_MASK;
     }
 
@@ -3014,7 +3014,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config BLS failed !", __FUNCTION__);
+            LOGE("%s:config BLS failed !", __FUNCTION__);
         result->active |= CAMIA10_BLS_MASK;
     }
 
@@ -3027,7 +3027,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config SDG failed !", __FUNCTION__);
+            LOGE("%s:config SDG failed !", __FUNCTION__);
         result->active |= CAMIA10_SDG_MASK;
     }
 
@@ -3043,7 +3043,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config hst failed !", __FUNCTION__);
+            LOGE("%s:config hst failed !", __FUNCTION__);
         result->active |= CAMIA10_HST_MASK;
         result->aec.actives |= CAMIA10_HST_MASK;
     }
@@ -3063,7 +3063,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config LSC failed !", __FUNCTION__);
+            LOGE("%s:config LSC failed !", __FUNCTION__);
         result->active |= CAMIA10_LSC_MASK;
         result->lsc_enabled = lsc_result.enabled;
     }
@@ -3079,7 +3079,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config AWB Gain failed !", __FUNCTION__);
+            LOGE("%s:config AWB Gain failed !", __FUNCTION__);
         result->active |= CAMIA10_AWB_GAIN_MASK;
         result->awb_gains_enabled = awb_result.enabled;
     }
@@ -3096,7 +3096,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config FLT failed !", __FUNCTION__);
+            LOGE("%s:config FLT failed !", __FUNCTION__);
         result->active |= CAMIA10_FLT_MASK;
     }
 
@@ -3109,7 +3109,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config BDM failed !", __FUNCTION__);
+            LOGE("%s:config BDM failed !", __FUNCTION__);
         result->active |= CAMIA10_BDM_MASK;
     }
 
@@ -3125,7 +3125,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config CTK failed !", __FUNCTION__);
+            LOGE("%s:config CTK failed !", __FUNCTION__);
         result->active |= CAMIA10_CTK_MASK;
         result->ctk_enabled = ctk_result.enabled;
     }
@@ -3141,7 +3141,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config CPROC failed !", __FUNCTION__);
+            LOGE("%s:config CPROC failed !", __FUNCTION__);
         result->active |= CAMIA10_CPROC_MASK;
     }
 
@@ -3154,7 +3154,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config IE failed !", __FUNCTION__);
+            LOGE("%s:config IE failed !", __FUNCTION__);
         result->active |= CAMIA10_IE_MASK;
     }
 
@@ -3170,7 +3170,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config AEC Meas failed !", __FUNCTION__);
+            LOGE("%s:config AEC Meas failed !", __FUNCTION__);
         result->active |= CAMIA10_AEC_MASK;
         result->aec_enabled = aec_result.enabled;
 
@@ -3202,7 +3202,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config WDR failed !", __FUNCTION__);
+            LOGE("%s:config WDR failed !", __FUNCTION__);
         result->active |= CAMIA10_WDR_MASK;
         if (manCfg->enabled[HAL_ISP_WDR_ID] == HAL_ISP_ACTIVE_FALSE) {
             // stop awdr
@@ -3230,7 +3230,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config GOC failed !", __FUNCTION__);
+            LOGE("%s:config GOC failed !", __FUNCTION__);
         result->active |= CAMIA10_GOC_MASK;
     }
 
@@ -3244,7 +3244,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
             );
 
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config DPF failed !", __FUNCTION__);
+            LOGE("%s:config DPF failed !", __FUNCTION__);
         result->active |= CAMIA10_DPF_MASK;
         result->adpf_enabled = dpfConfig.enabled;
     }
@@ -3262,7 +3262,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
         result->adpf.DynInvStrength.WeightG = dpfStrengConfig.g;
         result->adpf.DynInvStrength.WeightR = dpfStrengConfig.r;
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config DPF strength failed !", __FUNCTION__);
+            LOGE("%s:config DPF strength failed !", __FUNCTION__);
         result->active |= CAMIA10_DPF_STRENGTH_MASK;
         result->adpf_strength_enabled = dpfStrengConfig.enabled;
     }
@@ -3282,7 +3282,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
              &(result->rkDemosaicLP)
             );
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config demosaiclp failed !", __FUNCTION__);
+            LOGE("%s:config demosaiclp failed !", __FUNCTION__);
         result->active |= CAMIA10_DEMOSAICLP_MASK;
     }
 
@@ -3297,7 +3297,7 @@ RESULT CamIA10Engine::runManISP(struct HAL_ISP_cfg_s* manCfg, struct CamIA10_Res
              &(result->rkIEsharp)
             );
         if (ret != RET_SUCCESS)
-            ALOGE("%s:config demosaiclp failed !", __FUNCTION__);
+            LOGE("%s:config demosaiclp failed !", __FUNCTION__);
         result->active |= CAMIA10_RKIESHARP_MASK;
     }
 

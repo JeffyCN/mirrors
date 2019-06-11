@@ -70,7 +70,7 @@ int
 rkisp_iq_init(void* engine, const char* tuningFile/*, struct CamIA10_DyCfg* ia_dcfg*/) {
 	shared_ptr<CamIA10EngineItf> iqEngine = getCamIA10EngineItf();
 	if (iqEngine->initStatic((char*)tuningFile) != RET_SUCCESS) {
-		ALOGE("%s: initstatic failed", __func__);
+		LOGE("%s: initstatic failed", __func__);
 		rkisp_iq_deinit(engine);
 		return -1;
 	}

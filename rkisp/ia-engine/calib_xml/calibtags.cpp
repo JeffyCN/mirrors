@@ -16,7 +16,7 @@
 
 #include "calibtags.h"
 #include <ebase/dct_assert.h>
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 //#define CALIBDB_CHECK_DEBUG
 

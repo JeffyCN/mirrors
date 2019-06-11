@@ -23,7 +23,7 @@
 #include "settings_processor.h"
 #include "x3a_analyzer_rkiq.h"
 #include "isp_poll_thread.h"
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 using namespace XCam;
 

@@ -170,14 +170,14 @@ bool Isp10Engine::init(const char* tuningFile,
   osMutexLock(&mApiLock);
   if (mInitialized == 0) {
     if (mCamIAEngine == NULL) {
-      ALOGE("%s: getCamIA10EngineItf failed!",
+      LOGE("%s: getCamIA10EngineItf failed!",
             __func__);
       goto init_exit;
     }
 
     LOGD("%s:tuningFile %s", __func__, tuningFile);
     if (mCamIAEngine->initStatic((char*)tuningFile, ispDev, isp_ver) != RET_SUCCESS) {
-      ALOGE("%s: initstatic failed", __func__);
+      LOGE("%s: initstatic failed", __func__);
       osMutexUnlock(&mApiLock);
       deInit();
       osMutexLock(&mApiLock);
@@ -187,7 +187,7 @@ bool Isp10Engine::init(const char* tuningFile,
 	LOGD("initStatic success");
 /*
     if (!initISPStream(ispDev)) {
-      ALOGE("%s: initISPStream failed but continue", __func__);
+      LOGE("%s: initISPStream failed but continue", __func__);
       osMutexUnlock(&mApiLock);
       deInit();
       osMutexLock(&mApiLock);
@@ -253,7 +253,7 @@ bool Isp10Engine::start() {
 
 	LOGD("%s: run ISP3ATh\n", __func__);
 	if (RET_SUCCESS != mISP3AThread->run("ISP3ATh", OSLAYER_THREAD_PRIO_HIGH)) {
-	  ALOGE("%s: ISP3ATh thread start failed", __func__);
+	  LOGE("%s: ISP3ATh thread start failed", __func__);
 	  stop();
 	  ret = false;
 	} else {
@@ -561,7 +561,7 @@ bool Isp10Engine::configureISP(const void* config) {
       memset(&isp_cfg, 0, sizeof(struct CamIsp10ConfigSet));
       //run isp manual config??will override the 3A results
       if (!runISPManual(&ia_results, BOOL_TRUE))
-        ALOGE("%s:run ISP manual failed!", __func__);
+        LOGE("%s:run ISP manual failed!", __func__);
       convertIAResults(&isp_cfg, &ia_results);
       applyIspConfig(&isp_cfg);
     }
@@ -777,7 +777,7 @@ bool Isp10Engine::convertIAResults(
         else if (ia_results->awb.MeasMode == CAMERIC_ISP_AWB_MEASURING_MODE_RGB)
           isp_cfg->configs.awb_meas_config.awb_mode = CIFISP_AWB_MODE_RGB;
         else
-          ALOGE("%s:%d,erro awb measure mode %d", __func__, __LINE__, ia_results->awb.MeasMode);
+          LOGE("%s:%d,erro awb measure mode %d", __func__, __LINE__, ia_results->awb.MeasMode);
         isp_cfg->active_configs |= ISP_AWB_MEAS_MASK;
         isp_cfg->enabled[HAL_ISP_AWB_MEAS_ID] =
             ia_results->awb_meas_enabled;
@@ -1109,7 +1109,7 @@ bool Isp10Engine::convertIAResults(
         isp_cfg->configs.goc_config.mode =
             CIFISP_GOC_MODE_EQUIDISTANT;
       else
-        ALOGE("%s: not support %d goc mode.",
+        LOGE("%s: not support %d goc mode.",
               __func__, ia_results->goc.mode);
       for (int i = 0; i < CIFISP_GAMMA_OUT_MAX_SAMPLES; i++) {
         isp_cfg->configs.goc_config.gamma_y[i] =
@@ -1255,7 +1255,7 @@ bool Isp10Engine::convertIAResults(
         }
         break;
         default: {
-          ALOGE("%s: set ie mode failed %d", __FUNCTION__,
+          LOGE("%s: set ie mode failed %d", __FUNCTION__,
                 ia_results->ie.mode);
           if (ia_results->ie.enabled == BOOL_TRUE)
             isp_cfg->active_configs &=  ~ISP_IE_MASK;
@@ -1614,7 +1614,7 @@ void Isp10Engine::transDrvMetaDataToHal
           halMeta->exp_time
       );
     else
-      ALOGW("%s:mCamIAEngine has been desroyed!", __func__);
+      LOGW("%s:mCamIAEngine has been desroyed!", __func__);
     halMeta->awb.wb_gain.gain_blue =
         UtlFixToFloat_U0208(ispMetaData->other_cfg.awb_gain_config.gain_blue);
     halMeta->awb.wb_gain.gain_green_b =
@@ -1656,12 +1656,12 @@ bool Isp10Engine::threadLoop() {
   //LOGD("%s: enter",__func__);
 
   if (!getMeasurement(v4l2_buf)) {
-    ALOGE("%s: getMeasurement failed", __func__);
+    LOGE("%s: getMeasurement failed", __func__);
     return true;//false;
   }
 
   if (v4l2_buf.index >= CAM_ISP_NUM_OF_STAT_BUFS) {
-    ALOGE("%s: v4l2_buf index: %d is invalidate!", __func__, v4l2_buf.index);
+    LOGE("%s: v4l2_buf index: %d is invalidate!", __func__, v4l2_buf.index);
     return true;//false;
   }
 
@@ -1682,7 +1682,7 @@ bool Isp10Engine::threadLoop() {
 
   //run isp manual config??will override the 3A results
   if (!runISPManual(&ia_results, BOOL_TRUE))
-    ALOGE("%s:run ISP manual failed!", __func__);
+    LOGE("%s:run ISP manual failed!", __func__);
 
   convertIAResults(&isp_cfg, &ia_results);
 

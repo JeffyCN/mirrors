@@ -22,49 +22,7 @@
 #define XCAM_DEFS_H
 #include "unistd.h"
 #include <libgen.h>
-
-enum LOG_LEVEL {
-    ERROR_LEVEL,
-    WARNING_LEVEL,
-    INFO_LEVEL,
-    VERBOSE_LEVEL,
-    DEBUG_LEVEL
-};
-
-#ifndef XCAM_LOG_ERROR
-#define XCAM_LOG_ERROR(format, ...)    \
-    xcam_print_log (ERROR_LEVEL, "XCAM ERROR %s:%d: " format "\n", basename((char*)__FILE__), __LINE__, ## __VA_ARGS__)
-#endif
-
-#ifndef XCAM_LOG_WARNING
-#define XCAM_LOG_WARNING(format, ...)   \
-    xcam_print_log (WARNING_LEVEL, "XCAM WARNING %s:%d: " format "\n", basename((char*)__FILE__), __LINE__, ## __VA_ARGS__)
-#endif
-
-#ifndef XCAM_LOG_INFO
-#define XCAM_LOG_INFO(format, ...)   \
-    xcam_print_log (INFO_LEVEL, "XCAM INFO (%d) %s:%d: " format "\n", getpid(), basename((char*)__FILE__), __LINE__, ## __VA_ARGS__)
-#endif
-
-#define VERBOSE
-#ifdef VERBOSE
-#ifndef XCAM_LOG_VERBOSE
-#define XCAM_LOG_VERBOSE(format, ...)   \
-    xcam_print_log (VERBOSE_LEVEL, "XCAM VERBOSE (%d) %s:%d: " format "\n", getpid(), basename((char*)__FILE__), __LINE__, ## __VA_ARGS__)
-#endif
-#else
-#define XCAM_LOG_VERBOSE(...)
-#endif
-
-#define DEBUG
-#ifdef DEBUG
-#ifndef XCAM_LOG_DEBUG
-#define XCAM_LOG_DEBUG(format, ...)   \
-      xcam_print_log (DEBUG_LEVEL, "XCAM DEBUG %s:%d: " format "\n", basename((char*)__FILE__), __LINE__, ## __VA_ARGS__)
-#endif
-#else
-#define XCAM_LOG_DEBUG(...)
-#endif
+#include "xcam_log.h" 
 
 #define XCAM_ASSERT(exp)  assert(exp)
 

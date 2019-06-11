@@ -25,7 +25,7 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
 #endif
 #include "rkaiq.h"
 #include "rk_aiq_types.h"
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 using namespace android;
 namespace XCam {

@@ -21,7 +21,7 @@
 #include <ebase/types.h>
 #include <ebase/trace.h>
 #include <ebase/builtins.h>
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 #include <common/return_codes.h>
 #include <common/misc.h>
@@ -75,19 +75,19 @@ static RESULT AwdrCalculateWdrMaxGainLevel
     const float             fSensorGain,
     uint8_t*       MaxGainLevelRegValue
 ) {
-  ALOGV( "%s: (enter)\n", __func__);
+  LOGV( "%s: (enter)\n", __func__);
   if (pWdrMaxGainLevelCurve == NULL) {
-    ALOGE("%s: (exit) pWdrMaxGainLevelCurve == NULL \n", __func__);
+    LOGE("%s: (exit) pWdrMaxGainLevelCurve == NULL \n", __func__);
     return (RET_NULL_POINTER);
   }
 
   if (fSensorGain < 1.0f) {
-    ALOGE("%s: fSensorGain  < 1.0f  \n", __func__);
+    LOGE("%s: fSensorGain  < 1.0f  \n", __func__);
     return (RET_INVALID_PARM);
   }
 
   if (pWdrMaxGainLevelCurve->nSize < 1) {
-    ALOGE("%s: (exit) nSize == 0 \n", __func__);
+    LOGE("%s: (exit) nSize == 0 \n", __func__);
     return (RET_INVALID_PARM);
   }
 
@@ -144,9 +144,9 @@ static RESULT AwdrCalculateWdrMaxGainLevel
 
   *MaxGainLevelRegValue = (((uint8_t)MaxGainResult) << 4);
 
-  ALOGV( "%s: SensorGain(%f) MaxGainLimit(0x%02x) \n", __func__, Dgain, *MaxGainLevelRegValue);
+  LOGV( "%s: SensorGain(%f) MaxGainLimit(0x%02x) \n", __func__, Dgain, *MaxGainLevelRegValue);
 
-  ALOGV( "%s: (exit)\n", __func__);
+  LOGV( "%s: (exit)\n", __func__);
 
   return (RET_SUCCESS);
 }
@@ -163,10 +163,10 @@ static RESULT AwdrApplyConfiguration
 
   //CamerIcWdrConfig_t  WdrConfig;
 
-  ALOGV( "%s: (enter)\n", __func__);
+  LOGV( "%s: (enter)\n", __func__);
 
   if (pConfig->hCamCalibDb == NULL) {
-    ALOGE("%s: hCamCalibDb NULL\n", __func__);
+    LOGE("%s: hCamCalibDb NULL\n", __func__);
     return (RET_INVALID_PARM);
   }
 
@@ -183,7 +183,7 @@ static RESULT AwdrApplyConfiguration
     }
 
   } else {
-    ALOGE("%s: (enter) CamCalibDbGetWdrGlobal fail (%d)\n", __func__, result);
+    LOGE("%s: (enter) CamCalibDbGetWdrGlobal fail (%d)\n", __func__, result);
     pAwdrCtx->WdrEnable = 0;
     pAwdrCtx->WdrMaxGainEnable = 0;
   }
@@ -264,12 +264,12 @@ static RESULT AwdrApplyConfiguration
         // caluclate init strength
         result = AwdrCalculateWdrMaxGainLevel(&pAwdrCtx->pWdrGlobal->wdr_MaxGain_Level_curve, pConfig->fSensorGain, &pAwdrCtx->awdr_result.wdr_gain_max_value);
         if (result != RET_SUCCESS) {
-          ALOGV( "%s : AwdrCalculateWdrMaxGainLevel failed", __func__);
+          LOGV( "%s : AwdrCalculateWdrMaxGainLevel failed", __func__);
           return (result);
         }
         break;
       default:
-        ALOGV( "%s: pConfig->mode: %d isn't support",
+        LOGV( "%s: pConfig->mode: %d isn't support",
               __func__, pConfig->mode);
         break;
     }
@@ -279,7 +279,7 @@ static RESULT AwdrApplyConfiguration
   /* save configuration into context */
   pAwdrCtx->Config = *pConfig;
 
-  ALOGV( "%s: (exit)\n", __func__);
+  LOGV( "%s: (exit)\n", __func__);
 
   return (result);
 }
@@ -296,12 +296,12 @@ RESULT AwdrInit
 
   AwdrContext_t* pAwdrCtx;
 
-  ALOGV( "%s: (enter)\n", __func__);
+  LOGV( "%s: (enter)\n", __func__);
 
   /* allocate auto exposure control context */
   pAwdrCtx = (AwdrContext_t*)malloc(sizeof(AwdrContext_t));
   if (NULL == pAwdrCtx) {
-    ALOGV(  "%s: Can't allocate AWDR context\n",  __func__);
+    LOGV(  "%s: Can't allocate AWDR context\n",  __func__);
     return (RET_OUTOFMEM);
   }
 
@@ -315,7 +315,7 @@ RESULT AwdrInit
   /* config awdr during initialize */
   AwdrConfigure(*handlePtr, pConfig);
 
-  ALOGV( "%s: (exit)\n", __func__);
+  LOGV( "%s: (exit)\n", __func__);
 
   return (result);
 }
@@ -329,7 +329,7 @@ RESULT AwdrRelease
 ) {
   AwdrContext_t* pAwdrCtx = (AwdrContext_t*)handle;
 
-  ALOGV( "%s: (enter)\n", __func__);
+  LOGV( "%s: (enter)\n", __func__);
 
   /* initial checks */
   if (NULL == pAwdrCtx) {
@@ -346,7 +346,7 @@ RESULT AwdrRelease
   MEMSET(pAwdrCtx, 0, sizeof(AwdrContext_t));
   free(pAwdrCtx);
 
-  ALOGV( "%s: (exit)\n", __func__);
+  LOGV( "%s: (exit)\n", __func__);
 
   return (RET_SUCCESS);
 }
@@ -365,7 +365,7 @@ RESULT AwdrConfigure
 
   AwdrContext_t* pAwdrCtx = (AwdrContext_t*) handle;
 
-  ALOGV( "%s: (enter)\n", __func__);
+  LOGV( "%s: (enter)\n", __func__);
 
   /* initial checks */
   if (NULL == pAwdrCtx) {
@@ -386,12 +386,12 @@ RESULT AwdrConfigure
     /* apply new configuration */
     result = AwdrApplyConfiguration(pAwdrCtx, pConfig);
     if (result != RET_SUCCESS) {
-      ALOGE( "%s: Can't configure CamerIc WDR (%d)\n",  __func__, result);
+      LOGE( "%s: Can't configure CamerIc WDR (%d)\n",  __func__, result);
       return (result);
     }
   }
 
-  ALOGV( "%s: (exit)\n", __func__);
+  LOGV( "%s: (exit)\n", __func__);
   return (result);
 }
 
@@ -409,7 +409,7 @@ RESULT AwdrRun
 
   float dgain = 0.0f; /* gain difference */
 
-  ALOGV( "%s: (enter)\n", __func__);
+  LOGV( "%s: (enter)\n", __func__);
 
   /* initial checks */
   if (pAwdrCtx == NULL) {
@@ -436,7 +436,7 @@ RESULT AwdrRun
     }
   }
 
-  ALOGV( "%s: (exit)\n", __func__);
+  LOGV( "%s: (exit)\n", __func__);
 
   return (result);
 }
@@ -456,7 +456,7 @@ RESULT AwdrGetResult
     *result = pAwdrCtx->awdr_result;
     result->actives |= AWDR_WDR_MAXGAIN_LEVEL_MASK;
     pAwdrCtx->actives &= ~AWDR_WDR_MAXGAIN_LEVEL_MASK;
-    ALOGV( "%s: sensor gain(%f) Wdr maxgain(%d)\n", __func__, pAwdrCtx->gain, pAwdrCtx->awdr_result.wdr_gain_max_value);
+    LOGV( "%s: sensor gain(%f) Wdr maxgain(%d)\n", __func__, pAwdrCtx->gain, pAwdrCtx->awdr_result.wdr_gain_max_value);
   }
 
   return RET_SUCCESS;

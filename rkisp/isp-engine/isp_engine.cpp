@@ -51,7 +51,7 @@ bool IspEngine::deInit()
             ret = ioctl(mIspFd, VIDIOC_STREAMOFF, &type);
             if (ret < 0)
             {
-                ALOGE("%s: Failed to stop stream", __func__);
+                LOGE("%s: Failed to stop stream", __func__);
             }
         }
 
@@ -590,7 +590,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mHstNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP hst !", __func__);
+            LOGE("%s:can't config ISP hst !", __func__);
             goto config_end;
         }
     }
@@ -625,7 +625,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mAecNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP aec !", __func__);
+            LOGE("%s:can't config ISP aec !", __func__);
             goto config_end;
         }
     }
@@ -651,7 +651,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mLscNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP lsc !", __func__);
+            LOGE("%s:can't config ISP lsc !", __func__);
             goto config_end;
         }
     }
@@ -677,7 +677,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mAwbGainNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP awb gain !", __func__);
+            LOGE("%s:can't config ISP awb gain !", __func__);
             goto config_end;
         }
     }
@@ -703,7 +703,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mDpccNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP dpcc !", __func__);
+            LOGE("%s:can't config ISP dpcc !", __func__);
             goto config_end;
         }
     }
@@ -729,7 +729,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mSdgNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP sdg !", __func__);
+            LOGE("%s:can't config ISP sdg !", __func__);
             goto config_end;
         }
     }
@@ -755,7 +755,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mCtkNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP ctk !", __func__);
+            LOGE("%s:can't config ISP ctk !", __func__);
             goto config_end;
         }
     }
@@ -789,7 +789,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mAwbMeNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP awb measure !", __func__);
+            LOGE("%s:can't config ISP awb measure !", __func__);
             goto config_end;
         }
     }
@@ -815,7 +815,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mAfcNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP afc !", __func__);
+            LOGE("%s:can't config ISP afc !", __func__);
             goto config_end;
         }
     }
@@ -841,7 +841,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mDpfNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP dpf !", __func__);
+            LOGE("%s:can't config ISP dpf !", __func__);
             goto config_end;
         }
     }
@@ -867,7 +867,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mDpfStrengthNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP dpf strength!", __func__);
+            LOGE("%s:can't config ISP dpf strength!", __func__);
             goto config_end;
         }
     }
@@ -896,7 +896,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mCprocNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP cproc!", __func__);
+            LOGE("%s:can't config ISP cproc!", __func__);
             goto config_end;
         }
     }
@@ -922,7 +922,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mIeNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP ie!", __func__);
+            LOGE("%s:can't config ISP ie!", __func__);
             goto config_end;
         }
     }
@@ -953,7 +953,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mGocNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP goc!", __func__);
+            LOGE("%s:can't config ISP goc!", __func__);
             goto config_end;
         }
     }
@@ -965,7 +965,7 @@ bool IspEngine::configureISP(const void* config)
             mFltNeededUpdate = BOOL_TRUE;
             mFltEnabled = HAL_ISP_ACTIVE_SETTING;
             flt_cfg = *cfg->flt_cfg;
-            ALOGE("%s:HAL_ISP_FLT_MASK HAL_ISP_ACTIVE_SETTING!", __func__);
+            LOGE("%s:HAL_ISP_FLT_MASK HAL_ISP_ACTIVE_SETTING!", __func__);
         }
         else if (!cfg->enabled[HAL_ISP_FLT_ID])
         {
@@ -980,7 +980,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mFltNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP flt!", __func__);
+            LOGE("%s:can't config ISP flt!", __func__);
             goto config_end;
         }
     }
@@ -1006,7 +1006,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mBdmNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP bdm!", __func__);
+            LOGE("%s:can't config ISP bdm!", __func__);
             goto config_end;
         }
     }
@@ -1032,7 +1032,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mBlsNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config bls !", __func__);
+            LOGE("%s:can't config bls !", __func__);
             goto config_end;
         }
     }
@@ -1058,7 +1058,7 @@ bool IspEngine::configureISP(const void* config)
         else
         {
             mWdrNeededUpdate = BOOL_FALSE;
-            ALOGE("%s:can't config ISP bdm!", __func__);
+            LOGE("%s:can't config ISP bdm!", __func__);
             goto config_end;
         }
     }
@@ -1083,7 +1083,7 @@ bool IspEngine::configureISP(const void* config)
 		else 
 	    {
 	      m3DnrNeededUpdate = BOOL_FALSE;
-	      ALOGE("%s:can't config dsp 3dnr!", __func__);
+	      LOGE("%s:can't config dsp 3dnr!", __func__);
 	    }
 	}
 
@@ -1107,7 +1107,7 @@ bool IspEngine::configureISP(const void* config)
 		else 
 		{
 	      mNew3DnrNeededUpdate = BOOL_FALSE;
-	      ALOGE("%s:can't config new dsp 3dnr!", __func__);
+	      LOGE("%s:can't config new dsp 3dnr!", __func__);
 	    }
   	}
 
@@ -1131,7 +1131,7 @@ bool IspEngine::configureISP(const void* config)
 		else 
 		{
 	      mDemosaicLPNeededUpdate = BOOL_FALSE;
-	      ALOGE("%s:can't config new dsp 3dnr!", __func__);
+	      LOGE("%s:can't config new dsp 3dnr!", __func__);
 	    }
 	}
 
@@ -1155,7 +1155,7 @@ bool IspEngine::configureISP(const void* config)
 		else 
 		{
 	      mrkIEsharpNeededUpdate = BOOL_FALSE;
-	      ALOGE("%s:can't config new dsp 3dnr!", __func__);
+	      LOGE("%s:can't config new dsp 3dnr!", __func__);
 	    }
 	}
     /* should reconfig 3A algorithm ?*/
@@ -1182,7 +1182,7 @@ bool IspEngine::start()
     LOGD("%s: startMeasurements\n", __func__);
     if (!startMeasurements())
     {
-        ALOGE("%s failed to start measurements", __func__);
+        LOGE("%s failed to start measurements", __func__);
         --mStartCnt;
         ret = false;
         goto end;
@@ -1215,7 +1215,7 @@ bool IspEngine::setISPDeviceFd(int ispFd)
 {
     if (ispFd <= 0 )
     {
-        ALOGE("%s: invalid isp device file description(%d)/n",
+        LOGE("%s: invalid isp device file description(%d)/n",
               __func__,
               ispFd);
     }
@@ -1232,7 +1232,7 @@ bool IspEngine::initISPStream(const char* ispDev)
     mIspFd = open(ispDev, O_RDWR | O_NONBLOCK);
     if (mIspFd < 0)
     {
-        ALOGE("%s: Cannot open %s (error : %s)\n",
+        LOGE("%s: Cannot open %s (error : %s)\n",
               __func__,
               ispDev,
               strerror(errno));
@@ -1244,7 +1244,7 @@ bool IspEngine::initISPStream(const char* ispDev)
     req.memory = V4L2_MEMORY_MMAP;
     if (ioctl(mIspFd, VIDIOC_REQBUFS, &req) < 0)
     {
-        ALOGE("%s: VIDIOC_REQBUFS failed, strerror: %s",
+        LOGE("%s: VIDIOC_REQBUFS failed, strerror: %s",
               __func__,
               strerror(errno));
         return false;
@@ -1257,7 +1257,7 @@ bool IspEngine::initISPStream(const char* ispDev)
         v4l2_buf.index = i;
         if (ioctl(mIspFd, VIDIOC_QUERYBUF, &v4l2_buf) < 0)
         {
-            ALOGE("%s: VIDIOC_QUERYBUF failed\n", __func__);
+            LOGE("%s: VIDIOC_QUERYBUF failed\n", __func__);
             return false;
         }
 
@@ -1269,13 +1269,13 @@ bool IspEngine::initISPStream(const char* ispDev)
                               v4l2_buf.m.offset);
         if (mIspStatBuf[i] == MAP_FAILED)
         {
-            ALOGE("%s mmap() failed\n", __func__);
+            LOGE("%s mmap() failed\n", __func__);
             return false;
         }
 
         if (ioctl(mIspFd, VIDIOC_QBUF, &v4l2_buf) < 0)
         {
-            ALOGE("QBUF failed index %d", v4l2_buf.index);
+            LOGE("QBUF failed index %d", v4l2_buf.index);
             return false;
         }
     }
@@ -1298,7 +1298,7 @@ bool IspEngine::getMeasurement(struct v4l2_buffer& v4l2_buf)
         ret = poll(fds, 1, timeout_ms);
         if (ret <= 0)
         {
-            ALOGE("%s: poll error, %s",
+            LOGE("%s: poll error, %s",
                   __FUNCTION__,
                   strerror(errno));
             return false;
@@ -1341,7 +1341,7 @@ bool IspEngine::releaseMeasurement(struct v4l2_buffer* v4l2_buf)
 {
     if (ioctl(mIspFd, VIDIOC_QBUF, v4l2_buf) < 0)
     {
-        ALOGE("%s: QBUF failed", __func__);
+        LOGE("%s: QBUF failed", __func__);
         return false;
     }
 
@@ -1356,7 +1356,7 @@ bool IspEngine::stopMeasurements()
     LOGD("%s: going to STREAMOFF", __func__);
     if (ioctl(mIspFd, VIDIOC_STREAMOFF, &type) < 0)
     {
-        ALOGE("%s: VIDIOC_STREAMON failed\n", __func__);
+        LOGE("%s: VIDIOC_STREAMON failed\n", __func__);
         return false;
     }
 
@@ -1372,7 +1372,7 @@ bool IspEngine::startMeasurements()
     //  mIspFd);
     if ((ret = ioctl(mIspFd, VIDIOC_STREAMON, &type)) < 0)
     {
-        ALOGE("%s: VIDIOC_STREAMON failed, %s\n", __func__,
+        LOGE("%s: VIDIOC_STREAMON failed, %s\n", __func__,
               strerror(ret));
         return false;
     }
@@ -1750,7 +1750,7 @@ int IspEngine::switchSubDevIrCutMode(int mode)
         //mCamHwItf->setIrCutState(1);
     }
 
-    //ALOGE("%s: 111 lightmode:%d", __func__, mCamIA_DyCfg.LightMode);
+    //LOGE("%s: 111 lightmode:%d", __func__, mCamIA_DyCfg.LightMode);
     configureISP(&cfg);
     return 0;
 }

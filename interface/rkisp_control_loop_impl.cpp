@@ -13,7 +13,7 @@
 #include "camera_metadata_hidden.h"
 #include "rkcamera_vendor_tags.h"
 
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 #define V4L2_CAPTURE_MODE_STILL 0x2000
 #define V4L2_CAPTURE_MODE_VIDEO 0x4000
@@ -243,7 +243,7 @@ int rkisp_cl_prepare(void* cl_ctx,
         isp_dev->subscribe_event (V4L2_EVENT_FRAME_SYNC);
         device_manager->set_event_subdevice(isp_dev);
     } else {
-        ALOGE("failed to open isp subdev");
+        LOGE("failed to open isp subdev");
         return -1;
     }
 
@@ -256,7 +256,7 @@ int rkisp_cl_prepare(void* cl_ctx,
             LOGW("%s: can't get sensor name");
         device_manager->set_sensor_subdevice(sensor_dev, sensor_name);
     } else {
-        ALOGE("failed to open isp subdev");
+        LOGE("failed to open isp subdev");
         return -1;
     }
 
@@ -270,7 +270,7 @@ int rkisp_cl_prepare(void* cl_ctx,
     if (ret == XCAM_RETURN_NO_ERROR) {
         device_manager->set_isp_stats_device (stats_dev);
     } else {
-        ALOGE("failed to open statistics dev");
+        LOGE("failed to open statistics dev");
         return -1;
     }
 
@@ -289,7 +289,7 @@ int rkisp_cl_prepare(void* cl_ctx,
     if (ret == XCAM_RETURN_NO_ERROR) {
         device_manager->set_isp_params_device (param_dev);
     } else {
-        ALOGE("failed to open parameter dev");
+        LOGE("failed to open parameter dev");
         return -1;
     }
 
@@ -297,7 +297,7 @@ int rkisp_cl_prepare(void* cl_ctx,
         vcm_dev = new V4l2SubDevice(prepare_params->lens_sd_node_path);
         ret = vcm_dev->open ();
         if (ret != XCAM_RETURN_NO_ERROR) {
-            ALOGE("failed to open lens subdev");
+            LOGE("failed to open lens subdev");
             return -1;
         }
     }
@@ -307,7 +307,7 @@ int rkisp_cl_prepare(void* cl_ctx,
             fl_dev[i] = new V4l2SubDevice(prepare_params->flashlight_sd_node_path[i]);
             ret = fl_dev[i]->open ();
             if (ret != XCAM_RETURN_NO_ERROR) {
-                ALOGE("failed to open flashlight subdev");
+                LOGE("failed to open flashlight subdev");
                 return -1;
             }
         } else
@@ -333,7 +333,7 @@ int rkisp_cl_prepare(void* cl_ctx,
     struct rkmodule_inf camera_mod_info;
     xcam_mem_clear (camera_mod_info);
     if (__rkisp_get_cam_module_info(sensor_dev.ptr() , &camera_mod_info)) {
-            ALOGE("failed to get cam module info");
+            LOGE("failed to get cam module info");
             return -1;
     }
 
@@ -345,7 +345,7 @@ int rkisp_cl_prepare(void* cl_ctx,
     if (__rkisp_auto_select_iqfile(&camera_mod_info,
                                    device_manager->get_sensor_entity_name(),
                                    iq_file_name)) {
-        ALOGE("failed to get iq file name !");
+        LOGE("failed to get iq file name !");
         device_manager->set_has_3a(false);
         //return -1;
     } else {
@@ -354,7 +354,7 @@ int rkisp_cl_prepare(void* cl_ctx,
             device_manager->set_iq_path(iq_file_full_name);
             device_manager->set_has_3a(true);
         } else {
-            ALOGE("can't access iq file %s !", iq_file_full_name);
+            LOGE("can't access iq file %s !", iq_file_full_name);
             device_manager->set_has_3a(false);
         }
     }

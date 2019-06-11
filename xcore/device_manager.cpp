@@ -223,7 +223,7 @@ DeviceManager::set_has_3a(bool has_3a) {
     return true;
 }
 
-#include <base/log.h>
+#include <base/xcam_log.h>
 XCamReturn
 DeviceManager::start ()
 {

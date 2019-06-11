@@ -3,7 +3,7 @@
 #include <ebase/builtins.h>
 #include <sys/ioctl.h>
 #include <calib_xml/calibdb.h>
-#include <base/log.h>
+#include <base/xcam_log.h>
 
 #include <HAL/CamIsp101CtrItf.h>
 #include <af_ctrl.h>

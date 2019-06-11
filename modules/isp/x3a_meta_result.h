@@ -23,7 +23,7 @@
 
 #include <xcam_std.h>
 #include <x3a_result.h>
-#include <base/log.h>
+#include <base/xcam_log.h>
 #include <base/xcam_3a_result.h>
 #ifdef ANDROID_VERSION_ABOVE_8_X
 #include <CameraMetadata.h>

@@ -76,9 +76,6 @@ void xcam_free (void *ptr);
 int xcam_device_ioctl (int fd, int cmd, void *arg);
 const char *xcam_fourcc_to_string (uint32_t fourcc);
 
-void xcam_set_log (const char* file_name);
-void xcam_print_log (int level, const char* format, ...);
-
 static inline uint32_t
 xcam_ceil (uint32_t value, const uint32_t align) {
     return (value + align - 1) / align * align;
@@ -112,8 +109,6 @@ format_angle (float angle)
     XCAM_ASSERT (angle >= 0.0f && angle < 360.0f);
     return angle;
 }
-
-int xcam_get_log_level();
 
 XCAM_END_DECLARE
 

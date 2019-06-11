@@ -6,7 +6,7 @@
 rk_aiq* rk_aiq_init(const char* iq_xml_file) {
     CamIA10Engine* iqEngine = new CamIA10Engine();
     if (iqEngine->initStatic((char*)iq_xml_file) != RET_SUCCESS) {
-        ALOGE("%s: initstatic failed", __func__);
+        LOGE("%s: initstatic failed", __func__);
         rk_aiq_deinit((rk_aiq*)iqEngine);
         return NULL;
     } else {
@@ -39,7 +39,7 @@ int rk_aiq_stats_set(rk_aiq* ctx,
 		(sensor_desc->sensor_output_width != iqEngine->mStats.sensor_mode.isp_input_width ||
 			sensor_desc->sensor_output_height != iqEngine->mStats.sensor_mode.isp_input_height)) {
 		if (iqEngine->restart()!= RET_SUCCESS) {
-			ALOGE("%s: restart isp engine failed", __func__);
+			LOGE("%s: restart isp engine failed", __func__);
 			rk_aiq_deinit((rk_aiq*)iqEngine);
 			return NULL;
 		}

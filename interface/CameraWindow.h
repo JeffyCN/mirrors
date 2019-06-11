@@ -23,6 +23,8 @@
 /* #include "ia_types.h" */
 /* #include "FrameInfo.h" */
 
+#include <string.h>
+
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
 
 /** Coordinate, used in red-eye correction. */

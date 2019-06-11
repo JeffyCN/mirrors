@@ -3,7 +3,7 @@
 #include <ebase/builtins.h>
 #include <sys/ioctl.h>
 #include <calib_xml/calibdb.h>
-#include <base/log.h>
+#include <base/xcam_log.h>
 #include <isp_ctrl.h>
 
 //extern IspEngineItf::Configuration mIspCfg;
@@ -104,7 +104,7 @@ int configIsp(Isp10Engine *ispDev,
        //TODO: ae bias,zoom,rotation,3a areas
 
        if (!ispDev->configure(cfg)) {
-               ALOGE("%s: mISPDev->configure failed!", __func__);
+               LOGE("%s: mISPDev->configure failed!", __func__);
        }
 
        //mIspCfg = cfg;

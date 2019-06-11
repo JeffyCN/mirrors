@@ -4,7 +4,7 @@ LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES +=\
-	xcam_common.cpp \
+	xcam_log.cpp \
 
 LOCAL_CFLAGS += -Wno-error=unused-function -Wno-array-bounds
 LOCAL_CFLAGS += -DLINUX  -D_FILE_OFFSET_BITS=64 -DHAS_STDINT_H -DENABLE_ASSERTa
@@ -42,6 +42,7 @@ LOCAL_SRC_FILES +=\
 	$(DRM_SRC_FILES)
 
 LOCAL_SRC_FILES +=\
+	xcam_common.cpp \
 	analyzer_loader.cpp \
 	buffer_pool.cpp \
 	calibration_parser.cpp \
