@@ -31,6 +31,10 @@
 
 #include "gstkmsutils.h"
 
+#ifndef DRM_FORMAT_NV12_10
+#define DRM_FORMAT_NV12_10		fourcc_code('N', 'A', '1', '2')
+#endif
+
 /* *INDENT-OFF* */
 static const struct
 {
