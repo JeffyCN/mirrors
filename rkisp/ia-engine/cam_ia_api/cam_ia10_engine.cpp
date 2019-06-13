@@ -545,10 +545,10 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
 
             mLightMode = cfg->LightMode;
 #if 1
+            int ecmCnt = sizeof(aecCfg.EcmTimeDot.fCoeff) / sizeof (float);
             if (set->frame_time_ns_min != 0 && set->frame_time_ns_max != 0) {
                 aecCfg.FpsSetEnable = true;
                 aecCfg.isFpsFix = false;
-                int ecmCnt = sizeof(aecCfg.EcmTimeDot.fCoeff) / sizeof (float);
 
                 for (int i = 1; i < ecmCnt - 3; i++) {
                     aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ns_min / (1000 * 1000 * 1000);
@@ -558,19 +558,23 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
                 }
                 aecCfg.MinFrameDuration = (float)set->frame_time_ns_min / (1000 * 1000 * 1000);
                 aecCfg.MaxFrameDuration = (float)set->frame_time_ns_max / (1000 * 1000 * 1000);
-                LOGD("sensor param (%d)=[%f-%f-%f-%f-%f-%f] vts: %f, vtsMax: %d, pclk: %f, hts: %f\n",
-                     ecmCnt,
-                     aecCfg.EcmTimeDot.fCoeff[0],
-                     aecCfg.EcmTimeDot.fCoeff[1],
-                     aecCfg.EcmTimeDot.fCoeff[2],
-                     aecCfg.EcmTimeDot.fCoeff[3],
-                     aecCfg.EcmTimeDot.fCoeff[4],
-                     aecCfg.EcmTimeDot.fCoeff[5],
-                     aecCfg.LinePeriodsPerField,
-                     mStats.sensor_mode.line_periods_per_field,
-                     aecCfg.PixelClockFreqMHZ,
-                     aecCfg.PixelPeriodsPerLine);
+            } else {
+                aecCfg.MinFrameDuration = aecCfg.EcmTimeDot.fCoeff[0];
+                aecCfg.MaxFrameDuration = aecCfg.EcmTimeDot.fCoeff[ecmCnt - 1];
             }
+
+            LOGD("sensor param (%d)=[%f-%f-%f-%f-%f-%f] vts: %f, vtsMax: %d, pclk: %f, hts: %f\n",
+                 ecmCnt,
+                 aecCfg.EcmTimeDot.fCoeff[0],
+                 aecCfg.EcmTimeDot.fCoeff[1],
+                 aecCfg.EcmTimeDot.fCoeff[2],
+                 aecCfg.EcmTimeDot.fCoeff[3],
+                 aecCfg.EcmTimeDot.fCoeff[4],
+                 aecCfg.EcmTimeDot.fCoeff[5],
+                 aecCfg.LinePeriodsPerField,
+                 mStats.sensor_mode.line_periods_per_field,
+                 aecCfg.PixelClockFreqMHZ,
+                 aecCfg.PixelPeriodsPerLine);
 #endif
         }
         switch (set->mode) {
