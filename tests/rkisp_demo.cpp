@@ -39,6 +39,7 @@
 enum io_method {
     IO_METHOD_MMAP,
     IO_METHOD_USERPTR,
+    IO_METHOD_DMABUF,
 };
 
 void* _rkisp_engine;
@@ -76,6 +77,7 @@ struct RKisp_media_ctl
 struct buffer {
         void *start;
         size_t length;
+        struct v4l2_buffer v4l2_buf;
 };
 static char iq_file[255] = "/etc/cam_iq.xml";
 static char out_file[255];
@@ -94,6 +96,7 @@ static float mae_gain = 0.0f;
 static float mae_expo = 0.0f;
 FILE *fp;
 static int silent;
+static unsigned int drm_handle;
 
 #define DBG(...) do { if(!silent) printf(__VA_ARGS__); } while(0)
 #define ERR(...) do { fprintf(stderr, __VA_ARGS__); } while (0)
@@ -542,6 +545,64 @@ destory_dumb:
     return map;
 }
 
+static void* get_drm_fd(int drm_fd, int width, int height, int bpp, int *export_dmafd)
+{
+    struct drm_mode_create_dumb alloc_arg;
+    struct drm_mode_map_dumb mmap_arg;
+    struct drm_mode_destroy_dumb destory_arg;
+    int ret;
+    void *map;
+
+    CLEAR(alloc_arg);
+    alloc_arg.bpp = bpp;
+    alloc_arg.width = width;
+    alloc_arg.height = height;
+#define ROCKCHIP_BO_CONTIG  1
+#define ROCKCHIP_BO_CACHABLE (1<<1)
+    alloc_arg.flags = ROCKCHIP_BO_CONTIG | ROCKCHIP_BO_CACHABLE;
+
+    ret = drmIoctl(drm_fd, DRM_IOCTL_MODE_CREATE_DUMB, &alloc_arg);
+    if (ret) {
+        ERR("failed to create dumb buffer: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    CLEAR(mmap_arg);
+    mmap_arg.handle = alloc_arg.handle;
+    ret = drmIoctl(drm_fd, DRM_IOCTL_MODE_MAP_DUMB, &mmap_arg);
+    if (ret) {
+        ERR("failed to create map dumb: %s\n", strerror(errno));
+        ret = -EINVAL;
+        goto destory_dumb;
+    }
+
+    map = mmap(0, alloc_arg.size, PROT_READ | PROT_WRITE, MAP_SHARED, drm_fd, mmap_arg.offset);
+    if (map == MAP_FAILED) {
+        ERR("failed to mmap buffer: %s\n", strerror(errno));
+        ret = -EINVAL;
+        goto destory_dumb;
+    }
+
+    assert(alloc_arg.size == width * height * bpp / 8);
+    ret = drmPrimeHandleToFD(drm_fd, alloc_arg.handle, 0, export_dmafd);
+    if (ret) {
+        ERR("failed to export fd: %s\n", strerror(errno));
+        ret = -EINVAL;
+        goto destory_dumb;
+    }
+
+    drm_handle = alloc_arg.handle;
+
+    return map;
+
+destory_dumb:
+    CLEAR(destory_arg);
+    destory_arg.handle = alloc_arg.handle;
+    drmIoctl(drm_fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destory_arg);
+
+    return NULL;
+}
+
 static int xioctl(int fh, int request, void *arg)
 {
         int r;
@@ -566,7 +627,12 @@ static int read_frame(FILE *fp)
         CLEAR(buf);
 
         buf.type = buf_type;
-        buf.memory = (io == IO_METHOD_MMAP) ? V4L2_MEMORY_MMAP : V4L2_MEMORY_USERPTR;
+        if (io == IO_METHOD_MMAP)
+            buf.memory = V4L2_MEMORY_MMAP;
+        else if (io == IO_METHOD_DMABUF)
+            buf.memory = V4L2_MEMORY_DMABUF;
+        else
+            buf.memory = V4L2_MEMORY_USERPTR;
 
         if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == buf_type) {
             struct v4l2_plane planes[FMT_NUM_PLANES];
@@ -755,11 +821,19 @@ static void start_capturing(void)
 
                 CLEAR(buf);
                 buf.type = buf_type;
-                buf.memory = (io == IO_METHOD_MMAP) ? V4L2_MEMORY_MMAP : V4L2_MEMORY_USERPTR;
+                if (io == IO_METHOD_MMAP)
+                    buf.memory = V4L2_MEMORY_MMAP;
+                else if (io == IO_METHOD_DMABUF)
+                    buf.memory = V4L2_MEMORY_DMABUF;
+                else
+                    buf.memory = V4L2_MEMORY_USERPTR;
                 buf.index = i;
 
                 if (io == IO_METHOD_USERPTR) {
                     buf.m.userptr = (unsigned long)buffers[i].start;
+                    buf.length = buffers[i].length;
+                } else if (io == IO_METHOD_DMABUF) {
+                    buf.m.fd = buffers[i].v4l2_buf.m.fd;
                     buf.length = buffers[i].length;
                 }
 
@@ -768,6 +842,9 @@ static void start_capturing(void)
 
                     if (io == IO_METHOD_USERPTR) {
                         planes[0].m.userptr = (unsigned long)buffers[i].start;
+                        planes[0].length = buffers[i].length;
+                    } else if (io == IO_METHOD_DMABUF) {
+                        planes[0].m.fd = buffers[i].v4l2_buf.m.fd;
                         planes[0].length = buffers[i].length;
                     }
                     buf.m.planes = planes;
@@ -784,10 +861,19 @@ static void start_capturing(void)
 static void uninit_device(void)
 {
         unsigned int i;
+        struct drm_mode_destroy_dumb destory_arg;
 
-        for (i = 0; i < n_buffers; ++i)
+        for (i = 0; i < n_buffers; ++i) {
                 if (-1 == munmap(buffers[i].start, buffers[i].length))
                         errno_exit("munmap");
+
+                if (io == IO_METHOD_DMABUF) {
+                        close(buffers[i].v4l2_buf.m.fd);
+                        CLEAR(destory_arg);
+                        destory_arg.handle = drm_handle;
+                        drmIoctl(drm_fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destory_arg);
+                }
+        }
 
         free(buffers);
 
@@ -873,6 +959,45 @@ static void init_mmap(void)
                 if (MAP_FAILED == buffers[n_buffers].start)
                         errno_exit("mmap");
         }
+}
+
+static void init_dmabuf(int buffer_size, int width, int height)
+{
+    struct v4l2_requestbuffers req;
+    int bpp;
+    int export_dmafd;
+
+    CLEAR(req);
+
+    req.count  = BUFFER_COUNT;
+    req.memory = V4L2_MEMORY_DMABUF;
+    req.type = buf_type;
+
+    if (-1 == xioctl(fd, VIDIOC_REQBUFS, &req)) {
+        if (EINVAL == errno) {
+            ERR("%s does not support dmabuf i/on\n", dev_name);
+            exit(EXIT_FAILURE);
+        } else {
+            errno_exit("VIDIOC_REQBUFS");
+        }
+    }
+
+    buffers = (struct buffer*)calloc(req.count, sizeof(*buffers));
+
+    if (!buffers) {
+        ERR("Out of memory\n");
+        exit(EXIT_FAILURE);
+    }
+
+    drm_fd = init_drm();
+    bpp = buffer_size * 8 / width / height;
+    for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
+        buffers[n_buffers].length = buffer_size;
+        buffers[n_buffers].start = get_drm_fd(drm_fd, width, height, bpp, &export_dmafd);
+
+        buffers[n_buffers].v4l2_buf.m.fd = export_dmafd;
+        buffers[n_buffers].v4l2_buf.length = buffer_size;
+    }
 }
 
 static void init_userp(int buffer_size, int width, int height)
@@ -961,6 +1086,8 @@ static void init_device(void)
             init_mmap();
         else if (io == IO_METHOD_USERPTR)
             init_userp(fmt.fmt.pix.sizeimage, width, height);
+        else if (io == IO_METHOD_DMABUF)
+            init_dmabuf(fmt.fmt.pix.sizeimage, width, height);
 
 		//INIT RKISP
         _RKIspFunc.rkisp_handle = dlopen(LIBRKISP, RTLD_NOW);
@@ -1048,6 +1175,8 @@ void parse_args(int argc, char **argv)
        case 'm':
            if (!strcmp("drm", optarg))
                io = IO_METHOD_USERPTR;
+           else if(!strcmp("dmabuf", optarg))
+               io = IO_METHOD_DMABUF;
            else
                io = IO_METHOD_MMAP;
            break;
