@@ -1322,7 +1322,10 @@ RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *
         AiqFrameUseCase frameUseCase = _inputParams->frameUseCase;
 
         if (new_aestate == ANDROID_CONTROL_AE_STATE_PRECAPTURE &&
-            _inputParams->aeInputParams.aeParams.flash_mode != AE_FLASH_MODE_TORCH) {
+            _inputParams->aeInputParams.aeParams.flash_mode != AE_FLASH_MODE_TORCH &&
+            /* ignore the video snapshot case */
+            _inputParams->aeInputParams.aeParams.flash_mode != AE_FLASH_MODE_OFF
+            ) {
             new_usecase = UC_PRE_CAPTRUE;
             if (frameUseCase == AIQ_FRAME_USECASE_STILL_CAPTURE)
                 _delay_still_capture = true;
