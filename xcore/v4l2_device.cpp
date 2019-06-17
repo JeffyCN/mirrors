@@ -841,6 +841,9 @@ V4l2Device::queue_buffer (SmartPtr<V4l2Buffer> &buf)
         XCAM_STR (_name), v4l2_buf.index, v4l2_buf.memory,
         v4l2_buf.type, v4l2_buf.m.planes[0].length, v4l2_buf.m.planes[0].m.fd);
 
+    if (v4l2_buf.type == V4L2_BUF_TYPE_META_OUTPUT)
+        v4l2_buf.bytesused = v4l2_buf.length;
+
     if (io_control (VIDIOC_QBUF, &v4l2_buf) < 0) {
         XCAM_LOG_ERROR("fail to enqueue buffer index:%d.", v4l2_buf.index);
         return XCAM_RETURN_ERROR_IOCTL;
