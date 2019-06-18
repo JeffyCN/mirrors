@@ -47,6 +47,8 @@ static void gst_x_image_sink_reset (GstRkXImageSink * ximagesink);
 static void gst_x_image_sink_xwindow_update_geometry (GstRkXImageSink *
     ximagesink);
 static void gst_x_image_sink_expose (GstVideoOverlay * overlay);
+static void gst_x_image_sink_xwindow_clear (GstRkXImageSink * ximagesink,
+    GstXWindow * xwindow);
 
 static GstStaticPadTemplate gst_x_image_sink_sink_template_factory =
 GST_STATIC_PAD_TEMPLATE ("sink",
@@ -525,6 +527,7 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
       if (!gst_is_dmabuf_memory (mem))
         return GST_FLOW_ERROR;
     } else {
+      gst_x_image_sink_xwindow_clear (ximagesink, ximagesink->xwindow);
       g_mutex_unlock (&ximagesink->flow_lock);
       return TRUE;
     }
@@ -1656,7 +1659,6 @@ gst_x_image_sink_expose (GstVideoOverlay * overlay)
   GstRkXImageSink *ximagesink = GST_X_IMAGE_SINK (overlay);
 
   gst_x_image_sink_xwindow_update_geometry (ximagesink);
-  gst_x_image_sink_xwindow_clear (ximagesink, ximagesink->xwindow);
   gst_x_image_sink_ximage_put (ximagesink, NULL);
 }
 
