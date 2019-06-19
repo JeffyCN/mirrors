@@ -28,11 +28,23 @@ namespace XCam {
 AnalyzerThread::AnalyzerThread (XAnalyzer *analyzer)
     : Thread ("AnalyzerThread")
     , _analyzer (analyzer)
+    , _paused (false)
 {}
 
 AnalyzerThread::~AnalyzerThread ()
 {
     _stats_queue.clear ();
+}
+
+void AnalyzerThread::pause (bool pause)
+{
+
+    SmartLock locker(_mutex);
+    if (pause) {
+        _paused = true;
+        _stats_queue.clear ();
+    } else
+        _paused = false;
 }
 
 bool
@@ -73,11 +85,14 @@ AnalyzerThread::loop ()
     //    XCAM_LOG_WARNING ("lost 3a stats since 3a analyzer too slow");
     //}
 
+    SmartLock locker(_mutex);
+    if (_paused)
+        return true;
     XCamReturn ret = _analyzer->analyze (stats);
     if (ret == XCAM_RETURN_NO_ERROR || ret == XCAM_RETURN_BYPASS)
         return true;
 
-    XCAM_LOG_DEBUG ("analyzer(%s) failed to analyze 3a stats", XCAM_STR(_analyzer->get_name()));
+    XCAM_LOG_ERROR ("analyzer(%s) failed to analyze 3a stats", XCAM_STR(_analyzer->get_name()));
     return false;
 }
 
@@ -226,6 +241,13 @@ XAnalyzer::stop ()
 
     _started = false;
     XCAM_LOG_INFO ("Analyzer(%s) stopped.", XCAM_STR(get_name()));
+    return XCAM_RETURN_NO_ERROR;
+}
+
+XCamReturn
+XAnalyzer::pause (bool pause)
+{
+    _analyzer_thread->pause(pause);
     return XCAM_RETURN_NO_ERROR;
 }
 

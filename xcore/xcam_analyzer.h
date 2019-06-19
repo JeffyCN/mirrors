@@ -44,6 +44,7 @@ public:
         _stats_queue.pause_pop ();
     }
     bool push_stats (const SmartPtr<VideoBuffer> &buffer);
+    void pause (bool pause);
 
 protected:
     virtual bool started ();
@@ -55,6 +56,8 @@ protected:
 private:
     XAnalyzer              *_analyzer;
     SafeList<VideoBuffer>   _stats_queue;
+    XCam::Mutex     _mutex;
+    bool _paused;
 };
 
 class AnalyzerCallback {
@@ -89,6 +92,7 @@ public:
     };
     XCamReturn start ();
     XCamReturn stop ();
+    XCamReturn pause (bool pause);
     XCamReturn push_buffer (const SmartPtr<VideoBuffer> &buffer);
 
     uint32_t get_width () const {

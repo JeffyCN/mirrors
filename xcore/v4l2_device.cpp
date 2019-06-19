@@ -534,6 +534,12 @@ V4l2Device::stop ()
 {
     XCAM_LOG_INFO ("device(%s) stop, already start: %d", XCAM_STR (_name), _active);
 
+    while (poll_event (0, -1) > 0) {
+        SmartPtr<V4l2Buffer> buf = get_buffer_by_index (0);
+        if (buf.ptr())
+            dequeue_buffer(buf);
+    }
+
     // stream off
     if (_active) {
         if (io_control (VIDIOC_STREAMOFF, &_buf_type) < 0) {

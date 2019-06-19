@@ -393,7 +393,7 @@ DeviceManager::prepare ()
     XCAM_ASSERT (_isp_stats_device.ptr());
     XCAM_ASSERT (_isp_params_device.ptr());
 
-    _3a_analyzer->set_sync_mode(true);
+    _3a_analyzer->set_sync_mode(false);
 
     _3a_analyzer->set_isp_stats_device(_isp_stats_device.ptr());
     _3a_analyzer->set_isp_params_device(_isp_params_device.ptr());

@@ -169,6 +169,7 @@ void
 RkispDeviceManager::pause_dequeue ()
 {
     // should stop 3a because isp video stream may have been stopped
+     _3a_analyzer->pause (true);
     if (_poll_thread.ptr())
         _poll_thread->stop();
     if (_isp_params_device.ptr() && _isp_params_device->is_activated())
@@ -189,6 +190,7 @@ RkispDeviceManager::resume_dequeue ()
     if (_isp_stats_device.ptr() && !_isp_stats_device->is_activated())
         _isp_stats_device->start();
 
+    _3a_analyzer->pause (false);
     // for IspController
     ispPollThread->resume();
     // sensor mode may be changed, so we should re-generate the first isp
