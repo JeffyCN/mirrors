@@ -116,6 +116,7 @@ typedef struct _AiqInputParams {
     int sensorOutputWidth;
     int sensorOutputHeight;
     AiqFrameUseCase frameUseCase;
+    uint8_t         stillCapSyncCmd;
     void init();
     _AiqInputParams();
     ~_AiqInputParams() {}

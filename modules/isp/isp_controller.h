@@ -80,6 +80,10 @@ public:
     void dump_isp_config(struct rkisp1_isp_params_cfg* isp_params,
                                 struct rkisp_parameters *isp_cfg);
 #endif
+#define ISP_CONTRLLER_FLASH_MAX_NUM 2
+    XCamReturn set_3a_fl (int fl_mode, float fl_intensity[ISP_CONTRLLER_FLASH_MAX_NUM],
+                          int fl_timeout, int fl_on);
+    int get_flash_info ();
 
 private:
 
@@ -89,11 +93,6 @@ private:
                              struct rkisp1_isp_params_cfg *full_params);
     XCamReturn set_3a_config_sync ();
     XCamReturn apply_otp_config (struct rkisp_parameters *isp_cfg);
-#define ISP_CONTRLLER_FLASH_MAX_NUM 2
-    XCamReturn set_3a_fl (int fl_mode, float fl_intensity[ISP_CONTRLLER_FLASH_MAX_NUM],
-                          int fl_timeout, int fl_on);
-    int get_flash_info ();
-
 private:
     volatile bool            _is_exit;
     /* rkisp1x */

@@ -326,6 +326,7 @@ int rkisp_cl_prepare(void* cl_ctx,
     SmartPtr<IspPollThread> isp_poll_thread = new IspPollThread ();
     isp_poll_thread->set_isp_controller (isp_controller);
     device_manager->set_poll_thread (isp_poll_thread);
+    device_manager->set_isp_controller (isp_controller);
 
     SmartPtr<ImageProcessor> isp_processor = new IspImageProcessor (isp_controller, true);
     device_manager->add_image_processor (isp_processor);

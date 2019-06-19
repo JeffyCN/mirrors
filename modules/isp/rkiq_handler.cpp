@@ -377,6 +377,21 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
         metadata->update(ANDROID_SENSOR_INFO_SENSITIVITY_RANGE, sensitivity_range, 2);
     }
 
+    entry = settings->find(ANDROID_CONTROL_AE_MODE);
+    if (entry.count == 1 &&
+        aec_results.flashModeState != AEC_FLASH_PREFLASH &&
+        aec_results.flashModeState != AEC_FLASH_MAINFLASH) {
+        uint8_t stillcap_sync = false;
+        if (entry.data.u8[0] == ANDROID_CONTROL_AE_MODE_ON_ALWAYS_FLASH ||
+            (entry.data.u8[0] == ANDROID_CONTROL_AE_MODE_ON_AUTO_FLASH &&
+            aec_results.require_flash))
+            stillcap_sync = true;
+        else
+            stillcap_sync = false;
+        metadata->update(RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_NEEDED,
+                         &stillcap_sync, 1);
+    }
+
     return XCAM_RETURN_NO_ERROR;
 }
 
@@ -587,7 +602,7 @@ AiqCommonHandler::fillTonemapCurve(CamerIcIspGocConfig_t goc, AiqInputParams* in
 }
 
 XCamReturn
-AiqCommonHandler::processMiscMetaResults(X3aResultList &output)
+AiqCommonHandler::processMiscMetaResults(X3aResultList &output, bool first)
 {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
     SmartPtr<XmetaResult> res;
@@ -625,6 +640,13 @@ AiqCommonHandler::processMiscMetaResults(X3aResultList &output)
     int reqId = _aiq_compositor->getAiqInputParams().ptr() ? _aiq_compositor->getAiqInputParams()->reqId : -1;
     metadata->update(ANDROID_REQUEST_ID, &reqId, 1);
 
+    // set in _ae_handler->processAeMetaResults, called before
+    // processMiscMetaResults
+    entry = metadata->find(RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_NEEDED);
+    if (entry.count == 1) {
+        _stillcap_sync_needed = !!entry.data.u8[0];
+    }
+
     // update flash states
     CameraMetadata* staticMeta  =
         _aiq_compositor->getAiqInputParams()->staticMeta;
@@ -656,6 +678,17 @@ AiqCommonHandler::processMiscMetaResults(X3aResultList &output)
             else if (camia10_stats.frame_status == CAMIA10_FRAME_STATUS_FLASH_PARTIAL)
                 flashState = ANDROID_FLASH_STATE_PARTIAL;
             metadata->update(ANDROID_FLASH_STATE, &flashState, 1);
+            entry = staticMeta->find(ANDROID_FLASH_INFO_AVAILABLE);
+            // sync needed and main flash on
+            if ((_stillcap_sync_state == STILLCAP_SYNC_STATE_START &&
+                /* camia10_stats.flash_status.flash_mode == HAL_FLASH_MAIN && */
+                camia10_stats.frame_status == CAMIA10_FRAME_STATUS_FLASH_EXPOSED) ||
+                first) {
+                uint8_t stillcap_sync = RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD_SYNCDONE;
+                metadata->update(RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD, &stillcap_sync, 1);
+                _stillcap_sync_state = STILLCAP_SYNC_STATE_WAITING_END;
+                LOGD("%s:%d, stillcap_sync done", __FUNCTION__, __LINE__);
+            }
         }
     }
 
@@ -1196,6 +1229,8 @@ AiqAfHandler::analyze (X3aResultList &output, bool first)
 AiqCommonHandler::AiqCommonHandler (SmartPtr<RKiqCompositor> &aiq_compositor)
     : _aiq_compositor (aiq_compositor)
     , _gbce_result (NULL)
+    , _stillcap_sync_needed(false)
+    , _stillcap_sync_state(STILLCAP_SYNC_STATE_IDLE)
 {
     initTonemaps();
 }
@@ -1346,18 +1381,35 @@ RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *
                      first || _delay_still_capture)) {
                     _delay_still_capture = false;
                     new_usecase = UC_CAPTURE;
+                    if (_common_handler->_stillcap_sync_needed) {
+                        // no need to sync for resolution changed
+                        if (first)
+                            _common_handler->_stillcap_sync_state =
+                                AiqCommonHandler::STILLCAP_SYNC_STATE_START;
+                        else
+                            _common_handler->_stillcap_sync_state =
+                                AiqCommonHandler::STILLCAP_SYNC_STATE_WAITING_START;
+                    }
                 }
                 // cancel precap
                 if (new_aestate == ANDROID_CONTROL_AE_STATE_INACTIVE)
                     new_usecase = UC_PREVIEW;
                 break;
             case UC_CAPTURE:
-                // TODO: HAL should notify engine it has pick the right frame
-                // to encode jpeg, now set an safe delayed frame to ensure the
-                // HAL could capture the well exposured frame
-                if (_capture_to_preview_delay++ > 20) {
+                if (_common_handler->_stillcap_sync_state == AiqCommonHandler::STILLCAP_SYNC_STATE_WAITING_START &&
+                    _inputParams->stillCapSyncCmd == RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD_SYNCSTART)
+                    _common_handler->_stillcap_sync_state =
+                        AiqCommonHandler::STILLCAP_SYNC_STATE_START;
+
+                if (/*_capture_to_preview_delay++ > 20 ||*/
+                    (_common_handler->_stillcap_sync_state == AiqCommonHandler::STILLCAP_SYNC_STATE_WAITING_END &&
+                    _inputParams->stillCapSyncCmd == RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD_SYNCEND) ||
+                    !_common_handler->_stillcap_sync_needed) {
                     _capture_to_preview_delay = 0;
+                    _common_handler->_stillcap_sync_needed = 0;
                     new_usecase = UC_PREVIEW;
+                    _common_handler->_stillcap_sync_state =
+                        AiqCommonHandler::STILLCAP_SYNC_STATE_IDLE;
                 }
                 break;
             case UC_RECORDING:
@@ -1371,8 +1423,11 @@ RKiqCompositor::set_sensor_mode_data (struct isp_supplemental_sensor_mode_data *
                 LOGE("wrong usecase %d", cur_usecase);
             }
         }
-        LOGD("stats id %d, usecase %d -> %d, frameUseCase %d, new_aestate %d",
-             _isp_stats.frame_id, cur_usecase, new_usecase, frameUseCase, new_aestate);
+        LOGD("stats id %d, usecase %d -> %d, frameUseCase %d, new_aestate %d, "
+             "stillcap_sync_needed %d, sync_cmd %d, sync_state %d",
+             _isp_stats.frame_id, cur_usecase, new_usecase, frameUseCase,
+             new_aestate, _common_handler->_stillcap_sync_needed,
+             _inputParams->stillCapSyncCmd, _common_handler->_stillcap_sync_state);
         _ia_dcfg.uc = new_usecase;
     }
     _isp10_engine->getSensorModedata(sensor_mode,  &_ia_dcfg.sensor_mode);
@@ -1611,7 +1666,7 @@ void RKiqCompositor::pre_process_3A_states()
     }
 }
 
-XCamReturn RKiqCompositor::integrate (X3aResultList &results)
+XCamReturn RKiqCompositor::integrate (X3aResultList &results, bool first)
 {
     SmartPtr<X3aResult> isp_results;
     struct rkisp_parameters isp_3a_result;
@@ -1630,14 +1685,15 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
 
     if (_ae_handler && _awb_handler && _inputParams.ptr()) {
         if (_all_stats_meas_types ==
-            (CAMIA10_AEC_MASK | CAMIA10_HST_MASK | CAMIA10_AWB_MEAS_MASK | CAMIA10_AFC_MASK)) {
+            (CAMIA10_AEC_MASK | CAMIA10_HST_MASK | CAMIA10_AWB_MEAS_MASK | CAMIA10_AFC_MASK)
+            || first) {
             LOGD("%s:%d, complete all 3A stats analysis, report results",
                  __FUNCTION__, __LINE__);
             _ae_handler->processAeMetaResults(_ia_results.aec, results);
             _awb_handler->processAwbMetaResults(_ia_results.awb, results);
             _af_handler->processAfMetaResults(_ia_results.af, results);
             _common_handler->processToneMapsMetaResults(_ia_results.goc, results);
-            _common_handler->processMiscMetaResults(results);
+            _common_handler->processMiscMetaResults(results, first);
             _all_stats_meas_types = 0;
         }
     }
@@ -1709,31 +1765,41 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results)
     rkisp_flash_setting_t* flash_set = &isp_3a_result.flash_settings;
     CamIA10_flash_setting_t* flash_result = &_ia_results.flash;
     isp_3a_result.uc = _ia_results.uc;
-    flash_set->uc = _ia_results.uc;
-    switch (flash_result->flash_mode) {
-    case HAL_FLASH_OFF :
-        flash_set->flash_mode = RKISP_FLASH_MODE_OFF;
-        break;
-    case HAL_FLASH_TORCH:
-        flash_set->flash_mode = RKISP_FLASH_MODE_TORCH;
-        break;
-    case HAL_FLASH_PRE:
-        flash_set->flash_mode = RKISP_FLASH_MODE_FLASH_PRE;
-        break;
-    case HAL_FLASH_MAIN:
-        flash_set->flash_mode = RKISP_FLASH_MODE_FLASH_MAIN;
-        break;
-    case HAL_FLASH_ON:
-        flash_set->flash_mode = RKISP_FLASH_MODE_FLASH;
-        break;
-    default:
-        LOGE("not support flash mode %d", flash_result->flash_mode);
+    // if flash sync is needed, main flash should be triggered when
+    // STILLCAP_SYNC_CMD_SYNCSTART is received
+    if (_common_handler->_stillcap_sync_state ==
+        AiqCommonHandler::STILLCAP_SYNC_STATE_WAITING_START &&
+        flash_result->flash_mode == HAL_FLASH_MAIN) {
+        *flash_set = _flash_old_setting;
+    } else {
+        flash_set->uc = _ia_results.uc;
+        switch (flash_result->flash_mode) {
+        case HAL_FLASH_OFF :
+            flash_set->flash_mode = RKISP_FLASH_MODE_OFF;
+            break;
+        case HAL_FLASH_TORCH:
+            flash_set->flash_mode = RKISP_FLASH_MODE_TORCH;
+            break;
+        case HAL_FLASH_PRE:
+            flash_set->flash_mode = RKISP_FLASH_MODE_FLASH_PRE;
+            break;
+        case HAL_FLASH_MAIN:
+            flash_set->flash_mode = RKISP_FLASH_MODE_FLASH_MAIN;
+            break;
+        case HAL_FLASH_ON:
+            flash_set->flash_mode = RKISP_FLASH_MODE_FLASH;
+            break;
+        default:
+            LOGE("not support flash mode %d", flash_result->flash_mode);
+        }
+
+        flash_set->strobe = flash_result->strobe;
+        flash_set->timeout_ms = flash_result->flash_timeout_ms;
+        for (int i = 0; i < CAMIA10_FLASH_NUM_MAX; i ++)
+            flash_set->power[i] = flash_result->flash_power[i];
     }
 
-    flash_set->strobe = flash_result->strobe;
-    flash_set->timeout_ms = flash_result->flash_timeout_ms;
-    for (int i = 0; i < CAMIA10_FLASH_NUM_MAX; i ++)
-        flash_set->power[i] = flash_result->flash_power[i];
+    _flash_old_setting = *flash_set;
 
     for (int i=0; i < HAL_ISP_MODULE_MAX_ID_ID + 1; i++) {
         isp_3a_result.enabled[i] = _isp_cfg.enabled[i];

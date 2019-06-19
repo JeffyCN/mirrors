@@ -571,7 +571,7 @@ IspController::get_isp_parameter (struct rkisp_parameters& parameters, int frame
 // TODO: I don't know why the first 2 AEC mean luma stats
 // are incorrect(may be the isp driver bug), just ignore the
 // first 2 stats now
-#define RKISP_SKIP_STATS_NUM 2
+#define RKISP_SKIP_STATS_NUM 0
 
 XCamReturn
 IspController::get_3a_statistics (SmartPtr<X3aIspStatistics> &stats)

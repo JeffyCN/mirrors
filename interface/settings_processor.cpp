@@ -20,6 +20,7 @@
 
 #include "settings_processor.h"
 #include "rkisp_dev_manager.h"
+#include "rkcamera_vendor_tags.h"
 #include <base/xcam_log.h>
 
 SettingsProcessor::SettingsProcessor()
@@ -742,6 +743,22 @@ SettingsProcessor::processRequestSettings(const CameraMetadata &settings,
                 break;
         }
     }
+
+    entry = settings.find(RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD);
+    if (entry.count == 1) {
+        switch (entry.data.u8[0]) {
+            case RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD_SYNCSTART:
+                aiqparams.stillCapSyncCmd = RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD_SYNCSTART;
+                break;
+            case RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD_SYNCEND:
+                aiqparams.stillCapSyncCmd = RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD_SYNCEND;
+                break;
+            default :
+                aiqparams.stillCapSyncCmd = 0;
+                break;
+        }
+    } else
+        aiqparams.stillCapSyncCmd = 0;
 
     if ((ret = processAeSettings(settings, aiqparams)) != XCAM_RETURN_NO_ERROR)
         return ret;

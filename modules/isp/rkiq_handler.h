@@ -263,7 +263,7 @@ public:
         return _params.color_effect;
     }
     XCamReturn processToneMapsMetaResults(CamerIcIspGocConfig_t goc, X3aResultList &output);
-    XCamReturn processMiscMetaResults(X3aResultList &output);
+    XCamReturn processMiscMetaResults(X3aResultList &output, bool first = false);
 
 private:
     XCamReturn initTonemaps();
@@ -274,7 +274,16 @@ private:
     float   *mRGammaLut;      /*!< [(P_IN, P_OUT), (P_IN, P_OUT), ..] */
     float   *mGGammaLut;      /*!< [(P_IN, P_OUT), (P_IN, P_OUT), ..] */
     float   *mBGammaLut;      /*!< [(P_IN, P_OUT), (P_IN, P_OUT), ..] */
-
+    bool _stillcap_sync_needed;
+    typedef enum stillcap_sync_state_e {
+       STILLCAP_SYNC_STATE_IDLE,
+       STILLCAP_SYNC_STATE_WAITING_START,
+       STILLCAP_SYNC_STATE_START,
+       STILLCAP_SYNC_STATE_WAITING_END
+    } stillcap_sync_state_t;
+    stillcap_sync_state_t _stillcap_sync_state;
+    int _flash_stillcap_reg_time;
+    int _flash_stillcap_reg_gain;
 protected:
     SmartPtr<RKiqCompositor>     _aiq_compositor;
     ia_aiq_gbce_results        *_gbce_result;
@@ -329,7 +338,7 @@ public:
         return _frame_use;
     }
 
-    XCamReturn integrate (  X3aResultList &results);
+    XCamReturn integrate (  X3aResultList &results, bool first = false);
 
     SmartPtr<X3aResult> generate_3a_configs (struct rkisp_parameters *parameters);
     void convert_window_to_ia (const XCam3AWindow &window, ia_rectangle &ia_window);
@@ -392,6 +401,7 @@ private:
     uint32_t                   _all_stats_meas_types;
     bool _delay_still_capture;
     int32_t _capture_to_preview_delay;
+    rkisp_flash_setting_t _flash_old_setting;
 };
 
 };

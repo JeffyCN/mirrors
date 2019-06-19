@@ -54,6 +54,7 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
 #include "rkisp_control_loop.h"
 #include "x3a_meta_result.h"
 #include "rkaiq.h"
+#include "isp_controller.h"
 
 /*
  ***************** CAM ENGINE LIB VERSION NOTE *****************
@@ -130,12 +131,18 @@ public:
     XCam::SmartPtr<AiqInputParams> getAiqInputParams()
     {
         SmartLock lock(_settingsMutex);
-        if (!_settings.empty())
+        // use new setting when no flying settings to make sure
+        // same settings used for 3A stats of one frame
+        if (!_settings.empty() && _fly_settings.empty()) {
             _cur_settings = *_settings.begin();
+            _settings.erase(_settings.begin());
+            _fly_settings.push_back(_cur_settings);
+        }
 
         return _cur_settings;
     }
 
+    void set_isp_controller (SmartPtr<IspController> &isp) { _isp_controller = isp; }
     // only called one time in the func rkisp_cl_prepare@rkisp_control_loop_impl.cpp
     void set_static_metadata(const camera_metadata_t *metas) { staticMeta = metas; };
     static CameraMetadata& get_static_metadata() { return staticMeta; };
@@ -175,11 +182,13 @@ private:
     Mutex _settingsMutex;
     // push_back when set_control_params, erase when calculationd done
     std::vector<XCam::SmartPtr<AiqInputParams>>  _settings;
+    std::vector<XCam::SmartPtr<AiqInputParams>>  _fly_settings;
     XCam::SmartPtr<AiqInputParams>  _cur_settings;
     SettingsProcessor*            _settingsProcessor;
     static CameraMetadata staticMeta;
 
     const cl_result_callback_ops_t *mCallbackOps;
+    SmartPtr<IspController>          _isp_controller;
 
 };
 
