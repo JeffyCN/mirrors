@@ -81,7 +81,6 @@
 //		  add flash ctrl parameters in iq xml file.
 //v1.2.0:  add xml check & magic version code 692267
 //		  add awb flash  parameters in iq xml file.
-
 /*************************************************************************/
 /*************************************************************************/
 
