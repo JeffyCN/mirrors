@@ -29,7 +29,7 @@
 
 #include <drm_fourcc.h>
 
-#include "rkx_kmsutils.h"
+#include "gstkmsutils.h"
 
 /* *INDENT-OFF* */
 static const struct
@@ -47,6 +47,7 @@ static const struct
   DEF_FMT (XRGB8888, BGRx),
   DEF_FMT (ABGR8888, RGBA),
   DEF_FMT (XBGR8888, RGBx),
+  DEF_FMT (NV12_10, P010_10LE),
 #else
   DEF_FMT (ARGB8888, ARGB),
   DEF_FMT (XRGB8888, xRGB),
@@ -62,15 +63,13 @@ static const struct
   DEF_FMT (NV12, NV12),
   DEF_FMT (NV21, NV21),
   DEF_FMT (NV16, NV16),
-  /* FIXME should be renamed to P010_* */
-  DEF_FMT (NV12_10, P010_10LE),
 
 #undef DEF_FMT
 };
 /* *INDENT-ON* */
 
 GstVideoFormat
-rkx_video_format_from_drm (guint32 drmfmt)
+gst_video_format_from_drm (guint32 drmfmt)
 {
   gint i;
 
@@ -83,7 +82,7 @@ rkx_video_format_from_drm (guint32 drmfmt)
 }
 
 guint32
-rkx_drm_format_from_video (GstVideoFormat fmt)
+gst_drm_format_from_video (GstVideoFormat fmt)
 {
   gint i;
 
@@ -95,8 +94,59 @@ rkx_drm_format_from_video (GstVideoFormat fmt)
   return 0;
 }
 
+guint32
+gst_drm_bpp_from_drm (guint32 drmfmt)
+{
+  guint32 bpp;
+
+  switch (drmfmt) {
+    case DRM_FORMAT_YUV420:
+    case DRM_FORMAT_YVU420:
+    case DRM_FORMAT_YUV422:
+    case DRM_FORMAT_NV12:
+    case DRM_FORMAT_NV21:
+    case DRM_FORMAT_NV16:
+      bpp = 8;
+      break;
+    case DRM_FORMAT_UYVY:
+    case DRM_FORMAT_YUYV:
+    case DRM_FORMAT_YVYU:
+      bpp = 16;
+      break;
+    default:
+      bpp = 32;
+      break;
+  }
+
+  return bpp;
+}
+
+guint32
+gst_drm_height_from_drm (guint32 drmfmt, guint32 height)
+{
+  guint32 ret;
+
+  switch (drmfmt) {
+    case DRM_FORMAT_YUV420:
+    case DRM_FORMAT_YVU420:
+    case DRM_FORMAT_YUV422:
+    case DRM_FORMAT_NV12:
+    case DRM_FORMAT_NV21:
+      ret = height * 3 / 2;
+      break;
+    case DRM_FORMAT_NV16:
+      ret = height * 2;
+      break;
+    default:
+      ret = height;
+      break;
+  }
+
+  return ret;
+}
+
 static GstStructure *
-rkx_video_format_to_structure (GstVideoFormat format)
+gst_video_format_to_structure (GstVideoFormat format)
 {
   GstStructure *structure;
 
@@ -109,7 +159,7 @@ rkx_video_format_to_structure (GstVideoFormat format)
 }
 
 GstCaps *
-rkx_kms_sink_caps_template_fill (void)
+gst_kms_sink_caps_template_fill (void)
 {
   gint i;
   GstCaps *caps;
@@ -117,7 +167,7 @@ rkx_kms_sink_caps_template_fill (void)
 
   caps = gst_caps_new_empty ();
   for (i = 0; i < G_N_ELEMENTS (format_map); i++) {
-    template = rkx_video_format_to_structure (format_map[i].format);
+    template = gst_video_format_to_structure (format_map[i].format);
     gst_structure_set (template,
         "width", GST_TYPE_INT_RANGE, 1, G_MAXINT,
         "height", GST_TYPE_INT_RANGE, 1, G_MAXINT,
@@ -141,7 +191,7 @@ static const gint device_par_map[][2] = {
   (ABS(ratio - ((gdouble)device_par_map[idx][w] / device_par_map[idx][!(w)])))
 
 void
-rkx_video_calculate_device_ratio (guint dev_width, guint dev_height,
+gst_video_calculate_device_ratio (guint dev_width, guint dev_height,
     guint dev_width_mm, guint dev_height_mm,
     guint * dpy_par_n, guint * dpy_par_d)
 {

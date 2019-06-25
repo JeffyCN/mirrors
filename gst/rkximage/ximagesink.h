@@ -138,6 +138,7 @@ struct _GstRkXImageSink
 
   /* capabilities */
   gboolean has_prime_import;
+  gboolean has_prime_export;
   gboolean has_async_page_flip;
 
   char *display_name;
@@ -148,8 +149,6 @@ struct _GstRkXImageSink
 
   GThread *event_thread;
   gboolean running;
-
-  GstVideoInfo info;
 
   /* Framerate numerator and denominator */
   gint fps_n;
@@ -170,6 +169,7 @@ struct _GstRkXImageSink
 
   GstVideoInfo vinfo;
   GstCaps *allowed_caps;
+  GstBufferPool *pool;
   GstAllocator *allocator;
   GstBuffer *last_buffer;
 

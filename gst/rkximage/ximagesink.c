@@ -12,7 +12,7 @@
 
 /* Object header */
 #include "ximagesink.h"
-#include "rkx_kmsutils.h"
+#include "gstkmsutils.h"
 
 /* Debugging category */
 #include <gst/gstinfo.h>
@@ -27,6 +27,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "gstkmsbufferpool.h"
+#include "gstkmsallocator.h"
 
 GST_DEBUG_CATEGORY (gst_debug_x_image_sink);
 #define GST_CAT_DEFAULT gst_debug_x_image_sink
@@ -288,8 +291,10 @@ drm_get_caps (GstRkXImageSink * self)
   ret = drmGetCap (self->fd, DRM_CAP_PRIME, &has_prime);
   if (ret)
     GST_WARNING_OBJECT (self, "could not get prime capability");
-  else
+  else {
     self->has_prime_import = (gboolean) (has_prime & DRM_PRIME_CAP_IMPORT);
+    self->has_prime_export = (gboolean) (has_prime & DRM_PRIME_CAP_EXPORT);
+  }
 
   has_async_page_flip = 0;
   ret = drmGetCap (self->fd, DRM_CAP_ASYNC_PAGE_FLIP, &has_async_page_flip);
@@ -298,8 +303,10 @@ drm_get_caps (GstRkXImageSink * self)
   else
     self->has_async_page_flip = (gboolean) has_async_page_flip;
 
-  GST_INFO_OBJECT (self, "prime import (%s) / async page flip (%s)",
+  GST_INFO_OBJECT (self,
+      "prime import (%s) / prime export (%s) / async page flip (%s)",
       self->has_prime_import ? "✓" : "✗",
+      self->has_prime_export ? "✓" : "✗",
       self->has_async_page_flip ? "✓" : "✗");
 
   return TRUE;
@@ -322,7 +329,7 @@ drm_ensure_allowed_caps (GstRkXImageSink * self, drmModePlane * plane,
     return FALSE;
 
   for (i = 0; i < plane->count_formats; i++) {
-    fmt = rkx_video_format_from_drm (plane->formats[i]);
+    fmt = gst_video_format_from_drm (plane->formats[i]);
     if (fmt == GST_VIDEO_FORMAT_UNKNOWN) {
       GST_INFO_OBJECT (self, "ignoring format %" GST_FOURCC_FORMAT,
           GST_FOURCC_ARGS (plane->formats[i]));
@@ -348,6 +355,354 @@ drm_ensure_allowed_caps (GstRkXImageSink * self, drmModePlane * plane,
   return TRUE;
 }
 
+/*kms*/
+static void
+ensure_kms_allocator (GstRkXImageSink * self)
+{
+  if (self->allocator)
+    return;
+  self->allocator = gst_kms_allocator_new (self->fd);
+}
+
+static GstBufferPool *
+gst_kms_sink_create_pool (GstRkXImageSink * self, GstCaps * caps, gsize size,
+    gint min)
+{
+  GstBufferPool *pool;
+  GstStructure *config;
+
+  pool = gst_kms_buffer_pool_new ();
+  if (!pool)
+    goto pool_failed;
+
+  config = gst_buffer_pool_get_config (pool);
+  gst_buffer_pool_config_set_params (config, caps, size, min, 0);
+  gst_buffer_pool_config_add_option (config, GST_BUFFER_POOL_OPTION_VIDEO_META);
+
+  ensure_kms_allocator (self);
+  gst_buffer_pool_config_set_allocator (config, self->allocator, NULL);
+
+  if (!gst_buffer_pool_set_config (pool, config))
+    goto config_failed;
+
+  return pool;
+
+  /* ERRORS */
+pool_failed:
+  {
+    GST_ERROR_OBJECT (self, "failed to create buffer pool");
+    return NULL;
+  }
+config_failed:
+  {
+    GST_ERROR_OBJECT (self, "failed to set config");
+    gst_object_unref (pool);
+    return NULL;
+  }
+}
+
+static gboolean
+gst_kms_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
+{
+  GstRkXImageSink *self;
+  GstCaps *caps;
+  gboolean need_pool;
+  GstVideoInfo vinfo;
+  GstBufferPool *pool;
+  gsize size;
+
+  self = GST_X_IMAGE_SINK (bsink);
+
+  gst_query_parse_allocation (query, &caps, &need_pool);
+  if (!caps)
+    goto no_caps;
+  if (!gst_video_info_from_caps (&vinfo, caps))
+    goto invalid_caps;
+
+  size = GST_VIDEO_INFO_SIZE (&vinfo);
+
+  pool = NULL;
+  if (need_pool) {
+    pool = gst_kms_sink_create_pool (self, caps, size, 0);
+    if (!pool)
+      goto no_pool;
+
+    /* Only export for pool used upstream */
+    if (self->has_prime_export) {
+      GstStructure *config = gst_buffer_pool_get_config (pool);
+      gst_buffer_pool_config_add_option (config,
+          GST_BUFFER_POOL_OPTION_KMS_PRIME_EXPORT);
+      gst_buffer_pool_set_config (pool, config);
+    }
+  }
+
+  /* we need at least 2 buffer because we hold on to the last one */
+  gst_query_add_allocation_pool (query, pool, size, 2, 0);
+  if (pool)
+    gst_object_unref (pool);
+
+  gst_query_add_allocation_meta (query, GST_VIDEO_META_API_TYPE, NULL);
+  gst_query_add_allocation_meta (query, GST_VIDEO_CROP_META_API_TYPE, NULL);
+
+  return TRUE;
+
+  /* ERRORS */
+no_caps:
+  {
+    GST_DEBUG_OBJECT (bsink, "no caps specified");
+    return FALSE;
+  }
+invalid_caps:
+  {
+    GST_DEBUG_OBJECT (bsink, "invalid caps specified");
+    return FALSE;
+  }
+no_pool:
+  {
+    /* Already warned in create_pool */
+    return FALSE;
+  }
+}
+
+static gboolean
+gst_kms_sink_import_dmabuf (GstRkXImageSink * self, GstBuffer * inbuf,
+    GstBuffer ** outbuf)
+{
+  gint prime_fds[GST_VIDEO_MAX_PLANES] = { 0, };
+  GstVideoMeta *meta;
+  guint i, n_mem, n_planes;
+  GstKMSMemory *kmsmem;
+  guint mems_idx[GST_VIDEO_MAX_PLANES];
+  gsize mems_skip[GST_VIDEO_MAX_PLANES];
+  GstMemory *mems[GST_VIDEO_MAX_PLANES];
+
+  if (!self->has_prime_import)
+    return FALSE;
+
+  /* This will eliminate most non-dmabuf out there */
+  if (!gst_is_dmabuf_memory (gst_buffer_peek_memory (inbuf, 0)))
+    return FALSE;
+
+  n_planes = GST_VIDEO_INFO_N_PLANES (&self->vinfo);
+  n_mem = gst_buffer_n_memory (inbuf);
+  meta = gst_buffer_get_video_meta (inbuf);
+
+  GST_TRACE_OBJECT (self, "Found a dmabuf with %u planes and %u memories",
+      n_planes, n_mem);
+
+  /* We cannot have multiple dmabuf per plane */
+  if (n_mem > n_planes)
+    return FALSE;
+  g_assert (n_planes != 0);
+
+  /* Update video info based on video meta */
+  if (meta) {
+    GST_VIDEO_INFO_WIDTH (&self->vinfo) = meta->width;
+    GST_VIDEO_INFO_HEIGHT (&self->vinfo) = meta->height;
+
+    for (i = 0; i < meta->n_planes; i++) {
+      GST_VIDEO_INFO_PLANE_OFFSET (&self->vinfo, i) = meta->offset[i];
+      GST_VIDEO_INFO_PLANE_STRIDE (&self->vinfo, i) = meta->stride[i];
+    }
+  }
+
+  /* Find and validate all memories */
+  for (i = 0; i < n_planes; i++) {
+    guint length;
+
+    if (!gst_buffer_find_memory (inbuf,
+            GST_VIDEO_INFO_PLANE_OFFSET (&self->vinfo, i), 1,
+            &mems_idx[i], &length, &mems_skip[i]))
+      return FALSE;
+
+    mems[i] = gst_buffer_peek_memory (inbuf, mems_idx[i]);
+
+    /* adjust for memory offset, in case data does not
+     * start from byte 0 in the dmabuf fd */
+    mems_skip[i] += mems[i]->offset;
+
+    /* And all memory found must be dmabuf */
+    if (!gst_is_dmabuf_memory (mems[i]))
+      return FALSE;
+  }
+
+  kmsmem = (GstKMSMemory *) gst_kms_allocator_get_cached (mems[0]);
+  if (kmsmem) {
+    GST_LOG_OBJECT (self, "found KMS mem %p in DMABuf mem %p with fb id = %d",
+        kmsmem, mems[0], kmsmem->fb_id);
+    goto wrap_mem;
+  }
+
+  for (i = 0; i < n_planes; i++)
+    prime_fds[i] = gst_dmabuf_memory_get_fd (mems[i]);
+
+  GST_LOG_OBJECT (self, "found these prime ids: %d, %d, %d, %d", prime_fds[0],
+      prime_fds[1], prime_fds[2], prime_fds[3]);
+
+  kmsmem = gst_kms_allocator_dmabuf_import (self->allocator,
+      prime_fds, n_planes, mems_skip, &self->vinfo);
+  if (!kmsmem)
+    return FALSE;
+
+  GST_LOG_OBJECT (self, "setting KMS mem %p to DMABuf mem %p with fb id = %d",
+      kmsmem, mems[0], kmsmem->fb_id);
+  gst_kms_allocator_cache (self->allocator, mems[0], GST_MEMORY_CAST (kmsmem));
+
+wrap_mem:
+  *outbuf = gst_buffer_new ();
+  if (!*outbuf)
+    return FALSE;
+  gst_buffer_append_memory (*outbuf, gst_memory_ref (GST_MEMORY_CAST (kmsmem)));
+  gst_buffer_add_parent_buffer_meta (*outbuf, inbuf);
+
+  return TRUE;
+}
+
+static GstBuffer *
+gst_kms_sink_copy_to_dumb_buffer (GstRkXImageSink * self, GstBuffer * inbuf)
+{
+  GstFlowReturn ret;
+  GstVideoFrame inframe, outframe;
+  gboolean success;
+  GstBuffer *buf = NULL;
+
+  if (!gst_buffer_pool_set_active (self->pool, TRUE))
+    goto activate_pool_failed;
+
+  ret = gst_buffer_pool_acquire_buffer (self->pool, &buf, NULL);
+  if (ret != GST_FLOW_OK)
+    goto create_buffer_failed;
+
+  if (!gst_video_frame_map (&inframe, &self->vinfo, inbuf, GST_MAP_READ))
+    goto error_map_src_buffer;
+
+  if (!gst_video_frame_map (&outframe, &self->vinfo, buf, GST_MAP_WRITE))
+    goto error_map_dst_buffer;
+
+  success = gst_video_frame_copy (&outframe, &inframe);
+  gst_video_frame_unmap (&outframe);
+  gst_video_frame_unmap (&inframe);
+  if (!success)
+    goto error_copy_buffer;
+
+  return buf;
+
+bail:
+  {
+    if (buf)
+      gst_buffer_unref (buf);
+    return NULL;
+  }
+
+  /* ERRORS */
+activate_pool_failed:
+  {
+    GST_ELEMENT_ERROR (self, STREAM, FAILED, ("failed to activate buffer pool"),
+        ("failed to activate buffer pool"));
+    return NULL;
+  }
+create_buffer_failed:
+  {
+    GST_ELEMENT_ERROR (self, STREAM, FAILED, ("allocation failed"),
+        ("failed to create buffer"));
+    return NULL;
+  }
+error_copy_buffer:
+  {
+    GST_WARNING_OBJECT (self, "failed to upload buffer");
+    goto bail;
+  }
+error_map_dst_buffer:
+  {
+    gst_video_frame_unmap (&inframe);
+    /* fall-through */
+  }
+error_map_src_buffer:
+  {
+    GST_WARNING_OBJECT (self, "failed to map buffer");
+    goto bail;
+  }
+}
+
+static GstBuffer *
+gst_kms_sink_get_input_buffer (GstRkXImageSink * self, GstBuffer * inbuf)
+{
+  GstMemory *mem;
+  GstBuffer *buf = NULL;
+
+  mem = gst_buffer_peek_memory (inbuf, 0);
+  if (!mem)
+    return NULL;
+
+  if (gst_is_kms_memory (mem))
+    return gst_buffer_ref (inbuf);
+
+  if (gst_kms_sink_import_dmabuf (self, inbuf, &buf))
+    goto done;
+
+  buf = gst_kms_sink_copy_to_dumb_buffer (self, inbuf);
+
+done:
+  /* Copy all the non-memory related metas, this way CropMeta will be
+   * available upon GstVideoOverlay::expose calls. */
+  if (buf)
+    gst_buffer_copy_into (buf, inbuf, GST_BUFFER_COPY_METADATA, 0, -1);
+
+  return buf;
+}
+
+static void
+sync_handler (gint fd, guint frame, guint sec, guint usec, gpointer data)
+{
+  gboolean *waiting;
+
+  waiting = data;
+  *waiting = FALSE;
+}
+
+static gboolean
+gst_kms_sink_sync (GstRkXImageSink * self)
+{
+  gint ret;
+  gboolean waiting;
+  drmEventContext evctxt = {
+    .version = DRM_EVENT_CONTEXT_VERSION,
+    .page_flip_handler = sync_handler,
+  };
+
+  waiting = TRUE;
+  ret = drmModePageFlip (self->fd, self->crtc_id, self->buffer_id,
+      DRM_MODE_PAGE_FLIP_EVENT, &waiting);
+  if (ret)
+    goto pageflip_failed;
+
+  while (waiting) {
+    do {
+      ret = gst_poll_wait (self->poll, 3 * GST_SECOND);
+    } while (ret == -1 && (errno == EAGAIN || errno == EINTR));
+
+    ret = drmHandleEvent (self->fd, &evctxt);
+    if (ret)
+      goto event_failed;
+  }
+
+  return TRUE;
+
+pageflip_failed:
+  {
+    GST_WARNING_OBJECT (self, "drmModePageFlip failed: %s (%d)",
+        g_strerror (errno), errno);
+    return FALSE;
+  }
+event_failed:
+  {
+    GST_ERROR_OBJECT (self, "drmHandleEvent failed: %s (%d)",
+        g_strerror (errno), errno);
+    return FALSE;
+  }
+}
+
+/*ximagesink*/
 static gboolean
 xwindow_calculate_display_ratio (GstRkXImageSink * self, int *x, int *y,
     gint * window_width, gint * window_height)
@@ -357,13 +712,13 @@ xwindow_calculate_display_ratio (GstRkXImageSink * self, int *x, int *y,
   guint dpy_par_n, dpy_par_d;
   gint video_width, video_height;
 
-  video_width = GST_VIDEO_INFO_WIDTH (&self->info);
-  video_height = GST_VIDEO_INFO_HEIGHT (&self->info);
+  video_width = GST_VIDEO_INFO_WIDTH (&self->vinfo);
+  video_height = GST_VIDEO_INFO_HEIGHT (&self->vinfo);
 
   video_par_n = self->par_n;
   video_par_d = self->par_d;
 
-  rkx_video_calculate_device_ratio (self->hdisplay, self->vdisplay,
+  gst_video_calculate_device_ratio (self->hdisplay, self->vdisplay,
       self->mm_width, self->mm_height, &dpy_par_n, &dpy_par_d);
 
   if (!gst_video_calculate_display_ratio (&dar_n, &dar_d, video_width,
@@ -477,18 +832,17 @@ gst_x_image_sink_xwindow_draw_borders (GstRkXImageSink * ximagesink,
 
 /* This function puts a GstXImageBuffer on a GstRkXImageSink's window */
 static gboolean
-gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
+gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
 {
   GstVideoCropMeta *crop;
   GstVideoRectangle src = { 0, };
   GstVideoRectangle dst = { 0, };
   GstVideoRectangle result;
-  GstVideoMeta *video_info;
-  GstMemory *mem;
+  GstBuffer *buffer = NULL;
   gboolean draw_border = FALSE;
-  guint32 fb_id, gem_handle, w, h, fmt, bo_handles[4] = { 0, };
-  guint32 offsets[4] = { 0, };
-  guint32 pitches[4] = { 0, };
+  gboolean res = FALSE;
+  gboolean expose = buf == NULL;
+  guint32 fb_id;
   gint ret;
   float scl_w, scl_h;
 
@@ -503,37 +857,26 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
 
   /* Draw borders when displaying the first frame. After this
      draw borders only on expose event or caps change (ximagesink->draw_border = TRUE). */
-  if (!ximagesink->cur_image || ximagesink->draw_border) {
+  if (expose || !ximagesink->last_buffer || ximagesink->draw_border)
     draw_border = TRUE;
-  }
 
-  /* Store a reference to the last image we put, lose the previous one */
-  if (ximage && ximagesink->cur_image != ximage) {
-    if (ximagesink->cur_image) {
-      GST_LOG_OBJECT (ximagesink, "unreffing %p", ximagesink->cur_image);
-      gst_buffer_unref (ximagesink->cur_image);
-    }
-    GST_LOG_OBJECT (ximagesink, "reffing %p as our current image", ximage);
-    /* FIXME */
-    ximagesink->cur_image = gst_buffer_ref (ximage);
-  }
+  if (buf)
+    buffer = gst_kms_sink_get_input_buffer (ximagesink, buf);
+  else if (ximagesink->last_buffer)
+    buffer = gst_buffer_ref (ximagesink->last_buffer);
 
-  /* Expose sends a NULL image, we take the latest frame */
-  if (!ximage) {
-    draw_border = TRUE;
-    if (ximagesink->cur_image) {
-      ximage = ximagesink->cur_image;
-      mem = gst_buffer_peek_memory (ximage, 0);
-      if (!gst_is_dmabuf_memory (mem))
-        return GST_FLOW_ERROR;
-    } else {
-      gst_x_image_sink_xwindow_clear (ximagesink, ximagesink->xwindow);
-      g_mutex_unlock (&ximagesink->flow_lock);
-      return TRUE;
-    }
-  }
+  /* Make sure buf is not used accidentally */
+  buf = NULL;
 
-  crop = gst_buffer_get_video_crop_meta (ximage);
+  if (!buffer)
+    goto buffer_invalid;
+  fb_id = gst_kms_memory_get_fb_id (gst_buffer_peek_memory (buffer, 0));
+  if (fb_id == 0)
+    goto buffer_invalid;
+
+  GST_TRACE_OBJECT (ximagesink, "displaying fb %d", fb_id);
+
+  crop = gst_buffer_get_video_crop_meta (buffer);
   if (crop) {
     src.x = crop->x;
     src.y = crop->y;
@@ -558,23 +901,6 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
     ximagesink->draw_border = FALSE;
   }
 
-  /* drm stuff */
-  mem = gst_buffer_peek_memory (ximage, 0);
-  gst_buffer_ref (ximage);
-
-  ret = drmPrimeFDToHandle
-      (ximagesink->fd, gst_dmabuf_memory_get_fd (mem), &gem_handle);
-  if (ret < 0) {
-    GST_ERROR_OBJECT (ximagesink, "drmPrimeFDToHandle failed: %s (%d)",
-        strerror (-ret), ret);
-    goto error;
-  }
-
-  video_info = gst_buffer_get_video_meta (ximage);
-  w = (GST_VIDEO_INFO_WIDTH (&ximagesink->info) + 1) & 0xfffffffe;
-  h = (GST_VIDEO_INFO_HEIGHT (&ximagesink->info) + 1) & 0xfffffffe;
-  fmt = rkx_drm_format_from_video (GST_VIDEO_INFO_FORMAT (&ximagesink->info));
-
   xwindow_get_window_position (ximagesink, &result.x, &result.y);
 
   xwindow_get_render_rectangle (ximagesink, &result.x, &result.y, &result.w,
@@ -592,13 +918,6 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
     result.h *= 2;
   }
 
-  pitches[0] = video_info->stride[0];
-  offsets[0] = video_info->offset[0];
-  bo_handles[0] = gem_handle;
-  pitches[1] = video_info->stride[1];
-  offsets[1] = video_info->offset[1];
-  bo_handles[1] = gem_handle;
-
   /* handle hardware limition */
   scl_w = src.w / result.w;
   scl_h = src.h / result.h;
@@ -610,59 +929,51 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * ximage)
   if (scl_w >= 2 && scl_h >= 4) {
     /* Skip Line */
     src.h /= 2;
-    pitches[0] *= 2;
-    pitches[1] *= 2;
   }
   if (src.w >= 4090) {
     /* drop pixel */
     src.w = 3840;
   }
 
-  ret = drmModeAddFB2 (ximagesink->fd, w, h, fmt, bo_handles, pitches,
-      offsets, &fb_id, 0);
-  if (ret < 0) {
-    GST_ERROR_OBJECT (ximagesink, "drmModeAddFB2 failed: %s (%d)",
-        strerror (-ret), ret);
-    goto error;
-  }
-
-  GST_TRACE_OBJECT (ximagesink, "displaying fb %d", fb_id);
-
   GST_TRACE_OBJECT (ximagesink,
       "drmModeSetPlane at (%i,%i) %ix%i sourcing at (%i,%i) %ix%i",
       result.x, result.y, result.w, result.h, src.x, src.y, src.w, src.h);
 
-  ret =
-      drmModeSetPlane (ximagesink->fd, ximagesink->plane_id,
+  ret = drmModeSetPlane (ximagesink->fd, ximagesink->plane_id,
       ximagesink->crtc_id, fb_id, 0, result.x, result.y, result.w, result.h,
       /* source/cropping coordinates are given in Q16 */
       src.x << 16, src.y << 16, src.w << 16, src.h << 16);
 
   if (ret) {
     GST_ERROR_OBJECT (ximagesink, "drmModesetplane failed: %d", ret);
-    goto error;
+    goto out;
   }
 
-  if (ximagesink->last_fb_id) {
-    drmModeRmFB (ximagesink->fd, ximagesink->last_fb_id);
+  /* Wait for the previous frame to complete redraw */
+  if (!gst_kms_sink_sync (ximagesink)) {
+    GST_ERROR_OBJECT (ximagesink, "drmModesetplane failed: %d", ret);
+    goto out;
   }
 
-  ximagesink->last_fb_id = fb_id;
+  if (buffer != ximagesink->last_buffer)
+    gst_buffer_replace (&ximagesink->last_buffer, buffer);
+
+  res = TRUE;
 
 out:
-
-  g_mutex_unlock (&ximagesink->flow_lock);
-
-  gst_buffer_unref (ximage);
+  if (buffer)
+    gst_buffer_unref (buffer);
   g_mutex_unlock (&ximagesink->x_lock);
+  g_mutex_unlock (&ximagesink->flow_lock);
+  return res;
+
+buffer_invalid:
+  gst_x_image_sink_xwindow_clear (ximagesink, ximagesink->xwindow);
+  if (buffer)
+    gst_buffer_unref (buffer);
+  g_mutex_unlock (&ximagesink->flow_lock);
 
   return TRUE;
-
-error:
-  gst_buffer_unref (ximage);
-  g_mutex_unlock (&ximagesink->x_lock);
-  g_mutex_unlock (&ximagesink->flow_lock);
-  return GST_FLOW_ERROR;
 }
 
 static gboolean
@@ -1295,6 +1606,7 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
 {
   GstRkXImageSink *ximagesink;
   GstVideoInfo info;
+  GstBufferPool *newpool, *oldpool;
 
   ximagesink = GST_X_IMAGE_SINK (bsink);
 
@@ -1327,13 +1639,28 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
       GST_VIDEO_SINK_HEIGHT (ximagesink) <= 0)
     goto invalid_size;
 
+  /* create a new pool for the new configuration */
+  newpool = gst_kms_sink_create_pool (ximagesink, caps,
+      GST_VIDEO_INFO_SIZE (&info), 2);
+  if (!newpool)
+    goto no_pool;
+
+  /* we don't activate the internal pool yet as it may not be needed */
+  oldpool = ximagesink->pool;
+  ximagesink->pool = newpool;
+
+  if (oldpool) {
+    gst_buffer_pool_set_active (oldpool, FALSE);
+    gst_object_unref (oldpool);
+  }
+
   g_mutex_lock (&ximagesink->flow_lock);
   if (!ximagesink->xwindow) {
     ximagesink->xwindow = gst_x_image_sink_xwindow_new (ximagesink,
         GST_VIDEO_SINK_WIDTH (ximagesink), GST_VIDEO_SINK_HEIGHT (ximagesink));
   }
 
-  ximagesink->info = info;
+  ximagesink->vinfo = info;
 
   /* Remember to draw borders for next frame */
   ximagesink->draw_border = TRUE;
@@ -1352,6 +1679,11 @@ invalid_size:
   {
     GST_ELEMENT_ERROR (ximagesink, CORE, NEGOTIATION, (NULL),
         ("Invalid image size."));
+    return FALSE;
+  }
+no_pool:
+  {
+    /* Already warned in create_pool */
     return FALSE;
   }
 }
@@ -1492,37 +1824,6 @@ gst_x_image_sink_event (GstBaseSink * sink, GstEvent * event)
   }
 
   return GST_BASE_SINK_CLASS (parent_class)->event (sink, event);
-}
-
-static gboolean
-gst_x_image_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
-{
-  GstCaps *caps;
-  gboolean need_pool;
-  GstVideoInfo vinfo;
-
-  gst_query_parse_allocation (query, &caps, &need_pool);
-  if (!caps)
-    goto no_caps;
-  if (!gst_video_info_from_caps (&vinfo, caps))
-    goto invalid_caps;
-
-  gst_query_add_allocation_meta (query, GST_VIDEO_META_API_TYPE, NULL);
-  gst_query_add_allocation_meta (query, GST_VIDEO_CROP_META_API_TYPE, NULL);
-
-  return TRUE;
-
-  /* ERRORS */
-no_caps:
-  {
-    GST_DEBUG_OBJECT (bsink, "no caps specified");
-    return FALSE;
-  }
-invalid_caps:
-  {
-    GST_DEBUG_OBJECT (bsink, "invalid caps specified");
-    return FALSE;
-  }
 }
 
 /* Interfaces stuff */
@@ -1843,10 +2144,7 @@ gst_x_image_sink_reset (GstRkXImageSink * ximagesink)
   if (thread)
     g_thread_join (thread);
 
-  if (ximagesink->cur_image) {
-    gst_buffer_unref (ximagesink->cur_image);
-    ximagesink->cur_image = NULL;
-  }
+  gst_buffer_replace (&ximagesink->last_buffer, NULL);
 
   g_mutex_lock (&ximagesink->flow_lock);
 
@@ -1889,7 +2187,7 @@ gst_x_image_sink_init (GstRkXImageSink * ximagesink)
   ximagesink->display_name = NULL;
   ximagesink->xcontext = NULL;
   ximagesink->xwindow = NULL;
-  ximagesink->cur_image = NULL;
+  ximagesink->last_buffer = NULL;
 
   ximagesink->event_thread = NULL;
   ximagesink->running = FALSE;
@@ -2086,6 +2384,7 @@ gst_x_image_sink_stop (GstBaseSink * bsink)
 
   gst_buffer_replace (&self->last_buffer, NULL);
   gst_caps_replace (&self->allowed_caps, NULL);
+  gst_object_replace ((GstObject **) & self->pool, NULL);
   gst_object_replace ((GstObject **) & self->allocator, NULL);
 
   gst_poll_remove_fd (self->poll, &self->pollfd);
@@ -2206,7 +2505,7 @@ gst_x_image_sink_class_init (GstRkXImageSinkClass * klass)
   gstbasesink_class->set_caps = GST_DEBUG_FUNCPTR (gst_x_image_sink_setcaps);
   gstbasesink_class->get_times = GST_DEBUG_FUNCPTR (gst_x_image_sink_get_times);
   gstbasesink_class->propose_allocation =
-      GST_DEBUG_FUNCPTR (gst_x_image_sink_propose_allocation);
+      GST_DEBUG_FUNCPTR (gst_kms_sink_propose_allocation);
   gstbasesink_class->event = GST_DEBUG_FUNCPTR (gst_x_image_sink_event);
 
   videosink_class->show_frame = GST_DEBUG_FUNCPTR (gst_x_image_sink_show_frame);

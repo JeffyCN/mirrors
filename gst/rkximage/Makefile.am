@@ -2,7 +2,9 @@ plugin_LTLIBRARIES = libgstrkximage.la
 
 libgstrkximage_la_SOURCES =			\
 	ximagesink.c				\
-	rkx_kmsutils.c				\
+	gstkmsutils.c				\
+	gstkmsallocator.c			\
+	gstkmsbufferpool.c			\
 	$(NULL)
 
 libgstrkximage_la_CFLAGS =				\

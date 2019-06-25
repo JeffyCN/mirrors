@@ -23,18 +23,19 @@
  *
  */
 
-#ifndef __RKX_KMS_UTILS_H__
-#define __RKX_KMS_UTILS_H__
+#ifndef __GST_KMS_UTILS_H__
+#define __GST_KMS_UTILS_H__
 
 #include <gst/video/video.h>
-#include <gst/video/gstvideometa.h>
 
 G_BEGIN_DECLS
 
-GstVideoFormat rkx_video_format_from_drm (guint32 drmfmt);
-guint32        rkx_drm_format_from_video (GstVideoFormat fmt);
-GstCaps *      rkx_kms_sink_caps_template_fill (void);
-void           rkx_video_calculate_device_ratio (guint dev_width,
+GstVideoFormat gst_video_format_from_drm (guint32 drmfmt);
+guint32        gst_drm_format_from_video (GstVideoFormat fmt);
+guint32        gst_drm_bpp_from_drm (guint32 drmfmt);
+guint32        gst_drm_height_from_drm (guint32 drmfmt, guint32 height);
+GstCaps *      gst_kms_sink_caps_template_fill (void);
+void           gst_video_calculate_device_ratio (guint dev_width,
 						 guint dev_height,
 						 guint dev_width_mm,
 						 guint dev_height_mm,
