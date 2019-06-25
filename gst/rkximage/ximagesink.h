@@ -146,6 +146,7 @@ struct _GstRkXImageSink
   GstXContext *xcontext;
   GstXWindow *xwindow;
   GstBuffer *cur_image;
+  GstVideoRectangle clip_rect;
 
   GThread *event_thread;
   gboolean running;
