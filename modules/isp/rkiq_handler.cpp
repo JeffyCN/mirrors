@@ -233,6 +233,7 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
     SmartPtr<AiqInputParams> inputParams = _aiq_compositor->getAiqInputParams();
     SmartPtr<XmetaResult> res;
     bool is_first_param = false;
+    CameraMetadata* staticMeta  = inputParams->staticMeta;
 
     for (X3aResultList::iterator iter = output.begin ();
             iter != output.end (); iter++)
@@ -362,7 +363,7 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
 
     // update expousre range
     int64_t exptime_range_us[2];
-    entry = settings->find(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE);
+    entry = staticMeta->find(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE);
     if (entry.count == 2) {
         exptime_range_us[0] = entry.data.i64[0];
         exptime_range_us[1] = entry.data.i64[1];
@@ -370,7 +371,7 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
     }
 
     int32_t sensitivity_range[2];
-    entry = settings->find(ANDROID_SENSOR_INFO_SENSITIVITY_RANGE);
+    entry = staticMeta->find(ANDROID_SENSOR_INFO_SENSITIVITY_RANGE);
     if (entry.count == 2) {
         sensitivity_range[0] = entry.data.i32[0];
         sensitivity_range[1] = entry.data.i32[1];
