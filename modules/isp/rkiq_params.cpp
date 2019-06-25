@@ -1177,13 +1177,13 @@ XCamReturn rkisp1_convert_results(
 #define CONVERT_RET(id, mask, cfg, ret, last) \
     XCAM_LOG_DEBUG("convert ret id: %d, en: %d, lasten: %d", id, aiq_results->enabled[id], last_aiq_results.enabled[id]); \
     if ((aiq_results->active_configs & mask) && (memcmp(&ret, &last, sizeof(ret)) != 0)) { \
-        if (aiq_results->enabled[id] != last_aiq_results.enabled[id]) \
-            isp_cfg->module_en_update |= mask; \
         isp_cfg->module_cfg_update |= mask; \
-        isp_cfg->module_ens |= (aiq_results->enabled[id] ? mask : 0); \
         cfg = ret; \
+    } \
+    if (aiq_results->enabled[id] != last_aiq_results.enabled[id]) { \
+        isp_cfg->module_en_update |= mask; \
+        isp_cfg->module_ens |= (aiq_results->enabled[id] ? mask : 0); \
     }
-
     //disable ie cproc bdm
     /* aiq_results->enabled[HAL_ISP_IE_ID] = 0; */
     /*
