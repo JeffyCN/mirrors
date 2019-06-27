@@ -1282,6 +1282,7 @@ RKiqCompositor::RKiqCompositor ()
     , _all_stats_meas_types(0)
     , _delay_still_capture(false)
     , _capture_to_preview_delay(0)
+    ,_procReqId(-1)
 {
     xcam_mem_clear (_frame_params);
     xcam_mem_clear (_isp_stats);
@@ -1657,6 +1658,14 @@ RKiqCompositor::limit_nr_levels (struct rkisp_parameters *isp_param)
 void RKiqCompositor::pre_process_3A_states()
 {
     if (_ae_handler && _awb_handler && _af_handler && _inputParams.ptr()) {
+        // we'll use the latest inputparams if no new one is comming,
+        // so should ignore the processed triggers
+        if (_procReqId == _inputParams->reqId) {
+            _inputParams->aaaControls.ae.aePreCaptureTrigger = 0;
+            _inputParams->aaaControls.af.afTrigger = 0;
+            /* _inputParams->stillCapSyncCmd = 0; */
+        } else
+            _procReqId = _inputParams->reqId;
         _ae_handler->mAeState->processState(_inputParams->aaaControls.controlMode,
                                             _inputParams->aaaControls.ae);
         _awb_handler->mAwbState->processState(_inputParams->aaaControls.controlMode,

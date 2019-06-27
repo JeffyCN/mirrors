@@ -402,6 +402,8 @@ private:
     bool _delay_still_capture;
     int32_t _capture_to_preview_delay;
     rkisp_flash_setting_t _flash_old_setting;
+    // processed request id
+    unsigned int    _procReqId;
 };
 
 };
