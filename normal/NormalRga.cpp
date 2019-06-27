@@ -384,7 +384,19 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
             scaleMode = 0;     //  force change scale_mode to 0 ,for rga not support
         }
 	}
-
+	/*
+	 *  RGA2 upScale Bi-cubic can chose operator
+	 *  0  CATROM
+	 *  1  MITCHELL
+	 *  2  HERMITE
+	 *  3  B-SPLINE
+	 */
+	if (ctx->mVersion >= 2.0) {
+	    if (src->scale_mode)
+		scaleMode = src->scale_mode;
+	    else
+		scaleMode = 0;
+	}
     DEBUG("scaleMode = %d , stretch = %d; \n",scaleMode,stretch);
 
 	switch (rotation) {

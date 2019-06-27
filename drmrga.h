@@ -87,7 +87,8 @@ typedef struct rga_info {
 	int color;
 	int testLog;
 	int mmuFlag;
-	int reserve[128];
+	int scale_mode;
+	int reserve[124];
 } rga_info_t;
 
 
