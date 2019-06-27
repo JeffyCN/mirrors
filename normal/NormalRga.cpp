@@ -380,7 +380,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (hScale < 1 || vScale < 1)
     {
 		scaleMode = 2;
-        if((src->format == RK_FORMAT_RGBA_8888  ||src->format == RK_FORMAT_BGRA_8888)){
+        if((relSrcRect.format == RK_FORMAT_RGBA_8888  || relSrcRect.format == RK_FORMAT_BGRA_8888)){
             scaleMode = 0;     //  force change scale_mode to 0 ,for rga not support
         }
 	}
