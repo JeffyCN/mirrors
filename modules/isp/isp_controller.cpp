@@ -1056,6 +1056,8 @@ IspController::set_3a_config (X3aIspConfig *config, bool first)
 {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
 
+    SmartLock locker (_mutex);
+
     if (_is_exit) {
         XCAM_LOG_DEBUG ("set 3a config bypass since ia engine has stop");
         return XCAM_RETURN_BYPASS;
@@ -1064,8 +1066,6 @@ IspController::set_3a_config (X3aIspConfig *config, bool first)
     struct rkisp_parameters *isp_cfg = &isp_config;
 
     XCAM_ASSERT (isp_cfg);
-
-    SmartLock locker (_mutex);
 
     if (_pending_ispparams_queue.size() > 3) {
         XCAM_LOG_DEBUG ("too many pending isp params:%d !", _pending_ispparams_queue.size());
