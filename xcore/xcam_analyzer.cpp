@@ -60,13 +60,14 @@ AnalyzerThread::started ()
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
 
     XCAM_ASSERT (_analyzer);
+#if 0
     ret = _analyzer->configure ();
     if (ret != XCAM_RETURN_NO_ERROR) {
         _analyzer->notify_calculation_failed (NULL, 0, "configure 3a failed");
         XCAM_LOG_WARNING ("analyzer(%s) configure 3a failed", XCAM_STR(_analyzer->get_name()));
         return false;
     }
-
+#endif
     return true;
 }
 
@@ -218,6 +219,12 @@ XAnalyzer::start ()
             return ret;
         }
     } else {
+        XCamReturn ret = configure ();
+        if (ret != XCAM_RETURN_NO_ERROR) {
+            XCAM_LOG_ERROR ("analyzer failed to start in sync mode");
+            stop ();
+            return ret;
+        }
         if (_analyzer_thread->start () == false) {
             XCAM_LOG_WARNING ("analyzer thread start failed");
             stop ();
