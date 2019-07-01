@@ -111,7 +111,7 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
  * v2.2.0
  *  - fully support flashlight, pass CTS
  *  - use new log system
- *  - calibdb v1.4.0,magic code:704841 
+ *  - calibdb v1.5.0,magic code: 706729
  *  - aec lib v0.0.e
  *  - awb lib v0.0.e
  *  - af lib v0.2.17
