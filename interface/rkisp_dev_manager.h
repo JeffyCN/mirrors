@@ -108,9 +108,17 @@ using ::android::hardware::camera::common::V1_0::helper::CameraMetadata;
  *  - support flashlight and precapture
  *  - ae lib v0.0.a
  *  - calibdb v1.1.0 iq: v1.1.0 checksum: 677941 
+ * v2.2.0
+ *  - fully support flashlight, pass CTS
+ *  - use new log system
+ *  - calibdb v1.4.0,magic code:704841 
+ *  - aec lib v0.0.e
+ *  - awb lib v0.0.e
+ *  - af lib v0.2.17
+ *  - matched rkisp driver v0.1.5
  */
 
-#define CONFIG_CAM_ENGINE_LIB_VERSION "v2.0.1"
+#define CONFIG_CAM_ENGINE_LIB_VERSION "v2.2.0"
 
 using namespace XCam;
 class SettingsProcessor;
