@@ -81,13 +81,15 @@
 //		  add flash ctrl parameters in iq xml file.
 //v1.2.0:  add xml check & magic version code 692267
 //		  add awb flash  parameters in iq xml file.
+//v1.3.0:  add xml check & magic version code 702671
+//		  modify backlight AEC-->BackLight_Config, including 2 modes
 /*************************************************************************/
 /*************************************************************************/
 
 
 
 
-#define CODE_XML_PARSE_VERSION "v1.2.0"
+#define CODE_XML_PARSE_VERSION "v1.3.0"
 
 static std::ofstream redirectOut("/dev/null");
 
@@ -2478,6 +2480,143 @@ bool CalibDb::parseEntryAecIntervalAdjustStrategy
 
 
 
+bool CalibDb::parseEntryAecBackLightWeightMethod
+(
+    const XMLElement*   pelement,
+    void*                param
+)
+{
+#ifdef DEBUG_LOG
+	LOGD( "%s(%d): (enter)\n", __FUNCTION__,__LINE__);
+#endif
+
+
+	CamCalibAecGlobal_t *pAecData= (CamCalibAecGlobal_t *)param;
+	if(NULL == pAecData){
+		LOGE("%s(%d): Invalid pointer (exit)\n", __FUNCTION__,__LINE__);
+		return false;
+	}
+
+	XML_CHECK_START(CALIB_SENSOR_AEC_BACKLIGHT_WEIGHT_METHOD_TAG_ID, CALIB_SENSOR_AEC_BACKLIGHT_CONFIG_TAG_ID);
+
+	const XMLNode* pchild = pelement->FirstChild();
+	while (pchild) {
+		XmlTag tag = XmlTag(pchild->ToElement());
+		std::string tagname(pchild->ToElement()->Name());
+		XML_CHECK_WHILE_SUBTAG_MARK((char *)(tagname.c_str()), tag.Type(), tag.Size());
+
+#ifdef DEBUG_LOG
+		LOGD( "%s(%d): tag: %s value:%s\n", __FUNCTION__,__LINE__,tagname.c_str(), tag.Value());
+#endif
+
+		if(XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_LUMALOWTH_TAG_ID)){
+          int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.lumaLowTh, tag.Size());
+          DCT_ASSERT((no == tag.Size()));
+        }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_LUMAHIGHTH_TAG_ID)){
+          int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.lumaHighTh, tag.Size());
+          DCT_ASSERT((no == tag.Size()));
+        }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_LVTH_TAG_ID)){
+          int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.LvTh, tag.Size());
+          DCT_ASSERT((no == tag.Size()));
+        }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_WEIGHTMINTH_TAG_ID)){
+          int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.weightMinTh, tag.Size());
+          DCT_ASSERT((no == tag.Size()));
+        }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_WEIGHTMAXTH_TAG_ID)){
+          int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.weightMaxTh, tag.Size());
+          DCT_ASSERT((no == tag.Size()));
+        }else{
+		   LOGE( "%s(%d):parse error in AEC BackLight WeightMethod section (unknow tag: %s)\n",
+			  __FUNCTION__,__LINE__,tagname.c_str());
+		   return false;
+    	}
+
+		pchild = pchild->NextSibling();
+	}
+
+	XML_CHECK_END();
+
+#ifdef DEBUG_LOG
+    LOGD( "%s(%d): (exit)\n", __FUNCTION__,__LINE__);
+#endif
+
+	return true;
+
+}
+
+
+bool CalibDb::parseEntryAecBackLightDarkROIMethod
+(
+    const XMLElement*   pelement,
+    void*                param
+)
+{
+#ifdef DEBUG_LOG
+	LOGD( "%s(%d): (enter)\n", __FUNCTION__,__LINE__);
+#endif
+
+
+	CamCalibAecGlobal_t *pAecData= (CamCalibAecGlobal_t *)param;
+	if(NULL == pAecData){
+		LOGE("%s(%d): Invalid pointer (exit)\n", __FUNCTION__,__LINE__);
+		return false;
+	}
+
+	XML_CHECK_START(CALIB_SENSOR_AEC_BACKLIGHT_DARKROI_METHOD_TAG_ID,CALIB_SENSOR_AEC_BACKLIGHT_CONFIG_TAG_ID);
+
+	const XMLNode* pchild = pelement->FirstChild();
+	while (pchild) {
+		XmlTag tag = XmlTag(pchild->ToElement());
+		std::string tagname(pchild->ToElement()->Name());
+		XML_CHECK_WHILE_SUBTAG_MARK((char *)(tagname.c_str()), tag.Type(), tag.Size());
+
+#ifdef DEBUG_LOG
+		LOGD( "%s(%d): tag: %s value:%s\n", __FUNCTION__,__LINE__,tagname.c_str(), tag.Value());
+#endif
+
+		if(XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_OEROI_LOWTH_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.OEROILowTh, tag.Size());
+	      	DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_LV_LOWTH_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.LvLowTh, tag.Size());
+	      	DCT_ASSERT((no == tag.Size()));
+		}else if(XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_LV_HIGHTH_TAG_ID)){
+	      	int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.LvHightTh, tag.Size());
+	      	DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_EXPLEVEL_TAG_ID)){
+	      	int i = (sizeof(pAecData->backLightConf.ExpLevel) / sizeof(pAecData->backLightConf.ExpLevel.fCoeff[0]));
+	      	int no = ParseFloatArray(tag.Value(), pAecData->backLightConf.ExpLevel.fCoeff, i);
+	      	DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_NONOEPDF_HIGHTH_TAG_ID)){
+	      	int i = (sizeof(pAecData->backLightConf.NonOEPdfTh) / sizeof(pAecData->backLightConf.NonOEPdfTh.fCoeff[0]));
+	      	int no = ParseFloatArray(tag.Value(), pAecData->backLightConf.NonOEPdfTh.fCoeff, i);
+	      	DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_DARKPDF_HIGHTH_TAG_ID)){
+	      	int i = (sizeof(pAecData->backLightConf.DarkPdfTh) / sizeof(pAecData->backLightConf.DarkPdfTh.fCoeff[0]));
+	      	int no = ParseFloatArray(tag.Value(), pAecData->backLightConf.DarkPdfTh.fCoeff, i);
+	      	DCT_ASSERT((no == tag.Size()));
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_DYLOCALSETPOINT_TAG_ID)){
+	      	int i = (sizeof(pAecData->backLightConf.DyLocalSetPoint) / sizeof(pAecData->backLightConf.DyLocalSetPoint.fCoeff[0]));
+	      	int no = ParseFloatArray(tag.Value(), pAecData->backLightConf.DyLocalSetPoint.fCoeff, i);
+	      	DCT_ASSERT((no == tag.Size()));
+		}else{
+		   LOGE( "%s(%d):parse error in AEC BackLight DarkROIMethod section (unknow tag: %s)\n",
+			  __FUNCTION__,__LINE__,tagname.c_str());
+		   return false;
+    	}
+		pchild = pchild->NextSibling();
+	}
+
+	XML_CHECK_END();
+
+#ifdef DEBUG_LOG
+    LOGD( "%s(%d): (exit)\n", __FUNCTION__,__LINE__);
+#endif
+
+	return true;
+
+}
+
+
 
 bool CalibDb::parseEntryAecBacklight
 (
@@ -2511,19 +2650,33 @@ bool CalibDb::parseEntryAecBacklight
 		if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_ENABLE_TAG_ID)){
           int no = ParseUcharArray(tag.Value(), &pAecData->backLightConf.enable, tag.Size());
           DCT_ASSERT((no == tag.Size()));
-        }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_LUMALOWTH_TAG_ID)){
-          int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.lumaLowTh, tag.Size());
-          DCT_ASSERT((no == tag.Size()));
-        }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_LUMAHIGHTH_TAG_ID)){
-          int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.lumaHighTh, tag.Size());
-          DCT_ASSERT((no == tag.Size()));
-        }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_WEIGHTMINTH_TAG_ID)){
-          int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.weightMinTh, tag.Size());
-          DCT_ASSERT((no == tag.Size()));
-        }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_WEIGHTMAXTH_TAG_ID)){
-          int no = ParseFloatArray(tag.Value(), &pAecData->backLightConf.weightMaxTh, tag.Size());
-          DCT_ASSERT((no == tag.Size()));
-        }else {
+        }else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_MODE_TAG_ID)){
+	      char* value = Toupper(tag.Value());
+	      std::string s_value(value);
+#ifdef DEBUG_LOG
+		  LOGD( "%s(%d): value: %s\n", __FUNCTION__,__LINE__,value);
+		  LOGD( "%s(%d): s_value: %s\n", __FUNCTION__,__LINE__,s_value.c_str());
+#endif
+		  if (s_value == CALIB_SENSOR_AEC_BACKLIGHT_MODE_WEIGHT) {
+			pAecData->backLightConf.Mode= AEC_BACKLIT_MODE_WEIGHT_METHOD;
+		  } else if (s_value == CALIB_SENSOR_AEC_BACKLIGHT_MODE_DARKROI) {
+			pAecData->backLightConf.Mode = AEC_BACKLIT_MODE_DARKROI_METHOD;
+		  } else {
+			pAecData->backLightConf.Mode= AEC_BACKLIT_MODE_INVALID;
+			LOGE("%s(%d): invalid AEC BackLight Mode: %s \n", __FUNCTION__, __LINE__, s_value.c_str());
+			return (false);
+		  }
+    	}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_WEIGHT_METHOD_TAG_ID)){
+	      if (!parseEntryAecBackLightWeightMethod(pchild->ToElement(), pAecData)){
+			LOGE( "%s(%d): parse error in BackLight WeightMethod section\n",__FUNCTION__,__LINE__);
+			return (false);
+		  }
+		}else if (XML_CHECK_TAGID_COMPARE(CALIB_SENSOR_AEC_BACKLIGHT_DARKROI_METHOD_TAG_ID)){
+	      if (!parseEntryAecBackLightDarkROIMethod(pchild->ToElement(), pAecData)){
+			LOGE( "%s(%d): parse error in BackLight DarkROIMethod section\n",__FUNCTION__,__LINE__);
+			return (false);
+		  }
+		}else {
           LOGE( "%s(%d): parse error in AEC_backlight section (unknow tag:%s)\n",
 		  	 __FUNCTION__,__LINE__,tagname.c_str());
 		  return false;

@@ -150,6 +150,8 @@ class CalibDb {
   bool parseEntryAecHist2Hal( const XMLElement*, void *param = NULL );
   bool parseEntryAecNLSC( const XMLElement*, void *param = NULL );
   bool parseEntryAecIntervalAdjustStrategy( const XMLElement*, void *param = NULL );
+  bool parseEntryAecBackLightWeightMethod( const XMLElement*, void *param = NULL );
+  bool parseEntryAecBackLightDarkROIMethod( const XMLElement*, void *param = NULL );
   bool parseEntryAecBacklight( const XMLElement*, void *param = NULL );
   bool parseEntryAecLockAE( const XMLElement*, void *param = NULL );
   bool parseEntryAecHdrCtrlLframe( const XMLElement*, void *param = NULL );

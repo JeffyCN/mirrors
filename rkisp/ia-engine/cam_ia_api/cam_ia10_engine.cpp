@@ -1672,6 +1672,7 @@ RESULT CamIA10Engine::initAEC() {
     aecCfg.IntervalAdjStgy.dluma_high_th = pAecGlobal->InterAdjustStrategy.dluma_high_th;
     aecCfg.IntervalAdjStgy.dluma_low_th = pAecGlobal->InterAdjustStrategy.dluma_low_th;
     aecCfg.IntervalAdjStgy.trigger_frame = pAecGlobal->InterAdjustStrategy.trigger_frame;
+	memcpy(&aecCfg.backLightConf, &pAecGlobal->backLightConf, sizeof(pAecGlobal->backLightConf));//zlj add
     memcpy (&aecCfg.HdrCtrl,&pAecGlobal->HdrCtrl,sizeof(pAecGlobal->HdrCtrl));//zlj
     if (mIspVer > 0) {
         aecCfg.Valid_GridWeights_Num = 81;

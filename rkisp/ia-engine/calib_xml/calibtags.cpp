@@ -474,10 +474,27 @@ uint32_t calib_sensor_aec_NLSC_sub_tags[] = {
 
 uint32_t calib_sensor_aec_backlight_sub_tags[] = {
 	CALIB_SENSOR_AEC_BACKLIGHT_ENABLE_TAG_ID,
+	CALIB_SENSOR_AEC_BACKLIGHT_MODE_TAG_ID,
+	CALIB_SENSOR_AEC_BACKLIGHT_WEIGHT_METHOD_TAG_ID,
+	CALIB_SENSOR_AEC_BACKLIGHT_DARKROI_METHOD_TAG_ID
+};
+
+uint32_t calib_sensor_aec_backlight_weight_method_sub_tags[] = {
 	CALIB_SENSOR_AEC_BACKLIGHT_LUMALOWTH_TAG_ID,
 	CALIB_SENSOR_AEC_BACKLIGHT_LUMAHIGHTH_TAG_ID,
+	CALIB_SENSOR_AEC_BACKLIGHT_LVTH_TAG_ID,
 	CALIB_SENSOR_AEC_BACKLIGHT_WEIGHTMINTH_TAG_ID,
-	CALIB_SENSOR_AEC_BACKLIGHT_WEIGHTMAXTH_TAG_ID,
+	CALIB_SENSOR_AEC_BACKLIGHT_WEIGHTMAXTH_TAG_ID
+};
+
+uint32_t calib_sensor_aec_backlight_darkroi_method_sub_tags[] = {
+	CALIB_SENSOR_AEC_BACKLIGHT_OEROI_LOWTH_TAG_ID,
+	CALIB_SENSOR_AEC_BACKLIGHT_LV_LOWTH_TAG_ID,
+	CALIB_SENSOR_AEC_BACKLIGHT_LV_HIGHTH_TAG_ID,
+	CALIB_SENSOR_AEC_BACKLIGHT_EXPLEVEL_TAG_ID,
+	CALIB_SENSOR_AEC_BACKLIGHT_NONOEPDF_HIGHTH_TAG_ID,
+	CALIB_SENSOR_AEC_BACKLIGHT_DARKPDF_HIGHTH_TAG_ID,
+	CALIB_SENSOR_AEC_BACKLIGHT_DYLOCALSETPOINT_TAG_ID
 };
 
 uint32_t calib_sensor_aec_hist2hal_sub_tags[] = {
@@ -1819,17 +1836,54 @@ calib_tag_info_t g_calib_tag_infos[CALIB_IQ_TAG_END] = {
 	 [CALIB_SENSOR_AEC_BACKLIGHT_ENABLE_TAG_ID]		   =
 		{"Enable", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
 		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_AEC_BACKLIGHT_MODE_TAG_ID]		   =
+		{"Mode", CALIB_TAG_TYPE_CHAR, {-1, -1},
+		  check_tags_array_ignore, NULL},
+
+	 //backlight-weight-method
+	 [CALIB_SENSOR_AEC_BACKLIGHT_WEIGHT_METHOD_TAG_ID]		   =
+		{"WeightMethod", CALIB_TAG_TYPE_STRUCT, {-1, -1},
+		  check_tags_array_info(calib_sensor_aec_backlight_weight_method_sub_tags), NULL},
 	 [CALIB_SENSOR_AEC_BACKLIGHT_LUMALOWTH_TAG_ID]		   =
 		{"LumaLowTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
 		  check_tags_array_ignore, NULL},
 	 [CALIB_SENSOR_AEC_BACKLIGHT_LUMAHIGHTH_TAG_ID]		   =
 		{"LumaHighTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
 		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_AEC_BACKLIGHT_LVTH_TAG_ID]		   =
+		{"LvTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
 	 [CALIB_SENSOR_AEC_BACKLIGHT_WEIGHTMINTH_TAG_ID]		   =
 		{"WeightMinTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
 		  check_tags_array_ignore, NULL},
 	 [CALIB_SENSOR_AEC_BACKLIGHT_WEIGHTMAXTH_TAG_ID]		  =
 		{"WeightMaxTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+
+	 //backlight-darkroi-method
+	 [CALIB_SENSOR_AEC_BACKLIGHT_DARKROI_METHOD_TAG_ID]	  	  =
+		{"DarkROIMethod", CALIB_TAG_TYPE_STRUCT, {-1, -1},
+		  check_tags_array_info(calib_sensor_aec_backlight_darkroi_method_sub_tags), NULL},
+	 [CALIB_SENSOR_AEC_BACKLIGHT_OEROI_LOWTH_TAG_ID]		  =
+		{"OEROILowTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_AEC_BACKLIGHT_LV_LOWTH_TAG_ID]		  =
+		{"LvLowTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_AEC_BACKLIGHT_LV_HIGHTH_TAG_ID]		  =
+		{"LvHighTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_AEC_BACKLIGHT_EXPLEVEL_TAG_ID]		  =
+		{"ExpLevel", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_AEC_BACKLIGHT_NONOEPDF_HIGHTH_TAG_ID]		  =
+		{"NonOEPdfHighTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_AEC_BACKLIGHT_DARKPDF_HIGHTH_TAG_ID]		  	  =
+		{"DarkPdfHighTh", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
+		  check_tags_array_ignore, NULL},
+	 [CALIB_SENSOR_AEC_BACKLIGHT_DYLOCALSETPOINT_TAG_ID]		  =
+		{"DyLocalSetPoint", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
 		  check_tags_array_ignore, NULL},
 
 	//hist 2 hal

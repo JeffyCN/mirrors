@@ -1601,6 +1601,21 @@ typedef enum AecHdrMode_e {
   AEC_HDR_MODE_MAX
 } AecHdrMode_t;
 
+/*****************************************************************************/
+/**
+ *          AecBackLitMode_t
+ *
+ * @brief   mode type of AEC-BackLit
+ *
+ */
+/*****************************************************************************/
+typedef enum AecBackLitMode_e {
+  AEC_BACKLIT_MODE_INVALID    = 0,        /* invalid (only used for initialization) */
+  AEC_BACKLIT_MODE_WEIGHT_METHOD = 1,     /* Backlit based on Weight-Method MODE (by oyyf) */
+  AEC_BACKLIT_MODE_DARKROI_METHOD    = 2, /* Backlit based on DarkROI-Method MODE (by zlj) */
+  AEC_BACKLIT_MODE_MAX
+} AecBackLitMode_t;
+
 
 typedef enum EXP_SEPARATE_MODE_E{
 	EXP_SEPARATE_MODE_INVALID = 0,
@@ -1711,10 +1726,19 @@ typedef struct CamCalibAecNLSC_s{
 
 typedef struct CamCalibAecBacklight_s{
   uint8_t	enable;
+  uint8_t   Mode;
   float lumaHighTh;
   float lumaLowTh;
+  float LvTh;
   float weightMinTh;
   float weightMaxTh;
+  float OEROILowTh;
+  float LvLowTh;
+  float LvHightTh;
+  Cam6x1FloatMatrix_t NonOEPdfTh;
+  Cam6x1FloatMatrix_t DarkPdfTh;
+  Cam6x1FloatMatrix_t ExpLevel;
+  Cam6x1FloatMatrix_t DyLocalSetPoint;
 }CamCalibAecBacklight_t;
 
 typedef struct CamCalibAecHist2Hal_s{
