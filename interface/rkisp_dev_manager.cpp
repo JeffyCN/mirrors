@@ -188,6 +188,16 @@ RkispDeviceManager::set_control_params(const int request_frame_id,
                     stillcap_sync_cmd_end_delay = true;
                 }
             }
+            if (inputParams->aaaControls.ae.aePreCaptureTrigger == ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_START) {
+                if (!_settings.empty()) {
+                    XCam::SmartPtr<AiqInputParams> settings = *_settings.begin();
+                    settings->aaaControls.ae.aePreCaptureTrigger = ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_START;
+                    settings->reqId = -1;
+                } else {
+                    _cur_settings->aaaControls.ae.aePreCaptureTrigger = ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_START;
+                    _cur_settings->reqId = -1;
+                }
+            }
         }
     }
 
