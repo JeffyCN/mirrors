@@ -2272,8 +2272,10 @@ void RKiqCompositor::pre_process_3A_states()
         // we'll use the latest inputparams if no new one is comming,
         // so should ignore the processed triggers
         if (_procReqId == _inputParams->reqId) {
-            _inputParams->aaaControls.ae.aePreCaptureTrigger = 0;
-            _inputParams->aaaControls.af.afTrigger = 0;
+            if (_inputParams->aaaControls.ae.aePreCaptureTrigger == ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_START)
+                _inputParams->aaaControls.ae.aePreCaptureTrigger = 0;
+            if (_inputParams->aaaControls.af.afTrigger == ANDROID_CONTROL_AF_TRIGGER_START)
+                _inputParams->aaaControls.af.afTrigger = 0;
             /* _inputParams->stillCapSyncCmd = 0; */
         } else
             _procReqId = _inputParams->reqId;
