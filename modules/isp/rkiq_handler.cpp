@@ -736,10 +736,8 @@ AiqCommonHandler::processMiscMetaResults(struct CamIA10_Results &ia10_results, X
 void
 AiqCommonHandler::processTuningToolModuleInfoMetaResults(CameraMetadata* metadata)
 {
-     uint8_t moduleinfo[234], otpInfo, *pchr;
+     uint8_t moduleinfo[234], *pchr;
      char sensornam[32], modulenam[32], lensnam[32], *pstr,*pstart, *pend;
-     CamCalibDbHandle_t hCalib;
-     CamOTPGlobal_t *pCamOtp = NULL;
 
      memset(sensornam,0,sizeof(sensornam));
      memset(modulenam,0,sizeof(modulenam));
@@ -762,13 +760,15 @@ AiqCommonHandler::processTuningToolModuleInfoMetaResults(CameraMetadata* metadat
      pchr += sizeof(modulenam);
      memcpy(pchr, lensnam, sizeof(lensnam));
      pchr += sizeof(lensnam);
-     _aiq_compositor->_isp10_engine->getCalibdbHandle(&hCalib);
-     CamCalibDbGetOTPGlobal(hCalib, &pCamOtp);
-     if(pCamOtp)
-         otpInfo = pCamOtp->awb.enable | pCamOtp->lsc.enable<<1;
-     else
-        otpInfo = 0;
-     *pchr = otpInfo;
+     *pchr++ = _otp_info.awb.enable|_otp_info.lsc.enable<<1;
+     memcpy(pchr, &_otp_info.awb.golden_r_value, sizeof(_otp_info.awb.golden_r_value));
+     pchr += sizeof(_otp_info.awb.golden_r_value);
+     memcpy(pchr, &_otp_info.awb.golden_gr_value, sizeof(_otp_info.awb.golden_gr_value));
+     pchr += sizeof(_otp_info.awb.golden_gr_value);
+     memcpy(pchr, &_otp_info.awb.golden_gb_value, sizeof(_otp_info.awb.golden_gb_value));
+     pchr += sizeof(_otp_info.awb.golden_gb_value);
+     memcpy(pchr, &_otp_info.awb.golden_b_value, sizeof(_otp_info.awb.golden_b_value));
+     pchr += sizeof(_otp_info.awb.golden_b_value);
      metadata->update(RKCAMERA3_PRIVATEDATA_ISP_MODULE_INFO,(uint8_t*)moduleinfo,sizeof(moduleinfo));
 }
 
@@ -799,13 +799,13 @@ AiqCommonHandler::processTuningToolSensorInfoMetaResults(CameraMetadata* metadat
     tempval = (short)((sensor_desc.pixel_periods_per_line)&0xffff);
     memcpy(&sensor_info[3],&tempval,2);
     memcpy(&sensor_info[5], &sensor_desc.pixel_clock_freq_mhz, 4);
-    sensor_info[9] = 1;//bining or full
+    sensor_info[9] = 0;//bining or full
     _aiq_compositor->_isp10_engine->getCalibdbHandle(&hCalib);
     CamCalibDbGetMetaData(hCalib, &meta);
     if(meta.isp_output_type == isp_gray_output_type)
-        sensor_info[10] = 0;
-    else
         sensor_info[10] = 1;
+    else
+        sensor_info[10] = 0;
     metadata->update(RKCAMERA3_PRIVATEDATA_ISP_SENSOR_INFO,(uint8_t*)sensor_info,sizeof(sensor_info));
 
 }
@@ -1844,6 +1844,7 @@ AiqCommonHandler::AiqCommonHandler (SmartPtr<RKiqCompositor> &aiq_compositor)
     , _stillcap_sync_state(STILLCAP_SYNC_STATE_IDLE)
 {
     initTonemaps();
+    memset(&_otp_info, 0, sizeof(_otp_info));
 }
 AiqCommonHandler::~AiqCommonHandler ()
 {

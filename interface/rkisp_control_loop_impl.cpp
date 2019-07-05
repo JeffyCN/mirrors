@@ -360,8 +360,16 @@ int rkisp_cl_prepare(void* cl_ctx,
         }
     }
 
-    SmartPtr<X3aAnalyzer> aiq_analyzer =
+    SmartPtr<X3aAnalyzerRKiq> aiq_analyzer =
         new X3aAnalyzerRKiq (device_manager, isp_controller, device_manager->get_iq_path());
+    CamOTPGlobal_t cam_otp;
+    cam_otp.awb.enable = camera_mod_info.awb.flag;
+    cam_otp.awb.golden_r_value = camera_mod_info.awb.r_value;
+    cam_otp.awb.golden_gr_value = camera_mod_info.awb.gr_value;
+    cam_otp.awb.golden_gb_value = camera_mod_info.awb.gb_value;
+    cam_otp.awb.golden_b_value = camera_mod_info.awb.b_value;
+    cam_otp.lsc.enable = camera_mod_info.lsc.flag;
+    aiq_analyzer->setOtpInfo(cam_otp);
     device_manager->set_3a_analyzer (aiq_analyzer);
 
     device_manager->set_static_metadata (prepare_params->staticMeta);

@@ -301,6 +301,7 @@ protected:
     SmartPtr<RKiqCompositor>     _aiq_compositor;
     ia_aiq_gbce_results        *_gbce_result;
     char                       _iq_name[100];
+    CamOTPGlobal_t             _otp_info;
 };
 
 class RKiqCompositor {
@@ -335,6 +336,10 @@ public:
     {
         if(iq_name)
            strcpy(_common_handler->_iq_name, iq_name);
+    }
+    void set_otp_info(CamOTPGlobal_t &otp_info)
+    {
+        _common_handler->_otp_info = otp_info;
     }
     bool open (ia_binary_data &cpf);
     void close ();

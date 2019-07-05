@@ -45,6 +45,7 @@ public:
     struct isp_supplemental_sensor_mode_data* getSensorModeData () { return &_sensor_mode_data; }
     ~X3aAnalyzerRKiq ();
     XCamReturn restart();
+    void setOtpInfo(CamOTPGlobal_t &param);
 private:
 
     XCAM_DEAD_COPY (X3aAnalyzerRKiq);
@@ -71,6 +72,7 @@ private:
     struct isp_supplemental_sensor_mode_data   _sensor_mode_data;
     bool                              _sensor_data_ready;
     char                             *_cpf_path;
+    CamOTPGlobal_t                   _otpInfo;
 };
 
 };

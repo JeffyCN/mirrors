@@ -42,6 +42,7 @@ X3aAnalyzerRKiq::X3aAnalyzerRKiq (RkispDeviceManager* device_manager, SmartPtr<I
     if (cpf_path)
         _cpf_path = strndup (cpf_path, XCAM_MAX_STR_SIZE);
 
+    memset(&_otpInfo, 0, sizeof(_otpInfo));
     _rkiq_compositor = new RKiqCompositor ();
     XCAM_ASSERT (_rkiq_compositor.ptr());
     xcam_mem_clear (_sensor_mode_data);
@@ -58,6 +59,7 @@ X3aAnalyzerRKiq::X3aAnalyzerRKiq (struct isp_supplemental_sensor_mode_data &sens
     if (cpf_path)
         _cpf_path = strndup (cpf_path, XCAM_MAX_STR_SIZE);
 
+    memset(&_otpInfo, 0, sizeof(_otpInfo));
     _rkiq_compositor = new RKiqCompositor ();
     XCAM_ASSERT (_rkiq_compositor.ptr());
 
@@ -151,6 +153,7 @@ X3aAnalyzerRKiq::internal_init (uint32_t width, uint32_t height, double framerat
     _rkiq_compositor->set_framerate (framerate);
     _rkiq_compositor->init_dynamic_config();
     _rkiq_compositor->set_iq_name(_cpf_path);
+    _rkiq_compositor->set_otp_info(_otpInfo);
 
     return XCAM_RETURN_NO_ERROR;
 
@@ -390,6 +393,11 @@ X3aAnalyzerRKiq::post_3a_analyze (X3aResultList &results)
 
     _rkiq_compositor->setAiqInputParams(NULL);
     return XCAM_RETURN_NO_ERROR;
+}
+
+void X3aAnalyzerRKiq::setOtpInfo(CamOTPGlobal_t &param)
+{
+    _otpInfo = param;
 }
 
 };
