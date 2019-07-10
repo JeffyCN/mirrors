@@ -127,12 +127,6 @@ IspController::handle_sof(int64_t time, int frameid)
 
     _frame_sequence_cond.signal();
 
-    // TODO: sometimes may receive one unexpected sof event when
-    // IspController::exit(true) and exit(false), maybe isp driver
-    // has bug
-    if (_frame_sequence < 0 && frameid != 0)
-        return XCAM_RETURN_BYPASS;
-
     _frame_sof_time = time;
     _frame_sequence = frameid;
 
