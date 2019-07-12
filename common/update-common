@@ -1,0 +1,109 @@
+#!/bin/bash
+#
+# This script will update all the modules listed below so that
+# common points to master in the common module.
+#
+# If you have many of the GStreamer modules checked out in a particular
+# directory, it's best to run this script from that directory.  For
+# example, I check everything out in ~/gst, so this file is
+# ~/gst/common/update-common.  To do an update, I do
+# 'cd ~/gst ; ./common/update-common'.  This will automatically use
+# the refs in your existing checkout when cloning the temporary
+# checkout.  Alternatively, you can use the reference variable below.
+#
+
+# Set this variable to point to any directory containing existing
+# git # checkouts, and git will pull objects from there, decreasing
+# network usage.
+BRANCH=master
+reference=~/gst
+PUSHURL=ssh://git.freedesktop.org/git/gstreamer
+
+set -e
+set -x
+
+modules="gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad \
+	gst-plugins-ugly gst-libav gst-omx \
+	gnonlin gst-plugins-gl gst-rtsp-server gst-editing-services"
+
+topdir=`pwd`
+dir=`mktemp -d $topdir/common-update-XXXXXX`
+
+for module in $modules
+do
+  cd $dir
+  if test -e $reference/$module/.git ; then
+    pushd $reference/$module
+    PUSHURL=`git config remote.origin.url | sed 's@\(git/gstreamer\).*@\1@'`
+    popd
+    git clone --reference $reference/$module/.git --shared ssh://git.freedesktop.org/git/gstreamer/$module
+  elif test -e $topdir/$module/.git ; then
+    pushd $topdir/$module
+    PUSHURL=`git config remote.origin.url | sed 's@\(git/gstreamer\).*@\1@'`
+    popd
+    git clone --reference $topdir/$module/.git --shared $PUSHURL/$module
+  else
+    git clone $PUSHURL/$module
+  fi
+  cd $dir/$module
+
+  # ignore modules that don't have such a branch
+  if ! git show-ref origin/$BRANCH >/dev/null; then
+    continue;
+  fi
+
+  if test $BRANCH = 'master'; then
+    git checkout $BRANCH
+  else
+    git checkout -b $BRANCH origin/$BRANCH
+  fi
+
+  git submodule init
+  git submodule update
+  cd $dir/$module/common
+  ref_from=`git log --pretty=format:%h -n 1 HEAD`
+  if test $BRANCH = 'master'; then
+    git checkout $BRANCH
+  else
+    git checkout -b $BRANCH origin/$BRANCH
+  fi
+  git pull origin
+  ref_to=`git log --pretty=format:%h -n 1 HEAD`
+  echo updating common from $ref_from to $ref_to
+  if [ "$ref_from" != "$ref_to" ] ; then
+    cd $dir/$module
+    # update autogen.sh for selected modules
+    case $module in
+      gstreamer|gst-plugins-base|gst-plugins-good|gst-plugins-ugly|gst-plugins-bad|gst-libav|gst-editing-services )
+        ./common/update-autogen
+        git add autogen.sh
+        ;;
+      *)
+        ;;
+    esac
+    # update README and MAINTAINERS for selected modules
+    case $module in
+      gstreamer|gst-plugins-base|gst-plugins-good|gst-plugins-ugly|gst-plugins-bad )
+        ./common/update-readmes --run-git-add
+        ;;
+      *)
+        ;;
+    esac
+    # and finally update the common submodule
+    git add common
+    git commit -m "Automatic update of common submodule
+
+From $ref_from to $ref_to"
+  fi
+  cd $dir
+done
+
+for module in $modules
+do
+  cd $dir/$module
+  if git show-ref origin/$BRANCH >/dev/null; then
+    git push origin $BRANCH
+  fi
+done
+
+rm -rf $dir

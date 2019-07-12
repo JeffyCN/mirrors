@@ -1,0 +1,95 @@
+#!/usr/bin/env python
+import sys
+import os
+import subprocess
+
+# This server-side pre-receive hook is to be put and activated in all modules
+# that depend on the common submodule.
+#
+# It will check whether any modifications to the common 'submodule file' has a
+# a valid commit SHA1 that exists in the common module.
+
+def commit_exists(sha1, gitdir):
+    """Returns True if the sha1 is a valid commit in the given
+    git directory"""
+    # FIXME: We're using 'git show' for the time being, but there's a small
+    # risk that there might be a valid SHA1 for a non-commit object.
+    env = os.environ.copy()
+    env["GIT_DIR"] = gitdir
+    sub = subprocess.Popen(["git", "show", sha1], env=env,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
+    while True:
+        res = sub.poll()
+        if res != None:
+            return res == 0
+
+# location of the common git module
+COMMON_GIT_DIR = "/git/gstreamer/common.git"
+
+pushvalid = True
+error_badcommon = False
+error_badcommit = False
+
+print "=> Checking for integrity of common submodule changes"
+print
+
+for line in sys.stdin.readlines():
+    # ref is the ref to be modified
+    # old is the old commit it was pointing to
+    # new is the new commit it was pointing to
+    old, new, ref = line.split(' ', 2)
+
+    # 1. Get the latest change to common (if there was any changes)
+    sub = subprocess.Popen(["git", "diff", "%s..%s" % (old, new, ), "--", "common"],
+                           stdout=subprocess.PIPE)
+    stdout, stderr = sub.communicate()
+    if stdout != "":
+        # Format of submodule special files
+        # Subproject commit <SHA1>
+
+        # we get a diff, therefore only grab the last line
+        lastline = stdout.strip().rsplit('\n',1)[-1]
+        if not lastline.startswith("+Subproject commit"):
+            # this is bad, it means the diff has changed to something completely
+            # different
+            continue
+        subsha1 = lastline.rsplit(' ', 1)[-1]
+        print "   Pack wants common to point to", subsha1
+        if not commit_exists(subsha1, COMMON_GIT_DIR):
+            print "   /!\\ Commit does not exist in common git module /!\\"
+            print "   /!\\ for ref", ref
+            pushvalid = False
+            break
+
+        # 2. Figure out if that commit exists in the common submodule
+        # (use GIT_DIR to execute commands in that directory)
+
+    # Get the commit message
+    sub = subprocess.Popen(["git", "log", "--format=%s",
+	    "%s..%s" % (old, new, )], stdout=subprocess.PIPE)
+    stdout, stderr = sub.communicate()
+    if stdout != "":
+	for line in stdout.strip().rsplit('\n',1):
+	    if line.startswith("!"):
+	        error_badcommit = True
+		pushvalid = False
+		break
+
+if pushvalid:
+    print "   Incoming packet valid, proceeding to actual commit"
+    sys.exit(0)
+else:
+    if error_badcommit:
+        print "   Attempting to push commits with commit messages that start"
+        print "   with '!'.  Commit messages starting with '!' are reserved"
+	print "   for private branches to prevent the commits from accidentally"
+	print "   getting to the main repository."
+    if error_badcommon:
+        print "   Attempting to push commits containing modifications to common"
+        print "   that have not been commited to the actuall common module."
+        print
+        print "   First push your changes to common/ before pushing the changes"
+        print "   to the module using it."
+    sys.exit(-1)
+

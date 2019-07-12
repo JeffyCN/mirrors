@@ -1,0 +1,32 @@
+#!/bin/sh
+# Shell script to extract the date given a release version and a .doap file
+
+if test "x$1" = "x" -o "x$2" = "x" -o ! -s "$2"; then
+  echo "Usage: $0 RELEASE-VERSION-NUMBER DOAP-FILE" >&2;
+  exit 1
+fi
+
+if ! grep '<Project' "$2" >/dev/null ; then
+  echo "$2 does not look lika a .doap file" >&2;
+  exit 1
+fi
+
+if ! grep "$1" "$2" >/dev/null ; then
+  echo "$2 contains no reference to a version $1" >&2;
+  exit 1
+fi
+
+awk 'BEGIN {x=0}
+{
+if ($0~"<release>") {x=1; chunk=""}
+if (x==1) {
+  if ($0~"<revision>") { chunk = chunk $0 }
+  if ($0~"<created>") { chunk = chunk $0 }
+}
+if ($0~"</release>") {x=0; print chunk}
+}' < "$2" | \
+\
+grep '<revision>'"$1"'</revision>' | \
+\
+sed -e 's/^.*<created>//' -e 's/<\/created>.*$//'
+

@@ -1,0 +1,48 @@
+#!/bin/bash
+
+if [ ! -f "common/update-autogen" ]; then
+  echo "Run ./common/update-autogen from the top-level source directory of a GStreamer module";
+  exit 1;
+fi
+
+if ! ls -1 *.doap 2>/dev/null >/dev/null; then
+  echo "Could not find *.doap file";
+  exit 1;
+fi
+
+PACKAGE=`ls -1 *.doap | head -n1 | sed -e 's/.doap$//'`
+
+#echo "Package: $PACKAGE"
+
+DIR=`mktemp -d`
+if [[ $? != 0 ]]; then
+  echo "Could not create temp dir";
+  exit 1;
+fi
+
+TEMP_AUTOGEN_SH="$DIR/autogen.sh"
+echo "\
+#!/bin/sh
+#
+# $PACKAGE autogen.sh
+#
+# Run this to generate all the initial makefiles, etc.
+#
+# This file has been generated from common/autogen.sh.in via common/update-autogen
+
+" > $TEMP_AUTOGEN_SH
+
+sed \
+    -e "s/@API_VERSION@/1.0/g" \
+    -e "s/@PACKAGE@/$PACKAGE/g" \
+    -e "s/@SRCFILE@/$PACKAGE.doap/g" < common/autogen.sh.in >> $TEMP_AUTOGEN_SH
+
+chmod +x $TEMP_AUTOGEN_SH
+
+mv $TEMP_AUTOGEN_SH autogen.sh || {
+  echo "Failed to update autogen.sh"
+  exit 1;
+}
+rmdir $DIR
+
+echo "Updated $PACKAGE autogen.sh"
