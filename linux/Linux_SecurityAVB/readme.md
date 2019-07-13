@@ -1,18 +1,17 @@
 # **AVB Reference**
 
-发布版本：2.2
+发布版本：2.3
 
 作者邮箱：jason.zhu@rock-chips.com
 
 日期：2019.06.03
-
 文件密级：公开资料
 
 ------
 
 ## **前言**
 
-   适用于RK3308 / RK3326 / PX30 / RK3399 / RK3328。
+   适用于RK3308 / RK3326 / PX30 / RK3399 / RK3328 / RK3288 / RK1808。
 
 ## **概述**
 
@@ -43,19 +42,29 @@
 | 2019.01.28 | v2.0   | Zain.Wong | 同步 uboot 更改，增加 3399 配置 |
 | 2019.05.22 | v2.1   | Zain.Wong | 增加 3328 支持，并区分 OTP/EFUSE avb 烧写命令 |
 | 2019.06.03 | v2.2   | Zain.Wong | 修复一些不恰当的说明 |
+| 2019.07.13 | v2.3   | Zain.Wong | 增加注意事项，修改a/b parameter,同步修改uboot改动，并添加验证节点 |
 
 [TOC]
 
-## 1 . 注意事项
+## 1 . 验证节点
 
-关于device lock & unlock
+U-boot:
+  commit d3a731eb0a985e5d1c850e7e2fb3aa348ca27935
+  rockchip: rk1808: add CONFIG_SUPPORT_EMMC_RPMB
+
+已验证平台：
+  rk3308/rk3288/rk3328/rk3399/rk1808/rk3326/px30
+
+## 2 . 注意事项
 
   当设备处于unlock状态，程序还是会校验整个boot.img，如果固件有错误，程序会报具体是什么错误，**正常启动设备**。而如果设备处于lock状态，程序会校验整个boot.img，如果固件有误，则不会启动下一级固件。所以调试阶段设置device处于unlock状态，方便调试。
   一旦设备处理lock状态，就需要Authenticated Unlock，具体流程参见5. avb lock & unlock。
 
-## 2 . 固件配置
+  **当开启avb时，kernel不支持压缩格式。**
 
-2.1. trust
+## 3 . 固件配置
+
+### 3.1. trust
 
 进入rkbin/RKTRUST，以rk3308为例，找到RK3308TRUST.ini，修改
 
@@ -67,14 +76,14 @@ SEC=0
 SEC=1
 ```
 
-2.2. uboot
+### 3.2. uboot
 
  uboot需要fastboot和optee支持。
 
 ```
 CONFIG_OPTEE_CLIENT=y
-CONFIG_OPTEE_V1=y	#rk312x/rk322x/rk3288/rk3228H/rk3368/rk3399 与V2互斥
-CONFIG_OPTEE_V2=y	#rk3308/rk3326 与V1互斥
+CONFIG_OPTEE_V1=y	#rk3288/rk3328/rk3399 与V2互斥
+CONFIG_OPTEE_V2=y	#rk3308/rk3326/px30/rk1808 与V1互斥
 ```
 
 ​avb开启需要在config文件中配置
@@ -86,26 +95,46 @@ CONFIG_AVB_LIBAVB_ATX=y
 CONFIG_AVB_LIBAVB_USER=y
 CONFIG_RK_AVB_LIBAVB_USER=y
 CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE=y
-CONFIG_CRYPTO_ROCKCHIP=y
 CONFIG_ANDROID_AVB=y
 CONFIG_ANDROID_AB=y	#有需要再开
 CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION=y	#rpmb无法使用时打开，默认不开
 CONFIG_ROCKCHIP_PRELOADER_PUB_KEY=y #efuse 安全方案需要打开
+CONFIG_DM_CRYPTO=y #efuse 安全方案需要打开
+CONFIG_ROCKCHIP_CRYPTO_V1=y #efuse 安全方案需要打开 rk3399/rk3288
+CONFIG_ROCKCHIP_CRYPTO_V2=y #efuse 安全方案需要打开 rk1808
 ```
 
 ​固件，certificate及hash需要通过fastboot烧写，所以需要在config文件中配置
 
 ```
 CONFIG_FASTBOOT=y
-CONFIG_FASTBOOT_BUF_ADDR=0x800800	#各芯片平台不同
-CONFIG_FASTBOOT_BUF_SIZE=0x04000000	#各芯片平台不同
+CONFIG_FASTBOOT_BUF_ADDR=0x2000000	#各芯片平台不同,
+CONFIG_FASTBOOT_BUF_SIZE=0x08000000	#各芯片平台不同
 CONFIG_FASTBOOT_FLASH=y
 CONFIG_FASTBOOT_FLASH_MMC_DEV=0
 ```
 
-使用./make.sh xxxx，生成uboot.img, trust.img, loader.bin
+如果在开启ab的情况下，需要使用ramdisk机制（比如使用DM-V校验系统），需要手动修改代码：（因为平台兼容的原因，该补丁暂时无法合并）
+~~~
+diff --git a/common/android_bootloader.c b/common/android_bootloader.c
+index 230bf0e..e5c81e6 100644
+--- a/common/android_bootloader.c
++++ b/common/android_bootloader.c
+@@ -1061,9 +1061,6 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
+                 * "skip_initramfs" to the cmdline to make it ignore the
+                 * recovery initramfs in the boot partition.
+                 */
+-#ifdef CONFIG_ANDROID_AB
+-               mode_cmdline = "skip_initramfs";
+-#endif
+                break;
+        case ANDROID_BOOT_MODE_RECOVERY:
+                /* In recovery mode we still boot the kernel from "boot" but
+~~~
 
-2.3. parameter
+之后，使用./make.sh xxxx，生成uboot.img, trust.img, loader.bin
+
+#### 3.3. parameter
 
 AVB需要添加vbmeta分区，用来存放固件签名信息。大小1M，位置无关。
 
@@ -116,16 +145,17 @@ AVB需要system分区，在buildroot上，即rootfs分区，需要将rootfs改�
 以下是avb parameter例子：
 ~~~
 0x00002000@0x00004000(uboot),0x00002000@0x00006000(trust),0x00002000@0x00008000(misc),0x00010000@0x0000a000(boot),0x00010000@0x0001a000(recovery),0x00010000@0x0002a000(backup),0x00020000@0x0003a000(oem),0x00300000@0x0005a000(system),0x00000800@0x0035a000(vbmeta),0x00002000@0x0035a800(security),-@0x0035c800(userdata:grow)
+uuid:system=614e0000-0000-4b53-8000-1d28000054a9
 ~~~
 
 avb ab parameter:
 ~~~
-0x00002000@0x00004000(uboot),0x00002000@0x00006000(trust_a),0x00002000@0x00008000(trust_b),0x00002000@0x0000a000(misc),0x00010000@0x0000c000(boot_a),0x00010000@0x0001c000(boot_b),0x00010000@0x0002c000(backup),0x00020000@0x0003c000(oem),0x00300000@0x0005c000(system_a),0x00300000@0x0035c000(system_b),0x00000800@0x0065c000(vbmeta_a),0x00000800@0x0065c800(vbmeta_b),0x00002000@0x0065d000(security),-@0x0065f00(userdata:grow)
+0x00002000@0x00004000(uboot),0x00002000@0x00006000(trust),0x00004000@0x00008000(misc),0x00010000@0x0000c000(boot_a),0x00010000@0x0001c000(boot_b),0x00010000@0x0002c000(backup),0x00020000@0x0003c000(oem),0x00300000@0x0005c000(system_a),0x00300000@0x0035c000(system_b),0x00000800@0x0065c000(vbmeta_a),0x00000800@0x0065c800(vbmeta_b),0x00002000@0x0065d000(security),-@0x0065f00(userdata:grow)
 ~~~
 
 下载的时候，工具上的名称要同步修改，修改后，重载parameter。
 
-## 3 . Key
+## 4 . Key
 
 AVB中包含以下4把key：
 Product RootKey (PRK)：avb的root key
@@ -172,50 +202,22 @@ puk_certificate.bin permanent_attributes.bin为设备解锁的证书，
     openssl dgst -sha256 -out permanent_attributes_cer.bin -sign PrivateKey.pem permanent_attributes.bin
 ~~~
 
-## 4 . 修改脚本
-
-签名脚本为make_vbmeta.sh
-给固件签名的格式为：
-
-~~~
-python avbtool add_hash_footer --image <IMG> --partition_size <SIZE> --partition_name <PARTITION> --key testkey_psk.pem --algorithm SHA512_RSA4096
-~~~
-
-IMG 为签名固件
-SIZE 为签名后，固件大小，至少比原文件大64K，且不超过parameter中定义的分区大小，大小必须4K对齐
-PARTITION = boot / recovery
-
-签名完成后，用签名过的文件生成vbmeta.img
-基本格式：
-~~~
-python avbtool make_vbmeta_image --public_key_metadata metadata.bin --include_descriptors_from_image <IMG> --algorithm SHA256_RSA4096 --rollback_index 0 --key testkey_psk.pem  --output vbmeta.img
-~~~
-
---include_descriptors_from_image <IMG> 该字段可以多次使用，即有多少个加密过的文件，就添加多少个 --include_descriptors_from_image。
-例如：
-```
-python avbtool make_vbmeta_image --public_key_metadata metadata.bin --include_descriptors_from_image boot.img --include_descriptors_from_image recovery.img --algorithm SHA256_RSA4096 --rollback_index 0 --key testkey_psk.pem  --output vbmeta.img
-```
-
-可按照上述规则自行修改make_vbmeta.sh脚本
-
 ## 5 . 操作流程
 
-1. 把boot.img/recovery.img放到这个目录下
-2. 运行make_vbmeta.sh,生成vbmeta.bin和加密过的boot.img/recovery.img
-3. 替换固件:
+1. 运行make_vbmeta.sh -b path-to-boot.img -r path-to-recovery,在out目录下，生成vbmeta.bin和加密过的boot.img/recovery.img (不用recovery可以去除-r选项)
+2. 替换固件:
    uboot.img, trust.img, MiniloaderAll.bin替换成新配置uboot生成的3个固件。
-   boot.img使用该目录下生成的加密固件。
+   boot.img使用out目录下生成的加密固件。
    vbmeta.bin提取出来。
    parameter.txt 按 2.3 中规则修改
-4. 使用工具烧录。
+3. 使用工具烧录。
    如果使用的windows工具，请在工具中添加vbmeta分区（security分区视parameter而定），地址不填。
    然后重新加载parameter，工具会自行更新地址。
-   如果security/rpmb中avb数据为空，uboot会直接进fastboot，等待fastboot对应信息写入（跳过5）
-   需要使用fastboot成功lock住设备，然后重启才能进boot
-5. 下载之后，设备默认处于unlock状态，此时固件还是会校验，但是不会阻拦系统启动，只会报错。
+   如果security/rpmb中avb数据为空，uboot会直接进fastboot，等待fastboot对应信息写入
+4. 下载之后，设备默认处于unlock状态，此时固件还是会校验，但是不会阻拦系统启动，只会报错。
+5. 参考6 . avb lock & unlock 给设备加lock状态，这样就可阻止非法签名固件启动了。
 
-## 5 . avb lock & unlock
+## 6 . avb lock & unlock
 
 AVB 只有在lock状态下，才会真正阻拦非签名固件的启动。
 首先，需要将设备进入到fastboot模式，大致有3种途径：
@@ -266,7 +268,7 @@ sudo ./fastboot stage unlock_credential.bin
 sudo ./fastboot oem at-unlock-vboot
 ```
 
-## 6 . 最终打印
+## 7 . 最终打印
 
 ~~~
 ANDROID: reboot reason: "(none)"
