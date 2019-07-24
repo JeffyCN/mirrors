@@ -41,7 +41,7 @@
 #include <common/misc.h>
 #include <common/cam_types.h>
 #include <cam_ia_api/cameric.h>
-#include "base/log.h"
+#include "base/xcam_log.h"
 
 /*
  ***************** AE LIB VERSION NOTE *****************
@@ -68,10 +68,21 @@
  * v0.0.8
  *  - fix the min intergration time of 4[H] exposure lines
  * v0.0.9
- *  - enable ALOGV/ALOGW for Android 
+ *  - enable ALOGV/ALOGW for Android
+ * v0.0.a
+ *  - add preflash and mainflash algo
+ * v0.0.b
+ *  - add preflash and mainflash power control by iq setting
+ * v0.0.c
+ *  - add BackLight in Linear AE (including 2 modes)
+ * v0.0.d
+ *  - update HdrAE, add Dynamic ExpRatio & Backlight prob
+ * v0.0.e
+ *  - update HdrAE, add acceleration & smooth strategy
+ *  - add special EcmExecute for Hdr-DCG Mode
  */
 
-#define CONFIG_AE_LIB_VERSION "v0.0.9"
+#define CONFIG_AE_LIB_VERSION "v0.0.e"
 
 #ifdef __cplusplus
 extern "C"
@@ -79,6 +90,8 @@ extern "C"
 #endif
 
 #define AEC_AFPS_MASK (1 << 0)
+#define HDRAE_EFFECT_FNUM 5
+
 struct AecContext_s;
 typedef struct AecContext_s AecContext_t;
 /*****************************************************************************/
@@ -113,6 +126,8 @@ typedef enum AecDampingMode_e {
   AEC_DAMPING_MODE_INVALID        = 0,        /* invalid (only used for initialization) */
   AEC_DAMPING_MODE_STILL_IMAGE    = 1,        /* damping mode still image */
   AEC_DAMPING_MODE_VIDEO          = 2,        /* damping mode video */
+  AEC_DAMPING_MODE_PREFLASH		  = 3,
+  AEC_DAMPING_MODE_MAINFLASH	  = 4,
   AEC_DAMPING_MODE_MAX
 } AecDampingMode_t;
 
@@ -166,6 +181,13 @@ typedef enum AecMode_e {
   AEC_MODE_MAX
 } AecMode_t;
 
+typedef enum AecFlashMode_e{
+	AEC_FLASH_INVALID = 0,
+	AEC_FLASH_FLASHOFF,
+	AEC_FLASH_PREFLASH,
+	AEC_FLASH_MAINFLASH,
+	AEC_FLASH_MAX,
+}AecFlashMode_t;
 /*****************************************************************************/
 /**
  *          AecConfig_t
@@ -246,8 +268,11 @@ typedef struct AecConfig_s {
 
   //oyyf
   enum LIGHT_MODE LightMode;
+  CamCalibAecBacklight_t backLightConf;
   CamCalibAecExpSeparate_t *pExpSeparate[LIGHT_MODE_MAX];
   CamCalibAecDynamicSetpoint_t *pDySetpoint[LIGHT_MODE_MAX];
+  CamCalibAecFlashCtrl_t flash_config;
+  AecFlashMode_t flashModeSetting;
 } AecConfig_t;
 
 /*****************************************************************************/
@@ -269,40 +294,52 @@ typedef struct Hdrae_OE_meas_res
 	uint32_t SumHistPixel;
 	uint32_t SframeMaxLuma;
 }Hdrae_OE_meas_res_t;
+
 typedef struct Hdrae_stat_s
 {
     unsigned int hdr_hist_bins[AEC_HDR_HIST_BIN_N_MAX];
     unsigned short hdr_exp_mean[AEC_HDR_AE_MEAN_MAX];
 }Hdrae_stat_t;
 
-typedef struct Hdr_sensor_metadata_s {
-	unsigned int exp_time_l;
-	unsigned int exp_time;
-	unsigned int exp_time_s;
-	unsigned int gain_l;
-	unsigned int gain;
-	unsigned int gain_s;
-}Hdr_sensor_metadata_t;
+typedef struct HdrAE_metadata_s {
+	unsigned int regGain[3];
+	unsigned int regTime[3];
+	float halGain[3];
+	float halTime[3];
+	float exposure[3];
+}HdrAE_metadata_t;
 
-typedef struct Sensor_metadata_s {
+typedef struct LinearAE_metadata_s {
     float coarse_integration_time;
     float analog_gain_code_global;
     float LinePeriodsPerField;
     int regIntegrationTime;
     int regGain;
-} Sensor_metadata_t;
+} LinearAE_metadata_t;
+
+
+typedef enum AecFrameStatus_e{
+	AEC_FRAME_STATUS_OK,
+	AEC_FRAME_STATUS_CORRUPTED,
+	AEC_FRAME_STATUS_FLASH_EXPOSED,
+	AEC_FRAME_STATUS_FLASH_PARTIAL,
+	AEC_FRAME_STATUS_FLASH_FAILED,
+}AecFrameStatus_t;
 
 typedef struct AecStat_s {
   unsigned char  exp_mean[AEC_AE_MEAN_MAX];
   unsigned int   hist_bins[AEC_HIST_BIN_N_MAX];
-  Sensor_metadata_t sensor_metadata;
-  /*zlj add*/
+  LinearAE_metadata_t LinearAE_metadata;
+  /*zlj add for hdr*/
   bool   is_hdr_stats;
   struct Hdrae_stat_s oneframe[3];
   struct Hdrae_DRIndex_res fDRIndex;
   struct Hdrae_OE_meas_res fOEMeasRes;
-  struct Hdr_sensor_metadata_s sensor;
+  struct HdrAE_metadata_s HdrAE_metadata;
   unsigned int lgmean;
+
+  //stat of flash
+  AecFrameStatus_t frame_status;
 } AecStat_t;
 
 
@@ -322,7 +359,8 @@ typedef struct AecResult_s {
   float analog_gain_code_global;
   int regIntegrationTime;
   int regGain;
-  Sensor_metadata_t exp_smooth_results[3];
+  LinearAE_metadata_t exp_smooth_results[3];
+  HdrAE_metadata_t Hdrexp_smooth_results[HDRAE_EFFECT_FNUM];
   float PixelClockFreqMHZ;
   float PixelPeriodsPerLine;
   float LinePeriodsPerField;
@@ -351,6 +389,13 @@ typedef struct AecResult_s {
   int RegHdrTime[3];
   float HdrGains[3];
   float HdrIntTimes[3];
+  //oyyf
+  bool require_flash;
+  AecFlashMode_t flashModeState;
+  float MeanLuma;
+
+  float preflash_power_pct;
+  float mainflash_power_pct;
 } AecResult_t;
 
 // aec ctrl

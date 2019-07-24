@@ -101,9 +101,19 @@
 * 2)fix the bug tha continue focus will trigger frequently.
 *v0.2.14
 * 1)fix the bug that maxSharpnessPos is null,so that searchfine run out free.
+*v0.2.15
+* 1)change AfStart and AfOneShot control interface.
+* 2)tidy the af state and mode about framework layer.
+* 3)use one step dsharpness.
+* 4)limit af windows.
+*v0.2.16
+* 1)support af flash scene.
+* 2)fix the its bug,af can't converged.
+*v0.2.17
+* 1)SOC af which in af lib is disabled.
 */
 
-#define CONFIG_AF_LIB_VERSION "v0.2.14"
+#define CONFIG_AF_LIB_VERSION "v0.2.17"
 
 #ifdef __cplusplus
 extern "C"
@@ -116,6 +126,9 @@ typedef struct AfContext_s* AfHandle_t;     /**< handle to AF context */
 #define AF_TYPE_LASER (1 << 1)
 #define AF_TYPE_PDAF (1 << 2)
 
+#define AF_WIN_MAX_WIDTH  8191 //13bit
+#define AF_WIN_MAX_HEIGHT 8191 //13bit
+#define AF_EXP_MEAN_MAX 81
 /*******************************************************************************
  *
  * @struct  AfSearchStrategy_t
@@ -177,6 +190,53 @@ typedef struct AfMeasuringResult_s {
   AfVcmMoveStatus_t MoveStatus;
 } AfMeasuringResult_t;
 
+/******************************************************************************
+ *
+ * @struct  AfUseCase_t
+ *
+ * @brief   AF Use case structure
+ *
+ *****************************************************************************/
+typedef enum
+{
+  AF_UC_PREVIEW,
+  AF_UC_PRE_CAPTRUE,
+  AF_UC_CAPTURE,
+  AF_UC_RECORDING,
+  AF_UC_RAW
+} AfUseCase_t;
+
+/******************************************************************************
+ *
+ * @struct  AfExpFlahsState_t
+ *
+ * @brief   AF exposure flash state structure
+ *
+ *****************************************************************************/
+typedef enum
+{
+  AF_EXP_FLASH_INVALID = 0,
+  AF_EXP_FLASH_FLASHOFF,
+  AF_EXP_FLASH_PREFLASH,
+  AF_EXP_FLASH_MAINFLASH,
+  AF_EXP_FLASH_MAX
+} AfExpFlahsState_t;
+
+/******************************************************************************
+ *
+ * @struct  AfFrameStatus_t
+ *
+ * @brief   AF frame flash status structure
+ *
+ *****************************************************************************/
+typedef enum AfFrameStatus_e{
+	AF_FRAME_STATUS_OK,
+	AF_FRAME_STATUS_CORRUPTED,
+	AF_FRAME_STATUS_FLASH_EXPOSED,
+	AF_FRAME_STATUS_FLASH_PARTIAL,
+	AF_FRAME_STATUS_FLASH_FAILED,
+}AfFrameStatus_t;
+
 /*******************************************************************************
  *
  * @struct  AfMeas_t
@@ -189,7 +249,34 @@ typedef struct AfMeas_s {
   AfMeasuringResult_t cameric;
 
   uint32_t            meas_type;
+  float               exp_MeanLuma;
+  unsigned char       exp_mean[AF_EXP_MEAN_MAX];
+  unsigned char       exp_weight[AF_EXP_MEAN_MAX];
+  struct Cam_Win      exp_win;
+  uint32_t			  exp_winNum;
+  bool				  exp_converged;
+  AfExpFlahsState_t   exp_flash_state;
+  AfUseCase_t         uc;
+  AfFrameStatus_t     frame_status;
 } AfMeas_t;
+
+
+/*******************************************************************************
+ *
+ * @struct  AfMeas_t
+ *
+ * @brief   A structure to represent Laser measure parameter
+ *
+ *******************************************************************************/
+
+typedef enum
+{
+	flash_scene_off,          /*!< Focus in flash scene is in off state*/
+	flash_scene_search,       /*!< Focus in flash scene is in search state */
+	flash_scene_success,      /*!< Focus in flash scene has success */
+	flash_scene_fail,         /*!< Focus in flash scene has fail*/
+} AfFlashScene_t;
+
 
 typedef enum AfState_e {
   AF_STATE_INVALID        = 0,
@@ -345,6 +432,9 @@ typedef struct AfConfig_s {
 
   int32_t 	         LensePos;
   AfSearchStrategy_t Afss;           /**< focus search strategy */
+
+  struct Cam_Win     AfExpWin;
+  uint32_t           AfExpWinNum;
 } AfConfig_t;
 
 typedef enum AfEvtId_e {
@@ -499,8 +589,7 @@ RESULT AfSettled
  *****************************************************************************/
 RESULT AfStart
 (
-    AfHandle_t                handle,
-    const AfSearchStrategy_t  fss
+    AfHandle_t                handle
 );
 
 
@@ -521,7 +610,6 @@ RESULT AfStart
 RESULT AfOneShot
 (
     AfHandle_t                handle,
-    const AfSearchStrategy_t  fss,
     AfMeas_t*                 pMeasResults
 );
 
