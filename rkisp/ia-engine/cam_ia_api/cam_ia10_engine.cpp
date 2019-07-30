@@ -552,12 +552,11 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
             if (set->frame_time_ns_min != 0 && set->frame_time_ns_max != 0) {
                 aecCfg.FpsSetEnable = true;
                 aecCfg.isFpsFix = false;
-
-                for (int i = 1; i < ecmCnt - 3; i++) {
-                    aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ns_min / (1000 * 1000 * 1000);
-                }
-                for (int i = ecmCnt - 3; i < ecmCnt; i++) {
-                    aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ns_max / (1000 * 1000 * 1000);
+                if(!aecCfg.IsHdrAeMode){
+                    for (int i = 1; i < ecmCnt - 3; i++)
+                        aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ns_min / (1000 * 1000 * 1000);
+                    for (int i = ecmCnt - 3; i < ecmCnt; i++)
+                        aecCfg.EcmTimeDot.fCoeff[i] = (float)set->frame_time_ns_max / (1000 * 1000 * 1000);
                 }
                 aecCfg.MinFrameDuration = (float)set->frame_time_ns_min / (1000 * 1000 * 1000);
                 aecCfg.MaxFrameDuration = (float)set->frame_time_ns_max / (1000 * 1000 * 1000);
