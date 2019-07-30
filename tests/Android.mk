@@ -93,7 +93,7 @@ LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/../rkisp/ia-engine/include/linux/media \
 	$(LOCAL_PATH)/../rkisp/isp-engine \
 
-LOCAL_SHARED_LIBRARIES += librkisp
+LOCAL_SHARED_LIBRARIES += librkisp libdrm
 LOCAL_STATIC_LIBRARIES += \
 	libisp_log \
 
