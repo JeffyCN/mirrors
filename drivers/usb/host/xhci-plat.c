@@ -319,7 +319,6 @@ static int xhci_plat_probe(struct platform_device *pdev)
 		ret = usb_phy_init(hcd->usb_phy);
 		if (ret)
 			goto put_usb3_hcd;
-		hcd->skip_phy_initialization = 1;
 	}
 
 	xhci->shared_hcd->usb_phy = devm_usb_get_phy(sysdev,
