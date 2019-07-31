@@ -87,13 +87,16 @@
 //		  modify HdrAE params in AEC-->HdrCtrl
 //		  a:add params for BackLight prob calculation
 //		  b:modify M2S_Ratio/L2M_Ration as dynamic value
+//v1.5.0:  magic version code 706729
+//		  a:add magic code in xml file for tool
+
 /*************************************************************************/
 /*************************************************************************/
 
 
 
 
-#define CODE_XML_PARSE_VERSION "v1.4.0"
+#define CODE_XML_PARSE_VERSION "v1.5.0"
 
 static std::ofstream redirectOut("/dev/null");
 
@@ -1430,6 +1433,9 @@ bool CalibDb::parseEntryHeader
 
 	}else if( XML_CHECK_TAGID_COMPARE(CALIB_HEADER_SDK_IQ_VERIFY_ID)){
 	  strncpy(meta_data.sdk_iq_verify, value, sizeof(meta_data.sdk_iq_verify));
+    }else if( XML_CHECK_TAGID_COMPARE(CALIB_HEADER_XML_MAGIC_VERSION_CODE_ID)){
+	  int no = ParseUintArray(value, &meta_data.magic_version_code, 1);
+	  DCT_ASSERT((no == 1));
     }else {
 #if 1
 	  LOGD( "%s(%d): parse error in header section (unknow tag: %s)\n",
@@ -1446,8 +1452,14 @@ bool CalibDb::parseEntryHeader
   XML_CHECK_END();
 
   if(strcmp(meta_data.code_xml_parse_version, CODE_XML_PARSE_VERSION)){
-	LOGD("%s(%d): code xml parse version is no match (%s) != (%s) \n",
+	LOGE("%s(%d): code xml parse version is no match (%s) != (%s) \n",
 		__FUNCTION__, __LINE__, meta_data.code_xml_parse_version, CODE_XML_PARSE_VERSION);
+	return (false);
+  }
+
+  if(meta_data.magic_version_code != m_CalibInfo.IQMagicVerCode){
+	LOGE("%s(%d): magic version is no match (%u) != (%u) \n",
+		__FUNCTION__, __LINE__, meta_data.magic_version_code, m_CalibInfo.IQMagicVerCode);
 	return (false);
   }
 

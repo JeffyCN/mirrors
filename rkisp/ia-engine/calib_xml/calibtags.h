@@ -146,6 +146,7 @@ typedef enum CALIB_IQ_TAG_ID_E
 	CALIB_HEADER_CODE_XML_PARSE_VERSION_TAG_ID,
 	CALIB_HEADER_ISP_OUTPUT_TYPE_TAG_ID,
 	CALIB_HEADER_SDK_IQ_VERIFY_ID,
+	CALIB_HEADER_XML_MAGIC_VERSION_CODE_ID,
 
 	/******************************************************************************
 	* XML resolution tag

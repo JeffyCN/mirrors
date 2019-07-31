@@ -121,6 +121,7 @@ typedef struct CamCalibDbMetaData_s {
   code_xml_parse_version_t code_xml_parse_version;
   Isp_output_type_t       isp_output_type;
   sdk_IQ_verify_t		  sdk_iq_verify;
+  uint32_t magic_version_code;
 } CamCalibDbMetaData_t;
 
 

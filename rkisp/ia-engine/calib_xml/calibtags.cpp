@@ -45,6 +45,7 @@ uint32_t calib_header_sub_tags[] = {
 	CALIB_HEADER_ISP_OUTPUT_TYPE_TAG_ID,
 	CALIB_HEADER_RESOLUTION_TAG_ID,
 	CALIB_HEADER_SDK_IQ_VERIFY_ID,
+	CALIB_HEADER_XML_MAGIC_VERSION_CODE_ID,
 };
 
 uint32_t calib_header_resolution_sub_tags[] = {
@@ -1034,6 +1035,9 @@ calib_tag_info_t g_calib_tag_infos[CALIB_IQ_TAG_END] = {
           check_tags_array_ignore, NULL},
     [CALIB_HEADER_SDK_IQ_VERIFY_ID]         =
         {"sdk_IQfile_Verify", CALIB_TAG_TYPE_CHAR, {-1, -1},
+          check_tags_array_ignore, NULL},
+    [CALIB_HEADER_XML_MAGIC_VERSION_CODE_ID]         =
+        {"magic_code_version", CALIB_TAG_TYPE_DOUBLE, {-1, -1},
           check_tags_array_ignore, NULL},
 
 	//resolution
