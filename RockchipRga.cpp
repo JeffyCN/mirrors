@@ -54,6 +54,9 @@ int RockchipRga::RkRgaInit()
 {
     int ret = 0;
 
+    if (mSupportRga)
+        return 0;
+
     ret = RgaInit(&mContext);
     if(ret == 0)
         mSupportRga = true;
@@ -61,6 +64,14 @@ int RockchipRga::RkRgaInit()
         mSupportRga = false;
 
     return ret;
+}
+
+void RockchipRga::RkRgaDeInit()
+{
+    if (mSupportRga)
+        RgaDeInit(mContext);
+
+    mSupportRga = false;
 }
 
 int RockchipRga::RkRgaAllocBuffer(int drm_fd, bo_t *bo_info, int width,

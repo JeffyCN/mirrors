@@ -45,6 +45,7 @@ public:
     ~RockchipRga();
 
     int         RkRgaInit();
+    void        RkRgaDeInit();
     int         RkRgaAllocBuffer(int drm_fd /* input */, bo_t *bo_info,
                                  int width, int height, int bpp);
     int         RkRgaFreeBuffer(int drm_fd /* input */, bo_t *bo_info);

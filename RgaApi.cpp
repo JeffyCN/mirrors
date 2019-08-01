@@ -14,6 +14,11 @@ int c_RkRgaInit()
     return ret;
 }
 
+void c_RkRgaDeInit()
+{
+    rkRga.RkRgaDeInit();
+}
+
 int c_RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp)
 {
     rkRga.RkRgaGetAllocBuffer(bo_info, width, height, bpp);
