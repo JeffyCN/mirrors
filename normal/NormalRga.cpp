@@ -411,7 +411,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			srcActH = relSrcRect.height;
 
 			dstVirW = relDstRect.wstride;
-			dstVirH = relDstRect.height;
+			dstVirH = relDstRect.hstride;
 			dstXPos = relDstRect.xoffset;
 			dstYPos = relDstRect.yoffset;
 			dstActW = relDstRect.width;
@@ -428,7 +428,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			srcActH = relSrcRect.height;
 
 			dstVirW = relDstRect.wstride;
-			dstVirH = relDstRect.height;
+			dstVirH = relDstRect.hstride;
 			dstXPos = relDstRect.xoffset;
 			dstYPos = relDstRect.yoffset;
 			dstActW = relDstRect.width;
@@ -445,10 +445,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			srcActH = relSrcRect.height;
 
 			dstVirW = relDstRect.wstride;
-			dstVirH = relDstRect.height;
-			dstXPos = relDstRect.width - 1;
-			//dstYPos = relDstRect.yoffset;
-			dstYPos = 0;
+			dstVirH = relDstRect.hstride;
+			dstXPos = relDstRect.xoffset + relDstRect.width - 1;
+			dstYPos = relDstRect.yoffset;
 			dstActW = relDstRect.height;
 			dstActH = relDstRect.width;
 			break;
@@ -463,9 +462,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			srcActH = relSrcRect.height;
 
 			dstVirW = relDstRect.wstride;
-			dstVirH = relDstRect.height;
-			dstXPos = relDstRect.width - 1;
-			dstYPos = relDstRect.height - 1;
+			dstVirH = relDstRect.hstride;
+			dstXPos = relDstRect.xoffset + relDstRect.width - 1;
+			dstYPos = relDstRect.yoffset + relDstRect.height - 1;
 			dstActW = relDstRect.width;
 			dstActH = relDstRect.height;
 			break;
@@ -480,10 +479,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			srcActH = relSrcRect.height;
 
 			dstVirW = relDstRect.wstride;
-			dstVirH = relDstRect.height;
-			//dstXPos = relDstRect.xoffset;
-			dstXPos = 0;
-			dstYPos = relDstRect.height - 1;
+			dstVirH = relDstRect.hstride;
+			dstXPos = relDstRect.xoffset;
+			dstYPos = relDstRect.yoffset + relDstRect.height - 1;
 			dstActW = relDstRect.height;
 			dstActH = relDstRect.width;
 			break;
