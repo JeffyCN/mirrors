@@ -468,6 +468,7 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
         (set->ae_bias != shd->ae_bias)||
         (set->frame_time_ns_min != shd->frame_time_ns_min)||
         (set->frame_time_ns_max != shd->frame_time_ns_max)||
+        (set->manual_gains !=  shd->manual_gains) ||
         mLightMode != cfg->LightMode
         || (aecCfg.flashModeSetting != flashModeState)) {
         //cifisp_histogram_mode mode = CIFISP_HISTOGRAM_MODE_RGB_COMBINED;
