@@ -443,6 +443,7 @@ private:
     bool                       _flt_en_for_tool;
     bool                       _ctk_en_for_tool;
     bool                       _dpf_en_for_tool;
+    bool                       _skip_frame;
     struct CamIA10_Results     _results_for_tool = {0};
     // processed request id
     unsigned int    _procReqId;

@@ -179,9 +179,9 @@ X3aAnalyzerRKiq::internal_deinit ()
 XCamReturn X3aAnalyzerRKiq::restart()
 {
     XCamReturn ret;
-    _isp_ctrl_dev->clearStatic();
 
     if (_isp_ctrl_dev) {
+        _isp_ctrl_dev->clearStatic();
         _isp_ctrl_dev->deInit();
         delete _isp_ctrl_dev;
         _isp_ctrl_dev = NULL;
@@ -201,6 +201,11 @@ XCamReturn X3aAnalyzerRKiq::restart()
 
     XCAM_LOG_INFO ("init get sensor mode succc.");
     configIsp(_isp_ctrl_dev, &sensor_mode_data);
+
+//    if (!_rkiq_compositor->set_sensor_mode_data (&sensor_mode_data, true)) {
+//        XCAM_LOG_WARNING ("AIQ configure 3a failed");
+//        return XCAM_RETURN_ERROR_AIQ;
+//    }
 
     //init _isp_ctrl_dev
     if (_device) {

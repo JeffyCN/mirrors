@@ -1897,6 +1897,7 @@ RKiqCompositor::RKiqCompositor ()
     ,_ctk_en_for_tool(false)
     ,_dpf_en_for_tool(false)
     ,_tuning_flag(false)
+    ,_skip_frame(false)
     ,_procReqId(-1)
 {
     xcam_mem_clear (_frame_params);
@@ -2300,6 +2301,7 @@ void RKiqCompositor::tuning_tool_set_bls()
     struct HAL_ISP_bls_cfg_s isp_bls_cfg;
 
     if(_inputParams.ptr() && _inputParams->blsInputParams.updateFlag){
+        _inputParams->blsInputParams.updateFlag = false;
         if(_inputParams->blsInputParams.enable){
             //now using fixed mode,so no need modify win
             memset(&cfg, 0, sizeof(cfg));
@@ -2328,22 +2330,34 @@ void RKiqCompositor::tuning_tool_set_lsc()
     CamCalibDbHandle_t hCalib;
 
     if(_inputParams.ptr() && _inputParams->lscInputParams.updateFlag){
+        _inputParams->lscInputParams.updateFlag = false;
         if(_inputParams->lscInputParams.on){
             _isp10_engine->getCalibdbHandle(&hCalib);
+            memset(&lscprofile, 0, sizeof(lscprofile));
             memcpy(lscprofile.name,_inputParams->lscInputParams.LscName,sizeof(lscprofile.name));
             lscprofile.LscSectors = _inputParams->lscInputParams.LscSectors;
             lscprofile.LscNo = _inputParams->lscInputParams.LscNo;
             lscprofile.LscXo = _inputParams->lscInputParams.LscXo;
             lscprofile.LscYo = _inputParams->lscInputParams.LscYo;
             memcpy(lscprofile.LscXSizeTbl,_inputParams->lscInputParams.LscXSizeTbl,sizeof(lscprofile.LscXSizeTbl));
+            LOGD("lscXTbl:%d,%d,%d,%d,%d,%d,%d,%d",lscprofile.LscXSizeTbl[0],lscprofile.LscXSizeTbl[1],lscprofile.LscXSizeTbl[2],
+            lscprofile.LscXSizeTbl[3],lscprofile.LscXSizeTbl[4],lscprofile.LscXSizeTbl[5],lscprofile.LscXSizeTbl[6],lscprofile.LscXSizeTbl[7]);
             memcpy(lscprofile.LscYSizeTbl,_inputParams->lscInputParams.LscYSizeTbl,sizeof(lscprofile.LscYSizeTbl));
+            LOGD("lscYTbl:%d,%d,%d,%d,%d,%d,%d,%d",lscprofile.LscYSizeTbl[0],lscprofile.LscYSizeTbl[1],lscprofile.LscYSizeTbl[2],
+            lscprofile.LscYSizeTbl[3],lscprofile.LscYSizeTbl[4],lscprofile.LscYSizeTbl[5],lscprofile.LscYSizeTbl[6],lscprofile.LscYSizeTbl[7]);
             memcpy(lscprofile.LscMatrix,_inputParams->lscInputParams.LscMatrix,sizeof(lscprofile.LscMatrix));
+            LOGD("lscMatrix[0]:%d,%d,%d",lscprofile.LscMatrix[0].uCoeff[0],lscprofile.LscMatrix[0].uCoeff[1],lscprofile.LscMatrix[0].uCoeff[2]);
+            LOGD("lscMatrix[1]:%d,%d,%d",lscprofile.LscMatrix[1].uCoeff[0],lscprofile.LscMatrix[1].uCoeff[1],lscprofile.LscMatrix[1].uCoeff[2]);
+            LOGD("lscMatrix[2]:%d,%d,%d",lscprofile.LscMatrix[2].uCoeff[0],lscprofile.LscMatrix[2].uCoeff[1],lscprofile.LscMatrix[2].uCoeff[2]);
+            LOGD("lscMatrix[3]:%d,%d,%d",lscprofile.LscMatrix[3].uCoeff[0],lscprofile.LscMatrix[3].uCoeff[1],lscprofile.LscMatrix[3].uCoeff[2]);
             if (0==strcasecmp(lscprofile.name, "all")){
+                LOGD("lsc: replace all");
                 CamCalibDbReplaceLscProfileAll(hCalib, &lscprofile);
             }else{
                 CamLscProfile_t *plsc = NULL;
                 CamCalibDbGetLscProfileByName(hCalib, lscprofile.name, &plsc);
                 if(plsc){
+                    LOGD("lsc: replace single %s",lscprofile.name);
                     plsc->LscSectors = lscprofile.LscSectors;
                     plsc->LscNo = lscprofile.LscNo;
                     plsc->LscXo = lscprofile.LscXo;
@@ -2377,6 +2391,7 @@ void RKiqCompositor::tuning_tool_set_ccm(CamIA10_AWB_Result_t &awb_results)
     char ill_name[20];
     int saturation;
     if(_inputParams.ptr() && _inputParams->ccmInputParams.updateFlag){
+        _inputParams->ccmInputParams.updateFlag = false;
         if(_inputParams->ccmInputParams.on){
             memset(&ccProfile,0, sizeof(ccProfile));
             memcpy(ccProfile.name,_inputParams->ccmInputParams.name,sizeof(ccProfile.name));
@@ -2486,6 +2501,7 @@ void RKiqCompositor::tuning_tool_set_awb()
     if(_inputParams.ptr() && _inputParams->awbToolInputParams.updateFlag){
             AwbConfig_t awbParam;
             memset(&awbParam, 0, sizeof(awbParam));
+            _inputParams->awbToolInputParams.updateFlag = false;
             if(_inputParams->awbToolInputParams.on){
                 awbParam.awbTuning.forceGainEnable = BOOL_FALSE;
                 awbParam.awbTuning.forceIlluEnable = BOOL_FALSE;
@@ -2516,6 +2532,7 @@ void RKiqCompositor::tuning_tool_set_awb_wp()
     AwbConfig_t awbParam;
     if(_inputParams.ptr() && _inputParams->awbWpInputParams.updateFlag){
         CAM_AwbVersion_t vName;
+        _inputParams->awbWpInputParams.updateFlag = false;
         _isp10_engine->getCalibdbHandle(&hCalib);
         CamCalibDbGetAwb_VersionName(hCalib, &vName);
         if(vName != CAM_AWB_VERSION_11)
@@ -2611,6 +2628,7 @@ void RKiqCompositor::tuning_tool_set_awb_curve()
     char cur_resolution[20];
 
     if(_inputParams.ptr() && _inputParams->awbCurveInputParams.updateFlag){
+        _inputParams->awbCurveInputParams.updateFlag = false;
         struct CamIA10_SensorModeData &sensor_mode = get_sensor_mode_data();
         sprintf(cur_resolution,"%dx%d",sensor_mode.sensor_output_width,sensor_mode.sensor_output_height);
         _isp10_engine->getCalibdbHandle(&hCalib);
@@ -2654,6 +2672,7 @@ void RKiqCompositor::tuning_tool_set_awb_refgain()
     CamAwb_V11_IlluProfile_t *pIllumination = NULL;
     if(_inputParams.ptr() && _inputParams->awbRefGainInputParams.updateFlag){
         CAM_AwbVersion_t vName;
+        _inputParams->awbRefGainInputParams.updateFlag = false;
         _isp10_engine->getCalibdbHandle(&hCalib);
         CamCalibDbGetAwb_VersionName(hCalib, &vName);
         if(vName != CAM_AWB_VERSION_11)
@@ -2679,6 +2698,7 @@ void RKiqCompositor::tuning_tool_set_goc()
     CamCalibDbHandle_t hCalib;
 
     if(_inputParams.ptr() && _inputParams->gocInputParams.updateFlag){
+        _inputParams->gocInputParams.updateFlag = false;
         if(_inputParams->gocInputParams.on){
             memcpy(goc_name, _inputParams->gocInputParams.scene_name,sizeof(goc_name));
             _isp10_engine->getCalibdbHandle(&hCalib);
@@ -2706,6 +2726,7 @@ void RKiqCompositor::tuning_tool_set_goc()
 void RKiqCompositor::tuning_tool_set_cproc()
 {
     if(_inputParams.ptr() && _inputParams->cprocInputParams.updateFlag){
+        _inputParams->cprocInputParams.updateFlag = false;
         if(_inputParams->cprocInputParams.on){
             struct HAL_ISP_cfg_s cfg;
             struct HAL_ISP_cproc_cfg_s isp_cproc_cfg;
@@ -2736,6 +2757,7 @@ void RKiqCompositor::tuning_tool_set_dpf()
     CamCalibDbHandle_t hCalib;
     CamDpfProfileName_t dpf_name;
     if(_inputParams.ptr() && _inputParams->adpfInputParams.updateFlag){
+        _inputParams->adpfInputParams.updateFlag = false;
         if(_inputParams->adpfInputParams.dpf_enable)
         {
             memcpy(dpf_name, _inputParams->adpfInputParams.dpf_name,sizeof(dpf_name));
@@ -2786,6 +2808,7 @@ void RKiqCompositor::tuning_tool_set_flt()
     CamFilterProfileName_t filt_name[]={"NORMAL","NIGHT"};
     CamDpfProfileName_t dpf_name;
     if(_inputParams.ptr() && _inputParams->fltInputParams.updateFlag){
+        _inputParams->fltInputParams.updateFlag = false;
         if(_inputParams->fltInputParams.filter_enable){
         memcpy(dpf_name, _inputParams->fltInputParams.filter_name,sizeof(dpf_name));
         _isp10_engine->getCalibdbHandle(&hCalib);
@@ -2855,8 +2878,10 @@ void RKiqCompositor::tuning_tool_set_flt()
 void RKiqCompositor::tuning_tool_restart_engine()
 {
     if(_inputParams.ptr() && _inputParams->restartInputParams.updateFlag){
+        _inputParams->restartInputParams.updateFlag = false;
         if(_inputParams->restartInputParams.on){
             _awb_handler->_analyzer->restart();
+            _skip_frame = true;
         }
     }
 }
@@ -2890,6 +2915,10 @@ XCamReturn RKiqCompositor::integrate (X3aResultList &results, bool first)
     //_isp10_engine->runIA(&_ia_dcfg, &_ia_stat, &_ia_results);
     _isp10_engine->getIAResult(&_ia_results);
     tuning_tool_process(_ia_results);
+    if(_skip_frame){
+        _skip_frame = false;
+        return XCAM_RETURN_NO_ERROR;
+    }
     if (!_isp10_engine->runISPManual(&_ia_results, BOOL_TRUE)) {
         XCAM_LOG_ERROR("%s:run ISP manual failed!", __func__);
     }
