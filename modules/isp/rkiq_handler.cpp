@@ -674,6 +674,7 @@ AiqCommonHandler::processMiscMetaResults(struct CamIA10_Results &ia10_results, X
         processTuningToolDpfMetaResults(metadata, ia10_results);
         processTuningToolFltMetaResults(metadata, ia10_results);
     }
+    processExifMakernote(metadata, ia10_results);
     // Update reqId for the result in order to match the setting param
     int reqId = _aiq_compositor->getAiqInputParams().ptr() ? _aiq_compositor->getAiqInputParams()->reqId : -1;
     metadata->update(ANDROID_REQUEST_ID, &reqId, 1);
@@ -1304,6 +1305,40 @@ AiqCommonHandler::processTuningToolFltMetaResults(CameraMetadata* metadata, stru
             }
         }
     }
+}
+
+void
+AiqCommonHandler::processExifMakernote(CameraMetadata* metadata, struct CamIA10_Results &ia10_results)
+{
+    char makernote[600], str[64], illName[32];
+    char *pbuf = makernote;
+    int noIlluProfiles = 0;
+    CamCalibDbHandle_t  hCalib;
+
+    memset(makernote, 0, sizeof(makernote));
+    memset(str, 0, sizeof(str));
+    memset(illName, 0, sizeof(illName));
+    snprintf(makernote,sizeof(makernote)-1,"magicCode=%u  Rg_Proj=%0.5f   s=%0.5f   s_max1=%0.5f  "
+             "s_max2=%0.5f  Bg1=%0.5f   Rg1=%0.5f   Bg2=%0.5f   Rg2=%0.5f   colortemperature=%s   "
+             "ExpPriorIn=%0.2f   ExpPriorOut=%0.2f    region=%d   ",
+             _aiq_compositor->_isp10_engine->getCalibdbMagicVerCode(),ia10_results.awb.RgProj,ia10_results.awb.Wb_s,
+             ia10_results.awb.Wb_s_max1,ia10_results.awb.Wb_s_max2,ia10_results.awb.Wb_bg,ia10_results.awb.Wb_rg,
+             ia10_results.awb.WbClippedGainsOverG.GainBOverG,ia10_results.awb.WbClippedGainsOverG.GainROverG,
+             ia10_results.awb.curIllName,ia10_results.awb.ExpPriorIn,ia10_results.awb.ExpPriorOut,ia10_results.awb.Region);
+
+    _aiq_compositor->_isp10_engine->getCalibdbHandle(&hCalib);
+    CamCalibDbGetNoOfAwbIlluminations(hCalib, &noIlluProfiles);
+    for(int i=0; i<noIlluProfiles; i++)
+    {
+        CamCalibDbGetAwbIlluminationNameByIdx(hCalib, i, illName);
+        snprintf(str,sizeof(str)-1, "illuName[%d]=%s   ", i, illName);
+        strncat(makernote, str, sizeof(makernote)-strlen(makernote)-1);
+        snprintf(str,sizeof(str)-1, "likehood[%d]=%0.2f   ", i, ia10_results.awb.likehood[i]);
+        strncat(makernote, str, sizeof(makernote)-strlen(makernote)-1);
+        snprintf(str,sizeof(str)-1, "weight[%d]=%0.2f   ", i, ia10_results.awb.weight[i]);
+        strncat(makernote, str, sizeof(makernote)-strlen(makernote)-1);
+    }
+    metadata->update(RKCAMERA3_PRIVATEDATA_STILLCAP_ISP_PARAM, (uint8_t*)makernote, sizeof(makernote));
 }
 
 XCamReturn

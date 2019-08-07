@@ -163,6 +163,16 @@ typedef struct CamIA10_AWB_Result_s {
   float                           RegionSize;
   Cam1x4FloatMatrix_t             refWbgain;
   CamIlluminationName_t           curIllName;
+  int                             Region;
+  float                           ExpPriorIn;
+  float                           ExpPriorOut;
+  float                           likehood[32];
+  float                           weight[32];
+  float                           Wb_s;
+  float                           Wb_s_max1;
+  float                           Wb_s_max2;
+  float                           Wb_bg;
+  float                           Wb_rg;
 } CamIA10_AWB_Result_t;
 
 typedef struct CamIA10_AFC_Result_s {

@@ -2192,6 +2192,16 @@ void CamIA10Engine::convertAwbResult2Cameric
     awbCamicResult->RegionSize = awbResult->RegionSize;
     awbCamicResult->refWbgain = awbResult->refWbgain;
     memcpy(awbCamicResult->curIllName, awbResult->curIllName, sizeof(awbResult->curIllName));
+    awbCamicResult->Region = awbResult->Region;
+    awbCamicResult->ExpPriorIn = awbResult->ExpPriorIn;
+    awbCamicResult->ExpPriorOut = awbResult->ExpPriorOut;
+    memcpy(awbCamicResult->likehood, awbResult->likehood, sizeof(float)*32);
+    memcpy(awbCamicResult->weight, awbResult->weight, sizeof(float)*32);
+    awbCamicResult->Wb_s = awbResult->Wb_s;
+    awbCamicResult->Wb_s_max1 = awbResult->Wb_s_max1;
+    awbCamicResult->Wb_s_max2 = awbResult->Wb_s_max2;
+    awbCamicResult->Wb_rg = awbResult->Wb_rg;
+    awbCamicResult->Wb_bg = awbResult->Wb_bg;
 }
 
 void CamIA10Engine::updateAwbResults
@@ -2305,6 +2315,17 @@ void CamIA10Engine::updateAwbResults
     update->RegionSize = newCfg->RegionSize;
     update->refWbgain = newCfg->refWbgain;
     memcpy(update->curIllName, newCfg->curIllName, sizeof(newCfg->curIllName));
+    update->Region = newCfg->Region;
+    update->ExpPriorIn = newCfg->ExpPriorIn;
+    update->ExpPriorOut = newCfg->ExpPriorOut;
+    memcpy(update->likehood, newCfg->likehood, sizeof(float)*32);
+    memcpy(update->weight, newCfg->weight, sizeof(float)*32);
+    update->Wb_s = newCfg->Wb_s;
+    update->Wb_s_max1 = newCfg->Wb_s_max1;
+    update->Wb_s_max2 = newCfg->Wb_s_max2;
+    update->Wb_rg = newCfg->Wb_rg;
+    update->Wb_bg = newCfg->Wb_bg;
+
     //LOGD("%s:%d,update awb config actives %d \n",__func__,__LINE__,update->actives );
 }
 

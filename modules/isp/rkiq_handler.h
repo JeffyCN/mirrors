@@ -278,6 +278,7 @@ public:
     void processTuningToolCprocMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
     void processTuningToolDpfMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
     void processTuningToolFltMetaResults(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
+    void processExifMakernote(CameraMetadata* metadata, struct CamIA10_Results &ia10_results);
 private:
     XCamReturn initTonemaps();
     XCamReturn fillTonemapCurve(CamerIcIspGocConfig_t goc, AiqInputParams* inputParams, CameraMetadata* metadata);
