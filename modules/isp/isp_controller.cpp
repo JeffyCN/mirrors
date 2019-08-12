@@ -1079,7 +1079,7 @@ IspController::set_3a_config (X3aIspConfig *config, bool first)
 
     XCAM_ASSERT (isp_cfg);
 
-    if (_pending_ispparams_queue.size() > 3) {
+    if (_pending_ispparams_queue.size() > 8) {
         XCAM_LOG_DEBUG ("too many pending isp params:%d !", _pending_ispparams_queue.size());
         _pending_ispparams_queue.erase(_pending_ispparams_queue.begin());
     }
