@@ -641,7 +641,7 @@ IspController::get_3a_statistics (SmartPtr<X3aIspStatistics> &stats)
         /* compatible with no emd info, so we could use new camera engine with
          * old rkisp driver that has no emd field in stats
          */
-        if (isp_stats->meas_type & CIFISP_STAT_EMB_DATA)
+        if (aiq_stats->meas_type & CIFISP_STAT_EMB_DATA)
             *isp_stats = *aiq_stats;
         else
             memcpy(isp_stats, aiq_stats,
