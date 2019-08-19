@@ -19,7 +19,7 @@ LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/base \
 
 LOCAL_MODULE:= libisp_log
-ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \>= 26)))
 LOCAL_PROPRIETARY_MODULE := true
 LOCAL_C_INCLUDES += \
 system/core/libutils/include \
@@ -113,7 +113,7 @@ LOCAL_C_INCLUDES += \
 endif
 
 LOCAL_MODULE:= librkisp_ctrlloop
-ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \>= 26)))
 LOCAL_CFLAGS += -DANDROID_VERSION_ABOVE_8_X
 LOCAL_PROPRIETARY_MODULE := true
 LOCAL_C_INCLUDES += \

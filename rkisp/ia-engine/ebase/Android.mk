@@ -22,7 +22,7 @@ LOCAL_CFLAGS += -Wno-error=unused-function -Wno-array-bounds
 LOCAL_CFLAGS += -DLINUX  -D_FILE_OFFSET_BITS=64 -DHAS_STDINT_H -DENABLE_ASSERT
 #LOCAL_MODULE_RELATIVE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_MODULE:= libisp_ebase
-ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \>= 26)))
 LOCAL_PROPRIETARY_MODULE := true
 endif
 

@@ -22,7 +22,7 @@ LOCAL_CFLAGS += $(PRJ_CPPFLAGS)
 
 #LOCAL_MODULE_RELATIVE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_MODULE:= libisp_aaa_awdr
-ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \>= 26)))
 LOCAL_PROPRIETARY_MODULE := true
 LOCAL_C_INCLUDES += \
 system/core/libutils/include \

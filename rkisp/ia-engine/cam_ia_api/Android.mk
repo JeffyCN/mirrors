@@ -45,7 +45,7 @@ LOCAL_CPPFLAGS += $(PRJ_CPPFLAGS)
 LOCAL_STATIC_LIBRARIES += libisp_aaa_adpf libisp_aaa_awdr libtinyxml2 libisp_cam_calibdb libisp_calibdb libisp_oslayer libisp_ebase
 
 LOCAL_MODULE:= libisp_ia_engine
-ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \>= 26)))
 LOCAL_PROPRIETARY_MODULE := true
 LOCAL_C_INCLUDES += \
 system/core/libutils/include \

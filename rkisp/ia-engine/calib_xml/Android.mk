@@ -40,7 +40,7 @@ LOCAL_STATIC_LIBRARIES += \
 LOCAL_MODULE:= libisp_calibdb
 ifeq ($(IS_ANDROID_OS),true)
 LOCAL_SHARED_LIBRARIES += libutils libcutils liblog
-ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \>= 26)))
 LOCAL_PROPRIETARY_MODULE := true
 LOCAL_C_INCLUDES += \
 system/core/libutils/include \
