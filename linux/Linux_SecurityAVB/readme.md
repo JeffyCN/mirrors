@@ -1,6 +1,6 @@
 # **AVB Reference**
 
-发布版本：2.3
+发布版本：2.4
 
 作者邮箱：jason.zhu@rock-chips.com
 
@@ -43,6 +43,7 @@
 | 2019.05.22 | v2.1   | Zain.Wong | 增加 3328 支持，并区分 OTP/EFUSE avb 烧写命令 |
 | 2019.06.03 | v2.2   | Zain.Wong | 修复一些不恰当的说明 |
 | 2019.07.13 | v2.3   | Zain.Wong | 增加注意事项，修改a/b parameter,同步修改uboot改动，并添加验证节点 |
+| 2019.08.20 | v2.4   | Zain.Wong | 增加ATH UNLOCK配置 |
 
 [TOC]
 
@@ -102,10 +103,13 @@ CONFIG_ROCKCHIP_PRELOADER_PUB_KEY=y #efuse 安全方案需要打开
 CONFIG_DM_CRYPTO=y #efuse 安全方案需要打开
 CONFIG_ROCKCHIP_CRYPTO_V1=y #efuse 安全方案需要打开 rk3399/rk3288
 CONFIG_ROCKCHIP_CRYPTO_V2=y #efuse 安全方案需要打开 rk1808
+CONFIG_RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK=y
 ```
+其中 CONFIG_RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK 如果没有在menuconfig中找到，
+则需要手动开启（uboot较老的版本没有引到config中），在
+drivers/usb/gadget/f_fastboot.c 中手动定义，或者去掉对应的宏应用。
 
 ​固件，certificate及hash需要通过fastboot烧写，所以需要在config文件中配置
-
 ```
 CONFIG_FASTBOOT=y
 CONFIG_FASTBOOT_BUF_ADDR=0x2000000	#各芯片平台不同,
