@@ -155,6 +155,7 @@ gst_mpp_h264_enc_handle_frame (GstVideoEncoder * encoder,
 {
   GstCaps *outcaps;
   GstStructure *structure;
+  GstFlowReturn ret;
 
   outcaps = gst_caps_new_empty_simple ("video/x-h264");
   structure = gst_caps_get_structure (outcaps, 0);
@@ -162,8 +163,10 @@ gst_mpp_h264_enc_handle_frame (GstVideoEncoder * encoder,
       G_TYPE_STRING, "byte-stream", NULL);
   gst_structure_set (structure, "alignment", G_TYPE_STRING, "au", NULL);
 
-  return GST_MPP_VIDEO_ENC_CLASS (parent_class)->handle_frame (encoder, frame,
+  ret = GST_MPP_VIDEO_ENC_CLASS (parent_class)->handle_frame (encoder, frame,
       outcaps);
+  gst_caps_unref (outcaps);
+  return ret;
 }
 
 static void

@@ -109,11 +109,14 @@ gst_mpp_jpeg_enc_handle_frame (GstVideoEncoder * encoder,
     GstVideoCodecFrame * frame)
 {
   GstCaps *outcaps;
+  GstFlowReturn ret;
 
   outcaps = gst_caps_new_empty_simple ("image/jpeg");
 
-  return GST_MPP_VIDEO_ENC_CLASS (parent_class)->handle_frame (encoder, frame,
+  ret = GST_MPP_VIDEO_ENC_CLASS (parent_class)->handle_frame (encoder, frame,
       outcaps);
+  gst_caps_unref (outcaps);
+  return ret;
 }
 
 static void
