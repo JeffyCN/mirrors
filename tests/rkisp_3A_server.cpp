@@ -266,37 +266,22 @@ static void deinit_engine(void)
 // blocked func
 static int wait_stream_event(int fd, unsigned int event_type, int time_out_ms)
 {
-    int num = 1;
-    struct pollfd poll_fds[num];
+    int ret;
     struct v4l2_event event;
-    int ret = -1;
 
     CLEAR(event);
-    memset(poll_fds, 0, sizeof(poll_fds));
-    poll_fds[0].fd = fd;
-    poll_fds[0].events = (POLLPRI | POLLIN | POLLERR | POLLNVAL | POLLHUP);
 
     do {
-        ret = poll (poll_fds, num, time_out_ms);
-
-        if (ret > 0) {
-#if 0
-            // TODO: don't know why always trap in this case
-            if (poll_fds[0].revents & (POLLERR | POLLNVAL | POLLHUP)) {
-                ERR("poll unexpected event 0x%x, poll again !\n", poll_fds[0].revents);
-                continue;
-            }
-#endif
-            ret = xioctl(fd, VIDIOC_DQEVENT, &event);
-            if (ret == 0 && event.type == event_type) {
-                return 0;
-            }
-        } else if (ret < 0) {
-            ERR("poll 0x%x erro, poll again !\n", event_type);
-        } else {
-            ERR("poll 0x%x timeout !\n", event_type);
-            break;
-        }
+	/*
+	 * xioctl instead of poll.
+	 * Since poll() cannot wait for input before stream on,
+	 * it will return an error directly. So, use ioctl to
+	 * dequeue event and block until sucess.
+	 */
+	ret = xioctl(fd, VIDIOC_DQEVENT, &event);
+	if (ret == 0 && event.type == event_type) {
+		return 0;
+	}
     } while (true);
 
     return -1;
