@@ -960,7 +960,7 @@ RESULT CamCalibDbReplaceCcProfileByName
 RESULT CamCalibDbGetCcProfileByName
 (
     CamCalibDbHandle_t      hCamCalibDb,
-    CamLscProfileName_t     name,
+    CamCcProfileName_t      name,
     CamCcProfile_t**          pCcProfile
 );
 
@@ -1073,7 +1073,6 @@ RESULT CamCalibDbAddDsp3DNRSetting
     CamDpfProfile_t*         pDpfProfile,
     CamDsp3DNRSettingProfile_t* pAddDsp3DNRSetting
 );
-
 
 RESULT CamCalibDbGetNoOfDsp3DNRSetting
 (
@@ -1241,6 +1240,18 @@ RESULT CamCalibDbGetOTPGlobal
 (
     CamCalibDbHandle_t  hCamCalibDb,
     CamOTPGlobal_t**   ppOTPGlobal
+);
+
+RESULT CamCalibDbDumpFile
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    const char *dump_path
+);
+
+RESULT CamCalibDbLoadFile
+(
+    CamCalibDbHandle_t*  hCamCalibDb,
+    const char* CamCalibDbIqData
 );
 
 #ifdef __cplusplus

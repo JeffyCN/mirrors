@@ -1242,6 +1242,17 @@ RESULT CamCalibDbGetOTPGlobal
     CamOTPGlobal_t**   ppOTPGlobal
 );
 
+RESULT CamCalibDbDumpFile
+(
+    CamCalibDbHandle_t  hCamCalibDb,
+    const char *dump_path
+);
+
+RESULT CamCalibDbLoadFile
+(
+    CamCalibDbHandle_t*  hCamCalibDb,
+    const char* CamCalibDbIqData
+);
 
 #ifdef __cplusplus
 }

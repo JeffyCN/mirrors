@@ -100,6 +100,8 @@
 
 static std::ofstream redirectOut("/dev/null");
 
+#define IQDATA_LOAD_SPEEDUP
+
 //#define DEBUG_LOG
 
 
@@ -1150,6 +1152,11 @@ bool CalibDb::CreateCalibDb
   LOGD( "%s(%d): (enter)\n", __FUNCTION__,__LINE__);
 #endif
 
+#ifdef IQDATA_LOAD_SPEEDUP
+  if (CamCalibDbLoadFile(&m_CalibDbHandle, device) == RET_SUCCESS)
+    return (res);
+#endif
+
   RESULT result = CamCalibDbCreate(&m_CalibDbHandle);
   DCT_ASSERT(result == RET_SUCCESS);
   errorID = doc.LoadFile(device);
@@ -1213,6 +1220,10 @@ bool CalibDb::CreateCalibDb
   }
 
   XML_CHECK_END();
+
+#ifdef IQDATA_LOAD_SPEEDUP
+  CamCalibDbDumpFile(m_CalibDbHandle, device);
+#endif
 
 #ifdef DEBUG_LOG
   LOGD( "%s(%d): (exit)\n", __FUNCTION__,__LINE__);
