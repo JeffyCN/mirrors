@@ -1,10 +1,10 @@
 # **AVB Reference**
 
-发布版本：2.4
+发布版本：2.5
 
 作者邮箱：jason.zhu@rock-chips.com
 
-日期：2019.06.03
+日期：2019.09.02
 文件密级：公开资料
 
 ------
@@ -44,6 +44,7 @@
 | 2019.06.03 | v2.2   | Zain.Wong | 修复一些不恰当的说明 |
 | 2019.07.13 | v2.3   | Zain.Wong | 增加注意事项，修改a/b parameter,同步修改uboot改动，并添加验证节点 |
 | 2019.08.20 | v2.4   | Zain.Wong | 增加ATH UNLOCK配置 |
+| 2019.09.02 | v2.5   | Zain.Wong | 增加defconfig说明 |
 
 [TOC]
 
@@ -55,6 +56,10 @@ U-boot:
 
 已验证平台：
   rk3308/rk3288/rk3328/rk3399/rk1808/rk3326/px30
+
+defconfig:
+  uboot defconfig 默认使用 evb-xxxx_defconfig 或 xxxx_defconfig （xxxx 为各自芯片名称，比如evb-rk3288_defconfig 或 rk3288_defconfig）
+  rockchip 内部仅负责维护这两个defconfig，其他板子请自行对照修改。
 
 ## 2 . 注意事项
 
