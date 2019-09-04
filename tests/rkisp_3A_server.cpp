@@ -1,17 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <getopt.h> /* getopt_long() */
 #include <fcntl.h> /* low-level i/o */
+#include <inttypes.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <sys/ioctl.h>
 
 #include <linux/videodev2.h>
-#include <rkisp_dev_manager.h>
+#include "rkisp_control_loop.h"
 #include "mediactl.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
