@@ -1,100 +1,109 @@
-# **AVB Reference**
+# AVB Reference
 
-发布版本：2.5
-
-作者邮箱：jason.zhu@rock-chips.com
-
-日期：2019.09.02
-文件密级：公开资料
+Version: 2.5
+Author: jason.zhu@rock-chips.com; zain.wang@rock-chips.com
+Date: 2019.09.02
+Confidentiality level: Disclosure
 
 ------
 
-## **前言**
+## Introduction
 
-   适用于RK3308 / RK3326 / PX30 / RK3399 / RK3328 / RK3288 / RK1808。
+This document applies to RK3308/RK3326/PX30/RK3399/RK3328/RK3288/RK1808
 
-## **概述**
+## Summarize
 
-## **产品版本**
+### Version
+| **Chip** | **Security Storage** | **Kernel** |   **U-Boot**   |   **RKBIN**    |
+| -------- | -------------------- | ---------- | -------------- | -------------- |
+| RK3308   | OTP                  | ALL        | commit d3a731e | commit e00dab6 |
+| RK3326   | OTP                  | 4.4        | commit d3a731e | commit 20af526 |
+| PX30     | OTP                  | 4.4        | commit d3a731e | commit 20af526 |
+| RK3328   | OTP                  | 4.4        | commit d3a731e | commit 158ccc6 |
+| RK3399   | eFuse                | 4.4        | commit d3a731e | commit 158ccc6 |
+| RK3288   | eFuse                | 4.4        | commit d3a731e | commit c021945 |
+| RK1808   | eFuse                | 4.4        | commit d3a731e | commit 890556f |
 
-| **芯片名称** | **内核版本** |
-| -------- | -------- |
-| RK3308   | 所有内核版本   |
-| RK3326   | Kernel 4.4   |
-| RK3399   | Kernel 4.4   |
-| RK3328   | Kernel 4.4   |
+### Reader
+This document is mainly suitable for below engineers:
+- Technical Support Engineer
+- Software Engineer
 
-## **读者对象**
-
-本文档（本指南）主要适用于以下工程师：
-
-- 技术支持工程师
-- 软件开发工程师
-
-## **修订记录**
-
-| **日期**     | **版本** | **作者**    | **修改说明**                     |
-| ---------- | ------ | --------- | ---------------------------- |
-| 2018.05.28 | V1.0   | jason.zhu |                              |
-| 2018.06.12 | V1.1   | jason.zhu | 增加 Authenticated Unlock及一些说明 |
-| 2018.06.27 | V1.2   | Zain.Wong | 增加 key生成描述 |
-| 2018.11.16 | V1.3   | Zain.Wong | 增加 uboot 配置说明， 兼容rk3326 |
-| 2019.01.28 | v2.0   | Zain.Wong | 同步 uboot 更改，增加 3399 配置 |
-| 2019.05.22 | v2.1   | Zain.Wong | 增加 3328 支持，并区分 OTP/EFUSE avb 烧写命令 |
-| 2019.06.03 | v2.2   | Zain.Wong | 修复一些不恰当的说明 |
-| 2019.07.13 | v2.3   | Zain.Wong | 增加注意事项，修改a/b parameter,同步修改uboot改动，并添加验证节点 |
-| 2019.08.20 | v2.4   | Zain.Wong | 增加ATH UNLOCK配置 |
-| 2019.09.02 | v2.5   | Zain.Wong | 增加defconfig说明 |
+### Changes
+|  **Date**  | **Version** | **Author** |                                                       **Changes**                                                        |
+| ---------- | ----------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 2018.05.28 | V1.0        | Jason Zhu  | Initial                                                                                                                  |
+| 2018.06.12 | V1.1        | Jason Zhu  | Add Authenticated Unlock and some others descripation                                                                    |
+| 2018.06.27 | V1.2        | Zain Wong  | Add descripation generation AVB keys                                                                                     |
+| 2018.11.16 | V1.3        | Zain Wong  | Add u-boot config descripation <br> Add rk3326 support                                                                   |
+| 2019.01.28 | v2.0        | Zain Wong  | Support lastest uboot <br> Add rk3399 support                                                                            |
+| 2019.05.22 | v2.1        | Zain Wong  | Add new command to write avb keys to efuse/OTP <br> Add rk3328 support                                                   |
+| 2019.06.03 | v2.2        | Zain Wong  | Fix error descripation                                                                                                   |
+| 2019.07.13 | v2.3        | Zain Wong  | Add chapter "Notice" <br> Add parameter.txt descripation <br> Support lastest uboot <br> Add chapter "Verified Platform" |
+| 2019.08.20 | v2.4        | Zain Wong  | Add descripation for u-boot CONFIG_RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK                                                       |
+| 2019.09.02 | v2.5        | Zain Wong  | Add platform defconfig descripation                                                                                      |
+| 2019.09.10 | v2.6        | Zain Wong  | Add En Version <br> Fixed some descripations                                                                             |
 
 [TOC]
 
-## 1 . 验证节点
+## 1. Verified Platform
 
-U-boot:
-  commit d3a731eb0a985e5d1c850e7e2fb3aa348ca27935
-  rockchip: rk1808: add CONFIG_SUPPORT_EMMC_RPMB
+1.    commit d3a731eb0a985e5d1c850e7e2fb3aa348ca27935
+      rockchip: rk1808: add CONFIG_SUPPORT_EMMC_RPMB
+2.    chip:
+      rk3308/rk3288/rk3328/rk3399/rk1808/rk3326/px30
+3.    defconfig:
+      evb-xxxx_defconfig / xxxx_defconfig  (xxxx: chip name, such as evb-rk3308_defconfig / rk3308_defconfig)
 
-已验证平台：
-  rk3308/rk3288/rk3328/rk3399/rk1808/rk3326/px30
+## 2. Notice
 
-defconfig:
-  uboot defconfig 默认使用 evb-xxxx_defconfig 或 xxxx_defconfig （xxxx 为各自芯片名称，比如evb-rk3288_defconfig 或 rk3288_defconfig）
-  rockchip 内部仅负责维护这两个defconfig，其他板子请自行对照修改。
+1.    When the device is in **unlock state**, AVB will still verify the boot.img. AVB will show the error If boot.img is unvalid, but the device **boot normally**. When the device is in lock state, AVB will **stop booting** if boot.img is unvalid and show the error as well. Therefore, setting the device to unlock state is convenient for debugging.
 
-## 2 . 注意事项
+2.    AVB is not support compressed kernel images.
+3.    Chips used efuse must enable Base SecureBoot (Rockchip_Developer_Guide_Linux4.4_SecureBoot.pdf **chapter 2 Base SecureBoot**)
 
-  当设备处于unlock状态，程序还是会校验整个boot.img，如果固件有错误，程序会报具体是什么错误，**正常启动设备**。而如果设备处于lock状态，程序会校验整个boot.img，如果固件有误，则不会启动下一级固件。所以调试阶段设置device处于unlock状态，方便调试。
-  一旦设备处理lock状态，就需要Authenticated Unlock，具体流程参见5. avb lock & unlock。
-
-  **当开启avb时，kernel不支持压缩格式。**
-
-## 3 . 固件配置
+## 3. Configuration
 
 ### 3.1. trust
 
-进入rkbin/RKTRUST，以rk3308为例，找到RK3308TRUST.ini，修改
+Make sure the trust.img has enable secure option.
+
+Take rk3308 as an example.
+Enter rkbin/RKTRUST, find **RK3308TRUST.ini**(This file selected by make.sh in u-boot) and change:
+```changes
+diff --git a/RKTRUST/RK3308TRUST.ini b/RKTRUST/RK3308TRUST.ini
+index 0b2839d..51ec627 100644
+--- a/RKTRUST/RK3308TRUST.ini
++++ b/RKTRUST/RK3308TRUST.ini
+@@ -8,7 +8,7 @@ SEC=1
+ PATH=bin/rk33/rk3308_bl31_v2.21.elf
+ ADDR=0x00010000
+ [BL32_OPTION]
+-SEC=0
++SEC=1
+ PATH=bin/rk33/rk3308_bl32_v1.12.bin
+ ADDR=0x00200000
+ [BL33_OPTION]
 
 ```
-[BL32_OPTION]
-SEC=0
-改为
-[BL32_OPTION]
-SEC=1
-```
+**Secure option is enabled as default for TOS format, like RK3288TOS.ini**
 
-### 3.2. uboot
+<span id="3.2"></span>
+### 3.2. U-Boot
 
- uboot需要fastboot和optee支持。
-
-```
+AVB needs these configs:
+```config
+# OPTEE support
 CONFIG_OPTEE_CLIENT=y
-CONFIG_OPTEE_V1=y	#rk3288/rk3328/rk3399 与V2互斥
-CONFIG_OPTEE_V2=y	#rk3308/rk3326/px30/rk1808 与V1互斥
-```
+CONFIG_OPTEE_V1=y»      # For rk3288/rk3328/rk3399 and NOT work with V2
+CONFIG_OPTEE_V2=y»      # For rk3308/rk3326/px30/rk1808 and NOT work with V1
 
-​avb开启需要在config文件中配置
+# CRYPTO support
+CONFIG_DM_CRYPTO=y # Only For efuse
+CONFIG_ROCKCHIP_CRYPTO_V1=y # For efuse chips, like rk3399/rk3288
+CONFIG_ROCKCHIP_CRYPTO_V2=y # For efuse chips, like rk1808
 
-```
+# AVB support
 CONFIG_AVB_LIBAVB=y
 CONFIG_AVB_LIBAVB_AB=y
 CONFIG_AVB_LIBAVB_ATX=y
@@ -102,29 +111,42 @@ CONFIG_AVB_LIBAVB_USER=y
 CONFIG_RK_AVB_LIBAVB_USER=y
 CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE=y
 CONFIG_ANDROID_AVB=y
-CONFIG_ANDROID_AB=y	#有需要再开
-CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION=y	#rpmb无法使用时打开，默认不开
-CONFIG_ROCKCHIP_PRELOADER_PUB_KEY=y #efuse 安全方案需要打开
-CONFIG_DM_CRYPTO=y #efuse 安全方案需要打开
-CONFIG_ROCKCHIP_CRYPTO_V1=y #efuse 安全方案需要打开 rk3399/rk3288
-CONFIG_ROCKCHIP_CRYPTO_V2=y #efuse 安全方案需要打开 rk1808
-CONFIG_RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK=y
-```
-其中 CONFIG_RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK 如果没有在menuconfig中找到，
-则需要手动开启（uboot较老的版本没有引到config中），在
-drivers/usb/gadget/f_fastboot.c 中手动定义，或者去掉对应的宏应用。
+CONFIG_ANDROID_AB=y    # Not necessary
+CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION=y    # Enable it if no RPMB
+CONFIG_ROCKCHIP_PRELOADER_PUB_KEY=y    # Only for efuse
+CONFIG_RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK=y # See below
 
-​固件，certificate及hash需要通过fastboot烧写，所以需要在config文件中配置
-```
+#fastboot support
 CONFIG_FASTBOOT=y
-CONFIG_FASTBOOT_BUF_ADDR=0x2000000	#各芯片平台不同,
-CONFIG_FASTBOOT_BUF_SIZE=0x08000000	#各芯片平台不同
+CONFIG_FASTBOOT_BUF_ADDR=0x2000000»     # Not fixed, change it if necessary
+CONFIG_FASTBOOT_BUF_SIZE=0x08000000»    # Not fixed, change it if necessary
 CONFIG_FASTBOOT_FLASH=y
 CONFIG_FASTBOOT_FLASH_MMC_DEV=0
 ```
 
-如果在开启ab的情况下，需要使用ramdisk机制（比如使用DM-V校验系统），需要手动修改代码：（因为平台兼容的原因，该补丁暂时无法合并）
-~~~
+CONFIG_RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK is newer config for U-Boot, if no this config in U-Boot, try to fixed it manually.
+The important is try to run rk_auth_unlock() to ensure unlock operation in valid.
+Note: changes base on U-Boot commit 46a8a26905fc68e6683b93c97adae0dd9a4e37ba
+
+```C
+diff --git a/drivers/usb/gadget/f_fastboot.c b/drivers/usb/gadget/f_fastboot.c
+index 99d62a6..fec465e 100755
+--- a/drivers/usb/gadget/f_fastboot.c
++++ b/drivers/usb/gadget/f_fastboot.c
+@@ -1370,7 +1370,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
+                        fastboot_tx_write_str("FAILThe vboot is disable!");
+                } else {
+                        lock_state = 1;
+-#ifdef CONFIG_RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK
++#if 1
+                        if (rk_auth_unlock((void *)CONFIG_FASTBOOT_BUF_ADDR,
+                                           &out_is_trusted)) {
+                                printf("rk_auth_unlock ops error!\n");
+```
+
+If ramdisk is required when used A/B Partition, U-Boot has to modify.
+(This change unabled to merge to master since conflict with android)
+~~~C
 diff --git a/common/android_bootloader.c b/common/android_bootloader.c
 index 230bf0e..e5c81e6 100644
 --- a/common/android_bootloader.c
@@ -141,103 +163,106 @@ index 230bf0e..e5c81e6 100644
                 /* In recovery mode we still boot the kernel from "boot" but
 ~~~
 
-之后，使用./make.sh xxxx，生成uboot.img, trust.img, loader.bin
+Now, run ./make.sh xxx generating uboot.img, trust.img and loader.bin
 
-#### 3.3. parameter
+<span id="3.3"></span>
+### 3.3. Parameter
 
-AVB需要添加vbmeta分区，用来存放固件签名信息。大小1M，位置无关。
+Partition "vbmeta" and "system" are required.
+"vbmeta" use to store the signature information, size 1M, no matter where vbmeta is.
+"system" has different name in some unique platform, like buildroot calls "system" to "rootfs".
+Rename "rootfs" to "system". If used uuid, changes uuid partition name as well.
 
-AVB需要system分区，在buildroot上，即rootfs分区，需要将rootfs改名为system，如果使用了uuid，同时修改uuid分区名。
+"security" partition is required if storage medium is not EMMC (no RPMB partition), it used to storage AVB information instead of RPMB.
+AVB content is encrypted, the size is 4M and the location is optional.
 
-如果存储介质使用flash，还需要另外添加security分区，用来存放操作信息。内容加密存放。大小4M，位置无关。emmc无需添加该分区，emmc操作信息存放在物理rpmb分区
-
-以下是avb parameter例子：
+Here are examples of AVB parameter：
 ~~~
 0x00002000@0x00004000(uboot),0x00002000@0x00006000(trust),0x00002000@0x00008000(misc),0x00010000@0x0000a000(boot),0x00010000@0x0001a000(recovery),0x00010000@0x0002a000(backup),0x00020000@0x0003a000(oem),0x00300000@0x0005a000(system),0x00000800@0x0035a000(vbmeta),0x00002000@0x0035a800(security),-@0x0035c800(userdata:grow)
 uuid:system=614e0000-0000-4b53-8000-1d28000054a9
 ~~~
 
-avb ab parameter:
+AVB and A/B parameter:
 ~~~
 0x00002000@0x00004000(uboot),0x00002000@0x00006000(trust),0x00004000@0x00008000(misc),0x00010000@0x0000c000(boot_a),0x00010000@0x0001c000(boot_b),0x00010000@0x0002c000(backup),0x00020000@0x0003c000(oem),0x00300000@0x0005c000(system_a),0x00300000@0x0035c000(system_b),0x00000800@0x0065c000(vbmeta_a),0x00000800@0x0065c800(vbmeta_b),0x00002000@0x0065d000(security),-@0x0065f00(userdata:grow)
 ~~~
 
-下载的时候，工具上的名称要同步修改，修改后，重载parameter。
+When downloading, the partition names on the AndroidTools (windows PC）should be modified synchronously. After modification, reload parameter.
 
-## 4 . Key
+## 4. AVB Keys
 
-AVB中包含以下4把key：
-Product RootKey (PRK)：avb的root key
-ProductIntermediate Key (PIK)：中间key，中介作用
-ProductSigning Key (PSK)：用于签固件的key
-ProductUnlock Key (PUK)：用于解锁设备
+AVB contains the following four Keys:
+Product RootKey (PRK): root Key of AVB, in eFuse devices, related information is verified by Base SecureBoot Key. In OTP devices, PRK-Hash information pre-stored in OTP is directly read and verified;
+ProductIntermediate Key (PIK): intermediate Key;
+ProductSigning Key (PSK): used to sign a firmware;
+ProductUnlock Key (PUK): used to unlock a device.
 
-**该目录下已经有一套测试的证书和key，如果需要新的key和证书，可以按下面步骤自行生成。
-请妥善保管生成的文件，否则加锁之后将无法解锁，机子将无法刷机。**
-
+There is already a set of test certificates and keys in this directory. If you need new Keys and certificates, you can generate them by the following steps:
 ~~~
     openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -outform PEM -out testkey_prk.pem
     openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -outform PEM -out testkey_psk.pem
     openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -outform PEM -out testkey_pik.pem
     touch temp.bin
-    python avbtool make_atx_certificate --output=pik_certificate.bin --subject=temp.bin --subject_key=testkey_pik.pem --subject_is_intermediate_authority --subject_key_version 42 --authority_key=testkey_prk.pem
+    python avbtool make_atx_certificate --output=pik_certificate.bin --subject=temp.bin --subject_key=testkey_pik.pem --subject_is_intermediate_authority --subject_key_version 4
     echo "RKXXXX_nnnnnnnn" > product_id.bin
-    python avbtool make_atx_certificate --output=psk_certificate.bin --subject=product_id.bin --subject_key=testkey_psk.pem --subject_key_version 42 --authority_key=testkey_pik.pem
+    python avbtool make_atx_certificate --output=psk_certificate.bin --subject=product_id.bin --subject_key=testkey_psk.pem --subject_key_version 42 --authority_key=testkey_pik.
     python avbtool make_atx_metadata --output=metadata.bin --intermediate_key_certificate=pik_certificate.bin --product_key_certificate=psk_certificate.bin
 ~~~
 
-其中temp.bin需要自己创建的临时文件，新建temp.bin即可，无需填写数据。
-product_id.bin需要自己定义，占16字节，可作为产品ID定义。
-permanent_attributes.bin生成：
+temp.bin is a temporary file created manually, just touch temp.bin and blank it.
+Product_id.bin created manually is used for product ID, the size is 16 bytes.
 
+Generate permanent_attributes.bin：
 ~~~
     python avbtool make_atx_permanent_attributes --output=permanent_attributes.bin --product_id=product_id.bin --root_authority_key=testkey_prk.pem
 ~~~
 
-PUK生成：
+Generate PUK：
 ~~~
     openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -outform PEM -out testkey_puk.pem
 ~~~
 
-puk_certificate.bin permanent_attributes.bin为设备解锁的证书，
-生成过程需要用到PrivateKey.pem，该key为烧录进efuse/otp的key
-(参考Rockchip-Secure-Boot-Application-Note-V1.9), 其生成过程如下：
+Generate permanent_attributes.bin
 ~~~
-    python avbtool make_atx_certificate --output=puk_certificate.bin --subject=product_id.bin --subject_key=testkey_puk.pem --usage=com.google.android.things.vboot.unlock --subject_key_version 42 --authority_key=testkey_pik.pem
+    python avbtool make_atx_certificate --output=puk_certificate.bin --subject=product_id.bin --subject_key=testkey_puk.pem --usage=com.google.android.things.vboot.unlock --subj
 ~~~
 
-针对efuse设备，还需要另外生成 permanent_attributes_cer.bin（otp设备可以跳过）
+For eFuse devices, you need to generate additional permanent_attributes_cer.bin (OTP devices can skip this step)
+And the PrivateKey.pem which is the key of Base SecureBoot is requried.
 ~~~
     openssl dgst -sha256 -out permanent_attributes_cer.bin -sign PrivateKey.pem permanent_attributes.bin
 ~~~
 
-## 5 . 操作流程
+**Please keep the generated files properly, otherwise you will not be able to unlock after locking, and the machine will not be able to upgrade anymore.**
 
-1. 运行make_vbmeta.sh -b path-to-boot.img -r path-to-recovery,在out目录下，生成vbmeta.bin和加密过的boot.img/recovery.img (不用recovery可以去除-r选项)
-2. 替换固件:
-   uboot.img, trust.img, MiniloaderAll.bin替换成新配置uboot生成的3个固件。
-   boot.img使用out目录下生成的加密固件。
-   vbmeta.bin提取出来。
-   parameter.txt 按 2.3 中规则修改
-3. 使用工具烧录。
-   如果使用的windows工具，请在工具中添加vbmeta分区（security分区视parameter而定），地址不填。
-   然后重新加载parameter，工具会自行更新地址。
-   如果security/rpmb中avb数据为空，uboot会直接进fastboot，等待fastboot对应信息写入
-4. 下载之后，设备默认处于unlock状态，此时固件还是会校验，但是不会阻拦系统启动，只会报错。
-5. 参考6 . avb lock & unlock 给设备加lock状态，这样就可阻止非法签名固件启动了。
+## 5. Download Process
 
-## 6 . avb lock & unlock
+1.    run `make_vbmeta.sh -b <path-to-boot.img> -r <path-to-recovery.img>`, and generated vbmeta.img in "out" folder. (Remove -r option if no recovery.img)
+2.    used these firmware about AVB:
+- uboot.img, trust.img, MiniloaderAll.bin (`<chip_name>_loader_<version_lable>.bin>`) generated by U-Boot with [3.2. U-Boot](#3.2) configuration.
+- vbmeta.img generated with step 1.
+- parameter.txt generated with [3.3. Parameter](#3.3)
+3.    If use windows download tool (AndroidTool), try to add "vbmeta" partition to the tool and blank the address. Then reload parameter.txt, the tool will update "vbmata" address by itself.
+4.    After downloading, the device is in Unlock state defaultly.
 
-AVB 只有在lock状态下，才会真正阻拦非签名固件的启动。
-首先，需要将设备进入到fastboot模式，大致有3种途径：
+## 6. AVB Lock and Unlock
 
-1. 启动到系统中，运行reboot fastboot
-2. 进入到uboot 命令行中，输入fastboot usb 0
-3. 如果有fastboot按键，通过fastboot按键进入fastboot模式。
+AVB support Lock and Unlock states:
+- Lock: verify the image next stage to u-boot like boot.img and recovery.img, and stop booting unvalid image, report error if image is unvalid
+- Unlock: verify the image next stage to u-boot like boot.img and recovery.img, report error if image is unvalid, but still boot.
 
-   然后PC 通过fastboot命令操作（可能需要管理员权限）
+Therefore, setting the device to unlock state is convenient for debugging.
 
-pub_key 烧写
+All of AVB user operation is used fastboot.
+There are some ways to enter device fastboot mode:
+
+1. press "fastboot" key at bootimg if there is "fastboot" in board
+2. run "reboot fastboot" in system
+3. run "fastboot usb 0" in uboot console. (set CONFIG_BOOTDELAY in uboot, it support specific delay to wait ctrl-c to enter uboot console)
+
+Now, we can run fastboot command in PC to commuicate with device.
+
+Download AVB root information (must done before "Lock" and "Unlock"):
 ~~~
 sudo ./fastboot stage permanent_attributes.bin
 sudo ./fastboot oem fuse at-perm-attr
@@ -247,38 +272,24 @@ sudo ./fastboot stage permanent_attributes_cer.bin
 sudo ./fastboot oem fuse at-rsa-perm-attr
 ~~~
 
-lock
+Lock the device:
 ~~~
 sudo ./fastboot oem at-lock-vboot
 sudo ./fastboot reboot
 ~~~
 
-​解锁设备步骤：
-
-1. 设备进入fastboot模式，电脑端输入
-
+Unlock the device:
 ```
 sudo ./fastboot oem at-get-vboot-unlock-challenge
-sudo ./fastboot get_staged raw_unlock_challenge.bin
-```
-
-2. raw_unlock_challenge.bin放进本文件夹内，运行
-
-```
-./make_unlock.sh
-```
-
-​生成unlock_credential.bin。
-
-3. 电脑端输入
-
-```
+sudo ./fastboot get_staged raw_unlock_challenge.bin # get raw_unlock_challenge.bin
+./make_unlock.sh # generate unlock_credential.bin with raw_unlock_challenge.bin
 sudo ./fastboot stage unlock_credential.bin
 sudo ./fastboot oem at-unlock-vboot
 ```
 
-## 7 . 最终打印
+## 7. Verity
 
+If everything goes well, the log below will be shown if the device is LOCKED.
 ~~~
 ANDROID: reboot reason: "(none)"
 Could not find security partition
