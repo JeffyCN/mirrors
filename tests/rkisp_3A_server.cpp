@@ -13,7 +13,7 @@
 #include "mediactl.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
-#define DBG(...) do { if(!silent) printf("DBG: " __VA_ARGS__); } while(0)
+#define DBG(...) do { if(!silent) printf("DBG: " __VA_ARGS__);} while(0)
 #define ERR(...) do { fprintf(stderr, "ERR: " __VA_ARGS__); } while (0)
 
 
@@ -366,6 +366,11 @@ int main(int argc, char **argv)
     int ret = 0;
     int isp_fd;
     unsigned int stream_event = -1;
+
+    /* Line buffered so that printf can flash every line if redirected to
+     * no-interactive device.
+     */
+    setlinebuf(stdout);
 
     parse_args(argc, argv);
 
