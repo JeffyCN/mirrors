@@ -176,6 +176,8 @@ RESULT CamIA10Engine::initStatic
         if (it != g_CalibDbHandlesMap.end()) {
             CalibDb* calibdb_p = it->second;
             hCamCalibDb = calibdb_p->GetCalibDbHandle();
+            struct sensor_calib_info* pCalib_info = calibdb_p->GetCalibDbInfo();
+            magicVerCode = pCalib_info->IQMagicVerCode;
             LOGD("use cached calibdb for %s !", aiqb_data_file);
         } else {
             CalibDb* calibdb_p = new CalibDb();
