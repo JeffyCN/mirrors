@@ -766,14 +766,25 @@ gst_kms_sink_sync (GstRkXImageSink * self)
   gboolean waiting;
   drmEventContext evctxt = {
     .version = DRM_EVENT_CONTEXT_VERSION,
-    .page_flip_handler = sync_handler,
+    .vblank_handler = sync_handler,
+  };
+  drmVBlank vbl = {
+    .request = {
+          .type = DRM_VBLANK_RELATIVE | DRM_VBLANK_EVENT,
+          .sequence = 1,
+          .signal = (gulong) & waiting,
+        },
   };
 
+  if (self->pipe == 1)
+    vbl.request.type |= DRM_VBLANK_SECONDARY;
+  else if (self->pipe > 1)
+    vbl.request.type |= self->pipe << DRM_VBLANK_HIGH_CRTC_SHIFT;
+
   waiting = TRUE;
-  ret = drmModePageFlip (self->fd, self->crtc_id, self->buffer_id,
-      DRM_MODE_PAGE_FLIP_EVENT, &waiting);
+  ret = drmWaitVBlank (self->fd, &vbl);
   if (ret)
-    goto pageflip_failed;
+    goto vblank_failed;
 
   while (waiting) {
     do {
@@ -787,9 +798,10 @@ gst_kms_sink_sync (GstRkXImageSink * self)
 
   return TRUE;
 
-pageflip_failed:
+  /* ERRORS */
+vblank_failed:
   {
-    GST_WARNING_OBJECT (self, "drmModePageFlip failed: %s (%d)",
+    GST_WARNING_OBJECT (self, "drmWaitVBlank failed: %s (%d)",
         g_strerror (errno), errno);
     return FALSE;
   }
@@ -1071,10 +1083,8 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
   }
 
   /* Wait for the previous frame to complete redraw */
-  if (!gst_kms_sink_sync (ximagesink)) {
-    GST_ERROR_OBJECT (ximagesink, "drmModesetplane failed: %d", ret);
+  if (!gst_kms_sink_sync (ximagesink))
     goto out;
-  }
 
   if (buffer != ximagesink->last_buffer)
     gst_buffer_replace (&ximagesink->last_buffer, buffer);
