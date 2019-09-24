@@ -145,11 +145,15 @@ gst_vpudec_stop (GstVideoDecoder * decoder)
   g_assert (g_atomic_int_get (&vpudec->active) == FALSE);
   g_assert (g_atomic_int_get (&vpudec->processing) == FALSE);
 
-  if (vpudec->input_state)
+  if (vpudec->input_state) {
     gst_video_codec_state_unref (vpudec->input_state);
+    vpudec->input_state = NULL;
+  }
 
-  if (vpudec->output_state)
+  if (vpudec->output_state) {
     gst_video_codec_state_unref (vpudec->output_state);
+    vpudec->output_state = NULL;
+  }
 
   gst_vpudec_close (vpudec);
   if (vpudec->pool) {

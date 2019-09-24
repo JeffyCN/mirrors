@@ -197,8 +197,10 @@ gst_mpp_jpeg_dec_stop (GstVideoDecoder * decoder)
     self->input_group = NULL;
   }
 
-  if (self->input_state)
+  if (self->input_state) {
     gst_video_codec_state_unref (self->input_state);
+    self->input_state = NULL;
+  }
 
   GST_DEBUG_OBJECT (self, "Stopped");
 
