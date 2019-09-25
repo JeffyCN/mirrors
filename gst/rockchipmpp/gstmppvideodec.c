@@ -466,7 +466,7 @@ static void
 gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
 {
   GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
-  GstBuffer *buffer;
+  GstBuffer *buffer = NULL;
   GstVideoCodecFrame *frame;
   GstFlowReturn ret = GST_FLOW_OK;
 
@@ -500,7 +500,8 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
 beach:
   GST_DEBUG_OBJECT (self, "Leaving output thread: %s", gst_flow_get_name (ret));
 
-  gst_buffer_replace (&buffer, NULL);
+  if (buffer)
+    gst_buffer_replace (&buffer, NULL);
   self->output_flow = ret;
   gst_pad_pause_task (decoder->srcpad);
 }
