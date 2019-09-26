@@ -490,7 +490,7 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
 
     if (ret != GST_FLOW_OK)
       goto beach;
-  } else {
+  } else if (buffer) {
     GST_WARNING_OBJECT (self, "Decoder is producing too many buffers");
     gst_buffer_unref (buffer);
   }
