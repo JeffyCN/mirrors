@@ -30,9 +30,9 @@ _stdint.h
 gstreamer-rockchip-*.tar.*
 .dirstamp
 /*-libtool
-
+po
 /m4
-
+INSTALL
 .deps
 .libs
 *.lo
