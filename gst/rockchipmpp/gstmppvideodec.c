@@ -231,6 +231,9 @@ gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
   if (NULL == mframe || NULL == info)
     return FALSE;
 
+  if (!mpp_frame_get_info_change(mframe))
+    return FALSE;
+
   format = mpp_frame_type_to_gst_video_format (mpp_frame_get_fmt (mframe));
   if (format == GST_VIDEO_FORMAT_UNKNOWN)
     return FALSE;
@@ -274,20 +277,6 @@ gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
   }
 
   return TRUE;
-}
-
-static gboolean
-gst_mpp_video_acquire_frame_format (GstMppVideoDec * self)
-{
-  MPP_RET mret;
-  MppFrame mframe = NULL;
-  mret = self->mpi->decode_get_frame (self->mpp_ctx, &mframe);
-  if (mret || NULL == mframe) {
-    GST_ERROR_OBJECT (self, "can't get valid info %d", mret);
-    return FALSE;
-  }
-
-  return gst_mpp_video_frame_to_info (mframe, &self->info);
 }
 
 static gboolean
@@ -537,7 +526,8 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
   pool = GST_BUFFER_POOL (self->pool);
   if (!gst_buffer_pool_is_active (pool)) {
     GstBuffer *codec_data;
-    gint block_flag = MPP_POLL_BLOCK;
+    MppFrame mframe = NULL;
+    gint block_flag;
 
     codec_data = self->input_state->codec_data;
     if (codec_data) {
@@ -577,13 +567,25 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
     gst_buffer_unmap (codec_data, &mapinfo);
     gst_buffer_unref (codec_data);
 
-    self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK,
-        (gpointer) & block_flag);
+    GST_DEBUG_OBJECT (self, "Set MppDecode TiemOut");
+    block_flag = 200;
+    self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK_TIMEOUT,
+      (gpointer) &block_flag);
 
-    if (gst_mpp_video_acquire_frame_format (self)) {
+    /* Aquire format frame frome mpp decode */
+    mret = self->mpi->decode_get_frame (self->mpp_ctx, &mframe);
+    if (MPP_ERR_TIMEOUT == mret) {
+      GST_WARNING_OBJECT (self, "Decoder get format frame failed.");
+      goto drop;
+    } else if (mret || NULL == mframe) {
+      goto not_negotiated;
+    } else if (gst_mpp_video_frame_to_info (mframe, &self->info)) {
       GstVideoCodecState *output_state;
       GstVideoInfo *info = &self->info;
       GstStructure *config = gst_buffer_pool_get_config (pool);
+
+      /* free format frame */
+      mpp_frame_deinit(&mframe);
 
       output_state =
           gst_video_decoder_set_output_state (decoder,
@@ -603,7 +605,13 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
         goto error_activate_pool;
 
       self->mpi->control (self->mpp_ctx, MPP_DEC_SET_INFO_CHANGE_READY, NULL);
+      GST_DEBUG_OBJECT (self, "Set MppDecode Block");
+      block_flag = MPP_POLL_BLOCK;
+      self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK,
+        (gpointer) &block_flag);
     } else {
+      /* free unexpected frame */
+      mpp_frame_deinit(&mframe);
       goto not_negotiated;
     }
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
