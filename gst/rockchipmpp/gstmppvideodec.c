@@ -537,11 +537,12 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
       mpp_packet_set_extra_data (mpkt);
 
       GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
-      if (self->mpi->decode_put_packet (self->mpp_ctx, mpkt)) {
+      mret = self->mpi->decode_put_packet (self->mpp_ctx, mpkt);
+      GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+      if (mret) {
         gst_buffer_unmap (codec_data, &mapinfo);
         goto send_stream_error;
       }
-      GST_VIDEO_DECODER_STREAM_LOCK (decoder);
 
       mpp_packet_deinit (&mpkt);
       gst_buffer_unmap (codec_data, &mapinfo);
@@ -557,6 +558,7 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
     do {
       mret = self->mpi->decode_put_packet (self->mpp_ctx, mpkt);
     } while (MPP_ERR_BUFFER_FULL == mret);
+    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
     if (mret) {
       gst_buffer_unmap (codec_data, &mapinfo);
       gst_buffer_unref (codec_data);
@@ -572,8 +574,10 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
     self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK_TIMEOUT,
       (gpointer) &block_flag);
 
+    GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
     /* Aquire format frame frome mpp decode */
     mret = self->mpi->decode_get_frame (self->mpp_ctx, &mframe);
+    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
     if (MPP_ERR_TIMEOUT == mret) {
       GST_WARNING_OBJECT (self, "Decoder get format frame failed.");
       goto drop;
@@ -614,7 +618,6 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
       mpp_frame_deinit(&mframe);
       goto not_negotiated;
     }
-    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
   }
 
   /* Start the output thread if it is not started before */
