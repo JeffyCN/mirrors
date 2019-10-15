@@ -45,10 +45,12 @@ float get_bpp_from_format(int format)
             break;
         case RK_FORMAT_YCbCr_422_SP:
         case RK_FORMAT_YCbCr_422_P:
-        case RK_FORMAT_YCbCr_420_SP:
-        case RK_FORMAT_YCbCr_420_P:
         case RK_FORMAT_YCrCb_422_SP:
         case RK_FORMAT_YCrCb_422_P:
+            bpp = 2;
+            break;
+        case RK_FORMAT_YCbCr_420_SP:
+        case RK_FORMAT_YCbCr_420_P:
         case RK_FORMAT_YCrCb_420_P:
 	    case RK_FORMAT_YCrCb_420_SP:
             bpp = 1.5;
