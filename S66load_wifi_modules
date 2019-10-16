@@ -13,11 +13,13 @@ case "$1" in
 		if [ ! -f "/userdata/cfg/wpa_supplicant.conf" ];then
 			echo "wpa_supplicant.conf init"
 			cp /etc/wpa_supplicant.conf /userdata/cfg/
+			sync
 		fi
 
 		if [ ! -f "/userdata/bin/dnsmasq.conf" ];then
 			echo "wpa_supplicant.conf init"
 			cp /etc/dnsmasq.conf /userdata/bin/
+			sync
 		fi
 
 		printf "load wifi modules: "
