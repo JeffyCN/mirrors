@@ -1278,7 +1278,7 @@ IspController::set_3a_exposure (struct rkisp_exposure isp_exposure)
                 return XCAM_RETURN_ERROR_IOCTL;
             }
 
-            if (isp_exposure.analog_gain!= 0) {
+            if (isp_exposure.analog_gain >= 0) {
                 memset(&ctrl, 0, sizeof(ctrl));
                 ctrl.id = V4L2_CID_ANALOGUE_GAIN;
                 /* ctrl.value = isp_exposure.analog_gain; */
