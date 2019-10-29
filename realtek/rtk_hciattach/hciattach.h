@@ -23,6 +23,7 @@
 
 #include <termios.h>
 #include <stdint.h>
+#include <syslog.h>
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define cpu_to_le16(d)  (d)
@@ -57,7 +58,31 @@
 
 extern uint8_t DBG_ON;
 
+/* #define SYSLOG */
+
 #define LOG_STR     "Realtek Bluetooth"
+#ifdef SYSLOG
+#define RS_DBG(fmt, arg...) \
+    do{ \
+        if (DBG_ON) \
+            syslog(LOG_DEBUG, "%s :" fmt "\n" , LOG_STR, ##arg); \
+    }while(0)
+
+#define RS_INFO(fmt, arg...) \
+    do{ \
+        syslog(LOG_INFO, "%s :" fmt "\n", LOG_STR, ##arg); \
+    }while(0)
+
+#define RS_WARN(fmt, arg...) \
+    do{ \
+        syslog(LOG_WARNING, "%s WARN: " fmt "\n", LOG_STR, ##arg); \
+    }while(0)
+
+#define RS_ERR(fmt, arg...) \
+    do{ \
+        syslog(LOG_ERR, "%s ERROR: " fmt "\n", LOG_STR, ##arg); \
+    }while(0)
+#else
 #define RS_DBG(fmt, arg...) \
     do{ \
         if (DBG_ON) \
@@ -78,6 +103,7 @@ extern uint8_t DBG_ON;
     do{ \
         printf("%s ERROR: " fmt "\n", LOG_STR, ##arg); \
     }while(0)
+#endif
 
 typedef enum _H5_RX_STATE {
 	H5_W4_PKT_DELIMITER,

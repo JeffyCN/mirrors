@@ -48,6 +48,8 @@
 
 #include "hciattach.h"
 
+#define RFKILL_NODE	"/sys/class/rfkill/rfkill0/state"
+
 #ifdef NEED_PPOLL
 #include "ppoll.h"
 #endif
@@ -80,17 +82,17 @@ static volatile sig_atomic_t __io_canceled = 0;
 
 static void sig_hup(int sig)
 {
-	printf("sig hup.\n");
+	RS_INFO("signal hup.");
 }
 
 static void sig_term(int sig)
 {
 	switch (sig) {
 	case SIGINT:
-		printf("sig int.\n");
+		RS_INFO("signal int.");
 		break;
 	case SIGTERM:
-		printf("sig term.\n");
+		RS_INFO("signal term.");
 		break;
 	}
 	__io_canceled = 1;
@@ -98,7 +100,7 @@ static void sig_term(int sig)
 
 static void sig_alarm(int sig)
 {
-	fprintf(stderr, "Initialization timed out.\n");
+	RS_ERR("Initialization timed out.");
 	exit(1);
 }
 
@@ -171,7 +173,7 @@ int set_speed(int fd, struct termios *ti, int speed)
 static int realtek_init(int fd, struct uart_t *u, struct termios *ti)
 {
 
-	fprintf(stderr, "Realtek Bluetooth init uart with init speed:%d, type:HCI UART %s\n",
+	RS_INFO("Realtek Bluetooth init uart with init speed:%d, type:HCI UART %s",
 		u->init_speed,
 		(u->proto == HCI_UART_H4) ? "H4" : "H5");
 	return rtb_init(fd, u->proto, u->speed, ti);
@@ -179,7 +181,7 @@ static int realtek_init(int fd, struct uart_t *u, struct termios *ti)
 
 static int realtek_post(int fd, struct uart_t *u, struct termios *ti)
 {
-	fprintf(stderr, "Realtek Bluetooth post process\n");
+	RS_INFO("Realtek Bluetooth post process");
 	return rtb_post(fd, u->proto, ti);
 }
 
@@ -227,14 +229,16 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 
 	fd = open(dev, O_RDWR | O_NOCTTY);
 	if (fd < 0) {
-		perror("Can't open serial port");
+		RS_ERR("Can't open serial port, %d, %s", errno,
+		       strerror(errno));
 		return -1;
 	}
 
 	tcflush(fd, TCIOFLUSH);
 
 	if (tcgetattr(fd, &ti) < 0) {
-		perror("Can't get port settings");
+		RS_ERR("Can't get port settings, %d, %s", errno,
+		       strerror(errno));
 		return -1;
 	}
 
@@ -247,13 +251,15 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 		ti.c_cflag &= ~CRTSCTS;
 
 	if (tcsetattr(fd, TCSANOW, &ti) < 0) {
-		perror("Can't set port settings");
+		RS_ERR("Can't set port settings, %d, %s", errno,
+		       strerror(errno));
 		return -1;
 	}
 
 	/* Set initial baudrate */
 	if (set_speed(fd, &ti, u->init_speed) < 0) {
-		perror("Can't set initial baud rate");
+		RS_ERR("Can't set initial baud rate, %d, %s", errno,
+		       strerror(errno));
 		return -1;
 	}
 
@@ -281,17 +287,18 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 	/* Set TTY to N_HCI line discipline */
 	i = N_HCI;
 	if (ioctl(fd, TIOCSETD, &i) < 0) {
-		perror("Can't set line discipline");
+		RS_ERR("Can't set line discipline %d, %s", errno,
+		       strerror(errno));
 		return -1;
 	}
 
 	if (flags && ioctl(fd, HCIUARTSETFLAGS, flags) < 0) {
-		perror("Can't set UART flags");
+		RS_ERR("Can't set UART flags %d, %s", errno, strerror(errno));
 		return -1;
 	}
 
 	if (ioctl(fd, HCIUARTSETPROTO, u->proto) < 0) {
-		perror("Can't set device");
+		RS_ERR("Can't set device %d, %s", errno, strerror(errno));
 		return -1;
 	}
 
@@ -301,12 +308,54 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 	return fd;
 }
 
+static int reset_bluetooth(void)
+{
+
+	int fd;
+	char state[2];
+	int result;
+
+	/* power off and power on BT */
+	fd = open(RFKILL_NODE, O_RDWR);
+	if (fd < 0) {
+		RS_ERR("Cannot open %s, %d %s", RFKILL_NODE, errno,
+				strerror(errno));
+		return -1;
+	}
+	state[0] = '0';
+	state[1] = '\0';
+	result = write(fd, state, strlen(state) + 1);
+	if (result != (strlen(state) + 1)) {
+		RS_ERR("Cannot write 0 to rfkill state %d %s", errno,
+				strerror(errno));
+		close(fd);
+		return -1;
+	}
+
+	usleep(500000);
+
+	state[0] = '1';
+	state[1] = '\0';
+	result = write(fd, state, strlen(state) + 1);
+	if (result != (strlen(state) + 1)) {
+		RS_ERR("Cannot write 1 to rfkill state %d %s", errno,
+				strerror(errno));
+		close(fd);
+		return -1;
+	}
+
+	usleep(500000);
+	close(fd);
+
+	return 0;
+}
+
 static void usage(void)
 {
-	printf("hciattach - HCI UART driver initialization utility\n");
-	printf("Usage:\n");
-	printf("\thciattach [-n] [-p] [-b] [-r] [-t timeout] [-s initial_speed] <tty> <type | id> [speed] [flow|noflow] [bdaddr]\n");
-	printf("\thciattach -l\n");
+	RS_INFO("hciattach - HCI UART driver initialization utility");
+	RS_INFO("Usage:");
+	RS_INFO("\thciattach [-n] [-p] [-b] [-r] [-t timeout] [-s initial_speed] <tty> <type | id> [speed] [flow|noflow] [bdaddr]");
+	RS_INFO("\thciattach -l");
 }
 
 int main(int argc, char *argv[])
@@ -353,7 +402,7 @@ int main(int argc, char *argv[])
 
 		case 'l':
 			for (i = 0; uart[i].type; i++) {
-				printf("%-10s0x%04x,0x%04x\n", uart[i].type,
+				RS_INFO("%-10s0x%04x,0x%04x", uart[i].type,
 							uart[i].m_id, uart[i].p_id);
 			}
 			exit(0);
@@ -397,7 +446,7 @@ int main(int argc, char *argv[])
 			}
 
 			if (!u) {
-				fprintf(stderr, "Unknown device type or id\n");
+				RS_ERR("Unknown device type or id");
 				exit(1);
 			}
 
@@ -428,24 +477,26 @@ int main(int argc, char *argv[])
 	}
 
 	if (!u) {
-		fprintf(stderr, "Unknown device type or id\n");
+		RS_ERR("Unknown device type or id");
 		exit(1);
 	}
 
+start:
+
 #ifdef SCHED_ENABLE
-	printf("Increase the priority of the process with set sched\n");
+	RS_INFO("Increase the priority of the process with set sched");
 	memset(&sched_par, 0, sizeof(sched_par));
 	sched_par.sched_priority = 99;
 	err = sched_setscheduler(0, SCHED_FIFO, &sched_par);
 	if (err == -1) {
-		fprintf(stderr, "Call sched_setscheduler error, %s\n",
+		RS_ERR("Call sched_setscheduler error, %s",
 			strerror(errno));
 	}
 /* #else
- * 	printf("Increase the priority of the process with nice\n");
+ * 	RS_INFO("Increase the priority of the process with nice");
  * 	err = nice(-20);
  * 	if (err == -1) {
- * 		fprintf(stderr, "Call nice error, %s\n", strerror(errno));
+ * 		RS_ERR("Call nice error, %s", strerror(errno));
  * 	}
  */
 #endif
@@ -465,11 +516,12 @@ int main(int argc, char *argv[])
 
 	n = init_uart(dev, u, send_break, raw);
 	if (n < 0) {
-		perror("Can't initialize device");
+		RS_ERR("Can't initialize device %d, %s", errno,
+		       strerror(errno));
 		exit(1);
 	}
 
-	printf("Device setup complete\n");
+	RS_INFO("Device setup complete");
 
 	alarm(0);
 
@@ -489,7 +541,7 @@ int main(int argc, char *argv[])
 	if (detach) {
 		if ((pid = fork())) {
 			if (printpid)
-				printf("%d\n", pid);
+				RS_INFO("%d", pid);
 			return 0;
 		}
 
@@ -512,18 +564,27 @@ int main(int argc, char *argv[])
 		p.revents = 0;
 		err = ppoll(&p, 1, NULL, &sigs);
 		if (err < 0 && errno == EINTR) {
-			printf("Got EINTR.\n");
+			RS_INFO("Got EINTR.");
 			continue;
 		} if (err)
 			break;
 	}
 
+	RS_INFO("err %d, p->revents %04x", err, p.revents);
+
 	/* Restore TTY line discipline */
-	printf("Restore TTY line discipline\n");
+	RS_INFO("Restore TTY line discipline");
 	ld = N_TTY;
 	if (ioctl(n, TIOCSETD, &ld) < 0) {
-		perror("Can't restore line discipline");
+		RS_ERR("Can't restore line discipline %d, %s", errno,
+		       strerror(errno));
 		exit(1);
+	}
+
+	if (p.revents & (POLLERR | POLLHUP)) {
+		RS_INFO("Recover...");
+		reset_bluetooth();
+		goto start;
 	}
 
 	return 0;

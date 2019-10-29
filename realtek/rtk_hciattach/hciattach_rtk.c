@@ -44,7 +44,7 @@
 #include "hciattach.h"
 #include "hciattach_h4.h"
 
-#define RTK_VERSION "3.1.0099684.20190215-141136"
+#define RTK_VERSION "3.1.bca84ed.20190725-141904"
 
 #define TIMESTAMP_PR
 
@@ -853,6 +853,7 @@ static int h5_recv(struct rtb_struct *h5, void *data, int count)
 			/* The received seq number is unexpected */
 			if (h5->rx_skb->data[0] & 0x80 &&
 			    (h5->rx_skb->data[0] & 0x07) != h5->rxseq_txack) {
+				uint8_t rxseq_txack = (h5->rx_skb->data[0] & 0x07);
 				RS_ERR("Out-of-order packet arrived, got(%u)expected(%u)",
 				     h5->rx_skb->data[0] & 0x07,
 				     h5->rxseq_txack);
@@ -865,9 +866,9 @@ static int h5_recv(struct rtb_struct *h5, void *data, int count)
 				/* Depend on whether Controller will reset ack
 				 * number or not
 				 */
-				if (rtb_cfg.tx_index == rtb_cfg.total_num)
-					rtb_cfg.rxseq_txack =
-						h5->rx_skb->data[0] & 0x07;
+				if (rtb_cfg.link_estab_state == H5_PATCH &&
+				    rtb_cfg.tx_index == rtb_cfg.total_num)
+					rtb_cfg.rxseq_txack = rxseq_txack;
 
 				continue;
 			}
@@ -1024,7 +1025,7 @@ static int start_transmit_wait(int fd, struct sk_buff *skb,
 	do {
 		nfds = epoll_wait(rtb_cfg.epollfd, events, MAX_EVENTS, msec);
 		if (nfds == -1) {
-			perror("epoll_wait");
+			RS_ERR("epoll_wait, %s (%d)", strerror(errno), errno);
 			exit(EXIT_FAILURE);
 		}
 
@@ -1209,7 +1210,7 @@ static int h5_download_patch(int dd, int index, uint8_t *data, int len,
 	do {
 		nfds = epoll_wait(rtb_cfg.epollfd, events, MAX_EVENTS, -1);
 		if (nfds == -1) {
-			perror("epoll_wait");
+			RS_ERR("epoll_wait, %s (%d)", strerror(errno), errno);
 			exit(EXIT_FAILURE);
 		}
 
@@ -1765,12 +1766,13 @@ static int rtb_config(int fd, int proto, int speed, struct termios *ti)
 			goto change_baud;
 		} else if (rtb_cfg.lmp_subver == ROM_LMP_8761a) {
 			if (rtb_cfg.hci_rev == 0x000b) {
-				/* 8761B IC */
-				rtb_cfg.chip_type = CHIP_8761B;
-				rtb_cfg.uart_flow_ctrl = 1;
+				/* 8761B Test Chip without download */
+				rtb_cfg.chip_type = CHIP_8761BH4;
+				/* rtb_cfg.uart_flow_ctrl = 1; */
 				/* TODO: Change to different uart baud */
-				std_speed_to_vendor(1500000, &rtb_cfg.vendor_baud);
-				goto change_baud;
+				/* std_speed_to_vendor(1500000, &rtb_cfg.vendor_baud);
+				 * goto change_baud;
+				 */
 			} else if (rtb_cfg.hci_rev == 0x000a) {
 				if (rtb_cfg.eversion == 3)
 					rtb_cfg.chip_type = CHIP_8761ATF;
@@ -1928,8 +1930,7 @@ change_baud:
 
 start_download:
 	/* For 8761B Test chip, no patch to download */
-	if (rtb_cfg.chip_type == CHIP_8761BTC ||
-	    rtb_cfg.chip_type == CHIP_8761B)
+	if (rtb_cfg.chip_type == CHIP_8761BTC)
 		goto done;
 
 	if (rtb_cfg.total_len > 0 && rtb_cfg.dl_fw_flag) {
@@ -1966,20 +1967,21 @@ int rtb_init(int fd, int proto, int speed, struct termios *ti)
 
 	rtb_cfg.epollfd = epoll_create(64);
 	if (rtb_cfg.epollfd == -1) {
-		perror("epoll_create1");
+		RS_ERR("epoll_create1, %s (%d)", strerror(errno), errno);
 		exit(EXIT_FAILURE);
 	}
 
 	ev.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLRDHUP;
 	ev.data.fd = fd;
 	if (epoll_ctl(rtb_cfg.epollfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
-		perror("epoll_ctl: epoll ctl add");
+		RS_ERR("epoll_ctl: epoll ctl add, %s (%d)", strerror(errno),
+		       errno);
 		exit(EXIT_FAILURE);
 	}
 
-	rtb_cfg.timerfd = timerfd_create(CLOCK_REALTIME, 0);
+	rtb_cfg.timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
 	if (rtb_cfg.timerfd == -1) {
-		fprintf(stderr, "timerfd_create error\n");
+		RS_ERR("timerfd_create error, %s (%d)", strerror(errno), errno);
 		return -1;
 	}
 
@@ -1988,7 +1990,8 @@ int rtb_init(int fd, int proto, int speed, struct termios *ti)
 		ev.data.fd = rtb_cfg.timerfd;
 		if (epoll_ctl(rtb_cfg.epollfd, EPOLL_CTL_ADD,
 			      rtb_cfg.timerfd, &ev) == -1) {
-			perror("epoll_ctl: epoll ctl add");
+			RS_ERR("epoll_ctl: epoll ctl add, %s (%d)",
+			       strerror(errno), errno);
 			exit(EXIT_FAILURE);
 		}
 	}

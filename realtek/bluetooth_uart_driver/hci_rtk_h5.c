@@ -793,7 +793,7 @@ static void h5_timed_event(struct work_struct *work)
 	h5 = container_of(work, struct h5_struct, retrans_work.work);
 	hu = h5->hu;
 
-	BT_WARN("hu %p retransmitting %u pkts", hu, h5->unack.qlen);
+	BT_INFO("hu %p retransmitting %u pkts", hu, h5->unack.qlen);
 
 	spin_lock_irqsave_nested(&h5->unack.lock, flags, SINGLE_DEPTH_NESTING);
 

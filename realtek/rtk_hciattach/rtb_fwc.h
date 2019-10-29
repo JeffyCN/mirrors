@@ -45,13 +45,14 @@ struct rtb_struct;
 #define CHIP_8761AT	0x1F
 #define CHIP_8761ATF	0x2F
 #define CHIP_8761BTC	0x3F
-#define CHIP_8761B	0x4F
+#define CHIP_8761BH4	0x4F
 #define CHIP_8723BS	0x5F
 #define CHIP_BEFORE	0x6F
 #define CHIP_8822BS	0x70
 #define CHIP_8723DS	0x71
 #define CHIP_8821CS	0x72
 #define CHIP_8822CS	0x73
+#define CHIP_8761B	0x74
 
 #define RTL_FW_MATCH_CHIP_TYPE  (1 << 0)
 #define RTL_FW_MATCH_HCI_VER    (1 << 1)

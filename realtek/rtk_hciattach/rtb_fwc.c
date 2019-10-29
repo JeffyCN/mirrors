@@ -34,7 +34,6 @@
 #include "rtb_fwc.h"
 
 #define USE_CUSTOMER_ADDRESS
-#define EXTRA_CONFIG_OPTION
 
 #define FIRMWARE_DIRECTORY  "/lib/firmware/rtlbt/"
 #define BT_CONFIG_DIRECTORY "/lib/firmware/rtlbt/"
@@ -45,17 +44,21 @@
 static uint8_t customer_bdaddr = 0;
 #endif
 
-#define CONFIG_TXPOWER	(1 << 0)
-#define CONFIG_XTAL	(1 << 1)
-#define CONFIG_BTMAC	(1 << 2)
+struct list_head {
+	struct list_head *next, *prev;
+};
 
-#ifdef EXTRA_CONFIG_OPTION
+struct cfg_list_item {
+	struct list_head list;
+	uint16_t offset;
+	uint8_t len;
+	uint8_t data[0];
+};
+
+static struct list_head list_configs;
+
 #define EXTRA_CONFIG_FILE	"/opt/rtk_btconfig.txt"
-static uint32_t extra_cf;
-static uint8_t txpower_cfg[4];
-static uint8_t txpower_len;
-static uint8_t xtal_cfg;
-#endif
+static struct list_head list_extracfgs;
 
 struct rtb_cfg_item {
 	uint16_t offset;
@@ -96,7 +99,8 @@ uint16_t project_id[]=
 	ROM_LMP_8821a, /* id 10 for RTL8821CS, lmp subver 0x8821 */
 	ROM_LMP_NONE,
 	ROM_LMP_NONE,
-	ROM_LMP_8822c  /* id 13 for RTL8822CS, lmp subver 0x8822 */
+	ROM_LMP_8822c, /* id 13 for RTL8822CS, lmp subver 0x8822 */
+	ROM_LMP_8761a, /* id 14 for 8761B */
 };
 
 static struct patch_info h4_patch_table[] = {
@@ -112,16 +116,16 @@ static struct patch_info h4_patch_table[] = {
 	{ RTL_FW_MATCH_CHIP_TYPE, CHIP_8761ATF,
 		0x8761, 0xffff, 0, 0x000a,
 		"rtl8761atf_fw", "rtl8761atf_config", "RTL8761ATF" },
-	/* RTL8761B TC
+	/* RTL8761B(8763) H4 Test Chip without download
 	 * FW/Config is not used.
 	 */
 	{ RTL_FW_MATCH_CHIP_TYPE, CHIP_8761BTC,
 		0x8763, 0xffff, 0, 0x000b,
 		"rtl8761btc_fw", "rtl8761btc_config", "RTL8761BTC" },
-	/* RTL8761B */
-	{ RTL_FW_MATCH_CHIP_TYPE, CHIP_8761B,
+	/* RTL8761B H4 Test Chip wihtout download*/
+	{ RTL_FW_MATCH_CHIP_TYPE, CHIP_8761BH4,
 		0x8761, 0xffff, 0, 0x000b,
-		"rtl8761b_fw", "rtl8761b_config", "RTL8761B" },
+		"rtl8761bh4_fw", "rtl8761bh4_config", "RTL8761BH4" },
 
 	/* RTL8723DS */
 	{ RTL_FW_MATCH_HCI_VER | RTL_FW_MATCH_HCI_REV, CHIP_8723DS,
@@ -147,8 +151,13 @@ static struct patch_info patch_table[] = {
 	{ 0, 0, ROM_LMP_8821a, ROM_LMP_8821a, 0, 0,
 		"rtl8821a_fw", "rtl8821a_config", "RTL8821AS"},
 	/* RTL8761ATV */
-	{ 0, 0, ROM_LMP_8761a, ROM_LMP_8761a, 0, 0,
+	{ RTL_FW_MATCH_HCI_VER | RTL_FW_MATCH_HCI_REV, 0,
+		ROM_LMP_8761a, ROM_LMP_8761a, 0x06, 0x000a,
 		"rtl8761a_fw", "rtl8761a_config", "RTL8761ATV"},
+	/* RTL8761BTV */
+	{ RTL_FW_MATCH_HCI_VER | RTL_FW_MATCH_HCI_REV, CHIP_8761B,
+		ROM_LMP_8761a, ROM_LMP_8761a, 0x0a, 0x000b,
+		"rtl8761b_fw", "rtl8761b_config", "RTL8761BTV"},
 
 	/* RTL8703AS
 	 * RTL8822BS
@@ -208,20 +217,110 @@ static __inline uint32_t get_unaligned_le32(uint8_t * p)
 	    ((uint32_t) (*(p + 2)) << 16) + ((uint32_t) (*(p + 3)) << 24);
 }
 
-#ifdef EXTRA_CONFIG_OPTION
-static inline int xtalset_supported(void)
-{
-	struct patch_info *pent = rtb_cfg.patch_ent;
+/* list head from kernel */
+#define offsetof(TYPE, MEMBER)	((size_t)&((TYPE *)0)->MEMBER)
 
-	switch (pent->chip_type) {
-	case CHIP_8822BS:
-	case CHIP_8723DS:
-	case CHIP_8821CS:
-	case CHIP_8822CS:
-		return 1;
-	default:
-		return 0;
+#define container_of(ptr, type, member) ({                      \
+	const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+	(type *)( (char *)__mptr - offsetof(type,member) );})
+
+#define list_entry(ptr, type, member) \
+	container_of(ptr, type, member)
+
+#define list_for_each_safe(pos, n, head) \
+	for (pos = (head)->next, n = pos->next; pos != (head); \
+		pos = n, n = pos->next)
+
+static inline void INIT_LIST_HEAD(struct list_head *list)
+{
+	list->next = list;
+	list->prev = list;
+}
+
+static inline int list_empty(const struct list_head *head)
+{
+	return head->next == head;
+}
+
+static inline void __list_add(struct list_head *_new,
+			      struct list_head *prev,
+			      struct list_head *next)
+{
+	next->prev = _new;
+	_new->next = next;
+	_new->prev = prev;
+	prev->next = _new;
+}
+
+static inline void list_add_tail(struct list_head *_new, struct list_head *head)
+{
+	__list_add(_new, head->prev, head);
+}
+
+static inline void __list_del(struct list_head *prev, struct list_head *next)
+{
+	next->prev = prev;
+	prev->next = next;
+}
+
+#define LIST_POISON1  ((void *) 0x00100100)
+#define LIST_POISON2  ((void *) 0x00200200)
+static inline void list_del(struct list_head *entry)
+{
+	__list_del(entry->prev, entry->next);
+	entry->next = (struct list_head*)LIST_POISON1;
+	entry->prev = (struct list_head*)LIST_POISON2;
+}
+
+static inline void __list_splice(const struct list_head *list,
+				 struct list_head *prev,
+				 struct list_head *next)
+{
+	struct list_head *first = list->next;
+	struct list_head *last = list->prev;
+
+	first->prev = prev;
+	prev->next = first;
+
+	last->next = next;
+	next->prev = last;
+}
+
+static inline void list_splice_tail(struct list_head *list,
+				struct list_head *head)
+{
+	if (!list_empty(list))
+		__list_splice(list, head->prev, head);
+}
+
+static int config_lists_init(void)
+{
+	INIT_LIST_HEAD(&list_configs);
+	INIT_LIST_HEAD(&list_extracfgs);
+
+	return 0;
+}
+
+static void config_lists_free(void)
+{
+	struct list_head *iter;
+	struct list_head *tmp;
+	struct list_head *head;
+	struct cfg_list_item *n;
+
+	if (!list_empty(&list_extracfgs))
+		list_splice_tail(&list_extracfgs, &list_configs);
+	head = &list_configs;
+	list_for_each_safe(iter, tmp, head) {
+		n = list_entry(iter, struct cfg_list_item, list);
+		if (n) {
+			list_del(&n->list);
+			free(n);
+		}
 	}
+
+	INIT_LIST_HEAD(&list_configs);
+	INIT_LIST_HEAD(&list_extracfgs);
 }
 
 static void line_process(char *buf, int len /*@unused@*/)
@@ -233,6 +332,7 @@ static void line_process(char *buf, int len /*@unused@*/)
 	unsigned long int offset;
 	uint8_t l;
 	uint8_t i = 0;
+	struct cfg_list_item *item;
 
 	RS_INFO("%s", buf);
 
@@ -260,19 +360,18 @@ static void line_process(char *buf, int len /*@unused@*/)
 		return;
 	}
 
-	if (offset == 0x015b && l <= 4) {
-		/* Tx power */
-		for (i = 0; i < l; i++)
-			txpower_cfg[i] = (uint8_t)strtoul(argv[3 + i], NULL, 16);
-		txpower_len = l;
-		extra_cf |= CONFIG_TXPOWER;
-	} else if (offset == 0x01e6) {
-		/* XTAL for 8822B, 8821C 8723D */
-		xtal_cfg = (uint8_t)strtoul(argv[3], NULL, 16);
-		extra_cf |= CONFIG_XTAL;
-	} else {
-		RS_ERR("Extra Config offset %04lx not supported", offset);
+	item = malloc(sizeof(*item) + l);
+	if (!item) {
+		RS_WARN("%s: Cannot alloc mem for item, %04lx, %u", __func__,
+			offset, l);
+		return;
 	}
+
+	item->offset = (uint16_t)offset;
+	item->len = l;
+	for (i = 0; i < l; i++)
+		item->data[i] = (uint8_t)strtoul(argv[3 + i], NULL, 16);
+	list_add_tail(&item->list, &list_extracfgs);
 }
 
 static void config_process(uint8_t *buf, int len /*@unused@*/)
@@ -321,7 +420,6 @@ static void parse_extra_config(const char *path)
 done:
 	close(fd);
 }
-#endif
 
 /* Get the entry from patch_table according to LMP subversion */
 struct patch_info *get_patch_entry(struct rtb_struct *btrtl)
@@ -367,6 +465,7 @@ static int is_mac(uint8_t chip_type, uint16_t offset)
 			return 1;
 		break;
 	case CHIP_8822CS:
+	case CHIP_8761B:
 		if (offset == 0x0030)
 			return 1;
 		break;
@@ -374,7 +473,6 @@ static int is_mac(uint8_t chip_type, uint16_t offset)
 	case CHIP_8761AT:
 	case CHIP_8761ATF:
 	case CHIP_8761BTC:
-	case CHIP_8761B:
 	case CHIP_8723BS:
 		if (offset == 0x003c)
 			return 1;
@@ -396,6 +494,7 @@ static void fill_mac_offset(uint8_t chip_type, uint8_t b[2])
 		b[1] = 0x00;
 		break;
 	case CHIP_8822CS:
+	case CHIP_8761B:
 		b[0] = 0x30;
 		b[1] = 0x00;
 		break;
@@ -403,7 +502,6 @@ static void fill_mac_offset(uint8_t chip_type, uint8_t b[2])
 	case CHIP_8761AT:
 	case CHIP_8761ATF:
 	case CHIP_8761BTC:
-	case CHIP_8761B:
 	case CHIP_8723BS:
 		b[0] = 0x3c;
 		b[1] = 0x00;
@@ -411,6 +509,57 @@ static void fill_mac_offset(uint8_t chip_type, uint8_t b[2])
 	}
 }
 #endif
+
+static void merge_configs(uint8_t *cfg_buf, size_t *plen)
+{
+	struct list_head *iter, *tmp;
+	struct cfg_list_item *item;
+	uint8_t *buf;
+	uint16_t tmp_len;
+
+	list_for_each_safe(iter, tmp, &list_extracfgs) {
+		struct list_head *iter2, *tmp2;
+
+		item = list_entry(iter, struct cfg_list_item, list);
+		list_for_each_safe(iter2, tmp2, &list_configs) {
+			struct cfg_list_item *n;
+
+			n = list_entry(iter2, struct cfg_list_item, list);
+			if (item->offset == n->offset) {
+				if (item->len == n->len) {
+					memcpy(n->data, item->data, n->len);
+					list_del(&item->list);
+					free(item);
+					break;
+				}
+
+				RS_WARN("item mismatch %04x %u %u",
+					item->offset, item->len,
+					n->len);
+				list_del(&item->list);
+				free(item);
+			}
+		}
+	}
+
+	buf = cfg_buf + *plen;
+	list_for_each_safe(iter, tmp, &list_extracfgs) {
+		item = list_entry(iter, struct cfg_list_item, list);
+		buf[0] = item->offset & 0xff;
+		buf[1] = (item->offset >> 8) & 0xff;
+		buf[2] = item->len;
+		memcpy(buf + 3, item->data, item->len);
+		buf += (3 + item->len);
+		*plen += (3 + item->len);
+		list_del(&item->list);
+		free(item);
+	}
+
+	tmp_len = *plen - 6;
+
+	cfg_buf[4] = (tmp_len & 0xff);
+	cfg_buf[5] = ((tmp_len >> 8) & 0xff);
+}
 
 /*
  * Parse realtek Bluetooth config file.
@@ -427,14 +576,9 @@ int rtb_parse_config(uint8_t *cfg_buf, size_t *plen, uint8_t bdaddr[6])
 #ifdef USE_CUSTOMER_ADDRESS
 	uint8_t j = 0;
 	struct patch_info *pent = rtb_cfg.patch_ent;
+	int addr_found = 0;
 #endif
-#ifdef EXTRA_CONFIG_OPTION
-	uint8_t *head = cfg_buf;
-	uint32_t add_flags;
-	uint32_t flags = 0;
-
-	add_flags = extra_cf;
-#endif
+	struct cfg_list_item *item;
 
 	if (!cfg_buf || !plen) {
 		RS_ERR("%s: Invalid parameter", __func__);
@@ -472,7 +616,7 @@ int rtb_parse_config(uint8_t *cfg_buf, size_t *plen, uint8_t bdaddr[6])
 			 */
 			for (j = 0; j < entry->len; j++)
 				entry->data[j] = bdaddr[j];
-			flags |= CONFIG_BTMAC;
+			addr_found = 1;
 			RS_INFO("BT MAC found %02x:%02x:%02x:%02x:%02x:%02x",
 				entry->data[5], entry->data[4], entry->data[3],
 				entry->data[2], entry->data[1], entry->data[0]);
@@ -493,29 +637,6 @@ int rtb_parse_config(uint8_t *cfg_buf, size_t *plen, uint8_t bdaddr[6])
 					rtb_cfg.uart_flow_ctrl);
 			}
 			break;
-#ifdef EXTRA_CONFIG_OPTION
-		case 0x015b: /* Tx power */
-			if (!(add_flags & CONFIG_TXPOWER))
-				break;
-			add_flags &= ~CONFIG_TXPOWER;
-			if (txpower_len != entry->len) {
-				RS_ERR("invalid tx power cfg len %u, %u",
-				       txpower_len, entry->len);
-				break;
-			}
-			memcpy(entry->data, txpower_cfg, txpower_len);
-			RS_INFO("Replace Tx power Cfg %02x %02x %02x %02x",
-				txpower_cfg[0], txpower_cfg[1], txpower_cfg[2],
-				txpower_cfg[3]);
-			break;
-		case 0x01e6: /* xtal */
-			if (!(add_flags & CONFIG_XTAL))
-				break;
-			add_flags &= ~CONFIG_XTAL;
-			RS_INFO("Replace XTAL Cfg 0x%02x", xtal_cfg);
-			entry->data[0] = xtal_cfg;
-			break;
-#endif
 #ifdef RTL8723DSH4_UART_HWFLOWC
 		case 0x0018:
 			if (pent->chip_type == CHIP_8723DS &&
@@ -542,17 +663,32 @@ int rtb_parse_config(uint8_t *cfg_buf, size_t *plen, uint8_t bdaddr[6])
 			       entry->len);
 			break;
 		}
+
+		/* Add config item to list */
+		item = malloc(sizeof(*item) + entry->len);
+		if (item) {
+			item->offset = le16_to_cpu(entry->offset);
+			item->len = entry->len;
+			memcpy(item->data, entry->data, item->len);
+			list_add_tail(&item->list, &list_configs);
+		} else {
+			RS_ERR("Cannot alloc mem for entry %04x, %u",
+			       entry->offset, entry->len);
+		}
+
 		tmp = entry->len + sizeof(struct rtb_cfg_item);
 		i += tmp;
 		entry = (struct rtb_cfg_item *)((uint8_t *)entry + tmp);
 	}
 
 #ifdef USE_CUSTOMER_ADDRESS
-	if (!(flags & CONFIG_BTMAC) && customer_bdaddr) {
+	if (!addr_found && customer_bdaddr) {
 		uint8_t *b;
+		uint16_t ofs;
 
 		b = cfg_buf + *plen;
 		fill_mac_offset(pent->chip_type, b);
+		ofs = (((uint16_t)b[1] << 8) | b[0]);
 
 		RS_INFO("Add bdaddr section, offset %02x%02x", b[1], b[0]);
 		b[2] = 6;
@@ -564,42 +700,24 @@ int rtb_parse_config(uint8_t *cfg_buf, size_t *plen, uint8_t bdaddr[6])
 
 		cfg_buf[4] = (tmp & 0xff);
 		cfg_buf[5] = ((tmp >> 8) & 0xff);
+
+		/* Add address item to list */
+		item = malloc(sizeof(*item) + 6);
+		if (item) {
+			item->offset = ofs;
+			item->len = b[2];
+			memcpy(item->data, b + 3, 6);
+			list_add_tail(&item->list, &list_configs);
+		} else {
+			RS_ERR("Cannot alloc mem for entry %04x, %u",
+			       entry->offset, entry->len);
+		}
 	}
 #endif
 
-#ifdef EXTRA_CONFIG_OPTION
-	tmp = *plen;
-	if (add_flags & CONFIG_TXPOWER)
-		tmp += (2 + 1 + txpower_len);
-	if ((add_flags & CONFIG_XTAL))
-		tmp += (2 + 1 + 1);
-
-	if (add_flags) {
-		RS_INFO("Add extra configs");
-		cfg_buf = head;
-		tmp -= RTB_CFG_HDR_LEN;
-		cfg_buf[4] = (tmp & 0xff);
-		cfg_buf[5] = ((tmp >> 8) & 0xff);
-		cfg_buf += *plen;
-		if (add_flags & CONFIG_TXPOWER) {
-			RS_INFO("Add Tx power Cfg");
-			*cfg_buf++ = 0x5b;
-			*cfg_buf++ = 0x01;
-			*cfg_buf++ = txpower_len;
-			memcpy(cfg_buf, txpower_cfg, txpower_len);
-			cfg_buf += txpower_len;
-		}
-		if ((add_flags & CONFIG_XTAL)) {
-			RS_INFO("Add XTAL Cfg");
-			*cfg_buf++ = 0xe6;
-			*cfg_buf++ = 0x01;
-			*cfg_buf++ = 1;
-			*cfg_buf++ = xtal_cfg;
-		}
-		*plen = cfg_buf - head;
-		cfg_buf = head;
-	}
-#endif
+	/* plen, cfg_buf, head */
+	/* Merge configs */
+	merge_configs(cfg_buf, plen);
 
 	rtb_cfg.vendor_baud = baudrate;
 	return 0;
@@ -846,11 +964,14 @@ uint8_t *rtb_read_config(struct rtb_struct *btrtl, int *cfg_len)
 	char *str;
 	int i = 0;
 #endif
+	struct list_head *tmp, *iter;
 
 	if (!btrtl || !cfg_len) {
 		RS_ERR("%s: Invalid parameter", __func__);
 		return NULL;
 	}
+
+	config_lists_init();
 
 #ifdef USE_CUSTOMER_ADDRESS
 #ifdef BT_ADDR_FROM_VENDOR_STORAGE
@@ -965,15 +1086,15 @@ read_cfg:
 	tlength += 9;
 #endif
 
-#ifdef EXTRA_CONFIG_OPTION
 	parse_extra_config(EXTRA_CONFIG_FILE);
-	if (!xtalset_supported())
-		extra_cf &= ~CONFIG_XTAL;
-	if (extra_cf & CONFIG_TXPOWER)
-		tlength += 7;
-	if (extra_cf & CONFIG_XTAL)
-		tlength += 4;
-#endif
+	if (!list_empty(&list_extracfgs)) {
+		struct cfg_list_item *item;
+
+		list_for_each_safe(iter, tmp, &list_extracfgs) {
+			item = list_entry(iter, struct cfg_list_item, list);
+			tlength += (item->len + 3);
+		}
+	}
 
 	buf = malloc(tlength);
 	if (!buf) {
@@ -990,6 +1111,7 @@ read_cfg:
 	free(file_name);
 
 	result = rtb_parse_config(buf, &file_len, bdaddr);
+	config_lists_free();
 	if (result < 0) {
 		RS_ERR("Invalid Config content");
 		close(fd);
@@ -1007,6 +1129,7 @@ read_cfg:
 err_read:
 	free(buf);
 err_malloc:
+	config_lists_free();
 	close(fd);
 err_open:
 err_stat:
@@ -1190,10 +1313,8 @@ uint8_t *rtb_get_final_patch(int fd, int proto, int *rlen)
 		return NULL;
 	}
 
-	/* Chip uses single patch
-	 * h4 && 0x8761 or 3wire && 8723a */
-	if ((proto == HCI_UART_H4 && rtl->lmp_subver == 0x8761) ||
-	    (proto == HCI_UART_3WIRE && rtl->lmp_subver == ROM_LMP_8723a)) {
+	/* Use single patch for 3wire && 8723a */
+	if (proto == HCI_UART_3WIRE && rtl->lmp_subver == ROM_LMP_8723a) {
 		if (!memcmp(rtl->fw_buf, rtb_patch_smagic, 8)) {
 			RS_ERR("Unexpected signature");
 			goto err;

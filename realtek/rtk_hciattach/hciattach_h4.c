@@ -265,6 +265,8 @@ int h4_read_local_ver(int fd)
 	rtb_cfg.hci_ver = resp[7];
 	rtb_cfg.hci_rev = (uint32_t)resp[9] << 8 | resp[8];
 	rtb_cfg.lmp_subver = (uint32_t)resp[14] << 8 | resp[13];
+	RS_INFO("hci ver %02x, hci_rev %04x, lmp_subver %04x",
+		rtb_cfg.hci_ver, rtb_cfg.hci_rev, rtb_cfg.lmp_subver);
 	return 0;
 }
 
@@ -287,6 +289,7 @@ int h4_vendor_read_rom_ver(int fd)
 		return -1;
 	}
 	rtb_cfg.eversion = resp[7];
+	RS_INFO("eversion %02x", rtb_cfg.eversion);
 	return 0;
 }
 
