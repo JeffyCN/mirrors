@@ -18,18 +18,21 @@
 #include <sys/ioctl.h>
 #include <dlfcn.h>
 
-#ifdef ANDROID
-#include <drm.h>
-#include <drm_mode.h>
-#include <xf86drm.h>
-#include <xf86drmMode.h>
-#endif
-
 #include <linux/videodev2.h>
 #include <rkisp_control_loop.h>
 #include <rkisp_dev_manager.h>
 #include <interface/rkcamera_vendor_tags.h>
 #include "mediactl.h"
+
+extern "C" {
+#define virtual vir
+#include <drm.h>
+#include <drm_mode.h>
+#undef virtual
+}
+
+#include <xf86drm.h>
+#include <xf86drmMode.h>
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define FMT_NUM_PLANES 1

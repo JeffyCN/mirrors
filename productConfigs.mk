@@ -12,6 +12,7 @@ IS_SUPPORT_ION = false
 IS_SUPPORT_DMABUF = true
 IS_BUILD_GSTREAMER_PLUGIN = true
 IS_BUILD_TEST_APP = false
+IS_HAVE_DRM = false
 ifeq ($(ARCH),arm)
 CROSS_COMPILE ?= /home/zyc/toolchains/gcc-linaro-5.5.0-2017.10-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
 else
@@ -32,6 +33,7 @@ IS_SUPPORT_ION = false
 IS_SUPPORT_DMABUF = true
 IS_BUILD_GSTREAMER_PLUGIN = false
 IS_BUILD_TEST_APP = false
+IS_HAVE_DRM = true 
 #CROSS_COMPILE ?= /home/jacobchen/mksdk/compiler/gcc-linaro-5.5.0-2017.10-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
 endif
 
@@ -65,4 +67,8 @@ endif
 
 ifeq ($(IS_RK_ISP11),true)
 PRJ_CPPFLAGS := -DRK_ISP11=1
+endif
+
+ifeq ($(IS_HAVE_DRM),true)
+PRJ_CPPFLAGS := -DHAVE_LIBDRM=1
 endif

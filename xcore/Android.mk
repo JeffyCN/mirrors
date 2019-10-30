@@ -31,6 +31,7 @@ include $(BUILD_STATIC_LIBRARY)
 # build xcore
 include $(CLEAR_VARS)
 
+ifeq ($(IS_HAVE_DRM),true)
 DRM_SRC_FILES += \
 	intel_ia_ctrl.cpp \
 	dma_video_buffer.cpp \
@@ -40,6 +41,7 @@ DRM_SRC_FILES += \
 
 LOCAL_SRC_FILES +=\
 	$(DRM_SRC_FILES)
+endif
 
 LOCAL_SRC_FILES +=\
 	xcam_common.cpp \

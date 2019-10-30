@@ -48,8 +48,10 @@ LOCAL_STATIC_LIBRARIES += \
 	libisp_oslayer \
 	libisp_ebase
 
+ifeq ($(IS_HAVE_DRM),true)
 LOCAL_SHARED_LIBRARIES += \
 	libdrm
+endif
 
 ifeq ($(IS_ANDROID_OS),true)
 LOCAL_SHARED_LIBRARIES += libutils libcutils liblog
