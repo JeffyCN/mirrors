@@ -28,9 +28,11 @@
 #include "version.h"
 #include "normal/NormalRga.h"
 
+#if LIBDRM
 #include <drm.h>
 #include "drm_mode.h"
 #include "xf86drm.h"
+#endif
 
 
 // ---------------------------------------------------------------------------
@@ -76,6 +78,7 @@ void RockchipRga::RkRgaDeInit()
 
 int RockchipRga::RkRgaAllocBuffer(int drm_fd, bo_t *bo_info, int width,
                                   int height, int bpp) {
+#if LIBDRM
     struct drm_mode_create_dumb arg;
     int ret;
 
@@ -95,9 +98,13 @@ int RockchipRga::RkRgaAllocBuffer(int drm_fd, bo_t *bo_info, int width,
     bo_info->pitch = arg.pitch;
 
     return 0;
+#else
+    return -1;
+#endif
 }
 
 int RockchipRga::RkRgaFreeBuffer(int drm_fd, bo_t *bo_info) {
+#if LIBDRM
     struct drm_mode_destroy_dumb arg;
     int ret;
 
@@ -113,6 +120,9 @@ int RockchipRga::RkRgaFreeBuffer(int drm_fd, bo_t *bo_info) {
     bo_info->handle = 0;
 
     return 0;
+#else
+    return -1;
+#endif
 }
 
 int RockchipRga::RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp)
@@ -142,6 +152,7 @@ int RockchipRga::RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int b
 
 int RockchipRga::RkRgaGetMmap(bo_t *bo_info)
 {
+#if LIBDRM
     struct drm_mode_map_dumb arg;
     void *map;
     int ret;
@@ -156,6 +167,9 @@ int RockchipRga::RkRgaGetMmap(bo_t *bo_info)
        return -EINVAL;
     bo_info->ptr = map;
     return 0;
+#else
+    return -1;
+#endif
 }
 
 int RockchipRga::RkRgaUnmap(bo_t *bo_info)
@@ -178,9 +192,13 @@ int RockchipRga::RkRgaFree(bo_t *bo_info)
 
 int RockchipRga::RkRgaGetBufferFd(bo_t *bo_info, int *fd)
 {
+#if LIBDRM
     int ret = 0;
     ret = drmPrimeHandleToFD(bo_info->fd, bo_info->handle, 0, fd);
     return ret;
+#else
+    return -1;
+#endif
 }
 
 int RockchipRga::RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
