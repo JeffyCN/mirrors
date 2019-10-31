@@ -364,7 +364,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			DEBUG("Error scale[%f,%f] line %d \n", hScale, vScale, __LINE__);
 			return -EINVAL;
 		}
-		if (ctx->mVersion <= 2.0 && (hScale < 1/8 ||
+		if (ctx->mVersion < 2.0 && (hScale < 1/8 ||
 					hScale > 8 || vScale < 1/8 || vScale > 8)) {
 			DEBUG("Error scale[%f,%f] line %d \n", hScale, vScale, __LINE__);
 			return -EINVAL;
