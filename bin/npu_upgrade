@@ -17,9 +17,9 @@ LOADER=$DIR/$1
 UBOOT=$DIR/$2
 TRUST=$DIR/$3
 BOOT=$DIR/$4
-UBOOT_ADDR=0x40000
-TRUST_ADDR=0x40800
-BOOT_ADDR=0x20000
+UBOOT_ADDR=0x20000
+TRUST_ADDR=0x20800
+BOOT_ADDR=0x21000
 
 function download_func()
 {
@@ -84,7 +84,7 @@ function check_device_ready_func()
 			break
 		fi
 		if [ $i -eq 5 ]; then
-			/user/bin/npu_powerctrl -o
+			/usr/bin/npu_powerctrl -o
 			sleep 3
 			echo 'reset npu to retry!!!' >> /userdata/npu.log
 		fi
@@ -141,11 +141,6 @@ fi
 download_func
 if [ $? = 1 ];then
 	echo "reset download_func"
-	echo 'down load error!!! reset usb hub' >> /userdata/npu.log
-	echo 0 > /sys/class/gpio/gpio6/value
-	sleep 3
-	echo 1 > /sys/class/gpio/gpio6/value
-
 	poweron_Npu_func
 	check_device_ready_func
 	download_func
