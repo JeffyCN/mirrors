@@ -13,9 +13,9 @@
   <project name="linux/external/camera_engine_rkisp" path="npu/external/camera_engine_rkisp" revision="dc5d478736edbfd0f524322cb3abf43c82001c85" upstream="master"/>
   <project name="linux/external/powermanager" path="npu/external/powermanager" revision="17921d6b75395df5478613973e58916a6cf7c7ad" upstream="master"/>
   <project name="linux/external/rknpu" path="npu/external/rknpu" revision="320975b06dca5973cf0696865e800243ff31eb2b" upstream="master"/>
-  <project name="linux/external/rkscript" path="npu/external/rkscript" revision="323a1f19975536890f42b82847afdfabb3a9948b" upstream="master"/>
+  <project name="linux/external/rkscript" path="npu/external/rkscript" revision="00794eb93c999efaaccc407a5afaccbffd64c93b" upstream="master"/>
   <project name="linux/linux-rga" path="npu/external/linux-rga" revision="72e7764a9fe358e6ad50eb1b21176cc95802c7fb" upstream="master"/>
-  <project name="linux/rkmedia" path="npu/external/rkmedia" revision="2ba26fef6d7b65ca4c24cb1c40dfe39ce3901e01" upstream="master"/>
+  <project name="linux/rkmedia" path="npu/external/rkmedia" revision="6848a649235e4923868f4f6b0c5272784de72d63" upstream="master"/>
   <project name="rk/kernel" path="npu/kernel" revision="c633a8f44b8eded2547577b78da69416de22d601" upstream="develop-4.4"/>
   <project name="rk/prebuilts/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu" path="npu/prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu" revision="f96f76d6be89a6e28d4dac1f233f9aca9921f69b" upstream="master"/>
   <project name="rk/rk1108/buildroot" path="npu/buildroot" revision="84b1e8870823677147de058c42f0895a00f74226" upstream="rockchip/2018.02-rc3">
