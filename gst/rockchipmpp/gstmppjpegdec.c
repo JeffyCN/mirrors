@@ -395,6 +395,8 @@ gst_mpp_jpeg_dec_handle_frame (GstVideoDecoder * decoder,
       gst_buffer_get_size (frame->input_buffer));
 
   mpp_packet_init_with_buffer (&mpkt, self->input_buffer[0]);
+  mpp_packet_set_length (mpkt, gst_buffer_get_size (frame->input_buffer));
+  mpp_packet_set_size (mpkt, gst_buffer_get_size (frame->input_buffer));
 #endif
   mpp_task_meta_set_packet (mtask, KEY_INPUT_PACKET, mpkt);
 
