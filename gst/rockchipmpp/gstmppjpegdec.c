@@ -147,11 +147,7 @@ gst_mpp_video_set_format (GstMppJpegDec * self, MppCodingType codec_format)
 static gboolean
 gst_mpp_jpeg_dec_finish (GstVideoDecoder * decoder)
 {
-  GstMppJpegDec *self = GST_MPP_JPEG_DEC (decoder);
-  GstFlowReturn ret = GST_FLOW_OK;
-
-done:
-  return ret;
+  return GST_FLOW_OK;
 }
 
 static GstStateChangeReturn
