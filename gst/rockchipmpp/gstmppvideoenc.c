@@ -464,7 +464,10 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
 
     GST_DEBUG_OBJECT (self, "Filling src caps with output dimensions %ux%u",
         self->info.width, self->info.height);
-    packet_size = self->info.width * self->info.height;
+    /* In most cases, the packet size will be smaller than the frame size.
+     * In the case of YUV422, the packet size has the opportunity to reach
+     * the upper limit: 2 * width * height + JpegDefaultHeadSize(608) */
+    packet_size = self->info.width * self->info.height * 2 + 608;
 
     if (!outcaps)
       goto not_negotiated;
