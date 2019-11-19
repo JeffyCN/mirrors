@@ -888,7 +888,7 @@ IspController::set_3a_config_sync ()
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
     static bool delay_flash_strobe = false;
 
-    if (_effecting_ispparm_map.size() > 10)
+    while (_effecting_ispparm_map.size() > 10)
         _effecting_ispparm_map.erase(_effecting_ispparm_map.begin());
 
     if (_pending_ispparams_queue.empty()) {
