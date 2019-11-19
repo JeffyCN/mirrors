@@ -306,7 +306,7 @@ gst_mpp_video_enc_get_oldest_frame (GstVideoEncoder * encoder)
 }
 
 static GstFlowReturn
-gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
+gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer ** buffer)
 {
   GstVideoEncoder *encoder = GST_VIDEO_ENCODER (self);
   GstBuffer *new_buffer = NULL;
@@ -322,14 +322,14 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
 
   mpp_frame_set_buffer (mpp_frame, frame_in);
   /* Eos buffer */
-  if (0 == gst_buffer_get_size (buffer)) {
+  if (0 == gst_buffer_get_size (*buffer)) {
     mpp_frame_set_eos (mpp_frame, 1);
   } else {
     ptr = mpp_buffer_get_ptr (frame_in);
 
-    gst_buffer_ref (buffer);
-    gst_buffer_extract (buffer, 0, ptr, gst_buffer_get_size (buffer));
-    gst_buffer_unref (buffer);
+    gst_buffer_ref (*buffer);
+    gst_buffer_extract (*buffer, 0, ptr, gst_buffer_get_size (*buffer));
+    gst_buffer_unref (*buffer);
 
     mpp_frame_set_eos (mpp_frame, 0);
   }
@@ -437,7 +437,7 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer * buffer)
 beach:
   GST_DEBUG_OBJECT (self, "Leaving output thread");
 
-  gst_buffer_replace (&buffer, NULL);
+  gst_buffer_replace (buffer, NULL);
   self->output_flow = ret;
   g_atomic_int_set (&self->processing, FALSE);
   /* FIXME maybe I need to inform the rockchip mpp */
@@ -521,7 +521,7 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
 
   if (frame->input_buffer) {
     GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
-    ret = gst_mpp_video_enc_process_buffer (self, frame->input_buffer);
+    ret = gst_mpp_video_enc_process_buffer (self, &frame->input_buffer);
     GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
 
     if (ret == GST_FLOW_FLUSHING) {
@@ -619,7 +619,7 @@ gst_mpp_video_enc_finish (GstVideoEncoder * encoder)
   /* Send a empty buffer to send eos frame to rockchip mpp */
   buffer = gst_buffer_new ();
   /* buffer would be release here */
-  gst_mpp_video_enc_process_buffer (self, buffer);
+  gst_mpp_video_enc_process_buffer (self, &buffer);
 
   /* Wait the task in srcpad get eos package */
   while (g_atomic_int_get (&self->processing));
