@@ -59,7 +59,10 @@ LOCAL_C_INCLUDES := \
 ifeq ($(IS_ANDROID_OS),true)
 LOCAL_C_INCLUDES += \
     system/media/camera/include \
-    frameworks/av/include
+    frameworks/av/include \
+	external/libdrm/include/drm \
+	external/libdrm
+
 ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
 LOCAL_PROPRIETARY_MODULE := true
 LOCAL_C_INCLUDES += \
