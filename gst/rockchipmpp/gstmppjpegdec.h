@@ -65,7 +65,7 @@ struct _GstMppJpegDec
   MppCtx mpp_ctx;
   MppApi *mpi;
   MppBufferGroup input_group;
-  MppBuffer input_buffer[2];
+  MppPacket eos_packet;
 
   GstBufferPool *pool;          /* Pool of output frames */
 };
