@@ -225,7 +225,7 @@ gst_mpp_bare_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   GstBuffer *outbuf = NULL;
   GstMppMemory *mem = NULL;
 
-  for (gint n = 0; pool->count; n++) {
+  for (gint n = 0; n < pool->count; n++) {
     if (pool->buffers[n]) {
       outbuf = pool->buffers[n];
       if (gst_mpp_bare_is_buffer_valid (outbuf, &mem))
