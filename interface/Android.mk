@@ -79,7 +79,9 @@ else
 LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/../metadata/libcamera_client/include \
 	$(LOCAL_PATH)/../metadata/libcamera_metadata/include \
-	$(LOCAL_PATH)/../metadata/header_files/include/system/core/include
+	$(LOCAL_PATH)/../metadata/header_files/include/system/core/include \
+	$(LOCAL_PATH)/../ext/tinyxml2
+
 LOCAL_STATIC_LIBRARIES += \
 	librkisp_metadata
 endif
