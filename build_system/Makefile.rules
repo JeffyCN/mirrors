@@ -2,7 +2,7 @@ export ROOT_DIR:=$(CURDIR)
 export BUILD_SYSTEM:=$(CURDIR)/build_system
 
 OUTDIR?=$(CURDIR)/build/
-export BUILD_DIR:=$(shell realpath $(OUTDIR))
+export BUILD_DIR:=$(abspath $(OUTDIR))
 export BUILD_OUTPUT_STATIC_LIBS:=$(BUILD_DIR)/lib/
 export BUILD_OUTPUT_SHARED_LIBS:=$(BUILD_DIR)/lib/
 export BUILD_OUTPUT_BIN:=$(BUILD_DIR)/bin/
