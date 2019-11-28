@@ -26,9 +26,7 @@ cc_library_shared {
     ],
 
     vendor_available: true,
-    vndk: {
-        enabled: true,
-    },
+
     header_libs: [
         "gl_headers",
         "libgui_headers",
