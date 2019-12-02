@@ -429,7 +429,7 @@ drm_prepare_planes (GstRkXImageSink * self, drmModeRes * res,
   if (!plane)
     return FALSE;
 
-  if (drm_plane_set_property (self, plane, "colorkey", RKXIMAGE_COLOR_KEY) < 0)
+  if (!drm_plane_set_property (self, plane, "colorkey", RKXIMAGE_COLOR_KEY))
     goto out;
 
   GST_DEBUG_OBJECT (self, "applied colorkey = 0x%x to plane %d",
@@ -442,7 +442,7 @@ drm_prepare_planes (GstRkXImageSink * self, drmModeRes * res,
   if (!plane)
     goto out;
 
-  if (drm_plane_set_property (self, plane, "ZPOS", 0) < 0)
+  if (!drm_plane_set_property (self, plane, "ZPOS", 0))
     goto out;
 
   GST_DEBUG_OBJECT (self, "set plane %d zpos to 0", plane->plane_id);
