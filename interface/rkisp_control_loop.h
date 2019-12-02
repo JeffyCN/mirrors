@@ -186,6 +186,15 @@ int rkisp_cl_stop(void* cl_ctx);
  */
 void rkisp_cl_deinit(void* cl_ctx);
 
+/*
+ * set custom aec/hist weights manullay
+ * this interface could be called at any time
+ * Args:
+ *    |pWeight|: weight array, value should be in [1, 0x3f]
+ *    |cnt|: array size, now should be 81
+ */
+void rkisp_set_aec_weights(const unsigned char* pWeight, unsigned int cnt);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

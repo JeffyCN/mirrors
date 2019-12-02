@@ -15,6 +15,17 @@
 #include <string>
 
 static std::map<string, CalibDb*> g_CalibDbHandlesMap;
+static uint8_t g_aec_weights[81] = {0};
+static bool g_update_aec_weights = false;
+
+void CamIa10_set_aec_weights(const unsigned char* pWeight, unsigned int cnt)
+{
+   if (cnt != 81)
+       LOGE(" invalid aec weights counts, only accept size 81 !");
+
+   memcpy(g_aec_weights, pWeight, sizeof(g_aec_weights));
+   g_update_aec_weights = true;
+}
 
 CamIA10Engine::CamIA10Engine():
     aecContext(NULL),
@@ -470,8 +481,30 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
         (set->frame_time_ns_max != shd->frame_time_ns_max)||
         (set->manual_gains !=  shd->manual_gains) ||
         mLightMode != cfg->LightMode
-        || (aecCfg.flashModeSetting != flashModeState)) {
+        || (aecCfg.flashModeSetting != flashModeState) ||
+        g_update_aec_weights) {
         //cifisp_histogram_mode mode = CIFISP_HISTOGRAM_MODE_RGB_COMBINED;
+        if (g_update_aec_weights) {
+            uint8_t* pweight = g_aec_weights;
+            for ( int i = 0; i < 81; i+=9 ) {
+                LOGD("use user aec weights:");
+                LOGD("%02d -> %02d: %02d, %02d, %02d, %02d, %02d, %02d, %02d, %02d, %02d", i, i+8,
+                     pweight[i], pweight[i+1],pweight[i+2],pweight[i+3],pweight[i+4],
+                     pweight[i+5],pweight[i+6],pweight[i+7],pweight[i+8]);
+            }
+            if (mIspVer > 0)
+                memcpy(aecCfg.GridWeights.uCoeff, pweight, sizeof(g_aec_weights));
+            else {
+                cam_ia10_isp_map_hstw_9x9_to_5x5(pweight, aecCfg.GridWeights.uCoeff);
+                pweight = (uint8_t*)aecCfg.GridWeights.uCoeff;
+                LOGD("use user aec weights:");
+                for ( int i = 0; i < 25; i+=5 )
+                    LOGD("%02d -> %02d: %02d, %02d, %02d, %02d, %02d", i, i+4,
+                         pweight[i], pweight[i+1],pweight[i+2],pweight[i+3],pweight[i+4]);
+            }
+            g_update_aec_weights = false;
+        }
+
         cam_ia10_isp_hst_update_stepSize(
                                          aecCfg.HistMode,
                                          aecCfg.GridWeights.uCoeff,
