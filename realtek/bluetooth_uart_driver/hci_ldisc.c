@@ -48,7 +48,7 @@
 #include "rtk_coex.h"
 #endif
 
-#define VERSION "2.2.893cfa3.20190725-141904"
+#define VERSION "2.2.3b3fa69.20191024-161739"
 
 #if HCI_VERSION_CODE > KERNEL_VERSION(3, 4, 0)
 #define GET_DRV_DATA(x)		hci_get_drvdata(x)
@@ -214,7 +214,7 @@ int hci_uart_tx_wakeup(struct hci_uart *hu)
 	if (!test_bit(HCI_UART_PROTO_READY, &hu->flags))
 		goto no_schedule;
 
-	if (in_interrupt()) {
+	if (in_interrupt() || in_atomic()) {
 		if (test_and_set_bit(HCI_UART_SENDING, &hu->tx_state)) {
 			set_bit(HCI_UART_TX_WAKEUP, &hu->tx_state);
 			goto no_schedule;
@@ -720,10 +720,9 @@ static int hci_uart_register_dev(struct hci_uart *hu)
 #endif
 #endif
 
-/* #if HCI_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
- * 	set_bit(HCI_QUIRK_SIMULTANEOUS_DISCOVERY, &hdev->quirks);
- * #endif
- */
+#if HCI_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+	set_bit(HCI_QUIRK_SIMULTANEOUS_DISCOVERY, &hdev->quirks);
+#endif
 
 	if (hci_register_dev(hdev) < 0) {
 		BT_ERR("Can't register HCI device");

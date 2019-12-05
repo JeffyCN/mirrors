@@ -50,6 +50,7 @@ struct list_head {
 
 struct cfg_list_item {
 	struct list_head list;
+	uint8_t *cfg_data;
 	uint16_t offset;
 	uint8_t len;
 	uint8_t data[0];
@@ -366,7 +367,8 @@ static void line_process(char *buf, int len /*@unused@*/)
 			offset, l);
 		return;
 	}
-
+	memset(item, 0, sizeof(*item));
+	item->cfg_data = item->data;
 	item->offset = (uint16_t)offset;
 	item->len = l;
 	for (i = 0; i < l; i++)
@@ -527,7 +529,12 @@ static void merge_configs(uint8_t *cfg_buf, size_t *plen)
 			n = list_entry(iter2, struct cfg_list_item, list);
 			if (item->offset == n->offset) {
 				if (item->len == n->len) {
+					RS_INFO("Update cfg: %04x, %u",
+						n->offset, n->len);
 					memcpy(n->data, item->data, n->len);
+					if (n->cfg_data)
+						memcpy(n->cfg_data, item->data,
+						       n->len);
 					list_del(&item->list);
 					free(item);
 					break;
@@ -667,6 +674,8 @@ int rtb_parse_config(uint8_t *cfg_buf, size_t *plen, uint8_t bdaddr[6])
 		/* Add config item to list */
 		item = malloc(sizeof(*item) + entry->len);
 		if (item) {
+			memset(item, 0, sizeof(*item));
+			item->cfg_data = entry->data;
 			item->offset = le16_to_cpu(entry->offset);
 			item->len = entry->len;
 			memcpy(item->data, entry->data, item->len);
@@ -704,6 +713,8 @@ int rtb_parse_config(uint8_t *cfg_buf, size_t *plen, uint8_t bdaddr[6])
 		/* Add address item to list */
 		item = malloc(sizeof(*item) + 6);
 		if (item) {
+			memset(item, 0, sizeof(*item));
+			item->cfg_data = b + 3;
 			item->offset = ofs;
 			item->len = b[2];
 			memcpy(item->data, b + 3, 6);
