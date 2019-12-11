@@ -242,7 +242,7 @@ AC_ARG_ENABLE(Bsymbolic,
 dnl *** set variables based on configure arguments ***
 
 dnl set license and copyright notice
-GST_LICENSE="GPL"
+GST_LICENSE="LGPL"
 AC_DEFINE_UNQUOTED(GST_LICENSE, "$GST_LICENSE", [GStreamer license])
 AC_SUBST(GST_LICENSE)
 
