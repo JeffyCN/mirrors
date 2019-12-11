@@ -479,6 +479,7 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
         (set->ae_bias != shd->ae_bias)||
         (set->frame_time_ns_min != shd->frame_time_ns_min)||
         (set->frame_time_ns_max != shd->frame_time_ns_max)||
+        (set->iso_max != shd->iso_max)||
         (set->manual_gains !=  shd->manual_gains) ||
         mLightMode != cfg->LightMode
         || (aecCfg.flashModeSetting != flashModeState) ||
@@ -503,6 +504,15 @@ RESULT CamIA10Engine::updateAeConfig(struct CamIA10_DyCfg* cfg) {
                          pweight[i], pweight[i+1],pweight[i+2],pweight[i+3],pweight[i+4]);
             }
             g_update_aec_weights = false;
+        }
+
+        if (set->iso_max != shd->iso_max) {
+            for (int i = 1; i < 5; i++) {
+                if (aecCfg.EcmGainDot.fCoeff[i] > set->iso_max)
+                    aecCfg.EcmGainDot.fCoeff[i] = set->iso_max;
+            }
+            aecCfg.EcmGainDot.fCoeff[5] = set->iso_max;
+            LOGD("use user aec max gain: %d", set->iso_max);
         }
 
         cam_ia10_isp_hst_update_stepSize(

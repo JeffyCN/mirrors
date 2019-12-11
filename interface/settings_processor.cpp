@@ -248,6 +248,15 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
         aeParams->exposure_time_min = rw_entry.data.i64[0];
         aeParams->exposure_time_max = rw_entry.data.i64[1];
     }
+
+    int32_t iso_min, iso_max;
+    rw_entry = staticMeta.find(ANDROID_SENSOR_INFO_SENSITIVITY_RANGE);
+    if (rw_entry.count == 2) {
+        iso_min = rw_entry.data.i32[0];
+        iso_max = rw_entry.data.i32[1];
+        aeParams->max_analog_gain = (double)iso_max / 100;
+        LOGD("iso_max %f",aeParams->max_analog_gain);
+    }
     /*
      * MANUAL AE CONTROL
      */
@@ -275,13 +284,6 @@ SettingsProcessor::fillAeInputParams(const CameraMetadata *settings,
             }
         }
 
-        int32_t iso_min, iso_max;
-        rw_entry = staticMeta.find(ANDROID_SENSOR_INFO_SENSITIVITY_RANGE);
-        if (rw_entry.count == 2) {
-            iso_min = rw_entry.data.i32[0];
-            iso_max = rw_entry.data.i32[1];
-        }
-        aeParams->max_analog_gain = (double)iso_max / 100;
         // ******** manual_iso
         //# METADATA_Control sensor.sensitivity done
         entry = settings->find(ANDROID_SENSOR_SENSITIVITY);

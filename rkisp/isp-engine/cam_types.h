@@ -357,6 +357,8 @@ struct HAL_AecCfg {
   int ae_bias;
   int frame_time_ns_min;
   int frame_time_ns_max;
+  int iso_min;
+  int iso_max;
   float manual_gains;
 };
 
