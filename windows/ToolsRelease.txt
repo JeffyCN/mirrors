@@ -8,5 +8,6 @@
 7、 SpiImageTools		烧录器升级工具
 8、 DriverAssitant		驱动安装工具
 9、 RKImageMaker		打包工具
+10、SpeakerPCBATool		音箱PCBA测试工具
 
 
