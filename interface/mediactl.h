@@ -424,6 +424,44 @@ int media_parse_setup_link(struct media_device *media,
  */
 int media_parse_setup_links(struct media_device *media, const char *p);
 
+
+#define RKISP_FILE_PATH_LEN                       64
+#define RKISP_CAMS_NUM_MAX                        2
+#define RKISP_FLASH_NUM_MAX                       2
+
+/* The media topology instance that describes video device and
+ * sub-device informations.
+ *
+ * @vd_main_path, the isp mp device path, e.g. /dev/video0
+ * @vd_self_path, the isp sp-device path, e.g. /dev/video1
+ * @sd_isp_path, the isp sub-device path, e.g. /dev/v4l-subdev0
+ * @vd_params_path, the params video device path
+ * @vd_stats_path, the stats video device path
+ * @cams, multipe cameras can attache to isp, but only one can be active
+ * @sd_sensor_path, the sensor sub-device path
+ * @sd_lens_path, the lens sub-device path that attached to sensor
+ * @sd_flash_path, the flash sub-device path that attached to sensor,
+ *      can be two or more.
+ * @link_enabled, the link status of this sensor
+ */
+struct rkisp_media_info {
+    char vd_main_path[RKISP_FILE_PATH_LEN];
+    char vd_self_path[RKISP_FILE_PATH_LEN];
+    char sd_isp_path[RKISP_FILE_PATH_LEN];
+    char vd_params_path[RKISP_FILE_PATH_LEN];
+    char vd_stats_path[RKISP_FILE_PATH_LEN];
+
+    struct {
+            char sd_sensor_path[RKISP_FILE_PATH_LEN];
+            char sd_lens_path[RKISP_FILE_PATH_LEN];
+            char sd_flash_path[RKISP_FLASH_NUM_MAX][RKISP_FILE_PATH_LEN];
+            int link_enabled;
+    } cams[RKISP_CAMS_NUM_MAX];
+};
+
+int rkisp_get_media_info(struct rkisp_media_info* media_info,
+                         const char *mdev_path);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

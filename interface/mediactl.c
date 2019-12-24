@@ -31,6 +31,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -960,4 +961,134 @@ int media_parse_setup_links(struct media_device *media, const char *p)
 	} while (*end == ',');
 
 	return *end ? -EINVAL : 0;
+}
+
+static int
+rkisp_get_devname(struct media_device *device, const char *name, char *dev_name)
+{
+    const char *devname;
+
+    struct media_entity *entity =  NULL;
+
+    entity = media_get_entity_by_name(device, name, strlen(name));
+    if (!entity)
+        return -1;
+
+    devname = media_entity_get_devname(entity);
+    if (!devname) {
+        fprintf(stderr, "can't find %s device path!", name);
+        return -1;
+    }
+
+    strncpy(dev_name, devname, RKISP_FILE_PATH_LEN);
+
+    printf("get %s devname: %s\n", name, dev_name);
+
+    return 0;
+}
+
+static int
+rkisp_enumrate_modules(struct media_device *device, struct rkisp_media_info *media_info)
+{
+    uint32_t nents, i;
+    const char* dev_name = NULL;
+    int active_sensor = -1;
+
+    nents = media_get_entities_count (device);
+    for (i = 0; i < nents; ++i) {
+        int module_idx = -1;
+        struct media_entity *e;
+        const struct media_entity_desc *ef;
+        const struct media_link *link;
+
+        e = media_get_entity(device, i);
+        ef = media_entity_get_info(e);
+        if (ef->type != MEDIA_ENT_T_V4L2_SUBDEV_SENSOR &&
+            ef->type != MEDIA_ENT_T_V4L2_SUBDEV_FLASH &&
+            ef->type != MEDIA_ENT_T_V4L2_SUBDEV_LENS)
+            continue;
+
+        if (ef->name[0] != 'm' && ef->name[3] != '_') {
+            fprintf(stderr, "sensor/lens/flash entity name format is incorrect,"
+                            "pls check driver version !\n");
+            return -1;
+        }
+
+        /* Retrive the sensor index from sensor name,
+         * which is indicated by two characters after 'm',
+         *   e.g.  m00_b_ov13850 1-0010
+         *          ^^, 00 is the module index
+         */
+        module_idx = atoi(ef->name + 1);
+        if (module_idx >= RKISP_CAMS_NUM_MAX) {
+            fprintf(stderr, "sensors more than two not supported, %s\n",
+                    ef->name);
+            continue;
+        }
+
+        dev_name = media_entity_get_devname (e);
+
+        switch (ef->type) {
+        case MEDIA_ENT_T_V4L2_SUBDEV_SENSOR:
+            strncpy(media_info->cams[module_idx].sd_sensor_path,
+                    dev_name, RKISP_FILE_PATH_LEN);
+            link = media_entity_get_link(e, 0);
+            if (link && (link->flags & MEDIA_LNK_FL_ENABLED)) {
+                media_info->cams[module_idx].link_enabled = true;
+                active_sensor = module_idx;
+            }
+            break;
+        case MEDIA_ENT_T_V4L2_SUBDEV_FLASH:
+            // TODO, support multiple flashes attached to one module
+            strncpy(media_info->cams[module_idx].sd_flash_path[0],
+                    dev_name, RKISP_FILE_PATH_LEN);
+            break;
+        case MEDIA_ENT_T_V4L2_SUBDEV_LENS:
+            strncpy(media_info->cams[module_idx].sd_lens_path,
+                    dev_name, RKISP_FILE_PATH_LEN);
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (active_sensor < 0) {
+        fprintf(stderr, "Not sensor link is enabled, does sensor probe correctly?\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+int rkisp_get_media_info(struct rkisp_media_info *media_info, const char *mdev_path) {
+    struct media_device *device = NULL;
+    int ret;
+
+    device = media_device_new (mdev_path);
+    if (!device)
+        return -ENOMEM;
+    /* Enumerate entities, pads and links. */
+    ret = media_device_enumerate (device);
+    if (ret)
+        return ret;
+
+    ret = rkisp_get_devname(device, "rkisp1_mainpath",
+                            media_info->vd_main_path);
+    ret = rkisp_get_devname(device, "rkisp1_selfpath",
+                            media_info->vd_self_path);
+    ret = rkisp_get_devname(device, "rkisp1-isp-subdev",
+                            media_info->sd_isp_path);
+    ret |= rkisp_get_devname(device, "rkisp1-input-params",
+                             media_info->vd_params_path);
+    ret |= rkisp_get_devname(device, "rkisp1-statistics",
+                             media_info->vd_stats_path);
+    if (ret) {
+        media_device_unref (device);
+        return ret;
+    }
+
+    ret = rkisp_enumrate_modules(device, media_info);
+    media_device_unref (device);
+
+    return ret;
 }
