@@ -75,6 +75,9 @@ vendor_tag_info_t rkcamera3_privatedata[RKCAMERA3_PRIVATEDATA_END - RKCAMERA3_PR
     { "privatedata_isp_restart", TYPE_BYTE },
     { "privatedata_isp_protocol_info", TYPE_BYTE },
     { "privatedata_tuning_flag", TYPE_BYTE },
+    //{ "privatedata_hist_bins", TYPE_INT32 },
+    { "privatedata_exp_means", TYPE_BYTE },
+    { "privatedata_exp_means_count", TYPE_INT32 }
 };
 
 vendor_tag_info_t *rkcamera3_tag_info[RKCAMERA3_EXT_SECTION_END -
@@ -123,6 +126,9 @@ uint32_t rkcamera3_all_tags[] = {
     (uint32_t)RKCAMERA3_PRIVATEDATA_ISP_RESTART,
     (uint32_t)RKCAMERA3_PRIVATEDATA_ISP_PROTOCOL_INFO,
     (uint32_t)RKCAMERA3_PRIVATEDATA_TUNING_FLAG,
+    //(uint32_t)RKCAMERA3_PRIVATEDATA_HIST_BINS,
+    (uint32_t)RKCAMERA3_PRIVATEDATA_EXP_MEANS,
+    (uint32_t)RKCAMERA3_PRIVATEDATA_EXP_MEANS_COUNT
 };
 
 const vendor_tag_ops_t* RkCamera3VendorTags::Ops = NULL;
