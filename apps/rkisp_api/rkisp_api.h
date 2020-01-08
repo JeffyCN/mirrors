@@ -29,17 +29,26 @@ struct rkisp_api_ctx {
     int uselocal3A;
 };
 
+#define RKISP_MAX_LUMINANCE_GRID	81
+#define RKISP_MAX_HISTOGRAM_BIN		64
+
 /*
  * The linked buffer held frame data.
  * For particular formats(e.g. YUV422M), every frame may contains multi planes.
  *
- * @buf:        The buffer pointer if exist
- * @fd:         The fd of buffer
- * @size:       The size of this buffer/plane
- * @expo_time:  the expo time in nano second of this frame when @uselocal3A is true
- * @gain:       The gain of this frame when @uselocal3A is true
- * @frame_id:   The frame id from librkisp.so
- * @next_plane: Link to the next plane if this is multi-planes buffer
+ * @buf:            The buffer pointer if exist
+ * @fd:             The fd of buffer
+ * @size:           The size of this buffer/plane
+ * @frame_id:       The frame id from librkisp.so
+ * @next_plane:     Link to the next plane if this is multi-planes buffer
+ *
+ * If @uselocal3A is true, some more data as below available:
+ *   @expo_time:            The expo time in nano second of this frame
+ *   @gain:                 The gain of this frame
+ *   @luminance_grid:       The luminance of 9x9(or 5x5) grid of this frame
+ *   @luminance_grid_count: The array size of @luminance_grid
+ *   @hist_bins:            The histogram array of this frame
+ *   @hist_bins_count:      The array size of @hist_bins
  */
 struct rkisp_api_buf {
     void *buf;
@@ -48,6 +57,10 @@ struct rkisp_api_buf {
     struct {
         int64_t expo_time;
         int gain;
+	unsigned char luminance_grid[RKISP_MAX_LUMINANCE_GRID];
+	int luminance_grid_count;
+	int hist_bins[RKISP_MAX_HISTOGRAM_BIN];
+	int hist_bins_count;
         int64_t frame_id;
     } metadata;
     struct timeval timestamp;

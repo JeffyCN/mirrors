@@ -94,6 +94,8 @@ static int rkisp_start_engine(struct rkisp_priv *priv);
 static int rkisp_get_ae_time(struct rkisp_priv *priv, int64_t &time);
 static int rkisp_get_ae_gain(struct rkisp_priv *priv, int &gain);
 static int rkisp_get_meta_frame_id(struct rkisp_priv *priv, int64_t& frame_id);
+static int rkisp_get_luminance_grid(struct rkisp_priv *, unsigned char *, int);
+static int rkisp_get_histogram(struct rkisp_priv *, int *, int);
 
 static int xioctl(int fh, int request, void *arg)
 {
@@ -874,6 +876,10 @@ rkisp_get_frame(const struct rkisp_api_ctx *ctx, int timeout_ms)
         rkisp_get_ae_time(priv, buffer->pul.metadata.expo_time);
         rkisp_get_ae_gain(priv, buffer->pul.metadata.gain);
         rkisp_get_meta_frame_id(priv, buffer->pul.metadata.frame_id);
+        buffer->pul.metadata.luminance_grid_count = rkisp_get_luminance_grid(priv,
+           buffer->pul.metadata.luminance_grid, RKISP_MAX_LUMINANCE_GRID);
+        buffer->pul.metadata.hist_bins_count = rkisp_get_histogram(priv,
+           buffer->pul.metadata.hist_bins, RKISP_MAX_HISTOGRAM_BIN);
     }
 
     return (struct rkisp_api_buf*)buffer;
@@ -982,7 +988,6 @@ static int rkisp_get_meta_frame_id(struct rkisp_priv *priv, int64_t& frame_id) {
     return 0;
 }
 
-
 /* time in ns */
 static int rkisp_get_ae_time(struct rkisp_priv *priv, int64_t &time)
 {
@@ -1047,6 +1052,52 @@ static int rkisp_getAeMaxExposureGain(struct rkisp_priv *priv, int &gain)
 
     return 0;
 }
+
+static int rkisp_get_histogram(struct rkisp_priv *priv, int *hist, int size)
+{
+    struct control_params_3A* ctl_params = priv->g_3A_control_params;
+    camera_metadata_entry entry, count;
+
+    SmartLock lock(ctl_params->_meta_mutex);
+
+    count = ctl_params->_result_metadata.find(ANDROID_STATISTICS_INFO_MAX_HISTOGRAM_COUNT);
+    entry = ctl_params->_result_metadata.find(ANDROID_STATISTICS_HISTOGRAM);
+    if (!entry.count || !count.count)
+        return -1;
+
+    if (count.data.i32[0] > size) {
+        ERR("size of array [%d] < target size [%d]\n", size, count.data.i32[0]);
+        return -1;
+    }
+
+    memcpy(hist, entry.data.i32, sizeof(int) * count.data.i32[0]);
+
+    return count.data.i32[0];
+}
+
+static int
+rkisp_get_luminance_grid(struct rkisp_priv *priv, unsigned char *luma, int size)
+{
+    struct control_params_3A* ctl_params = priv->g_3A_control_params;
+    camera_metadata_entry entry, count;
+
+    SmartLock lock(ctl_params->_meta_mutex);
+
+    count = ctl_params->_result_metadata.find(RKCAMERA3_PRIVATEDATA_EXP_MEANS_COUNT);
+    entry = ctl_params->_result_metadata.find(RKCAMERA3_PRIVATEDATA_EXP_MEANS);
+    if (!entry.count || !count.count)
+        return -1;
+
+    if (count.data.i32[0] > size) {
+        ERR("size of array [%d] < target size [%d]\n", size, count.data.i32[0]);
+        return -1;
+    }
+
+    memcpy(luma, entry.data.u8, sizeof(entry.data.u8[0]) * count.data.i32[0]);
+
+    return count.data.i32[0];
+}
+
 
 static int init_3A_control_params(struct rkisp_priv *priv)
 {
