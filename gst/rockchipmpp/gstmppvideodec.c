@@ -446,6 +446,57 @@ device_error:
   }
 }
 
+static GstVideoCodecFrame *
+gst_mpp_video_dec_get_frame (GstVideoDecoder * decoder, GstBuffer * buffer)
+{
+  GstVideoCodecFrame *frame = NULL;
+  GList *frames, *l;
+
+  /* Use oldest frame for invalid PTS */
+  if (!GST_BUFFER_PTS (buffer))
+    return gst_video_decoder_get_oldest_frame (decoder);
+
+  /* MPP outputs frames in display order, so let's guessing a best frame for
+   * target PTS, and discard all out-dated ones */
+  frames = gst_video_decoder_get_frames (decoder);
+  for (l = frames; l != NULL; l = l->next) {
+    GstVideoCodecFrame *f = l->data;
+
+    /* Filter out future frames */
+    if (GST_CLOCK_TIME_IS_VALID (f->pts) && f->pts > GST_BUFFER_PTS (buffer))
+      continue;
+
+    if (!frame) {
+      frame = f;
+      continue;
+    }
+
+    if (GST_CLOCK_TIME_IS_VALID (f->pts)) {
+      GstVideoCodecFrame *to_rm;
+
+      /* Get the earliest one and discard the rest */
+      if (f->pts >= frame->pts) {
+        to_rm = f;
+      } else {
+        to_rm = frame;
+        frame = f;
+      }
+
+      GST_WARNING_OBJECT (decoder, "Discarding out-dated frame (#%d)",
+          to_rm->system_frame_number);
+
+      gst_video_codec_frame_ref (to_rm);
+      gst_video_decoder_release_frame (decoder, to_rm);
+    }
+  }
+
+  if (frame)
+    gst_video_codec_frame_ref (frame);
+
+  g_list_free_full (frames, (GDestroyNotify) gst_video_codec_frame_unref);
+  return frame;
+}
+
 static void
 gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
 {
@@ -458,26 +509,26 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
   if (ret != GST_FLOW_OK && ret != GST_FLOW_CUSTOM_ERROR_1)
     goto beach;
 
-  frame = gst_video_decoder_get_oldest_frame (decoder);
+  frame = gst_mpp_video_dec_get_frame (decoder, buffer);
   if (frame) {
-    if (ret == GST_FLOW_CUSTOM_ERROR_1) {
-      gst_video_decoder_drop_frame (decoder, frame);
-      return;
-    }
     frame->output_buffer = buffer;
-
     buffer = NULL;
-    ret = gst_video_decoder_finish_frame (decoder, frame);
 
-    GST_TRACE_OBJECT (self, "finish buffer ts=%" GST_TIME_FORMAT,
-        GST_TIME_ARGS (GST_BUFFER_TIMESTAMP (frame->output_buffer)));
-
-    if (ret != GST_FLOW_OK)
-      goto beach;
-  } else if (buffer) {
-    GST_WARNING_OBJECT (self, "Decoder is producing too many buffers");
-    gst_buffer_unref (buffer);
+    if (ret == GST_FLOW_CUSTOM_ERROR_1) {
+      GST_WARNING_OBJECT (self, "Discarding error frame (#%d)",
+          frame->system_frame_number);
+      gst_video_decoder_release_frame (decoder, frame);
+    } else {
+      GST_TRACE_OBJECT (self, "finish frame ts=%" GST_TIME_FORMAT,
+          GST_TIME_ARGS (frame->pts));
+      ret = gst_video_decoder_finish_frame (decoder, frame);
+      if (ret != GST_FLOW_OK)
+        goto beach;
+    }
   }
+
+  if (buffer)
+    gst_buffer_unref (buffer);
 
   return;
 
@@ -637,6 +688,9 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
   if (!processed) {
     gst_buffer_map (frame->input_buffer, &mapinfo, GST_MAP_READ);
     mpp_packet_init (&mpkt, mapinfo.data, mapinfo.size);
+
+    mpp_packet_set_pts (mpkt, frame->pts);
+    mpp_packet_set_dts (mpkt, frame->dts);
 
   retry:
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);

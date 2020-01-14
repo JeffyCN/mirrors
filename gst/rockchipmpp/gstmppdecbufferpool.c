@@ -252,6 +252,9 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   if (outbuf == NULL)
     goto no_buffer;
 
+  GST_BUFFER_DTS (outbuf) = mpp_frame_get_dts (mframe);
+  GST_BUFFER_PTS (outbuf) = mpp_frame_get_pts (mframe);
+
   mode = mpp_frame_get_mode (mframe);
   switch (mode & MPP_FRAME_FLAG_FIELD_ORDER_MASK) {
     case MPP_FRAME_FLAG_BOT_FIRST:
@@ -308,6 +311,10 @@ no_buffer:
   }
 drop_frame:
   {
+    *buffer = gst_buffer_new ();
+    GST_BUFFER_DTS (*buffer) = mpp_frame_get_dts (mframe);
+    GST_BUFFER_PTS (*buffer) = mpp_frame_get_pts (mframe);
+
     mpp_frame_deinit (&mframe);
     return GST_FLOW_CUSTOM_ERROR_1;
   }
