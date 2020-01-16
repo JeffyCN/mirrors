@@ -42,9 +42,9 @@ int checkRectForRga(rga_rect_t rect)
 	}
 
 	if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(rect.format)) &&
-		((rect.wstride % 8) || (rect.xoffset % 2) || (rect.width % 2) ||
+		((rect.xoffset % 2) || (rect.width % 2) ||
 		(rect.yoffset % 2) || (rect.height % 2) || (rect.hstride % 2))) {
-		ALOGE("err wstride is not align to 8 or yuv not align to 2");
+		ALOGE("err yuv not align to 2");
 		return -EINVAL;
 	}
 
