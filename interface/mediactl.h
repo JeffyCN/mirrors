@@ -450,6 +450,7 @@ struct rkisp_media_info {
     char sd_isp_path[RKISP_FILE_PATH_LEN];
     char vd_params_path[RKISP_FILE_PATH_LEN];
     char vd_stats_path[RKISP_FILE_PATH_LEN];
+    char vd_cif_path[RKISP_FILE_PATH_LEN];
 
     struct {
             char sd_sensor_path[RKISP_FILE_PATH_LEN];

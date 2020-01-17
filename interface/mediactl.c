@@ -1072,16 +1072,28 @@ int rkisp_get_media_info(struct rkisp_media_info *media_info, const char *mdev_p
     if (ret)
         return ret;
 
-    ret = rkisp_get_devname(device, "rkisp1_mainpath",
-                            media_info->vd_main_path);
-    ret = rkisp_get_devname(device, "rkisp1_selfpath",
-                            media_info->vd_self_path);
-    ret = rkisp_get_devname(device, "rkisp1-isp-subdev",
-                            media_info->sd_isp_path);
-    ret |= rkisp_get_devname(device, "rkisp1-input-params",
-                             media_info->vd_params_path);
-    ret |= rkisp_get_devname(device, "rkisp1-statistics",
-                             media_info->vd_stats_path);
+    /* Try rkcif */
+    ret = rkisp_get_devname(device, "stream_cif",
+                            media_info->vd_cif_path);
+    if (ret) {
+        /* Try another name of rkcif */
+        ret = rkisp_get_devname(device, "stream_cif_dvp",
+                                media_info->vd_cif_path);
+
+    }
+    if (ret) {
+        /* Try rkisp */
+        ret = rkisp_get_devname(device, "rkisp1_mainpath",
+                                media_info->vd_main_path);
+        ret = rkisp_get_devname(device, "rkisp1_selfpath",
+                                media_info->vd_self_path);
+        ret = rkisp_get_devname(device, "rkisp1-isp-subdev",
+                                media_info->sd_isp_path);
+        ret |= rkisp_get_devname(device, "rkisp1-input-params",
+                                 media_info->vd_params_path);
+        ret |= rkisp_get_devname(device, "rkisp1-statistics",
+                                 media_info->vd_stats_path);
+    }
     if (ret) {
         media_device_unref (device);
         return ret;

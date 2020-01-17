@@ -72,12 +72,16 @@ struct rkisp_priv {
 
     struct rkisp_buf_priv *bufs;
 
+    int is_rkcif;
+
     void* rkisp_engine;
     struct rkisp_media_info media_info;
     camera_metadata_t* meta;
     struct control_params_3A* g_3A_control_params;
 };
 
+static const char * rkisp_get_active_sensor(const struct rkisp_priv *priv);
+static int rkisp_get_media_topology(struct rkisp_priv *priv);
 static int rkisp_init_engine(struct rkisp_priv *priv);
 static void rkisp_deinit_engine(struct rkisp_priv *priv);
 static void rkisp_stop_engine(struct rkisp_priv *priv);
@@ -346,7 +350,14 @@ rkisp_open_device(const char *dev_path, int uselocal3A)
     priv->buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
     strncpy(priv->ctx.dev_path, dev_path, sizeof(priv->ctx.dev_path));
 
+    if (rkisp_get_media_topology(priv))
+        goto err_close;
+
     if (uselocal3A) {
+        if (priv->is_rkcif) {
+            ERR("rkcif(%s) is not supports local 3A\n", dev_path);
+            goto err_close;
+        }
         priv->ctx.uselocal3A = uselocal3A;
         /*
          * TODO: Signal SIGSTOP the rkisp_3A_server to stop 3A tuning.
@@ -470,6 +481,48 @@ rkisp_set_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int fcc)
              priv->ctx.fcc, priv->ctx.width, priv->ctx.height);
 
     return 0;
+}
+
+int
+rkisp_set_sensor_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int code)
+{
+    struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
+    struct v4l2_subdev_format fmt;
+    const char *sensor;
+    int ret, fd;
+
+    sensor = rkisp_get_active_sensor(priv);
+    if (!sensor)
+        return -1;
+    fd = open(sensor, O_RDWR | O_CLOEXEC, 0);
+    if (fd < 0) {
+       ERR("Open sensor subdev %s failed, %s\n", sensor, strerror(errno));
+       return fd;
+    }
+
+    memset(&fmt, 0, sizeof(fmt));
+    fmt.pad = 0; //TODO: It's not definite that pad always be 0
+    fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+    fmt.format.height = h;
+    fmt.format.width = w;
+    fmt.format.code = code;
+
+    ret = ioctl(fd, VIDIOC_SUBDEV_S_FMT, &fmt);
+    if (ret < 0) {
+        ERR("subdev %s set fmt failed, %s. Does sensor driver support set_fmt?\n",
+            sensor, strerror(errno));
+        goto close;
+    }
+
+    if (fmt.format.width != w || fmt.format.height != h ||
+        fmt.format.code != code) {
+        INFO("subdev %s choose the best fit fmt: %dx%d, 0x%08x\n",
+             sensor, fmt.format.width, fmt.format.height, fmt.format.code);
+    }
+
+close:
+    close(fd);
+    return ret;
 }
 
 int
@@ -833,7 +886,7 @@ static void deinit_3A_control_params(struct rkisp_priv *priv)
     priv->meta = NULL;
 }
 
-static int init_engine(struct rkisp_priv *priv)
+static int rkisp_init_engine(struct rkisp_priv *priv)
 {
     struct rkisp_cl_prepare_params_s params = {0};
     int ret = 0;
@@ -909,7 +962,23 @@ static void rkisp_deinit_engine(struct rkisp_priv *priv)
     priv->rkisp_engine = NULL;
 }
 
-static int rkisp_init_engine(struct rkisp_priv *priv)
+static const char * rkisp_get_active_sensor(const struct rkisp_priv *priv)
+{
+    int i;
+
+    for (i = 0; i < RKISP_CAMS_NUM_MAX; i++)
+        if (priv->media_info.cams[i].link_enabled)
+            break;
+    if (i == RKISP_CAMS_NUM_MAX) {
+        ERR("Not sensor linked for %s, make sure sensor probed correctly\n",
+            priv->ctx.dev_path);
+        return NULL;
+    }
+
+    return priv->media_info.cams[i].sd_sensor_path;
+}
+
+static int rkisp_get_media_topology(struct rkisp_priv *priv)
 {
     char mdev_path[64];
     int i, ret;
@@ -927,18 +996,25 @@ static int rkisp_init_engine(struct rkisp_priv *priv)
 
         if (!strcmp(priv->media_info.vd_main_path, priv->ctx.dev_path) ||
             !strcmp(priv->media_info.vd_self_path, priv->ctx.dev_path)) {
-            INFO("Get media device: %s info, done\n", mdev_path);
+            INFO("Get rkisp media device: %s info, done\n", mdev_path);
+            break;
+        } else if (!strcmp(priv->media_info.vd_cif_path, priv->ctx.dev_path)) {
+            INFO("Get rkcif media device: %s info, done\n", mdev_path);
+            priv->is_rkcif = 1;
             break;
         }
     }
 
-    if (ret)
+    if (ret) {
+        ERR("Can not find media topology for %s,"
+            "please check 'media-ctl -p -d /dev/mediaX'\n", priv->ctx.dev_path);
         return ret;
+    }
 
-    if (ret = init_engine(priv))
-        return ret;
+    if (!rkisp_get_active_sensor(priv))
+        return -1;
 
-    return 0;
+    return ret;
 }
 
 int
@@ -948,7 +1024,7 @@ rkisp_set_manual_expo(const struct rkisp_api_ctx *ctx, int on)
     struct control_params_3A* ctl_params;
     uint8_t ae_mode;
 
-    if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
+    if (!priv->ctx.uselocal3A || !priv->rkisp_engine || priv->is_rkcif)
         return -EINVAL;
 
     ctl_params = priv->g_3A_control_params;
@@ -990,7 +1066,7 @@ rkisp_update_expo(const struct rkisp_api_ctx *ctx, int gain, int64_t expo_time_n
     uint8_t ae_mode = ANDROID_CONTROL_AE_MODE_OFF;
     int32_t sensitivity = gain;
 
-    if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
+    if (!priv->ctx.uselocal3A || !priv->rkisp_engine || priv->is_rkcif)
         return -EINVAL;
 
     ctl_params = priv->g_3A_control_params;
@@ -1014,7 +1090,7 @@ rkisp_set_max_expotime(const struct rkisp_api_ctx *ctx, int64_t max_expo_time_ns
     struct control_params_3A* ctl_params;
     int64_t exptime_range_ns[2] = {0};
 
-    if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
+    if (!priv->ctx.uselocal3A || !priv->rkisp_engine || priv->is_rkcif)
         return -EINVAL;
 
     ctl_params = priv->g_3A_control_params;
@@ -1039,7 +1115,7 @@ rkisp_get_max_expotime(const struct rkisp_api_ctx *ctx, int64_t *max_expo_time)
     struct control_params_3A* ctl_params;
     camera_metadata_entry entry;
 
-    if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
+    if (!priv->ctx.uselocal3A || !priv->rkisp_engine || priv->is_rkcif)
         return -EINVAL;
 
     SmartLock lock(ctl_params->_meta_mutex);
@@ -1060,7 +1136,7 @@ rkisp_set_max_gain(const struct rkisp_api_ctx *ctx, int max_gain)
     struct control_params_3A* ctl_params;
     int32_t sensitivity_range[2] = {0,0};
 
-    if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
+    if (!priv->ctx.uselocal3A || !priv->rkisp_engine || priv->is_rkcif)
         return -EINVAL;
 
     ctl_params = priv->g_3A_control_params;
@@ -1086,7 +1162,7 @@ rkisp_get_max_gain(const struct rkisp_api_ctx *ctx, int *max_gain)
     struct control_params_3A* ctl_params;
     camera_metadata_entry entry;
 
-    if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
+    if (!priv->ctx.uselocal3A || !priv->rkisp_engine || priv->is_rkcif)
         return -EINVAL;
 
     SmartLock lock(ctl_params->_meta_mutex);
@@ -1106,7 +1182,7 @@ rkisp_set_expo_weights(const struct rkisp_api_ctx *ctx,
 {
     struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
 
-    if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
+    if (!priv->ctx.uselocal3A || !priv->rkisp_engine || priv->is_rkcif)
         return -EINVAL;
 
     //TODO: warning if streamoff
@@ -1122,7 +1198,7 @@ rkisp_set_fps_range(const struct rkisp_api_ctx *ctx, int max_fps)
     struct control_params_3A* ctl_params;
     int32_t fps_range[2] = {1, 120};
 
-    if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
+    if (!priv->ctx.uselocal3A || !priv->rkisp_engine || priv->is_rkcif)
         return -EINVAL;
 
     ctl_params = priv->g_3A_control_params;

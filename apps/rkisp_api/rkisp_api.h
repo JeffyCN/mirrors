@@ -2,6 +2,7 @@
 #define __RKISP_API_CTX__
 
 #include <linux/videodev2.h>
+#include <linux/media-bus-format.h>
 #include <sys/time.h>
 
 #ifdef __cplusplus
@@ -75,13 +76,25 @@ rkisp_open_device(const char *dev_path, int uselocal3A);
  * If app does set format, the default values are
  *   - width:  640
  *   - height: 480
- *   -fcc:     V4L2_PIX_FMT_NV12
+ *   - fcc:     V4L2_PIX_FMT_NV12
  *
  * Return 0 if success, error num if format is not supported.
  */
 int
 rkisp_set_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int fcc);
 
+/*
+ * Set sensor format, incluing resolution and MEDIA_BUS_FMT. Optional.
+ * This can be called only when stream off.
+ *
+ * @mbus_code:   defined in linux/media-bus-format.h
+ *
+ * Return 0 if success, error num if format is not supported.
+ */
+
+int
+rkisp_set_sensor_fmt(const struct rkisp_api_ctx *ctx, int width, int height,
+                     int mbus_code);
 /*
  * Request buffers bases on frame format. Optional.
  *
