@@ -379,7 +379,8 @@ gst_mpp_dec_buffer_pool_finalize (GObject * object)
   GstMppDecBufferPool *pool = GST_MPP_DEC_BUFFER_POOL (object);
 
   if (GST_MPP_DEC_BUFFER_POOL (pool->dec->pool) == pool)
-    pool->dec->mpi->control (pool->dec->mpp_ctx, MPP_DEC_SET_EXT_BUF_GROUP, NULL);
+    pool->dec->mpi->control (pool->dec->mpp_ctx, MPP_DEC_SET_EXT_BUF_GROUP,
+        NULL);
 
   gst_object_unref (pool->dec);
 

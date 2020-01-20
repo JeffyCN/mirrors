@@ -28,14 +28,12 @@
 G_BEGIN_DECLS
 #define	VIDEO_MAX_FRAME	32
 #define GST_MPP_MEMORY_QUARK gst_mpp_memory_quark ()
-
 #define GST_TYPE_MPP_ALLOCATOR            (gst_mpp_allocator_get_type())
 #define GST_IS_MPP_ALLOCATOR(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_MPP_ALLOCATOR))
 #define GST_IS_MPP_ALLOCATOR_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GST_TYPE_MPP_ALLOCATOR))
 #define GST_MPP_ALLOCATOR(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_MPP_ALLOCATOR, GstMppAllocator))
 #define GST_MPP_ALLOCATOR_CLASS(obj)      (G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_MPP_ALLOCATOR, GstMppAllocatorClass))
 #define GST_MPP_ALLOCATOR_CAST(obj)       ((GstMppAllocator *)(obj))
-
 typedef struct _GstMppMemory GstMppMemory;
 typedef struct _GstMppAllocator GstMppAllocator;
 typedef struct _GstMppAllocatorClass GstMppAllocatorClass;
@@ -59,7 +57,7 @@ struct _GstMppAllocator
   GstAllocator parent;
   gboolean active;
 
-  guint32 count;       /* number of buffers allocated by the mpp */
+  guint32 count;                /* number of buffers allocated by the mpp */
   MppBufferGroup mpp_mem_pool;
 
   GstMppMemory *mems[VIDEO_MAX_FRAME];
@@ -77,18 +75,15 @@ gboolean gst_is_mpp_memory (GstMemory * mem);
 
 GQuark gst_mpp_memory_quark (void);
 
-GstMppAllocator *
-gst_mpp_allocator_new (GstObject * parent);
+GstMppAllocator *gst_mpp_allocator_new (GstObject * parent);
 
 guint
 gst_mpp_allocator_start (GstMppAllocator * allocator,
-		gsize size, guint32 count);
+    gsize size, guint32 count);
 
-gint
-gst_mpp_allocator_stop (GstMppAllocator * allocator);
+gint gst_mpp_allocator_stop (GstMppAllocator * allocator);
 
-GstMemory *
-gst_mpp_allocator_alloc_dmabuf (GstMppAllocator * allocator,
+GstMemory *gst_mpp_allocator_alloc_dmabuf (GstMppAllocator * allocator,
     GstAllocator * dmabuf_allocator);
 
 

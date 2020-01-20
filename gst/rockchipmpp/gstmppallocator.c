@@ -70,7 +70,7 @@ _mppmem_new (GstMemoryFlags flags, GstAllocator * allocator,
       flags, allocator, parent, maxsize, align, offset, size);
 
   mem->data = data;
-  mem->dmafd = dup(dmafd);
+  mem->dmafd = dup (dmafd);
   mem->mpp_buf = mpp_buf;
   mem->size = maxsize;
 

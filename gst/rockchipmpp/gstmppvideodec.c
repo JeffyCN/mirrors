@@ -226,7 +226,7 @@ gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
   if (NULL == mframe || NULL == info)
     return FALSE;
 
-  if (!mpp_frame_get_info_change(mframe))
+  if (!mpp_frame_get_info_change (mframe))
     return FALSE;
 
   format = mpp_frame_type_to_gst_video_format (mpp_frame_get_fmt (mframe));
@@ -567,7 +567,7 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
     GST_DEBUG_OBJECT (self, "Set MppDecode TiemOut");
     block_flag = 200;
     self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK_TIMEOUT,
-      (gpointer) &block_flag);
+        (gpointer) & block_flag);
 
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
     /* Aquire format frame frome mpp decode */
@@ -584,7 +584,7 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
       GstStructure *config = gst_buffer_pool_get_config (pool);
 
       /* free format frame */
-      mpp_frame_deinit(&mframe);
+      mpp_frame_deinit (&mframe);
 
       output_state =
           gst_video_decoder_set_output_state (decoder,
@@ -607,10 +607,10 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
       GST_DEBUG_OBJECT (self, "Set MppDecode Block");
       block_flag = MPP_POLL_BLOCK;
       self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK,
-        (gpointer) &block_flag);
+          (gpointer) & block_flag);
     } else {
       /* free unexpected frame */
-      mpp_frame_deinit(&mframe);
+      mpp_frame_deinit (&mframe);
       goto not_negotiated;
     }
   }
