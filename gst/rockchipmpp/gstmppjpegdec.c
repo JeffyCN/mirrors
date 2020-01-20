@@ -35,7 +35,7 @@ GST_DEBUG_CATEGORY (mpp_jpeg_dec_debug);
 #define parent_class gst_mpp_jpeg_dec_parent_class
 G_DEFINE_TYPE (GstMppJpegDec, gst_mpp_jpeg_dec, GST_TYPE_VIDEO_DECODER);
 
-#define NB_OUTPUT_BUFS 22        /* nb frames necessary for display pipeline */
+#define NB_OUTPUT_BUFS 22       /* nb frames necessary for display pipeline */
 
 /* GstVideoDecoder base class method */
 static GstStaticPadTemplate gst_mpp_jpeg_dec_sink_template =
@@ -495,7 +495,7 @@ gst_mpp_jpeg_dec_loop (GstVideoDecoder * decoder)
     goto meta_error;
 
   /* HACK: Should use mpp_meta_set_ptr when supported */
-  mpp_meta_get_frame (meta, KEY_OUTPUT_FRAME, (MppFrame *) &buffer);
+  mpp_meta_get_frame (meta, KEY_OUTPUT_FRAME, (MppFrame *) & buffer);
   if (!buffer)
     goto meta_error;
 

@@ -240,8 +240,7 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
   }
 
   header_mode = MPP_ENC_HEADER_MODE_EACH_IDR;
-  if (self->mpi->control (self->mpp_ctx,
-          MPP_ENC_SET_HEADER_MODE, &header_mode)) {
+  if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_HEADER_MODE, &header_mode)) {
     GST_DEBUG_OBJECT (self, "Setting header mode for rockchip mpp failed");
     return FALSE;
   }
