@@ -87,6 +87,9 @@ rkisp_set_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int fcc);
  * Set sensor format, incluing resolution and MEDIA_BUS_FMT. Optional.
  * This can be called only when stream off.
  *
+ * If sensor switches to a smaller size, this routine will trigger pipeline
+ * setting to change isp subdev format size.
+ *
  * @mbus_code:   defined in linux/media-bus-format.h
  *
  * Return 0 if success, error num if format is not supported.
@@ -95,6 +98,25 @@ rkisp_set_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int fcc);
 int
 rkisp_set_sensor_fmt(const struct rkisp_api_ctx *ctx, int width, int height,
                      int mbus_code);
+
+/*
+ * Set the isp subdev fmt, including the sink and source pads. Optional.
+ * This can be called only when stream off.
+ *
+ * NOTE: This function is not commonly used.
+ *
+ * It is mainly used in when sensor output size is changed, or
+ * when app want capture bayer raw data (e.g. TOF sensor) which need change @out_code.
+ *
+ * @in_code:  the mbus code of sind pad
+ * @out_code: the mbus code of source pad
+ *
+ * mbus codes defined in linux/media-bus-format.h
+ */
+int
+rkisp_set_ispsd_fmt(const struct rkisp_api_ctx *ctx,
+                    int in_w, int in_h, int in_code,
+                    int out_w, int out_h, int out_code);
 /*
  * Request buffers bases on frame format. Optional.
  *

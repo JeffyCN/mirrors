@@ -26,10 +26,14 @@
 #define DEFAULT_FCC             V4L2_PIX_FMT_NV12
 #define DEFAULT_BUFFER_COUNT    4
 
+#define IS_BAYER_RAW(mbus_code) ((mbus_code) >= MEDIA_BUS_FMT_SBGGR8_1X8 && \
+                                 (mbus_code) < MEDIA_BUS_FMT_JPEG_1X8)
+
 static int silent;
 
 #define DBG(str, ...) do { if(!silent) printf("[DBG]%s:%d: " str, __func__, __LINE__, __VA_ARGS__); } while(0)
 #define INFO(str, ...) do { printf("[INFO]%s:%d: " str, __func__, __LINE__, __VA_ARGS__); } while (0)
+#define WARN(str, ...) do { printf("[WARN]%s:%d: " str, __func__, __LINE__, __VA_ARGS__); } while (0)
 #define ERR(str, ...) do { fprintf(stderr, "[ERR]%s:%d: " str, __func__, __LINE__, __VA_ARGS__); } while (0)
 
 struct rkisp_buf_priv {
@@ -76,6 +80,7 @@ struct rkisp_priv {
 
     void* rkisp_engine;
     struct rkisp_media_info media_info;
+    char mdev_path[64];
     camera_metadata_t* meta;
     struct control_params_3A* g_3A_control_params;
 };
@@ -503,6 +508,12 @@ rkisp_set_sensor_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int code)
     memset(&fmt, 0, sizeof(fmt));
     fmt.pad = 0; //TODO: It's not definite that pad always be 0
     fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+    ret = ioctl(fd, VIDIOC_SUBDEV_G_FMT, &fmt);
+    if (ret < 0) {
+        ERR("get sensor fmt failed %s.\n", strerror(errno));
+        goto close;
+    }
+
     fmt.format.height = h;
     fmt.format.width = w;
     fmt.format.code = code;
@@ -520,8 +531,190 @@ rkisp_set_sensor_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int code)
              sensor, fmt.format.width, fmt.format.height, fmt.format.code);
     }
 
+    /* If ispsd input size is larger than sensor, update pipeline with default value */
+    if (!priv->is_rkcif && strlen(priv->media_info.sd_isp_path) != 0) {
+        struct v4l2_subdev_format isp_fmt;
+        int isp_fd;
+
+        isp_fd = open(priv->media_info.sd_isp_path, O_RDWR | O_CLOEXEC, 0);
+        if (isp_fd < 0) {
+            ERR("Open isp subdev failed, %s\n", strerror(errno));
+            goto close;
+        }
+
+        memset(&isp_fmt, 0, sizeof(isp_fmt));
+        isp_fmt.pad = 0; //TODO isp sd sink pad always be 0?
+        isp_fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+        ret = ioctl(isp_fd, VIDIOC_SUBDEV_G_FMT, &isp_fmt);
+        if (ret < 0) {
+            ERR("isp subdev get fmt failed %s.\n", strerror(errno));
+            close(isp_fd);
+            goto close;
+        }
+        close(isp_fd);
+
+        if (isp_fmt.format.width > fmt.format.width ||
+            isp_fmt.format.height > fmt.format.height ||
+            isp_fmt.format.code != fmt.format.code) {
+                int ispsd_out_code, width, height;
+
+                WARN("isp subdev fmt(%dx%d) > fmt(%dx%d), or mbus code(0x%08x) != 0x%08x\n",
+                     isp_fmt.format.width, isp_fmt.format.height,
+                     fmt.format.width, fmt.format.height,
+                     isp_fmt.format.code, fmt.format.code);
+                WARN("Update isp pipeline accordeing to sensor settings, "
+                     "PLEASE DOUBLE CHECK with `medai-ctl -p -d %s`\n",
+                     priv->mdev_path);
+                if (IS_BAYER_RAW(fmt.format.code))
+                    ispsd_out_code = MEDIA_BUS_FMT_YUYV8_2X8;
+                else
+                    ispsd_out_code = fmt.format.code;
+
+                width = fmt.format.width;
+                height = fmt.format.height;
+
+                ret = rkisp_set_ispsd_fmt(ctx, width, height, fmt.format.code,
+                                          width, height, ispsd_out_code);
+                if (ret)
+                    goto close;
+        }
+    }
+
 close:
     close(fd);
+    return ret;
+}
+
+static int
+rkisp_video_set_crop(const struct rkisp_priv *priv, int w, int h)
+{
+    struct v4l2_selection sel;
+    int ret;
+
+    memset(&sel, 0, sizeof(sel));
+    sel.type = priv->buf_type;
+    sel.r.width = w;
+    sel.r.height = h;
+    sel.r.left = 0;
+    sel.r.top = 0;
+    sel.target = V4L2_SEL_TGT_CROP;
+    sel.flags = 0;
+    ret = ioctl(priv->ctx.fd, VIDIOC_S_SELECTION, &sel);
+    if (ret) {
+        ERR("set output crop(0,0/%dx%d) failed, %s\n", w, h, strerror(errno));
+        return ret;
+    }
+
+    return 0;
+}
+
+static int
+rkisp_sd_set_crop(const char *ispsd, int fd, int pad, int *w, int *h)
+{
+    struct v4l2_subdev_selection sel;
+    int ret;
+
+    memset(&sel, 0, sizeof(sel));
+    sel.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+    sel.pad = pad;
+    sel.r.width = *w;
+    sel.r.height = *h;
+    sel.r.left = 0;
+    sel.r.top = 0;
+    sel.target = V4L2_SEL_TGT_CROP;
+    sel.flags = V4L2_SEL_FLAG_LE;
+    ret = ioctl(fd, VIDIOC_SUBDEV_S_SELECTION, &sel);
+    if (ret) {
+        ERR("subdev %s pad %d crop failed, ret = %d\n", ispsd, sel.pad, ret);
+        return ret;
+    }
+
+    *w = sel.r.width;
+    *h = sel.r.height;
+
+    return 0;
+}
+
+static int
+rkisp_sd_set_fmt(const char *ispsd, int pad, int *w, int *h, int code)
+{
+    struct v4l2_subdev_format fmt;
+    int ret, fd;
+
+    fd = open(ispsd, O_RDWR | O_CLOEXEC, 0);
+    if (fd < 0) {
+       ERR("Open isp subdev %s failed, %s\n", ispsd, strerror(errno));
+       return fd;
+    }
+
+    if (pad == 2) { /* Source pad */
+        ret = rkisp_sd_set_crop(ispsd, fd, pad, w, h);
+        if (ret)
+            goto close;
+    }
+
+    /* Get fmt and only update what we want */
+    memset(&fmt, 0, sizeof(fmt));
+    fmt.pad = pad;
+    fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+    ret = ioctl(fd, VIDIOC_SUBDEV_G_FMT, &fmt);
+    if (ret < 0) {
+        ERR("subdev %s get pad: %d fmt failed %s.\n",
+            ispsd, strerror(errno), fmt.pad);
+        goto close;
+    }
+
+    fmt.format.height = *h;
+    fmt.format.width = *w;
+    fmt.format.code = code;
+
+    ret = ioctl(fd, VIDIOC_SUBDEV_S_FMT, &fmt);
+    if (ret < 0) {
+        ERR("subdev %s set pad: %d fmt failed %s.\n",
+            ispsd, strerror(errno), fmt.pad);
+        goto close;
+    }
+
+    if (fmt.format.width != *w || fmt.format.height != *h ||
+        fmt.format.code != code) {
+        INFO("subdev %s pad %d choose the best fit fmt: %dx%d, 0x%08x\n",
+             ispsd, pad, fmt.format.width, fmt.format.height, fmt.format.code);
+    }
+
+    *w = fmt.format.width;
+    *h = fmt.format.height;
+    if (pad == 0) {
+        ret = rkisp_sd_set_crop(ispsd, fd, pad, w, h);
+        if (ret)
+            goto close;
+    }
+
+close:
+    close(fd);
+
+    return ret;
+}
+
+int
+rkisp_set_ispsd_fmt(const struct rkisp_api_ctx *ctx,
+                    int in_w, int in_h, int in_code,
+                    int out_w, int out_h, int out_code)
+{
+    struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
+    const char *ispsd;
+    int ret;
+
+    if (priv->is_rkcif)
+        return -1;
+
+    ispsd = priv->media_info.sd_isp_path;
+    //TODO: check source and sink pad
+    ret = rkisp_sd_set_fmt(ispsd, 0, &in_w, &in_h, in_code);
+    ret |= rkisp_sd_set_fmt(ispsd, 2, &out_w, &out_h, out_code);
+
+    /* set video selection(crop) because ispsd size changed */
+    ret |= rkisp_video_set_crop(priv, out_w, out_h);
+
     return ret;
 }
 
@@ -1007,6 +1200,8 @@ static int rkisp_get_media_topology(struct rkisp_priv *priv)
             break;
         }
     }
+
+    strcpy(priv->mdev_path, mdev_path);
 
     if (ret) {
         ERR("Can not find media topology for %s,"
