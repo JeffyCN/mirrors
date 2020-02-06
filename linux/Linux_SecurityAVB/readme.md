@@ -1,8 +1,8 @@
 # AVB Reference
 
-Version: 2.5
+Version: 2.7
 Author: jason.zhu@rock-chips.com; zain.wang@rock-chips.com
-Date: 2019.09.02
+Date: 2020.02.06
 Confidentiality level: Disclosure
 
 ------
@@ -43,6 +43,7 @@ This document is mainly suitable for below engineers:
 | 2019.08.20 | v2.4        | Zain Wong  | Add descripation for u-boot CONFIG_RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK                                                       |
 | 2019.09.02 | v2.5        | Zain Wong  | Add platform defconfig descripation                                                                                      |
 | 2019.09.10 | v2.6        | Zain Wong  | Add En Version <br> Fixed some descripations                                                                             |
+| 2020.02.06 | v2.7        | Zain Wong  | Fix error descripation                                                                                                   |
 
 [TOC]
 
@@ -203,9 +204,9 @@ There is already a set of test certificates and keys in this directory. If you n
     openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -outform PEM -out testkey_psk.pem
     openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -outform PEM -out testkey_pik.pem
     touch temp.bin
-    python avbtool make_atx_certificate --output=pik_certificate.bin --subject=temp.bin --subject_key=testkey_pik.pem --subject_is_intermediate_authority --subject_key_version 4
-    echo "RKXXXX_nnnnnnnn" > product_id.bin
-    python avbtool make_atx_certificate --output=psk_certificate.bin --subject=product_id.bin --subject_key=testkey_psk.pem --subject_key_version 42 --authority_key=testkey_pik.
+    python avbtool make_atx_certificate --output=pik_certificate.bin --subject=temp.bin --subject_key=testkey_pik.pem --subject_is_intermediate_authority --subject_key_version 42 --authority_key=testkey_prk.pem
+    echo -n "0123456789123456" > product_id.bin
+    python avbtool make_atx_certificate --output=psk_certificate.bin --subject=product_id.bin --subject_key=testkey_psk.pem --subject_key_version 42 --authority_key=testkey_pik.pem
     python avbtool make_atx_metadata --output=metadata.bin --intermediate_key_certificate=pik_certificate.bin --product_key_certificate=psk_certificate.bin
 ~~~
 
@@ -222,9 +223,9 @@ Generate PUK：
     openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -outform PEM -out testkey_puk.pem
 ~~~
 
-Generate permanent_attributes.bin
+Generate puk_certificate.bin
 ~~~
-    python avbtool make_atx_certificate --output=puk_certificate.bin --subject=product_id.bin --subject_key=testkey_puk.pem --usage=com.google.android.things.vboot.unlock --subj
+    python avbtool make_atx_certificate --output=puk_certificate.bin --subject=product_id.bin --subject_key=testkey_puk.pem --usage=com.google.android.things.vboot.unlock --subject_key_version 42 --authority_key=testkey_pik.pem
 ~~~
 
 For eFuse devices, you need to generate additional permanent_attributes_cer.bin (OTP devices can skip this step)
