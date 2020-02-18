@@ -382,9 +382,9 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer ** buffer)
         mpp_task_meta_get_s32 (task, KEY_OUTPUT_INTRA, &intra_flag, 0);
 
         GST_LOG_OBJECT (self, "Allocate output buffer");
-        if (intra_flag)
+        if (intra_flag && self->sps_packet)
           new_buffer = gst_video_encoder_allocate_output_buffer (encoder,
-              MAX_EXTRA_DATA + len);
+              mpp_packet_get_length (self->sps_packet) + len);
         else
           new_buffer = gst_video_encoder_allocate_output_buffer (encoder, len);
         if (NULL == new_buffer) {
