@@ -79,7 +79,7 @@ gst_mpp_video_enc_start (GstVideoEncoder * encoder)
   GST_DEBUG_OBJECT (self, "Starting");
   g_atomic_int_set (&self->active, TRUE);
   self->output_flow = GST_FLOW_OK;
-  self->outcaps = NULL;
+  self->negotiated = FALSE;
 
   return TRUE;
 }
@@ -115,8 +115,7 @@ gst_mpp_video_enc_stop (GstVideoEncoder * encoder)
   g_assert (g_atomic_int_get (&self->active) == FALSE);
   g_assert (g_atomic_int_get (&self->processing) == FALSE);
 
-  if (self->outcaps)
-    gst_caps_unref (self->outcaps);
+  self->negotiated = FALSE;
 
   if (self->input_state) {
     gst_video_codec_state_unref (self->input_state);
@@ -450,6 +449,7 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
 {
 
   GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
+  GstVideoCodecState *output;
   GstFlowReturn ret = GST_FLOW_OK;
 
   GST_DEBUG_OBJECT (self, "Handling frame %d", frame->system_frame_number);
@@ -457,8 +457,7 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
   if (G_UNLIKELY (!g_atomic_int_get (&self->active)))
     goto flushing;
 
-  /* FIXME don't use this as a flag */
-  if (self->outcaps == NULL) {
+  if (!self->negotiated) {
     gint i = 0;
     gsize packet_size;
 
@@ -507,8 +506,9 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
     if (self->mpi->poll (self->mpp_ctx, MPP_PORT_INPUT, MPP_POLL_BLOCK))
       GST_ERROR_OBJECT (self, "mpp input poll failed");
 
-    gst_video_encoder_set_output_state (encoder, outcaps, self->input_state);
-    self->outcaps = gst_caps_ref (outcaps);
+    output = gst_video_encoder_set_output_state (encoder,
+        gst_caps_ref (outcaps), self->input_state);
+    gst_video_codec_state_unref (output);
 
     if (!gst_video_encoder_negotiate (encoder)) {
       if (GST_PAD_IS_FLUSHING (GST_VIDEO_ENCODER_SRC_PAD (encoder)))
@@ -517,6 +517,7 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
         goto not_negotiated;
     }
 
+    self->negotiated = TRUE;
   }
   if (g_atomic_int_get (&self->processing) == FALSE) {
     g_atomic_int_set (&self->processing, TRUE);

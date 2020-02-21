@@ -63,7 +63,6 @@ struct _GstMppVideoEnc
   MppBuffer output_buffer[MPP_MAX_BUFFERS];
   MppFrame mpp_frame;
   MppPacket sps_packet;
-  GstCaps *outcaps;
 
   /* the currently format */
   GstVideoInfo info;
@@ -74,6 +73,7 @@ struct _GstMppVideoEnc
 
   /* State */
   GstVideoCodecState *input_state;
+  gboolean negotiated;
   gboolean processing;
   gboolean active;
   GstFlowReturn output_flow;
