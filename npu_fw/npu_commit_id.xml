@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest>
-  <project name="android/rk/u-boot" path="npu/u-boot" revision="d625acc28e2963c097074c49a25072346e686a1c" upstream="next-dev"/>
+  <project name="android/rk/u-boot" path="npu/u-boot" revision="c5ef40e3706b5ca34e7f43dbebe697a4b4c866f1" upstream="next-dev"/>
   <project name="linux/app/n4" path="npu/app/n4" revision="6e3fc43844746cfbf4498f63f27472023c01f0a0" upstream="master"/>
   <project name="linux/buildroot/dl" path="npu/buildroot/dl" revision="cd79e8e74ad0246112627fe9815dccad52fb6763" upstream="master"/>
-  <project name="linux/device/rockchip" path="npu/device/rockchip" revision="39ea63ecc0f644998956f8349ad6909317a203df" upstream="master">
+  <project name="linux/device/rockchip" path="npu/device/rockchip" revision="edec765e8c999403d94b5873e3bb50fc511f849f" upstream="master">
     <linkfile dest="npu/mkfirmware.sh" src="common/mkfirmware.sh"/>
     <linkfile dest="npu/build.sh" src="common/build.sh"/>
     <linkfile dest="npu/rkflash.sh" src="common/rkflash.sh"/>
     <linkfile dest="npu/device/rockchip/.BoardConfig.mk" src="rk3399pro-npu/BoardConfig.mk"/>
   </project>
-  <project name="linux/external/camera_engine_rkisp" path="npu/external/camera_engine_rkisp" revision="1115ec90edca37ce5f1fce5a1651a65aced0ef51" upstream="master"/>
+  <project name="linux/external/camera_engine_rkisp" path="npu/external/camera_engine_rkisp" revision="a79d36dac4d357ec156506c84775a4e53c501939" upstream="master"/>
   <project name="linux/external/powermanager" path="npu/external/powermanager" revision="17921d6b75395df5478613973e58916a6cf7c7ad" upstream="master"/>
-  <project name="linux/external/rknpu" path="npu/external/rknpu" revision="c56a3e520b3e0882f082cb9f5f7518b2b9c9db2b" upstream="master"/>
-  <project name="linux/external/rkscript" path="npu/external/rkscript" revision="a2da3f30146442dd4f8c415cf90b0c14dd294e31" upstream="master"/>
-  <project name="linux/external/rktoolkit" path="npu/external/rktoolkit" revision="0f4211cd0b61c8eb7c9ebb34a1cee3377e4cff56" upstream="master"/>
+  <project name="linux/external/rknpu" path="npu/external/rknpu" revision="1121c481b6fcff3f5b9982259192089c03c63725" upstream="master"/>
+  <project name="linux/external/rkscript" path="npu/external/rkscript" revision="324143e744f6d1a227a524c63a7ac3046d5f7915" upstream="master"/>
+  <project name="linux/external/rktoolkit" path="npu/external/rktoolkit" revision="fc1ddcf4f804d1dbb55e2695a32b2aabe6016e8e" upstream="master"/>
   <project name="linux/linux-rga" path="npu/external/linux-rga" revision="72e7764a9fe358e6ad50eb1b21176cc95802c7fb" upstream="master"/>
   <project name="linux/rkmedia" path="npu/external/rkmedia" revision="6c796505c1d327f06ec6ade0df697ff84bfe75b1" upstream="master"/>
-  <project name="rk/kernel-stable" path="npu/kernel" revision="63fe0f99c5e9a1d0688dfa7d6ab702d494d192e6" upstream="stable-4.4-rk3399pro_npu-linux"/>
+  <project name="rk/kernel-stable" path="npu/kernel" revision="bc673f1b71315f2d76827693f74a429894557cb7" upstream="rk3399pro_npu-linux"/>
   <project name="rk/prebuilts/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu" path="npu/prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu" revision="f96f76d6be89a6e28d4dac1f233f9aca9921f69b" upstream="master"/>
-  <project name="rk/rk1108/buildroot" path="npu/buildroot" revision="459b04628efa87bd0993041f104cc66b4a44363e" upstream="rockchip/2018.02-rc3">
+  <project name="rk/rk1108/buildroot" path="npu/buildroot" revision="f2fea23c798aa069cc05cea83f2dea3e481aa2da" upstream="rockchip/2018.02-rc3">
     <linkfile dest="npu/Makefile" src="build/Makefile"/>
     <linkfile dest="npu/envsetup.sh" src="build/envsetup.sh"/>
   </project>
-  <project name="rk/rkbin" path="npu/rkbin" revision="5e54e6c0bbc0141985aca17adcebf3692cdc7f78" upstream="master"/>
+  <project name="rk/rkbin" path="npu/rkbin" revision="c12df872d14f9d67b59da3b846642a35b51a48f6" upstream="master"/>
 </manifest>
