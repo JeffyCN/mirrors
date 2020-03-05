@@ -5,7 +5,7 @@ dnl please read gstreamer/docs/random/autotools before changing this file
 dnl initialize autoconf
 dnl releases only do -Wall, git and prerelease does -Werror too
 dnl use a three digit version number for releases, and four for git/pre
-AC_INIT([GStreamer Plug-ins], [1.12.0], [https://github.com/rockchip-linux/gstreamer-rockchip/issues], [gstreamer-rockchip])
+AC_INIT([GStreamer Plug-ins], [1.10.0], [https://github.com/rockchip-linux/gstreamer-rockchip], [gstreamer-rockchip])
 
 AG_GST_INIT
 
@@ -46,7 +46,7 @@ AG_GST_LIBTOOL_PREPARE
 AS_LIBTOOL(GST, 801, 0, 801)
 
 dnl *** required versions of GStreamer stuff ***
-GST_REQ=1.12.0
+GST_REQ=1.10.0
 GSTPB_REQ=1.10.0
 
 dnl *** autotools stuff ****
@@ -56,6 +56,9 @@ AS_AUTOTOOLS_ALTERNATE
 
 dnl Add parameters for aclocal
 AC_SUBST(ACLOCAL_AMFLAGS, "-I m4 -I common/m4")
+
+dnl PKG_CONFIG_SYSROOT_DIR is a valid environment variable
+m4_pattern_allow(PKG_CONFIG_SYSROOT_DIR)
 
 dnl set up gettext
 dnl the version check needs to stay here because autopoint greps for it
@@ -276,9 +279,7 @@ AM_CONDITIONAL(GST_PLUGIN_BUILD_STATIC, test "x$enable_static_plugins" = "xyes")
 # set by AG_GST_PARSE_SUBSYSTEM_DISABLES above
 dnl make sure it doesn't complain about unused variables if debugging is disabled
 NO_WARNINGS=""
-if test "x${GST_DISABLE_GST_DEBUG}" = "xyes"; then
-  NO_WARNINGS="-Wno-unused"
-fi
+AG_GST_CHECK_GST_DEBUG_DISABLED([NO_WARNINGS="-Wno-unused"], [NO_WARNINGS=""])
 
 dnl define an ERROR_CFLAGS Makefile variable
 dnl -Wundef: too many broken headers

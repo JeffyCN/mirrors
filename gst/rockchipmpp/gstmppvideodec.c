@@ -24,6 +24,7 @@
 #endif
 
 #include <gst/gst.h>
+#include <gst/gst-compat-private.h>
 
 #include "gstmppdecbufferpool.h"
 #include "gstmppvideodec.h"
