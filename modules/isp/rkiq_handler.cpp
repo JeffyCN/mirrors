@@ -409,8 +409,7 @@ AiqAeHandler::processAeMetaResults(AecResult_t aec_results, X3aResultList &outpu
                     (int*)isp_stat.params.hist.hist_bins,
                     CIFISP_HIST_BIN_N_MAX);
 */
-    
-   int32_t hist_mode = ANDROID_STATISTICS_HISTOGRAM_MODE_ON;
+    uint8_t hist_mode = ANDROID_STATISTICS_HISTOGRAM_MODE_ON;
     metadata->update(ANDROID_STATISTICS_HISTOGRAM_MODE,
                     &hist_mode,
                     1);
