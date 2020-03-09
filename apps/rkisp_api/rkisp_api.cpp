@@ -898,7 +898,7 @@ static int rkisp_init_engine(struct rkisp_priv *priv)
 
     if (ret = rkisp_cl_init(&priv->rkisp_engine, NULL, (cl_result_callback_ops_t*)priv->g_3A_control_params)) {
         ERR("rkisp engine init failed!, ret = %d\n", ret);
-        goto deinit;
+        goto deinit_params;
     }
 
     params.isp_sd_node_path = priv->media_info.sd_isp_path;
@@ -927,7 +927,7 @@ static int rkisp_init_engine(struct rkisp_priv *priv)
     if (ret = rkisp_cl_prepare(priv->rkisp_engine, &params)) {
         ERR("rkisp engine prepare failed! ret = %d\n", ret);
         priv->g_3A_control_params->_settings_metadata.unlock(params.staticMeta);
-        goto deinit;
+        goto deinit_cl;
     }
     priv->g_3A_control_params->_settings_metadata.unlock(params.staticMeta);
 
@@ -935,7 +935,9 @@ static int rkisp_init_engine(struct rkisp_priv *priv)
 
     return 0;
 
-deinit:
+deinit_cl:
+    rkisp_cl_deinit(priv->rkisp_engine);
+deinit_params:
     deinit_3A_control_params(priv);
 
     return ret;
@@ -959,6 +961,7 @@ static void rkisp_stop_engine(struct rkisp_priv *priv)
 static void rkisp_deinit_engine(struct rkisp_priv *priv)
 {
     rkisp_cl_deinit(priv->rkisp_engine);
+    deinit_3A_control_params(priv);
     priv->rkisp_engine = NULL;
 }
 
