@@ -1883,9 +1883,9 @@ AiqCommonHandler::AiqCommonHandler (SmartPtr<RKiqCompositor> &aiq_compositor)
 }
 AiqCommonHandler::~AiqCommonHandler ()
 {
-    delete mRGammaLut;
-    delete mGGammaLut;
-    delete mBGammaLut;
+    delete[] mRGammaLut;
+    delete[] mGGammaLut;
+    delete[] mBGammaLut;
 }
 
 XCamReturn
