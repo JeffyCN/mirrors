@@ -53,7 +53,7 @@ signed_image()
 	echo "Sign ${IMAGE}"
 	SIZE=`ls $OUT/${IMAGE}.img -l | awk '{printf $5}'`
 	# At least 64K greater than origin file
-	SIZE=$[(SIZE / 4024 + 64) * 4096]
+	SIZE=$[(SIZE / 4096 + 17) * 4096]
 	python $SCRIPTS/avbtool add_hash_footer --image $OUT/${IMAGE}.img --partition_size ${SIZE} --partition_name ${IMAGE} --key avb_keys/testkey_psk.pem --algorithm SHA512_RSA4096
 	echo "Sign $IMAGE Done"
 }
