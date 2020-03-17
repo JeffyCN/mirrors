@@ -37,6 +37,7 @@ using namespace android;
 CameraMetadata RkispDeviceManager::staticMeta;
 static vendor_tag_ops_t rkcamera_vendor_tag_ops_instance;
 extern void CamIa10_set_aec_weights(const unsigned char* pWeight, unsigned int cnt);
+extern void CamIa10_get_aec_weights(unsigned char* pWeight, unsigned int *cnt);
 
 typedef enum RKISP_CL_STATE_enum {
     RKISP_CL_STATE_INVALID  = -1,
@@ -450,3 +451,7 @@ void rkisp_set_aec_weights(const unsigned char* pWeight, unsigned int cnt)
     return CamIa10_set_aec_weights(pWeight, cnt);
 }
 
+void rkisp_get_aec_weights(unsigned char* pWeight, unsigned int *cnt)
+{
+    return CamIa10_get_aec_weights(pWeight, cnt);
+}

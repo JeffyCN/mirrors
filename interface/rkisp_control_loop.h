@@ -194,6 +194,7 @@ void rkisp_cl_deinit(void* cl_ctx);
  *    |cnt|: array size, now should be 81
  */
 void rkisp_set_aec_weights(const unsigned char* pWeight, unsigned int cnt);
+void rkisp_get_aec_weights(unsigned char* pWeight, unsigned int *cnt);
 
 #ifdef __cplusplus
 }

@@ -18,6 +18,15 @@ static std::map<string, CalibDb*> g_CalibDbHandlesMap;
 static uint8_t g_aec_weights[81] = {0};
 static bool g_update_aec_weights = false;
 
+void CamIa10_get_aec_weights(unsigned char* pWeight, unsigned int* cnt)
+{
+   DCT_ASSERT(NULL != pWeight);
+   DCT_ASSERT(NULL != cnt);
+
+   memcpy(pWeight, g_aec_weights, sizeof(g_aec_weights));
+   *cnt = 81;
+}
+
 void CamIa10_set_aec_weights(const unsigned char* pWeight, unsigned int cnt)
 {
    if (cnt != 81)
@@ -1784,6 +1793,8 @@ RESULT CamIA10Engine::initAEC() {
            aecCfg.pDySetpoint[i] = pDySetpointProfile;
         }
     }
+
+    memcpy(g_aec_weights, aecCfg.GridWeights.uCoeff, sizeof(g_aec_weights));
 
     int no_ExpSeparate = 0;
     ret = CamCalibDbGetNoOfExpSeparate(hCamCalibDb, pAecGlobal, &no_ExpSeparate);
