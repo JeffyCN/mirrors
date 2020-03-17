@@ -29,6 +29,7 @@ struct rkisp_api_ctx {
     int uselocal3A;
 };
 
+#define RKISP_EXPO_WEIGHT_GRID      81
 #define RKISP_MAX_LUMINANCE_GRID	81
 #define RKISP_MAX_HISTOGRAM_BIN		64
 
@@ -222,8 +223,21 @@ rkisp_set_max_gain(const struct rkisp_api_ctx *ctx, int max_gain);
 int
 rkisp_get_max_gain(const struct rkisp_api_ctx *ctx, int *max_gain);
 
+
+/*
+ * The get/set_expo_weights() will get or set exposure weights
+ * of RKISP_EXPO_WEIGHT_GRID(that is 9x9) grid.
+ *
+ * @weights:        The array of weight, size shall be at least 81(9x9).
+ * @size:           The size of array.
+ *
+ * Return 0 if success, or < 0 if error.
+ */
 int
 rkisp_set_expo_weights(const struct rkisp_api_ctx *ctx,
+                       unsigned char* weights, unsigned int size);
+int
+rkisp_get_expo_weights(const struct rkisp_api_ctx *ctx,
                        unsigned char* weights, unsigned int size);
 int
 rkisp_set_fps_range(const struct rkisp_api_ctx *ctx, int max_fps);

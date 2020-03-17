@@ -662,7 +662,7 @@ rkisp_sd_set_fmt(const char *ispsd, int pad, int *w, int *h, int code)
     ret = ioctl(fd, VIDIOC_SUBDEV_G_FMT, &fmt);
     if (ret < 0) {
         ERR("subdev %s get pad: %d fmt failed %s.\n",
-            ispsd, strerror(errno), fmt.pad);
+            ispsd, fmt.pad, strerror(errno));
         goto close;
     }
 
@@ -673,7 +673,7 @@ rkisp_sd_set_fmt(const char *ispsd, int pad, int *w, int *h, int code)
     ret = ioctl(fd, VIDIOC_SUBDEV_S_FMT, &fmt);
     if (ret < 0) {
         ERR("subdev %s set pad: %d fmt failed %s.\n",
-            ispsd, strerror(errno), fmt.pad);
+            ispsd, fmt.pad, strerror(errno));
         goto close;
     }
 
@@ -979,7 +979,7 @@ static int rkisp_get_meta_frame_id(struct rkisp_priv *priv, int64_t& frame_id) {
 
     entry = ctl_params->_result_metadata.find(RKCAMERA3_PRIVATEDATA_EFFECTIVE_DRIVER_FRAME_ID);
     if (!entry.count) {
-        DBG("no RKCAMERA3_PRIVATEDATA_EFFECTIVE_DRIVER_FRAME_ID, %d\n", entry.count);
+        DBG("no RKCAMERA3_PRIVATEDATA_EFFECTIVE_DRIVER_FRAME_ID, %lu\n", entry.count);
         frame_id = -1;
         return -1;
     }
@@ -1426,6 +1426,29 @@ rkisp_get_max_gain(const struct rkisp_api_ctx *ctx, int *max_gain)
 }
 
 int
+rkisp_get_expo_weights(const struct rkisp_api_ctx *ctx,
+                       unsigned char* weights, unsigned int size)
+{
+    struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
+
+    if (!priv->ctx.uselocal3A || !priv->rkisp_engine || priv->is_rkcif)
+        return -EINVAL;
+
+    if (size != RKISP_EXPO_WEIGHT_GRID) {
+        ERR("The weights array size shall be %d at least, but got %d\n",
+            RKISP_EXPO_WEIGHT_GRID, size);
+        return -EINVAL;
+    }
+
+    //TODO: warning if streamoff
+    //AEC weights are available after rkisp_cl_prepare(),
+    //for our case, after rkisp_open_device().
+    rkisp_get_aec_weights(weights, &size);
+
+    return 0;
+}
+
+int
 rkisp_set_expo_weights(const struct rkisp_api_ctx *ctx,
                        unsigned char* weights, unsigned int size)
 {
@@ -1433,6 +1456,11 @@ rkisp_set_expo_weights(const struct rkisp_api_ctx *ctx,
 
     if (!priv->ctx.uselocal3A || !priv->rkisp_engine || priv->is_rkcif)
         return -EINVAL;
+
+    if (size != RKISP_EXPO_WEIGHT_GRID) {
+        ERR("The weights array size should be %d\n", RKISP_EXPO_WEIGHT_GRID);
+        return -EINVAL;
+    }
 
     //TODO: warning if streamoff
     rkisp_set_aec_weights(weights, size);
