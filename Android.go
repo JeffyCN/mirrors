@@ -31,7 +31,7 @@ func Defaults(ctx android.LoadHookContext) {
 func globalDefaults(ctx android.BaseContext) ([]string) {
 	var cppflags []string
 	//该打印输出为: TARGET_PRODUCT:rk3328 fmt.Println("TARGET_PRODUCT:",ctx.AConfig().Getenv("TARGET_PRODUCT")) //通过 strings.EqualFold 比较字符串，可参考go语言字符串对比
-	if (strings.EqualFold(ctx.AConfig().Getenv("TARGET_PRODUCT"),"rk3368")) {
+	if (strings.EqualFold(ctx.AConfig().Getenv("TARGET_BOARD_PLATFORM"),"rk3368") ) {
 	//添加 DEBUG 宏定义
         cppflags = append(cppflags,"-DRK3368=1")
 	}

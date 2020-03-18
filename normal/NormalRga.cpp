@@ -449,7 +449,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (src && srcFd < 0) {
 		srcFd = src->fd;
 		src->mmuFlag = 1;
-		dst->mmuFlag = 1;
 	}
 
     if(is_out_log())
@@ -462,7 +461,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (src && src->phyAddr)
 		srcBuf = src->phyAddr;
 	else if (src && src->virAddr)
+	{
 		srcBuf = src->virAddr;
+		src->mmuFlag = 1;
+	}
 #ifndef ANDROID_8
 	else if (src && src->hnd)
 		//Get virtual addresss by lock action(on libgralloc)
@@ -486,7 +488,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (dst && dstFd < 0) {
 		dstFd = dst->fd;
 		dst->mmuFlag = 1;
-		src->mmuFlag = 1;
 	}
 
     if(is_out_log())
@@ -499,7 +500,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (dst && dst->phyAddr)
 		dstBuf = dst->phyAddr;
 	else if (dst && dst->virAddr)
+	{
 		dstBuf = dst->virAddr;
+		dst->mmuFlag = 1;
+	}
 #ifndef ANDROID_8
 	else if (dst && dst->hnd)
 		ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
