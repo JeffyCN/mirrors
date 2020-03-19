@@ -17,7 +17,7 @@ case "$1" in
 		#echo "wifi ready: $WIFI_READY"
 		CNT=`expr $CNT + 1`
 		if [ $CNT -gt 100 ];then
-			echo "wifi driver is not ready. please check if /etc/init.d/S66load_wifi_modules run correctly. then run /etc/init.d/S67wifi start"
+			echo "wifi driver is not ready. please check if /etc/init.d/S36load_wifi_modules run correctly. then run /etc/init.d/S67wifi start"
 			exit 0
 		fi
 	done
