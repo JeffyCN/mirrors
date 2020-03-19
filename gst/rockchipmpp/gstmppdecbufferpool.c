@@ -232,6 +232,7 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
 {
   GstMppDecBufferPool *pool = GST_MPP_DEC_BUFFER_POOL (bpool);
   GstMppVideoDec *dec = pool->dec;
+  GstVideoInterlaceMode interlace_mode;
   GstBuffer *outbuf;
   MppFrame mframe = NULL;
   MppBuffer mpp_buf;
@@ -256,21 +257,43 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   GST_BUFFER_PTS (outbuf) = mpp_frame_get_pts (mframe);
 
   mode = mpp_frame_get_mode (mframe);
+  interlace_mode = GST_VIDEO_INTERLACE_MODE_PROGRESSIVE;
   switch (mode & MPP_FRAME_FLAG_FIELD_ORDER_MASK) {
     case MPP_FRAME_FLAG_BOT_FIRST:
       GST_BUFFER_FLAG_SET (outbuf, GST_VIDEO_BUFFER_FLAG_INTERLACED);
       GST_BUFFER_FLAG_UNSET (outbuf, GST_VIDEO_BUFFER_FLAG_TFF);
+      interlace_mode = GST_VIDEO_INTERLACE_MODE_INTERLEAVED;
       break;
     case MPP_FRAME_FLAG_TOP_FIRST:
       GST_BUFFER_FLAG_SET (outbuf, GST_VIDEO_BUFFER_FLAG_INTERLACED);
       GST_BUFFER_FLAG_SET (outbuf, GST_VIDEO_BUFFER_FLAG_TFF);
+      interlace_mode = GST_VIDEO_INTERLACE_MODE_INTERLEAVED;
       break;
     case MPP_FRAME_FLAG_DEINTERLACED:
+      interlace_mode = GST_VIDEO_INTERLACE_MODE_MIXED;
     default:
       GST_BUFFER_FLAG_UNSET (outbuf, GST_VIDEO_BUFFER_FLAG_INTERLACED);
       GST_BUFFER_FLAG_UNSET (outbuf, GST_VIDEO_BUFFER_FLAG_TFF);
       break;
   }
+
+#ifdef MPP_FRAME_FLAG_IEP_DEI_MASK
+  /* IEP deinterlaced */
+  if (mode & MPP_FRAME_FLAG_IEP_DEI_MASK)
+    interlace_mode = GST_VIDEO_INTERLACE_MODE_PROGRESSIVE;
+#endif
+
+  if (dec->info.interlace_mode != interlace_mode) {
+    GstVideoCodecState *output_state =
+        gst_video_decoder_get_output_state ((GstVideoDecoder *) dec);
+
+    if (output_state) {
+      output_state->info.interlace_mode = dec->info.interlace_mode =
+          interlace_mode;
+      gst_video_codec_state_unref (output_state);
+    }
+  }
+
   /*
    * Increase the reference of the buffer or the destroy the mpp frame
    * would decrease the reference and put it back to unused status
