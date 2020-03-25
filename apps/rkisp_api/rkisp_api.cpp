@@ -1189,8 +1189,9 @@ deinit_params:
 
 static int rkisp_start_engine(struct rkisp_priv *priv)
 {
-    rkisp_cl_start(priv->rkisp_engine);
-    if (priv->rkisp_engine == NULL) {
+    int ret;
+    ret = rkisp_cl_start(priv->rkisp_engine);
+    if (ret || priv->rkisp_engine == NULL) {
         ERR("rkisp_init engine failed, engine = %p\n", priv->rkisp_engine);
         return -1;
     }
