@@ -36,6 +36,10 @@ static int silent;
 #define WARN(str, ...) do { printf("[WARN]%s:%d: " str, __func__, __LINE__, __VA_ARGS__); } while (0)
 #define ERR(str, ...) do { fprintf(stderr, "[ERR]%s:%d: " str, __func__, __LINE__, __VA_ARGS__); } while (0)
 
+#define FCC_TO_CHARS(fcc) \
+            ((fcc) >> 0) & 0xFF, ((fcc) >> 8) & 0xFF, \
+            ((fcc) >> 16) & 0xFF, ((fcc) >> 24) & 0xFF
+
 struct rkisp_buf_priv {
     struct rkisp_api_buf pul;
 
@@ -96,6 +100,8 @@ static int rkisp_get_ae_gain(struct rkisp_priv *priv, int &gain);
 static int rkisp_get_meta_frame_id(struct rkisp_priv *priv, int64_t& frame_id);
 static int rkisp_get_luminance_grid(struct rkisp_priv *, unsigned char *, int);
 static int rkisp_get_histogram(struct rkisp_priv *, int *, int);
+
+static int rkisp_get_fmt(const struct rkisp_api_ctx *ctx);
 
 static int xioctl(int fh, int request, void *arg)
 {
@@ -374,8 +380,7 @@ rkisp_open_device(const char *dev_path, int uselocal3A)
             goto err_close;
     }
 
-    rkisp_set_fmt((struct rkisp_api_ctx*) priv,
-                  DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FCC);
+    rkisp_get_fmt((struct rkisp_api_ctx*) priv);
 
     /* Set default value in case app does not call #{rkisp_set_buf()} */
     priv->req_buf_count = DEFAULT_BUFFER_COUNT;
@@ -450,6 +455,29 @@ static int rkisp_init_buf(struct rkisp_priv *priv)
     return 0;
 }
 
+static int rkisp_get_fmt(const struct rkisp_api_ctx *ctx)
+{
+    struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
+    struct v4l2_format fmt;
+
+    CLEAR(fmt);
+    fmt.type = priv->buf_type;
+    if (-1 == xioctl(priv->ctx.fd, VIDIOC_G_FMT, &fmt)) {
+        ERR("%s ERR S_FMT: %d, %s\n", priv->ctx.dev_path,
+	    errno, strerror(errno));
+        return -errno;
+    }
+
+    priv->ctx.width = fmt.fmt.pix.width;
+    priv->ctx.height = fmt.fmt.pix.height;
+    priv->ctx.fcc = fmt.fmt.pix.pixelformat;
+
+    INFO("Get Driver default fmt: fcc %C%C%C%C [%dx%d]\n",
+         FCC_TO_CHARS(priv->ctx.fcc), priv->ctx.width, priv->ctx.height);
+
+    return 0;
+}
+
 int
 rkisp_set_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int fcc)
 {
@@ -474,7 +502,7 @@ rkisp_set_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int fcc)
     if (-1 == xioctl(priv->ctx.fd, VIDIOC_S_FMT, &fmt)) {
         ERR("%s ERR S_FMT: %d, %s\n", priv->ctx.dev_path,
 	    errno, strerror(errno));
-        return -1;
+        return -errno;
     }
 
     priv->ctx.width = fmt.fmt.pix.width;
@@ -482,10 +510,9 @@ rkisp_set_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int fcc)
     priv->ctx.fcc = fmt.fmt.pix.pixelformat;
 
     if (priv->ctx.width != w || priv->ctx.height != h || priv->ctx.fcc != fcc)
-        INFO("Format is not match, request: fcc 0x%08x [%dx%d], "
-             "driver supports: fcc 0x%08x [%dx%d]\n",
-             fcc, w, h,
-             priv->ctx.fcc, priv->ctx.width, priv->ctx.height);
+        WARN("Format is not match, request: fcc %C%C%C%C [%dx%d], "
+             "driver supports: fcc %C%C%C%C [%dx%d]\n", FCC_TO_CHARS(fcc), w, h,
+             FCC_TO_CHARS(priv->ctx.fcc), priv->ctx.width, priv->ctx.height);
 
     return 0;
 }
