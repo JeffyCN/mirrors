@@ -4,7 +4,14 @@
 package-file	package-file
 bootloader	Image/MiniLoaderAll.bin
 parameter	Image/parameter.txt
-trust		Image/trust.img
+#
+# if uboot.img is fit, uboot.img had include uboot and trust,
+# so ignore trust.img
+# file Image/uboot.img
+# Image/uboot.img: Device Tree Blob version 17
+#
+# trust		Image/trust.img
+#
 uboot		Image/uboot.img
 misc		Image/misc.img
 #resource	Image/resource.img
