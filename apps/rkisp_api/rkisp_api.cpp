@@ -652,8 +652,8 @@ close:
     return ret;
 }
 
-static int
-rkisp_video_set_crop(const struct rkisp_priv *priv, int w, int h)
+int
+rkisp_video_set_crop(const struct rkisp_priv *priv, int x, int y, int w, int h)
 {
     struct v4l2_selection sel;
     int ret;
@@ -662,8 +662,8 @@ rkisp_video_set_crop(const struct rkisp_priv *priv, int w, int h)
     sel.type = priv->buf_type;
     sel.r.width = w;
     sel.r.height = h;
-    sel.r.left = 0;
-    sel.r.top = 0;
+    sel.r.left = x;
+    sel.r.top = y;
     sel.target = V4L2_SEL_TGT_CROP;
     sel.flags = 0;
     ret = ioctl(priv->ctx.fd, VIDIOC_S_SELECTION, &sel);
@@ -780,7 +780,7 @@ rkisp_set_ispsd_fmt(const struct rkisp_api_ctx *ctx,
     ret |= rkisp_sd_set_fmt(ispsd, 2, &out_w, &out_h, out_code);
 
     /* set video selection(crop) because ispsd size changed */
-    ret |= rkisp_video_set_crop(priv, out_w, out_h);
+    ret |= rkisp_video_set_crop(priv, 0, 0, out_w, out_h);
 
     return ret;
 }

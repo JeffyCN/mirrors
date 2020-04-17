@@ -80,9 +80,26 @@ struct rkisp_api_buf {
  *
  * If failed return NULL.
  */
+
 const struct rkisp_api_ctx*
 rkisp_open_device(const char *dev_path, int uselocal3A);
 
+/* Set crop of frames.  The crop operation is before scaling. Optional.
+ * This can be called only when stream off.
+ *
+ * For example, sensor output 1920x1080, set crop to 1728x1080, and set
+ * #{rkisp_set_fmt} to 1280x800, it will be:
+ * 1920x1080  crop --> 1728x1080 scale down --> 1280x800
+ *
+ * @x:  The left offset
+ * @y:  The top offset
+ * @w:  The target width
+ * @h:  The target height
+ *
+ * Return 0 if success.
+ */
+int rkisp_video_set_crop(const struct rkisp_priv *priv,
+                         int x, int y, int w, int h);
 /*
  * Set the frame format, incluing resolution and fourcc. Optional.
  * This can be called only when stream off.
