@@ -775,7 +775,7 @@ typedef int8_t RT_S8, *PRT_S8;
 typedef uint16_t RT_U16, *PRT_U16;
 typedef int32_t RT_S32, *PRT_S32;
 typedef uint32_t RT_U32, *PRT_U32;
-static void rtk_get_ram_addr(char bt_addr[0])
+static void rtk_get_ram_addr(uint8_t bt_addr[0])
 {
 	srand(time(NULL) + getpid() + getpid() * 987654 + rand());
 
@@ -817,7 +817,7 @@ struct rk_vendor_req {
         uint8 data[1024];
 };
 
-static void rknand_get_randeom_btaddr(char *bt_addr)
+static void rknand_get_randeom_btaddr(uint8_t *bt_addr)
 {
 	int i;
 	/* No autogen BDA. Generate one now. */
@@ -827,7 +827,7 @@ static void rknand_get_randeom_btaddr(char *bt_addr)
 		rtk_get_ram_addr(&bt_addr[i]);
 }
 
-static void rknand_print_hex_data(uint8 *s, struct rk_vendor_req *buf, uint32 len)
+static void rknand_print_hex_data(char *s, struct rk_vendor_req *buf, uint32 len)
 {
         unsigned char i = 0;
 
@@ -848,9 +848,8 @@ static void rknand_print_hex_data(uint8 *s, struct rk_vendor_req *buf, uint32 le
         fprintf(stdout, "\n");
 }
 
-static int vendor_storage_read(int cmd, char *buf, int buf_len)
+static int vendor_storage_read(int cmd, uint8_t *buf, int buf_len)
 {
-        uint32 i;
         int ret ;
         uint8 p_buf[100]; /* malloc req buffer or used extern buffer */
         struct rk_vendor_req *req;
@@ -879,10 +878,9 @@ static int vendor_storage_read(int cmd, char *buf, int buf_len)
 		memcpy(buf, req->data, req->len);
         return req->len;
 }
-static int vendor_storage_write(int cmd, char *num)
+static int vendor_storage_write(int cmd, uint8_t *num)
 {
-        uint32 i;
-        int ret ;
+		int ret;
         uint8 p_buf[100]; /* malloc req buffer or used extern buffer */
         struct rk_vendor_req *req;
 
@@ -899,7 +897,7 @@ static int vendor_storage_write(int cmd, char *num)
         if (cmd != VENDOR_SN_ID && cmd != VENDOR_IMEI_ID)
                 req->len = 6;
         else
-                req->len = strlen(num);
+                req->len = strlen((char *)num);
         memcpy(req->data, num, req->len);
 
         ret = ioctl(sys_fd, VENDOR_WRITE_IO, req);
@@ -911,7 +909,7 @@ static int vendor_storage_write(int cmd, char *num)
         rknand_print_hex_data("vendor write:", req, req->len);
         return 0;
 }
-static int vendor_storage_read_bt_addr(uint8_t *tbuf)
+static int vendor_storage_read_bt_addr(char *tbuf)
 {
 	uint8 raw_buf[100] = {0};
 	int raw_len = 0;
@@ -926,7 +924,7 @@ static int vendor_storage_read_bt_addr(uint8_t *tbuf)
 	tbuf[17] = '\0';
 	return 17;
 }
-static int vendor_storage_write_bt_addr(char *tbuf)
+static int vendor_storage_write_bt_addr(uint8_t *tbuf)
 {
 	return vendor_storage_write(VENDOR_BT_MAC_ID, tbuf);
 }
@@ -969,9 +967,11 @@ uint8_t *rtb_read_config(struct rtb_struct *btrtl, int *cfg_len)
 	uint8_t *buf;
 #ifdef USE_CUSTOMER_ADDRESS
 #define BDADDR_STRING_LEN	17
+#ifndef BT_ADDR_FROM_VENDOR_STORAGE
 	size_t size;
+#endif
 	size_t result;
-	uint8_t tbuf[BDADDR_STRING_LEN + 1];
+	char tbuf[BDADDR_STRING_LEN + 1];
 	char *str;
 	int i = 0;
 #endif
@@ -1066,10 +1066,10 @@ uint8_t *rtb_read_config(struct rtb_struct *btrtl, int *cfg_len)
 		       bdaddr[1], bdaddr[0]);
 		customer_bdaddr = 1;
 	}
-#endif
-#endif
 
 read_cfg:
+#endif
+#endif
 	*cfg_len = 0;
 	file_name = malloc(PATH_MAX);
 	if (!file_name) {

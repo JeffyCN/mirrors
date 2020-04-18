@@ -104,6 +104,7 @@
 
 // TODO: Integrate BCM support into Bluez hciattach
 
+#include <ctype.h>
 #include <stdio.h>
 #include <getopt.h>
 #include <errno.h>
@@ -179,7 +180,7 @@ static const fw_auto_detection_entry_t fw_auto_detection_table[] = {
 	{"BCM4359C0","BCM4359C0"},  //AP6359
 	{"BCM4349B1","BCM4359B1"},  //AP6359
 	{"BCM4359C0","BCM4359C0"},	//AP6398s
-	{(const char *) NULL, NULL}
+	{(char *) NULL, NULL}
 };
 int uart_fd = -1;
 int hcdfile_fd = -1;
