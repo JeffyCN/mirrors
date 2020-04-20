@@ -2234,7 +2234,7 @@ RKiqCompositor::set_flash_status_info (rkisp_flash_setting_t& flash_info) {
         _ia_stat.flash_status.flash_mode = HAL_FLASH_ON;
         break;
     default:
-        LOGE("not support flash mode %d", flash_info.flash_mode);
+        LOGD("not support flash mode %d", flash_info.flash_mode);
     }
     // set frame status in set_3a_stats
 
