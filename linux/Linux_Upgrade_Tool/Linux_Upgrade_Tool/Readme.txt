@@ -36,3 +36,36 @@ v1.37 revision:
 
 v1.38 revision:
 1.fix get flash size bug when creating gpt bug
+
+v1.39 revision:
+1.support to write sn into vendor
+2.optimize progress output
+
+v1.4 revision:
+1.destroy gpt when download parameter
+2.change timeout of usb transfer to 5s
+
+v1.41 revision:
+1. add RL into console mode
+
+v1.42 revision:
+1. add release interface into uninitializeUsb
+
+v1.43 revision:
+1. judge device by location_id in the wait function
+
+v1.45 revision:
+1.location_id support 7 level
+
+v1.46 revision:
+1.fix compute last partition size bug during download sparse image 
+
+v1.47 revision:
+1.fix parse uuid bug 
+
+v1.48 revision:
+1.optimize download progress
+2.check size if larger than partition
+
+v1.49 revision:
+1.support to switch uvc into rockusb
