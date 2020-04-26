@@ -242,12 +242,17 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   if (ret || NULL == mframe)
     goto mpp_error;
 
+  if (mpp_frame_get_eos (mframe))
+    goto mpp_eos;
+
   if (mpp_frame_get_discard (mframe) || mpp_frame_get_errinfo (mframe))
     goto drop_frame;
+
   /* get from the pool the GstBuffer associated with the index */
   mpp_buf = mpp_frame_get_buffer (mframe);
   if (NULL == mpp_buf)
-    goto mpp_eos;
+    goto mpp_error;
+
   buf_index = mpp_buffer_get_index (mpp_buf);
   outbuf = pool->buffers[buf_index];
   if (outbuf == NULL)
@@ -317,12 +322,17 @@ mpp_eos:
   {
     *buffer = NULL;
     GST_INFO_OBJECT (pool, "got eos or %d", ret);
+
+    mpp_frame_deinit (&mframe);
     return GST_FLOW_EOS;
   }
 mpp_error:
   {
     *buffer = NULL;
     GST_ERROR_OBJECT (pool, "mpp error %d", ret);
+
+    if (mframe)
+      mpp_frame_deinit (&mframe);
     return GST_FLOW_ERROR;
   }
 no_buffer:
@@ -330,6 +340,8 @@ no_buffer:
     *buffer = NULL;
     GST_ERROR_OBJECT (pool, "No free buffer found in the pool at index %d",
         buf_index);
+
+    mpp_frame_deinit (&mframe);
     return GST_FLOW_ERROR;
   }
 drop_frame:
