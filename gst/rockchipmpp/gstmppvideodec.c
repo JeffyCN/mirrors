@@ -42,12 +42,12 @@ static GstStaticPadTemplate gst_mpp_video_dec_sink_template =
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-h264,"
-        "stream-format = (string) { byte-stream },"
+        "stream-format = (string) { avc, avc3, byte-stream },"
         "alignment = (string) { au },"
         "parsed = (boolean) true"
         ";"
         "video/x-h265,"
-        "stream-format = (string) { byte-stream },"
+        "stream-format = (string) { hvc1, hev1, byte-stream },"
         "alignment = (string) { au },"
         "parsed = (boolean) true"
         ";"
