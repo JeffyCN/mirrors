@@ -194,7 +194,7 @@ static int media_device_open(struct media_device *media)
 
 	media_dbg(media, "Opening media device %s\n", media->devnode);
 
-	media->fd = open(media->devnode, O_RDWR);
+	media->fd = open(media->devnode, O_RDWR | O_CLOEXEC);
 	if (media->fd < 0) {
 		ret = -errno;
 		media_dbg(media, "%s: Can't open media device %s\n",

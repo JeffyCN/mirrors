@@ -1229,7 +1229,7 @@ bool IspEngine::initISPStream(const char* ispDev)
     struct v4l2_requestbuffers req;
     struct v4l2_buffer v4l2_buf;
 
-    mIspFd = open(ispDev, O_RDWR | O_NONBLOCK);
+    mIspFd = open(ispDev, O_RDWR | O_NONBLOCK | O_CLOEXEC);
     if (mIspFd < 0)
     {
         LOGE("%s: Cannot open %s (error : %s)\n",

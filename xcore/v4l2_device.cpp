@@ -170,7 +170,7 @@ V4l2Device::open ()
         XCAM_LOG_DEBUG ("v4l2 device open failed, there's no device name");
         return XCAM_RETURN_ERROR_PARAM;
     }
-    _fd = ::open (_name, O_RDWR);
+    _fd = ::open (_name, O_RDWR | O_CLOEXEC);
     if (_fd == -1) {
         XCAM_LOG_DEBUG ("open device(%s) failed", _name);
         return XCAM_RETURN_ERROR_IOCTL;

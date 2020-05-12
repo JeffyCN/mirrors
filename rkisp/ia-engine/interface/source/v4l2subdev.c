@@ -44,7 +44,7 @@ int v4l2_subdev_open(struct media_entity *entity)
 	if (entity->fd != -1)
 		return 0;
 
-	entity->fd = open(entity->devname, O_RDWR);
+	entity->fd = open(entity->devname, O_RDWR | O_CLOEXEC);
 	if (entity->fd == -1) {
 		int ret = -errno;
 		media_dbg(entity->media,
