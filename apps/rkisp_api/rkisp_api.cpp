@@ -1300,9 +1300,9 @@ static const char * rkisp_get_active_sensor(const struct rkisp_priv *priv)
 static int rkisp_get_media_topology(struct rkisp_priv *priv)
 {
     char mdev_path[64];
-    int i, ret;
+    int i, ret, max = 8;
 
-    for (i = 0; ; i++) {
+    for (i = 0; i < max; i++) {
         sprintf(mdev_path, "/dev/media%d", i);
         INFO("Get media device: %s info\n", mdev_path);
 
