@@ -40,6 +40,7 @@ struct rkisp_api_ctx {
  * @buf:            The buffer pointer if exist
  * @fd:             The fd of buffer
  * @size:           The size of this buffer/plane
+ * @sequence:       The sequence count of this frame from v4l2_buffer
  * @frame_id:       The frame id from librkisp.so
  * @next_plane:     Link to the next plane if this is multi-planes buffer
  *
@@ -55,13 +56,14 @@ struct rkisp_api_buf {
     void *buf;
     int fd;
     int size;
+    uint64_t sequence;
     struct {
         int64_t expo_time;
         int gain;
-	unsigned char luminance_grid[RKISP_MAX_LUMINANCE_GRID];
-	int luminance_grid_count;
-	int hist_bins[RKISP_MAX_HISTOGRAM_BIN];
-	int hist_bins_count;
+    unsigned char luminance_grid[RKISP_MAX_LUMINANCE_GRID];
+    int luminance_grid_count;
+    int hist_bins[RKISP_MAX_HISTOGRAM_BIN];
+    int hist_bins_count;
         int64_t frame_id;
     } metadata;
     struct timeval timestamp;

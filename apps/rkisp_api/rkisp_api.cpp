@@ -941,6 +941,7 @@ rkisp_get_frame(const struct rkisp_api_ctx *ctx, int timeout_ms)
 
     buffer->index = buf.index;
     buffer->pul.timestamp = buf.timestamp;
+    buffer->pul.sequence = buf.sequence;
 
     if (priv->ctx.uselocal3A && priv->rkisp_engine) {
         rkisp_get_ae_time(priv, buffer->pul.metadata.expo_time);
