@@ -44,10 +44,11 @@ typedef enum {
 
 /* Status codes, returned by any blit function */
 typedef enum {
-    IM_STATUS_SUCCESS         = 0,
-    IM_STATUS_NOT_SUPPORTED   = 1,
-    IM_STATUS_OUT_OF_MEMORY   = 2,
-    IM_STATUS_INVALID_PARAM   = 3,
+    IM_STATUS_SUCCESS         = 1,
+    IM_STATUS_NOT_SUPPORTED   = -1,
+    IM_STATUS_OUT_OF_MEMORY   = -2,
+    IM_STATUS_INVALID_PARAM   = -3,
+    IM_STATUS_FAILED          = 0,
 } IM_STATUS;
 
 //struct AHardwareBuffer AHardwareBuffer;
@@ -58,7 +59,7 @@ typedef struct {
     int y;        /* upper-left y */
     int width;    /* width */
     int height;   /* height */
-} rga_rect;
+} im_rect;
 
 /* im_info definition */
 typedef struct {
@@ -83,16 +84,11 @@ typedef struct rga_nn {
 } rga_nn_t;
 
 /*
- * rga init
- */
-IM_API IM_STATUS rgainit();
-
-/*
  * @return buffer_t
  */
-IM_API buffer_t* warpbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format);
-IM_API buffer_t* warpbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format);
-IM_API buffer_t* warpbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format);
+IM_API buffer_t warpbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format);
+IM_API buffer_t warpbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format);
+IM_API buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format);
 
 #if 0 //Android
 IM_API buffer_t* warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
@@ -147,7 +143,7 @@ IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double 
  */
 #define imcrop(src, dst, srect) imcrop_t(src, dst, srect, srect, 1)
 
-IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, rga_rect srect, rga_rect drect, int sync);
+IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect srect, im_rect drect, int sync);
 
 /*
  * rotation
@@ -200,9 +196,9 @@ IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
 #define imreset(src, dst, rect, color) imreset_t(src, dst, rect, color, 1)
 #define imdraw(src, dst, rect, color) imdraw_t(src, dst, rect, color, 1)
 
-IM_API IM_STATUS imfill_t(const buffer_t src, buffer_t dst, rga_rect rect, unsigned char color, int sync);
-IM_API IM_STATUS imreset_t(const buffer_t src, buffer_t dst, rga_rect rect, unsigned char color, int sync);
-IM_API IM_STATUS imdraw_t(const buffer_t src, buffer_t dst, rga_rect rect, unsigned char color, int sync);
+IM_API IM_STATUS imfill_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync);
+IM_API IM_STATUS imreset_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync);
+IM_API IM_STATUS imdraw_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync);
 
 /*
  * translate
