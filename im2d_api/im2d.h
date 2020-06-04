@@ -17,7 +17,7 @@ extern "C" {
 #if 1 //ANDROID
 #include <hardware/rga.h>
 
-#include <hardware_buffer_jni.h>
+//#include <hardware_buffer_jni.h>
 #else
 
 #endif
@@ -50,7 +50,7 @@ typedef enum {
     IM_STATUS_INVALID_PARAM   = 3,
 } IM_STATUS;
 
-struct AHardwareBuffer AHardwareBuffer;
+//struct AHardwareBuffer AHardwareBuffer;
 
 /* Rectangle definition */
 typedef struct {
@@ -93,8 +93,11 @@ IM_API IM_STATUS rgainit();
 IM_API buffer_t* warpbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format);
 IM_API buffer_t* warpbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format);
 IM_API buffer_t* warpbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format);
+
+#if 0 //Android
 IM_API buffer_t* warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
 IM_API buffer_t* warpbuffer_AHardwareBuffer(AHardwareBuffer buf);
+#endif
 
 /*
  * Query RGA basic information, supported resolution, supported format, etc.
@@ -126,6 +129,7 @@ IM_API const char* querystring(int name);
  * @returns success or else negative error code.
  */
 #define imresize(src, dst) imresize_t(src, dst, 0, 0, INTER_LINEAR, 1)
+#define impyramid(src, dst) imresize_t(src, dst, 0.5, 0.5, INTER_LINEAR, 1)
 
 IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double fy, int interpolation, int sync);
 
@@ -298,7 +302,7 @@ IM_API IM_STATUS improcess_t(const buffer_t src, buffer_t dst, int sync, ...);
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS int imsync(void);
+IM_API IM_STATUS imsync(void);
 
 #ifdef __cplusplus
 }

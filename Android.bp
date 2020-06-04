@@ -38,6 +38,7 @@ cc_library_shared {
         "GraphicBuffer.cpp",
         "normal/NormalRga.cpp",
         "normal/NormalRgaApi.cpp",
+        "im2d_api/im2d.cpp"
     ],
 
     include_dirs: [
