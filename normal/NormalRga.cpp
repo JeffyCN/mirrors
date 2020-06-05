@@ -960,9 +960,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	rgaReg.render_mode |= RGA_BUF_GEM_TYPE_DMA;
 #endif
 #endif
-	if(src->sync_mode == RGA_BLIT_ASYNC)
+	if(dst->sync_mode == RGA_BLIT_ASYNC)
 	{
-		sync_mode = src->sync_mode;
+		sync_mode = dst->sync_mode;
 	}
 	/* using sync to pass config to rga driver. */
 	if(ioctl(ctx->rgaFd, sync_mode, &rgaReg)) {
@@ -1007,6 +1007,7 @@ int RgaCollorFill(rga_info *dst)
 	COLOR_FILL fillColor ;
 	void *dstBuf = NULL;
 	RECT clip;
+	int sync_mode = RGA_BLIT_SYNC;
 
 	if (!ctx) {
 		ALOGE("Try to use uninit rgaCtx=%p",ctx);
@@ -1183,7 +1184,12 @@ int RgaCollorFill(rga_info *dst)
 #endif
 #endif
 
-	if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg)) {
+	if(dst->sync_mode == RGA_BLIT_ASYNC)
+	{
+		sync_mode = dst->sync_mode;
+	}
+
+	if(ioctl(ctx->rgaFd, sync_mode, &rgaReg)) {
 		printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
 		ALOGE(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
 	}
