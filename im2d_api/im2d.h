@@ -134,16 +134,15 @@ IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double 
  *
  * @param src
  * @param dst
- * @param srect
- * @param drect
+ * @param rect
  * @param sync
  *      wait until operation complete
  *
  * @returns success or else negative error code.
  */
-#define imcrop(src, dst, srect) imcrop_t(src, dst, srect, NULL, 1)
+#define imcrop(src, dst, rect) imcrop_t(src, dst, rect, 1)
 
-IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect srect, im_rect drect, int sync);
+IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect rect, int sync);
 
 /*
  * rotation
@@ -193,12 +192,10 @@ IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
  * @returns success or else negative error code.
  */
 #define imfill(src, dst, rect, color) imfill_t(src, dst, rect, color, 1)
-#define imreset(src, dst, rect, color) imreset_t(src, dst, rect, color, 1)
-#define imdraw(src, dst, rect, color) imdraw_t(src, dst, rect, color, 1)
+#define imreset(src, dst, rect, color) imfill_t(src, dst, rect, color, 1)
+#define imdraw(src, dst, rect, color) imfill_t(src, dst, rect, color, 1)
 
 IM_API IM_STATUS imfill_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync);
-IM_API IM_STATUS imreset_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync);
-IM_API IM_STATUS imdraw_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync);
 
 /*
  * translate

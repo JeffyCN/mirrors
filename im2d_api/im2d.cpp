@@ -155,7 +155,7 @@ IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double 
         return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect srect, im_rect drect, int sync)
+IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect rect, int sync)
 {
     rga_info_t srcinfo;
     rga_info_t dstinfo;
@@ -168,20 +168,14 @@ IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect srect, im_re
     if (ret < 0)
         return IM_STATUS_INVALID_PARAM;
 
-    if ((srect.width + srect.x > src.width) || (srect.height + srect.y > src.height))
+    if ((rect.width + rect.x > src.width) || (rect.height + rect.y > src.height))
     {
-        ALOGE("rga_im2d: invaild width or invaild x on src rect");
+        ALOGE("rga_im2d: invaild rect");
         return IM_STATUS_INVALID_PARAM;
     }
 
-    if ((drect.width + drect.x > dst.width) || (drect.height + drect.y > dst.height))
-    {
-        ALOGE("rga_im2d: invaild width or invaild x on dst rect");
-        return IM_STATUS_INVALID_PARAM;
-    }
-
-    rga_set_rect(&srcinfo.rect, srect.x, srect.y, srect.width, srect.height, src.wstride, src.hstride, src.format);
-    rga_set_rect(&dstinfo.rect, drect.x, drect.y, drect.width, drect.height, dst.wstride, dst.hstride, dst.format);
+    rga_set_rect(&srcinfo.rect, rect.x, rect.y, rect.width, rect.height, src.wstride, src.hstride, src.format);
+    rga_set_rect(&dstinfo.rect, 0, 0, rect.width, rect.height, dst.wstride, dst.hstride, dst.format);
 
     if (sync == 0)
         srcinfo.sync_mode = RGA_BLIT_ASYNC;
@@ -195,7 +189,30 @@ IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect srect, im_re
 
 IM_API IM_STATUS imrotate_t(const buffer_t src, buffer_t dst, int rotation, int sync)
 {
-    return IM_STATUS_SUCCESS;
+    rga_info_t srcinfo;
+    rga_info_t dstinfo;
+    int ret;
+
+    memset(&srcinfo, 0, sizeof(rga_info_t));
+    memset(&dstinfo, 0, sizeof(rga_info_t));
+
+    ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
+    if (ret < 0)
+        return IM_STATUS_INVALID_PARAM;
+
+    srcinfo.rotation = rotation;
+
+    rga_set_rect(&srcinfo.rect, 0, 0, src.width, src.height, src.wstride, src.hstride, src.format);
+    rga_set_rect(&dstinfo.rect, 0, 0, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
+
+    if (sync == 0)
+        srcinfo.sync_mode = RGA_BLIT_ASYNC;
+
+    ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
+    if (ret)
+        return IM_STATUS_FAILED;
+    else
+        return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
@@ -204,16 +221,6 @@ IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
 }
 
 IM_API IM_STATUS imfill_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync)
-{
-    return IM_STATUS_SUCCESS;
-}
-
-IM_API IM_STATUS imreset_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync)
-{
-    return IM_STATUS_SUCCESS;
-}
-
-IM_API IM_STATUS imdraw_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync)
 {
     return IM_STATUS_SUCCESS;
 }
