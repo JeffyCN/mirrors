@@ -141,7 +141,7 @@ IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double 
  *
  * @returns success or else negative error code.
  */
-#define imcrop(src, dst, srect) imcrop_t(src, dst, srect, srect, 1)
+#define imcrop(src, dst, srect) imcrop_t(src, dst, srect, NULL, 1)
 
 IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect srect, im_rect drect, int sync);
 
