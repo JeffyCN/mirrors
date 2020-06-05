@@ -266,7 +266,7 @@ IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
         return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imfill_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync)
+IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, unsigned char color, int sync)
 {
     rga_info_t dstinfo;
     int ret;
@@ -278,6 +278,12 @@ IM_API IM_STATUS imfill_t(const buffer_t src, buffer_t dst, im_rect rect, unsign
         return IM_STATUS_INVALID_PARAM;
 
     dstinfo.color = color;
+
+    if ((rect.width + rect.x > dst.width) || (rect.height + rect.y > dst.height))
+    {
+        ALOGE("rga_im2d: invaild rect");
+        return IM_STATUS_INVALID_PARAM;
+    }
 
     rga_set_rect(&dstinfo.rect, rect.x, rect.y, rect.width, rect.height, dst.wstride, dst.hstride, dst.format);
 

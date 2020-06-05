@@ -191,11 +191,11 @@ IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
  *
  * @returns success or else negative error code.
  */
-#define imfill(src, dst, rect, color) imfill_t(src, dst, rect, color, 1)
-#define imreset(src, dst, rect, color) imfill_t(src, dst, rect, color, 1)
-#define imdraw(src, dst, rect, color) imfill_t(src, dst, rect, color, 1)
+#define imfill(dst, rect, color) imfill_t(dst, rect, color, 1)
+#define imreset(dst, rect, color) imfill_t(dst, rect, color, 1)
+#define imdraw(dst, rect, color) imfill_t(dst, rect, color, 1)
 
-IM_API IM_STATUS imfill_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync);
+IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, unsigned char color, int sync);
 
 /*
  * translate
