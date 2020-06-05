@@ -13,6 +13,9 @@
 #include "im2d.h"
 
 #include <RockchipRga.h>
+#include "normal/NormalRga.h"
+
+#define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 
 using namespace android;
 
@@ -116,7 +119,40 @@ IM_API const char* querystring(int name)
 
 IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double fy, int interpolation, int sync)
 {
-    return IM_STATUS_SUCCESS;
+    rga_info_t srcinfo;
+    rga_info_t dstinfo;
+    int ret;
+
+    memset(&srcinfo, 0, sizeof(rga_info_t));
+    memset(&dstinfo, 0, sizeof(rga_info_t));
+
+    ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
+    if (ret < 0)
+        return IM_STATUS_INVALID_PARAM;
+
+    if (fx > 0 || fy > 0)
+    {
+        if (fx == 0) fx = 1;
+        if (fy == 0) fy = 1;
+
+        dst.width = (int)(src.width * fx);
+        dst.height = (int)(src.height * fy);
+
+        if(NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format))
+            ALIGN(dst.width, 2);
+    }
+
+    rga_set_rect(&srcinfo.rect, 0, 0, src.width, src.height, src.wstride, src.hstride, src.format);
+    rga_set_rect(&dstinfo.rect, 0, 0, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
+
+    if (sync == 0)
+        srcinfo.sync_mode = RGA_BLIT_ASYNC;
+
+    ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
+    if (ret)
+        return IM_STATUS_FAILED;
+    else
+        return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect srect, im_rect drect, int sync)
@@ -164,14 +200,20 @@ IM_API IM_STATUS imcopy_t(const buffer_t src, buffer_t dst, int sync)
     memset(&dstinfo, 0, sizeof(rga_info_t));
 
     ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
-    if (!ret)
+    if (ret < 0)
+        return IM_STATUS_INVALID_PARAM;
+
+    if (src.width != dst.width || src.height != dst.height)
         return IM_STATUS_INVALID_PARAM;
 
     rga_set_rect(&srcinfo.rect, 0, 0, src.width, src.height, src.wstride, src.hstride, src.format);
     rga_set_rect(&dstinfo.rect, 0, 0, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
 
+    if (sync == 0)
+        srcinfo.sync_mode = RGA_BLIT_ASYNC;
+
     ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
-    if(ret)
+    if (ret)
         return IM_STATUS_FAILED;
     else
         return IM_STATUS_SUCCESS;
