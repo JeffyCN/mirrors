@@ -174,8 +174,8 @@ IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double 
     ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
     if (ret)
         return IM_STATUS_FAILED;
-    else
-        return IM_STATUS_SUCCESS;
+
+    return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect rect, int sync)
@@ -206,8 +206,8 @@ IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect rect, int sy
     ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
     if (ret)
         return IM_STATUS_FAILED;
-    else
-        return IM_STATUS_SUCCESS;
+
+    return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imrotate_t(const buffer_t src, buffer_t dst, int rotation, int sync)
@@ -234,8 +234,8 @@ IM_API IM_STATUS imrotate_t(const buffer_t src, buffer_t dst, int rotation, int 
     ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
     if (ret)
         return IM_STATUS_FAILED;
-    else
-        return IM_STATUS_SUCCESS;
+
+    return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
@@ -262,8 +262,8 @@ IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
     ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
     if (ret)
         return IM_STATUS_FAILED;
-    else
-        return IM_STATUS_SUCCESS;
+
+    return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, unsigned char color, int sync)
@@ -293,8 +293,8 @@ IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, unsigned char color, int s
     ret = rkRga.RkRgaCollorFill(&dstinfo);
     if (ret)
         return IM_STATUS_FAILED;
-    else
-        return IM_STATUS_SUCCESS;
+
+    return IM_STATUS_SUCCESS;
 
     return IM_STATUS_SUCCESS;
 }
@@ -321,8 +321,8 @@ IM_API IM_STATUS imtranslate_t(const buffer_t src, buffer_t dst, int x, int y, i
     ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
     if (ret)
         return IM_STATUS_FAILED;
-    else
-        return IM_STATUS_SUCCESS;
+
+    return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imcopy_t(const buffer_t src, buffer_t dst, int sync)
@@ -350,8 +350,8 @@ IM_API IM_STATUS imcopy_t(const buffer_t src, buffer_t dst, int sync)
     ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
     if (ret)
         return IM_STATUS_FAILED;
-    else
-        return IM_STATUS_SUCCESS;
+
+    return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imblend_t(const buffer_t srcA, const buffer_t srcB, buffer_t dst, int mode, int sync)
@@ -389,8 +389,8 @@ IM_API IM_STATUS imcvtcolor_t(const buffer_t src, buffer_t dst, int sfmt, int df
     ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
     if (ret)
         return IM_STATUS_FAILED;
-    else
-        return IM_STATUS_SUCCESS;
+
+    return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imquantize_t(const buffer_t src, buffer_t dst, rga_nn_t nn_info, int sync)
