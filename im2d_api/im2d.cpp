@@ -217,7 +217,30 @@ IM_API IM_STATUS imrotate_t(const buffer_t src, buffer_t dst, int rotation, int 
 
 IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
 {
-    return IM_STATUS_SUCCESS;
+    rga_info_t srcinfo;
+    rga_info_t dstinfo;
+    int ret;
+
+    memset(&srcinfo, 0, sizeof(rga_info_t));
+    memset(&dstinfo, 0, sizeof(rga_info_t));
+
+    ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
+    if (ret < 0)
+        return IM_STATUS_INVALID_PARAM;
+
+    srcinfo.rotation = mode;
+
+    rga_set_rect(&srcinfo.rect, 0, 0, src.width, src.height, src.wstride, src.hstride, src.format);
+    rga_set_rect(&dstinfo.rect, 0, 0, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
+
+    if (sync == 0)
+        srcinfo.sync_mode = RGA_BLIT_ASYNC;
+
+    ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
+    if (ret)
+        return IM_STATUS_FAILED;
+    else
+        return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imfill_t(const buffer_t src, buffer_t dst, im_rect rect, unsigned char color, int sync)
