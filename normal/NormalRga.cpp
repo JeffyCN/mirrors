@@ -927,6 +927,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format)))
 		yuvToRgbMode |= 0x2 << 4;
 
+	if(dst->color_space_mode > 0)
+		yuvToRgbMode = dst->color_space_mode;
+
 	/* mode
 	 * scaleMode:set different algorithm to scale.
 	 * rotateMode:rotation mode

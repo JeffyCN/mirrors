@@ -301,7 +301,28 @@ IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, unsigned char color, int s
 
 IM_API IM_STATUS imtranslate_t(const buffer_t src, buffer_t dst, int x, int y, int sync)
 {
-    return IM_STATUS_SUCCESS;
+    rga_info_t srcinfo;
+    rga_info_t dstinfo;
+    int ret;
+
+    memset(&srcinfo, 0, sizeof(rga_info_t));
+    memset(&dstinfo, 0, sizeof(rga_info_t));
+
+    ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
+    if (ret < 0)
+        return IM_STATUS_INVALID_PARAM;
+
+    rga_set_rect(&srcinfo.rect, 0, 0, src.width - x, src.height - y, src.wstride, src.hstride, src.format);
+    rga_set_rect(&dstinfo.rect, x, y, src.width - x, src.height - y, dst.wstride, dst.hstride, dst.format);
+
+    if (sync == 0)
+        dstinfo.sync_mode = RGA_BLIT_ASYNC;
+
+    ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
+    if (ret)
+        return IM_STATUS_FAILED;
+    else
+        return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imcopy_t(const buffer_t src, buffer_t dst, int sync)
@@ -338,9 +359,38 @@ IM_API IM_STATUS imblend_t(const buffer_t srcA, const buffer_t srcB, buffer_t ds
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imcvtcolor_t(const buffer_t src, buffer_t dst, int sfmt, int dfmt, int sync)
+IM_API IM_STATUS imcvtcolor_t(const buffer_t src, buffer_t dst, int sfmt, int dfmt, int mode, int sync)
 {
-    return IM_STATUS_SUCCESS;
+    rga_info_t srcinfo;
+    rga_info_t dstinfo;
+    int ret;
+
+    memset(&srcinfo, 0, sizeof(rga_info_t));
+    memset(&dstinfo, 0, sizeof(rga_info_t));
+
+    ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
+    if (ret < 0)
+        return IM_STATUS_INVALID_PARAM;
+
+    if (src.width != dst.width || src.height != dst.height)
+        return IM_STATUS_INVALID_PARAM;
+
+    rga_set_rect(&srcinfo.rect, 0, 0, src.width, src.height, src.wstride, src.hstride, sfmt);
+    rga_set_rect(&dstinfo.rect, 0, 0, dst.width, dst.height, dst.wstride, dst.hstride, dfmt);
+
+    if (mode > 0)
+    {
+        dstinfo.color_space_mode = mode;
+    }
+
+    if (sync == 0)
+        dstinfo.sync_mode = RGA_BLIT_ASYNC;
+
+    ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
+    if (ret)
+        return IM_STATUS_FAILED;
+    else
+        return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS imquantize_t(const buffer_t src, buffer_t dst, rga_nn_t nn_info, int sync)
