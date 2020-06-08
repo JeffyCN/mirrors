@@ -14,10 +14,12 @@
 
 #include <RockchipRga.h>
 #include "normal/NormalRga.h"
+#include <sstream>
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 
 using namespace android;
+using namespace std;
 
 RockchipRga& rkRga(RockchipRga::get());
 
@@ -135,7 +137,253 @@ IM_API int rga_set_buffer_info(const buffer_t src, buffer_t dst, rga_info_t* src
 
 IM_API const char* querystring(int name)
 {
-    const char* temp = "rk-debug";
+    bool all_output = 0, all_output_prepared = 0;
+    char buf[16];
+    int rgafd, rga_version = 0;
+    const char *temp;
+    const char *output_vendor = "Rockchip Electronics Co.,Ltd.";
+    const char *output_name[] = {
+        "RGA vendor : ",
+        "RGA vesion : ",
+        "Max input  : ",
+        "Max output : ",
+        "Scale limit: ",
+        "Input support format : ",
+        "output support format: "
+    };
+    const char *output_version[] = {
+        "unknown",
+        "RGA_1",
+        "RGA_1_plus",
+        "RGA_2",
+        "RGA_2_lite0",
+        "RGA_2_lite1",
+        "RGA_2_Enhance"
+    };
+    const char *output_resolution[] = {
+        "unknown",
+        "2048x2048",
+        "4096x4096",
+        "8192x8192"
+    };
+    const char *output_scale_limit[] = {
+        "unknown",
+        "0.125 ~ 8",
+        "0.0625 ~ 16"
+    };
+    const char *output_format[] = {
+        "unknown",
+        "RGBA_8888 RGBA_4444 RGBA_5551 RGB_565 RGB_888 ",
+        "BPP8 BPP4 BPP2 BPP1 ",
+        "YUV420/YUV422 ",
+        "YUV420_10bit/YUV422_10bit ",
+        "YUYV ",
+        "YUV400/Y4 "
+    };
+    ostringstream out;
+    string info;
+
+    /*open /dev/rga node in order to get rga vesion*/
+    rgafd = open("/dev/rga", O_RDWR, 0);
+    if (rgafd < 0) {
+        printf("failed to open rga:%s.",strerror(errno));
+        return "err";
+    }
+    if (ioctl(rgafd, RGA_GET_VERSION, buf)) {
+        printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        return "err";
+    }
+    if (strncmp(buf,"1.3",3) == 0)
+        rga_version = RGA_1;
+    else if (strncmp(buf,"1.6",3) == 0)
+        rga_version = RGA_1_PLUS;
+    else if (strncmp(buf,"2.00",4) == 0) //3288 vesion is 2.00
+        rga_version = RGA_2;
+    else if (strncmp(buf,"3.00",4) == 0) //3288w version is 3.00
+        rga_version = RGA_2;
+    else if (strncmp(buf,"3.02",4) == 0)
+        rga_version = RGA_2_ENHANCE;
+    else if (strncmp(buf,"4.00",4) == 0)
+        rga_version = RGA_2_LITE0;
+    else if (strncmp(buf,"4.00",4) == 0)
+        rga_version = RGA_2_LITE1;
+    else
+        rga_version = RGA_V_ERR;
+
+    close(rgafd);
+
+    do{
+        switch(name)
+        {
+            case RGA_VENDOR :
+                    out << output_name[name] << output_vendor << endl;
+                break;
+
+            case RGA_VERSION :
+                switch(rga_version)
+                {
+                    case RGA_1 :
+                        out << output_name[name] << output_version[RGA_1] << endl;
+                        break;
+                    case RGA_1_PLUS :
+                        out << output_name[name] << output_version[RGA_1_PLUS] << endl;
+                        break;
+                    case RGA_2 :
+                        out << output_name[name] << output_version[RGA_2] << endl;
+                        break;
+                    case RGA_2_LITE0 :
+                        out << output_name[name] << output_version[RGA_2_LITE0] << endl;
+                        break;
+                    case RGA_2_LITE1 :
+                        out << output_name[name] << output_version[RGA_2_LITE1] << endl;
+                        break;
+                    case RGA_2_ENHANCE :
+                        out << output_name[name] << output_version[RGA_2_ENHANCE] << endl;
+                        break;
+                    case RGA_V_ERR :
+                        out << output_name[name] << output_version[RGA_V_ERR] << endl;
+                        break;
+                    default:
+                        return "err";
+                }
+                break;
+
+            case RGA_MAX_INPUT :
+                switch(rga_version)
+                {
+                    case RGA_1 :
+                    case RGA_1_PLUS :
+                    case RGA_2 :
+                    case RGA_2_LITE0 :
+                    case RGA_2_LITE1 :
+                    case RGA_2_ENHANCE :
+                        out << output_name[name] << output_resolution[3] << endl;
+                        break;
+                    case RGA_V_ERR :
+                        out << output_name[name] << output_resolution[0] << endl;
+                        break;
+                    default:
+                        return "err";
+                }
+                break;
+
+            case RGA_MAX_OUTPUT :
+                switch(rga_version)
+                {
+                    case RGA_1 :
+                    case RGA_1_PLUS :
+                        out << output_name[name] << output_resolution[1] << endl;
+                        break;
+                    case RGA_2 :
+                    case RGA_2_LITE0 :
+                    case RGA_2_LITE1 :
+                    case RGA_2_ENHANCE :
+                        out << output_name[name] << output_resolution[2] << endl;
+                        break;
+                    case RGA_V_ERR :
+                        out << output_name[name] << output_resolution[0] << endl;
+                        break;
+                    default:
+                        return "err";
+                }
+                break;
+
+            case RGA_SCALE_LIMIT :
+                switch(rga_version)
+                {
+                    case RGA_1 :
+                    case RGA_1_PLUS :
+                    case RGA_2_LITE0 :
+                    case RGA_2_LITE1 :
+                        out << output_name[name] << output_scale_limit[1] << endl;
+                    case RGA_2 :
+                    case RGA_2_ENHANCE :
+                        out << output_name[name] << output_scale_limit[2] << endl;
+                        break;
+                    case RGA_V_ERR :
+                        out << output_name[name] << output_resolution[0] << endl;
+                        break;
+                    default:
+                        return "err";
+                }
+                break;
+
+            case RGA_INPUT_FORMAT :
+                switch(rga_version)
+                {
+                    case RGA_1 :
+                    case RGA_1_PLUS :
+                        out << output_name[name] << output_format[1] << output_format[2] << output_format[3] << endl;
+                    case RGA_2 :
+                    case RGA_2_LITE0 :
+                        out << output_name[name] << output_format[1] << output_format[3] << endl;
+                        break;
+                    case RGA_2_LITE1 :
+                    case RGA_2_ENHANCE :
+                        out << output_name[name] << output_format[1] << output_format[3] << output_format[4] << endl;
+                        break;
+                    case RGA_V_ERR :
+                        out << output_name[name] << output_format[0] << endl;
+                        break;
+                    default:
+                        return "err";
+                }
+                break;
+
+            case RGA_OUTPUT_FORMAT :
+                switch(rga_version)
+                {
+                    case RGA_1 :
+                        out << output_name[name] << output_format[1] << output_format[3] << endl;
+                        break;
+                    case RGA_1_PLUS :
+                        out << output_name[name] << output_format[1] << output_format[3] << endl;
+                        break;
+                    case RGA_2 :
+                        out << output_name[name] << output_format[1] << output_format[3] << endl;
+                        break;
+                    case RGA_2_LITE0 :
+                        out << output_name[name] << output_format[1] << output_format[3] << endl;
+                        break;
+                    case RGA_2_LITE1 :
+                        out << output_name[name] << output_format[1] << output_format[3] << output_format[4] << endl;
+                        break;
+                    case RGA_2_ENHANCE :
+                        out << output_name[name] << output_format[1] << output_format[3] << output_format[4] << output_format[5] << endl;
+                        break;
+                    case RGA_V_ERR :
+                        out << output_name[name] << output_format[0] << endl;
+                        break;
+                    default:
+                        return "err";
+                }
+                break;
+
+            case RGA_ALL :
+                if (!all_output)
+                {
+                    all_output = 1;
+                    name = 0;
+                }
+                else
+                    all_output_prepared = 1;
+                break;
+
+            default:
+                return "err";
+        }
+
+        info = out.str();
+
+        if (all_output_prepared)
+            break;
+        else if (all_output && strcmp(info.c_str(),"0")>0)
+            name++;
+
+    }while(all_output);
+
+    temp = info.c_str();
+    printf("\n%s\n", temp);
 
     return temp;
 }

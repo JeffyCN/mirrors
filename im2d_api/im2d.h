@@ -64,6 +64,30 @@ typedef enum {
     IM_COLOR_SPACE_DEFAULT        = -1,
 } IM_COLOR_SPACE_MODE;
 
+/* Get RGA basic information index */
+typedef enum {
+    RGA_VENDOR = 0,
+    RGA_VERSION,
+    RGA_MAX_INPUT,
+    RGA_MAX_OUTPUT,
+    RGA_SCALE_LIMIT,
+    RGA_INPUT_FORMAT,
+    RGA_OUTPUT_FORMAT,
+    RGA_ALL,
+} IM_INFORMATION;
+
+/*rga version index*/
+typedef enum
+{
+    RGA_V_ERR                  = 0x0,
+    RGA_1                      = 0x1,
+    RGA_1_PLUS                 = 0x2,
+    RGA_2                      = 0x3,
+    RGA_2_LITE0                = 0x4,
+    RGA_2_LITE1                = 0x5,
+    RGA_2_ENHANCE              = 0x6,
+}RGA_VERSION_NUM;
+
 //struct AHardwareBuffer AHardwareBuffer;
 
 /* Rectangle definition */
