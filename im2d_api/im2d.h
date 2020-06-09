@@ -16,7 +16,6 @@ extern "C" {
 
 #if 1 //ANDROID
 #include <hardware/rga.h>
-
 //#include <hardware_buffer_jni.h>
 #else
 
@@ -126,11 +125,6 @@ typedef struct rga_nn {
 IM_API buffer_t warpbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format);
 IM_API buffer_t warpbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format);
 IM_API buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format);
-
-#if 0 //Android
-IM_API buffer_t* warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
-IM_API buffer_t* warpbuffer_AHardwareBuffer(AHardwareBuffer buf);
-#endif
 
 /*
  * Query RGA basic information, supported resolution, supported format, etc.

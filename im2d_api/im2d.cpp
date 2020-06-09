@@ -11,10 +11,12 @@
  */
 
 #include "im2d.h"
+#include "im2d_cpp.h"
 
 #include <RockchipRga.h>
 #include "normal/NormalRga.h"
 #include <sstream>
+#include <ui/GraphicBuffer.h>
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 
@@ -70,6 +72,35 @@ IM_API buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, int hs
 
     return buffer;
 }
+
+#if 1 //Android
+IM_API buffer_t warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
+{
+    buffer_t buffer;
+    int ret = 0;
+
+    memset(&buffer, 0, sizeof(buffer_t));
+
+    ret = rkRga.RkRgaGetBufferFd(buf->handle, &buffer.fd);
+    if (ret)
+        ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(buf->handle));
+
+    if (buffer.fd <= 0)
+    {
+        ret = RkRgaGetHandleMapAddress(buf->handle, &buffer.vir_addr);
+        if(!buffer.vir_addr)
+            ALOGE("rga_im2d: invaild GraphicBuffer");
+    }
+
+    buffer.width   = buf->getWidth();
+    buffer.height  = buf->getHeight();
+    buffer.wstride = buf->getStride();
+    buffer.hstride = buf->getHeight();
+    buffer.format  = buf->getPixelFormat();
+
+    return buffer;
+}
+#endif
 
 IM_API int rga_set_buffer_info(buffer_t dst, rga_info_t* dstinfo)
 {
@@ -185,12 +216,14 @@ IM_API const char* querystring(int name)
 
     /*open /dev/rga node in order to get rga vesion*/
     rgafd = open("/dev/rga", O_RDWR, 0);
-    if (rgafd < 0) {
-        printf("failed to open rga:%s.",strerror(errno));
+    if (rgafd < 0)
+    {
+        ALOGE("rga_im2d: failed to open /dev/rga: %s.",strerror(errno));
         return "err";
     }
-    if (ioctl(rgafd, RGA_GET_VERSION, buf)) {
-        printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+    if (ioctl(rgafd, RGA_GET_VERSION, buf))
+    {
+        ALOGE("rga_im2d: rga get version fail: %s",strerror(errno));
         return "err";
     }
     if (strncmp(buf,"1.3",3) == 0)
@@ -383,7 +416,6 @@ IM_API const char* querystring(int name)
     }while(all_output);
 
     temp = info.c_str();
-    printf("\n%s\n", temp);
 
     return temp;
 }
