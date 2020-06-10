@@ -52,6 +52,7 @@ typedef enum {
     IM_ALPHA_BLEND_MASK         = 0x7fe0,
 
     IM_SYNC                     = 1 << 15,
+    IM_CROP                     = 1 << 16,
 } IM_USAGE;
 
 /* Status codes, returned by any blit function */
@@ -333,7 +334,7 @@ IM_API IM_STATUS imquantize_t(const buffer_t src, buffer_t dst, rga_nn_t nn_info
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS improcess(const buffer_t src, buffer_t dst, im_rect srect, im_rect drect, int usage);
+IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect drect, int usage);
 
 /*
  * block until all execution is complete
