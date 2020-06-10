@@ -508,30 +508,24 @@ IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
 
 IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, unsigned char color, int sync)
 {
-    rga_info_t dstinfo;
-    int ret;
+    int usage = 0;
+    int ret = IM_STATUS_SUCCESS;
+    im_rect srect;
+    im_rect drect;
 
-    memset(&dstinfo, 0, sizeof(rga_info_t));
+    buffer_t src;
 
-    ret = rga_set_buffer_info(dst, &dstinfo);
-    if (ret < 0)
-        return IM_STATUS_INVALID_PARAM;
+    memset(&src, 0, sizeof(buffer_t));
 
-    dstinfo.color = color;
+    usage |= IM_COLOR_FILL;
 
-    if ((rect.width + rect.x > dst.width) || (rect.height + rect.y > dst.height))
-    {
-        ALOGE("rga_im2d: invaild rect");
-        return IM_STATUS_INVALID_PARAM;
-    }
-
-    rga_set_rect(&dstinfo.rect, rect.x, rect.y, rect.width, rect.height, dst.wstride, dst.hstride, dst.format);
+    dst.color = color;
 
     if (sync == 0)
-        dstinfo.sync_mode = RGA_BLIT_ASYNC;
+        usage |= IM_SYNC;
 
-    ret = rkRga.RkRgaCollorFill(&dstinfo);
-    if (ret)
+    ret = improcess(src, dst, srect, rect, usage);
+    if (!ret)
         return IM_STATUS_FAILED;
 
     return IM_STATUS_SUCCESS;
@@ -624,7 +618,10 @@ IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect dr
     memset(&srcinfo, 0, sizeof(rga_info_t));
     memset(&dstinfo, 0, sizeof(rga_info_t));
 
-    ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
+    if (usage & IM_COLOR_FILL)
+        ret = rga_set_buffer_info(dst, &dstinfo);
+    else
+        ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
     if (ret < 0)
         return IM_STATUS_INVALID_PARAM;
 
@@ -634,6 +631,7 @@ IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect dr
         return IM_STATUS_INVALID_PARAM;
     }
 
+    /* rect judgment */
     if ((drect.width + drect.x > dst.width) || (drect.height + drect.y > dst.height))
     {
         ALOGE("rga_im2d: invaild dst rect");
@@ -661,6 +659,7 @@ IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect dr
     rga_set_rect(&srcinfo.rect, srect.x, srect.y, src.width, src.height, src.wstride, src.hstride, src.format);
     rga_set_rect(&dstinfo.rect, drect.x, drect.y, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
 
+    /* Transform */
     switch(usage & IM_HAL_TRANSFORM_MASK)
     {
         case IM_HAL_TRANSFORM_ROT_90:
@@ -680,9 +679,9 @@ IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect dr
             break;
     }
 
+    /* special config for yuv to rgb */
     if (dst.color_space_mode & (IM_YUV_TO_RGB_MASK))
     {
-        /* special config for yuv to rgb */
         if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
 			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format)))
             dstinfo.color_space_mode = dst.color_space_mode;
@@ -690,9 +689,9 @@ IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect dr
             return IM_STATUS_INVALID_PARAM;
     }
 
+    /* special config for rgb to yuv */
     if (dst.color_space_mode & (IM_RGB_TO_YUV_MASK))
     {
-        /* special config for rgb to yuv */
         if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format)) &&
 			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format)))
             dstinfo.color_space_mode = dst.color_space_mode;
@@ -703,7 +702,13 @@ IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect dr
     if (usage & IM_SYNC)
         dstinfo.sync_mode = RGA_BLIT_ASYNC;
 
-    ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
+    if (usage & IM_COLOR_FILL)
+    {
+        dstinfo.color = dst.color;
+        ret = rkRga.RkRgaCollorFill(&dstinfo);
+    }
+    else
+        ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
     if (ret)
         return IM_STATUS_FAILED;
 
