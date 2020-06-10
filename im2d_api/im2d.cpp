@@ -630,33 +630,42 @@ IM_API IM_STATUS imblend_t(const buffer_t srcA, const buffer_t srcB, buffer_t ds
 
 IM_API IM_STATUS imcvtcolor_t(const buffer_t src, buffer_t dst, int sfmt, int dfmt, int mode, int sync)
 {
-    rga_info_t srcinfo;
-    rga_info_t dstinfo;
-    int ret;
+    int usage = 0;
+    int ret = IM_STATUS_SUCCESS;
+    im_rect srect;
+    im_rect drect;
 
-    memset(&srcinfo, 0, sizeof(rga_info_t));
-    memset(&dstinfo, 0, sizeof(rga_info_t));
-
-    ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
-    if (ret < 0)
+    if ((src.width != dst.width) || (src.height != dst.height))
         return IM_STATUS_INVALID_PARAM;
 
-    if (src.width != dst.width || src.height != dst.height)
-        return IM_STATUS_INVALID_PARAM;
+    src.format = sfmt;
+    dst.format = dfmt;
 
-    rga_set_rect(&srcinfo.rect, 0, 0, src.width, src.height, src.wstride, src.hstride, sfmt);
-    rga_set_rect(&dstinfo.rect, 0, 0, dst.width, dst.height, dst.wstride, dst.hstride, dfmt);
-
-    if (mode > 0)
+    if (mode & (IM_YUV_TO_RGB_MASK))
     {
-        dstinfo.color_space_mode = mode;
+        /* special config for yuv to rgb */
+        if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(sfmt)) &&
+			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dfmt)))
+            dst.color_space_mode = mode;
+        else
+            return IM_STATUS_INVALID_PARAM;
+    }
+
+    if (mode & (IM_RGB_TO_YUV_MASK))
+    {
+        /* special config for rgb to yuv */
+        if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(sfmt)) &&
+			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dfmt)))
+            dst.color_space_mode = mode;
+        else
+            return IM_STATUS_INVALID_PARAM;
     }
 
     if (sync == 0)
-        dstinfo.sync_mode = RGA_BLIT_ASYNC;
+        usage |= IM_SYNC;
 
-    ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
-    if (ret)
+    ret = improcess(src, dst, srect, drect, usage);
+    if (!ret)
         return IM_STATUS_FAILED;
 
     return IM_STATUS_SUCCESS;
