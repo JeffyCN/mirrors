@@ -533,25 +533,26 @@ IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, unsigned char color, int s
 
 IM_API IM_STATUS imtranslate_t(const buffer_t src, buffer_t dst, int x, int y, int sync)
 {
-    rga_info_t srcinfo;
-    rga_info_t dstinfo;
-    int ret;
+    int usage = 0;
+    int ret = IM_STATUS_SUCCESS;
+    im_rect srect;
+    im_rect drect;
 
-    memset(&srcinfo, 0, sizeof(rga_info_t));
-    memset(&dstinfo, 0, sizeof(rga_info_t));
-
-    ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
-    if (ret < 0)
+    if ((src.width != dst.width) || (src.height != dst.height))
         return IM_STATUS_INVALID_PARAM;
 
-    rga_set_rect(&srcinfo.rect, 0, 0, src.width - x, src.height - y, src.wstride, src.hstride, src.format);
-    rga_set_rect(&dstinfo.rect, x, y, src.width - x, src.height - y, dst.wstride, dst.hstride, dst.format);
-
     if (sync == 0)
-        dstinfo.sync_mode = RGA_BLIT_ASYNC;
+        usage |= IM_SYNC;
 
-    ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
-    if (ret)
+    srect.width = src.width - x;
+    srect.height = src.height - y;
+    drect.x = x;
+    drect.y = y;
+    drect.width = src.width - x;
+    drect.height = src.height - y;
+
+    ret = improcess(src, dst, srect, drect, usage);
+    if (!ret)
         return IM_STATUS_FAILED;
 
     return IM_STATUS_SUCCESS;
@@ -622,6 +623,7 @@ IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect dr
         ret = rga_set_buffer_info(dst, &dstinfo);
     else
         ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
+
     if (ret < 0)
         return IM_STATUS_INVALID_PARAM;
 
@@ -709,6 +711,7 @@ IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect dr
     }
     else
         ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
+
     if (ret)
         return IM_STATUS_FAILED;
 
