@@ -53,7 +53,7 @@ typedef enum {
 
     IM_SYNC                     = 1 << 15,
     IM_CROP                     = 1 << 16,
-    IM_COLOR_FILL              = 1 << 17,
+    IM_COLOR_FILL               = 1 << 17,
 } IM_USAGE;
 
 /* Status codes, returned by any blit function */
@@ -124,6 +124,7 @@ typedef struct {
     int format;                         /* format */
     int color_space_mode;               /* color_space_mode */
     int color;                          /* color, used by color fill */
+    int global_alpha;                   /* global_alpha */
 } buffer_t;
 
 typedef struct rga_nn {

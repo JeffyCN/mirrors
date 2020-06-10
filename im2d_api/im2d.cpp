@@ -580,6 +580,20 @@ IM_API IM_STATUS imcopy_t(const buffer_t src, buffer_t dst, int sync)
 
 IM_API IM_STATUS imblend_t(const buffer_t srcA, const buffer_t srcB, buffer_t dst, int mode, int sync)
 {
+    int usage = 0;
+    int ret = IM_STATUS_SUCCESS;
+    im_rect srect;
+    im_rect drect;
+
+    usage |= mode;
+
+    if (sync == 0)
+        usage |= IM_SYNC;
+
+    ret = improcess(srcA, dst, srect, drect, usage);
+    if (!ret)
+        return IM_STATUS_FAILED;
+
     return IM_STATUS_SUCCESS;
 }
 
@@ -680,6 +694,37 @@ IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect dr
             srcinfo.rotation = HAL_TRANSFORM_FLIP_H;
             break;
     }
+
+    /* Blend */
+    switch(usage & IM_ALPHA_BLEND_MASK)
+    {
+        case IM_ALPHA_BLEND_SRC_OVER:
+            srcinfo.blend = 0xff0105;
+            break;
+        case IM_ALPHA_BLEND_SRC:
+            break;
+        case IM_ALPHA_BLEND_SRC_IN:
+            break;
+        case IM_ALPHA_BLEND_DST_IN:
+            break;
+        case IM_ALPHA_BLEND_SRC_OUT:
+            break;
+        case IM_ALPHA_BLEND_DST_OUT:
+            break;
+        case IM_ALPHA_BLEND_DST_OVER:
+            break;
+        case IM_ALPHA_BLEND_SRC_ATOP:
+            break;
+        case IM_ALPHA_BLEND_DST_ATOP:
+            srcinfo.blend = 0xff0405;
+            break;
+        case IM_ALPHA_BLEND_XOR:
+            break;
+    }
+
+    /* set global alpha */
+    if ((src.global_alpha > 0) && (usage & IM_ALPHA_BLEND_MASK))
+        srcinfo.blend &= src.global_alpha << 16;
 
     /* special config for yuv to rgb */
     if (dst.color_space_mode & (IM_YUV_TO_RGB_MASK))
