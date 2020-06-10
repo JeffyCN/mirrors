@@ -25,21 +25,34 @@ extern "C" {
 #define IM_API /* define API export as needed */
 #endif
 
-/* Additional blend modes, can be used with both source and target configs.
-   If none of the below is set, the default "SRC over DST" is applied. */
 typedef enum {
-    IM_ALPHA_BLEND_SRC_OVER,     /* Default, Porter-Duff "SRC over DST" */
-    IM_ALPHA_BLEND_SRC,          /* Porter-Duff "SRC" */
-    IM_ALPHA_BLEND_SRC_IN,       /* Porter-Duff "SRC in DST" */
-    IM_ALPHA_BLEND_DST_IN,       /* Porter-Duff "DST in SRC" */
-    IM_ALPHA_BLEND_SRC_OUT,      /* Porter-Duff "SRC out DST" */
-    IM_ALPHA_BLEND_DST_OUT,      /* Porter-Duff "DST out SRC" */
-    IM_ALPHA_BLEND_DST_OVER,     /* Porter-Duff "DST over SRC" */
-    IM_ALPHA_BLEND_SRC_ATOP,     /* Porter-Duff "SRC ATOP" */
-    IM_ALPHA_BLEND_DST_ATOP,     /* Porter-Duff "DST ATOP" */
-    IM_ALPHA_BLEND_XOR,          /* Xor */
-    IM_ALPHA_BLEND_NONE,         /* disables alpha blending */
-} IM_ALPHA_BLEND_MODE;
+/* Rotation */
+    IM_HAL_TRANSFORM_ROT_90     = 1 << 0,
+    IM_HAL_TRANSFORM_ROT_180    = 1 << 1,
+    IM_HAL_TRANSFORM_ROT_270    = 1 << 2,
+    IM_HAL_TRANSFORM_FLIP_H     = 1 << 3,
+    IM_HAL_TRANSFORM_FLIP_V     = 1 << 4,
+    IM_HAL_TRANSFORM_MASK       = 0x1f,
+
+/*
+ * Blend
+ * Additional blend usage, can be used with both source and target configs.
+ * If none of the below is set, the default "SRC over DST" is applied.
+ */
+    IM_ALPHA_BLEND_SRC_OVER     = 1 << 5,     /* Default, Porter-Duff "SRC over DST" */
+    IM_ALPHA_BLEND_SRC          = 1 << 6,     /* Porter-Duff "SRC" */
+    IM_ALPHA_BLEND_SRC_IN       = 1 << 7,     /* Porter-Duff "SRC in DST" */
+    IM_ALPHA_BLEND_DST_IN       = 1 << 8,     /* Porter-Duff "DST in SRC" */
+    IM_ALPHA_BLEND_SRC_OUT      = 1 << 9,     /* Porter-Duff "SRC out DST" */
+    IM_ALPHA_BLEND_DST_OUT      = 1 << 10,    /* Porter-Duff "DST out SRC" */
+    IM_ALPHA_BLEND_DST_OVER     = 1 << 11,    /* Porter-Duff "DST over SRC" */
+    IM_ALPHA_BLEND_SRC_ATOP     = 1 << 12,    /* Porter-Duff "SRC ATOP" */
+    IM_ALPHA_BLEND_DST_ATOP     = 1 << 13,    /* Porter-Duff "DST ATOP" */
+    IM_ALPHA_BLEND_XOR          = 1 << 14,    /* Xor */
+    IM_ALPHA_BLEND_MASK         = 0x7fe0,
+
+    IM_SYNC                     = 1 << 15,
+} IM_USAGE;
 
 /* Status codes, returned by any blit function */
 typedef enum {
@@ -91,10 +104,10 @@ typedef enum
 
 /* Rectangle definition */
 typedef struct {
-    int x;        /* upper-left x */
-    int y;        /* upper-left y */
-    int width;    /* width */
-    int height;   /* height */
+    int x = 0;        /* upper-left x */
+    int y = 0;        /* upper-left y */
+    int width = 0;    /* width */
+    int height = 0;   /* height */
 } im_rect;
 
 /* im_info definition */
@@ -107,6 +120,7 @@ typedef struct {
     int wstride;                        /* wstride */
 	int hstride;                        /* hstride */
     int format;                         /* format */
+    int color_space_mode;               /* color_space_mode */
 } buffer_t;
 
 typedef struct rga_nn {
@@ -313,15 +327,13 @@ IM_API IM_STATUS imquantize_t(const buffer_t src, buffer_t dst, rga_nn_t nn_info
  *
  * @param src
  * @param dst
- * @param sync
+ * @param usage
  * @param ...
  *      wait until operation complete
  *
  * @returns success or else negative error code.
  */
-#define improcess(src, dst, ...) improcess_t(src, dst, 1, ...)
-
-IM_API IM_STATUS improcess_t(const buffer_t src, buffer_t dst, int sync, ...);
+IM_API IM_STATUS improcess(const buffer_t src, buffer_t dst, im_rect srect, im_rect drect, int usage);
 
 /*
  * block until all execution is complete
