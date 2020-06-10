@@ -422,16 +422,10 @@ IM_API const char* querystring(int name)
 
 IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double fy, int interpolation, int sync)
 {
-    rga_info_t srcinfo;
-    rga_info_t dstinfo;
-    int ret;
-
-    memset(&srcinfo, 0, sizeof(rga_info_t));
-    memset(&dstinfo, 0, sizeof(rga_info_t));
-
-    ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
-    if (ret < 0)
-        return IM_STATUS_INVALID_PARAM;
+    int usage = 0;
+    int ret = IM_STATUS_SUCCESS;
+    im_rect srect;
+    im_rect drect;
 
     if (fx > 0 || fy > 0)
     {
@@ -445,14 +439,11 @@ IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double 
             dst.width = ALIGN(dst.width, 2);
     }
 
-    rga_set_rect(&srcinfo.rect, 0, 0, src.width, src.height, src.wstride, src.hstride, src.format);
-    rga_set_rect(&dstinfo.rect, 0, 0, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
-
     if (sync == 0)
-        dstinfo.sync_mode = RGA_BLIT_ASYNC;
+        usage |= IM_SYNC;
 
-    ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
-    if (ret)
+    ret = improcess(src, dst, srect, drect, usage);
+    if (!ret)
         return IM_STATUS_FAILED;
 
     return IM_STATUS_SUCCESS;
@@ -635,9 +626,6 @@ IM_API IM_STATUS imcvtcolor_t(buffer_t src, buffer_t dst, int sfmt, int dfmt, in
     im_rect srect;
     im_rect drect;
 
-    if ((src.width != dst.width) || (src.height != dst.height))
-        return IM_STATUS_INVALID_PARAM;
-
     src.format = sfmt;
     dst.format = dfmt;
 
@@ -677,8 +665,8 @@ IM_API IM_STATUS improcess(const buffer_t src, buffer_t dst, im_rect srect, im_r
     if (dst.color_space_mode & (IM_YUV_TO_RGB_MASK))
     {
         /* special config for yuv to rgb */
-        if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(sfmt)) &&
-			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dfmt)))
+        if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
+			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format)))
             dstinfo.color_space_mode = dst.color_space_mode;
         else
             return IM_STATUS_INVALID_PARAM;
@@ -687,8 +675,8 @@ IM_API IM_STATUS improcess(const buffer_t src, buffer_t dst, im_rect srect, im_r
     if (dst.color_space_mode & (IM_RGB_TO_YUV_MASK))
     {
         /* special config for rgb to yuv */
-        if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(sfmt)) &&
-			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dfmt)))
+        if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format)) &&
+			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format)))
             dstinfo.color_space_mode = dst.color_space_mode;
         else
             return IM_STATUS_INVALID_PARAM;
