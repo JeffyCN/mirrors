@@ -196,9 +196,9 @@ IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect rect, int sy
  * @param src
  * @param dst
  * @param rotation
- *      HAL_TRANSFORM_ROT_90
- *      HAL_TRANSFORM_ROT_180
- *      HAL_TRANSFORM_ROT_270
+ *      IM_HAL_TRANSFORM_ROT_90
+ *      IM_HAL_TRANSFORM_ROT_180
+ *      IM_HAL_TRANSFORM_ROT_270
  * @param sync
  *      wait until operation complete
  *
@@ -214,8 +214,8 @@ IM_API IM_STATUS imrotate_t(const buffer_t src, buffer_t dst, int rotation, int 
  * @param src
  * @param dst
  * @param mode
- *      HAL_TRANSFORM_FLIP_H
- *      HAL_TRANSFORM_FLIP_V
+ *      IM_HAL_TRANSFORM_FLIP_H
+ *      IM_HAL_TRANSFORM_FLIP_V
  * @param sync
  *      wait until operation complete
  *

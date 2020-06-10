@@ -470,27 +470,18 @@ IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect rect, int sy
 
 IM_API IM_STATUS imrotate_t(const buffer_t src, buffer_t dst, int rotation, int sync)
 {
-    rga_info_t srcinfo;
-    rga_info_t dstinfo;
-    int ret;
+    int usage = 0;
+    int ret = IM_STATUS_SUCCESS;
+    im_rect srect;
+    im_rect drect;
 
-    memset(&srcinfo, 0, sizeof(rga_info_t));
-    memset(&dstinfo, 0, sizeof(rga_info_t));
-
-    ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
-    if (ret < 0)
-        return IM_STATUS_INVALID_PARAM;
-
-    srcinfo.rotation = rotation;
-
-    rga_set_rect(&srcinfo.rect, 0, 0, src.width, src.height, src.wstride, src.hstride, src.format);
-    rga_set_rect(&dstinfo.rect, 0, 0, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
+    usage |= rotation;
 
     if (sync == 0)
-        dstinfo.sync_mode = RGA_BLIT_ASYNC;
+        usage |= IM_SYNC;
 
-    ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
-    if (ret)
+    ret = improcess(src, dst, srect, drect, usage);
+    if (!ret)
         return IM_STATUS_FAILED;
 
     return IM_STATUS_SUCCESS;
@@ -498,27 +489,18 @@ IM_API IM_STATUS imrotate_t(const buffer_t src, buffer_t dst, int rotation, int 
 
 IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
 {
-    rga_info_t srcinfo;
-    rga_info_t dstinfo;
-    int ret;
+    int usage = 0;
+    int ret = IM_STATUS_SUCCESS;
+    im_rect srect;
+    im_rect drect;
 
-    memset(&srcinfo, 0, sizeof(rga_info_t));
-    memset(&dstinfo, 0, sizeof(rga_info_t));
-
-    ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
-    if (ret < 0)
-        return IM_STATUS_INVALID_PARAM;
-
-    srcinfo.rotation = mode;
-
-    rga_set_rect(&srcinfo.rect, 0, 0, src.width, src.height, src.wstride, src.hstride, src.format);
-    rga_set_rect(&dstinfo.rect, 0, 0, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
+    usage |= mode;
 
     if (sync == 0)
-        dstinfo.sync_mode = RGA_BLIT_ASYNC;
+        usage |= IM_SYNC;
 
-    ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
-    if (ret)
+    ret = improcess(src, dst, srect, drect, usage);
+    if (!ret)
         return IM_STATUS_FAILED;
 
     return IM_STATUS_SUCCESS;
@@ -678,6 +660,25 @@ IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect dr
 
     rga_set_rect(&srcinfo.rect, srect.x, srect.y, src.width, src.height, src.wstride, src.hstride, src.format);
     rga_set_rect(&dstinfo.rect, drect.x, drect.y, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
+
+    switch(usage & IM_HAL_TRANSFORM_MASK)
+    {
+        case IM_HAL_TRANSFORM_ROT_90:
+            srcinfo.rotation = HAL_TRANSFORM_ROT_90;
+            break;
+        case IM_HAL_TRANSFORM_ROT_180:
+            srcinfo.rotation = HAL_TRANSFORM_ROT_180;
+            break;
+        case IM_HAL_TRANSFORM_ROT_270:
+            srcinfo.rotation = HAL_TRANSFORM_ROT_270;
+            break;
+        case IM_HAL_TRANSFORM_FLIP_V:
+            srcinfo.rotation = HAL_TRANSFORM_FLIP_V;
+            break;
+        case IM_HAL_TRANSFORM_FLIP_H:
+            srcinfo.rotation = HAL_TRANSFORM_FLIP_H;
+            break;
+    }
 
     if (dst.color_space_mode & (IM_YUV_TO_RGB_MASK))
     {
