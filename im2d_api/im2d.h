@@ -305,7 +305,7 @@ IM_API IM_STATUS imblend_t(const buffer_t srcA, const buffer_t srcB, buffer_t ds
  */
 #define imcvtcolor(src, dst, sfmt, dfmt) imcvtcolor_t(src, dst, sfmt, dfmt, IM_COLOR_SPACE_DEFAULT, 1)
 
-IM_API IM_STATUS imcvtcolor_t(const buffer_t src, buffer_t dst, int sfmt, int dfmt, int mode, int sync);
+IM_API IM_STATUS imcvtcolor_t(buffer_t src, buffer_t dst, int sfmt, int dfmt, int mode, int sync);
 
 /*
  * nn quantize

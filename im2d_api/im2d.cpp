@@ -628,7 +628,7 @@ IM_API IM_STATUS imblend_t(const buffer_t srcA, const buffer_t srcB, buffer_t ds
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imcvtcolor_t(const buffer_t src, buffer_t dst, int sfmt, int dfmt, int mode, int sync)
+IM_API IM_STATUS imcvtcolor_t(buffer_t src, buffer_t dst, int sfmt, int dfmt, int mode, int sync)
 {
     int usage = 0;
     int ret = IM_STATUS_SUCCESS;
@@ -641,25 +641,7 @@ IM_API IM_STATUS imcvtcolor_t(const buffer_t src, buffer_t dst, int sfmt, int df
     src.format = sfmt;
     dst.format = dfmt;
 
-    if (mode & (IM_YUV_TO_RGB_MASK))
-    {
-        /* special config for yuv to rgb */
-        if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(sfmt)) &&
-			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dfmt)))
-            dst.color_space_mode = mode;
-        else
-            return IM_STATUS_INVALID_PARAM;
-    }
-
-    if (mode & (IM_RGB_TO_YUV_MASK))
-    {
-        /* special config for rgb to yuv */
-        if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(sfmt)) &&
-			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dfmt)))
-            dst.color_space_mode = mode;
-        else
-            return IM_STATUS_INVALID_PARAM;
-    }
+    dst.color_space_mode = mode;
 
     if (sync == 0)
         usage |= IM_SYNC;
@@ -692,9 +674,24 @@ IM_API IM_STATUS improcess(const buffer_t src, buffer_t dst, im_rect srect, im_r
     rga_set_rect(&srcinfo.rect, 0, 0, src.width, src.height, src.wstride, src.hstride, src.format);
     rga_set_rect(&dstinfo.rect, 0, 0, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
 
-    if (dst.color_space_mode > 0)
+    if (dst.color_space_mode & (IM_YUV_TO_RGB_MASK))
     {
-        dstinfo.color_space_mode = dst.color_space_mode;
+        /* special config for yuv to rgb */
+        if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(sfmt)) &&
+			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dfmt)))
+            dstinfo.color_space_mode = dst.color_space_mode;
+        else
+            return IM_STATUS_INVALID_PARAM;
+    }
+
+    if (dst.color_space_mode & (IM_RGB_TO_YUV_MASK))
+    {
+        /* special config for rgb to yuv */
+        if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(sfmt)) &&
+			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dfmt)))
+            dstinfo.color_space_mode = dst.color_space_mode;
+        else
+            return IM_STATUS_INVALID_PARAM;
     }
 
     if (usage & IM_SYNC)
