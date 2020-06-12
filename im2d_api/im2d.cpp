@@ -506,7 +506,7 @@ IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, unsigned char color, int sync)
+IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, int color, int sync)
 {
     int usage = 0;
     int ret = IM_STATUS_SUCCESS;

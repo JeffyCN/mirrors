@@ -244,7 +244,7 @@ IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
 #define imreset(dst, rect, color) imfill_t(dst, rect, color, 1)
 #define imdraw(dst, rect, color) imfill_t(dst, rect, color, 1)
 
-IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, unsigned char color, int sync);
+IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, int color, int sync);
 
 /*
  * translate
