@@ -15,6 +15,8 @@
 #include "../RgaApi.h"
 #include <cutils/properties.h>
 
+#define RGA_VERSION "1.00"
+
 volatile int32_t refCount = 0;
 struct rgaContext *rgaCtx = NULL;
 
@@ -162,6 +164,7 @@ int RgaInit(void **ctx)
 {
 	int ret = 0;
 	ret = NormalRgaOpen(ctx);
+	property_set("vendor.rga.version", RGA_VERSION);
 	return ret;
 }
 
@@ -172,7 +175,7 @@ int RgaDeInit(void *ctx)
 	return ret;
 }
 
-int NormalRgaPaletteTable(buffer_handle_t dst, 
+int NormalRgaPaletteTable(buffer_handle_t dst,
 		unsigned int v, drm_rga_t *rects)
 {
 	//check rects
@@ -201,7 +204,7 @@ int NormalRgaPaletteTable(buffer_handle_t dst,
 	if (rects && (ctx->mLogAlways || ctx->mLogOnce)) {
 		ALOGD("Src:[%d,%d,%d,%d][%d,%d,%d]=>Dst:[%d,%d,%d,%d][%d,%d,%d]",
 				rects->src.xoffset,rects->src.yoffset,
-				rects->src.width, rects->src.height, 
+				rects->src.width, rects->src.height,
 				rects->src.wstride,rects->src.format, rects->src.size,
 				rects->dst.xoffset,rects->dst.yoffset,
 				rects->dst.width, rects->dst.height,
@@ -280,7 +283,7 @@ int NormalRgaPaletteTable(buffer_handle_t dst,
 	NormalRgaSetSrcActiveInfo(&rgaReg, srcActW, srcActH, srcXPos, srcYPos);
 	NormalRgaSetDstActiveInfo(&rgaReg, dstActW, dstActH, dstXPos, dstYPos);
 	NormalRgaSetSrcVirtualInfo(&rgaReg, (unsigned long)srcBuf,
-			(unsigned long)srcBuf + srcVirW * srcVirH, 
+			(unsigned long)srcBuf + srcVirW * srcVirH,
 			(unsigned long)srcBuf + srcVirW * srcVirH * 5/4,
 			srcVirW, srcVirH,
 			RkRgaGetRgaFormat(relRects.src.format),0);
@@ -302,7 +305,7 @@ int NormalRgaPaletteTable(buffer_handle_t dst,
 		NormalRgaMmuFlag(&rgaReg, srcMmuFlag, dstMmuFlag);
 	}
 
-	if (ctx->mLogAlways || ctx->mLogOnce) 
+	if (ctx->mLogAlways || ctx->mLogOnce)
 		NormalRgaLogOutRgaReq(rgaReg);
 
 	if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg)) {
@@ -415,7 +418,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			ret = NormalRgaGetRect(src->hnd, &tmpSrcRect);
 			if (ret){
                 ALOGE("src handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);
-			    printf("src handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);   
+			    printf("src handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);
 				return ret;
 			}
 			memcpy(&relSrcRect, &tmpSrcRect, sizeof(rga_rect_t));
@@ -531,7 +534,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 #ifdef RK3126C
 	if ( (relSrcRect.width == relDstRect.width) && (relSrcRect.height == relDstRect.height ) &&
 		 (relSrcRect.width + 2*relSrcRect.xoffset == relSrcRect.wstride) &&
-		 (relSrcRect.height + 2*relSrcRect.yoffset == relSrcRect.hstride) && 
+		 (relSrcRect.height + 2*relSrcRect.yoffset == relSrcRect.hstride) &&
 		 (relSrcRect.format == HAL_PIXEL_FORMAT_YCrCb_NV12) && (relSrcRect.xoffset > 0 && relSrcRect.yoffset > 0)
 	)
 	{

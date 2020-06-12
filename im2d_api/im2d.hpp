@@ -10,6 +10,7 @@
  *
  */
 
+#include "im2d.h"
 #include <ui/GraphicBuffer.h>
 
 using namespace android;

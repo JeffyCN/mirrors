@@ -10,13 +10,13 @@
  *
  */
 
-#include "im2d.h"
-#include "im2d_cpp.h"
+#include "im2d.hpp"
 
 #include <RockchipRga.h>
 #include "normal/NormalRga.h"
 #include <sstream>
 #include <ui/GraphicBuffer.h>
+#include <cutils/properties.h>
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 
@@ -169,18 +169,22 @@ IM_API int rga_set_buffer_info(const buffer_t src, buffer_t dst, rga_info_t* src
 IM_API const char* querystring(int name)
 {
     bool all_output = 0, all_output_prepared = 0;
-    char buf[16];
+    char buf[16], version_value[PROPERTY_VALUE_MAX];
     int rgafd, rga_version = 0;
     const char *temp;
     const char *output_vendor = "Rockchip Electronics Co.,Ltd.";
     const char *output_name[] = {
         "RGA vendor : ",
-        "RGA vesion : ",
+        "RGA version: ",
         "Max input  : ",
         "Max output : ",
         "Scale limit: ",
         "Input support format : ",
         "output support format: "
+    };
+    const char *version_name[] = {
+        "librga version   : ",
+        "rga_im2d version : "
     };
     const char *output_version[] = {
         "unknown",
@@ -213,6 +217,8 @@ IM_API const char* querystring(int name)
     };
     ostringstream out;
     string info;
+
+    property_set("vendor.rga_im2d.version", RGA_IM2D_VERSION);
 
     /*open /dev/rga node in order to get rga vesion*/
     rgafd = open("/dev/rga", O_RDWR, 0);
@@ -279,6 +285,12 @@ IM_API const char* querystring(int name)
                     default:
                         return "err";
                 }
+
+                property_get("vendor.rga.version", version_value, "0");
+                out << version_name[0] << version_value << endl;
+                property_get("vendor.rga_im2d.version", version_value, "0");
+                out << version_name[1] << version_value << endl;
+
                 break;
 
             case RGA_MAX_INPUT :

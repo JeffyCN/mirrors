@@ -56,7 +56,7 @@
 
 int         NormalRgaInitTables();
 
-int         NormalRgaPaletteTable(buffer_handle_t dst, 
+int         NormalRgaPaletteTable(buffer_handle_t dst,
                                            unsigned int v, drm_rga_t *rects);
 
 int         NormalRgaStereo(buffer_handle_t src,
@@ -104,8 +104,8 @@ int         NormalRgaSetSrcVirtualInfo(struct rga_req *req,
                                             unsigned char a_swap_en);
 #else
 int         NormalRgaSetSrcVirtualInfo(struct rga_req *req,
-        	unsigned int yrgb_addr, unsigned int uv_addr,unsigned int v_addr,          
-        	unsigned int vir_w, unsigned int vir_h, unsigned char format, 
+        	unsigned int yrgb_addr, unsigned int uv_addr,unsigned int v_addr,
+        	unsigned int vir_w, unsigned int vir_h, unsigned char format,
         	                                        unsigned char a_swap_en);
 #endif
 
@@ -160,14 +160,14 @@ int         NormalRgaSetRopMaskInfo(struct rga_req *msg,
 /* 0:alpha' = alpha + (alpha>>7) | alpha' = alpha */
 /* 0 global alpha / 1 per pixel alpha / 2 mix mode */
 
-/* porter duff alpha mode en */ 
+/* porter duff alpha mode en */
 
 /* use dst alpha  */
 
 int         NormalRgaSetAlphaEnInfo(struct rga_req *msg,
-    		unsigned int alpha_cal_mode, unsigned int alpha_mode,        
-    		unsigned int global_a_value, unsigned int PD_en,             
-    		unsigned int PD_mode,        unsigned int dst_alpha_en );     
+    		unsigned int alpha_cal_mode, unsigned int alpha_mode,
+    		unsigned int global_a_value, unsigned int PD_en,
+    		unsigned int PD_mode,        unsigned int dst_alpha_en );
 
 
 
@@ -192,14 +192,14 @@ bool        NormalRgaIsYuvFormat(int format);
 bool        NormalRgaIsRgbFormat(int format);
 
 
-// 0/near  1/bilnear  2/bicubic  
-// 0/copy 1/rotate_scale 2/x_mirror 3/y_mirror 
-// rotate angle     
-// dither en flag   
-// AA flag          
+// 0/near  1/bilnear  2/bicubic
+// 0/copy 1/rotate_scale 2/x_mirror 3/y_mirror
+// rotate angle
+// dither en flag
+// AA flag
 int         NormalRgaSetBitbltMode(struct rga_req *msg,
-                	unsigned char scale_mode,  unsigned char rotate_mode, 
-                	unsigned int  angle,       unsigned int  dither_en,   
+                	unsigned char scale_mode,  unsigned char rotate_mode,
+                	unsigned int  angle,       unsigned int  dither_en,
                 	unsigned int  AA_en,       unsigned int  yuv2rgb_mode);
 
 
@@ -208,7 +208,7 @@ int         NormalRgaSetBitbltMode(struct rga_req *msg,
 /* BPP1 = 0 */
 /* BPP1 = 1 */
 int         NormalRgaSetColorPaletteMode(struct rga_req *msg,
-            		unsigned char  palette_mode,unsigned char  endian_mode, 
+            		unsigned char  palette_mode,unsigned char  endian_mode,
             		unsigned int  bpp1_0_color, unsigned int  bpp1_1_color);
 
 /* gradient color part         */
@@ -216,13 +216,13 @@ int         NormalRgaSetColorPaletteMode(struct rga_req *msg,
  /* patten fill or solid fill   */
 /* solid color                 */
  /* pattern width               */
- /* pattern height              */  
+ /* pattern height              */
  /* pattern x offset            */
  /* pattern y offset            */
  /* alpha en                    */
 int         NormalRgaSetColorFillMode(
                 struct rga_req *msg,                COLOR_FILL  *gr_color,
-                unsigned char  gr_satur_mode,       unsigned char  cf_mode,              
+                unsigned char  gr_satur_mode,       unsigned char  cf_mode,
                 unsigned int color,                 unsigned short pat_width,
                 unsigned short pat_height,          unsigned char pat_x_off,
                 unsigned char pat_y_off,            unsigned char aa_en);
@@ -235,8 +235,8 @@ int         NormalRgaSetColorFillMode(
 /* AA en                    */
 /* last point en            */
 int         NormalRgaSetLineDrawingMode(struct rga_req *msg,
-        		POINT sp,                     POINT ep,                     
-        		unsigned int color,           unsigned int line_width,      
+        		POINT sp,                     POINT ep,
+        		unsigned int color,           unsigned int line_width,
         		unsigned char AA_en,          unsigned char last_point_en);
 
 
@@ -246,7 +246,7 @@ int         NormalRgaSetLineDrawingMode(struct rga_req *msg,
 /* dither_en flag   */
 
 int         NormalRgaSetBlurSharpFilterMode(
-            		struct rga_req *msg,         unsigned char filter_mode,   
+            		struct rga_req *msg,         unsigned char filter_mode,
             		unsigned char filter_type,   unsigned char dither_en);
 
 
@@ -271,7 +271,7 @@ int         NormalRgaUpdatePaletteTableMode(
 /* patten format  */
 
 int         NormalRgaUpdatePattenBuffMode(struct rga_req *msg,
-                                unsigned int pat_addr, unsigned int w,        
+                                unsigned int pat_addr, unsigned int w,
                                 unsigned int h,        unsigned int format);
 
 
