@@ -80,6 +80,17 @@ typedef enum {
     IM_COLOR_SPACE_DEFAULT        = 0,
 } IM_COLOR_SPACE_MODE;
 
+typedef enum {
+    IM_UP_SCALE,
+    IM_DOWN_SCLLE,
+}IM_SCALE;
+
+typedef enum {
+    INTER_NEAREST,
+    INTER_LINEAR,
+    INTER_CUBIC,
+}IM_SCALE_MODE;
+
 /* Get RGA basic information index */
 typedef enum {
     RGA_VENDOR = 0,
@@ -176,7 +187,12 @@ IM_API const char* querystring(int name);
  * @returns success or else negative error code.
  */
 #define imresize(src, dst) imresize_t(src, dst, 0, 0, INTER_LINEAR, 1)
-#define impyramid(src, dst) imresize_t(src, dst, 0.5, 0.5, INTER_LINEAR, 1)
+#define impyramid(src, dst, direction) \
+        imresize_t(src, \
+                   dst, \
+                   direction == IM_UP_SCALE ? 0.5 : 2, \
+                   direction == IM_UP_SCALE ? 0.5 : 2, \
+                   INTER_LINEAR, 1)
 
 IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double fy, int interpolation, int sync);
 
