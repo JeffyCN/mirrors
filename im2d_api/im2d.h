@@ -307,7 +307,7 @@ IM_API IM_STATUS imcopy_t(const buffer_t src, buffer_t dst, int sync);
  *
  * @returns success or else negative error code.
  */
-#define imblend(srcA, srcB, dst) imblend_t(srcA, srcB, dst, RGA_ALPHA_BLEND_SRC_OVER, 1)
+#define imblend(srcA, srcB, dst) imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_SRC_OVER, 1)
 
 IM_API IM_STATUS imblend_t(const buffer_t srcA, const buffer_t srcB, buffer_t dst, int mode, int sync);
 
