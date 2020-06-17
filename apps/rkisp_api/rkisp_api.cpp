@@ -361,6 +361,11 @@ rkisp_open_device(const char *dev_path, int uselocal3A)
     struct rkisp_priv *priv;
     struct v4l2_capability cap;
 
+    if (NULL == dev_path) {
+        ERR("dev_path is %p, abort\n", dev_path);
+        return NULL;
+    }
+
     priv = (struct rkisp_priv *)malloc(sizeof(*priv));
     if (!priv) {
         ERR("malloc fail, %d\n", errno);
@@ -518,6 +523,11 @@ rkisp_set_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int fcc)
     struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
     struct v4l2_format fmt;
 
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
+
     if (priv->ctx.width == fmt.fmt.pix.width &&
         priv->ctx.height == fmt.fmt.pix.height &&
         priv->ctx.fcc == fmt.fmt.pix.pixelformat)
@@ -558,6 +568,11 @@ rkisp_set_sensor_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int code)
     struct v4l2_subdev_format fmt;
     const char *sensor;
     int ret, fd;
+
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
 
     if (priv->camera_type == CAM_TYPE_USB)
         return -EINVAL;
@@ -771,6 +786,11 @@ rkisp_set_ispsd_fmt(const struct rkisp_api_ctx *ctx,
     const char *ispsd;
     int ret;
 
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
+
     if (priv->camera_type != CAM_TYPE_RKISP1)
         return -EINVAL;
 
@@ -791,6 +811,11 @@ rkisp_set_buf(const struct rkisp_api_ctx *ctx, int buf_count,
 {
     struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
     int i;
+
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
 
     if (buf_count < 2) {
         ERR("buf count shall be >= 2, current: %d\n", buf_count);
@@ -840,6 +865,11 @@ rkisp_start_capture(const struct rkisp_api_ctx *ctx)
     enum v4l2_buf_type type;
     int ret;
 
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
+
     if (priv->ctx.uselocal3A && (ret = rkisp_start_engine(priv)))
         return ret;
 
@@ -881,6 +911,11 @@ rkisp_get_frame(const struct rkisp_api_ctx *ctx, int timeout_ms)
     struct v4l2_plane planes[FMT_NUM_PLANES];
     struct rkisp_buf_priv* buffer;
     struct v4l2_buffer buf;
+
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return NULL;
+    }
 
     if (timeout_ms > 0) {
         fd_set fds;
@@ -962,6 +997,11 @@ rkisp_put_frame(const struct rkisp_api_ctx *ctx,
 {
     struct rkisp_buf_priv *buffer;
 
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return;
+    }
+
     buffer = (struct rkisp_buf_priv *) buf;
     rkisp_qbuf((struct rkisp_priv *)ctx, buffer->index);
 }
@@ -970,6 +1010,11 @@ void rkisp_stop_capture(const struct rkisp_api_ctx *ctx)
 {
     struct rkisp_priv *priv = (struct rkisp_priv*) ctx;
     enum v4l2_buf_type type;
+
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return;
+    }
 
     if (priv->ctx.uselocal3A && priv->rkisp_engine)
         rkisp_stop_engine(priv);
@@ -983,6 +1028,11 @@ void rkisp_stop_capture(const struct rkisp_api_ctx *ctx)
 void rkisp_close_device(const struct rkisp_api_ctx *ctx)
 {
     struct rkisp_priv *priv = (struct rkisp_priv*) ctx;
+
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return;
+    }
 
     rkisp_clr_buf(priv);
 
@@ -1350,6 +1400,11 @@ rkisp_set_manual_expo(const struct rkisp_api_ctx *ctx, int on)
     struct control_params_3A* ctl_params;
     uint8_t ae_mode;
 
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
+
     if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
         return -EINVAL;
 
@@ -1392,6 +1447,11 @@ rkisp_update_expo(const struct rkisp_api_ctx *ctx, int gain, int64_t expo_time_n
     uint8_t ae_mode = ANDROID_CONTROL_AE_MODE_OFF;
     int32_t sensitivity = gain;
 
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
+
     if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
         return -EINVAL;
 
@@ -1415,6 +1475,11 @@ rkisp_set_max_expotime(const struct rkisp_api_ctx *ctx, int64_t max_expo_time_ns
     struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
     struct control_params_3A* ctl_params;
     int64_t exptime_range_ns[2] = {0};
+
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
 
     if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
         return -EINVAL;
@@ -1441,6 +1506,11 @@ rkisp_get_max_expotime(const struct rkisp_api_ctx *ctx, int64_t *max_expo_time)
     struct control_params_3A* ctl_params;
     camera_metadata_entry entry;
 
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
+
     if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
         return -EINVAL;
 
@@ -1461,6 +1531,11 @@ rkisp_set_max_gain(const struct rkisp_api_ctx *ctx, int max_gain)
     struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
     struct control_params_3A* ctl_params;
     int32_t sensitivity_range[2] = {0,0};
+
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
 
     if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
         return -EINVAL;
@@ -1488,6 +1563,11 @@ rkisp_get_max_gain(const struct rkisp_api_ctx *ctx, int *max_gain)
     struct control_params_3A* ctl_params;
     camera_metadata_entry entry;
 
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
+
     if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
         return -EINVAL;
 
@@ -1507,6 +1587,11 @@ rkisp_get_expo_weights(const struct rkisp_api_ctx *ctx,
                        unsigned char* weights, unsigned int size)
 {
     struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
+
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
 
     if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
         return -EINVAL;
@@ -1531,6 +1616,11 @@ rkisp_set_expo_weights(const struct rkisp_api_ctx *ctx,
 {
     struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
 
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
+
     if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
         return -EINVAL;
 
@@ -1551,6 +1641,11 @@ rkisp_set_fps_range(const struct rkisp_api_ctx *ctx, int max_fps)
     struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
     struct control_params_3A* ctl_params;
     int32_t fps_range[2] = {1, 120};
+
+    if (NULL == ctx) {
+        ERR("ctx is %p, abort\n", ctx);
+        return -EINVAL;
+    }
 
     if (!priv->ctx.uselocal3A || !priv->rkisp_engine)
         return -EINVAL;
