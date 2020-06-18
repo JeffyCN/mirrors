@@ -138,7 +138,7 @@ typedef struct {
     int color_space_mode;               /* color_space_mode */
     int color;                          /* color, used by color fill */
     int global_alpha;                   /* global_alpha */
-} buffer_t;
+} rga_buffer_t;
 
 typedef struct rga_nn {
     int nn_flag;                /* enable nn */
@@ -151,11 +151,15 @@ typedef struct rga_nn {
 } rga_nn_t;
 
 /*
- * @return buffer_t
+ * @return rga_buffer_t
  */
-IM_API buffer_t warpbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format);
-IM_API buffer_t warpbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format);
-IM_API buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format);
+#define warpbuffer_viraddr_i(vir_addr, width, height, format) warpbuffer_virtualaddr(vir_addr, width, height, width, height, format)
+#define warpbuffer_phyaddr_i(phy_addr, width, height, format) warpbuffer_physicaladdr(phy_addr, width, height, width, height, format)
+#define warpbuffer_fd_i(fd, width, height, format) warpbuffer_fd(fd, width, height, width, height, format)
+
+IM_API rga_buffer_t warpbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format);
+IM_API rga_buffer_t warpbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format);
+IM_API rga_buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format);
 
 /*
  * Query RGA basic information, supported resolution, supported format, etc.
@@ -194,7 +198,7 @@ IM_API const char* querystring(int name);
                    direction == IM_UP_SCALE ? 0.5 : 2, \
                    INTER_LINEAR, 1)
 
-IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double fy, int interpolation, int sync);
+IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync);
 
 /*
  * Crop
@@ -209,7 +213,7 @@ IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double 
  */
 #define imcrop(src, dst, rect) imcrop_t(src, dst, rect, 1)
 
-IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect rect, int sync);
+IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, int sync);
 
 /*
  * rotation
@@ -227,7 +231,7 @@ IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect rect, int sy
  */
 #define imrotate(src, dst, rotation) imrotate_t(src, dst, rotation, 1)
 
-IM_API IM_STATUS imrotate_t(const buffer_t src, buffer_t dst, int rotation, int sync);
+IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotation, int sync);
 
 /*
  * flip
@@ -244,7 +248,7 @@ IM_API IM_STATUS imrotate_t(const buffer_t src, buffer_t dst, int rotation, int 
  */
 #define imflip(src, dst, mode) imflip_t(src, dst, mode, 1)
 
-IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync);
+IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, int sync);
 
 /*
  * fill/reset/draw
@@ -262,7 +266,7 @@ IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
 #define imreset(dst, rect, color) imfill_t(dst, rect, color, 1)
 #define imdraw(dst, rect, color) imfill_t(dst, rect, color, 1)
 
-IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, int color, int sync);
+IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync);
 
 /*
  * translate
@@ -278,7 +282,7 @@ IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, int color, int sync);
  */
 #define imtranslate(src, dst, x, y) imtranslate_t(src, dst, x, y, 1)
 
-IM_API IM_STATUS imtranslate_t(const buffer_t src, buffer_t dst, int x, int y, int sync);
+IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync);
 
 /*
  * copy
@@ -292,7 +296,7 @@ IM_API IM_STATUS imtranslate_t(const buffer_t src, buffer_t dst, int x, int y, i
  */
 #define imcopy(src, dst) imcopy_t(src, dst, 1)
 
-IM_API IM_STATUS imcopy_t(const buffer_t src, buffer_t dst, int sync);
+IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
 
 /*
  * blend (SRC + DST -> DST or SRCA + SRCB -> DST)
@@ -309,7 +313,7 @@ IM_API IM_STATUS imcopy_t(const buffer_t src, buffer_t dst, int sync);
  */
 #define imblend(srcA, srcB, dst) imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_SRC_OVER, 1)
 
-IM_API IM_STATUS imblend_t(const buffer_t srcA, const buffer_t srcB, buffer_t dst, int mode, int sync);
+IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode, int sync);
 
 /*
  * format convert
@@ -327,7 +331,7 @@ IM_API IM_STATUS imblend_t(const buffer_t srcA, const buffer_t srcB, buffer_t ds
  */
 #define imcvtcolor(src, dst, sfmt, dfmt) imcvtcolor_t(src, dst, sfmt, dfmt, IM_COLOR_SPACE_DEFAULT, 1)
 
-IM_API IM_STATUS imcvtcolor_t(buffer_t src, buffer_t dst, int sfmt, int dfmt, int mode, int sync);
+IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync);
 
 /*
  * nn quantize
@@ -342,7 +346,7 @@ IM_API IM_STATUS imcvtcolor_t(buffer_t src, buffer_t dst, int sfmt, int dfmt, in
  */
 #define imquantize(src, dst, nn_info) imquantize_t(src, dst, nn_info, 1)
 
-IM_API IM_STATUS imquantize_t(const buffer_t src, buffer_t dst, rga_nn_t nn_info, int sync);
+IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, rga_nn_t nn_info, int sync);
 
 /*
  * process
@@ -355,7 +359,7 @@ IM_API IM_STATUS imquantize_t(const buffer_t src, buffer_t dst, rga_nn_t nn_info
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect drect, int usage);
+IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im_rect drect, int usage);
 
 /*
  * block until all execution is complete

@@ -16,7 +16,7 @@
 using namespace android;
 
 #if 1 //Android
-IM_API buffer_t warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
-//IM_API buffer_t warpbuffer_AHardwareBuffer(AHardwareBuffer buf);
+IM_API rga_buffer_t warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
+//IM_API rga_buffer_t warpbuffer_AHardwareBuffer(AHardwareBuffer buf);
 #endif
 

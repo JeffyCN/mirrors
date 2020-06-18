@@ -25,11 +25,11 @@ using namespace std;
 
 RockchipRga& rkRga(RockchipRga::get());
 
-IM_API buffer_t warpbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format)
+IM_API rga_buffer_t warpbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format)
 {
-    buffer_t buffer;
+    rga_buffer_t buffer;
 
-    memset(&buffer, 0, sizeof(buffer_t));
+    memset(&buffer, 0, sizeof(rga_buffer_t));
 
     buffer.vir_addr = vir_addr;
     buffer.width = width;
@@ -41,11 +41,11 @@ IM_API buffer_t warpbuffer_virtualaddr(void* vir_addr, int width, int height, in
     return buffer;
 }
 
-IM_API buffer_t warpbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format)
+IM_API rga_buffer_t warpbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format)
 {
-    buffer_t buffer;
+    rga_buffer_t buffer;
 
-    memset(&buffer, 0, sizeof(buffer_t));
+    memset(&buffer, 0, sizeof(rga_buffer_t));
 
     buffer.phy_addr = phy_addr;
     buffer.width = width;
@@ -57,11 +57,11 @@ IM_API buffer_t warpbuffer_physicaladdr(void* phy_addr, int width, int height, i
     return buffer;
 }
 
-IM_API buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format)
+IM_API rga_buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format)
 {
-    buffer_t buffer;
+    rga_buffer_t buffer;
 
-    memset(&buffer, 0, sizeof(buffer_t));
+    memset(&buffer, 0, sizeof(rga_buffer_t));
 
     buffer.fd = fd;
     buffer.width = width;
@@ -74,12 +74,12 @@ IM_API buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, int hs
 }
 
 #if 1 //Android
-IM_API buffer_t warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
+IM_API rga_buffer_t warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
 {
-    buffer_t buffer;
+    rga_buffer_t buffer;
     int ret = 0;
 
-    memset(&buffer, 0, sizeof(buffer_t));
+    memset(&buffer, 0, sizeof(rga_buffer_t));
 
     ret = rkRga.RkRgaGetBufferFd(buf->handle, &buffer.fd);
     if (ret)
@@ -102,7 +102,7 @@ IM_API buffer_t warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
 }
 #endif
 
-IM_API int rga_set_buffer_info(buffer_t dst, rga_info_t* dstinfo)
+IM_API int rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo)
 {
     if(dst.phy_addr != NULL)
         dstinfo->phyAddr= dst.phy_addr;
@@ -125,7 +125,7 @@ IM_API int rga_set_buffer_info(buffer_t dst, rga_info_t* dstinfo)
     return IM_STATUS_SUCCESS;
 }
 
-IM_API int rga_set_buffer_info(const buffer_t src, buffer_t dst, rga_info_t* srcinfo, rga_info_t* dstinfo)
+IM_API int rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, rga_info_t* srcinfo, rga_info_t* dstinfo)
 {
     if(src.phy_addr != NULL)
         srcinfo->phyAddr = src.phy_addr;
@@ -432,7 +432,7 @@ IM_API const char* querystring(int name)
     return temp;
 }
 
-IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double fy, int interpolation, int sync)
+IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync)
 {
     int usage = 0;
     int ret = IM_STATUS_SUCCESS;
@@ -461,7 +461,7 @@ IM_API IM_STATUS imresize_t(const buffer_t src, buffer_t dst, double fx, double 
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect rect, int sync)
+IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, int sync)
 {
     int usage = 0;
     int ret = IM_STATUS_SUCCESS;
@@ -480,7 +480,7 @@ IM_API IM_STATUS imcrop_t(const buffer_t src, buffer_t dst, im_rect rect, int sy
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imrotate_t(const buffer_t src, buffer_t dst, int rotation, int sync)
+IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotation, int sync)
 {
     int usage = 0;
     int ret = IM_STATUS_SUCCESS;
@@ -499,7 +499,7 @@ IM_API IM_STATUS imrotate_t(const buffer_t src, buffer_t dst, int rotation, int 
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
+IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, int sync)
 {
     int usage = 0;
     int ret = IM_STATUS_SUCCESS;
@@ -518,16 +518,16 @@ IM_API IM_STATUS imflip_t (const buffer_t src, buffer_t dst, int mode, int sync)
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, int color, int sync)
+IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync)
 {
     int usage = 0;
     int ret = IM_STATUS_SUCCESS;
     im_rect srect;
     im_rect drect;
 
-    buffer_t src;
+    rga_buffer_t src;
 
-    memset(&src, 0, sizeof(buffer_t));
+    memset(&src, 0, sizeof(rga_buffer_t));
 
     usage |= IM_COLOR_FILL;
 
@@ -543,7 +543,7 @@ IM_API IM_STATUS imfill_t(buffer_t dst, im_rect rect, int color, int sync)
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imtranslate_t(const buffer_t src, buffer_t dst, int x, int y, int sync)
+IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync)
 {
     int usage = 0;
     int ret = IM_STATUS_SUCCESS;
@@ -570,7 +570,7 @@ IM_API IM_STATUS imtranslate_t(const buffer_t src, buffer_t dst, int x, int y, i
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imcopy_t(const buffer_t src, buffer_t dst, int sync)
+IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync)
 {
     int usage = 0;
     int ret = IM_STATUS_SUCCESS;
@@ -590,7 +590,7 @@ IM_API IM_STATUS imcopy_t(const buffer_t src, buffer_t dst, int sync)
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imblend_t(const buffer_t srcA, const buffer_t srcB, buffer_t dst, int mode, int sync)
+IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode, int sync)
 {
     int usage = 0;
     int ret = IM_STATUS_SUCCESS;
@@ -609,7 +609,7 @@ IM_API IM_STATUS imblend_t(const buffer_t srcA, const buffer_t srcB, buffer_t ds
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imcvtcolor_t(buffer_t src, buffer_t dst, int sfmt, int dfmt, int mode, int sync)
+IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync)
 {
     int usage = 0;
     int ret = IM_STATUS_SUCCESS;
@@ -631,12 +631,12 @@ IM_API IM_STATUS imcvtcolor_t(buffer_t src, buffer_t dst, int sfmt, int dfmt, in
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imquantize_t(const buffer_t src, buffer_t dst, rga_nn_t nn_info, int sync)
+IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, rga_nn_t nn_info, int sync)
 {
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS improcess(buffer_t src, buffer_t dst, im_rect srect, im_rect drect, int usage)
+IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im_rect drect, int usage)
 {
     rga_info_t srcinfo;
     rga_info_t dstinfo;
