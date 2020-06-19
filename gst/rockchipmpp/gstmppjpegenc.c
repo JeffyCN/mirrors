@@ -83,7 +83,7 @@ gst_mpp_jpeg_enc_set_format (GstVideoEncoder * encoder,
   rc_cfg.gop = GST_VIDEO_INFO_FPS_N (&state->info)
       / GST_VIDEO_INFO_FPS_D (&state->info);
   rc_cfg.skip_cnt = 0;
-
+  rc_cfg.max_reenc_times = 1;
 
   if (mpp_video_enc->mpi->control (mpp_video_enc->mpp_ctx, MPP_ENC_SET_RC_CFG,
           &rc_cfg)) {
