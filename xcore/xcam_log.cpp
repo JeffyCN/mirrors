@@ -110,12 +110,11 @@ int xcam_get_log_level() {
 void xcam_print_log (int module, int level, const char* format, ...) {
     char buffer[XCAM_MAX_STR_SIZE] = {0};
 
-    va_list va_list;
-    va_start (va_list, format);
-    vsnprintf (buffer, XCAM_MAX_STR_SIZE, format, va_list);
-    va_end (va_list);
-
     if (strlen (log_file_name) > 0) {
+        va_list va_list;
+        va_start (va_list, format);
+        vsnprintf (buffer, XCAM_MAX_STR_SIZE, format, va_list);
+        va_end (va_list);
         FILE* p_file = fopen (log_file_name, "ab+");
         if (NULL != p_file) {
             fwrite (buffer, sizeof (buffer[0]), strlen (buffer), p_file);
@@ -127,6 +126,11 @@ void xcam_print_log (int module, int level, const char* format, ...) {
     }
 #ifdef ANDROID_OS
     if (level <= g_xcore_log_infos[module].log_level) {
+        va_list va_list;
+        va_start (va_list, format);
+        vsnprintf (buffer, XCAM_MAX_STR_SIZE, format, va_list);
+        va_end (va_list);
+
         switch(level) {
         case XCORE_LOG_LEVEL_ERR:
             ALOGE("[%s]:%s", g_xcore_log_infos[module].module_name, buffer);
@@ -147,8 +151,13 @@ void xcam_print_log (int module, int level, const char* format, ...) {
         }
     }
 #else
-    if (level <= g_cam_engine_log_level)
+    if (level <= g_cam_engine_log_level) {
+        va_list va_list;
+        va_start (va_list, format);
+        vsnprintf (buffer, XCAM_MAX_STR_SIZE, format, va_list);
+        va_end (va_list);
         printf ("[%s]:%s", g_xcore_log_infos[module].module_name, buffer);
+    }
 #endif
 }
 
