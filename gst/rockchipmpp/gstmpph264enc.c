@@ -84,7 +84,7 @@ gst_mpp_h264_enc_set_format (GstVideoEncoder * encoder,
   rc_cfg.fps_out_denorm = GST_VIDEO_INFO_FPS_D (&state->info);
   rc_cfg.gop = GST_VIDEO_INFO_FPS_N (&state->info)
       / GST_VIDEO_INFO_FPS_D (&state->info);
-  rc_cfg.max_reenc_times = 0;
+  rc_cfg.skip_cnt = 0;
 
   codec_cfg.h264.qp_init = 26;
 
