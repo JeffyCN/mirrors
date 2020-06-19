@@ -519,6 +519,9 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
           frame->system_frame_number);
       gst_video_decoder_release_frame (decoder, frame);
     } else {
+      if (!GST_CLOCK_TIME_IS_VALID (frame->pts))
+        frame->pts = GST_BUFFER_PTS (frame->output_buffer) * 1000000;
+
       GST_TRACE_OBJECT (self, "finish frame ts=%" GST_TIME_FORMAT,
           GST_TIME_ARGS (frame->pts));
       ret = gst_video_decoder_finish_frame (decoder, frame);
