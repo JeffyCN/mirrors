@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <syslog.h>
 
 #define WIFI_CHIP_TYPE_PATH	"/sys/class/rkwifi/chip"
 #define WIFI_POWER_INF		"/sys/class/rkwifi/power"
@@ -20,7 +21,20 @@
 
 #define UNKKOWN_DRIVER_MODULE_ARG ""
 
-#define BT_TTY_DEV "/dev/ttyS4"
+#define RKWIFIBT_DEBUG
+
+#ifdef RKWIFIBT_DEBUG
+#define pr_debug(fmt, ...)		syslog(LOG_DEBUG, fmt, ##__VA_ARGS__)
+#define pr_info(fmt, ...)		syslog(LOG_INFO, fmt, ##__VA_ARGS__)
+#define pr_warning(fmt, ...)	syslog(LOG_WARNING, fmt, ##__VA_ARGS__)
+#define pr_err(fmt, ...)		syslog(LOG_ERR, fmt, ##__VA_ARGS__)
+#else
+#define pr_debug
+#define pr_info
+#define pr_warning
+#define pr_err
+#endif
+
 
 int check_wifi_chip_type(void);
 int check_wifi_chip_type_string(char *type);
@@ -168,25 +182,25 @@ int save_wifi_chip_type(char *type)
 
 	if ((ret == 0) || (errno == EACCES)) {
 		if ((ret != 0) && (chmod(RECOGNIZE_WIFI_CHIP, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP) != 0)) {
-			printf("Cannot set RW to \"%s\": %s \n", RECOGNIZE_WIFI_CHIP, strerror(errno));
+			pr_info("Cannot set RW to \"%s\": %s \n", RECOGNIZE_WIFI_CHIP, strerror(errno));
 			return -1;
 		}
-		printf("%s is exit \n", RECOGNIZE_WIFI_CHIP);
+		pr_info("%s is exit \n", RECOGNIZE_WIFI_CHIP);
 		return 0;
 	}
 
 	fd = open(RECOGNIZE_WIFI_CHIP, O_CREAT|O_RDWR, 0664);
 	if (fd < 0) {
-		printf("Cannot create \"%s\": %s", RECOGNIZE_WIFI_CHIP, strerror(errno));
+		pr_info("Cannot create \"%s\": %s", RECOGNIZE_WIFI_CHIP, strerror(errno));
 		return -1;
 	}
 
-	printf("%s is not exit,save wifi chip \n", RECOGNIZE_WIFI_CHIP);
+	pr_info("%s is not exit,save wifi chip \n", RECOGNIZE_WIFI_CHIP);
 	strcpy(buf, type);
-	printf("recognized wifi chip = %s, save to %s \n", buf, RECOGNIZE_WIFI_CHIP);
+	pr_info("recognized wifi chip = %s, save to %s \n", buf, RECOGNIZE_WIFI_CHIP);
 
 	if (write(fd, buf, strlen(buf) + 1) != (strlen(buf) + 1)) {
-		printf("Error writing \"%s\": %s \n", RECOGNIZE_WIFI_CHIP, strerror(errno));
+		pr_info("Error writing \"%s\": %s \n", RECOGNIZE_WIFI_CHIP, strerror(errno));
 		close(fd);
 		return -1;
 	}
@@ -194,7 +208,7 @@ int save_wifi_chip_type(char *type)
 	close(fd);
 
 	if (chmod(RECOGNIZE_WIFI_CHIP, 0664) < 0) {
-		printf("Error changing permissions of %s to 0664: %s \n",RECOGNIZE_WIFI_CHIP, strerror(errno));
+		pr_info("Error changing permissions of %s to 0664: %s \n",RECOGNIZE_WIFI_CHIP, strerror(errno));
 		unlink(RECOGNIZE_WIFI_CHIP);
 		return -1;
 	}
@@ -213,7 +227,7 @@ int get_wifi_device_id(const char *bus_dir, const char *prefix)
 	idnum = sizeof(supported_wifi_devices) / sizeof(supported_wifi_devices[0]);
 	dir = opendir(bus_dir);
 	if (!dir) {
-		printf("open dir failed: %s \n", strerror(errno));
+		pr_info("open dir failed: %s \n", strerror(errno));
 		return invalid_wifi_device_id;
 	}
 
@@ -221,7 +235,7 @@ int get_wifi_device_id(const char *bus_dir, const char *prefix)
 		char line[256];
 		char uevent_file[256] = {0};
 		sprintf(uevent_file, "%s/%s/uevent", bus_dir, next->d_name);
-		printf("uevent path:%s \n", uevent_file);
+		pr_info("uevent path:%s \n", uevent_file);
 		fp = fopen(uevent_file, "r");
 		if (NULL == fp) {
 			continue;
@@ -234,7 +248,7 @@ int get_wifi_device_id(const char *bus_dir, const char *prefix)
 			int producd_bcddev = 0;
 			char temp[10] = {0};
 			pos = strstr(line, prefix);
-			printf("line: %s, prefix: %s.\n", line, prefix);
+			pr_info("line: %s, prefix: %s.\n", line, prefix);
 			if (pos != NULL) {
 				if (strncmp(bus_dir, USB_DIR, sizeof(USB_DIR)) == 0)
 					sscanf(pos + 8, "%x/%x/%x", &product_vid, &product_did, &producd_bcddev);
@@ -246,10 +260,10 @@ int get_wifi_device_id(const char *bus_dir, const char *prefix)
 					return invalid_wifi_device_id;
 
 				sprintf(temp, "%04x:%04x", product_vid, product_did);
-				printf("pid:vid : %s \n", temp);
+				pr_info("pid:vid : %s \n", temp);
 				for (i = 0; i < idnum; i++) {
 					if (0 == strncmp(temp, supported_wifi_devices[i].wifi_vid_pid, 9)) {
-						printf("found device pid:vid : %s \n", temp);
+						pr_info("found device pid:vid : %s \n", temp);
 						strcpy(recoginze_wifi_chip, supported_wifi_devices[i].wifi_name);
 						identify_sucess = 1 ;
 						ret = 0;
@@ -265,7 +279,7 @@ int get_wifi_device_id(const char *bus_dir, const char *prefix)
 	ret = invalid_wifi_device_id;
 ready:
 	closedir(dir);
-	printf("wifi detectd return ret:%d \n", ret);
+	pr_info("wifi detectd return ret:%d \n", ret);
 	return ret;
 }
 
@@ -273,20 +287,20 @@ int check_wifi_chip_type_string(char *type)
 {
 	if (identify_sucess == -1) {
 		if (get_wifi_device_id(SDIO_DIR, PREFIX_SDIO) == 0)
-			printf("SDIO WIFI identify sucess \n");
+			pr_info("SDIO WIFI identify sucess \n");
 		else if (get_wifi_device_id(USB_DIR, PREFIX_USB) == 0)
-			printf("USB WIFI identify sucess \n");
+			pr_info("USB WIFI identify sucess \n");
 		else if (get_wifi_device_id(PCIE_DIR, PREFIX_PCIE) == 0)
-			printf("PCIE WIFI identify sucess \n");
+			pr_info("PCIE WIFI identify sucess \n");
 		else {
-			printf("maybe there is no usb wifi or sdio or pcie wifi, set default wifi module Brocom APXXX \n");
+			pr_info("maybe there is no usb wifi or sdio or pcie wifi, set default wifi module Brocom APXXX \n");
 			strcpy(recoginze_wifi_chip, "APXXX");
 			identify_sucess = 1 ;
 		}
 	}
 
 	strcpy(type, recoginze_wifi_chip);
-	printf("%s: %s \n", __func__, type);
+	pr_info("%s: %s \n", __func__, type);
 	return 0;
 }
 
@@ -298,13 +312,13 @@ int check_wireless_ready(void)
 
 	fp = fopen("/proc/net/dev", "r");
 	if (fp == NULL) {
-		printf("Couldn't open /proc/net/dev \n");
+		pr_info("Couldn't open /proc/net/dev \n");
 		return 0;
 	}
 
 	while(fgets(line, 1024, fp)) {
 		if ((strstr(line, "wlan0:") != NULL) || (strstr(line, "p2p0:") != NULL)) {
-			printf("Wifi driver is ready for now... \n");
+			pr_info("Wifi driver is ready for now... \n");
 			fclose(fp);
 			return 1;
 		}
@@ -312,7 +326,7 @@ int check_wireless_ready(void)
 
 	fclose(fp);
 
-	printf("Wifi driver is not ready.\n");
+	pr_info("Wifi driver is not ready.\n");
 	return 0;
 }
 
@@ -385,7 +399,7 @@ int wifibt_load_driver(void)
 		wifi_dirver_is_loaded = 1;
 	}
 
-	printf("%s \n", __func__);
+	pr_info("%s \n", __func__);
 
 	if (wifi_type[0] == 0) {
 		check_wifi_chip_type_string(wifi_type);
@@ -397,20 +411,20 @@ int wifibt_load_driver(void)
 			wifi_ko_path = module_list[i].wifi_module_path;
 			wifi_ko_arg = module_list[i].wifi_module_arg;
 			bt_firmware_patch = module_list[i].bt_firmware_path;
-			printf("%s matched ko file path  %s \n", __func__, wifi_ko_path);
+			pr_info("%s matched ko file path  %s \n", __func__, wifi_ko_path);
 			break;
 		}
 	}
 
 	if (wifi_ko_path == NULL) {
-		printf("%s falied to find wifi driver for type=%s \n", __func__, wifi_type);
+		pr_info("%s falied to find wifi driver for type=%s \n", __func__, wifi_type);
 		return -1;
 	}
 
 	sprintf(temp, "insmod %s %s", wifi_ko_path, wifi_ko_arg);
-	printf("%s %s\n", __func__, temp);
+	pr_info("%s %s\n", __func__, temp);
 	if (system(temp)) {
-		printf("%s insmod %s failed \n", __func__, wifi_ko_path);
+		pr_info("%s insmod %s failed \n", __func__, wifi_ko_path);
 		return -1;
 	}
 
@@ -430,9 +444,9 @@ int wifibt_load_driver(void)
 		usleep(2);
 
 		sprintf(temp, "brcm_patchram_plus1 --bd_addr_rand --enable_hci --no2bytes --use_baudrate_for_download  --tosleep  200000 --baudrate 1500000 --patchram  %s %s &", bt_firmware_patch, bt_tty_dev);
-		printf("%s %s\n", __func__, temp);
+		pr_info("%s %s\n", __func__, temp);
 		if (system(temp)) {
-			printf("bt_init: %s failed \n", temp);
+			pr_info("bt_init: %s failed \n", temp);
 			return -1;
 		}
 	} else if (strstr(bt_firmware_patch , "RTL")) {
@@ -456,10 +470,10 @@ int wifibt_load_driver(void)
 
 int main(int argc, char *argv[])
 {
-	printf("Rockchip Linux WifiBt init \n");
+	pr_info("Rockchip Linux WifiBt init \n");
 
 	strncpy(bt_tty_dev, argv[1], 10);
-	printf("BT TTY: %s \n", bt_tty_dev);
+	pr_info("BT TTY: %s \n", bt_tty_dev);
 
 	wifibt_load_driver();
 
