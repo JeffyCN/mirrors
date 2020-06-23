@@ -100,6 +100,35 @@ IM_API rga_buffer_t warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
 
     return buffer;
 }
+
+IM_API rga_buffer_t warpbuffer_AHardwareBuffer(AHardwareBuffer *buf)
+{
+	rga_buffer_t buffer;
+	int ret = 0;
+
+    GraphicBuffer *gbuffer = GraphicBuffer::fromAHardwareBuffer(buf);
+
+    ret = rkRga.RkRgaGetBufferFd(gbuffer->handle, &buffer.fd);
+    if (ret)
+        ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(gbuffer->handle));
+
+    if (buffer.fd <= 0)
+    {
+        ret = RkRgaGetHandleMapAddress(gbuffer->handle, &buffer.vir_addr);
+        if(!buffer.vir_addr)
+            ALOGE("rga_im2d: invaild GraphicBuffer");
+    }
+
+    buffer.width   = gbuffer->getWidth();
+    buffer.height  = gbuffer->getHeight();
+    buffer.wstride = gbuffer->getStride();
+    buffer.hstride = gbuffer->getHeight();
+    buffer.format  = gbuffer->getPixelFormat();
+
+	memset(&buffer, 0, sizeof(rga_buffer_t));
+
+	return buffer;
+}
 #endif
 
 IM_API int rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo)
