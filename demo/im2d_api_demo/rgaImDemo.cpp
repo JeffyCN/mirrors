@@ -4,8 +4,9 @@
 #include <sys/types.h>
 #include <math.h>
 #include <fcntl.h>
-
 #include "RockchipFileOps.h"
+
+#define ERROR -1
 
 sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format)
 {
@@ -40,7 +41,7 @@ int Write_GraphicBuffer(sp<GraphicBuffer> gb, bool flag, int index)
 
     if (ret) {
         printf("lock buffer error : %s\n",strerror(errno));
-        return -1;
+        return ERROR;
     } else
         printf("lock buffer %s \n","ok");
 
@@ -50,23 +51,25 @@ int Write_GraphicBuffer(sp<GraphicBuffer> gb, bool flag, int index)
     {
         ret = get_buf_from_file(buf, gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index);
         if (!ret)
-            printf("open file\n");
+            printf("open file %s \n", "ok");
         else
-            printf ("can not open file\n");
+        {
+            printf ("open file %s \n", "fault");
+            return ERROR;
+        }
     }
-    printf("flag = %d", flag);
 
     ret = gb->unlock();
 	  if (ret) {
         printf("unlock buffer error : %s\n",strerror(errno));
-        return -1;
+        return ERROR;
     } else
         printf("unlock buffer %s \n","ok");
 
     return 0;
 }
 
-const char * GetError(IM_STATUS status)
+const char * ImGetError(IM_STATUS status)
 {
     switch(status)
     {
@@ -90,14 +93,17 @@ const char * GetError(IM_STATUS status)
 int main(int argc, char*  argv[])
 {
     int ret;
-    int rotation = 0, flip = 0, color = 0;
-    const int *parm_data = NULL;
     int srcWidth,srcHeight,srcFormat;
     int dstWidth,dstHeight,dstFormat;
+    int parm_data[MODE_MAX] = {0};
 
-    mode_code MODE;
-    querystring_info IM_INFO;
-    IM_STATUS STATUS;
+    int               COLOR;
+    IM_USAGE          ROTATE;
+    IM_USAGE          FLIP;
+
+    MODE_CODE         MODE;
+    QUERYSTRING_INFO  IM_INFO;
+    IM_STATUS         STATUS;
 
     im_rect src_rect;
     im_rect dst_rect;
@@ -117,7 +123,12 @@ int main(int argc, char*  argv[])
     dstHeight = 720;
     dstFormat = HAL_PIXEL_FORMAT_RGBA_8888;
 
-    MODE = readArguments(argc, argv);
+    MODE = readArguments(argc, argv, parm_data);
+    if(MODE_NONE == MODE)
+    {
+        printf("%s, Unknow RGA mode\n", __FUNCTION__);
+        return ERROR;
+    }
     /********** Get parameters **********/
     if(MODE != MODE_QUERYSTRING)
     {
@@ -126,17 +137,38 @@ int main(int argc, char*  argv[])
         if (src_buf == NULL || dst_buf == NULL)
         {
             printf("GraphicBuff init error!\n");
-            return -1;
+            return ERROR;
         }
 
-        Write_GraphicBuffer(src_buf, write_buff, 0);
+        if(ERROR == Write_GraphicBuffer(src_buf, write_buff, 0))
+        {
+            printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
+            return -1;
+        }
         if(MODE == MODE_BLEND)
-            Write_GraphicBuffer(dst_buf, write_buff, 1);
+        {
+            if(ERROR == Write_GraphicBuffer(dst_buf, write_buff, 1))
+            {
+                printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
+                return ERROR;
+            }
+        }
         else
-            Write_GraphicBuffer(dst_buf, Empty_buff, 1);
+        {
+            if(ERROR == Write_GraphicBuffer(dst_buf, Empty_buff, 1))
+            {
+                printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
+                return ERROR;
+            }
+        }
 
         src = warpbuffer_GraphicBuffer(src_buf);
         dst = warpbuffer_GraphicBuffer(dst_buf);
+        if((src.fd == 0 && src.vir_addr == 0) || (dst.fd == 0 && dst.vir_addr == 0))
+        {
+            printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
+            return ERROR;
+        }
     }
 
     /********** Execution function according to mode **********/
@@ -144,23 +176,21 @@ int main(int argc, char*  argv[])
     {
         case MODE_QUERYSTRING :
 
-            IM_INFO = readInfo(argc, argv);
+            IM_INFO = (QUERYSTRING_INFO)parm_data[MODE_QUERYSTRING];
             printf("\n%s\n", querystring(IM_INFO));
 
             break;
 
-        case MODE_COPY :      //rgaImDemo -copy
+        case MODE_COPY :      //rgaImDemo --copy
 
             STATUS = imcopy(src, dst);
-            printf("copying .... %s\n", GetError(STATUS));
+            printf("copying .... %s\n", ImGetError(STATUS));
 
             break;
 
-        case MODE_RESIZE :    //rgaImDemo -resize -up/down
+        case MODE_RESIZE :    //rgaImDemo --resize=up/down
 
-            parm_data = readParm(argc, argv);
-
-            switch(readResizeMode(parm_data))
+            switch(parm_data[MODE_RESIZE])
             {
                 case UP_RESIZE :
 
@@ -168,9 +198,13 @@ int main(int argc, char*  argv[])
                     if (dst_buf == NULL)
                     {
                         printf("dst GraphicBuff init error!\n");
-                        return -1;
+                        return ERROR;
                     }
-                    Write_GraphicBuffer(dst_buf, Empty_buff, 1);
+                    if(ERROR == Write_GraphicBuffer(dst_buf, Empty_buff, 1))
+                    {
+                        printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
+                        return ERROR;
+                    }
                     dst = warpbuffer_GraphicBuffer(dst_buf);
 
                     break;
@@ -180,20 +214,24 @@ int main(int argc, char*  argv[])
                     if (dst_buf == NULL)
                     {
                         printf("dst GraphicBuff init error!\n");
-                        return -1;
+                        return ERROR;
                     }
-                    Write_GraphicBuffer(dst_buf, Empty_buff, 1);
+                    if(ERROR == Write_GraphicBuffer(dst_buf, Empty_buff, 1))
+                    {
+                        printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
+                        return ERROR;
+                    }
                     dst = warpbuffer_GraphicBuffer(dst_buf);
 
                     break;
             }
 
             STATUS = imresize(src, dst);
-            printf("resizing .... %s\n", GetError(STATUS));
+            printf("resizing .... %s\n", ImGetError(STATUS));
 
             break;
 
-        case MODE_CROP :      //rgaImDemo -crop
+        case MODE_CROP :      //rgaImDemo --crop
 
             src_rect.x      = 100;
             src_rect.y      = 100;
@@ -201,83 +239,78 @@ int main(int argc, char*  argv[])
             src_rect.height = 300;
 
             STATUS = imcrop(src, dst, src_rect);
-            printf("cropping .... %s\n", GetError(STATUS));
+            printf("cropping .... %s\n", ImGetError(STATUS));
 
             break;
 
-        case MODE_ROTATE :    //rgaImDemo -rotate -90/180/270
+        case MODE_ROTATE :    //rgaImDemo --rotate=90/180/270
 
-                parm_data = readParm(argc, argv);
-            rotation = readRotationMode(parm_data);
+            ROTATE = (IM_USAGE)parm_data[MODE_ROTATE];
 
-            STATUS = imrotate(src, dst, rotation);
-            printf("rotating .... %s\n", GetError(STATUS));
-
-            break;
-
-        case MODE_FLIP :      //rgaImDemo -flip -H/V
-
-                parm_data = readParm(argc, argv);
-
-            flip = readFlipMode(parm_data);
-
-            STATUS = imflip(src, dst, flip);
-            printf("flipping .... %s\n", GetError(STATUS));
+            STATUS = imrotate(src, dst, ROTATE);
+            printf("rotating .... %s\n", ImGetError(STATUS));
 
             break;
 
-        case MODE_TRANSLATE : //rgaImDemo -translate
+        case MODE_FLIP :      //rgaImDemo --flip=H/V
+
+            FLIP = (IM_USAGE)parm_data[MODE_FLIP];
+
+            STATUS = imflip(src, dst, FLIP);
+            printf("flipping .... %s\n", ImGetError(STATUS));
+
+            break;
+
+        case MODE_TRANSLATE : //rgaImDemo --translate
 
             src_rect.x = 300;
             src_rect.y = 300;
 
             STATUS = imtranslate(src, dst, src_rect.x, src_rect.y);
-            printf("translating .... %s\n", GetError(STATUS));
+            printf("translating .... %s\n", ImGetError(STATUS));
 
             break;
 
-        case MODE_BLEND :     //rgaImDemo -blend
+        case MODE_BLEND :     //rgaImDemo --blend
 
             STATUS = imblend(src, src, dst);
-            printf("blending .... %s\n", GetError(STATUS));
+            printf("blending .... %s\n", ImGetError(STATUS));
 
             break;
 
-        case MODE_CVTCOLOR :  //rgaImDemo -cvtcolor
+        case MODE_CVTCOLOR :  //rgaImDemo --cvtcolor
 
             src.format = HAL_PIXEL_FORMAT_RGBA_8888;
             dst.format = HAL_PIXEL_FORMAT_YCrCb_NV12;
 
             STATUS = imcvtcolor(src, dst, src.format, dst.format);
-            printf("cvtcolor .... %s\n", GetError(STATUS));
+            printf("cvtcolor .... %s\n", ImGetError(STATUS));
 
             break;
 
-        case MODE_FILL :      //rgaImDemo -fill -blue/green/red
+        case MODE_FILL :      //rgaImDemo --fill=blue/green/red
 
-            parm_data = readParm(argc, argv);
-
-            color = readColor(parm_data);
+            COLOR = parm_data[MODE_FILL];
 
             dst_rect.x      = 100;
             dst_rect.y      = 100;
             dst_rect.width  = 300;
             dst_rect.height = 300;
 
-            STATUS = imfill(dst, dst_rect, color);
-            printf("filling .... %s\n", GetError(STATUS));
+            STATUS = imfill(dst, dst_rect, COLOR);
+            printf("filling .... %s\n", ImGetError(STATUS));
 
             break;
 
         case MODE_NONE :
 
-            printf("Unknown mode\n");
+            printf("%s, Unknown mode\n", __FUNCTION__);
 
             break;
 
         default :
 
-            printf("Invalid mode\n");
+            printf("%s, Invalid mode\n", __FUNCTION__);
 
             break;
     }

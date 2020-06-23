@@ -1,306 +1,251 @@
-#include "args.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <getopt.h>
+#include "args.h"
 #include "im2d_api/im2d.h"
 
-mode_code readArguments(int argc, char *argv[])
+void help_function()
 {
-    int i = 1;
-    //read the arguments of the program
-    if(argc <= 1)
+    printf("\n=============================================================================================\n");
+	  printf( "   usage: rgaImDemo [--help/-h] [--querystring/--querystring=<options>]\n"
+	          "                    [--copy] [--resize=<up/down>] [--crop] [--rotate=90/180/270]\n"
+	          "                    [--flip=H/V] [--translate] [--blend] [--cvtcolor]\n"
+	          "                    [--fill=blue/green/red]\n");
+	  printf( "\t --help/-h     Call help\n"
+            "\t --querystring You can print the version or support information corresponding to the current version of RGA according to the options.\n"
+            "\t               If there is no input options, all versions and support information of the current version of RGA will be printed.\n"
+            "\t --copy        Copy the image by RGA.The default is 720p to 720p.\n"
+            "\t --resize      resize the image by RGA.You can choose to up(720p->1080p) or down(720p->480p).\n"
+            "\t --crop        Crop the image by RGA.By default, a picture of 300*300 size is cropped from (100,100).\n"
+            "\t --rotate      Rotate the image by RGA.You can choose to rotate 90/180/270 degrees.\n"
+            "\t --flip        Flip the image by RGA.You can choice of horizontal flip or vertical flip.\n"
+            "\t --translate   Translate the image by RGA.Default translation (300,300).\n"
+            "\t --blend       Blend the image by RGA.Default, Porter-Duff 'SRC over DST'.\n"
+            "\t --cvtcolor    Modify the image format and color space by RGA.The default is RGBA8888 to NV12.\n"
+            "\t --fill        Fill the image by RGA to blue, green, red, when you set the option to the corresponding color.\n");
+    printf("=============================================================================================\n\n");
+}
+
+MODE_CODE readArguments(int argc, char *argv[], int* parm)
+{
+    int opt = 0;
+    int option_index = 0;
+
+    char string[] = "h";
+    static struct option mode_options[] =
     {
-        goto out;
-    }
-    if (strcmp(argv[i],"-h") == 0 || strcmp(argv[i],"-help") == 0 )
+        { "querystring", optional_argument, NULL, MODE_QUERYSTRING_CHAR   },
+        {        "copy",       no_argument, NULL, MODE_COPY_CHAR          },
+        {      "resize", required_argument, NULL, MODE_RESIZE_CHAR        },
+        {        "crop",       no_argument, NULL, MODE_CROP_CHAR          },
+        {      "rotate", required_argument, NULL, MODE_ROTATE_CHAR        },
+        {        "flip", required_argument, NULL, MODE_FLIP_CHAR          },
+        {   "translate",       no_argument, NULL, MODE_TRANSLATE_CHAR     },
+        {       "blend",       no_argument, NULL, MODE_BLEND_CHAR         },
+        {    "cvtcolor",       no_argument, NULL, MODE_CVTCOLOR_CHAR      },
+        {        "fill", required_argument, NULL, MODE_FILL_CHAR          },
+        {        "help",       no_argument, NULL, 'h'                     },
+        {         NULL ,                 0, NULL, 0                       },
+    };
+
+    while((opt = getopt_long(argc, argv, string, mode_options, &option_index))!= -1)
     {
-        return MODE_NONE;
+        printf("Start selecting mode\n");
+        switch (opt)
+        {
+            case MODE_QUERYSTRING_CHAR :
+                printf("im2d querystring ..\n");
+
+                if (optarg != NULL)
+                    parm[MODE_QUERYSTRING] = readInfo(optarg);
+                else
+                    parm[MODE_QUERYSTRING] = INFO_ALL;
+
+                return MODE_QUERYSTRING;
+
+            case MODE_COPY_CHAR :
+                printf("im2d copy ..\n");
+                return MODE_COPY;
+
+            case MODE_RESIZE_CHAR :
+                printf("im2d resize ..\n");
+
+                if (optarg != NULL)
+                    parm[MODE_RESIZE] = readParm(optarg);
+                if (parm[MODE_RESIZE] == -1)
+                    goto out;
+
+                return MODE_RESIZE;
+
+            case MODE_CROP_CHAR :
+                printf("im2d crop ..\n");
+                return MODE_CROP;
+
+            case MODE_ROTATE_CHAR :
+                printf("im2d rotate ..\n");
+
+                if (optarg != NULL)
+                    parm[MODE_ROTATE] = readParm(optarg);
+                if (parm[MODE_ROTATE] == -1)
+                    goto out;
+
+                return MODE_ROTATE;
+
+            case MODE_FLIP_CHAR :
+                printf("im2d flip ..\n");
+
+                if (optarg != NULL)
+                    parm[MODE_FLIP] = readParm(optarg);
+                if (parm[MODE_FLIP] == -1)
+                    goto out;
+
+                return MODE_FLIP;
+
+            case MODE_TRANSLATE_CHAR :
+                printf("im2d translate ..\n");
+                return MODE_TRANSLATE;
+
+            case MODE_BLEND_CHAR :
+                printf("im2d blend ..\n");
+                return MODE_BLEND;
+
+            case MODE_CVTCOLOR_CHAR :
+                printf("im2d cvtcolor ..\n");
+                return MODE_CVTCOLOR;
+
+            case MODE_FILL_CHAR :
+                printf("im2d fill ..\n");
+
+                if (optarg != NULL)
+                    parm[MODE_FILL] = readParm(optarg);
+                if (parm[MODE_FILL] == -1)
+                    goto out;
+
+                return MODE_FILL;
+
+            case 'h' :
+                help_function();
+                return MODE_NONE;
+
+            default :
+                printf("%s, no options!\n", __FUNCTION__);
+                help_function();
+                return MODE_NONE;
+        }
     }
-    else if (strcmp(argv[i],"-vendor") == 0 )
-    {
-        printf("\nim2d querystring ..\n");
-        return MODE_QUERYSTRING;
-    }
-    else if (strcmp(argv[i],"-v") == 0 || strcmp(argv[i],"-version") == 0 )
-    {
-        printf("\nim2d querystring ..\n");
-        return MODE_QUERYSTRING;
-    }
-    else if (strcmp(argv[i],"-mi") == 0 || strcmp(argv[i],"-maxinput") == 0 )
-    {
-        printf("\nim2d querystring ..\n");
-        return MODE_QUERYSTRING;
-    }
-    else if (strcmp(argv[i],"-mo") == 0 || strcmp(argv[i],"-maxoutput") == 0 )
-    {
-        printf("\nim2d querystring ..\n");
-        return MODE_QUERYSTRING;
-    }
-    else if (strcmp(argv[i],"-s") == 0 || strcmp(argv[i],"-scale") == 0 )
-    {
-        printf("\nim2d querystring ..\n");
-        return MODE_QUERYSTRING;
-    }
-    else if (strcmp(argv[i],"-if") == 0 || strcmp(argv[i],"-inputformat") == 0 )
-    {
-        printf("\nim2d querystring ..\n");
-        return MODE_QUERYSTRING;
-    }
-    else if (strcmp(argv[i],"-of") == 0 || strcmp(argv[i],"-outputformat") == 0 )
-    {
-        printf("\nim2d querystring ..\n");
-        return MODE_QUERYSTRING;
-    }
-    else if (strcmp(argv[i],"-a") == 0 || strcmp(argv[i],"-all") == 0 )
-    {
-        printf("\nim2d querystring ..\n");
-        return MODE_QUERYSTRING;
-    }
-    //read the image name
-    else if(strcmp(argv[i],"-copy")==0)
-    {
-        printf("im2d copy ..\n");
-        return MODE_COPY;
-    }
-    else if(strcmp(argv[i],"-resize")==0)
-    {
-        printf("im2d resize ..\n");
-        return MODE_RESIZE;
-    }
-    else if(strcmp(argv[i],"-crop")==0)
-    {
-        printf("im2d crop ..\n");
-        return MODE_CROP;
-    }
-    else if(strcmp(argv[i],"-rotate")==0)
-    {
-        printf("im2d rotate ..\n");
-        return MODE_ROTATE;
-    }
-    else if(strcmp(argv[i],"-flip")==0)
-    {
-        printf("im2d flip ..\n");
-        return MODE_FLIP;
-    }
-    else if(strcmp(argv[i],"-translate")==0)
-    {
-        printf("im2d translate ..\n");
-        return MODE_TRANSLATE;
-    }
-    else if(strcmp(argv[i],"-blend")==0)
-    {
-        printf("im2d blend ..\n");
-        return MODE_BLEND;
-    }
-    else if(strcmp(argv[i],"-cvtcolor")==0)
-    {
-        printf("im2d cvtcolor ..\n");
-        return MODE_CVTCOLOR;
-    }
-    else if(strcmp(argv[i],"-fill")==0)
-    {
-        printf("im2d fill ..\n");
-        return MODE_FILL;
-    }
-    else
-    {
-        goto out;
-    }
-out :
-    printf("Invalid parameter\n");
+out:
+    help_function();
     return MODE_NONE;
 }
 
-querystring_info readInfo(int argc, char *argv[])
+QUERYSTRING_INFO readInfo(char* targ)
 {
-    int i = 1;
-    //read the arguments of the program
-    if(argc <= 1)
+    if (strcmp(targ,"d") == 0 || strcmp(targ,"vendor") == 0 )
     {
-        goto out;
-    }
-    if (strcmp(argv[i],"-vendor") == 0 )
-    {
-        printf("\nim2d querystring : vendor ..\n");
+        printf("im2d querystring .. vendor ...\n");
         return INFO_VENDOR;
     }
-    else if (strcmp(argv[i],"-v") == 0 || strcmp(argv[i],"-version") == 0 )
+    else if (strcmp(targ,"v") == 0 || strcmp(targ,"version") == 0 )
     {
-        printf("\nim2d querystring : vendor ..\n");
+        printf("im2d querystring .. vendor ...\n");
         return INFO_VERSION;
     }
-    else if (strcmp(argv[i],"-mi") == 0 || strcmp(argv[i],"-maxinput") == 0 )
+    else if (strcmp(targ,"i") == 0 || strcmp(targ,"maxinput") == 0 )
     {
-        printf("\nim2d querystring : max input ..\n");
+        printf("im2d querystring .. max input ...\n");
         return INFO_MAX_INPUT;
     }
-    else if (strcmp(argv[i],"-mo") == 0 || strcmp(argv[i],"-maxoutput") == 0 )
+    else if (strcmp(targ,"o") == 0 || strcmp(targ,"maxoutput") == 0 )
     {
-        printf("\nim2d querystring : max output ..\n");
+        printf("im2d querystring .. max output ...\n");
         return INFO_MAX_OUTPUT;
     }
-    else if (strcmp(argv[i],"-s") == 0 || strcmp(argv[i],"-scale") == 0 )
+    else if (strcmp(targ,"s") == 0 || strcmp(targ,"scalelimit") == 0 )
     {
-        printf("\nim2d querystring : scale limit ..\n");
+        printf("im2d querystring .. scale limit ...\n");
         return INFO_SCALE_LIMIT;
     }
-    else if (strcmp(argv[i],"-if") == 0 || strcmp(argv[i],"-inputformat") == 0 )
+    else if (strcmp(targ,"f") == 0 || strcmp(targ,"inputformat") == 0 )
     {
-        printf("\nim2d querystring : input format ..\n");
+        printf("im2d querystring .. input format ...\n");
         return INFO_INPUT_FORMAT;
     }
-    else if (strcmp(argv[i],"-of") == 0 || strcmp(argv[i],"-outputformat") == 0 )
+    else if (strcmp(targ,"f") == 0 || strcmp(targ,"outputformat") == 0 )
     {
-        printf("\nim2d querystring : output format ..\n");
+        printf("im2d querystring .. output format ...\n");
         return INFO_OUTPUT_FORMAT;
     }
-    else if (strcmp(argv[i],"-a") == 0 || strcmp(argv[i],"-all") == 0 )
+    else if (strcmp(targ,"a") == 0 || strcmp(targ,"all") == 0 || strcmp(targ," ") == 0)
     {
-        printf("\nim2d querystring : all ..\n");
+        printf("im2d querystring .. all ...\n");
         return INFO_ALL;
     }
     else
     {
-        goto out;
+        printf("%s, Invalid infomation, print all\n", __FUNCTION__);
+        return INFO_ERR;
     }
-    out :
-    printf("Invalid infomation, print all\n");
-    return INFO_ERR;
 }
 
-const int * readParm(int argc, char *argv[])
+int readParm(char* targ)
 {
-  	static int parm[30];
-  	int i = 2;
-
-    if(argc <= 1)
+    if (strcmp(targ,"up") == 0 )
     {
-        goto out;
+        printf("up resize ...\n");
+        return UP_RESIZE;
     }
-    if (strcmp(argv[i],"-up") == 0 )
+    else if (strcmp(targ,"down") == 0)
     {
-        printf("\nup resize ...\n");
-        parm[RESIZE_MODE] = 0;
-        return (const int*)parm;
+        printf("down resize ...\n");
+        return DOWN_RESIZE;
     }
-    else if (strcmp(argv[i],"-down") == 0)
+    else if (strcmp(targ,"90") == 0)
     {
-        printf("\ndown resize ...\n");
-        parm[RESIZE_MODE] = 1;
-        return (const int*)parm;
+        printf("rotation 90 ...\n");
+        return IM_HAL_TRANSFORM_ROT_90;
     }
-    else if (strcmp(argv[i],"-90") == 0)
+    else if (strcmp(targ,"180") == 0)
     {
-        printf("\nrotation 90 ...\n");
-        parm[ROTATION_MODE] = 90;
-        return (const int*)parm;
+        printf("nrotation 180 ...\n");
+        return IM_HAL_TRANSFORM_ROT_180;
     }
-    else if (strcmp(argv[i],"-180") == 0)
+    else if (strcmp(targ,"-270") == 0)
     {
-        printf("\nnrotation 180 ...\n");
-        parm[ROTATION_MODE] = 180;
-        return (const int*)parm;
+        printf("rotation 270 ...\n");
+        return IM_HAL_TRANSFORM_ROT_270;
     }
-    else if (strcmp(argv[i],"-270") == 0)
+    else if (strcmp(targ,"H") == 0)
     {
-        printf("\nnrotation 270 ...\n");
-        parm[ROTATION_MODE] = 270;
-        return (const int*)parm;
+        printf("flip H ...\n");
+        return IM_HAL_TRANSFORM_FLIP_H;
     }
-    else if (strcmp(argv[i],"-H") == 0)
+    else if (strcmp(targ,"V") == 0)
     {
-        printf("\nflip H ...\n");
-        parm[FLIP_MODE] = 0;
-        return (const int*)parm;
+        printf("flip V ...\n");
+        return IM_HAL_TRANSFORM_FLIP_V;
     }
-    else if (strcmp(argv[i],"-V") == 0)
+    else if (strcmp(targ,"blue") == 0)
     {
-        printf("\nflip V ...\n");
-        parm[FLIP_MODE] = 1;
-        return (const int*)parm;
+        printf("fill blue ...\n");
+        return BLUE_COLOR;
     }
-    else if (strcmp(argv[i],"-blue") == 0)
+    else if (strcmp(targ,"green") == 0)
     {
-        printf("\nfill blue ...\n");
-        parm[COLOR] = 0;
-        return (const int*)parm;
+        printf("fill green ...\n");
+        return GREEN_COLOR;
     }
-    else if (strcmp(argv[i],"-green") == 0)
+    else if (strcmp(targ,"red") == 0)
     {
-        printf("\nfill green ...\n");
-        parm[COLOR] = 1;
-        return (const int*)parm;
-    }
-    else if (strcmp(argv[i],"-red") == 0)
-    {
-        printf("\nfill red ...\n");
-        parm[COLOR] = 2;
-        return (const int*)parm;
+        printf("fill red ...\n");
+        return RED_COLOR;
     }
     else
     {
-        goto out;
+        printf("%s, Invalid parameter\n", __FUNCTION__);
+        return -1;
     }
-
-out :
-    printf("Invalid infomation, print all\n");
-    return NULL;
 }
-
-int readResizeMode(const int * parm)
-{
-    switch(parm[RESIZE_MODE])
-    {
-        case 0 :
-            return UP_RESIZE;
-        case 1 :
-            return DOWN_RESIZE;
-    }
-
-    return -1;
-}
-
-
-int readRotationMode(const int * parm)
-{
-    switch(parm[ROTATION_MODE])
-    {
-        case 90 :
-            return IM_HAL_TRANSFORM_ROT_90;
-        case 180 :
-            return IM_HAL_TRANSFORM_ROT_180;
-        case 270 :
-            return IM_HAL_TRANSFORM_ROT_270;
-    }
-
-    return -1;
-}
-int readFlipMode(const int * parm)
-{
-    switch(parm[FLIP_MODE])
-    {
-        case 0 :
-            return IM_HAL_TRANSFORM_FLIP_H;
-        case 1 :
-            return IM_HAL_TRANSFORM_FLIP_V;
-    }
-    return -1;
-}
-
-int readColor(const int * parm)
-{
-    switch(parm[COLOR])
-    {
-        case 0 :
-            return 0xffff0000;//蓝色
-        case 1 :
-            return 0xff00ff00;//绿色
-        case 2 :
-            return 0xff0000ff;//红色
-    }
-
-    return -1;
-}
-
 

@@ -13,8 +13,9 @@ typedef enum _mode_code
     MODE_BLEND,
     MODE_CVTCOLOR,
     MODE_FILL,
-    MODE_NONE
-}mode_code;
+    MODE_NONE,
+    MODE_MAX
+}MODE_CODE;
 
 typedef enum {
     INFO_VENDOR = 0,
@@ -26,45 +27,29 @@ typedef enum {
     INFO_OUTPUT_FORMAT,
     INFO_ALL,
     INFO_ERR
-} querystring_info;
+} QUERYSTRING_INFO;
 
-typedef enum {
-    RESIZE_MODE = 0,
-    ROTATION_MODE,
-    FLIP_MODE,
-    BLEND_MODE,
-    COLOR,
-    NONE,
-} parm_name;
+#define MODE_QUERYSTRING_CHAR     (char) (MODE_QUERYSTRING+'0')
+#define MODE_COPY_CHAR            (char) (MODE_COPY       +'0')
+#define MODE_RESIZE_CHAR          (char) (MODE_RESIZE     +'0')
+#define MODE_CROP_CHAR            (char) (MODE_CROP       +'0')
+#define MODE_ROTATE_CHAR          (char) (MODE_ROTATE     +'0')
+#define MODE_FLIP_CHAR            (char) (MODE_FLIP       +'0')
+#define MODE_TRANSLATE_CHAR       (char) (MODE_TRANSLATE  +'0')
+#define MODE_BLEND_CHAR           (char) (MODE_BLEND      +'0')
+#define MODE_CVTCOLOR_CHAR        (char) (MODE_CVTCOLOR   +'0')
+#define MODE_FILL_CHAR            (char) (MODE_FILL       +'0')
+#define MODE_NONE_CHAR            (char) (MODE_NONE       +'0')
 
-#define readSrcWidth(parm)        parm[SRC_WIDTH]
-#define readSrcHeight(parm)       parm[SRC_HEIGHT]
-#define readSrcStrideWidth(parm)  parm[SRC_STRIDE_WIDTH]
-#define readSrcStrideHeight(parm) parm[SRC_STRIDE_HEIGHT]
-#define readSrcFormat(parm)       parm[SRC_FORMAT]
-#define readSrcXOffset(parm)      parm[SRC_X_OFFSET]
-#define readSrcYOffset(parm)      parm[SRC_Y_OFFSET]
-#define readDstWidth(parm)        parm[DST_WIDTH]
-#define readDstHeight(parm)       parm[DST_HEIGHT]
-#define readDstStrideWidth(parm)  parm[DST_STRIDE_WIDTH]
-#define readDstStrideHeight(parm) parm[DST_STRIDE_HEIGHT]
-#define readDstFormat(parm)       parm[DST_FORMAT]
-#define readDstXOffset(parm)      parm[DST_X_OFFSET]
-#define readDstYOffset(parm)      parm[DST_Y_OFFSET]
-
-#define UP_RESIZE 0
+#define UP_RESIZE   0
 #define DOWN_RESIZE 1
+#define BLUE_COLOR  0xffff0000
+#define GREEN_COLOR 0xff00ff00
+#define RED_COLOR   0xff0000ff
 
-
-
-mode_code readArguments(int argc, char *argv[]);
-querystring_info readInfo(int argc, char *argv[]);
-const int * readParm(int argc, char *argv[]);
-
-int readResizeMode(const int * parm);
-int readRotationMode(const int * parm);
-int readFlipMode(const int * parm);
-int readColor(const int * parm);
+MODE_CODE readArguments(int argc, char *argv[], int* parm);
+QUERYSTRING_INFO readInfo(char* targ);
+int readParm(char* targ);
 
 #endif
 
