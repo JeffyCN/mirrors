@@ -15,7 +15,7 @@
 #include <RockchipRga.h>
 #include "normal/NormalRga.h"
 #include <sstream>
-#include <ui/GraphicBuffer.h>
+
 #include <cutils/properties.h>
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
