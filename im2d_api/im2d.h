@@ -60,11 +60,12 @@ typedef enum {
 
 /* Status codes, returned by any blit function */
 typedef enum {
-    IM_STATUS_SUCCESS         = 1,
+    IM_STATUS_NOERROR         =  2,
+    IM_STATUS_SUCCESS         =  1,
     IM_STATUS_NOT_SUPPORTED   = -1,
     IM_STATUS_OUT_OF_MEMORY   = -2,
     IM_STATUS_INVALID_PARAM   = -3,
-    IM_STATUS_FAILED          = 0,
+    IM_STATUS_FAILED          =  0,
 } IM_STATUS;
 
 /* Status codes, returned by any blit function */

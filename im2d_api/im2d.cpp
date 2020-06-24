@@ -32,11 +32,11 @@ IM_API rga_buffer_t warpbuffer_virtualaddr(void* vir_addr, int width, int height
     memset(&buffer, 0, sizeof(rga_buffer_t));
 
     buffer.vir_addr = vir_addr;
-    buffer.width = width;
-    buffer.height = height;
-    buffer.wstride = wstride;
-    buffer.hstride = hstride;
-    buffer.format = format;
+    buffer.width    = width;
+    buffer.height   = height;
+    buffer.wstride  = wstride;
+    buffer.hstride  = hstride;
+    buffer.format   = format;
 
     return buffer;
 }
@@ -48,11 +48,11 @@ IM_API rga_buffer_t warpbuffer_physicaladdr(void* phy_addr, int width, int heigh
     memset(&buffer, 0, sizeof(rga_buffer_t));
 
     buffer.phy_addr = phy_addr;
-    buffer.width = width;
-    buffer.height = height;
-    buffer.wstride = wstride;
-    buffer.hstride = hstride;
-    buffer.format = format;
+    buffer.width    = width;
+    buffer.height   = height;
+    buffer.wstride  = wstride;
+    buffer.hstride  = hstride;
+    buffer.format   = format;
 
     return buffer;
 }
@@ -63,17 +63,19 @@ IM_API rga_buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, in
 
     memset(&buffer, 0, sizeof(rga_buffer_t));
 
-    buffer.fd = fd;
-    buffer.width = width;
-    buffer.height = height;
+    buffer.fd      = fd;
+    buffer.width   = width;
+    buffer.height  = height;
     buffer.wstride = wstride;
     buffer.hstride = hstride;
-    buffer.format = format;
+    buffer.format  = format;
 
     return buffer;
 }
 
 #if 1 //Android
+/*When warpbuffer_GraphicBuffer and warpbuffer_AHardwareBuffer are used, */
+/*it is necessary to check whether fd and virtual address of the return rga_buffer_t are valid parameters*/
 IM_API rga_buffer_t warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
 {
     rga_buffer_t buffer;
@@ -131,8 +133,14 @@ IM_API rga_buffer_t warpbuffer_AHardwareBuffer(AHardwareBuffer *buf)
 }
 #endif
 
-IM_API int rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo)
+IM_API IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo)
 {
+    if(NULL == dstinfo)
+    {
+        ALOGE("rga_im2d: invaild dstinfo");
+        return IM_STATUS_INVALID_PARAM;
+    }
+
     if(dst.phy_addr != NULL)
         dstinfo->phyAddr= dst.phy_addr;
     else if(dst.fd > 0)
@@ -154,8 +162,19 @@ IM_API int rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo)
     return IM_STATUS_SUCCESS;
 }
 
-IM_API int rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, rga_info_t* srcinfo, rga_info_t* dstinfo)
+IM_API IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, rga_info_t* srcinfo, rga_info_t* dstinfo)
 {
+    if(NULL == srcinfo)
+    {
+        ALOGE("rga_im2d: invaild srcinfo");
+        return IM_STATUS_INVALID_PARAM;
+    }
+    if(NULL == dstinfo)
+    {
+        ALOGE("rga_im2d: invaild dstinfo");
+        return IM_STATUS_INVALID_PARAM;
+    }
+
     if(src.phy_addr != NULL)
         srcinfo->phyAddr = src.phy_addr;
     else if(src.fd > 0)
@@ -194,6 +213,9 @@ IM_API int rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, rga_inf
 
     return IM_STATUS_SUCCESS;
 }
+
+#define LIBRGA    0
+#define RGA_IM2D  1
 
 IM_API const char* querystring(int name)
 {
@@ -265,20 +287,24 @@ IM_API const char* querystring(int name)
         rga_version = RGA_1;
     else if (strncmp(buf,"1.6",3) == 0)
         rga_version = RGA_1_PLUS;
-    else if (strncmp(buf,"2.00",4) == 0) //3288 vesion is 2.00
+    /*3288 vesion is 2.00*/
+    else if (strncmp(buf,"2.00",4) == 0)
         rga_version = RGA_2;
-    else if (strncmp(buf,"3.00",4) == 0) //3288w version is 3.00
+    /*3288w version is 3.00*/
+    else if (strncmp(buf,"3.00",4) == 0)
         rga_version = RGA_2;
     else if (strncmp(buf,"3.02",4) == 0)
         rga_version = RGA_2_ENHANCE;
     else if (strncmp(buf,"4.00",4) == 0)
         rga_version = RGA_2_LITE0;
+    /*The version number of lite1 cannot be obtained temporarily.*/
     else if (strncmp(buf,"4.00",4) == 0)
         rga_version = RGA_2_LITE1;
     else
         rga_version = RGA_V_ERR;
 
     close(rgafd);
+    rgafd = -1;
 
     do{
         switch(name)
@@ -316,9 +342,9 @@ IM_API const char* querystring(int name)
                 }
 
                 property_get("vendor.rga.version", version_value, "0");
-                out << version_name[0] << version_value << endl;
+                out << version_name[LIBRGA] << version_value << endl;
                 property_get("vendor.rga_im2d.version", version_value, "0");
-                out << version_name[1] << version_value << endl;
+                out << version_name[RGA_IM2D] << version_value << endl;
 
                 break;
 
@@ -464,7 +490,7 @@ IM_API const char* querystring(int name)
 IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync)
 {
     int usage = 0;
-    int ret = IM_STATUS_SUCCESS;
+    int ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -493,7 +519,7 @@ IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx,
 IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, int sync)
 {
     int usage = 0;
-    int ret = IM_STATUS_SUCCESS;
+    int ret = IM_STATUS_NOERROR;
 
     im_rect drect;
 
@@ -512,7 +538,7 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
 IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotation, int sync)
 {
     int usage = 0;
-    int ret = IM_STATUS_SUCCESS;
+    int ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -531,7 +557,7 @@ IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotati
 IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, int sync)
 {
     int usage = 0;
-    int ret = IM_STATUS_SUCCESS;
+    int ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -550,7 +576,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
 IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync)
 {
     int usage = 0;
-    int ret = IM_STATUS_SUCCESS;
+    int ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -575,7 +601,7 @@ IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync)
 IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync)
 {
     int usage = 0;
-    int ret = IM_STATUS_SUCCESS;
+    int ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -602,7 +628,7 @@ IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, 
 IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync)
 {
     int usage = 0;
-    int ret = IM_STATUS_SUCCESS;
+    int ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -622,7 +648,7 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync)
 IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode, int sync)
 {
     int usage = 0;
-    int ret = IM_STATUS_SUCCESS;
+    int ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -641,7 +667,7 @@ IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga
 IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync)
 {
     int usage = 0;
-    int ret = IM_STATUS_SUCCESS;
+    int ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -665,6 +691,24 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, rga_nn_t
     return IM_STATUS_SUCCESS;
 }
 
+IM_API IM_STATUS imcheck(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im_rect drect, int usage)
+{
+    if ((srect.width + srect.x > src.width) || (srect.height + srect.y > src.height))
+    {
+        ALOGE("rga_im2d: invaild src rect");
+        return IM_STATUS_INVALID_PARAM;
+    }
+
+    /* rect judgment */
+    if ((drect.width + drect.x > dst.width) || (drect.height + drect.y > dst.height))
+    {
+        ALOGE("rga_im2d: invaild dst rect");
+        return IM_STATUS_INVALID_PARAM;
+    }
+
+    return IM_STATUS_NOERROR;
+}
+
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im_rect drect, int usage)
 {
     rga_info_t srcinfo;
@@ -682,18 +726,8 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
     if (ret < 0)
         return IM_STATUS_INVALID_PARAM;
 
-    if ((srect.width + srect.x > src.width) || (srect.height + srect.y > src.height))
-    {
-        ALOGE("rga_im2d: invaild src rect");
+    if(IM_STATUS_NOERROR != imcheck(src, dst, srect, drect, usage))
         return IM_STATUS_INVALID_PARAM;
-    }
-
-    /* rect judgment */
-    if ((drect.width + drect.x > dst.width) || (drect.height + drect.y > dst.height))
-    {
-        ALOGE("rga_im2d: invaild dst rect");
-        return IM_STATUS_INVALID_PARAM;
-    }
 
     if (srect.width > 0 && srect.height > 0)
     {
@@ -716,51 +750,56 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
     rga_set_rect(&srcinfo.rect, srect.x, srect.y, src.width, src.height, src.wstride, src.hstride, src.format);
     rga_set_rect(&dstinfo.rect, drect.x, drect.y, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
 
-    /* Transform */
-    switch(usage & IM_HAL_TRANSFORM_MASK)
+    if((usage & (IM_ALPHA_BLEND_MASK+IM_HAL_TRANSFORM_MASK)) != 0)
     {
-        case IM_HAL_TRANSFORM_ROT_90:
-            srcinfo.rotation = HAL_TRANSFORM_ROT_90;
-            break;
-        case IM_HAL_TRANSFORM_ROT_180:
-            srcinfo.rotation = HAL_TRANSFORM_ROT_180;
-            break;
-        case IM_HAL_TRANSFORM_ROT_270:
-            srcinfo.rotation = HAL_TRANSFORM_ROT_270;
-            break;
-        case IM_HAL_TRANSFORM_FLIP_V:
-            srcinfo.rotation = HAL_TRANSFORM_FLIP_V;
-            break;
-        case IM_HAL_TRANSFORM_FLIP_H:
-            srcinfo.rotation = HAL_TRANSFORM_FLIP_H;
-            break;
-    }
+        /* Transform */
+        switch(usage & IM_HAL_TRANSFORM_MASK)
+        {
+            case IM_HAL_TRANSFORM_ROT_90:
+                srcinfo.rotation = HAL_TRANSFORM_ROT_90;
+                break;
+            case IM_HAL_TRANSFORM_ROT_180:
+                srcinfo.rotation = HAL_TRANSFORM_ROT_180;
+                break;
+            case IM_HAL_TRANSFORM_ROT_270:
+                srcinfo.rotation = HAL_TRANSFORM_ROT_270;
+                break;
+            case IM_HAL_TRANSFORM_FLIP_V:
+                srcinfo.rotation = HAL_TRANSFORM_FLIP_V;
+                break;
+            case IM_HAL_TRANSFORM_FLIP_H:
+                srcinfo.rotation = HAL_TRANSFORM_FLIP_H;
+                break;
+        }
 
-    /* Blend */
-    switch(usage & IM_ALPHA_BLEND_MASK)
-    {
-        case IM_ALPHA_BLEND_SRC_OVER:
-            srcinfo.blend = 0xff0105;
-            break;
-        case IM_ALPHA_BLEND_SRC:
-            break;
-        case IM_ALPHA_BLEND_SRC_IN:
-            break;
-        case IM_ALPHA_BLEND_DST_IN:
-            break;
-        case IM_ALPHA_BLEND_SRC_OUT:
-            break;
-        case IM_ALPHA_BLEND_DST_OUT:
-            break;
-        case IM_ALPHA_BLEND_DST_OVER:
-            break;
-        case IM_ALPHA_BLEND_SRC_ATOP:
-            break;
-        case IM_ALPHA_BLEND_DST_ATOP:
-            srcinfo.blend = 0xff0405;
-            break;
-        case IM_ALPHA_BLEND_XOR:
-            break;
+        /* Blend */
+        switch(usage & IM_ALPHA_BLEND_MASK)
+        {
+            case IM_ALPHA_BLEND_SRC_OVER:
+                srcinfo.blend = 0xff0105;
+                break;
+            case IM_ALPHA_BLEND_SRC:
+                break;
+            case IM_ALPHA_BLEND_SRC_IN:
+                break;
+            case IM_ALPHA_BLEND_DST_IN:
+                break;
+            case IM_ALPHA_BLEND_SRC_OUT:
+                break;
+            case IM_ALPHA_BLEND_DST_OUT:
+                break;
+            case IM_ALPHA_BLEND_DST_OVER:
+                break;
+            case IM_ALPHA_BLEND_SRC_ATOP:
+                break;
+            case IM_ALPHA_BLEND_DST_ATOP:
+                srcinfo.blend = 0xff0405;
+                break;
+            case IM_ALPHA_BLEND_XOR:
+                break;
+        }
+        if(srcinfo.blend == 0 && srcinfo.rotation ==0)
+            ALOGE("rga_im2d: Could not find blend/rotate/flip usage : 0x%x", usage);
     }
 
     /* set global alpha */
