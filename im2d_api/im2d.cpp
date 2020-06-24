@@ -1,7 +1,8 @@
 /*
- * Copyright (C) 2016 Rockchip Electronics Co.Ltd
+ * Copyright (C) 2020 Rockchip Electronics Co.Ltd
  * Authors:
  *	PutinLee <putin.lee@rock-chips.com>
+ *  Cerf Yu <cerf.yu@rock-chips.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of  the GNU General  Public License as published by the
