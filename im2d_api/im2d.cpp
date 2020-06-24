@@ -25,7 +25,7 @@ using namespace std;
 
 RockchipRga& rkRga(RockchipRga::get());
 
-IM_API rga_buffer_t warpbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format)
+IM_API rga_buffer_t wrapbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format)
 {
     rga_buffer_t buffer;
 
@@ -41,7 +41,7 @@ IM_API rga_buffer_t warpbuffer_virtualaddr(void* vir_addr, int width, int height
     return buffer;
 }
 
-IM_API rga_buffer_t warpbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format)
+IM_API rga_buffer_t wrapbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format)
 {
     rga_buffer_t buffer;
 
@@ -57,7 +57,7 @@ IM_API rga_buffer_t warpbuffer_physicaladdr(void* phy_addr, int width, int heigh
     return buffer;
 }
 
-IM_API rga_buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format)
+IM_API rga_buffer_t wrapbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format)
 {
     rga_buffer_t buffer;
 
@@ -74,9 +74,9 @@ IM_API rga_buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, in
 }
 
 #if 1 //Android
-/*When warpbuffer_GraphicBuffer and warpbuffer_AHardwareBuffer are used, */
+/*When wrapbuffer_GraphicBuffer and wrapbuffer_AHardwareBuffer are used, */
 /*it is necessary to check whether fd and virtual address of the return rga_buffer_t are valid parameters*/
-IM_API rga_buffer_t warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
+IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
 {
     rga_buffer_t buffer;
     int ret = 0;
@@ -103,7 +103,7 @@ IM_API rga_buffer_t warpbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
     return buffer;
 }
 
-IM_API rga_buffer_t warpbuffer_AHardwareBuffer(AHardwareBuffer *buf)
+IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf)
 {
 	rga_buffer_t buffer;
 	int ret = 0;

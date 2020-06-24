@@ -16,7 +16,6 @@ extern "C" {
 
 #if 1 //ANDROID
 #include <hardware/rga.h>
-//#include <hardware_buffer_jni.h>
 #else
 
 #endif
@@ -154,13 +153,13 @@ typedef struct rga_nn {
 /*
  * @return rga_buffer_t
  */
-#define warpbuffer_viraddr_i(vir_addr, width, height, format) warpbuffer_virtualaddr(vir_addr, width, height, width, height, format)
-#define warpbuffer_phyaddr_i(phy_addr, width, height, format) warpbuffer_physicaladdr(phy_addr, width, height, width, height, format)
-#define warpbuffer_fd_i(fd, width, height, format) warpbuffer_fd(fd, width, height, width, height, format)
+#define wrapbuffer_viraddr_i(vir_addr, width, height, format) wrapbuffer_virtualaddr(vir_addr, width, height, width, height, format)
+#define wrapbuffer_phyaddr_i(phy_addr, width, height, format) wrapbuffer_physicaladdr(phy_addr, width, height, width, height, format)
+#define wrapbuffer_fd_i(fd, width, height, format) wrapbuffer_fd(fd, width, height, width, height, format)
 
-IM_API rga_buffer_t warpbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format);
-IM_API rga_buffer_t warpbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format);
-IM_API rga_buffer_t warpbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format);
+IM_API rga_buffer_t wrapbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format);
+IM_API rga_buffer_t wrapbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format);
+IM_API rga_buffer_t wrapbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format);
 
 /*
  * Query RGA basic information, supported resolution, supported format, etc.

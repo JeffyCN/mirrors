@@ -162,8 +162,8 @@ int main(int argc, char*  argv[])
             }
         }
 
-        src = warpbuffer_GraphicBuffer(src_buf);
-        dst = warpbuffer_GraphicBuffer(dst_buf);
+        src = wrapbuffer_GraphicBuffer(src_buf);
+        dst = wrapbuffer_GraphicBuffer(dst_buf);
         if((src.fd == 0 && src.vir_addr == 0) || (dst.fd == 0 && dst.vir_addr == 0))
         {
             printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
@@ -205,7 +205,7 @@ int main(int argc, char*  argv[])
                         printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
                         return ERROR;
                     }
-                    dst = warpbuffer_GraphicBuffer(dst_buf);
+                    dst = wrapbuffer_GraphicBuffer(dst_buf);
 
                     break;
                 case DOWN_RESIZE :
@@ -221,7 +221,7 @@ int main(int argc, char*  argv[])
                         printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
                         return ERROR;
                     }
-                    dst = warpbuffer_GraphicBuffer(dst_buf);
+                    dst = wrapbuffer_GraphicBuffer(dst_buf);
 
                     break;
             }
