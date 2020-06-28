@@ -42,7 +42,7 @@ typedef enum {
  * If none of the below is set, the default "SRC over DST" is applied.
  */
     IM_ALPHA_BLEND_SRC_OVER     = 1 << 5,     /* Default, Porter-Duff "SRC over DST" */
-    IM_ALPHA_BLEND_SRC          = 1 << 6,     /* Porter-Duff "SRC" */
+    IM_ALPHA_BLEND_DST          = 1 << 6,     /* Porter-Duff "DST" */
     IM_ALPHA_BLEND_SRC_IN       = 1 << 7,     /* Porter-Duff "SRC in DST" */
     IM_ALPHA_BLEND_DST_IN       = 1 << 8,     /* Porter-Duff "DST in SRC" */
     IM_ALPHA_BLEND_SRC_OUT      = 1 << 9,     /* Porter-Duff "SRC out DST" */

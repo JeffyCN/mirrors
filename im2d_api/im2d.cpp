@@ -776,7 +776,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
         /* Blend */
         switch(usage & IM_ALPHA_BLEND_MASK)
         {
-            case IM_ALPHA_BLEND_SRC_OVER:
+            case IM_ALPHA_BLEND_DST:
                 srcinfo.blend = 0xff0105;
                 break;
             case IM_ALPHA_BLEND_SRC:
@@ -790,10 +790,11 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
             case IM_ALPHA_BLEND_DST_OUT:
                 break;
             case IM_ALPHA_BLEND_DST_OVER:
+                srcinfo.blend = 0xff0501
                 break;
             case IM_ALPHA_BLEND_SRC_ATOP:
                 break;
-            case IM_ALPHA_BLEND_DST_ATOP:
+            case IM_ALPHA_BLEND_DST_OUT:
                 srcinfo.blend = 0xff0405;
                 break;
             case IM_ALPHA_BLEND_XOR:
