@@ -779,7 +779,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
             case IM_ALPHA_BLEND_DST:
                 srcinfo.blend = 0xff0105;
                 break;
-            case IM_ALPHA_BLEND_SRC:
+            case IM_ALPHA_BLEND_SRC_OVER:
                 break;
             case IM_ALPHA_BLEND_SRC_IN:
                 break;
@@ -787,10 +787,8 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
                 break;
             case IM_ALPHA_BLEND_SRC_OUT:
                 break;
-            case IM_ALPHA_BLEND_DST_OUT:
-                break;
             case IM_ALPHA_BLEND_DST_OVER:
-                srcinfo.blend = 0xff0501
+                srcinfo.blend = 0xff0501;
                 break;
             case IM_ALPHA_BLEND_SRC_ATOP:
                 break;
