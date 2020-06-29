@@ -19,7 +19,20 @@
 #include <fcntl.h>
 #include "RockchipFileOps.h"
 
-#define ERROR -1
+#define ERROR               -1
+/********** SrcInfo set **********/
+#define SRC_WIDTH  1280
+#define SRC_HEIGHT 720
+#define SRC_FORMAT HAL_PIXEL_FORMAT_RGBA_8888
+/********** DstInfo set **********/
+#define DST_WIDTH  1280
+#define DST_HEIGHT 720
+#define DST_FORMAT HAL_PIXEL_FORMAT_RGBA_8888
+
+enum {
+    FILL_BUFF  = 0,
+    EMPTY_BUFF = 1
+};
 
 sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format)
 {
@@ -42,11 +55,8 @@ sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format)
     return gb;
 }
 
-#define write_buff 0
-#define Empty_buff 1
-
 /********** write data to buffer or init buffer**********/
-int Write_GraphicBuffer(sp<GraphicBuffer> gb, bool flag, int index)
+int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int flag, int index)
 {
     int ret;
 	  char* buf = NULL;
@@ -86,6 +96,9 @@ const char * ImGetError(IM_STATUS status)
 {
     switch(status)
     {
+        case IM_STATUS_NOERROR :
+            return "No error!";
+
         case IM_STATUS_SUCCESS :
             return "Succed!";
 
@@ -106,8 +119,6 @@ const char * ImGetError(IM_STATUS status)
 int main(int argc, char*  argv[])
 {
     int ret;
-    int srcWidth,srcHeight,srcFormat;
-    int dstWidth,dstHeight,dstFormat;
     int parm_data[MODE_MAX] = {0};
 
     int               COLOR;
@@ -120,21 +131,11 @@ int main(int argc, char*  argv[])
 
     im_rect src_rect;
     im_rect dst_rect;
-    buffer_t src;
-    buffer_t dst;
+    rga_buffer_t src;
+    rga_buffer_t dst;
 
     sp<GraphicBuffer> src_buf;
     sp<GraphicBuffer> dst_buf;
-
-    /********** SrcInfo set **********/
-    srcWidth  = 1280;
-    srcHeight = 720;
-    srcFormat = HAL_PIXEL_FORMAT_RGBA_8888;
-
-    /********** DstInfo set **********/
-    dstWidth  = 1280;
-    dstHeight = 720;
-    dstFormat = HAL_PIXEL_FORMAT_RGBA_8888;
 
     MODE = readArguments(argc, argv, parm_data);
     if(MODE_NONE == MODE)
@@ -145,22 +146,22 @@ int main(int argc, char*  argv[])
     /********** Get parameters **********/
     if(MODE != MODE_QUERYSTRING)
     {
-        src_buf = GraphicBuffer_Init(srcWidth, srcHeight, srcFormat);
-        dst_buf = GraphicBuffer_Init(dstWidth, dstHeight, dstFormat);
+        src_buf = GraphicBuffer_Init(SRC_WIDTH, SRC_HEIGHT, SRC_FORMAT);
+        dst_buf = GraphicBuffer_Init(DST_WIDTH, DST_HEIGHT, DST_FORMAT);
         if (src_buf == NULL || dst_buf == NULL)
         {
             printf("GraphicBuff init error!\n");
             return ERROR;
         }
 
-        if(ERROR == Write_GraphicBuffer(src_buf, write_buff, 0))
+        if(ERROR == GraphicBuffer_Fill(src_buf, FILL_BUFF, 0))
         {
             printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
             return -1;
         }
         if(MODE == MODE_BLEND)
         {
-            if(ERROR == Write_GraphicBuffer(dst_buf, write_buff, 1))
+            if(ERROR == GraphicBuffer_Fill(dst_buf, FILL_BUFF, 1))
             {
                 printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
                 return ERROR;
@@ -168,7 +169,7 @@ int main(int argc, char*  argv[])
         }
         else
         {
-            if(ERROR == Write_GraphicBuffer(dst_buf, Empty_buff, 1))
+            if(ERROR == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1))
             {
                 printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
                 return ERROR;
@@ -205,15 +206,15 @@ int main(int argc, char*  argv[])
 
             switch(parm_data[MODE_RESIZE])
             {
-                case UP_RESIZE :
+                case IM_UP_SCALE :
 
-                    dst_buf = GraphicBuffer_Init(1920, 1080, dstFormat);
+                    dst_buf = GraphicBuffer_Init(1920, 1080, DST_FORMAT);
                     if (dst_buf == NULL)
                     {
                         printf("dst GraphicBuff init error!\n");
                         return ERROR;
                     }
-                    if(ERROR == Write_GraphicBuffer(dst_buf, Empty_buff, 1))
+                    if(ERROR == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1))
                     {
                         printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
                         return ERROR;
@@ -221,15 +222,15 @@ int main(int argc, char*  argv[])
                     dst = wrapbuffer_GraphicBuffer(dst_buf);
 
                     break;
-                case DOWN_RESIZE :
+                case IM_DOWN_SCALE :
 
-                    dst_buf = GraphicBuffer_Init(720, 480, dstFormat);
+                    dst_buf = GraphicBuffer_Init(720, 480, DST_FORMAT);
                     if (dst_buf == NULL)
                     {
                         printf("dst GraphicBuff init error!\n");
                         return ERROR;
                     }
-                    if(ERROR == Write_GraphicBuffer(dst_buf, Empty_buff, 1))
+                    if(ERROR == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1))
                     {
                         printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
                         return ERROR;

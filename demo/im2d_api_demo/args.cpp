@@ -208,12 +208,12 @@ int readParm(char* targ)
     if (strcmp(targ,"up") == 0 )
     {
         printf("up resize ...\n");
-        return UP_RESIZE;
+        return IM_UP_SCALE;
     }
     else if (strcmp(targ,"down") == 0)
     {
         printf("down resize ...\n");
-        return DOWN_RESIZE;
+        return IM_DOWN_SCALE;
     }
     else if (strcmp(targ,"90") == 0)
     {

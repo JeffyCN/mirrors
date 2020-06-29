@@ -54,8 +54,6 @@ typedef enum {
 #define MODE_FILL_CHAR            (char) (MODE_FILL       +'0')
 #define MODE_NONE_CHAR            (char) (MODE_NONE       +'0')
 
-#define UP_RESIZE   0
-#define DOWN_RESIZE 1
 #define BLUE_COLOR  0xffff0000
 #define GREEN_COLOR 0xff00ff00
 #define RED_COLOR   0xff0000ff
