@@ -1,7 +1,7 @@
 LOCAL_PATH:= $(call my-dir)
 #======================================================================
 #
-#rgaCopy565ToRgba
+#rgaImDemo
 #
 #======================================================================
 include $(CLEAR_VARS)
@@ -31,7 +31,8 @@ LOCAL_SHARED_LIBRARIES := \
     libGLESv1_CM \
     libhardware \
     libsync_vendor \
-    librga
+    librga \
+	libnativewindow
 
 LOCAL_HEADER_LIBRARIES += \
     libutils_headers \

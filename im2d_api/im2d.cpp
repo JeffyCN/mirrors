@@ -106,15 +106,16 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
 
 IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf)
 {
-	rga_buffer_t buffer;
-	int ret = 0;
+    rga_buffer_t buffer;
+    int ret = 0;
+
+    memset(&buffer, 0, sizeof(rga_buffer_t));
 
     GraphicBuffer *gbuffer = GraphicBuffer::fromAHardwareBuffer(buf);
 
     ret = rkRga.RkRgaGetBufferFd(gbuffer->handle, &buffer.fd);
     if (ret)
         ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(gbuffer->handle));
-
     if (buffer.fd <= 0)
     {
         ret = RkRgaGetHandleMapAddress(gbuffer->handle, &buffer.vir_addr);
@@ -128,9 +129,7 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf)
     buffer.hstride = gbuffer->getHeight();
     buffer.format  = gbuffer->getPixelFormat();
 
-	memset(&buffer, 0, sizeof(rga_buffer_t));
-
-	return buffer;
+    return buffer;
 }
 #endif
 
