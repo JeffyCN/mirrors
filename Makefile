@@ -160,7 +160,10 @@ $(foreach lib,$(STATIC_LIBS),$(eval $(call gen_libs,$(lib),$(CUR_OBJ),$(AR))))
 
 all: $(ULT_BIN) $(ULT_LIBS)
 
-
+install:
+	mkdir -p $(DESTDIR)/usr/lib $(DESTDIR)/usr/include
+	install -D -m 644 $(PRG_LIB_DIR)/librga.so $(DESTDIR)/usr/lib/
+	install -D -m 644 $(CURDIR)/*.h $(DESTDIR)/usr/include/
 clean:
 	-$(FIND) $(CURDIR) -name "*.o" -o -name "*.d" | $(XARGS) $(RM)
 	-$(RM) $(ULT_BIN) $(ULT_LIBS)
