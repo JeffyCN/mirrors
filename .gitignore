@@ -8,3 +8,9 @@
 *~
 *.swp
 *.gc??
+*.log
+*.substvars
+debian/linux-rga*
+debian/debhelper-build-stamp
+debian/files
+debian/.debhelper
