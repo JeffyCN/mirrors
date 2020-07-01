@@ -180,7 +180,7 @@ int get_buf_from_file(void *buf, int f, int sw, int sh, int index)
     }
 #endif
 
-    return 0;
+    return ret;
 }
 
 int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index)
@@ -221,6 +221,6 @@ int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index)
     fclose(file);
 #endif
 
-    return 0;
+    return ret;
 }
 

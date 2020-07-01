@@ -227,8 +227,8 @@ int RockchipRga::RkRgaLogOutUserPara(rga_info *rgaInfo)
     if (!rgaInfo)
         return -EINVAL;
 
-    printf("fd-vir-phy-hnd-format[%d, %p, %p, %p, %d] \n", rgaInfo->fd,
-	rgaInfo->virAddr, rgaInfo->phyAddr, (void*)rgaInfo->hnd, rgaInfo->format);
+    printf("fd-vir-phy-hnd-format[%d, %p, %p, %d, %d] \n", rgaInfo->fd,
+	rgaInfo->virAddr, rgaInfo->phyAddr, rgaInfo->hnd, rgaInfo->format);
     printf("rect[%d, %d, %d, %d, %d, %d, %d, %d] \n",
         rgaInfo->rect.xoffset, rgaInfo->rect.yoffset,
         rgaInfo->rect.width,   rgaInfo->rect.height, rgaInfo->rect.wstride,

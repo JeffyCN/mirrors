@@ -148,7 +148,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	int dstVirW,dstVirH,dstActW,dstActH,dstXPos,dstYPos;
 	//int src1VirW,src1VirH,src1ActW,src1ActH,src1XPos,src1YPos;
 	int scaleMode,rotateMode,orientation,ditherEn;
-	int srcType,dstType,src1Type,srcMmuFlag,dstMmuFlag,src1MmuFlag;
+	int srcType,dstType,srcMmuFlag,dstMmuFlag;
 	int planeAlpha;
 	int dstFd = -1;
 	int srcFd = -1;
@@ -158,15 +158,14 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
     float hScale = 1;
     float vScale = 1;
 	int ret = 0;
-	rga_rect_t relSrcRect,tmpSrcRect,relDstRect,tmpDstRect;
-	rga_rect_t relSrc1Rect,tmpSrc1Rect;
-	struct rga_req rgaReg,tmprgaReg;
+	rga_rect_t relSrcRect,relDstRect;
+	rga_rect_t relSrc1Rect;
+	struct rga_req rgaReg;
 	unsigned int blend;
 	unsigned int yuvToRgbMode;
 	bool perpixelAlpha = 0;
 	void *srcBuf = NULL;
 	void *dstBuf = NULL;
-	void *src1Buf = NULL;
 	RECT_t clip;
 
 	if (!ctx) {
@@ -177,7 +176,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	memset(&rgaReg, 0, sizeof(struct rga_req));
 
 	srcType = dstType = srcMmuFlag = dstMmuFlag = 0;
-	src1Type = src1MmuFlag = 0;
 	rotation = 0;
 	blend = 0;
 	yuvToRgbMode = 0;
@@ -698,12 +696,11 @@ int RgaCollorFill(rga_info *dst)
 	//check buffer_handle_t with rects
 	struct rgaContext *ctx = rgaCtx;
 	int dstVirW,dstVirH,dstActW,dstActH,dstXPos,dstYPos;
-	int scaleMode,ditherEn;
 	int dstType,dstMmuFlag;
 	int dstFd = -1;
 	int ret = 0;
 	unsigned int color = 0x00000000;
-	rga_rect_t relDstRect,tmpDstRect;
+	rga_rect_t relDstRect;
 	struct rga_req rgaReg;
 	COLOR_FILL fillColor ;
 	void *dstBuf = NULL;
