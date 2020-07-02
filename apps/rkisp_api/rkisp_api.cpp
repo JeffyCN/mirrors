@@ -110,7 +110,7 @@ struct rkisp_priv {
     struct control_params_3A* g_3A_control_params;
 };
 
-static const char * rkisp_get_active_sensor(const struct rkisp_priv *priv);
+const char * rkisp_get_active_sensor(const struct rkisp_api_ctx *ctx);
 static int rkisp_get_media_topology(struct rkisp_priv *priv);
 static int rkisp_init_engine(struct rkisp_priv *priv);
 static void rkisp_deinit_engine(struct rkisp_priv *priv);
@@ -592,7 +592,7 @@ rkisp_set_sensor_fmt(const struct rkisp_api_ctx *ctx, int w, int h, int code)
     if (priv->camera_type == CAM_TYPE_USB)
         return -EINVAL;
 
-    sensor = rkisp_get_active_sensor(priv);
+    sensor = rkisp_get_active_sensor(ctx);
     if (!sensor)
         return -EINVAL;
     fd = open(sensor, O_RDWR | O_CLOEXEC, 0);
@@ -1346,8 +1346,9 @@ static void rkisp_deinit_engine(struct rkisp_priv *priv)
     priv->rkisp_engine = NULL;
 }
 
-static const char * rkisp_get_active_sensor(const struct rkisp_priv *priv)
+const char * rkisp_get_active_sensor(const struct rkisp_api_ctx *ctx)
 {
+    struct rkisp_priv *priv = (struct rkisp_priv *) ctx;
     int i;
 
     for (i = 0; i < RKISP_CAMS_NUM_MAX; i++)
@@ -1399,7 +1400,7 @@ static int rkisp_get_media_topology(struct rkisp_priv *priv)
 
     strcpy(priv->mdev_path, mdev_path);
 
-    if (!rkisp_get_active_sensor(priv)) {
+    if (!rkisp_get_active_sensor((struct rkisp_api_ctx *)priv)) {
         ERR("%s is RKISP1 or RKCIF device but not sensor attached\n",
             priv->ctx.dev_path);
         return -1;

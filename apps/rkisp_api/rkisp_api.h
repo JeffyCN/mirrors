@@ -244,6 +244,13 @@ rkisp_stop_capture(const struct rkisp_api_ctx *ctx);
 void
 rkisp_close_device(const struct rkisp_api_ctx *ctx);
 
+
+/*
+ * Get the active sensor path.
+ */
+const char *
+rkisp_get_active_sensor(const struct rkisp_api_ctx *ctx);
+
 int
 rkisp_set_manual_expo(const struct rkisp_api_ctx *ctx, int on);
 int
