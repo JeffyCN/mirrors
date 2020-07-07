@@ -52,8 +52,14 @@ signed_image()
 	IMAGE=$1
 	echo "Sign ${IMAGE}"
 	SIZE=`ls $OUT/${IMAGE}.img -l | awk '{printf $5}'`
-	# At least 64K greater than origin file
-	SIZE=$[(SIZE / 4096 + 17) * 4096]
+	echo "image size is ${SIZE}"
+	# At least 68K greater than origin file
+	# Source code (scripts/avbtool)
+	# reserve some memory for (footer + vbmeta struct)
+	# - MAX_VBMETA_SIZE = 64 * 1024
+	# - MAX_FOOTER_SIZE = 4096
+	SIZE=$[(SIZE / 4096 + 18) * 4096]
+	echo "set size to ${SIZE}"
 	python $SCRIPTS/avbtool add_hash_footer --image $OUT/${IMAGE}.img --partition_size ${SIZE} --partition_name ${IMAGE} --key avb_keys/testkey_psk.pem --algorithm SHA512_RSA4096
 	echo "Sign $IMAGE Done"
 }
