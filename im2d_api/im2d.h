@@ -15,10 +15,8 @@
 extern "C" {
 #endif
 
-#if 1 //ANDROID
+#ifdef ANDROID
 #include <hardware/rga.h>
-#else
-
 #endif
 
 #ifndef IM_API
@@ -83,7 +81,7 @@ typedef enum {
 
 typedef enum {
     IM_UP_SCALE,
-    IM_DOWN_SCALE,
+    IM_DOWN_SCLLE,
 }IM_SCALE;
 
 typedef enum {
@@ -312,7 +310,7 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
  *
  * @returns success or else negative error code.
  */
-#define imblend(srcA, srcB, dst) imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_SRC_OVER, 1)
+#define imblend(srcA, srcB, dst) imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_DST, 1)
 
 IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode, int sync);
 

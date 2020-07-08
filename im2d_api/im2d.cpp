@@ -13,18 +13,40 @@
 
 #include "im2d.hpp"
 
+#ifdef ANDROID
 #include <RockchipRga.h>
 #include "normal/NormalRga.h"
+#endif
+
+#ifdef LINUX
+#include "../RockchipRga.h"
+#include "../normal/NormalRga.h"
+#endif
+
 #include <sstream>
 
+#ifdef ANDROID
 #include <cutils/properties.h>
+
+using namespace android;
+
+RockchipRga& rkRga(RockchipRga::get());
+
+#endif
+
+#ifdef LINUX
+
+#include <sys/ioctl.h>
+
+#define ALOGE(...) printf(__VA_ARGS__)
+
+RockchipRga rkRga;
+
+#endif
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 
-using namespace android;
 using namespace std;
-
-RockchipRga& rkRga(RockchipRga::get());
 
 IM_API rga_buffer_t wrapbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format)
 {
@@ -74,7 +96,7 @@ IM_API rga_buffer_t wrapbuffer_fd(int fd, int width, int height, int wstride, in
     return buffer;
 }
 
-#if 1 //Android
+#ifdef ANDROID
 /*When wrapbuffer_GraphicBuffer and wrapbuffer_AHardwareBuffer are used, */
 /*it is necessary to check whether fd and virtual address of the return rga_buffer_t are valid parameters*/
 IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
@@ -106,16 +128,15 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf)
 
 IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf)
 {
-    rga_buffer_t buffer;
-    int ret = 0;
-
-    memset(&buffer, 0, sizeof(rga_buffer_t));
+	rga_buffer_t buffer;
+	int ret = 0;
 
     GraphicBuffer *gbuffer = GraphicBuffer::fromAHardwareBuffer(buf);
 
     ret = rkRga.RkRgaGetBufferFd(gbuffer->handle, &buffer.fd);
     if (ret)
         ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(gbuffer->handle));
+
     if (buffer.fd <= 0)
     {
         ret = RkRgaGetHandleMapAddress(gbuffer->handle, &buffer.vir_addr);
@@ -129,7 +150,9 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf)
     buffer.hstride = gbuffer->getHeight();
     buffer.format  = gbuffer->getPixelFormat();
 
-    return buffer;
+	memset(&buffer, 0, sizeof(rga_buffer_t));
+
+	return buffer;
 }
 #endif
 
@@ -220,7 +243,10 @@ IM_API IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, r
 IM_API const char* querystring(int name)
 {
     bool all_output = 0, all_output_prepared = 0;
-    char buf[16], version_value[PROPERTY_VALUE_MAX];
+    char buf[16];
+#ifdef ANDROID
+    char version_value[PROPERTY_VALUE_MAX];
+#endif
     int rgafd, rga_version = 0;
     const char *temp;
     const char *output_vendor = "Rockchip Electronics Co.,Ltd.";
@@ -269,7 +295,9 @@ IM_API const char* querystring(int name)
     ostringstream out;
     string info;
 
+#ifdef ANDROID
     property_set("vendor.rga_im2d.version", RGA_IM2D_VERSION);
+#endif
 
     /*open /dev/rga node in order to get rga vesion*/
     rgafd = open("/dev/rga", O_RDWR, 0);
@@ -341,11 +369,12 @@ IM_API const char* querystring(int name)
                         return "err";
                 }
 
+#ifdef ANDROID
                 property_get("vendor.rga.version", version_value, "0");
                 out << version_name[LIBRGA] << version_value << endl;
                 property_get("vendor.rga_im2d.version", version_value, "0");
                 out << version_name[RGA_IM2D] << version_value << endl;
-
+#endif
                 break;
 
             case RGA_MAX_INPUT :
@@ -798,7 +827,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
                 break;
         }
         if(srcinfo.blend == 0 && srcinfo.rotation ==0)
-            ALOGE("rga_im2d: Could not find blend/rotate/flip usage : 0x%x", usage);
+            ALOGE("rga_im2d: Could not find blend/rotate/flip usage : 0x%x \n", usage);
     }
 
     /* set global alpha */

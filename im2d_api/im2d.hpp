@@ -12,11 +12,13 @@
  */
 
 #include "im2d.h"
+
+#ifdef ANDROID
+
 #include <ui/GraphicBuffer.h>
 
 using namespace android;
 
-#if 1 //Android
 IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
 IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf);
 #endif
