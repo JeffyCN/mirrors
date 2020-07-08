@@ -13,16 +13,32 @@
 #ifndef _rk_drm_rga_
 #define _rk_drm_rga_
 
-#define DRMRGA_HARDWARE_MODULE_ID "librga"
-
 #include <stdint.h>
 #include <sys/cdefs.h>
+
+#ifdef ANDROID
+#define DRMRGA_HARDWARE_MODULE_ID "librga"
 
 #include <hardware/gralloc.h>
 #include <hardware/hardware.h>
 #include <system/graphics.h>
 #include <cutils/native_handle.h>
+#endif
 
+#ifdef LINUX
+#include "rga.h"
+
+/* flip source image horizontally (around the vertical axis) */
+#define HAL_TRANSFORM_FLIP_H     0x01
+/* flip source image vertically (around the horizontal axis)*/
+#define HAL_TRANSFORM_FLIP_V     0x02
+/* rotate source image 90 degrees clockwise */
+#define HAL_TRANSFORM_ROT_90     0x04
+/* rotate source image 180 degrees */
+#define HAL_TRANSFORM_ROT_180    0x03
+/* rotate source image 270 degrees clockwise */
+#define HAL_TRANSFORM_ROT_270    0x07
+#endif
 
 /*****************************************************************************/
 
@@ -51,6 +67,17 @@ enum {
 };
 /*****************************************************************************/
 
+#ifdef LINUX
+typedef struct bo {
+    int fd;
+    void *ptr;
+    size_t size;
+    size_t offset;
+    size_t pitch;
+    unsigned handle;
+}bo_t;
+#endif
+
 /*
    @value size:     user not need care about.For avoid read/write out of memory
  */
@@ -75,7 +102,11 @@ typedef struct rga_info {
 	int fd;
 	void *virAddr;
 	void *phyAddr;
+#ifdef LINUX
+	unsigned hnd;
+#else /* Android */
 	buffer_handle_t hnd;
+#endif
 	int format;
 	rga_rect_t rect;
 	unsigned int blend;
@@ -84,12 +115,13 @@ typedef struct rga_info {
 	int color;
 	int testLog;
 	int mmuFlag;
-	int reserve[128];
 	int colorkey_en;
 	int colorkey_max;
 	int colorkey_min;
-	int sync_mode;
+	int scale_mode;
 	int color_space_mode;
+	int sync_mode;
+	int reserve[128];
 } rga_info_t;
 
 
@@ -122,6 +154,18 @@ static inline int rga_set_rect(rga_rect_t *rect,
 
 	return 0;
 }
+
+#ifdef LINUX
+static inline void rga_set_rotation(rga_info_t *info, int angle)
+{
+    if (angle == 90)
+        info->rotation = HAL_TRANSFORM_ROT_90;
+    else if (angle == 180)
+        info->rotation = HAL_TRANSFORM_ROT_180;
+    else if (angle == 270)
+        info->rotation = HAL_TRANSFORM_ROT_270;
+}
+#endif
 /*****************************************************************************/
 
 #endif
