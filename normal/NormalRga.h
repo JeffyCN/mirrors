@@ -22,15 +22,7 @@
 #include <vector>
 #include <sys/types.h>
 
-//#include <system/window.h>
-
-#include <utils/Thread.h>
-
-#include <EGL/egl.h>
-#include <GLES/gl.h>
-
 //////////////////////////////////////////////////////////////////////////////////
-#include <hardware/hardware.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,33 +31,55 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <sys/mman.h>
+#include <linux/stddef.h>
+
+#include "NormalRgaContext.h"
+
+#include "stdio.h"
+
+#ifdef ANDROID
 #include <utils/Atomic.h>
 #include <utils/Errors.h>
 #include <utils/Log.h>
 #include <ui/PixelFormat.h>
 
-#include <sys/mman.h>
-#include <linux/stddef.h>
-
+#include <utils/Thread.h>
+#include <hardware/hardware.h>
 #include <hardware/rga.h>
-#include "stdio.h"
-
 #include "drmrga.h"
-#include "NormalRgaContext.h"
 
+#elif LINUX
+
+#include "../drmrga.h"
+#include "../rga.h"
+
+
+int         RgaInit(void **ctx);
+int         RgaDeInit(void *ctx);
+int         RgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
+int 		RgaFlush();
+int         RgaCollorFill(rga_info_t *dst);
+
+#endif
 
 int         NormalRgaInitTables();
 
-int         NormalRgaPaletteTable(buffer_handle_t dst,
-                                           unsigned int v, drm_rga_t *rects);
-
-int         NormalRgaStereo(buffer_handle_t src,
-                                                buffer_handle_t dst,int div);
 int         NormalRgaScale();
 int         NormalRgaRoate();
 int         NormalRgaRoateScale();
+#ifdef ANDROID
 int         NormalRgaGetRects(buffer_handle_t src, buffer_handle_t dst,
                                 int *sType, int *dType, drm_rga_t* tmpRects);
+int         NormalRgaGetRect(buffer_handle_t hnd, rga_rect_t *rect);
+int         NormalRgaGetMmuType(buffer_handle_t hnd, int *mmuType);
+#endif
+
+#ifdef LINUX
+int 		RkRgaGetRgaFormat(int format);
+uint32_t 	bytesPerPixel(int format);
+#endif
+
 /*
 @fun NormalRgaSetRects:For use to set the rects esayly
 
@@ -76,17 +90,18 @@ int         NormalRgaGetRects(buffer_handle_t src, buffer_handle_t dst,
 */
 int         checkRectForRga(rga_rect_t rect);
 int         isRectValid(rga_rect_t rect);
-int         NormalRgaGetRect(buffer_handle_t hnd, rga_rect_t *rect);
-int         NormalRgaGetMmuType(buffer_handle_t hnd, int *mmuType);
 
 int         NormalRgaSetRect(rga_rect_t *rect, int x, int y,
                                                int w, int h, int s, int f);
 void        NormalRgaSetLogOnceFlag(int log);
 void        NormalRgaSetAlwaysLogFlag(bool log);
 void        NormalRgaLogOutRgaReq(struct rga_req rgaReg);
+
+#ifdef ANDROID
 void        is_debug_log(void);
 int         is_out_log(void);
 int         hwc_get_int_property(const char* pcProperty, const char* default_value);
+#endif
 
 int         NormalRgaSetFdsOffsets(struct rga_req *req,
                                 uint16_t src_fd,     uint16_t dst_fd,
@@ -165,9 +180,9 @@ int         NormalRgaSetRopMaskInfo(struct rga_req *msg,
 /* use dst alpha  */
 
 int         NormalRgaSetAlphaEnInfo(struct rga_req *msg,
-    		unsigned int alpha_cal_mode, unsigned int alpha_mode,
-    		unsigned int global_a_value, unsigned int PD_en,
-    		unsigned int PD_mode,        unsigned int dst_alpha_en );
+			unsigned int alpha_cal_mode, unsigned int alpha_mode,
+			unsigned int global_a_value, unsigned int PD_en,
+			unsigned int PD_mode,        unsigned int dst_alpha_en );
 
 
 
@@ -198,8 +213,8 @@ bool        NormalRgaIsRgbFormat(int format);
 // dither en flag
 // AA flag
 int         NormalRgaSetBitbltMode(struct rga_req *msg,
-                	unsigned char scale_mode,  unsigned char rotate_mode,
-                	unsigned int  angle,       unsigned int  dither_en,
+					unsigned char scale_mode,  unsigned char rotate_mode,
+					unsigned int  angle,       unsigned int  dither_en,
                 	unsigned int  AA_en,       unsigned int  yuv2rgb_mode);
 
 
@@ -208,7 +223,7 @@ int         NormalRgaSetBitbltMode(struct rga_req *msg,
 /* BPP1 = 0 */
 /* BPP1 = 1 */
 int         NormalRgaSetColorPaletteMode(struct rga_req *msg,
-            		unsigned char  palette_mode,unsigned char  endian_mode,
+					unsigned char  palette_mode,unsigned char  endian_mode,
             		unsigned int  bpp1_0_color, unsigned int  bpp1_1_color);
 
 /* gradient color part         */
@@ -246,7 +261,7 @@ int         NormalRgaSetLineDrawingMode(struct rga_req *msg,
 /* dither_en flag   */
 
 int         NormalRgaSetBlurSharpFilterMode(
-            		struct rga_req *msg,         unsigned char filter_mode,
+					struct rga_req *msg,         unsigned char filter_mode,
             		unsigned char filter_type,   unsigned char dither_en);
 
 
