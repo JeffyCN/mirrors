@@ -63,7 +63,7 @@ int RkRgaGetRgaFormat(int format)
 		case RK_FORMAT_YCbCr_420_SP_10B:
 			return RK_FORMAT_YCbCr_420_SP_10B; //0x20
 		default:
-			DEBUG("Is unsupport format now,please fix \n");
+			ALOGE("Is unsupport format now,please fix \n");
 			return -1;
 	}
 }
