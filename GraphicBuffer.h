@@ -12,6 +12,9 @@
 
 #ifndef _rk_graphic_buffer_h_
 #define _rk_graphic_buffer_h_
+
+#ifdef ANDROID
+
 #include <stdint.h>
 #include <vector>
 #include <sys/types.h>
@@ -91,4 +94,6 @@ int         RkRgaGetHandleMapAddress(buffer_handle_t handle,
 									void **buf);
 
 int         RkRgaGetRgaFormat(int format);
+#endif
+
 #endif

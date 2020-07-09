@@ -9,6 +9,8 @@
  * option) any later version.
  *
  */
+#ifdef ANDROID
+
 #include "GraphicBuffer.h"
 
 gralloc_module_t const *mAllocMod = NULL;
@@ -289,3 +291,5 @@ int RkRgaGetRgaFormatFromAndroid(int format)
 			return -1;
 	}
 }
+
+#endif
