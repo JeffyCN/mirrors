@@ -21,10 +21,9 @@
 
 #include <sys/mman.h>
 #include <linux/stddef.h>
+#endif
 
 #include "drmrga.h"
-
-#endif
 
 #ifdef __cplusplus
 extern "C"{

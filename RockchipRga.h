@@ -14,41 +14,39 @@
 #define _rockchip_rga_h_
 
 #include <stdint.h>
-#include <vector>
+
 #include <sys/types.h>
 
-//#include <system/window.h>
-
-#include <utils/Thread.h>
-
-#ifndef UN_NEED_GL
-#include <EGL/egl.h>
-#include <GLES/gl.h>
-#endif
-
 //////////////////////////////////////////////////////////////////////////////////
-#include <hardware/hardware.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <time.h>
 #include <unistd.h>
-#include <utils/Singleton.h>
 
 #include <sys/mman.h>
 #include <linux/stddef.h>
 
-#include <hardware/rga.h>
 #include "stdio.h"
 
 #include "drmrga.h"
-#ifndef UN_NEED_GL
+
 #include "GraphicBuffer.h"
-#endif
+
 //////////////////////////////////////////////////////////////////////////////////
+#ifndef ANDROID
+#include "RgaSingleton.h"
+#endif
+
+#ifdef ANDROID
+#include <utils/Thread.h>
+#include <hardware/hardware.h>
+#include <hardware/rga.h>
 
 namespace android {
+#endif
 // -------------------------------------------------------------------------------
 
 class RockchipRga :public Singleton<RockchipRga>
@@ -60,9 +58,21 @@ public:
     static inline RockchipRga& get() {return getInstance();}
 
     int         RkRgaInit();
-    int         RkRgaGetBufferFd(buffer_handle_t handle, int *fd);
+#ifdef LINUX
+    void        RkRgaDeInit();
+    int         RkRgaAllocBuffer(int drm_fd /* input */, bo_t *bo_info,
+                                 int width, int height, int bpp);
+    int         RkRgaFreeBuffer(int drm_fd /* input */, bo_t *bo_info);
+    int         RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp);
+    int         RkRgaGetMmap(bo_t *bo_info);
+    int         RkRgaUnmap(bo_t *bo_info);
+    int         RkRgaFree(bo_t *bo_info);
+    int         RkRgaGetBufferFd(bo_t *bo_info, int *fd);
+#elif ANDROID
+	int         RkRgaGetBufferFd(buffer_handle_t handle, int *fd);
+#endif
     int         RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1);
-    int         RkRgaCollorFill(rga_info *dst);
+	int         RkRgaCollorFill(rga_info *dst);
     int         RkRgaFlush();
 
 
@@ -78,7 +88,7 @@ private:
     int                             mLogOnce;
     int                             mLogAlways;
     void *                          mContext;
-    static Mutex                    mMutex;
+    //static Mutex                    mMutex;
 
     friend class Singleton<RockchipRga>;
                 RockchipRga();
@@ -89,8 +99,9 @@ private:
 };
 
 // ---------------------------------------------------------------------------
-
+#ifdef ANDROID
 }; // namespace android
+#endif
 
-#endif // ANDROID_BOOTANIMATION_H
+#endif
 
