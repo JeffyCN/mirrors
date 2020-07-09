@@ -12,13 +12,82 @@
 
 #include "NormalRga.h"
 #include "NormalRgaContext.h"
+#ifdef ANDROID
 #include "../GraphicBuffer.h"
+#elif LINUX /* LINUX */
+#include "../rga.h"
+
+#define ALOGE(...) printf(__VA_ARGS__)
+
+#endif
 
 int         sina_table[360];
 int         cosa_table[360];
 /**********************************************************************
   =======================================================================
  **********************************************************************/
+
+#ifdef LINUX
+int RkRgaGetRgaFormat(int format)
+{
+	switch (format)
+	{
+		case RK_FORMAT_RGB_565:
+			return RK_FORMAT_RGB_565;
+		case RK_FORMAT_BGR_888:
+			return RK_FORMAT_BGR_888;
+		case RK_FORMAT_RGB_888:
+			return RK_FORMAT_RGB_888;
+		case RK_FORMAT_RGBA_8888:
+			return RK_FORMAT_RGBA_8888;
+		case RK_FORMAT_RGBX_8888:
+			return RK_FORMAT_RGBX_8888;
+		case RK_FORMAT_BGRA_8888:
+			return RK_FORMAT_BGRA_8888;
+		case RK_FORMAT_YCrCb_420_SP:
+			return RK_FORMAT_YCrCb_420_SP;
+		case RK_FORMAT_YCbCr_420_SP:
+			return RK_FORMAT_YCbCr_420_SP;
+		case RK_FORMAT_YCrCb_420_P:
+			return RK_FORMAT_YCrCb_420_P;
+		case RK_FORMAT_YCbCr_422_SP:
+			return RK_FORMAT_YCbCr_422_SP;
+        case RK_FORMAT_YCbCr_422_P:
+			return RK_FORMAT_YCbCr_422_P;
+        case RK_FORMAT_YCbCr_420_P:
+			return RK_FORMAT_YCbCr_420_P;
+        case RK_FORMAT_YCrCb_422_SP:
+			return RK_FORMAT_YCrCb_422_SP;
+        case RK_FORMAT_YCrCb_422_P:
+			return RK_FORMAT_YCrCb_422_P;
+		case RK_FORMAT_YCbCr_420_SP_10B:
+			return RK_FORMAT_YCbCr_420_SP_10B; //0x20
+		default:
+			DEBUG("Is unsupport format now,please fix \n");
+			return -1;
+	}
+}
+
+uint32_t bytesPerPixel(int format) 
+{
+	switch (format)
+	{
+		case RK_FORMAT_RGBA_8888:
+		case RK_FORMAT_RGBX_8888:
+		case RK_FORMAT_BGRA_8888:
+			return 4;
+		case RK_FORMAT_RGB_888:
+			return 3;
+		case RK_FORMAT_RGB_565:
+		case RK_FORMAT_RGBA_5551:
+		case RK_FORMAT_RGBA_4444:
+			return 2;
+		}
+	return 0;
+}
+
+#endif
+
 int checkRectForRga(rga_rect_t rect)
 {
 	if (rect.xoffset < 0 || rect.yoffset < 0) {
@@ -42,7 +111,7 @@ int checkRectForRga(rga_rect_t rect)
 	}
 
 	if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(rect.format)) &&
-		((rect.xoffset % 2) || (rect.width % 2) ||
+		((rect.wstride % 2) ||(rect.xoffset % 2) || (rect.width % 2) ||
 		(rect.yoffset % 2) || (rect.height % 2) || (rect.hstride % 2))) {
 		ALOGE("err yuv not align to 2");
 		return -EINVAL;
@@ -56,6 +125,7 @@ int isRectValid(rga_rect_t rect)
 	return rect.width > 0 && rect.height > 0;
 }
 
+#ifdef ANDROID
 int NormalRgaGetRects(buffer_handle_t src,
 		buffer_handle_t dst,int* sType,int* dType,drm_rga_t* tmpRects)
 {
@@ -158,6 +228,7 @@ int NormalRgaGetMmuType(buffer_handle_t hnd, int *mmuType)
 
 	return ret;
 }
+#endif
 
 int NormalRgaSetRect(rga_rect_t *rect, int x, int y,
 		int w, int h, int s, int f)
@@ -791,64 +862,64 @@ int NormalRgaInitTables()
 void NormalRgaLogOutRgaReq(struct rga_req rgaReg)
 {
 #if defined(__arm64__) || defined(__aarch64__)
-	ALOGD("render_mode=%d rotate_mode=%d\n",
+	ALOGE("render_mode=%d rotate_mode=%d\n",
 			rgaReg.render_mode, rgaReg.rotate_mode);
-	ALOGD("src:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+	ALOGE("src:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
 			rgaReg.src.yrgb_addr, rgaReg.src.uv_addr, rgaReg.src.v_addr,
 			rgaReg.src.x_offset, rgaReg.src.y_offset,
 			rgaReg.src.act_w, rgaReg.src.act_h,
 			rgaReg.src.vir_w, rgaReg.src.vir_h, rgaReg.src.format);
-	ALOGD("dst:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+	ALOGE("dst:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
 			rgaReg.dst.yrgb_addr, rgaReg.dst.uv_addr, rgaReg.dst.v_addr,
 			rgaReg.dst.x_offset, rgaReg.dst.y_offset,
 			rgaReg.dst.act_w, rgaReg.dst.act_h,
 			rgaReg.dst.vir_w, rgaReg.dst.vir_h, rgaReg.dst.format);
-	ALOGD("pat:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+	ALOGE("pat:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
 			rgaReg.pat.yrgb_addr, rgaReg.pat.uv_addr, rgaReg.pat.v_addr,
 			rgaReg.pat.x_offset, rgaReg.pat.y_offset,
 			rgaReg.pat.act_w, rgaReg.pat.act_h,
 			rgaReg.pat.vir_w, rgaReg.pat.vir_h, rgaReg.pat.format);
-	ALOGD("ROP:[%lx,%x,%x],LUT[%lx]", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
+	ALOGE("ROP:[%lx,%x,%x],LUT[%lx]", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
 			rgaReg.rop_code, rgaReg.LUT_addr);
 
-	ALOGD("color:[%x,%x,%x,%x,%x]", rgaReg.color_key_max, rgaReg.color_key_min,
+	ALOGE("color:[%x,%x,%x,%x,%x]", rgaReg.color_key_max, rgaReg.color_key_min,
 			rgaReg.fg_color, rgaReg.bg_color, rgaReg.color_fill_mode);
 
-	ALOGD("MMU:[%d,%lx,%x]", rgaReg.mmu_info.mmu_en,
+	ALOGE("MMU:[%d,%lx,%x]", rgaReg.mmu_info.mmu_en,
 			rgaReg.mmu_info.base_addr, rgaReg.mmu_info.mmu_flag);
 
 
-	ALOGD("mode[%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
+	ALOGE("mode[%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
 			rgaReg.endian_mode, rgaReg.src_trans_mode);
 #else
-	ALOGD("render_mode=%d rotate_mode=%d\n",
+	ALOGE("render_mode=%d rotate_mode=%d\n",
 			rgaReg.render_mode, rgaReg.rotate_mode);
-	ALOGD("src:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+	ALOGE("src:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
 			rgaReg.src.yrgb_addr, rgaReg.src.uv_addr, rgaReg.src.v_addr,
 			rgaReg.src.x_offset, rgaReg.src.y_offset,
 			rgaReg.src.act_w, rgaReg.src.act_h,
 			rgaReg.src.vir_w, rgaReg.src.vir_h, rgaReg.src.format);
-	ALOGD("dst:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+	ALOGE("dst:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
 			rgaReg.dst.yrgb_addr, rgaReg.dst.uv_addr, rgaReg.dst.v_addr,
 			rgaReg.dst.x_offset, rgaReg.dst.y_offset,
 			rgaReg.dst.act_w, rgaReg.dst.act_h,
 			rgaReg.dst.vir_w, rgaReg.dst.vir_h, rgaReg.dst.format);
-	ALOGD("pat:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+	ALOGE("pat:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
 			rgaReg.pat.yrgb_addr, rgaReg.pat.uv_addr, rgaReg.pat.v_addr,
 			rgaReg.pat.x_offset, rgaReg.pat.y_offset,
 			rgaReg.pat.act_w, rgaReg.pat.act_h,
 			rgaReg.pat.vir_w, rgaReg.pat.vir_h, rgaReg.pat.format);
-	ALOGD("ROP:[%x,%x,%x],LUT[%x]", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
+	ALOGE("ROP:[%x,%x,%x],LUT[%x]", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
 			rgaReg.rop_code, rgaReg.LUT_addr);
 
-	ALOGD("color:[%x,%x,%x,%x,%x]", rgaReg.color_key_max, rgaReg.color_key_min,
+	ALOGE("color:[%x,%x,%x,%x,%x]", rgaReg.color_key_max, rgaReg.color_key_min,
 			rgaReg.fg_color, rgaReg.bg_color, rgaReg.color_fill_mode);
 
-	ALOGD("MMU:[%d,%x,%x]", rgaReg.mmu_info.mmu_en,
+	ALOGE("MMU:[%d,%x,%x]", rgaReg.mmu_info.mmu_en,
 			rgaReg.mmu_info.base_addr, rgaReg.mmu_info.mmu_flag);
 
 
-	ALOGD("mode[%d,%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
+	ALOGE("mode[%d,%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
 			rgaReg.endian_mode, rgaReg.src_trans_mode,rgaReg.scale_mode);
 #endif
 	return;
