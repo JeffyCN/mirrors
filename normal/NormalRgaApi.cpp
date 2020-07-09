@@ -17,8 +17,6 @@
 #elif LINUX /* LINUX */
 #include "../rga.h"
 
-#define ALOGE(...) printf(__VA_ARGS__)
-
 #endif
 
 int         sina_table[360];

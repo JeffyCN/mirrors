@@ -14,6 +14,12 @@
 #define _rockchip_normal_rga_context_h_
 #define UNUSED(...) (void)(__VA_ARGS__)
 
+#ifdef LINUX
+#define __DEBUG 0
+
+#define ALOGE(...) printf(__VA_ARGS__)
+#endif
+
 struct rgaContext{
     int rgaFd;
     int mLogAlways;
