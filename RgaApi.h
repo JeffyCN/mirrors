@@ -9,18 +9,49 @@
  * option) any later version.
  *
  */
+#ifdef LINUX
+#include <stdint.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <unistd.h>
 
-#ifndef _rockchip_rga_api_h_
-#define _rockchip_rga_api_h_
-#ifdef __cplusplus
-extern "C" {
+#include <sys/mman.h>
+#include <linux/stddef.h>
+
+#include "drmrga.h"
+
 #endif
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+#ifdef LINUX
+int c_RkRgaInit();
+void c_RkRgaDeInit();
+int c_RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp);
+int c_RkRgaGetMmap(bo_t *bo_info);
+int c_RkRgaUnmap(bo_t *bo_info);
+int c_RkRgaGetBufferFd(bo_t *bo_info, int *fd);
+int c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
+int c_RkRgaColorFill(rga_info_t *dst);
+int c_RkRgaFree(bo_t *bo_info);
+
+#elif ANDROID
+
 int         RgaInit(void **ctx);
 int         RgaDeInit(void *ctx);
 int         RgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
 int         RgaCollorFill(rga_info_t *dst);
 int         RgaFlush();
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif
-#endif
+
