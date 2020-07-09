@@ -131,6 +131,8 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf)
 	rga_buffer_t buffer;
 	int ret = 0;
 
+    memset(&buffer, 0, sizeof(rga_buffer_t));
+
     GraphicBuffer *gbuffer = GraphicBuffer::fromAHardwareBuffer(buf);
 
     ret = rkRga.RkRgaGetBufferFd(gbuffer->handle, &buffer.fd);
@@ -149,8 +151,6 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf)
     buffer.wstride = gbuffer->getStride();
     buffer.hstride = gbuffer->getHeight();
     buffer.format  = gbuffer->getPixelFormat();
-
-	memset(&buffer, 0, sizeof(rga_buffer_t));
 
 	return buffer;
 }

@@ -81,7 +81,7 @@ typedef enum {
 
 typedef enum {
     IM_UP_SCALE,
-    IM_DOWN_SCLLE,
+    IM_DOWN_SCALE,
 }IM_SCALE;
 
 typedef enum {
