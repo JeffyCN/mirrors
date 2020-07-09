@@ -11,11 +11,17 @@
  */
 #include "NormalRga.h"
 #include "NormalRgaContext.h"
+
+#ifdef ANDROID
 #include "../GraphicBuffer.h"
 #include "../RgaApi.h"
 #include <cutils/properties.h>
 
 #define RGA_VERSION "1.00"
+
+#elif LINUX
+#include <sys/ioctl.h> 
+#endif
 
 volatile int32_t refCount = 0;
 struct rgaContext *rgaCtx = NULL;
@@ -36,6 +42,7 @@ void NormalRgaSetAlwaysLogFlag(int log)
 	return;
 }
 
+#ifdef ANDROID
 void is_debug_log(void)
 {
     struct rgaContext *ctx = rgaCtx;
@@ -65,7 +72,7 @@ int hwc_get_int_property(const char* pcProperty, const char* default_value)
 
     return new_value;
 }
-
+#endif
 
 int NormalRgaOpen(void **context)
 {
@@ -88,7 +95,7 @@ int NormalRgaOpen(void **context)
 		}
 	} else {
 		ctx = rgaCtx;
-		ALOGW("Had init the rga dev ctx = %p",ctx);
+		ALOGE("Had init the rga dev ctx = %p",ctx);
 		goto init;
 	}
 
@@ -110,14 +117,12 @@ int NormalRgaOpen(void **context)
 	rgaCtx = ctx;
 
 init:
+#ifdef ANDROID
 	android_atomic_inc(&refCount);
+#endif
 	*context = (void *)ctx;
 	return ret;
 
-loadModErr:
-rgaInitErr:
-devCreateErr:
-	close(fd);
 drmOpenErr:
 	free(ctx);
 mallocErr:
@@ -144,12 +149,14 @@ int NormalRgaClose(void *context)
 	}
 
 	if (refCount <= 0) {
-		ALOGW("This can not be happened");
+		ALOGE("This can not be happened");
 		return 0;
 	}
 
+#ifdef ANDROID
 	if (refCount > 0 && android_atomic_dec(&refCount) != 1)
 		return 0;
+#endif
 
 	rgaCtx = NULL;
 
@@ -164,7 +171,9 @@ int RgaInit(void **ctx)
 {
 	int ret = 0;
 	ret = NormalRgaOpen(ctx);
+#ifdef ANDROID
 	property_set("vendor.rga.version", RGA_VERSION);
+#endif
 	return ret;
 }
 
@@ -175,6 +184,7 @@ int RgaDeInit(void *ctx)
 	return ret;
 }
 
+#ifdef ANDROID
 int NormalRgaPaletteTable(buffer_handle_t dst,
 		unsigned int v, drm_rga_t *rects)
 {
@@ -318,6 +328,7 @@ int NormalRgaPaletteTable(buffer_handle_t dst,
 
 	return 0;
 }
+#endif
 
 int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 {
@@ -365,10 +376,12 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	blend = 0;
 	yuvToRgbMode = 0;
 
+#ifdef ANDROID
 	/* print debug log by setting property vendor.rga.log as 1 */
 	is_debug_log();
 	if(is_out_log())
 		ALOGD("<<<<-------- print rgaLog -------->>>>");
+#endif
 
 	if (!src && !dst && !src1) {
 		ALOGE("src = %p, dst = %p, src1 = %p", src, dst, src1);
@@ -398,6 +411,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		memcpy(&relSrc1Rect, &src1->rect, sizeof(rga_rect_t));
 
 	srcFd = dstFd = src1Fd = -1;
+	
+#ifdef ANDROID
     if(is_out_log())
     ALOGD("src->hnd = %p , dst->hnd = %p \n",src->hnd,dst->hnd);
 
@@ -449,13 +464,18 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		NormalRgaGetMmuType(dst->hnd, &dstType);
 	}
 
+#endif
+
+
 	if (src && srcFd < 0) {
 		srcFd = src->fd;
 		src->mmuFlag = 1;
 	}
 
+#ifdef ANDROID
     if(is_out_log())
         ALOGD("srcFd = %.2d , phyAddr = %p , virAddr = %p\n",srcFd,src->phyAddr,src->virAddr);
+#endif
 
 	/*
 	 * First to use phyical address or fd, second to usr virtual address. Phyical address can save time beacause cpu
@@ -468,11 +488,13 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		srcBuf = src->virAddr;
 		src->mmuFlag = 1;
 	}
+#ifdef ANDROID
 #ifndef ANDROID_8
 	else if (src && src->hnd)
 		//Get virtual addresss by lock action(on libgralloc)
 		ret = RkRgaGetHandleMapAddress(src->hnd, &srcBuf);
 #endif		//ANDROID_8
+#endif
 
 	if (srcFd == -1 && !srcBuf) {
 		ALOGE("%d:src has not fd and address for render", __LINE__);
@@ -493,8 +515,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		dst->mmuFlag = 1;
 	}
 
+#ifdef ANDROID
     if(is_out_log())
         ALOGD("dstFd = %.2d , phyAddr = %p , virAddr = %p\n",dstFd,dst->phyAddr,dst->virAddr);
+#endif
 
 	/*
 	 * First to use phyical address or fd, second to usr virtual address. Phyical address can save time beacause cpu
@@ -507,13 +531,18 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		dstBuf = dst->virAddr;
 		dst->mmuFlag = 1;
 	}
+	
+#ifdef ANDROID
 #ifndef ANDROID_8
 	else if (dst && dst->hnd)
 		ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
 #endif		//ANDROID_8
 
+#ifdef ANDROID
     if(is_out_log())
         ALOGD("srcBuf = %p , dstBuf = %p\n",srcBuf,dstBuf);
+#endif
+#endif
 
 	if (dst && dstFd == -1 && !dstBuf) {
 		ALOGE("%d:dst has not fd and address for render", __LINE__);
@@ -548,10 +577,15 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	planeAlpha = (blend & 0xFF0000) >> 16;
 
 	/* determined by format, need pixel alpha or not. */
+#ifdef ANDROID
 	perpixelAlpha = relSrcRect.format == HAL_PIXEL_FORMAT_RGBA_8888 ||
 		relSrcRect.format == HAL_PIXEL_FORMAT_BGRA_8888;
     if(is_out_log())
-        ALOGD("blend = %x , perpixelAlpha = %d",blend ,perpixelAlpha);
+        ALOGE("blend = %x , perpixelAlpha = %d",blend ,perpixelAlpha);
+#elif LINUX
+	perpixelAlpha = relSrcRect.format == RK_FORMAT_RGBA_8888 ||
+		relSrcRect.format == RK_FORMAT_BGRA_8888;
+#endif
 
 	/* blend bit[0:15] is to set which way to blend,such as whether need glabal alpha,and so on. */
 	switch ((blend & 0xFFFF)) {
@@ -641,13 +675,19 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	if (hScale < 1 || vScale < 1)
     {
 		scaleMode = 2;
+#ifdef ANDROID
         if((src->format == HAL_PIXEL_FORMAT_RGBA_8888  ||src->format == HAL_PIXEL_FORMAT_BGRA_8888)){
+#elif LINUX
+		if((relSrcRect.format == RK_FORMAT_RGBA_8888  || relSrcRect.format == RK_FORMAT_BGRA_8888)){
+#endif
             scaleMode = 0;     //  force change scale_mode to 0 ,for rga not support
         }
 	}
 
+#ifdef ANDROID
     if(is_out_log())
         ALOGD("scaleMode = %d , stretch = %d;",scaleMode,stretch);
+#endif
 
 	/*
 	 * according to the rotation to set corresponding parameter.It's diffrient from the opengl.
@@ -699,10 +739,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			srcActH = relSrcRect.height;
 
 			dstVirW = relDstRect.wstride;
-			dstVirH = relDstRect.height;
-			dstXPos = relDstRect.width - 1;
-			//dstYPos = relDstRect.yoffset;
-			dstYPos = 0;
+			dstVirH = relDstRect.hstride;
+			dstXPos = relDstRect.xoffset + relDstRect.width - 1;
+			dstYPos = relDstRect.yoffset;
 			dstActW = relDstRect.height;
 			dstActH = relDstRect.width;
 			break;
@@ -717,9 +756,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			srcActH = relSrcRect.height;
 
 			dstVirW = relDstRect.wstride;
-			dstVirH = relDstRect.height;
-			dstXPos = relDstRect.width - 1;
-			dstYPos = relDstRect.height - 1;
+			dstVirH = relDstRect.hstride;
+			dstXPos = relDstRect.xoffset + relDstRect.width - 1;
+			dstYPos = relDstRect.yoffset + relDstRect.height - 1;
 			dstActW = relDstRect.width;
 			dstActH = relDstRect.height;
 			break;
@@ -734,10 +773,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			srcActH = relSrcRect.height;
 
 			dstVirW = relDstRect.wstride;
-			dstVirH = relDstRect.height;
-			//dstXPos = relDstRect.xoffset;
-			dstXPos = 0;
-			dstYPos = relDstRect.height - 1;
+			dstVirH = relDstRect.hstride;
+			dstXPos = relDstRect.xoffset;
+			dstYPos = relDstRect.yoffset + relDstRect.height - 1;
 			dstActW = relDstRect.height;
 			dstActH = relDstRect.width;
 			break;
@@ -766,11 +804,16 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 	clip.ymin = 0;
 	clip.ymax = dstVirH - 1;
 
+#ifdef ANDROID
 	ditherEn = (android::bytesPerPixel(relSrcRect.format)
 			!= android::bytesPerPixel(relSrcRect.format) ? 1 : 0);
 
     if(is_out_log())
-        ALOGD("rgaVersion = %lf  , ditherEn =%d ",ctx->mVersion,ditherEn);
+        ALOGE("rgaVersion = %lf  , ditherEn =%d ",ctx->mVersion,ditherEn);
+#elif LINUX
+	ditherEn = (bytesPerPixel(relSrcRect.format) 
+			!= bytesPerPixel(relSrcRect.format) ? 1 : 0);
+#endif
 
 	/* only to configure the parameter by driver version, because rga driver has too many version. */
     if (ctx->mVersion <= (float)1.003) {
@@ -954,16 +997,24 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 		NormalRgaSetSrcTransModeInfo(&rgaReg, 0, 1, 1, 1, 1, src->colorkey_min, src->colorkey_max, 1);
 	}
 
+#ifdef ANDROID
     if(is_out_log()) {
 		ALOGD("srcMmuFlag = %d , dstMmuFlag = %d , rotateMode = %d \n", srcMmuFlag, dstMmuFlag,rotateMode);
 		ALOGD("<<<<-------- rgaReg -------->>>>\n");
 		NormalRgaLogOutRgaReq(rgaReg);
 	}
+#elif LINUX
+#ifdef __DEBUG
+		NormalRgaLogOutRgaReq(rgaReg);
+#endif
+#endif
 
+#ifdef ANDROID
 #ifndef RK3368
 #ifdef	ANDROID_7_DRM
 	/* if Android 7.0 and above using drm should configure this parameter. */
 	rgaReg.render_mode |= RGA_BUF_GEM_TYPE_DMA;
+#endif
 #endif
 #endif
 	if(dst->sync_mode == RGA_BLIT_ASYNC)
@@ -1038,7 +1089,7 @@ int RgaCollorFill(rga_info *dst)
 
 	if (relDstRect.hstride == 0)
 		relDstRect.hstride = relDstRect.height;
-
+#ifdef ANDROID
 	if (dst && dst->hnd) {
 		ret = RkRgaGetHandleFd(dst->hnd, &dstFd);
 		if (ret) {
@@ -1054,7 +1105,7 @@ int RgaCollorFill(rga_info *dst)
 		}
 		NormalRgaGetMmuType(dst->hnd, &dstType);
 	}
-
+#endif
 
 	if (dst && dstFd < 0)
 		dstFd = dst->fd;
@@ -1063,8 +1114,10 @@ int RgaCollorFill(rga_info *dst)
 		dstBuf = dst->phyAddr;
 	else if (dst && dst->virAddr)
 		dstBuf = dst->virAddr;
+#ifdef ANDROID
 	else if (dst && dst->hnd)
 		ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
+#endif
 
 	if (dst && dstFd == -1 && !dstBuf) {
 		ALOGE("%d:dst has not fd and address for render", __LINE__);
@@ -1181,7 +1234,7 @@ int RgaCollorFill(rga_info *dst)
 		NormalRgaMmuFlag(&rgaReg, dstMmuFlag, dstMmuFlag);
 	}
 
-	//ALOGD("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
+	//ALOGE("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
 	//NormalRgaLogOutRgaReq(rgaReg);
 
 #ifndef RK3368
