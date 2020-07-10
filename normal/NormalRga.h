@@ -270,7 +270,11 @@ int         NormalRgaSetColorFillMode(
 /* AA en                    */
 /* last point en            */
 int         NormalRgaSetLineDrawingMode(struct rga_req *msg,
+#ifdef ANDROID
         		POINT sp,                     POINT ep,
+#elif LINUX
+				POINT_t sp,                     POINT_t ep,
+#endif
         		unsigned int color,           unsigned int line_width,
         		unsigned char AA_en,          unsigned char last_point_en);
 
