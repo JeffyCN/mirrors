@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2020 Rockchip Electronics Co.Ltd
  * Authors:
- *	PutinLee <putin.lee@rock-chips.com>
+ *  PutinLee <putin.lee@rock-chips.com>
  *  Cerf Yu <cerf.yu@rock-chips.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
@@ -37,32 +37,28 @@ enum {
     EMPTY_BUFF = 1
 };
 
-sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format)
-{
+sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format) {
 #ifdef ANDROID_7_DRM
     sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format,
-        GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_HW_FB));
+                                           GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_HW_FB));
 #else
     sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format,
-        GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN));
+                                           GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN));
 #endif
 
-    if (gb->initCheck())
-    {
+    if (gb->initCheck()) {
         printf("GraphicBuffer check error : %s\n",strerror(errno));
         return NULL;
-    }
-    else
+    } else
         printf("GraphicBuffer check %s \n","ok");
 
     return gb;
 }
 
 /********** write data to buffer or init buffer**********/
-int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int flag, int index)
-{
+int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int flag, int index) {
     int ret;
-	  char* buf = NULL;
+    char* buf = NULL;
     ret = gb->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&buf);
 
     if (ret) {
@@ -73,20 +69,18 @@ int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int flag, int index)
 
     if(flag)
         memset(buf,0x00,gb->getPixelFormat()*gb->getWidth()*gb->getHeight());
-    else
-    {
+    else {
         ret = get_buf_from_file(buf, gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index);
         if (!ret)
             printf("open file %s \n", "ok");
-        else
-        {
+        else {
             printf ("open file %s \n", "fault");
             return ERROR;
         }
     }
 
     ret = gb->unlock();
-	  if (ret) {
+    if (ret) {
         printf("unlock buffer error : %s\n",strerror(errno));
         return ERROR;
     } else
@@ -96,12 +90,10 @@ int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int flag, int index)
 }
 
 #if USE_AHARDWAREBUFFER
-int AHardwareBuffer_Init(int width, int height, int format, AHardwareBuffer** outBuffer)
-{
+int AHardwareBuffer_Init(int width, int height, int format, AHardwareBuffer** outBuffer) {
     sp<GraphicBuffer> gbuffer;
     gbuffer = GraphicBuffer_Init(width, height, format);
-    if(gbuffer == NULL)
-    {
+    if(gbuffer == NULL) {
         return ERROR;
     }
 
@@ -112,14 +104,12 @@ int AHardwareBuffer_Init(int width, int height, int format, AHardwareBuffer** ou
     return 0;
 }
 
-int AHardwareBuffer_Fill(AHardwareBuffer** buffer, int flag, int index)
-{
+int AHardwareBuffer_Fill(AHardwareBuffer** buffer, int flag, int index) {
     sp<GraphicBuffer> gbuffer;
 
     gbuffer = GraphicBuffer::fromAHardwareBuffer(*buffer);
 
-    if(ERROR == GraphicBuffer_Fill(gbuffer, flag, index))
-    {
+    if(ERROR == GraphicBuffer_Fill(gbuffer, flag, index)) {
         printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
         return ERROR;
     }
@@ -134,10 +124,8 @@ int AHardwareBuffer_Fill(AHardwareBuffer** buffer, int flag, int index)
 
 #endif
 
-const char * ImGetError(IM_STATUS status)
-{
-    switch(status)
-    {
+const char * ImGetError(IM_STATUS status) {
+    switch(status) {
         case IM_STATUS_NOERROR :
             return "No error!";
 
@@ -158,8 +146,7 @@ const char * ImGetError(IM_STATUS status)
     }
 }
 
-int main(int argc, char*  argv[])
-{
+int main(int argc, char*  argv[]) {
     int ret = 0;
     int parm_data[MODE_MAX] = {0};
 
@@ -185,43 +172,33 @@ int main(int argc, char*  argv[])
 #endif
 
     MODE = readArguments(argc, argv, parm_data);
-    if(MODE_NONE == MODE)
-    {
+    if(MODE_NONE == MODE) {
         printf("%s, Unknow RGA mode\n", __FUNCTION__);
         return ERROR;
     }
     /********** Get parameters **********/
-    if(MODE != MODE_QUERYSTRING)
-    {
+    if(MODE != MODE_QUERYSTRING) {
 #if USE_AHARDWAREBUFFER
-        if(ERROR == AHardwareBuffer_Init(SRC_WIDTH, SRC_HEIGHT, SRC_FORMAT, &src_buf))
-        {
+        if(ERROR == AHardwareBuffer_Init(SRC_WIDTH, SRC_HEIGHT, SRC_FORMAT, &src_buf)) {
             printf("AHardwareBuffer init error!\n");
             return ERROR;
         }
-        if(ERROR == AHardwareBuffer_Init(DST_WIDTH, DST_HEIGHT, DST_FORMAT, &dst_buf))
-        {
+        if(ERROR == AHardwareBuffer_Init(DST_WIDTH, DST_HEIGHT, DST_FORMAT, &dst_buf)) {
             printf("AHardwareBuffer init error!\n");
             return ERROR;
         }
 
-        if(ERROR == AHardwareBuffer_Fill(&src_buf, FILL_BUFF, 0))
-        {
+        if(ERROR == AHardwareBuffer_Fill(&src_buf, FILL_BUFF, 0)) {
             printf("%s, write AHardwareBuffer error!\n", __FUNCTION__);
             return -1;
         }
-        if(MODE == MODE_BLEND)
-        {
-            if(ERROR == AHardwareBuffer_Fill(&dst_buf, FILL_BUFF, 1))
-            {
+        if(MODE == MODE_BLEND) {
+            if(ERROR == AHardwareBuffer_Fill(&dst_buf, FILL_BUFF, 1)) {
                 printf("%s, write AHardwareBuffer error!\n", __FUNCTION__);
                 return ERROR;
             }
-        }
-        else
-        {
-            if(ERROR == AHardwareBuffer_Fill(&dst_buf, EMPTY_BUFF, 1))
-            {
+        } else {
+            if(ERROR == AHardwareBuffer_Fill(&dst_buf, EMPTY_BUFF, 1)) {
                 printf("%s, write AHardwareBuffer error!\n", __FUNCTION__);
                 return ERROR;
             }
@@ -230,37 +207,29 @@ int main(int argc, char*  argv[])
         src = wrapbuffer_AHardwareBuffer(src_buf);
         dst = wrapbuffer_AHardwareBuffer(dst_buf);
 
-        if((src.fd == 0 && src.vir_addr == 0) || (dst.fd == 0 && dst.vir_addr == 0))
-        {
+        if((src.fd == 0 && src.vir_addr == 0) || (dst.fd == 0 && dst.vir_addr == 0)) {
             printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
             return ERROR;
         }
 #else
         src_buf = GraphicBuffer_Init(SRC_WIDTH, SRC_HEIGHT, SRC_FORMAT);
         dst_buf = GraphicBuffer_Init(DST_WIDTH, DST_HEIGHT, DST_FORMAT);
-        if (src_buf == NULL || dst_buf == NULL)
-        {
+        if (src_buf == NULL || dst_buf == NULL) {
             printf("GraphicBuff init error!\n");
             return ERROR;
         }
 
-        if(ERROR == GraphicBuffer_Fill(src_buf, FILL_BUFF, 0))
-        {
+        if(ERROR == GraphicBuffer_Fill(src_buf, FILL_BUFF, 0)) {
             printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
             return -1;
         }
-        if(MODE == MODE_BLEND)
-        {
-            if(ERROR == GraphicBuffer_Fill(dst_buf, FILL_BUFF, 1))
-            {
+        if(MODE == MODE_BLEND) {
+            if(ERROR == GraphicBuffer_Fill(dst_buf, FILL_BUFF, 1)) {
                 printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
                 return ERROR;
             }
-        }
-        else
-        {
-            if(ERROR == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1))
-            {
+        } else {
+            if(ERROR == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1)) {
                 printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
                 return ERROR;
             }
@@ -268,8 +237,7 @@ int main(int argc, char*  argv[])
 
         src = wrapbuffer_GraphicBuffer(src_buf);
         dst = wrapbuffer_GraphicBuffer(dst_buf);
-        if((src.fd == 0 && src.vir_addr == 0) || (dst.fd == 0 && dst.vir_addr == 0))
-        {
+        if((src.fd == 0 && src.vir_addr == 0) || (dst.fd == 0 && dst.vir_addr == 0)) {
             printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
             return ERROR;
         }
@@ -277,8 +245,7 @@ int main(int argc, char*  argv[])
     }
 
     /********** Execution function according to mode **********/
-    switch(MODE)
-    {
+    switch(MODE) {
         case MODE_QUERYSTRING :
 
             IM_INFO = (QUERYSTRING_INFO)parm_data[MODE_QUERYSTRING];
@@ -295,43 +262,36 @@ int main(int argc, char*  argv[])
 
         case MODE_RESIZE :    //rgaImDemo --resize=up/down
 
-            switch(parm_data[MODE_RESIZE])
-            {
+            switch(parm_data[MODE_RESIZE]) {
                 case IM_UP_SCALE :
 
 #if USE_AHARDWAREBUFFER
-                    if(ERROR == AHardwareBuffer_Init(1920, 1080, DST_FORMAT, &dst_buf))
-                    {
+                    if(ERROR == AHardwareBuffer_Init(1920, 1080, DST_FORMAT, &dst_buf)) {
                         printf("AHardwareBuffer init error!\n");
                         return ERROR;
                     }
 
-                    if(ERROR == AHardwareBuffer_Fill(&dst_buf, EMPTY_BUFF, 0))
-                    {
+                    if(ERROR == AHardwareBuffer_Fill(&dst_buf, EMPTY_BUFF, 0)) {
                         printf("%s, write AHardwareBuffer error!\n", __FUNCTION__);
                         return ERROR;
                     }
                     dst = wrapbuffer_AHardwareBuffer(dst_buf);
-                    if(dst.fd == 0 && dst.vir_addr == 0)
-                    {
+                    if(dst.fd == 0 && dst.vir_addr == 0) {
                         printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
                         return ERROR;
                     }
 #else
                     dst_buf = GraphicBuffer_Init(1920, 1080, DST_FORMAT);
-                    if (dst_buf == NULL)
-                    {
+                    if (dst_buf == NULL) {
                         printf("dst GraphicBuff init error!\n");
                         return ERROR;
                     }
-                    if(ERROR == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1))
-                    {
+                    if(ERROR == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1)) {
                         printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
                         return ERROR;
                     }
                     dst = wrapbuffer_GraphicBuffer(dst_buf);
-                    if(dst.fd == 0 && dst.vir_addr == 0)
-                    {
+                    if(dst.fd == 0 && dst.vir_addr == 0) {
                         printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
                         return ERROR;
                     }
@@ -341,39 +301,33 @@ int main(int argc, char*  argv[])
                 case IM_DOWN_SCALE :
 
 #if USE_AHARDWAREBUFFER
-                    if(ERROR == AHardwareBuffer_Init(720, 480, DST_FORMAT, &dst_buf))
-                    {
+                    if(ERROR == AHardwareBuffer_Init(720, 480, DST_FORMAT, &dst_buf)) {
                         printf("AHardwareBuffer init error!\n");
                         return ERROR;
                     }
 
-                    if(ERROR == AHardwareBuffer_Fill(&dst_buf, EMPTY_BUFF, 0))
-                    {
+                    if(ERROR == AHardwareBuffer_Fill(&dst_buf, EMPTY_BUFF, 0)) {
                         printf("%s, write AHardwareBuffer error!\n", __FUNCTION__);
                         return ERROR;
                     }
 
                     dst = wrapbuffer_AHardwareBuffer(dst_buf);
-                    if(dst.fd == 0 && dst.vir_addr == 0)
-                    {
+                    if(dst.fd == 0 && dst.vir_addr == 0) {
                         printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
                         return ERROR;
                     }
 #else
                     dst_buf = GraphicBuffer_Init(720, 480, DST_FORMAT);
-                    if (dst_buf == NULL)
-                    {
+                    if (dst_buf == NULL) {
                         printf("dst GraphicBuff init error!\n");
                         return ERROR;
                     }
-                    if(ERROR == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1))
-                    {
+                    if(ERROR == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1)) {
                         printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
                         return ERROR;
                     }
                     dst = wrapbuffer_GraphicBuffer(dst_buf);
-                    if(dst.fd == 0 && dst.vir_addr == 0)
-                    {
+                    if(dst.fd == 0 && dst.vir_addr == 0) {
                         printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
                         return ERROR;
                     }
@@ -475,15 +429,13 @@ int main(int argc, char*  argv[])
     char* outbuf = NULL;
 #if USE_AHARDWAREBUFFER
     sp<GraphicBuffer> gbuffer = GraphicBuffer::fromAHardwareBuffer(dst_buf);
-    if (gbuffer != NULL)
-    {
+    if (gbuffer != NULL) {
         ret = gbuffer->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&outbuf);
         output_buf_data_to_file(outbuf, dst.format, dst.width, dst.height, 0);
         ret = gbuffer->unlock();
     }
 #else
-    if (dst_buf != NULL)
-    {
+    if (dst_buf != NULL) {
         ret = dst_buf->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&outbuf);
         output_buf_data_to_file(outbuf, dst.format, dst.width, dst.height, 0);
         ret = dst_buf->unlock();

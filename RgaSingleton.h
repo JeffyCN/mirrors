@@ -11,11 +11,10 @@
 #endif
 
 template <typename TYPE>
-class Singleton
-{
-public:
+class Singleton {
+  public:
     static TYPE& getInstance() {
-		Mutex::Autolock _l(sLock);
+        Mutex::Autolock _l(sLock);
         TYPE* instance = sInstance;
         if (instance == nullptr) {
             instance = new TYPE();
@@ -29,14 +28,14 @@ public:
         return sInstance != nullptr;
     }
 
-protected:
+  protected:
     ~Singleton() { }
     Singleton() { }
 
-private:
+  private:
     Singleton(const Singleton&);
     Singleton& operator = (const Singleton&);
-	static Mutex sLock;
+    static Mutex sLock;
     static TYPE* sInstance;
 };
 

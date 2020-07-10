@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2016 Rockchip Electronics Co.Ltd
  * Authors:
- *	Zhiqin Wei <wzq@rock-chips.com>
+ *  Zhiqin Wei <wzq@rock-chips.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of  the GNU General  Public License as published by the
@@ -72,8 +72,7 @@
 
 using namespace android;
 
-int main()
-{
+int main() {
     /******************************
      * Define Variable:
      * Define variable to describe the frame
@@ -94,13 +93,13 @@ int main()
     dstWidth = 1280;
     dstHeight = 720;
     dstFormat = HAL_PIXEL_FORMAT_RGBA_8888;
-	
+
     /******************************
      * Instantiation RockchipRga:
      * Singleton pattern instantiates an interface,you can use it to call RGA_interface
      ******************************/
     RockchipRga& rkRga(RockchipRga::get());
-	
+
     /******************************
      * Instantiation GraphicBufferMapper:
      * Instantiation Android's tool of GraphicBufferMapper,
@@ -113,28 +112,28 @@ int main()
      ******************************/
 #ifdef ANDROID_7_DRM
     sp<GraphicBuffer> gbs(new GraphicBuffer(srcWidth,srcHeight,srcFormat,
-        GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_HW_FB));
+                                            GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_HW_FB));
 #else
     sp<GraphicBuffer> gbs(new GraphicBuffer(srcWidth,srcHeight,srcFormat,
-        GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN));
+                                            GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN));
 #endif
 
     if (gbs->initCheck()) {
         printf("GraphicBuffer_src error : %s\n",strerror(errno));
         return ret;
-    }else{
+    } else {
         printf("GraphicBuffer_src %s \n","ok");
-	}
-        
+    }
+
     /******************************
      * Apply For Dst_buffer:
      ******************************/
 #ifdef ANDROID_7_DRM
     sp<GraphicBuffer> gbd(new GraphicBuffer(dstWidth,dstHeight,dstFormat,
-        GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_HW_FB));
+                                            GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_HW_FB));
 #else
     sp<GraphicBuffer> gbd(new GraphicBuffer(dstWidth,dstHeight,dstFormat,
-        GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN));
+                                            GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN));
 #endif
     /******************************
      * Validity Check:
@@ -148,19 +147,19 @@ int main()
     /******************************
      * Map Buffer_address To Userspace:
      ******************************/
-/*
-#ifdef ANDROID_8
-    buffer_handle_t importedHandle_src;
-    buffer_handle_t importedHandle_dst;
-    mgbMapper.importBuffer(gbs->handle, &importedHandle_src);
-    mgbMapper.importBuffer(gbd->handle, &importedHandle_dst);
-    gbs->handle = importedHandle_src;
-    gbd->handle = importedHandle_dst;
-#else
-    mgbMapper.registerBuffer(gbs->handle);
-    mgbMapper.registerBuffer(gbd->handle);
-#endif
-*/
+    /*
+    #ifdef ANDROID_8
+        buffer_handle_t importedHandle_src;
+        buffer_handle_t importedHandle_dst;
+        mgbMapper.importBuffer(gbs->handle, &importedHandle_src);
+        mgbMapper.importBuffer(gbd->handle, &importedHandle_dst);
+        gbs->handle = importedHandle_src;
+        gbd->handle = importedHandle_dst;
+    #else
+        mgbMapper.registerBuffer(gbs->handle);
+        mgbMapper.registerBuffer(gbd->handle);
+    #endif
+    */
     /******************************
      * Lock Src_buffer:
      ******************************/
@@ -168,7 +167,7 @@ int main()
     if (ret) {
         printf("lock buffer_src error : %s\n",strerror(errno));
         return ret;
-    } else 
+    } else
         printf("lock buffer_src %s \n","ok");
 
     /******************************
@@ -184,7 +183,7 @@ int main()
     if (ret) {
         printf("unlock buffer_src error : %s\n",strerror(errno));
         return ret;
-    } else 
+    } else
         printf("unlock buffer_src %s \n","ok");
 
     /******************************
@@ -194,7 +193,7 @@ int main()
     if (ret) {
         printf("lock buffer_dst error : %s\n",strerror(errno));
         return ret;
-    } else 
+    } else
         printf("lock buffer_dst %s \n","ok");
 
     /******************************
@@ -210,46 +209,46 @@ int main()
     if (ret) {
         printf("unlock buffer_src error : %s\n",strerror(errno));
         return ret;
-    } else 
+    } else
         printf("unlock buffer_src %s \n","ok");
 
     while(1) {
-       /******************************
-        * Instantiation rga_info_t:
-        * Packaging information about source and target buffer.
-        ******************************/
-    	rga_info_t src;
-    	rga_info_t dst;
-		
-    	memset(&src, 0, sizeof(rga_info_t));
-    	src.fd = -1;
+        /******************************
+         * Instantiation rga_info_t:
+         * Packaging information about source and target buffer.
+         ******************************/
+        rga_info_t src;
+        rga_info_t dst;
+
+        memset(&src, 0, sizeof(rga_info_t));
+        src.fd = -1;
         src.mmuFlag = 1;
         src.hnd = gbs->handle;
-		
-    	memset(&dst, 0, sizeof(rga_info_t));
-    	dst.fd = -1;
-    	dst.mmuFlag = 1;
-	dst.hnd = gbd->handle;
-		
+
+        memset(&dst, 0, sizeof(rga_info_t));
+        dst.fd = -1;
+        dst.mmuFlag = 1;
+        dst.hnd = gbd->handle;
+
         /******************************
          * Get Src_fd:
          * Calling RkRgaGetBufferFd interface of rkRga to get fd by handle
          ******************************/
-    	ret = rkRga.RkRgaGetBufferFd(gbs->handle, &src.fd);
+        ret = rkRga.RkRgaGetBufferFd(gbs->handle, &src.fd);
         printf("src.fd =%d\n",src.fd);
         if (ret) {
             printf("rgaGetsrcFd fail : %s,hnd=%p \n",
-                                            strerror(errno),(void*)(gbd->handle));
+                   strerror(errno),(void*)(gbd->handle));
         }
         /******************************
          * Get Dst_fd:
          * Calling RkRgaGetBufferFd interface of rkRga to get fd by handle
          ******************************/
-    	ret = rkRga.RkRgaGetBufferFd(gbd->handle, &dst.fd);
-		printf("dst.fd =%d \n",dst.fd);
+        ret = rkRga.RkRgaGetBufferFd(gbd->handle, &dst.fd);
+        printf("dst.fd =%d \n",dst.fd);
         if (ret) {
             printf("rgaGetdstFd error : %s,hnd=%p\n",
-                                            strerror(errno),(void*)(gbd->handle));
+                   strerror(errno),(void*)(gbd->handle));
         }
         /******************************
          * If src.fd or dst.fd is illegal,attemp to get virtual address
@@ -263,10 +262,10 @@ int main()
              * If phyAddr or virAddr is illegal and handle isn't NULL ,
              * Calling RkRgaGetHandleMapAddress interface to get virAddr by handle
              ******************************/
-            if (( src.phyAddr != 0 || src.virAddr != 0 ) || src.hnd != NULL ){
+            if (( src.phyAddr != 0 || src.virAddr != 0 ) || src.hnd != NULL ) {
                 ret = RkRgaGetHandleMapAddress( gbs->handle, &src.virAddr );
                 printf("src.virAddr =%p\n",src.virAddr);
-                if(!src.virAddr){
+                if(!src.virAddr) {
                     printf("err! src has not fd and address for render ,Stop!\n");
                     break;
                 }
@@ -277,10 +276,10 @@ int main()
              * If phyAddr or virAddr is illegal and handle isn't NULL ,
              * Calling RkRgaGetHandleMapAddress interface to get virAddr by handle
              ******************************/
-            if (( dst.phyAddr != 0 || dst.virAddr != 0 ) || dst.hnd != NULL ){
+            if (( dst.phyAddr != 0 || dst.virAddr != 0 ) || dst.hnd != NULL ) {
                 ret = RkRgaGetHandleMapAddress( gbd->handle, &dst.virAddr );
                 printf("dst.virAddr =%p\n",dst.virAddr);
-                if(!dst.virAddr){
+                if(!dst.virAddr) {
                     printf("err! dst has not fd and address for render ,Stop!\n");
                     break;
                 }
@@ -292,13 +291,13 @@ int main()
          ******************************/
         rga_set_rect(&src.rect, 0,0,srcWidth,srcHeight,srcWidth/*stride*/,srcHeight,srcFormat);
         rga_set_rect(&dst.rect, 0,0,dstWidth,dstHeight,dstWidth/*stride*/,dstHeight,dstFormat);
-		
+
         /******************************
          * Set The rga_mod:
          * Configure RGA work mode,here is Compositing Mode
          ******************************/
         src.blend = 0xff0405;
-		
+
         /******************************
          * Calling Rga_Interface:
          * 1.Deliver two configured data structures to Rga_Interface and Waiting RGA to finish work.
@@ -306,15 +305,15 @@ int main()
          * 3.Print the time-consuming of RGA
          ******************************/
         struct timeval tpend1, tpend2;
-	long usec1 = 0;
-	gettimeofday(&tpend1, NULL);
-		
+        long usec1 = 0;
+        gettimeofday(&tpend1, NULL);
+
         ret = rkRga.RkRgaBlit(&src, &dst, NULL);
         if (ret) {
             printf("rgaFillColor error : %s,hnd=%p\n",
-                                            strerror(errno),(void*)(gbd->handle));
+                   strerror(errno),(void*)(gbd->handle));
         }
-		
+
         gettimeofday(&tpend2, NULL);
         usec1 = 1000 * (tpend2.tv_sec - tpend1.tv_sec) + (tpend2.tv_usec - tpend1.tv_usec) / 1000;
         printf("cost_time=%ld ms\n", usec1);
@@ -332,7 +331,7 @@ int main()
         }
         printf("threadloop\n");
         usleep(500000);
-	break;
+        break;
     }
     return 0;
 }

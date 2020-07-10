@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2016 Rockchip Electronics Co.Ltd
  * Authors:
- *	Zhiqin Wei <wzq@rock-chips.com>
+ *  Zhiqin Wei <wzq@rock-chips.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of  the GNU General  Public License as published by the
@@ -49,54 +49,61 @@ namespace android {
 #endif
 // -------------------------------------------------------------------------------
 
-class RockchipRga :public Singleton<RockchipRga>
-{
-/************************************public**************************************/
+    class RockchipRga :public Singleton<RockchipRga> {
+        /************************************public**************************************/
 
-public:
+      public:
 
-    static inline RockchipRga& get() {return getInstance();}
+        static inline RockchipRga& get() {
+            return getInstance();
+        }
 
-    int         RkRgaInit();
+        int         RkRgaInit();
 #ifdef LINUX
-    void        RkRgaDeInit();
-    int         RkRgaAllocBuffer(int drm_fd /* input */, bo_t *bo_info,
-                                 int width, int height, int bpp);
-    int         RkRgaFreeBuffer(int drm_fd /* input */, bo_t *bo_info);
-    int         RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp);
-    int         RkRgaGetMmap(bo_t *bo_info);
-    int         RkRgaUnmap(bo_t *bo_info);
-    int         RkRgaFree(bo_t *bo_info);
-    int         RkRgaGetBufferFd(bo_t *bo_info, int *fd);
+        void        RkRgaDeInit();
+        int         RkRgaAllocBuffer(int drm_fd /* input */, bo_t *bo_info,
+                                     int width, int height, int bpp);
+        int         RkRgaFreeBuffer(int drm_fd /* input */, bo_t *bo_info);
+        int         RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp);
+        int         RkRgaGetMmap(bo_t *bo_info);
+        int         RkRgaUnmap(bo_t *bo_info);
+        int         RkRgaFree(bo_t *bo_info);
+        int         RkRgaGetBufferFd(bo_t *bo_info, int *fd);
 #elif ANDROID
-	int         RkRgaGetBufferFd(buffer_handle_t handle, int *fd);
+        int         RkRgaGetBufferFd(buffer_handle_t handle, int *fd);
 #endif
-    int         RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1);
-	int         RkRgaCollorFill(rga_info *dst);
-    int         RkRgaFlush();
+        int         RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1);
+        int         RkRgaCollorFill(rga_info *dst);
+        int         RkRgaFlush();
 
 
-    void        RkRgaSetLogOnceFlag(int log) {mLogOnce = log;}
-    void        RkRgaSetAlwaysLogFlag(bool log) {mLogAlways = log;}
-    void        RkRgaLogOutRgaReq(struct rga_req rgaReg);
-    int         RkRgaLogOutUserPara(rga_info *rgaInfo);
-    inline bool RkRgaIsReady() { return mSupportRga; }
+        void        RkRgaSetLogOnceFlag(int log) {
+            mLogOnce = log;
+        }
+        void        RkRgaSetAlwaysLogFlag(bool log) {
+            mLogAlways = log;
+        }
+        void        RkRgaLogOutRgaReq(struct rga_req rgaReg);
+        int         RkRgaLogOutUserPara(rga_info *rgaInfo);
+        inline bool RkRgaIsReady() {
+            return mSupportRga;
+        }
 
-/************************************private***********************************/
-private:
-    bool                            mSupportRga;
-    int                             mLogOnce;
-    int                             mLogAlways;
-    void *                          mContext;
-    //static Mutex                    mMutex;
+        /************************************private***********************************/
+      private:
+        bool                            mSupportRga;
+        int                             mLogOnce;
+        int                             mLogAlways;
+        void *                          mContext;
+        //static Mutex                    mMutex;
 
-    friend class Singleton<RockchipRga>;
-                RockchipRga();
-                 ~RockchipRga();
+        friend class Singleton<RockchipRga>;
+        RockchipRga();
+        ~RockchipRga();
 
 
 
-};
+    };
 
 // ---------------------------------------------------------------------------
 #ifdef ANDROID

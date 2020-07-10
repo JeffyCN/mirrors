@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2020 Rockchip Electronics Co.Ltd
  * Authors:
- *	PutinLee <putin.lee@rock-chips.com>
+ *  PutinLee <putin.lee@rock-chips.com>
  *  Cerf Yu <cerf.yu@rock-chips.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
@@ -26,7 +26,7 @@ extern "C" {
 #define RGA_IM2D_VERSION "1.00"
 
 typedef enum {
-/* Rotation */
+    /* Rotation */
     IM_HAL_TRANSFORM_ROT_90     = 1 << 0,
     IM_HAL_TRANSFORM_ROT_180    = 1 << 1,
     IM_HAL_TRANSFORM_ROT_270    = 1 << 2,
@@ -34,11 +34,11 @@ typedef enum {
     IM_HAL_TRANSFORM_FLIP_V     = 1 << 4,
     IM_HAL_TRANSFORM_MASK       = 0x1f,
 
-/*
- * Blend
- * Additional blend usage, can be used with both source and target configs.
- * If none of the below is set, the default "SRC over DST" is applied.
- */
+    /*
+     * Blend
+     * Additional blend usage, can be used with both source and target configs.
+     * If none of the below is set, the default "SRC over DST" is applied.
+     */
     IM_ALPHA_BLEND_SRC_OVER     = 1 << 5,     /* Default, Porter-Duff "SRC over DST" */
     IM_ALPHA_BLEND_DST          = 1 << 6,     /* Porter-Duff "DST" */
     IM_ALPHA_BLEND_SRC_IN       = 1 << 7,     /* Porter-Duff "SRC in DST" */
@@ -82,13 +82,13 @@ typedef enum {
 typedef enum {
     IM_UP_SCALE,
     IM_DOWN_SCALE,
-}IM_SCALE;
+} IM_SCALE;
 
 typedef enum {
     INTER_NEAREST,
     INTER_LINEAR,
     INTER_CUBIC,
-}IM_SCALE_MODE;
+} IM_SCALE_MODE;
 
 /* Get RGA basic information index */
 typedef enum {
@@ -103,8 +103,7 @@ typedef enum {
 } IM_INFORMATION;
 
 /*rga version index*/
-typedef enum
-{
+typedef enum {
     RGA_V_ERR                  = 0x0,
     RGA_1                      = 0x1,
     RGA_1_PLUS                 = 0x2,
@@ -112,7 +111,7 @@ typedef enum
     RGA_2_LITE0                = 0x4,
     RGA_2_LITE1                = 0x5,
     RGA_2_ENHANCE              = 0x6,
-}RGA_VERSION_NUM;
+} RGA_VERSION_NUM;
 
 //struct AHardwareBuffer AHardwareBuffer;
 
@@ -132,7 +131,7 @@ typedef struct {
     int width;                          /* width */
     int height;                         /* height */
     int wstride;                        /* wstride */
-	int hstride;                        /* hstride */
+    int hstride;                        /* hstride */
     int format;                         /* format */
     int color_space_mode;               /* color_space_mode */
     int color;                          /* color, used by color fill */

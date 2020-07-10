@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2020 Rockchip Electronics Co.Ltd
  * Authors:
- *	PutinLee <putin.lee@rock-chips.com>
+ *  PutinLee <putin.lee@rock-chips.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of  the GNU General  Public License as published by the
@@ -100,15 +100,21 @@ class CAPABILITY("mutex") Mutex {
     // lock if possible; returns 0 on success, error otherwise
     int32_t tryLock() TRY_ACQUIRE(0);
 
-	int32_t timedLock(int64_t timeoutNs) TRY_ACQUIRE(0);
+    int32_t timedLock(int64_t timeoutNs) TRY_ACQUIRE(0);
 
     // Manages the mutex automatically. It'll be locked when Autolock is
     // constructed and released when Autolock goes out of scope.
     class SCOPED_CAPABILITY Autolock {
       public:
-        inline explicit Autolock(Mutex& mutex) ACQUIRE(mutex) : mLock(mutex) { mLock.lock(); }
-        inline explicit Autolock(Mutex* mutex) ACQUIRE(mutex) : mLock(*mutex) { mLock.lock(); }
-        inline ~Autolock() RELEASE() { mLock.unlock(); }
+        inline explicit Autolock(Mutex& mutex) ACQUIRE(mutex) : mLock(mutex) {
+            mLock.lock();
+        }
+        inline explicit Autolock(Mutex* mutex) ACQUIRE(mutex) : mLock(*mutex) {
+            mLock.lock();
+        }
+        inline ~Autolock() RELEASE() {
+            mLock.unlock();
+        }
 
       private:
         Mutex& mLock;

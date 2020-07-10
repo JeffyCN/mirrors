@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2020 Rockchip Electronics Co.Ltd
  * Authors:
- *	PutinLee <putin.lee@rock-chips.com>
+ *  PutinLee <putin.lee@rock-chips.com>
  *  Cerf Yu <cerf.yu@rock-chips.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
@@ -14,8 +14,7 @@
 #ifndef ARGS_H
 #define ARGS_H
 
-typedef enum _mode_code
-{
+typedef enum _mode_code {
     MODE_QUERYSTRING = 0,
     MODE_COPY,
     MODE_RESIZE,
@@ -28,7 +27,7 @@ typedef enum _mode_code
     MODE_FILL,
     MODE_NONE,
     MODE_MAX
-}MODE_CODE;
+} MODE_CODE;
 
 typedef enum {
     INFO_VENDOR = 0,

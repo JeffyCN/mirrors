@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2016 Rockchip Electronics Co.Ltd
  * Authors:
- *	Zhiqin Wei <wzq@rock-chips.com>
+ *  Zhiqin Wei <wzq@rock-chips.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of  the GNU General  Public License as published by the
@@ -58,12 +58,12 @@
 #define DRM_RGA_TRANSFORM_FLIP_V        HAL_TRANSFORM_FLIP_V
 
 enum {
-	AWIDTH                      = 0,
-	AHEIGHT,
-	ASTRIDE,
-	AFORMAT,
-	ASIZE,
-	ATYPE,
+    AWIDTH                      = 0,
+    AHEIGHT,
+    ASTRIDE,
+    AFORMAT,
+    ASIZE,
+    ATYPE,
 };
 /*****************************************************************************/
 
@@ -75,21 +75,21 @@ typedef struct bo {
     size_t offset;
     size_t pitch;
     unsigned handle;
-}bo_t;
+} bo_t;
 #endif
 
 /*
    @value size:     user not need care about.For avoid read/write out of memory
  */
 typedef struct rga_rect {
-	int xoffset;
-	int yoffset;
-	int width;
-	int height;
-	int wstride;
-	int hstride;
-	int format;
-	int size;
+    int xoffset;
+    int yoffset;
+    int width;
+    int height;
+    int wstride;
+    int hstride;
+    int format;
+    int size;
 } rga_rect_t;
 
 /*
@@ -99,35 +99,35 @@ typedef struct rga_rect {
    @value hnd:    use buffer_handle_t
  */
 typedef struct rga_info {
-	int fd;
-	void *virAddr;
-	void *phyAddr;
+    int fd;
+    void *virAddr;
+    void *phyAddr;
 #ifdef LINUX
-	unsigned hnd;
+    unsigned hnd;
 #else /* Android */
-	buffer_handle_t hnd;
+    buffer_handle_t hnd;
 #endif
-	int format;
-	rga_rect_t rect;
-	unsigned int blend;
-	int bufferSize;
-	int rotation;
-	int color;
-	int testLog;
-	int mmuFlag;
-	int colorkey_en;
-	int colorkey_max;
-	int colorkey_min;
-	int scale_mode;
-	int color_space_mode;
-	int sync_mode;
-	int reserve[128];
+    int format;
+    rga_rect_t rect;
+    unsigned int blend;
+    int bufferSize;
+    int rotation;
+    int color;
+    int testLog;
+    int mmuFlag;
+    int colorkey_en;
+    int colorkey_max;
+    int colorkey_min;
+    int scale_mode;
+    int color_space_mode;
+    int sync_mode;
+    int reserve[128];
 } rga_info_t;
 
 
 typedef struct drm_rga {
-	rga_rect_t src;
-	rga_rect_t dst;
+    rga_rect_t src;
+    rga_rect_t dst;
 } drm_rga_t;
 
 /*
@@ -139,25 +139,23 @@ typedef struct drm_rga {
    mean to set the src rect to the value.
  */
 static inline int rga_set_rect(rga_rect_t *rect,
-		int x, int y, int w, int h, int sw, int sh, int f)
-{
-	if (!rect)
-		return -EINVAL;
+                               int x, int y, int w, int h, int sw, int sh, int f) {
+    if (!rect)
+        return -EINVAL;
 
-	rect->xoffset = x;
-	rect->yoffset = y;
-	rect->width = w;
-	rect->height = h;
-	rect->wstride = sw;
-	rect->hstride = sh;
-	rect->format = f;
+    rect->xoffset = x;
+    rect->yoffset = y;
+    rect->width = w;
+    rect->height = h;
+    rect->wstride = sw;
+    rect->hstride = sh;
+    rect->format = f;
 
-	return 0;
+    return 0;
 }
 
 #ifdef LINUX
-static inline void rga_set_rotation(rga_info_t *info, int angle)
-{
+static inline void rga_set_rotation(rga_info_t *info, int angle) {
     if (angle == 90)
         info->rotation = HAL_TRANSFORM_ROT_90;
     else if (angle == 180)

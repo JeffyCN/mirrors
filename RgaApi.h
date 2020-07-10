@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2016 Rockchip Electronics Co.Ltd
  * Authors:
- *	Zhiqin Wei <wzq@rock-chips.com>
+ *  Zhiqin Wei <wzq@rock-chips.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of  the GNU General  Public License as published by the
@@ -26,7 +26,7 @@
 #include "drmrga.h"
 
 #ifdef __cplusplus
-extern "C"{
+extern "C" {
 #endif
 
 #if 0

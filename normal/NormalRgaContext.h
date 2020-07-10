@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2016 Rockchip Electronics Co.Ltd
  * Authors:
- *	Zhiqin Wei <wzq@rock-chips.com>
+ *  Zhiqin Wei <wzq@rock-chips.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of  the GNU General  Public License as published by the
@@ -20,12 +20,12 @@
 #define ALOGE(...) printf(__VA_ARGS__)
 #endif
 
-struct rgaContext{
+struct rgaContext {
     int rgaFd;
     int mLogAlways;
     int mLogOnce;
     float mVersion;
-	int Is_debug;
+    int Is_debug;
 
 };
 #endif
