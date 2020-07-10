@@ -231,7 +231,7 @@ IM_API const char* querystring(int name);
  */
 #define imresize(src, dst, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -243,6 +243,7 @@ IM_API const char* querystring(int name);
         } else if (argc == 4){ \
             ret = imresize_t(src, dst, args[0], args[1], args[2], args[3]); \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
@@ -270,7 +271,7 @@ IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx,
  */
 #define imcrop(src, dst, rect, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -278,6 +279,7 @@ IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx,
         } else if (argc == 1){ \
             ret = imcrop_t(src, dst, rect, args[0]);; \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
@@ -301,7 +303,7 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
  */
 #define imrotate(src, dst, rotation, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -309,6 +311,7 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
         } else if (argc == 1){ \
             ret = imrotate_t(src, dst, rotation, args[0]);; \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
@@ -331,7 +334,7 @@ IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotati
  */
 #define imflip(src, dst, mode, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -339,6 +342,7 @@ IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotati
         } else if (argc == 1){ \
             ret = imflip_t(src, dst, mode, args[0]);; \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
@@ -360,7 +364,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
  */
 #define imfill(src, dst, color, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -368,6 +372,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
         } else if (argc == 1){ \
             ret = imfill_t(src, dst, color, args[0]);; \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
@@ -375,7 +380,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
 
 #define imreset(src, dst, color, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -383,6 +388,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
         } else if (argc == 1){ \
             ret = imfill_t(src, dst, color, args[0]);; \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
@@ -390,7 +396,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
 
 #define imdraw(src, dst, color, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -398,6 +404,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
         } else if (argc == 1){ \
             ret = imfill_t(src, dst, color, args[0]);; \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
@@ -418,7 +425,7 @@ IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync);
  */
 #define imtranslate(src, dst, x, y, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -426,6 +433,7 @@ IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync);
         } else if (argc == 1){ \
             ret = imtranslate_t(src, dst, x, y, args[0]);; \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
@@ -444,7 +452,7 @@ IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, 
  */
 #define imcopy(src, dst, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -452,6 +460,7 @@ IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, 
         } else if (argc == 1){ \
             ret = imcopy_t(src, dst, args[0]);; \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
@@ -474,7 +483,7 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
  */
 #define imblend(srcA, srcB, dst, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -484,6 +493,7 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
         } else if (argc == 2){ \
             ret = imblend_t(srcA, srcB, dst, args[0], args[1]); \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
@@ -507,7 +517,7 @@ IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga
  */
 #define imcvtcolor(src, dst, sfmt, dfmt, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -517,6 +527,7 @@ IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga
         } else if (argc == 2){ \
             ret = imcvtcolor_t(src, dst, sfmt, dfmt, args[0], args[1]); \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
@@ -537,7 +548,7 @@ IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int 
  */
 #define imquantize(src, dst, nn_info, ...) \
     ({ \
-        IM_STATUS ret; \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
@@ -545,6 +556,7 @@ IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int 
         } else if (argc == 1){ \
             ret = imquantize_t(src, dst, nn_info, args[0]);; \
         } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
         ret; \
