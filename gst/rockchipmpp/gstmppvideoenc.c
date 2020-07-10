@@ -127,10 +127,6 @@ gst_mpp_video_enc_stop (GstVideoEncoder * encoder)
       mpp_buffer_put (self->input_buffer[i]);
       self->input_buffer[i] = NULL;
     }
-    if (self->output_buffer[i]) {
-      mpp_buffer_put (self->output_buffer[i]);
-      self->output_buffer[i] = NULL;
-    }
   }
 
   /* Must be destroy before input_group */
@@ -313,11 +309,10 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer ** buffer)
   GstVideoCodecFrame *frame;
   gpointer ptr = NULL;
   MppFrame mpp_frame = self->mpp_frame;
-  MppTask task = NULL;
   MppBuffer frame_in = self->input_buffer[current_index];
-  MppBuffer pkt_buf_out = self->output_buffer[current_index];
   MppPacket packet = NULL;
-  GstFlowReturn ret;
+  MppMeta meta;
+  GstFlowReturn ret = GST_FLOW_OK;
 
   mpp_frame_set_buffer (mpp_frame, frame_in);
   /* Eos buffer */
@@ -333,89 +328,60 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer ** buffer)
     mpp_frame_set_eos (mpp_frame, 0);
   }
 
-  do {
-    if (self->mpi->dequeue (self->mpp_ctx, MPP_PORT_INPUT, &task)) {
-      GST_ERROR_OBJECT (self, "mpp task input dequeue failed");
-      return GST_FLOW_ERROR;
-    }
-    if (NULL == task) {
-      GST_LOG_OBJECT (self, "mpp input failed, try again");
-      g_usleep (2);
-    } else {
-      break;
-    }
-  } while (1);
-  mpp_task_meta_set_frame (task, KEY_INPUT_FRAME, mpp_frame);
-
-  mpp_packet_init_with_buffer (&packet, pkt_buf_out);
-  mpp_task_meta_set_packet (task, KEY_OUTPUT_PACKET, packet);
-
-  if (self->mpi->enqueue (self->mpp_ctx, MPP_PORT_INPUT, task)) {
-    GST_ERROR_OBJECT (self, "mpp task input enqueu failed");
+  if (self->mpi->encode_put_frame (self->mpp_ctx, mpp_frame)) {
+    GST_ERROR_OBJECT (self, "mpp put frame failed");
+    return GST_FLOW_ERROR;
   }
 
   GST_LOG_OBJECT (self, "Process output buffer");
 
-  do {
-    MppFrame packet_out = NULL;
-    ret = GST_FLOW_OK;
+  if (self->mpi->encode_get_packet (self->mpp_ctx, &packet)) {
+    GST_ERROR_OBJECT (self, "mpp get packet failed");
+    return GST_FLOW_ERROR;
+  }
 
-    if (self->mpi->dequeue (self->mpp_ctx, MPP_PORT_OUTPUT, &task)) {
-      g_usleep (2);
-      continue;
+  /* Get result */
+  if (packet) {
+    gconstpointer *ptr = mpp_packet_get_pos (packet);
+    gsize len = mpp_packet_get_length (packet);
+    gint intra_flag = 0;
+
+    if (mpp_packet_get_eos (packet))
+      ret = GST_FLOW_EOS;
+
+    meta = mpp_packet_get_meta (packet);
+    if (meta)
+      mpp_meta_get_s32 (meta, KEY_OUTPUT_INTRA, &intra_flag);
+
+    GST_LOG_OBJECT (self, "Allocate output buffer");
+    if (intra_flag && self->sps_packet)
+      new_buffer = gst_video_encoder_allocate_output_buffer (encoder,
+          mpp_packet_get_length (self->sps_packet) + len);
+    else
+      new_buffer = gst_video_encoder_allocate_output_buffer (encoder, len);
+    if (NULL == new_buffer) {
+      ret = GST_FLOW_FLUSHING;
+      goto beach;
     }
 
-    if (task) {
-      mpp_task_meta_get_packet (task, KEY_OUTPUT_PACKET, &packet_out);
-      g_assert (packet_out == packet);
+    /* Fill the buffer */
+    if (intra_flag && self->sps_packet) {
+      const gpointer *sps_ptr = mpp_packet_get_pos (self->sps_packet);
+      gsize sps_len = mpp_packet_get_length (self->sps_packet);
 
-      /* Get result */
-      if (packet) {
-        gconstpointer *ptr = mpp_packet_get_pos (packet);
-        gsize len = mpp_packet_get_length (packet);
-        gint intra_flag = 0;
+      gst_buffer_fill (new_buffer, 0, sps_ptr, sps_len);
 
-        if (mpp_packet_get_eos (packet))
-          ret = GST_FLOW_EOS;
-
-        mpp_task_meta_get_s32 (task, KEY_OUTPUT_INTRA, &intra_flag, 0);
-
-        GST_LOG_OBJECT (self, "Allocate output buffer");
-        if (intra_flag && self->sps_packet)
-          new_buffer = gst_video_encoder_allocate_output_buffer (encoder,
-              mpp_packet_get_length (self->sps_packet) + len);
-        else
-          new_buffer = gst_video_encoder_allocate_output_buffer (encoder, len);
-        if (NULL == new_buffer) {
-          ret = GST_FLOW_FLUSHING;
-          goto beach;
-        }
-
-        /* Fill the buffer */
-        if (intra_flag && self->sps_packet) {
-          const gpointer *sps_ptr = mpp_packet_get_pos (self->sps_packet);
-          gsize sps_len = mpp_packet_get_length (self->sps_packet);
-
-          gst_buffer_fill (new_buffer, 0, sps_ptr, sps_len);
-
-          gst_buffer_fill (new_buffer, sps_len, ptr, len);
-        } else {
-          gst_buffer_fill (new_buffer, 0, ptr, len);
-        }
-
-        mpp_packet_deinit (&packet);
-      }
-
-      if (self->mpi->enqueue (self->mpp_ctx, MPP_PORT_OUTPUT, task)) {
-        GST_ERROR_OBJECT (self, "mpp task output enqueue failed");
-        ret = GST_FLOW_ERROR;
-      }
-      current_index++;
-      if (current_index >= MPP_MAX_BUFFERS)
-        current_index = 0;
-      break;
+      gst_buffer_fill (new_buffer, sps_len, ptr, len);
+    } else {
+      gst_buffer_fill (new_buffer, 0, ptr, len);
     }
-  } while (1);
+
+    mpp_packet_deinit (&packet);
+  }
+
+  current_index++;
+  if (current_index >= MPP_MAX_BUFFERS)
+    current_index = 0;
   if (ret != GST_FLOW_OK)
     goto beach;
 
@@ -459,14 +425,9 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
 
   if (!self->negotiated) {
     gint i = 0;
-    gsize packet_size;
 
     GST_DEBUG_OBJECT (self, "Filling src caps with output dimensions %ux%u",
         self->info.width, self->info.height);
-    /* In most cases, the packet size will be smaller than the frame size.
-     * In the case of YUV422, the packet size has the opportunity to reach
-     * the upper limit: 2 * width * height + JpegDefaultHeadSize(608) */
-    packet_size = self->info.width * self->info.height * 2 + 608;
 
     if (!outcaps)
       goto not_negotiated;
@@ -485,9 +446,6 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
     for (i = 0; i < MPP_MAX_BUFFERS; i++) {
       if (mpp_buffer_get (self->input_group, &self->input_buffer[i],
               self->info.size))
-        goto activate_failed;
-      if (mpp_buffer_get (self->output_group, &self->output_buffer[i],
-              packet_size))
         goto activate_failed;
     }
 
