@@ -30,8 +30,6 @@
 
 using namespace android;
 
-RockchipRga& rkRga(RockchipRga::get());
-
 #endif
 
 #ifdef LINUX
@@ -40,9 +38,9 @@ RockchipRga& rkRga(RockchipRga::get());
 
 #define ALOGE(...) printf(__VA_ARGS__)
 
-RockchipRga rkRga;
-
 #endif
+
+RockchipRga& rkRga(RockchipRga::get());
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 
