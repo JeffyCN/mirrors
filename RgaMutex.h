@@ -14,7 +14,7 @@
 #ifndef _LIBS_RGA_MUTEX_H
 #define _LIBS_RGA_MUTEX_H
 
-#ifndef __ANDROID_VNDK__
+#ifndef ANDROID
 #include <stdint.h>
 #include <sys/types.h>
 #include <time.h>

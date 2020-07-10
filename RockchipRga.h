@@ -95,7 +95,6 @@ namespace android {
         int                             mLogOnce;
         int                             mLogAlways;
         void *                          mContext;
-        //static Mutex                    mMutex;
 
         friend class Singleton<RockchipRga>;
         RockchipRga();

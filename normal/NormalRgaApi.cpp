@@ -717,8 +717,8 @@ int NormalRgaUpdatePattenBuffMode(struct rga_req *msg,
     msg->render_mode = update_patten_buff_mode;
 
     msg->pat.yrgb_addr   = pat_addr;
-    msg->pat.act_w  = w*h;   // hxx
-    msg->pat.act_h  = 1;     // hxx
+    msg->pat.act_w  = w*h;
+    msg->pat.act_h  = 1;
     msg->pat.format = format;
     return 1;
 }

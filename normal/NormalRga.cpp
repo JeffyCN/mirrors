@@ -612,9 +612,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     if (relDstRect.hstride == 0)
         relDstRect.hstride = relDstRect.height;
 
-    //if (relSrcRect.format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
-    //      relSrcRect.wstride = relSrcRect.wstride * 5 / 4;
-
     /* do some check, check the area of src and dst whether is effective. */
     if (src) {
         ret = checkRectForRga(relSrcRect);
@@ -1223,8 +1220,11 @@ int RgaCollorFill(rga_info *dst) {
         NormalRgaMmuFlag(&rgaReg, dstMmuFlag, dstMmuFlag);
     }
 
-    //ALOGE("%d,%d,%d", srcMmuFlag, dstMmuFlag,rotateMode);
-    //NormalRgaLogOutRgaReq(rgaReg);
+#ifdef LINUX
+#ifdef __DEBUG
+    NormalRgaLogOutRgaReq(rgaReg);
+#endif
+#endif
 
 #ifndef RK3368
 #ifdef  ANDROID_7_DRM
