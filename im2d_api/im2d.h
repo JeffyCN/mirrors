@@ -151,13 +151,54 @@ typedef struct rga_nn {
 /*
  * @return rga_buffer_t
  */
-#define wrapbuffer_viraddr_i(vir_addr, width, height, format) wrapbuffer_virtualaddr(vir_addr, width, height, width, height, format)
-#define wrapbuffer_phyaddr_i(phy_addr, width, height, format) wrapbuffer_physicaladdr(phy_addr, width, height, width, height, format)
-#define wrapbuffer_fd_i(fd, width, height, format) wrapbuffer_fd(fd, width, height, width, height, format)
+#define warpbuffer_virtualaddr(vir_addr, width, height, format, ...) \
+    ({ \
+        rga_buffer_t buffer; \
+        int args[] = {__VA_ARGS__}; \
+        int argc = sizeof(args)/sizeof(int); \
+        if (argc == 0) { \
+            buffer = warpbuffer_virtualaddr_t(vir_addr, width, height, width, height, format); \
+        } else if (argc == 2){ \
+            buffer = warpbuffer_virtualaddr_t(vir_addr, width, height, args[0], args[1], format); \
+        } else { \
+            printf("invalid parameter\n"); \
+        } \
+        buffer; \
+    })
 
-IM_API rga_buffer_t wrapbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format);
-IM_API rga_buffer_t wrapbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format);
-IM_API rga_buffer_t wrapbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format);
+#define wrapbuffer_physicaladdr(phy_addr, width, height, format, ...) \
+    ({ \
+        rga_buffer_t buffer; \
+        int args[] = {__VA_ARGS__}; \
+        int argc = sizeof(args)/sizeof(int); \
+        if (argc == 0) { \
+            buffer = wrapbuffer_physicaladdr_t(phy_addr, width, height, width, height, format); \
+        } else if (argc == 2){ \
+            buffer = wrapbuffer_physicaladdr_t(phy_addr, width, height, args[0], args[1], format); \
+        } else { \
+            printf("invalid parameter\n"); \
+        } \
+        buffer; \
+    })
+
+#define wrapbuffer_fd(fd, width, height, format, ...) \
+    ({ \
+        rga_buffer_t buffer; \
+        int args[] = {__VA_ARGS__}; \
+        int argc = sizeof(args)/sizeof(int); \
+        if (argc == 0) { \
+            buffer = wrapbuffer_fd_t(fd, width, height, width, height, format); \
+        } else if (argc == 2){ \
+            buffer = wrapbuffer_fd_t(fd, width, height, args[0], args[1], format); \
+        } else { \
+            printf("invalid parameter\n"); \
+        } \
+        buffer; \
+    })
+
+IM_API rga_buffer_t wrapbuffer_virtualaddr_t(void* vir_addr, int width, int height, int wstride, int hstride, int format);
+IM_API rga_buffer_t wrapbuffer_physicaladdr_t(void* phy_addr, int width, int height, int wstride, int hstride, int format);
+IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, int hstride, int format);
 
 /*
  * Query RGA basic information, supported resolution, supported format, etc.

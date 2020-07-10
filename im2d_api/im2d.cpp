@@ -46,7 +46,7 @@ RockchipRga& rkRga(RockchipRga::get());
 
 using namespace std;
 
-IM_API rga_buffer_t wrapbuffer_virtualaddr(void* vir_addr, int width, int height, int wstride, int hstride, int format) {
+IM_API rga_buffer_t wrapbuffer_virtualaddr_t(void* vir_addr, int width, int height, int wstride, int hstride, int format) {
     rga_buffer_t buffer;
 
     memset(&buffer, 0, sizeof(rga_buffer_t));
@@ -61,7 +61,7 @@ IM_API rga_buffer_t wrapbuffer_virtualaddr(void* vir_addr, int width, int height
     return buffer;
 }
 
-IM_API rga_buffer_t wrapbuffer_physicaladdr(void* phy_addr, int width, int height, int wstride, int hstride, int format) {
+IM_API rga_buffer_t wrapbuffer_physicaladdr_t(void* phy_addr, int width, int height, int wstride, int hstride, int format) {
     rga_buffer_t buffer;
 
     memset(&buffer, 0, sizeof(rga_buffer_t));
@@ -76,7 +76,7 @@ IM_API rga_buffer_t wrapbuffer_physicaladdr(void* phy_addr, int width, int heigh
     return buffer;
 }
 
-IM_API rga_buffer_t wrapbuffer_fd(int fd, int width, int height, int wstride, int hstride, int format) {
+IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, int hstride, int format) {
     rga_buffer_t buffer;
 
     memset(&buffer, 0, sizeof(rga_buffer_t));
