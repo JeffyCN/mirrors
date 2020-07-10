@@ -40,6 +40,11 @@ using namespace android;
 
 #endif
 
+typedef enum {
+    LIBRGA = 0,
+    RGA_IM2D
+} QUERYSTRING_API;
+
 RockchipRga& rkRga(RockchipRga::get());
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
@@ -207,9 +212,6 @@ IM_API IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, r
 
     return IM_STATUS_SUCCESS;
 }
-
-#define LIBRGA    0
-#define RGA_IM2D  1
 
 IM_API const char* querystring(int name) {
     bool all_output = 0, all_output_prepared = 0;
@@ -680,7 +682,7 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
     ret = improcess(src, dst, srect, drect, usage);
     if (!ret)
         return IM_STATUS_FAILED;
-  
+
     return IM_STATUS_SUCCESS;
 }
 
