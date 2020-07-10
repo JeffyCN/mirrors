@@ -664,7 +664,23 @@ IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int 
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, rga_nn_t nn_info, int sync) {
+IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info, int sync) {
+    int usage = 0;
+    int ret = IM_STATUS_NOERROR;
+    im_rect srect;
+    im_rect drect;
+
+    usage |= IM_NN_QUANTIZE;
+
+    dst.nn = nn_info;
+
+    if (sync == 0)
+        usage |= IM_SYNC;
+
+    ret = improcess(src, dst, srect, drect, usage);
+    if (!ret)
+        return IM_STATUS_FAILED;
+  
     return IM_STATUS_SUCCESS;
 }
 
@@ -766,6 +782,17 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
         }
         if(srcinfo.blend == 0 && srcinfo.rotation ==0)
             ALOGE("rga_im2d: Could not find blend/rotate/flip usage : 0x%x \n", usage);
+    }
+
+    /* set NN quantize */
+    if (usage & IM_NN_QUANTIZE) {
+        dstinfo.nn.nn_flag = 1;
+        dstinfo.nn.scale_r = dst.nn.scale_r;
+        dstinfo.nn.scale_g = dst.nn.scale_g;
+        dstinfo.nn.scale_b = dst.nn.scale_b;
+        dstinfo.nn.offset_r = dst.nn.offset_r;
+        dstinfo.nn.offset_g = dst.nn.offset_g;
+        dstinfo.nn.offset_b = dst.nn.offset_b;
     }
 
     /* set global alpha */

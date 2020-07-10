@@ -313,6 +313,7 @@ int         NormalRgaUpdatePattenBuffMode(struct rga_req *msg,
         unsigned int pat_addr, unsigned int w,
         unsigned int h,        unsigned int format);
 
+int NormalRgaNNQuantizeMode(struct rga_req *msg, rga_info *dst);
 
 #if defined(__arm64__) || defined(__aarch64__)
 int         NormalRgaMmuInfo(struct rga_req *msg,

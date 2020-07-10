@@ -92,6 +92,16 @@ typedef struct rga_rect {
     int size;
 } rga_rect_t;
 
+typedef struct rga_nn {
+   int nn_flag;
+   int scale_r;
+   int scale_g;
+   int scale_b;
+   int offset_r;
+   int offset_g;
+   int offset_b;
+} rga_nn_t;
+
 /*
    @value fd:     use fd to share memory, it can be ion shard fd,and dma fd.
    @value virAddr:userspace address
@@ -121,6 +131,7 @@ typedef struct rga_info {
     int scale_mode;
     int color_space_mode;
     int sync_mode;
+    rga_nn_t nn;
     int reserve[128];
 } rga_info_t;
 

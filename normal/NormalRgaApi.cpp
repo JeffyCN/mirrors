@@ -758,6 +758,23 @@ int NormalRgaMmuFlag(struct rga_req *msg,
     return 1;
 }
 
+int NormalRgaNNQuantizeMode(struct rga_req *msg, rga_info *dst) {
+   if (dst->nn.nn_flag == 1) {
+        msg->alpha_rop_flag = 1;
+        msg->alpha_rop_flag |= (dst->nn.nn_flag << 8);
+
+        msg->gr_color.gr_x_r = dst->nn.scale_r;
+        msg->gr_color.gr_x_g = dst->nn.scale_g;
+        msg->gr_color.gr_x_b = dst->nn.scale_b;
+
+        msg->gr_color.gr_y_r = dst->nn.offset_r;
+        msg->gr_color.gr_y_g = dst->nn.offset_g;
+        msg->gr_color.gr_y_b = dst->nn.offset_b;
+    }
+
+    return 0;
+}
+
 int NormalRgaInitTables() {
     int sinaTable[360] = {
         0,   1144,   2287,   3430,   4572,   5712,   6850,   7987,   9121,  10252,
@@ -871,6 +888,9 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
 
     ALOGE("mode[%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
           rgaReg.endian_mode, rgaReg.src_trans_mode);
+
+    ALOGE("gr_color_x [%x, %x, %x] \n", rgaReg.gr_color.gr_x_r, rgaReg.gr_color.gr_x_g, rgaReg.gr_color.gr_x_b);
+    ALOGE("gr_color_x [%x, %x, %x] \n", rgaReg.gr_color.gr_y_r, rgaReg.gr_color.gr_y_g, rgaReg.gr_color.gr_y_b);
 #else
     ALOGE("render_mode=%d rotate_mode=%d\n",
           rgaReg.render_mode, rgaReg.rotate_mode);
@@ -901,6 +921,9 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
 
     ALOGE("mode[%d,%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
           rgaReg.endian_mode, rgaReg.src_trans_mode,rgaReg.scale_mode);
+
+    ALOGE("gr_color_x [%x, %x, %x] \n", rgaReg.gr_color.gr_x_r, rgaReg.gr_color.gr_x_g, rgaReg.gr_color.gr_x_b);
+    ALOGE("gr_color_x [%x, %x, %x] \n", rgaReg.gr_color.gr_y_r, rgaReg.gr_color.gr_y_g, rgaReg.gr_color.gr_y_b);
 #endif
     return;
 }

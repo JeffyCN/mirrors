@@ -54,6 +54,7 @@ typedef enum {
     IM_SYNC                     = 1 << 15,
     IM_CROP                     = 1 << 16,
     IM_COLOR_FILL               = 1 << 17,
+    IM_NN_QUANTIZE              = 1 << 18,
 } IM_USAGE;
 
 /* Status codes, returned by any blit function */
@@ -123,6 +124,15 @@ typedef struct {
     int height = 0;   /* height */
 } im_rect;
 
+typedef struct im_nn {
+    int scale_r;                /* scaling factor on R channal */
+    int scale_g;                /* scaling factor on G channal */
+    int scale_b;                /* scaling factor on B channal */
+    int offset_r;               /* offset on R channal */
+    int offset_g;               /* offset on G channal */
+    int offset_b;               /* offset on B channal */
+} im_nn_t;
+
 /* im_info definition */
 typedef struct {
     void* vir_addr;                     /* virtual address */
@@ -136,17 +146,8 @@ typedef struct {
     int color_space_mode;               /* color_space_mode */
     int color;                          /* color, used by color fill */
     int global_alpha;                   /* global_alpha */
+    im_nn_t nn;
 } rga_buffer_t;
-
-typedef struct rga_nn {
-    int nn_flag;                /* enable nn */
-    int scale_r;                /* scaling factor on R channal */
-    int scale_g;                /* scaling factor on G channal */
-    int scale_b;                /* scaling factor on B channal */
-    int offset_r;               /* offset on R channal */
-    int offset_g;               /* offset on G channal */
-    int offset_b;               /* offset on B channal */
-} rga_nn_t;
 
 /*
  * @return rga_buffer_t
@@ -562,7 +563,7 @@ IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int 
         ret; \
     })
 
-IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, rga_nn_t nn_info, int sync);
+IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info, int sync);
 
 /*
  * process

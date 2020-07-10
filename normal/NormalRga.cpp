@@ -971,6 +971,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     NormalRgaSetBitbltMode(&rgaReg, scaleMode, rotateMode, orientation,
                            ditherEn, 0, yuvToRgbMode);
 
+    NormalRgaNNQuantizeMode(&rgaReg, dst);
+
     if (srcMmuFlag || dstMmuFlag) {
         NormalRgaMmuInfo(&rgaReg, 1, 0, 0, 0, 0, 2);
         NormalRgaMmuFlag(&rgaReg, srcMmuFlag, dstMmuFlag);
