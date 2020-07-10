@@ -29,7 +29,7 @@
 extern "C"{
 #endif
 
-#ifdef LINUX
+#if 0
 int c_RkRgaInit();
 void c_RkRgaDeInit();
 int c_RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp);

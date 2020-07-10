@@ -1,13 +1,14 @@
-#ifdef LINUX
+#if 0
 
 #include "RgaApi.h"
+
+RockchipRga c_rkRga;
 
 #ifdef __cplusplus
 extern "C"{
 #endif
 
 #include "RockchipRga.h"
-RockchipRga c_rkRga;
 
 int c_RkRgaInit()
 {
