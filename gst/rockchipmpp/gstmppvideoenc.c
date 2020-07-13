@@ -187,6 +187,7 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
   gsize ver_stride, cr_h;
   GstVideoFormat format;
   MppEncPrepCfg prep_cfg;
+  MppEncHeaderMode header_mode;
 
   GST_DEBUG_OBJECT (self, "Setting format: %" GST_PTR_FORMAT, state->caps);
 
@@ -238,9 +239,12 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
     return FALSE;
   }
 
-  if (self->mpi->control
-      (self->mpp_ctx, MPP_ENC_GET_EXTRA_INFO, &self->sps_packet))
-    self->sps_packet = NULL;
+  header_mode = MPP_ENC_HEADER_MODE_EACH_IDR;
+  if (self->mpi->control (self->mpp_ctx,
+          MPP_ENC_SET_HEADER_MODE, &header_mode)) {
+    GST_DEBUG_OBJECT (self, "Setting header mode for rockchip mpp failed");
+    return FALSE;
+  }
 
   self->input_state = gst_video_codec_state_ref (state);
 
@@ -311,7 +315,6 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer ** buffer)
   MppFrame mpp_frame = self->mpp_frame;
   MppBuffer frame_in = self->input_buffer[current_index];
   MppPacket packet = NULL;
-  MppMeta meta;
   GstFlowReturn ret = GST_FLOW_OK;
 
   mpp_frame_set_buffer (mpp_frame, frame_in);
@@ -344,38 +347,18 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer ** buffer)
   if (packet) {
     gconstpointer *ptr = mpp_packet_get_pos (packet);
     gsize len = mpp_packet_get_length (packet);
-    gint intra_flag = 0;
 
     if (mpp_packet_get_eos (packet))
       ret = GST_FLOW_EOS;
 
-    meta = mpp_packet_get_meta (packet);
-    if (meta)
-      mpp_meta_get_s32 (meta, KEY_OUTPUT_INTRA, &intra_flag);
-
     GST_LOG_OBJECT (self, "Allocate output buffer");
-    if (intra_flag && self->sps_packet)
-      new_buffer = gst_video_encoder_allocate_output_buffer (encoder,
-          mpp_packet_get_length (self->sps_packet) + len);
-    else
-      new_buffer = gst_video_encoder_allocate_output_buffer (encoder, len);
+    new_buffer = gst_video_encoder_allocate_output_buffer (encoder, len);
     if (NULL == new_buffer) {
       ret = GST_FLOW_FLUSHING;
       goto beach;
     }
 
-    /* Fill the buffer */
-    if (intra_flag && self->sps_packet) {
-      const gpointer *sps_ptr = mpp_packet_get_pos (self->sps_packet);
-      gsize sps_len = mpp_packet_get_length (self->sps_packet);
-
-      gst_buffer_fill (new_buffer, 0, sps_ptr, sps_len);
-
-      gst_buffer_fill (new_buffer, sps_len, ptr, len);
-    } else {
-      gst_buffer_fill (new_buffer, 0, ptr, len);
-    }
-
+    gst_buffer_fill (new_buffer, 0, ptr, len);
     mpp_packet_deinit (&packet);
   }
 
