@@ -335,20 +335,21 @@ IM_API const char* querystring(int name) {
     char version_value[PROPERTY_VALUE_MAX];
 #endif
     int rgafd, rga_version = 0;
+    long usage = 0;
     const char *temp;
     const char *output_vendor = "Rockchip Electronics Co.,Ltd.";
     const char *output_name[] = {
-        "RGA vendor : ",
-        "RGA version: ",
-        "Max input  : ",
-        "Max output : ",
-        "Scale limit: ",
-        "Input support format : ",
-        "output support format: "
+        "RGA vendor            : ",
+        "RGA version           : ",
+        "Max input             : ",
+        "Max output            : ",
+        "Scale limit           : ",
+        "Input support format  : ",
+        "output support format : "
     };
     const char *version_name[] = {
-        "librga version   : ",
-        "rga_im2d version : "
+        "librga version        : ",
+        "rga_im2d version      : "
     };
     const char *output_version[] = {
         "unknown",
@@ -386,38 +387,35 @@ IM_API const char* querystring(int name) {
     property_set("vendor.rga_im2d.version", RGA_IM2D_VERSION);
 #endif
 
-    /*open /dev/rga node in order to get rga vesion*/
-    rgafd = open("/dev/rga", O_RDWR, 0);
-    if (rgafd < 0) {
-        ALOGE("rga_im2d: failed to open /dev/rga: %s.",strerror(errno));
-        return "err";
+    usage = rga_get_info();
+    if (IM_STATUS_FAILED == usage) {
+        ALOGE("rga im2d: rga2 get info failed!\n");
+        return "get info failed";
     }
-    if (ioctl(rgafd, RGA_GET_VERSION, buf)) {
-        ALOGE("rga_im2d: rga get version fail: %s",strerror(errno));
-        return "err";
-    }
-    if (strncmp(buf,"1.3",3) == 0)
-        rga_version = RGA_1;
-    else if (strncmp(buf,"1.6",3) == 0)
-        rga_version = RGA_1_PLUS;
-    /*3288 vesion is 2.00*/
-    else if (strncmp(buf,"2.00",4) == 0)
-        rga_version = RGA_2;
-    /*3288w version is 3.00*/
-    else if (strncmp(buf,"3.00",4) == 0)
-        rga_version = RGA_2;
-    else if (strncmp(buf,"3.02",4) == 0)
-        rga_version = RGA_2_ENHANCE;
-    else if (strncmp(buf,"4.00",4) == 0)
-        rga_version = RGA_2_LITE0;
-    /*The version number of lite1 cannot be obtained temporarily.*/
-    else if (strncmp(buf,"4.00",4) == 0)
-        rga_version = RGA_2_LITE1;
-    else
-        rga_version = RGA_V_ERR;
 
-    close(rgafd);
-    rgafd = -1;
+    switch(usage & IM_RGA_INFO_VERSION_MASK) {
+        case IM_RGA_INFO_VERSION_RGA_1 :
+            rga_version = RGA_1;
+            break;
+        case IM_RGA_INFO_VERSION_RGA_1_PLUS :
+            rga_version = RGA_1_PLUS;
+            break;
+        case IM_RGA_INFO_VERSION_RGA_2 :
+            rga_version = RGA_2;
+            break;
+        case IM_RGA_INFO_VERSION_RGA_2_LITE0 :
+            rga_version = RGA_2_LITE0;
+            break;
+        case IM_RGA_INFO_VERSION_RGA_2_LITE1 :
+            rga_version = RGA_2_LITE1;
+            break;
+        case IM_RGA_INFO_VERSION_RGA_2_ENHANCE :
+            rga_version = RGA_2_ENHANCE;
+            break;
+        default :
+            rga_version = RGA_V_ERR;
+            break;
+    }
 
     do {
         switch(name) {
@@ -426,144 +424,99 @@ IM_API const char* querystring(int name) {
                 break;
 
             case RGA_VERSION :
-                switch(rga_version) {
-                    case RGA_1 :
-                        out << output_name[name] << output_version[RGA_1] << endl;
-                        break;
-                    case RGA_1_PLUS :
-                        out << output_name[name] << output_version[RGA_1_PLUS] << endl;
-                        break;
-                    case RGA_2 :
-                        out << output_name[name] << output_version[RGA_2] << endl;
-                        break;
-                    case RGA_2_LITE0 :
-                        out << output_name[name] << output_version[RGA_2_LITE0] << endl;
-                        break;
-                    case RGA_2_LITE1 :
-                        out << output_name[name] << output_version[RGA_2_LITE1] << endl;
-                        break;
-                    case RGA_2_ENHANCE :
-                        out << output_name[name] << output_version[RGA_2_ENHANCE] << endl;
-                        break;
-                    case RGA_V_ERR :
-                        out << output_name[name] << output_version[RGA_V_ERR] << endl;
-                        break;
-                    default:
-                        return "err";
-                }
-
+                out << output_name[name] << output_version[rga_version] << endl;
 #ifdef ANDROID
                 property_get("vendor.rga.version", version_value, "0");
-                out << version_name[LIBRGA] << version_value << endl;
+                out << version_name[LIBRGA] << "v" << version_value << endl;
                 property_get("vendor.rga_im2d.version", version_value, "0");
-                out << version_name[RGA_IM2D] << version_value << endl;
+                out << version_name[RGA_IM2D] << "v" << version_value << endl;
 #endif
                 break;
 
             case RGA_MAX_INPUT :
-                switch(rga_version) {
-                    case RGA_1 :
-                    case RGA_1_PLUS :
-                    case RGA_2 :
-                    case RGA_2_LITE0 :
-                    case RGA_2_LITE1 :
-                    case RGA_2_ENHANCE :
+                switch(usage & IM_RGA_INFO_RESOLUTION_INPUT_MASK) {
+                    case IM_RGA_INFO_RESOLUTION_INPUT_2048 :
+                        out << output_name[name] << output_resolution[1] << endl;
+                        break;
+                    case IM_RGA_INFO_RESOLUTION_INPUT_4096 :
+                        out << output_name[name] << output_resolution[2] << endl;
+                        break;
+                    case IM_RGA_INFO_RESOLUTION_INPUT_8192 :
                         out << output_name[name] << output_resolution[3] << endl;
                         break;
-                    case RGA_V_ERR :
-                        out << output_name[name] << output_resolution[0] << endl;
+                    default :
+                        out << output_name[name] << output_resolution[RGA_V_ERR] << endl;
                         break;
-                    default:
-                        return "err";
                 }
                 break;
 
             case RGA_MAX_OUTPUT :
-                switch(rga_version) {
-                    case RGA_1 :
-                    case RGA_1_PLUS :
+                switch(usage & IM_RGA_INFO_RESOLUTION_OUTPUT_MASK) {
+                    case IM_RGA_INFO_RESOLUTION_OUTPUT_2048 :
                         out << output_name[name] << output_resolution[1] << endl;
                         break;
-                    case RGA_2 :
-                    case RGA_2_LITE0 :
-                    case RGA_2_LITE1 :
-                    case RGA_2_ENHANCE :
+                    case IM_RGA_INFO_RESOLUTION_OUTPUT_4096 :
                         out << output_name[name] << output_resolution[2] << endl;
                         break;
-                    case RGA_V_ERR :
-                        out << output_name[name] << output_resolution[0] << endl;
+                    case IM_RGA_INFO_RESOLUTION_OUTPUT_8192 :
+                        out << output_name[name] << output_resolution[3] << endl;
                         break;
-                    default:
-                        return "err";
+                    default :
+                        out << output_name[name] << output_resolution[RGA_V_ERR] << endl;
+                        break;
                 }
                 break;
 
             case RGA_SCALE_LIMIT :
-                switch(rga_version) {
-                    case RGA_1 :
-                    case RGA_1_PLUS :
-                    case RGA_2_LITE0 :
-                    case RGA_2_LITE1 :
+                switch(usage & IM_RGA_INFO_SCALE_LIMIT_MASK) {
+                    case IM_RGA_INFO_SCALE_LIMIT_8 :
                         out << output_name[name] << output_scale_limit[1] << endl;
-                    case RGA_2 :
-                    case RGA_2_ENHANCE :
+                        break;
+                    case IM_RGA_INFO_SCALE_LIMIT_16 :
                         out << output_name[name] << output_scale_limit[2] << endl;
                         break;
-                    case RGA_V_ERR :
-                        out << output_name[name] << output_resolution[0] << endl;
+                    default :
+                        out << output_name[name] << output_scale_limit[RGA_V_ERR] << endl;
                         break;
-                    default:
-                        return "err";
                 }
                 break;
 
             case RGA_INPUT_FORMAT :
-                switch(rga_version) {
-                    case RGA_1 :
-                    case RGA_1_PLUS :
-                        out << output_name[name] << output_format[1] << output_format[2] << output_format[3] << endl;
-                    case RGA_2 :
-                    case RGA_2_LITE0 :
-                        out << output_name[name] << output_format[1] << output_format[3] << endl;
-                        break;
-                    case RGA_2_LITE1 :
-                    case RGA_2_ENHANCE :
-                        out << output_name[name] << output_format[1] << output_format[3] << output_format[4] << endl;
-                        break;
-                    case RGA_V_ERR :
-                        out << output_name[name] << output_format[0] << endl;
-                        break;
-                    default:
-                        return "err";
-                }
+                out << output_name[name];
+                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_RGB)
+                    out << output_format[1];
+                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_BP)
+                    out << output_format[2];
+                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_8)
+                    out << output_format[3];
+                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_10)
+                    out << output_format[4];
+                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUYV)
+                    out << output_format[5];
+                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV400)
+                    out << output_format[6];
+                if(!(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_MASK))
+                    out << output_format[RGA_V_ERR];
+                out << endl;
                 break;
 
             case RGA_OUTPUT_FORMAT :
-                switch(rga_version) {
-                    case RGA_1 :
-                        out << output_name[name] << output_format[1] << output_format[3] << endl;
-                        break;
-                    case RGA_1_PLUS :
-                        out << output_name[name] << output_format[1] << output_format[3] << endl;
-                        break;
-                    case RGA_2 :
-                        out << output_name[name] << output_format[1] << output_format[3] << endl;
-                        break;
-                    case RGA_2_LITE0 :
-                        out << output_name[name] << output_format[1] << output_format[3] << endl;
-                        break;
-                    case RGA_2_LITE1 :
-                        out << output_name[name] << output_format[1] << output_format[3] << output_format[4] << endl;
-                        break;
-                    case RGA_2_ENHANCE :
-                        out << output_name[name] << output_format[1] << output_format[3] << output_format[4] << output_format[5] << endl;
-                        break;
-                    case RGA_V_ERR :
-                        out << output_name[name] << output_format[0] << endl;
-                        break;
-                    default:
-                        return "err";
-                }
+                out << output_name[name];
+                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_RGB)
+                    out << output_format[1];
+                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_BP)
+                    out << output_format[2];
+                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_8)
+                    out << output_format[3];
+                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_10)
+                    out << output_format[4];
+                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUYV)
+                    out << output_format[5];
+                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV400)
+                    out << output_format[6];
+                if(!(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_MASK))
+                    out << output_format[RGA_V_ERR];
+                out << endl;
                 break;
 
             case RGA_ALL :
