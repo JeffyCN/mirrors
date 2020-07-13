@@ -16,8 +16,8 @@
 *.pyc
 linux/Linux_Pack_Firmware/rockdev/mkupdate.sh
 linux/Linux_Pack_Firmware/rockdev/package-file
-windows/AndroidTool/AndroidTool_Release/config.cfg
-windows/AndroidTool/rockdev/mkupdate.bat
-windows/AndroidTool/rockdev/package-file
+windows/RKDevTool/RKDevTool_Release/config.cfg
+windows/RKDevTool/rockdev/mkupdate.bat
+windows/RKDevTool/rockdev/package-file
 linux/Linux_Pack_Firmware/rockdev/update.img
 linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool/log
