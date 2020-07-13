@@ -57,6 +57,45 @@ typedef enum {
     IM_NN_QUANTIZE              = 1 << 18,
 } IM_USAGE;
 
+typedef enum {
+    /*RGA version*/
+    IM_RGA_INFO_VERSION_RGA_1           = 1<< 0,
+    IM_RGA_INFO_VERSION_RGA_1_PLUS      = 1<< 1,
+    IM_RGA_INFO_VERSION_RGA_2           = 1<< 2,
+    IM_RGA_INFO_VERSION_RGA_2_LITE0     = 1<< 3,
+    IM_RGA_INFO_VERSION_RGA_2_LITE1     = 1<< 4,
+    IM_RGA_INFO_VERSION_RGA_2_ENHANCE   = 1<< 5,
+    IM_RGA_INFO_VERSION_MASK            = 0x3f,
+    /*RGA resolution*/
+    IM_RGA_INFO_RESOLUTION_INPUT_2048   = 1 << 6,
+    IM_RGA_INFO_RESOLUTION_INPUT_4096   = 1 << 7,
+    IM_RGA_INFO_RESOLUTION_INPUT_8192   = 1 << 8,
+    IM_RGA_INFO_RESOLUTION_INPUT_MASK   = 0x1c0,
+    IM_RGA_INFO_RESOLUTION_OUTPUT_2048  = 1 << 9,
+    IM_RGA_INFO_RESOLUTION_OUTPUT_4096  = 1 << 10,
+    IM_RGA_INFO_RESOLUTION_OUTPUT_8192  = 1 << 11,
+    IM_RGA_INFO_RESOLUTION_OUTPUT_MASK  = 0xe00,
+    /*RGA scale limit*/
+    IM_RGA_INFO_SCALE_LIMIT_8           = 1 << 12,
+    IM_RGA_INFO_SCALE_LIMIT_16          = 1 << 13,
+    IM_RGA_INFO_SCALE_LIMIT_MASK        = 0x3000,
+    /*RGA suport format*/
+    IM_RGA_INFO_INPUT_SUPORT_FORMAT_RGB       = 1 << 14,
+    IM_RGA_INFO_INPUT_SUPORT_FORMAT_BP        = 1 << 15,
+    IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_8     = 1 << 16,
+    IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_10    = 1 << 17,
+    IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUYV      = 1 << 18,
+    IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV400    = 1 << 19,
+    IM_RGA_INFO_INPUT_SUPORT_FORMAT_MASK      = 0xfc000,
+    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_RGB      = 1 << 20,
+    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_BP       = 1 << 21,
+    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_8    = 1 << 22,
+    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_10   = 1 << 23,
+    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUYV     = 1 << 24,
+    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV400   = 1 << 25,
+    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_MASK     = 0x3f00000
+} IM_RGA_INFO_USAGE;
+
 /* Status codes, returned by any blit function */
 typedef enum {
     IM_STATUS_NOERROR         =  2,
@@ -216,6 +255,34 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
  * @returns a string describing properties of RGA.
  */
 IM_API const char* querystring(int name);
+
+/*
+ * check RGA basic information, supported resolution, supported format, etc.
+ *
+ * @param src
+ * @param dst
+ * @param src_rect
+ * @param dst_rect
+ * @param mode_usage
+ *
+ * @returns no error or else negative error code.
+ */
+ #define imcheck(src, dst, src_rect, dst_rect, ...) \
+    ({ \
+        IM_STATUS ret = IM_STATUS_NOERROR; \
+        int args[] = {__VA_ARGS__}; \
+        int argc = sizeof(args)/sizeof(int); \
+        if (argc == 0) { \
+            ret = imcheck_t(src, dst, src_rect, dst_rect, 0); \
+        } else if (argc == 1){ \
+            ret = imcheck_t(src, dst, src_rect, dst_rect, args[0]); \
+        } else { \
+            ret = IM_STATUS_FAILED; \
+            printf("check failed\n"); \
+        } \
+        ret; \
+    })
+IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const im_rect src_rect, const im_rect dst_rect, const int mdoe_usage);
 
 /*
  * Resize
