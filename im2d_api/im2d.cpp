@@ -166,8 +166,16 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
 
     if (buffer.fd <= 0) {
         ret = RkRgaGetHandleMapAddress(buf->handle, &buffer.vir_addr);
-        if(!buffer.vir_addr)
-            ALOGE("rga_im2d: invaild GraphicBuffer");
+        if(!buffer.vir_addr) {
+            ALOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
+            imErrorMsg("invaild GraphicBuffer, can not get fd and virtual address.");
+            goto INVAILD;
+        }
+    }
+    if (buf->getWidth() % 16) {
+        ALOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+        imErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+        goto INVAILD;
     }
 
     buffer.width   = buf->getWidth();
@@ -176,6 +184,7 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
     buffer.hstride = buf->getHeight();
     buffer.format  = buf->getPixelFormat();
 
+INVAILD:
     return buffer;
 }
 
@@ -193,8 +202,17 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
 
     if (buffer.fd <= 0) {
         ret = RkRgaGetHandleMapAddress(gbuffer->handle, &buffer.vir_addr);
-        if(!buffer.vir_addr)
-            ALOGE("rga_im2d: invaild GraphicBuffer");
+        if(!buffer.vir_addr) {
+            ALOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
+            imErrorMsg("invaild GraphicBuffer, can not get fd and virtual address.");
+            goto INVAILD;
+        }
+    }
+
+    if (gbuffer->getWidth() % 16) {
+        ALOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16or use other buffer types");
+        imErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+        goto INVAILD;
     }
 
     buffer.width   = gbuffer->getWidth();
@@ -203,6 +221,7 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
     buffer.hstride = gbuffer->getHeight();
     buffer.format  = gbuffer->getPixelFormat();
 
+INVAILD:
     return buffer;
 }
 #endif
@@ -614,7 +633,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
 
     /**************** src/dst judgment ****************/
     if (src.width <= 0 || src.height <= 0 || src.format < 0) {
-        imErrorMsg("Illegal src, the parameter cannot be negative.");
+        imErrorMsg("Illegal src, the parameter cannot be negative or 0.");
         return IM_STATUS_ILLEGAL_PARAM;
     }
 
@@ -624,7 +643,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     }
 
     if (dst.width <= 0 || dst.height <= 0 || dst.format < 0) {
-        imErrorMsg("Illegal dst, the parameter cannot be negative.");
+        imErrorMsg("Illegal dst, the parameter cannot be negative or 0.");
         return IM_STATUS_ILLEGAL_PARAM;
     }
 
