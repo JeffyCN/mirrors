@@ -58,17 +58,17 @@ IM_API void imErrorMsg(const char* msg) {
     err_msg << msg << endl;
 }
 
-IM_API const char* imStrError(IM_STATUS status) {
+IM_API const char* imStrError_t(IM_STATUS status) {
     ostringstream error;
     string msg;
 
     const char *error_type[] = {
           "No errors during operation: ",
-          "Run successfully: ",
+          "Run successfully! ",
           "Unsupported function: ",
           "Memory overflow: ",
-          "There are invalid parameters: ",
-          "There are illegal parameters: ",
+          "Invalid parameters: ",
+          "Illegal parameters: ",
           "Fatal error: ",
     };
     msg = err_msg.str();
@@ -78,7 +78,7 @@ IM_API const char* imStrError(IM_STATUS status) {
             error << error_type[0] << msg.c_str() << endl;
             break;
         case IM_STATUS_SUCCESS :
-            error << error_type[1] << msg.c_str() << endl;
+            error << error_type[1] << endl;
             break;
 
         case IM_STATUS_NOT_SUPPORTED :
@@ -103,6 +103,7 @@ IM_API const char* imStrError(IM_STATUS status) {
     }
 
     msg = error.str();
+    imErrorMsg("No error message, it has been cleared.");
     return msg.c_str();
 }
 
@@ -331,65 +332,65 @@ IM_API long rga_get_info() {
             usage |= IM_RGA_INFO_RESOLUTION_INPUT_8192;
             usage |= IM_RGA_INFO_RESOLUTION_OUTPUT_2048;
             usage |= IM_RGA_INFO_SCALE_LIMIT_8;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_BP;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_8;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_BP;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
             break;
         case RGA_1_PLUS :
             usage |= IM_RGA_INFO_VERSION_RGA_1_PLUS;
             usage |= IM_RGA_INFO_RESOLUTION_INPUT_8192;
             usage |= IM_RGA_INFO_RESOLUTION_OUTPUT_2048;
             usage |= IM_RGA_INFO_SCALE_LIMIT_8;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_BP;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_8;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_BP;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
             break;
         case RGA_2 :
             usage |= IM_RGA_INFO_VERSION_RGA_2;
             usage |= IM_RGA_INFO_RESOLUTION_INPUT_8192;
             usage |= IM_RGA_INFO_RESOLUTION_OUTPUT_4096;
             usage |= IM_RGA_INFO_SCALE_LIMIT_16;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_8;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
             break;
         case RGA_2_LITE0 :
             usage |= IM_RGA_INFO_VERSION_RGA_2_LITE0;
             usage |= IM_RGA_INFO_RESOLUTION_INPUT_8192;
             usage |= IM_RGA_INFO_RESOLUTION_OUTPUT_4096;
             usage |= IM_RGA_INFO_SCALE_LIMIT_8;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_8;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
             break;
         case RGA_2_LITE1 :
             usage |= IM_RGA_INFO_VERSION_RGA_2_LITE1;
             usage |= IM_RGA_INFO_RESOLUTION_INPUT_8192;
             usage |= IM_RGA_INFO_RESOLUTION_OUTPUT_4096;
             usage |= IM_RGA_INFO_SCALE_LIMIT_8;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_8;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_10;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_10;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
             break;
         case RGA_2_ENHANCE :
             usage |= IM_RGA_INFO_VERSION_RGA_2_ENHANCE;
             usage |= IM_RGA_INFO_RESOLUTION_INPUT_8192;
             usage |= IM_RGA_INFO_RESOLUTION_OUTPUT_4096;
             usage |= IM_RGA_INFO_SCALE_LIMIT_16;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_8;
-            usage |= IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_10;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_RGB;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_8;
-            usage |= IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUYV;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_10;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUYV;
             break;
         case RGA_V_ERR :
             usage = IM_STATUS_FAILED;
@@ -556,38 +557,38 @@ IM_API const char* querystring(int name) {
 
             case RGA_INPUT_FORMAT :
                 out << output_name[name];
-                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_RGB)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_RGB)
                     out << output_format[1];
-                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_BP)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_BP)
                     out << output_format[2];
-                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_8)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8)
                     out << output_format[3];
-                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_10)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_10)
                     out << output_format[4];
-                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUYV)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUYV)
                     out << output_format[5];
-                if(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV400)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV400)
                     out << output_format[6];
-                if(!(usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_MASK))
+                if(!(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_MASK))
                     out << output_format[RGA_V_ERR];
                 out << endl;
                 break;
 
             case RGA_OUTPUT_FORMAT :
                 out << output_name[name];
-                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_RGB)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB)
                     out << output_format[1];
-                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_BP)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_BP)
                     out << output_format[2];
-                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_8)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8)
                     out << output_format[3];
-                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_10)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_10)
                     out << output_format[4];
-                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUYV)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUYV)
                     out << output_format[5];
-                if(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV400)
+                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV400)
                     out << output_format[6];
-                if(!(usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_MASK))
+                if(!(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_MASK))
                     out << output_format[RGA_V_ERR];
                 out << endl;
                 break;
@@ -765,7 +766,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         src_fmt == RK_FORMAT_BGR_888   || src_fmt == RK_FORMAT_RGBX_8888 ||
         src_fmt == RK_FORMAT_BGRA_8888 || src_fmt == RK_FORMAT_RGBA_8888 ||
         src_fmt == RK_FORMAT_RGBA_4444 || src_fmt == RK_FORMAT_RGBA_5551) {
-        if (~usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_RGB) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_RGB) {
             imErrorMsg("Src unsupported input RGB format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
@@ -773,7 +774,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     }
     else if (src_fmt == RK_FORMAT_BPP1 || src_fmt == RK_FORMAT_BPP2 ||
              src_fmt == RK_FORMAT_BPP4 || src_fmt == RK_FORMAT_BPP8) {
-        if (~usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_BP) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_BP) {
             imErrorMsg("Src unsupported input BP format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
@@ -783,7 +784,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
              src_fmt == RK_FORMAT_YCrCb_420_P  || src_fmt == RK_FORMAT_YCbCr_420_P  ||
              src_fmt == RK_FORMAT_YCrCb_422_SP || src_fmt == RK_FORMAT_YCbCr_422_SP ||
              src_fmt == RK_FORMAT_YCrCb_422_P  || src_fmt == RK_FORMAT_YCbCr_422_P) {
-        if (~usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_8) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8) {
             imErrorMsg("Src unsupported input YUV 8bit format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
@@ -798,7 +799,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     		src_isYUV_8 = 1;
     }
     else if (src_fmt == RK_FORMAT_YCbCr_420_SP_10B || src_fmt == RK_FORMAT_YCrCb_420_SP_10B) {
-        if (~usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_10) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_10) {
             imErrorMsg("Src unsupported input YUV 10bit format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
@@ -813,14 +814,14 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         src_isYUV_10 = 1;
     }
     else if (src_fmt == -1) {
-        if (~usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUYV) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUYV) {
             imErrorMsg("Src unsupported input YUYV format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
         src_isYUYV = 1;
     }
     else if (src_fmt == -1) {
-        if (~usage & IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV400) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV400) {
             imErrorMsg("Src unsupported input YUV400 format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
@@ -841,7 +842,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         dst_fmt == RK_FORMAT_BGR_888   || dst_fmt == RK_FORMAT_RGBX_8888 ||
         dst_fmt == RK_FORMAT_BGRA_8888 || dst_fmt == RK_FORMAT_RGBA_8888 ||
         dst_fmt == RK_FORMAT_RGBA_4444 || dst_fmt == RK_FORMAT_RGBA_5551) {
-        if (~usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_RGB) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB) {
             imErrorMsg("Dst unsupported output RGB format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
@@ -849,7 +850,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     }
     else if (dst_fmt == RK_FORMAT_BPP1 || dst_fmt == RK_FORMAT_BPP2 ||
              dst_fmt == RK_FORMAT_BPP4 || dst_fmt == RK_FORMAT_BPP8) {
-        if (~usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_BP) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_BP) {
             imErrorMsg("Dst unsupported output BP format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
@@ -859,7 +860,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
              dst_fmt == RK_FORMAT_YCrCb_420_P  || dst_fmt == RK_FORMAT_YCbCr_420_P  ||
              dst_fmt == RK_FORMAT_YCrCb_422_SP || dst_fmt == RK_FORMAT_YCbCr_422_SP ||
              dst_fmt == RK_FORMAT_YCrCb_422_P  || dst_fmt == RK_FORMAT_YCbCr_422_P) {
-        if (~usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_8) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8) {
             imErrorMsg("Dst unsupported output YUV 8bit format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
@@ -874,7 +875,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     		dst_isYUV_8 = 1;
     }
     else if (dst_fmt == RK_FORMAT_YCrCb_420_SP_10B || dst_fmt == RK_FORMAT_YCbCr_420_SP_10B) {
-        if (~usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_10) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_10) {
             imErrorMsg("Dst unsupported output YUV 10bit format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
@@ -889,14 +890,14 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         dst_isYUV_10 = 1;
     }
     else if (dst_fmt == -1) {
-        if (~usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUYV) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUYV) {
             imErrorMsg("Dst unsupported output YUYV format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
         dst_isYUYV = 1;
     }
     else if (dst_fmt == -1) {
-        if (~usage & IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV400) {
+        if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV400) {
             imErrorMsg("Dst unsupported output YUV400 format.");
             return IM_STATUS_NOT_SUPPORTED;
         }

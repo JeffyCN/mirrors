@@ -80,20 +80,20 @@ typedef enum {
     IM_RGA_INFO_SCALE_LIMIT_16          = 1 << 13,
     IM_RGA_INFO_SCALE_LIMIT_MASK        = 0x3000,
     /*RGA suport format*/
-    IM_RGA_INFO_INPUT_SUPORT_FORMAT_RGB       = 1 << 14,
-    IM_RGA_INFO_INPUT_SUPORT_FORMAT_BP        = 1 << 15,
-    IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_8     = 1 << 16,
-    IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV_10    = 1 << 17,
-    IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUYV      = 1 << 18,
-    IM_RGA_INFO_INPUT_SUPORT_FORMAT_YUV400    = 1 << 19,
-    IM_RGA_INFO_INPUT_SUPORT_FORMAT_MASK      = 0xfc000,
-    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_RGB      = 1 << 20,
-    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_BP       = 1 << 21,
-    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_8    = 1 << 22,
-    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV_10   = 1 << 23,
-    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUYV     = 1 << 24,
-    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_YUV400   = 1 << 25,
-    IM_RGA_INFO_OUTPUT_SUPORT_FORMAT_MASK     = 0x3f00000
+    IM_RGA_INFO_SUPPORT_FORMAT_INPUT_RGB       = 1 << 14,
+    IM_RGA_INFO_SUPPORT_FORMAT_INPUT_BP        = 1 << 15,
+    IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8     = 1 << 16,
+    IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_10    = 1 << 17,
+    IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUYV      = 1 << 18,
+    IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV400    = 1 << 19,
+    IM_RGA_INFO_SUPPORT_FORMAT_INPUT_MASK      = 0xfc000,
+    IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB      = 1 << 20,
+    IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_BP       = 1 << 21,
+    IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8    = 1 << 22,
+    IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_10   = 1 << 23,
+    IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUYV     = 1 << 24,
+    IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV400   = 1 << 25,
+    IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_MASK     = 0x3f00000
 } IM_RGA_INFO_USAGE;
 
 /* Status codes, returned by any blit function */
@@ -188,6 +188,26 @@ typedef struct {
     int global_alpha;                   /* global_alpha */
     im_nn_t nn;
 } rga_buffer_t;
+
+/*
+ * @return error message string
+ */
+#define imStrError(...) \
+    ({ \
+        const char* err; \
+        int args[] = {__VA_ARGS__}; \
+        int argc = sizeof(args)/sizeof(int); \
+        if (argc == 0) { \
+            err = imStrError_t(IM_STATUS_INVALID_PARAM); \
+        } else if (argc == 1){ \
+            err = imStrError_t((IM_STATUS)args[0]); \
+        } else { \
+            err = ("Fatal error, imStrError() too many parameters\n"); \
+            printf("Fatal error, imStrError() too many parameters\n"); \
+        } \
+        err; \
+    })
+IM_API const char* imStrError_t(IM_STATUS status);
 
 /*
  * @return rga_buffer_t
@@ -652,8 +672,6 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
  * @returns success or else negative error code.
  */
 IM_API IM_STATUS imsync(void);
-
-IM_API const char* imStrError(IM_STATUS status);
 
 #ifdef __cplusplus
 }
