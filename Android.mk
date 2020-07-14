@@ -27,7 +27,7 @@
 #
 
 LOCAL_PATH:= $(call my-dir)
-ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 8.0)))
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \< 28)))
 #================================================================
 ifneq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)

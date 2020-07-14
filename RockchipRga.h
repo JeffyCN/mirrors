@@ -41,6 +41,7 @@
 #endif
 
 #ifdef ANDROID
+#include <utils/Singleton.h>
 #include <utils/Thread.h>
 #include <hardware/hardware.h>
 #include <hardware/rga.h>
