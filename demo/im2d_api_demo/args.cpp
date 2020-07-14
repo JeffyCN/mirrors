@@ -202,7 +202,7 @@ int readParm(char* targ) {
     } else if (strcmp(targ,"180") == 0) {
         printf("nrotation 180 ...\n");
         return IM_HAL_TRANSFORM_ROT_180;
-    } else if (strcmp(targ,"-270") == 0) {
+    } else if (strcmp(targ,"270") == 0) {
         printf("rotation 270 ...\n");
         return IM_HAL_TRANSFORM_ROT_270;
     } else if (strcmp(targ,"H") == 0) {

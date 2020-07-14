@@ -336,7 +336,7 @@ int main(int argc, char*  argv[]) {
             src_rect.width  = 300;
             src_rect.height = 300;
 
-            ret = imcheck(src, dst, src_rect, dst_rect);
+            ret = imcheck(src, dst, src_rect, dst_rect, IM_CROP);
             if (IM_STATUS_NOERROR != ret) {
                 printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
                 return -1;
@@ -431,7 +431,7 @@ int main(int argc, char*  argv[]) {
             dst_rect.width  = 300;
             dst_rect.height = 300;
 
-            ret = imcheck(src, dst, src_rect, dst_rect);
+            ret = imcheck(src, dst, src_rect, dst_rect, IM_COLOR_FILL);
             if (IM_STATUS_NOERROR != ret) {
                 printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
                 return -1;
