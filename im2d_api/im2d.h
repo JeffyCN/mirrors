@@ -103,6 +103,7 @@ typedef enum {
     IM_STATUS_NOT_SUPPORTED   = -1,
     IM_STATUS_OUT_OF_MEMORY   = -2,
     IM_STATUS_INVALID_PARAM   = -3,
+    IM_STATUS_ILLEGAL_PARAM   = -4,
     IM_STATUS_FAILED          =  0,
 } IM_STATUS;
 
@@ -651,6 +652,8 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
  * @returns success or else negative error code.
  */
 IM_API IM_STATUS imsync(void);
+
+IM_API const char* imStrError(IM_STATUS status);
 
 #ifdef __cplusplus
 }
