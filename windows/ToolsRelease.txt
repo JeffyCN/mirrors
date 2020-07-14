@@ -10,4 +10,5 @@
 9、 RKImageMaker			打包工具
 10、SpeakerPCBATool			音箱PCBA测试工具
 11、Rockchip_Develop_Tool	Firmware.img打包格式固件烧录工具
+12、ParameterTool_v1.0.zip  分区表修改工具
 
