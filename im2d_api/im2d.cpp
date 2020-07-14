@@ -66,7 +66,8 @@ IM_API const char* imStrError_t(IM_STATUS status) {
         "Memory overflow: ",
         "Invalid parameters: ",
         "Illegal parameters: ",
-        "Fatal error: "
+        "Fatal error: ",
+        "unkown status"
     };
     ostringstream error;
     static string msg;
@@ -101,7 +102,7 @@ IM_API const char* imStrError_t(IM_STATUS status) {
             error << error_type[6] << msg.c_str() << endl;
             break;
         default :
-            error << "unkown status" << "!" << endl;
+            error << error_type[7] << endl;
     }
 
     msg = error.str();
@@ -232,6 +233,7 @@ INVAILD:
 IM_API IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo) {
     if(NULL == dstinfo) {
         ALOGE("rga_im2d: invaild dstinfo");
+        imErrorMsg("Dst structure address is NULL.");
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -245,6 +247,7 @@ IM_API IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo) {
         dstinfo->mmuFlag = 1;
     } else {
         ALOGE("rga_im2d: invaild dst buffer");
+        imErrorMsg("No address available in dst buffer.");
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -254,10 +257,12 @@ IM_API IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo) {
 IM_API IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, rga_info_t* srcinfo, rga_info_t* dstinfo) {
     if(NULL == srcinfo) {
         ALOGE("rga_im2d: invaild srcinfo");
+        imErrorMsg("Src structure address is NULL.");
         return IM_STATUS_INVALID_PARAM;
     }
     if(NULL == dstinfo) {
         ALOGE("rga_im2d: invaild dstinfo");
+        imErrorMsg("Dst structure address is NULL.");
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -271,6 +276,7 @@ IM_API IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, r
         srcinfo->mmuFlag = 1;
     } else {
         ALOGE("rga_im2d: invaild src buffer");
+        imErrorMsg("No address available in src buffer.");
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -284,6 +290,7 @@ IM_API IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, r
         dstinfo->mmuFlag = 1;
     } else {
         ALOGE("rga_im2d: invaild dst buffer");
+        imErrorMsg("No address available in dst buffer.");
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -738,7 +745,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     }
 
     /**************** scale check ****************/
-    if ((~mode_usage & IM_COLOR_FILL) || (~mode_usage & IM_CROP)) {
+    if ((~mode_usage & IM_COLOR_FILL) && (~mode_usage & IM_CROP)) {
         switch (usage & IM_RGA_INFO_SCALE_LIMIT_MASK)
         {
             case IM_RGA_INFO_SCALE_LIMIT_8 :
@@ -942,7 +949,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
 
 IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync) {
     int usage = 0;
-    int ret = IM_STATUS_NOERROR;
+    IM_STATUS ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -961,15 +968,13 @@ IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx,
         usage |= IM_SYNC;
 
     ret = improcess(src, dst, srect, drect, usage);
-    if (!ret)
-        return IM_STATUS_FAILED;
 
-    return IM_STATUS_SUCCESS;
+    return ret;
 }
 
 IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, int sync) {
     int usage = 0;
-    int ret = IM_STATUS_NOERROR;
+    IM_STATUS ret = IM_STATUS_NOERROR;
 
     im_rect drect;
 
@@ -979,15 +984,13 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
         usage |= IM_SYNC;
 
     ret = improcess(src, dst, rect, drect, usage);
-    if (!ret)
-        return IM_STATUS_FAILED;
 
-    return IM_STATUS_SUCCESS;
+    return ret;
 }
 
 IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotation, int sync) {
     int usage = 0;
-    int ret = IM_STATUS_NOERROR;
+    IM_STATUS ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -997,15 +1000,13 @@ IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotati
         usage |= IM_SYNC;
 
     ret = improcess(src, dst, srect, drect, usage);
-    if (!ret)
-        return IM_STATUS_FAILED;
 
-    return IM_STATUS_SUCCESS;
+    return ret;
 }
 
 IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, int sync) {
     int usage = 0;
-    int ret = IM_STATUS_NOERROR;
+    IM_STATUS ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -1015,15 +1016,13 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
         usage |= IM_SYNC;
 
     ret = improcess(src, dst, srect, drect, usage);
-    if (!ret)
-        return IM_STATUS_FAILED;
 
-    return IM_STATUS_SUCCESS;
+    return ret;
 }
 
 IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync) {
     int usage = 0;
-    int ret = IM_STATUS_NOERROR;
+    IM_STATUS ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -1039,15 +1038,13 @@ IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync) {
         usage |= IM_SYNC;
 
     ret = improcess(src, dst, srect, rect, usage);
-    if (!ret)
-        return IM_STATUS_FAILED;
 
-    return IM_STATUS_SUCCESS;
+    return ret;
 }
 
 IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync) {
     int usage = 0;
-    int ret = IM_STATUS_NOERROR;
+    IM_STATUS ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -1065,15 +1062,13 @@ IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, 
     drect.height = src.height - y;
 
     ret = improcess(src, dst, srect, drect, usage);
-    if (!ret)
-        return IM_STATUS_FAILED;
 
-    return IM_STATUS_SUCCESS;
+    return ret;
 }
 
 IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync) {
     int usage = 0;
-    int ret = IM_STATUS_NOERROR;
+    IM_STATUS ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -1084,15 +1079,13 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync) {
         usage |= IM_SYNC;
 
     ret = improcess(src, dst, srect, drect, usage);
-    if (!ret)
-        return IM_STATUS_FAILED;
 
-    return IM_STATUS_SUCCESS;
+    return ret;
 }
 
 IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode, int sync) {
     int usage = 0;
-    int ret = IM_STATUS_NOERROR;
+    IM_STATUS ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -1102,15 +1095,13 @@ IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga
         usage |= IM_SYNC;
 
     ret = improcess(srcA, dst, srect, drect, usage);
-    if (!ret)
-        return IM_STATUS_FAILED;
 
-    return IM_STATUS_SUCCESS;
+    return ret;
 }
 
 IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync) {
     int usage = 0;
-    int ret = IM_STATUS_NOERROR;
+    IM_STATUS ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -1123,15 +1114,13 @@ IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int 
         usage |= IM_SYNC;
 
     ret = improcess(src, dst, srect, drect, usage);
-    if (!ret)
-        return IM_STATUS_FAILED;
 
-    return IM_STATUS_SUCCESS;
+    return ret;
 }
 
 IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info, int sync) {
     int usage = 0;
-    int ret = IM_STATUS_NOERROR;
+    IM_STATUS ret = IM_STATUS_NOERROR;
     im_rect srect;
     im_rect drect;
 
@@ -1143,10 +1132,8 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
         usage |= IM_SYNC;
 
     ret = improcess(src, dst, srect, drect, usage);
-    if (!ret)
-        return IM_STATUS_FAILED;
 
-    return IM_STATUS_SUCCESS;
+    return ret;
 }
 
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im_rect drect, int usage) {
@@ -1161,12 +1148,11 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
         ret = rga_set_buffer_info(dst, &dstinfo);
     else
         ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
-
-    if (ret < 0)
-        return IM_STATUS_INVALID_PARAM;
+    if (ret <= 0)
+        return (IM_STATUS)ret;
 
     ret = imcheck(src, dst, srect, drect, usage);
-    if(IM_STATUS_NOERROR != ret)
+    if(ret <= 0)
         return (IM_STATUS)ret;
 
     if (srect.width > 0 && srect.height > 0) {
@@ -1255,8 +1241,11 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
         if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
             NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format)))
             dstinfo.color_space_mode = dst.color_space_mode;
-        else
-            return IM_STATUS_INVALID_PARAM;
+        else {
+            imErrorMsg("Not yuv to rgb does not need for color_sapce_mode, please fix.");
+            return IM_STATUS_ILLEGAL_PARAM;
+        }
+
     }
 
     /* special config for rgb to yuv */
@@ -1264,8 +1253,10 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
         if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format)) &&
             NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format)))
             dstinfo.color_space_mode = dst.color_space_mode;
-        else
-            return IM_STATUS_INVALID_PARAM;
+        else {
+            imErrorMsg("Not rgb to yuv does not need for color_sapce_mode, please fix.");
+            return IM_STATUS_ILLEGAL_PARAM;
+        }
     }
 
     if (usage & IM_SYNC)
@@ -1277,8 +1268,10 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im
     } else
         ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
 
-    if (ret)
+    if (ret) {
+        imErrorMsg("Failed to call Blit/ColorFill, query log to find the cause of failure.");
         return IM_STATUS_FAILED;
+    }
 
     return IM_STATUS_SUCCESS;
 }
