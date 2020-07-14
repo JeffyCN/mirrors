@@ -174,17 +174,17 @@ QUERYSTRING_INFO readInfo(char* targ) {
     } else if (strcmp(targ,"s") == 0 || strcmp(targ,"scalelimit") == 0 ) {
         printf("im2d querystring .. scale limit ...\n");
         return INFO_SCALE_LIMIT;
-    } else if (strcmp(targ,"f") == 0 || strcmp(targ,"inputformat") == 0 ) {
+    } else if (strcmp(targ,"n") == 0 || strcmp(targ,"inputformat") == 0 ) {
         printf("im2d querystring .. input format ...\n");
         return INFO_INPUT_FORMAT;
-    } else if (strcmp(targ,"f") == 0 || strcmp(targ,"outputformat") == 0 ) {
+    } else if (strcmp(targ,"u") == 0 || strcmp(targ,"outputformat") == 0 ) {
         printf("im2d querystring .. output format ...\n");
         return INFO_OUTPUT_FORMAT;
     } else if (strcmp(targ,"a") == 0 || strcmp(targ,"all") == 0 || strcmp(targ," ") == 0) {
         printf("im2d querystring .. all ...\n");
         return INFO_ALL;
     } else {
-        printf("%s, Invalid infomation, print all\n", __FUNCTION__);
+        printf("%s, Invalid instruction\n", __FUNCTION__);
         return INFO_ERR;
     }
 }

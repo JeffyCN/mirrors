@@ -124,28 +124,6 @@ int AHardwareBuffer_Fill(AHardwareBuffer** buffer, int flag, int index) {
 
 #endif
 
-const char * ImGetError(IM_STATUS status) {
-    switch(status) {
-        case IM_STATUS_NOERROR :
-            return "No error!";
-
-        case IM_STATUS_SUCCESS :
-            return "Succed!";
-
-        case IM_STATUS_NOT_SUPPORTED :
-            return "Not supported!";
-
-        case IM_STATUS_OUT_OF_MEMORY :
-            return "Out of memory!";
-
-        case IM_STATUS_INVALID_PARAM :
-            return "Invalid parameter!";
-
-        case IM_STATUS_FAILED :
-            return "Anther failed!";
-    }
-}
-
 int main(int argc, char*  argv[]) {
     int ret = 0;
     int parm_data[MODE_MAX] = {0};
@@ -192,7 +170,7 @@ int main(int argc, char*  argv[]) {
             printf("%s, write AHardwareBuffer error!\n", __FUNCTION__);
             return -1;
         }
-        if(MODE == MODE_BLEND) {
+        if(MODE == MODE_BLEND || MODE == MODE_FILL) {
             if(ERROR == AHardwareBuffer_Fill(&dst_buf, FILL_BUFF, 1)) {
                 printf("%s, write AHardwareBuffer error!\n", __FUNCTION__);
                 return ERROR;
@@ -206,9 +184,8 @@ int main(int argc, char*  argv[]) {
 
         src = wrapbuffer_AHardwareBuffer(src_buf);
         dst = wrapbuffer_AHardwareBuffer(dst_buf);
-
-        if((src.fd == 0 && src.vir_addr == 0) || (dst.fd == 0 && dst.vir_addr == 0)) {
-            printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
+        if(src.width == 0 || dst.width == 0) {
+            printf("%s, %s", __FUNCTION__, imStrError());
             return ERROR;
         }
 #else
@@ -223,7 +200,7 @@ int main(int argc, char*  argv[]) {
             printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
             return -1;
         }
-        if(MODE == MODE_BLEND) {
+        if(MODE == MODE_BLEND || MODE == MODE_FILL) {
             if(ERROR == GraphicBuffer_Fill(dst_buf, FILL_BUFF, 1)) {
                 printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
                 return ERROR;
@@ -237,8 +214,8 @@ int main(int argc, char*  argv[]) {
 
         src = wrapbuffer_GraphicBuffer(src_buf);
         dst = wrapbuffer_GraphicBuffer(dst_buf);
-        if((src.fd == 0 && src.vir_addr == 0) || (dst.fd == 0 && dst.vir_addr == 0)) {
-            printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
+        if(src.width == 0 || dst.width == 0) {
+            printf("%s, %s\n", __FUNCTION__, imStrError());
             return ERROR;
         }
 #endif
@@ -255,8 +232,14 @@ int main(int argc, char*  argv[]) {
 
         case MODE_COPY :      //rgaImDemo --copy
 
+            ret = imcheck(src, dst, src_rect, dst_rect);
+            if (IM_STATUS_NOERROR != ret) {
+                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+                return -1;
+            }
+
             STATUS = imcopy(src, dst);
-            printf("copying .... %s\n", ImGetError(STATUS));
+            printf("copying .... %s\n", imStrError(STATUS));
 
             break;
 
@@ -276,8 +259,8 @@ int main(int argc, char*  argv[]) {
                         return ERROR;
                     }
                     dst = wrapbuffer_AHardwareBuffer(dst_buf);
-                    if(dst.fd == 0 && dst.vir_addr == 0) {
-                        printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
+                    if(dst.width == 0) {
+                        printf("%s, dst: %s\n", __FUNCTION__, imStrError());
                         return ERROR;
                     }
 #else
@@ -291,8 +274,8 @@ int main(int argc, char*  argv[]) {
                         return ERROR;
                     }
                     dst = wrapbuffer_GraphicBuffer(dst_buf);
-                    if(dst.fd == 0 && dst.vir_addr == 0) {
-                        printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
+                    if(dst.width == 0) {
+                        printf("%s, dst: %s\n", __FUNCTION__, imStrError());
                         return ERROR;
                     }
 #endif
@@ -312,8 +295,8 @@ int main(int argc, char*  argv[]) {
                     }
 
                     dst = wrapbuffer_AHardwareBuffer(dst_buf);
-                    if(dst.fd == 0 && dst.vir_addr == 0) {
-                        printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
+                    if(dst.width == 0) {
+                        printf("%s, dst: %s\n", __FUNCTION__, imStrError());
                         return ERROR;
                     }
 #else
@@ -327,17 +310,22 @@ int main(int argc, char*  argv[]) {
                         return ERROR;
                     }
                     dst = wrapbuffer_GraphicBuffer(dst_buf);
-                    if(dst.fd == 0 && dst.vir_addr == 0) {
-                        printf("%s, Could not get buffer fd/vir_addr\n", __FUNCTION__);
+                    if(dst.width == 0) {
+                        printf("%s, dst: %s\n", __FUNCTION__, imStrError());
                         return ERROR;
                     }
 #endif
-
                     break;
             }
 
+            ret = imcheck(src, dst, src_rect, dst_rect);
+            if (IM_STATUS_NOERROR != ret) {
+                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+                return -1;
+            }
+
             STATUS = imresize(src, dst);
-            printf("resizing .... %s\n", ImGetError(STATUS));
+            printf("resizing .... %s\n", imStrError(STATUS));
 
             break;
 
@@ -348,8 +336,14 @@ int main(int argc, char*  argv[]) {
             src_rect.width  = 300;
             src_rect.height = 300;
 
+            ret = imcheck(src, dst, src_rect, dst_rect);
+            if (IM_STATUS_NOERROR != ret) {
+                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+                return -1;
+            }
+
             STATUS = imcrop(src, dst, src_rect);
-            printf("cropping .... %s\n", ImGetError(STATUS));
+            printf("cropping .... %s\n", imStrError(STATUS));
 
             break;
 
@@ -357,8 +351,14 @@ int main(int argc, char*  argv[]) {
 
             ROTATE = (IM_USAGE)parm_data[MODE_ROTATE];
 
+            ret = imcheck(src, dst, src_rect, dst_rect);
+            if (IM_STATUS_NOERROR != ret) {
+                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+                return -1;
+            }
+
             STATUS = imrotate(src, dst, ROTATE);
-            printf("rotating .... %s\n", ImGetError(STATUS));
+            printf("rotating .... %s\n", imStrError(STATUS));
 
             break;
 
@@ -366,8 +366,14 @@ int main(int argc, char*  argv[]) {
 
             FLIP = (IM_USAGE)parm_data[MODE_FLIP];
 
+            ret = imcheck(src, dst, src_rect, dst_rect);
+            if (IM_STATUS_NOERROR != ret) {
+                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+                return -1;
+            }
+
             STATUS = imflip(src, dst, FLIP);
-            printf("flipping .... %s\n", ImGetError(STATUS));
+            printf("flipping .... %s\n", imStrError(STATUS));
 
             break;
 
@@ -376,15 +382,27 @@ int main(int argc, char*  argv[]) {
             src_rect.x = 300;
             src_rect.y = 300;
 
+            ret = imcheck(src, dst, src_rect, dst_rect);
+            if (IM_STATUS_NOERROR != ret) {
+                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+                return -1;
+            }
+
             STATUS = imtranslate(src, dst, src_rect.x, src_rect.y);
-            printf("translating .... %s\n", ImGetError(STATUS));
+            printf("translating .... %s\n", imStrError(STATUS));
 
             break;
 
         case MODE_BLEND :     //rgaImDemo --blend
 
+            ret = imcheck(src, dst, src_rect, dst_rect);
+            if (IM_STATUS_NOERROR != ret) {
+                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+                return -1;
+            }
+
             STATUS = imblend(src, src, dst);
-            printf("blending .... %s\n", ImGetError(STATUS));
+            printf("blending .... %s\n", imStrError(STATUS));
 
             break;
 
@@ -393,8 +411,14 @@ int main(int argc, char*  argv[]) {
             src.format = HAL_PIXEL_FORMAT_RGBA_8888;
             dst.format = HAL_PIXEL_FORMAT_YCrCb_NV12;
 
+            ret = imcheck(src, dst, src_rect, dst_rect);
+            if (IM_STATUS_NOERROR != ret) {
+                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+                return -1;
+            }
+
             STATUS = imcvtcolor(src, dst, src.format, dst.format);
-            printf("cvtcolor .... %s\n", ImGetError(STATUS));
+            printf("cvtcolor .... %s\n", imStrError(STATUS));
 
             break;
 
@@ -407,8 +431,14 @@ int main(int argc, char*  argv[]) {
             dst_rect.width  = 300;
             dst_rect.height = 300;
 
+            ret = imcheck(src, dst, src_rect, dst_rect);
+            if (IM_STATUS_NOERROR != ret) {
+                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+                return -1;
+            }
+
             STATUS = imfill(dst, dst_rect, COLOR);
-            printf("filling .... %s\n", ImGetError(STATUS));
+            printf("filling .... %s\n", imStrError(STATUS));
 
             break;
 
