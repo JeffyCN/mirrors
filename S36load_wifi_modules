@@ -25,6 +25,8 @@ case "$1" in
 			sync
 		fi
 
+		insmod WIFI_KO
+
 		;;
 	stop)
 
