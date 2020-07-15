@@ -192,13 +192,15 @@ INVAILD:
     return buffer;
 }
 
+#if USE_AHARDWAREBUFFER
+#include <android/hardware_buffer.h>
 IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
     rga_buffer_t buffer;
     int ret = 0;
 
     memset(&buffer, 0, sizeof(rga_buffer_t));
 
-    GraphicBuffer *gbuffer = GraphicBuffer::fromAHardwareBuffer(buf);
+    GraphicBuffer *gbuffer = reinterpret_cast<GraphicBuffer*>(buf);
 
     ret = rkRga.RkRgaGetBufferFd(gbuffer->handle, &buffer.fd);
     if (ret)
@@ -228,6 +230,7 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
 INVAILD:
     return buffer;
 }
+#endif
 #endif
 
 IM_API IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo) {

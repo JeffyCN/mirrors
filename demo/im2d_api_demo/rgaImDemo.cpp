@@ -21,7 +21,6 @@
 #include <ui/GraphicBuffer.h>
 
 #define ERROR               -1
-#define USE_AHARDWAREBUFFER  0
 
 /********** SrcInfo set **********/
 #define SRC_WIDTH  1280
@@ -97,7 +96,7 @@ int AHardwareBuffer_Init(int width, int height, int format, AHardwareBuffer** ou
         return ERROR;
     }
 
-    *outBuffer = gbuffer.get()->toAHardwareBuffer();
+    *outBuffer = reinterpret_cast<AHardwareBuffer*>(gbuffer.get());
     // Ensure the buffer doesn't get destroyed when the sp<> goes away.
     AHardwareBuffer_acquire(*outBuffer);
     printf("AHardwareBuffer init ok!\n");
@@ -107,14 +106,14 @@ int AHardwareBuffer_Init(int width, int height, int format, AHardwareBuffer** ou
 int AHardwareBuffer_Fill(AHardwareBuffer** buffer, int flag, int index) {
     sp<GraphicBuffer> gbuffer;
 
-    gbuffer = GraphicBuffer::fromAHardwareBuffer(*buffer);
+    gbuffer = reinterpret_cast<GraphicBuffer*>(*buffer);
 
     if(ERROR == GraphicBuffer_Fill(gbuffer, flag, index)) {
         printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
         return ERROR;
     }
 
-    *buffer = gbuffer.get()->toAHardwareBuffer();
+    *buffer = reinterpret_cast<AHardwareBuffer*>(gbuffer.get());
     // Ensure the buffer doesn't get destroyed when the sp<> goes away.
 
     AHardwareBuffer_acquire(*buffer);
@@ -458,7 +457,7 @@ int main(int argc, char*  argv[]) {
     /********** output buf data to file **********/
     char* outbuf = NULL;
 #if USE_AHARDWAREBUFFER
-    sp<GraphicBuffer> gbuffer = GraphicBuffer::fromAHardwareBuffer(dst_buf);
+    sp<GraphicBuffer> gbuffer = reinterpret_cast<GraphicBuffer*>(dst_buf);
     if (gbuffer != NULL) {
         ret = gbuffer->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&outbuf);
         output_buf_data_to_file(outbuf, dst.format, dst.width, dst.height, 0);

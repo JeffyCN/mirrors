@@ -11,6 +11,10 @@ LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
 
 LOCAL_CFLAGS += -DROCKCHIP_GPU_LIB_ENABLE
 
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \> 25)))
+LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
+endif
+
 LOCAL_CFLAGS += -Wall -Werror -Wunreachable-code
 
 LOCAL_C_INCLUDES += external/tinyalsa/include
@@ -30,7 +34,6 @@ LOCAL_SHARED_LIBRARIES := \
     libEGL \
     libGLESv1_CM \
     libhardware \
-    libsync_vendor \
     librga \
 	libnativewindow
 

@@ -20,6 +20,11 @@
 using namespace android;
 
 IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
+
+#if USE_AHARDWAREBUFFER
+#include <android/hardware_buffer.h>
 IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf);
+#endif
+
 #endif
 

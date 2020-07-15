@@ -38,6 +38,10 @@ LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
 
 LOCAL_CFLAGS += -DROCKCHIP_GPU_LIB_ENABLE
 
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \> 25)))
+LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
+endif
+
 #LOCAL_CFLAGS += -Wall -Werror -Wunreachable-code
 
 LOCAL_C_INCLUDES += external/tinyalsa/include
@@ -75,7 +79,8 @@ LOCAL_SRC_FILES:= \
     RockchipRga.cpp \
     GraphicBuffer.cpp \
     normal/NormalRga.cpp \
-    normal/NormalRgaApi.cpp
+    normal/NormalRgaApi.cpp \
+    im2d_api/im2d.cpp
 
 ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.0)))
 ifeq ($(strip $(TARGET_BOARD_PLATFORM_GPU)), mali-t720)
@@ -116,11 +121,16 @@ include $(CLEAR_VARS)
 
 $(info $(shell $(LOCAL_PATH)/version.sh))
 
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \> 25)))
+LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
+endif
+
 LOCAL_SRC_FILES += \
-	RockchipRga.cpp \
-	GraphicBuffer.cpp \
-	normal/NormalRga.cpp \
-	normal/NormalRgaApi.cpp
+    RockchipRga.cpp \
+    GraphicBuffer.cpp \
+    normal/NormalRga.cpp \
+    normal/NormalRgaApi.cpp \
+    im2d_api/im2d.cpp
 
 LOCAL_MODULE := librga
 LOCAL_PROPRIETARY_MODULE := true
@@ -177,10 +187,15 @@ include $(CLEAR_VARS)
 
 $(info $(shell $(LOCAL_PATH)/version.sh))
 
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \> 25)))
+LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
+endif
+
 LOCAL_SRC_FILES += \
-        RockchipRga.cpp \
-	GraphicBuffer.cpp \
-        drm/DrmmodeRga.cpp
+    RockchipRga.cpp \
+    GraphicBuffer.cpp \
+    drm/DrmmodeRga.cpp \
+    im2d_api/im2d.cpp
 
 LOCAL_MODULE := librga
 
