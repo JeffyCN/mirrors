@@ -212,15 +212,15 @@ IM_API const char* imStrError_t(IM_STATUS status);
 /*
  * @return rga_buffer_t
  */
-#define warpbuffer_virtualaddr(vir_addr, width, height, format, ...) \
+#define wrapbuffer_virtualaddr(vir_addr, width, height, format, ...) \
     ({ \
         rga_buffer_t buffer; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
-            buffer = warpbuffer_virtualaddr_t(vir_addr, width, height, width, height, format); \
+            buffer = wrapbuffer_virtualaddr_t(vir_addr, width, height, width, height, format); \
         } else if (argc == 2){ \
-            buffer = warpbuffer_virtualaddr_t(vir_addr, width, height, args[0], args[1], format); \
+            buffer = wrapbuffer_virtualaddr_t(vir_addr, width, height, args[0], args[1], format); \
         } else { \
             printf("invalid parameter\n"); \
         } \
