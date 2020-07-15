@@ -14,23 +14,43 @@
 #include "im2d_api/im2d.hpp"
 #include "args.h"
 #include <stdint.h>
+#include <stdio.h> 
+#include <stdlib.h>
 #include <sys/types.h>
 #include <math.h>
 #include <fcntl.h>
+#include <memory.h>
 #include "RockchipFileOps.h"
+#include "rga.h"
+
+#ifdef ANDROID
 #include <ui/GraphicBuffer.h>
+#endif
 
 #define ERROR               -1
 
 /********** SrcInfo set **********/
 #define SRC_WIDTH  1280
 #define SRC_HEIGHT 720
+
+#ifdef ANDROID
 #define SRC_FORMAT HAL_PIXEL_FORMAT_RGBA_8888
+#endif
+#ifdef LINUX
+#define SRC_FORMAT RK_FORMAT_RGBA_8888
+#endif
 /********** DstInfo set **********/
 #define DST_WIDTH  1280
 #define DST_HEIGHT 720
-#define DST_FORMAT HAL_PIXEL_FORMAT_RGBA_8888
 
+#ifdef ANDROID
+#define DST_FORMAT HAL_PIXEL_FORMAT_RGBA_8888
+#endif
+#ifdef LINUX
+#define DST_FORMAT RK_FORMAT_RGBA_8888
+#endif
+
+#ifdef ANDROID
 enum {
     FILL_BUFF  = 0,
     EMPTY_BUFF = 1
@@ -122,6 +142,7 @@ int AHardwareBuffer_Fill(AHardwareBuffer** buffer, int flag, int index) {
 }
 
 #endif
+#endif
 
 int main(int argc, char*  argv[]) {
     int ret = 0;
@@ -140,12 +161,19 @@ int main(int argc, char*  argv[]) {
     rga_buffer_t src;
     rga_buffer_t dst;
 
+#ifdef ANDROID
 #if USE_AHARDWAREBUFFER
     AHardwareBuffer* src_buf = nullptr;
     AHardwareBuffer* dst_buf = nullptr;
 #else
     sp<GraphicBuffer> src_buf;
     sp<GraphicBuffer> dst_buf;
+#endif
+#endif
+
+#ifdef LINUX
+    char* src_buf = NULL;
+    char* dst_buf = NULL;
 #endif
 
     MODE = readArguments(argc, argv, parm_data);
@@ -155,6 +183,7 @@ int main(int argc, char*  argv[]) {
     }
     /********** Get parameters **********/
     if(MODE != MODE_QUERYSTRING) {
+#ifdef ANDROID
 #if USE_AHARDWAREBUFFER
         if(ERROR == AHardwareBuffer_Init(SRC_WIDTH, SRC_HEIGHT, SRC_FORMAT, &src_buf)) {
             printf("AHardwareBuffer init error!\n");
@@ -218,6 +247,35 @@ int main(int argc, char*  argv[]) {
             return ERROR;
         }
 #endif
+#endif
+
+#ifdef LINUX
+        src_buf = (char*)malloc(SRC_WIDTH*SRC_HEIGHT*get_bpp_from_format(SRC_FORMAT));
+        dst_buf = (char*)malloc(DST_WIDTH*DST_HEIGHT*get_bpp_from_format(DST_FORMAT));
+
+        ret = get_buf_from_file(src_buf, SRC_FORMAT, SRC_WIDTH, SRC_HEIGHT, 0);
+        if (!ret)
+            printf("open file\n");
+        else
+            printf ("can not open file\n");
+
+        if(MODE == MODE_BLEND || MODE == MODE_FILL) {
+            ret = get_buf_from_file(dst_buf, DST_FORMAT, DST_WIDTH, DST_HEIGHT, 1);
+            if (!ret)
+                printf("open file\n");
+            else
+                printf ("can not open file\n");
+        } else {
+            memset(dst_buf,0x00,DST_WIDTH*DST_HEIGHT*get_bpp_from_format(DST_FORMAT));
+        }
+
+        src = wrapbuffer_virtualaddr(src_buf, SRC_WIDTH, SRC_HEIGHT, SRC_FORMAT);
+        dst = wrapbuffer_virtualaddr(dst_buf, DST_WIDTH, DST_HEIGHT, DST_FORMAT);
+        if(src.width == 0 || dst.width == 0) {
+            printf("%s, %s\n", __FUNCTION__, imStrError());
+            return ERROR;
+        }
+#endif
     }
 
     /********** Execution function according to mode **********/
@@ -247,6 +305,7 @@ int main(int argc, char*  argv[]) {
             switch(parm_data[MODE_RESIZE]) {
                 case IM_UP_SCALE :
 
+#ifdef ANDROID
 #if USE_AHARDWAREBUFFER
                     if(ERROR == AHardwareBuffer_Init(1920, 1080, DST_FORMAT, &dst_buf)) {
                         printf("AHardwareBuffer init error!\n");
@@ -278,10 +337,28 @@ int main(int argc, char*  argv[]) {
                         return ERROR;
                     }
 #endif
+#endif
+
+#ifdef LINUX
+                    if (dst_buf != NULL) {
+                        free(dst_buf);
+                        dst_buf = NULL;
+                    }
+                    dst_buf = (char*)malloc(1920*1080*get_bpp_from_format(DST_FORMAT));
+
+                    memset(dst_buf,0x00,1920*1080*get_bpp_from_format(DST_FORMAT));
+
+                    dst = wrapbuffer_virtualaddr(dst_buf, 1920, 1080, DST_FORMAT);
+                    if(dst.width == 0) {
+                        printf("%s, %s\n", __FUNCTION__, imStrError());
+                        return ERROR;
+                    }
+#endif
 
                     break;
                 case IM_DOWN_SCALE :
 
+#ifdef ANDROID
 #if USE_AHARDWAREBUFFER
                     if(ERROR == AHardwareBuffer_Init(720, 480, DST_FORMAT, &dst_buf)) {
                         printf("AHardwareBuffer init error!\n");
@@ -314,6 +391,24 @@ int main(int argc, char*  argv[]) {
                         return ERROR;
                     }
 #endif
+#endif
+
+#ifdef LINUX
+                    if (dst_buf != NULL) {
+                        free(dst_buf);
+                        dst_buf = NULL;
+                    }
+                    dst_buf = (char*)malloc(720*480*get_bpp_from_format(DST_FORMAT));
+
+                    memset(dst_buf,0x00,720*480*get_bpp_from_format(DST_FORMAT));
+
+                    dst = wrapbuffer_virtualaddr(dst_buf, 720, 480, DST_FORMAT);
+                    if(dst.width == 0) {
+                        printf("%s, %s\n", __FUNCTION__, imStrError());
+                        return ERROR;
+                    }
+#endif
+
                     break;
             }
 
@@ -407,8 +502,15 @@ int main(int argc, char*  argv[]) {
 
         case MODE_CVTCOLOR :  //rgaImDemo --cvtcolor
 
+#ifdef ANDROID
             src.format = HAL_PIXEL_FORMAT_RGBA_8888;
             dst.format = HAL_PIXEL_FORMAT_YCrCb_NV12;
+#endif
+
+#ifdef LINUX
+			src.format = RK_FORMAT_RGBA_8888;
+			dst.format = RK_FORMAT_YCbCr_420_SP;
+#endif
 
             ret = imcheck(src, dst, src_rect, dst_rect);
             if (IM_STATUS_NOERROR != ret) {
@@ -455,7 +557,8 @@ int main(int argc, char*  argv[]) {
     }
 
     /********** output buf data to file **********/
-    char* outbuf = NULL;
+#ifdef ANDROID 
+	char* outbuf = NULL;
 #if USE_AHARDWAREBUFFER
     sp<GraphicBuffer> gbuffer = reinterpret_cast<GraphicBuffer*>(dst_buf);
     if (gbuffer != NULL) {
@@ -468,6 +571,20 @@ int main(int argc, char*  argv[]) {
         ret = dst_buf->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&outbuf);
         output_buf_data_to_file(outbuf, dst.format, dst.width, dst.height, 0);
         ret = dst_buf->unlock();
+    }
+#endif
+#endif
+
+#ifdef LINUX
+    if (src_buf != NULL) {
+        free(src_buf);
+        src_buf = NULL;
+    }
+
+    if (dst_buf != NULL) {
+        output_buf_data_to_file(dst_buf, dst.format, dst.width, dst.height, 0);
+        free(dst_buf);
+        dst_buf = NULL;
     }
 #endif
 

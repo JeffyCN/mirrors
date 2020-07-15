@@ -14,6 +14,7 @@
 #define _rk_file_ops_h_
 
 // -------------------------------------------------------------------------------
+float get_bpp_from_format(int format);
 int get_buf_from_file(void *buf, int f, int sw, int sh, int index);
 int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index);
 #endif

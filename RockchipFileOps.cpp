@@ -148,7 +148,14 @@ int get_string_by_format(char *value, int format)
 
 int get_buf_from_file(void *buf, int f, int sw, int sh, int index)
 {
+#ifdef ANDROID
     const char *inputFilePath = "/data/in%dw%d-h%d-%s.bin";
+#endif
+
+#ifdef LINUX
+	const char *inputFilePath = "/usr/data/in%dw%d-h%d-%s.bin";
+#endif
+
     char filePath[100];
     char fstring[30];
     int ret = 0;
@@ -185,7 +192,14 @@ int get_buf_from_file(void *buf, int f, int sw, int sh, int index)
 
 int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index)
 {
+#ifdef ANDROID
     const char *outputFilePath = "/data/out%dw%d-h%d-%s.bin";
+#endif
+
+#ifdef LINUX
+	const char *outputFilePath = "/usr/data/out%dw%d-h%d-%s.bin";
+#endif
+
     char filePath[100];
     char fstring[30];
     int ret = 0;
