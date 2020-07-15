@@ -7,55 +7,45 @@ librga API版本: v1.00
 
 ### 适用芯片平台
 
-Rockchip rk3066|rk3188|rk2926|rk2928|rk3026|rk3028|rk3128|Sofia 3gr|rk3288|rk3288w|rk3190|rk1108|rk3368|rk3326|rk3228|rk3228H|rk3326|rk1808|rv1126|rv1109rk3399|rk3399pro
+Rockchip rk3066|rk3188|rk2926|rk2928|rk3026|rk3028|rk3128|Sofia3gr|rk3288|rk3288w|rk3190|rk1108|rk3368|rk3326|rk3228|rk3228H|rk3326|rk1808|rv1126|rv1109rk3399|rk3399pro
 
 ### 编译说明
 
-1. Android Source Project
+* **Android Source Project**
 
-   下载librga仓库拷贝至android源码工程 hardware/rockchip目录，执行mm进行编译。根据不同的Android版本将自动选择Android.mk或Android.bp作为编译脚本。
+> 下载librga仓库拷贝至android源码工程 hardware/rockchip目录，执行**mm**进行编译。根据不同的Android版本将自动选择Android.mk或Android.bp作为编译脚本。
 
-2. Android NDK (build for android)
+* **Android NDK (build for android)**
 
-   修改librga源码根目录下的文件ndk-android.sh，指定ANDROID_NDK_HOME为NDK开发包的路径。执行以下操作完成编译：
+> 修改librga源码根目录下的文件**ndk-android.sh**，指定**ANDROID_NDK_HOME**为NDK开发包的路径。执行以下操作完成编译：
 
-   $mkdir build
+```c
+$ mkdir build
+$ cd build
+$ cp ../ndk-android.sh ./
+$ chmod +x ./ndk-android.sh
+$ ./ndk-android.sh
+$ make
+```
 
-   $cd build
+* **Android NDK (build for buildroot/debian)**
 
-   $cp ../ndk-android.sh ./
+> 修改librga源码根目录下的**buildroot.cmake**文件，指定**TOOLCHAIN_HOME**为交叉编译工具的路径。执行以下操作完成编译:
+>
 
-   $chmod +x ./ndk-android.sh
+```c
+$ mkdir build
+$ cd build
+$ cp ../ndk-linux.sh ./
+$ chmod +x ./ndk-linux.sh
+$ ./ndk-linux.sh
+$ make
+```
 
-   $./ndk-android.sh
+* **Buildroot/Debian**
 
-   $make
-
-3. Android NDK (build for buildroot/debian)
-
-   修改librga源码根目录下的buildroot.cmake文件，指定TOOLCHAIN_HOME为交叉编译工具的路径。执行以下操作完成编译:
-
-   $mkdir build
-
-   $cd build
-
-   $cp ../ndk-linux.sh ./
-
-   $chmod +x ./ndk-linux.sh
-
-   $./ndk-linux.sh
-
-   $make
-
-4. Buildroot/Debian
-
-   librga也提供了Makefile文件，可以在开发板上或修改Makefile自行定义交叉编译工具后，执行make完成编译。
+> librga也提供了Makefile文件，可以在开发板上或修改Makefile自行定义交叉编译工具后，执行make完成编译。
 
 ### 接口说明
 
-librga应用开发接口说明参考以下文件: 
-
-[API document]: ./im2d_api/readme.md
-
-
-
+librga应用开发接口说明参考以下文件：[API document]: ./im2d_api/readme.md
