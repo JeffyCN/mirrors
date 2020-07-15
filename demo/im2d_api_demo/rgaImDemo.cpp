@@ -14,7 +14,7 @@
 #include "im2d_api/im2d.hpp"
 #include "args.h"
 #include <stdint.h>
-#include <stdio.h> 
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <math.h>
@@ -506,10 +506,9 @@ int main(int argc, char*  argv[]) {
             src.format = HAL_PIXEL_FORMAT_RGBA_8888;
             dst.format = HAL_PIXEL_FORMAT_YCrCb_NV12;
 #endif
-
 #ifdef LINUX
-			src.format = RK_FORMAT_RGBA_8888;
-			dst.format = RK_FORMAT_YCbCr_420_SP;
+      			src.format = RK_FORMAT_RGBA_8888;
+      			dst.format = RK_FORMAT_YCbCr_420_SP;
 #endif
 
             ret = imcheck(src, dst, src_rect, dst_rect);
@@ -557,7 +556,7 @@ int main(int argc, char*  argv[]) {
     }
 
     /********** output buf data to file **********/
-#ifdef ANDROID 
+#ifdef ANDROID
 	char* outbuf = NULL;
 #if USE_AHARDWAREBUFFER
     sp<GraphicBuffer> gbuffer = reinterpret_cast<GraphicBuffer*>(dst_buf);

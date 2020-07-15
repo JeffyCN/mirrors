@@ -72,7 +72,6 @@ LOCAL_CFLAGS += -DRK3188
 endif
 
 LOCAL_SRC_FILES:= \
-	RockchipFileOps.cpp \
     rgaImDemo.cpp \
 	args.cpp
 

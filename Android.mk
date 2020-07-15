@@ -78,6 +78,7 @@ endif
 LOCAL_SRC_FILES:= \
     RockchipRga.cpp \
     GraphicBuffer.cpp \
+	RockchipFileOps.cpp \
     normal/NormalRga.cpp \
     normal/NormalRgaApi.cpp \
     im2d_api/im2d.cpp
