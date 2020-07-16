@@ -1,5 +1,10 @@
-Linux_Pack_Firmware:linux�¹̼��������
-Linux_Upgrade_Tool:linux�¿�������
-Linux_SecureBoot:linux�¹̼�ǩ������
 
-��ϵEmail:liuyi@rock-chips.com
+Linux 系统工具
+工具名称               | 工具用途
+---------------------- | -------------------------------------------
+Linux_Pack_Firmware    | 固件打包工具(打包成updata.img)
+Linux_Upgrade_Tool     | 烧录固件工具
+Linux_SecureBoot       | 固件签名工具
+Firmware_Merger        | SPI NOR固件打包工具(生成的固件可以用于烧录器)
+
+联系Email:liuyi@rock-chips.com
