@@ -22,8 +22,7 @@
 #include <sys/mman.h>
 #include <linux/stddef.h>
 
-float get_bpp_from_format(int format)
-{
+float get_bpp_from_format(int format) {
     float bpp = 0;
 
     switch (format) {
@@ -70,7 +69,7 @@ float get_bpp_from_format(int format)
         case RK_FORMAT_YCbCr_420_SP:
         case RK_FORMAT_YCbCr_420_P:
         case RK_FORMAT_YCrCb_420_P:
-	      case RK_FORMAT_YCrCb_420_SP:
+        case RK_FORMAT_YCrCb_420_SP:
             bpp = 1.5;
             break;
         case RK_FORMAT_YCbCr_420_SP_10B:
@@ -79,15 +78,14 @@ float get_bpp_from_format(int format)
             break;
 #endif
         default:
-    	    printf("Is unsupport format now,please fix \n");
+            printf("Is unsupport format now,please fix \n");
             return 0;
     }
 
     return bpp;
 }
 
-int get_buf_size_by_w_h_f(int w, int h, int f)
-{
+int get_buf_size_by_w_h_f(int w, int h, int f) {
     float bpp = get_bpp_from_format(f);
     int size = 0;
 
@@ -95,8 +93,7 @@ int get_buf_size_by_w_h_f(int w, int h, int f)
     return size;
 }
 
-int get_string_by_format(char *value, int format)
-{
+int get_string_by_format(char *value, int format) {
     if (!value)
         return -EINVAL;
 
@@ -146,7 +143,7 @@ int get_string_by_format(char *value, int format)
         case RK_FORMAT_BGRA_8888:
             memcpy(value, "bgra8888", sizeof("bgra8888"));
             break;
-	      case RK_FORMAT_YCrCb_420_SP:
+        case RK_FORMAT_YCrCb_420_SP:
             memcpy(value, "crcb420sp", sizeof("crcb420sp"));
             break;
         case RK_FORMAT_BGR_888:
@@ -181,21 +178,20 @@ int get_string_by_format(char *value, int format)
             break;
 #endif
         default:
-    	    printf("Is unsupport format now,please fix");
+            printf("Is unsupport format now,please fix");
             return 0;
     }
 
     return 0;
 }
 
-int get_buf_from_file(void *buf, int f, int sw, int sh, int index)
-{
+int get_buf_from_file(void *buf, int f, int sw, int sh, int index) {
 #ifdef ANDROID
     const char *inputFilePath = "/data/in%dw%d-h%d-%s.bin";
 #endif
 
 #ifdef LINUX
-	const char *inputFilePath = "/usr/data/in%dw%d-h%d-%s.bin";
+    const char *inputFilePath = "/usr/data/in%dw%d-h%d-%s.bin";
 #endif
 
     char filePath[100];
@@ -232,14 +228,13 @@ int get_buf_from_file(void *buf, int f, int sw, int sh, int index)
     return 0;
 }
 
-int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index)
-{
+int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index) {
 #ifdef ANDROID
     const char *outputFilePath = "/data/out%dw%d-h%d-%s.bin";
 #endif
 
 #ifdef LINUX
-	const char *outputFilePath = "/usr/data/out%dw%d-h%d-%s.bin";
+    const char *outputFilePath = "/usr/data/out%dw%d-h%d-%s.bin";
 #endif
 
     char filePath[100];
@@ -254,7 +249,7 @@ int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index)
         fprintf(stderr, "Could not open %s\n", yuvFilePath);
         return false;
     }
-    #if 0
+#if 0
     {
         char *pbuf = (char*)malloc(2 * mHeight * 4864);
         fread(pbuf, 2 * 4864 * 2160, 1, file);
@@ -262,17 +257,17 @@ int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index)
             memcpy(buf+i*4800,pbuf+i*6080,4800);
         memset(buf+2160*4800,0x80,4800 * 2160);
     }
-    #else
+#else
     fread(dstbuf, 2 * 1920 * 1088, 1, file);
     fclose(file);
-    #endif
+#endif
 #else
     FILE *file = fopen(filePath, "wb+");
     if (!file) {
         fprintf(stderr, "Could not open %s\n", filePath);
         return false;
     } else
-	    fprintf(stderr, "open %s and write ok\n", filePath);
+        fprintf(stderr, "open %s and write ok\n", filePath);
     fwrite(buf, get_buf_size_by_w_h_f(sw, sh, f), 1, file);
     fclose(file);
 #endif

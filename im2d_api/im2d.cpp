@@ -631,8 +631,7 @@ IM_API const char* querystring(int name) {
     return temp;
 }
 
-IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const im_rect src_rect, const im_rect dst_rect, int mode_usage)
-{
+IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const im_rect src_rect, const im_rect dst_rect, int mode_usage) {
     bool src_isRGB = 0, src_isBP = 0, src_isYUV_8 = 0, src_isYUV_10 = 0, src_isYUYV = 0, src_isYUV400 = 0;
     bool dst_isRGB = 0, dst_isBP = 0, dst_isYUV_8 = 0, dst_isYUV_10 = 0, dst_isYUYV = 0, dst_isYUV400 = 0;
     int src_fmt, dst_fmt;
@@ -749,8 +748,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
 
     /**************** scale check ****************/
     if ((~mode_usage & IM_COLOR_FILL) && (~mode_usage & IM_CROP)) {
-        switch (usage & IM_RGA_INFO_SCALE_LIMIT_MASK)
-        {
+        switch (usage & IM_RGA_INFO_SCALE_LIMIT_MASK) {
             case IM_RGA_INFO_SCALE_LIMIT_8 :
                 if (((src.width >> 3) >= dst.width) || ((src.height >> 3) >= dst.height)) {
                     imErrorMsg("Unsupported to scaling less than 1/8 times.");
@@ -792,19 +790,17 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
                 return IM_STATUS_NOT_SUPPORTED;
             }
             src_isRGB = 1;
-        }
-        else if (src_fmt == RK_FORMAT_BPP1 || src_fmt == RK_FORMAT_BPP2 ||
-                 src_fmt == RK_FORMAT_BPP4 || src_fmt == RK_FORMAT_BPP8) {
+        } else if (src_fmt == RK_FORMAT_BPP1 || src_fmt == RK_FORMAT_BPP2 ||
+                   src_fmt == RK_FORMAT_BPP4 || src_fmt == RK_FORMAT_BPP8) {
             if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_BP) {
                 imErrorMsg("Src unsupported input BP format.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             src_isBP = 1;
-        }
-        else if (src_fmt == RK_FORMAT_YCrCb_420_SP || src_fmt == RK_FORMAT_YCbCr_420_SP ||
-                 src_fmt == RK_FORMAT_YCrCb_420_P  || src_fmt == RK_FORMAT_YCbCr_420_P  ||
-                 src_fmt == RK_FORMAT_YCrCb_422_SP || src_fmt == RK_FORMAT_YCbCr_422_SP ||
-                 src_fmt == RK_FORMAT_YCrCb_422_P  || src_fmt == RK_FORMAT_YCbCr_422_P) {
+        } else if (src_fmt == RK_FORMAT_YCrCb_420_SP || src_fmt == RK_FORMAT_YCbCr_420_SP ||
+                   src_fmt == RK_FORMAT_YCrCb_420_P  || src_fmt == RK_FORMAT_YCbCr_420_P  ||
+                   src_fmt == RK_FORMAT_YCrCb_422_SP || src_fmt == RK_FORMAT_YCbCr_422_SP ||
+                   src_fmt == RK_FORMAT_YCrCb_422_P  || src_fmt == RK_FORMAT_YCbCr_422_P) {
             if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8) {
                 imErrorMsg("Src unsupported input YUV 8bit format.");
                 return IM_STATUS_NOT_SUPPORTED;
@@ -816,16 +812,15 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
                 (src_rect.width % 2) || (src_rect.height % 2)) {
                 imErrorMsg("Err src wstride is not align to 8 or yuv not align to 2.");
                 return IM_STATUS_INVALID_PARAM;
-        		}
-        		src_isYUV_8 = 1;
-        }
-        else if (src_fmt == RK_FORMAT_YCbCr_420_SP_10B || src_fmt == RK_FORMAT_YCrCb_420_SP_10B) {
+            }
+            src_isYUV_8 = 1;
+        } else if (src_fmt == RK_FORMAT_YCbCr_420_SP_10B || src_fmt == RK_FORMAT_YCrCb_420_SP_10B) {
             if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_10) {
                 imErrorMsg("Src unsupported input YUV 10bit format.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             /*Align check*/
-    		    if ((src.wstride % 16) || (src.hstride % 2) ||
+            if ((src.wstride % 16) || (src.hstride % 2) ||
                 (src.width % 2)  || (src.height % 2) ||
                 (src_rect.x % 2) || (src_rect.y % 2) ||
                 (src_rect.width % 2) || (src_rect.height % 2)) {
@@ -833,22 +828,19 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
                 return IM_STATUS_INVALID_PARAM;
             }
             src_isYUV_10 = 1;
-        }
-        else if (src_fmt == -1) {
+        } else if (src_fmt == -1) {
             if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUYV) {
                 imErrorMsg("Src unsupported input YUYV format.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             src_isYUYV = 1;
-        }
-        else if (src_fmt == -1) {
+        } else if (src_fmt == -1) {
             if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV400) {
                 imErrorMsg("Src unsupported input YUV400 format.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             src_isYUV400 = 1;
-        }
-        else {
+        } else {
             imErrorMsg("Src unsupported input this format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
@@ -869,19 +861,17 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
             return IM_STATUS_NOT_SUPPORTED;
         }
         dst_isRGB = 1;
-    }
-    else if (dst_fmt == RK_FORMAT_BPP1 || dst_fmt == RK_FORMAT_BPP2 ||
-             dst_fmt == RK_FORMAT_BPP4 || dst_fmt == RK_FORMAT_BPP8) {
+    } else if (dst_fmt == RK_FORMAT_BPP1 || dst_fmt == RK_FORMAT_BPP2 ||
+               dst_fmt == RK_FORMAT_BPP4 || dst_fmt == RK_FORMAT_BPP8) {
         if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_BP) {
             imErrorMsg("Dst unsupported output BP format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
         dst_isBP = 1;
-    }
-    else if (dst_fmt == RK_FORMAT_YCrCb_420_SP || dst_fmt == RK_FORMAT_YCbCr_420_SP ||
-             dst_fmt == RK_FORMAT_YCrCb_420_P  || dst_fmt == RK_FORMAT_YCbCr_420_P  ||
-             dst_fmt == RK_FORMAT_YCrCb_422_SP || dst_fmt == RK_FORMAT_YCbCr_422_SP ||
-             dst_fmt == RK_FORMAT_YCrCb_422_P  || dst_fmt == RK_FORMAT_YCbCr_422_P) {
+    } else if (dst_fmt == RK_FORMAT_YCrCb_420_SP || dst_fmt == RK_FORMAT_YCbCr_420_SP ||
+               dst_fmt == RK_FORMAT_YCrCb_420_P  || dst_fmt == RK_FORMAT_YCbCr_420_P  ||
+               dst_fmt == RK_FORMAT_YCrCb_422_SP || dst_fmt == RK_FORMAT_YCbCr_422_SP ||
+               dst_fmt == RK_FORMAT_YCrCb_422_P  || dst_fmt == RK_FORMAT_YCbCr_422_P) {
         if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8) {
             imErrorMsg("Dst unsupported output YUV 8bit format.");
             return IM_STATUS_NOT_SUPPORTED;
@@ -893,16 +883,15 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
             (dst_rect.width % 2) || (dst_rect.height % 2)) {
             imErrorMsg("Err dst wstride is not align to 8 or yuv not align to 2.");
             return IM_STATUS_INVALID_PARAM;
-    		}
-    		dst_isYUV_8 = 1;
-    }
-    else if (dst_fmt == RK_FORMAT_YCrCb_420_SP_10B || dst_fmt == RK_FORMAT_YCbCr_420_SP_10B) {
+        }
+        dst_isYUV_8 = 1;
+    } else if (dst_fmt == RK_FORMAT_YCrCb_420_SP_10B || dst_fmt == RK_FORMAT_YCbCr_420_SP_10B) {
         if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_10) {
             imErrorMsg("Dst unsupported output YUV 10bit format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
         /*Align check*/
-		    if ((dst.wstride % 16) || (dst.hstride % 2) ||
+        if ((dst.wstride % 16) || (dst.hstride % 2) ||
             (dst.width % 2)  || (dst.height % 2) ||
             (dst_rect.x % 2) || (dst_rect.y % 2) ||
             (dst_rect.width % 2) || (dst_rect.height % 2)) {
@@ -910,22 +899,19 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
             return IM_STATUS_INVALID_PARAM;
         }
         dst_isYUV_10 = 1;
-    }
-    else if (dst_fmt == -1) {
+    } else if (dst_fmt == -1) {
         if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUYV) {
             imErrorMsg("Dst unsupported output YUYV format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
         dst_isYUYV = 1;
-    }
-    else if (dst_fmt == -1) {
+    } else if (dst_fmt == -1) {
         if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV400) {
             imErrorMsg("Dst unsupported output YUV400 format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
         dst_isYUV400 = 1;
-    }
-    else {
+    } else {
         imErrorMsg("Dst unsupported output this format.");
         return IM_STATUS_NOT_SUPPORTED;
     }
@@ -933,21 +919,20 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     /**************** blend mode check ****************/
     if (mode_usage & IM_ALPHA_BLEND_MASK) {
         if ((mode_usage & IM_ALPHA_BLEND_DST_OVER) && (!dst_isRGB ||
-            (dst_fmt == RK_FORMAT_RGB_565 || dst_fmt == RK_FORMAT_RGB_888 ||
-             dst_fmt == RK_FORMAT_BGR_888))) {
-                imErrorMsg("Blend mode 'dst_over' unsupported dst format without alpha.");
-                return IM_STATUS_NOT_SUPPORTED;
-        }
-        else if (!(src_isRGB && dst_isRGB) ||
-                  (src_fmt == RK_FORMAT_RGB_565 || src_fmt == RK_FORMAT_RGB_888 ||
-                   src_fmt == RK_FORMAT_BGR_888 || dst_fmt == RK_FORMAT_RGB_565 ||
-                   dst_fmt == RK_FORMAT_RGB_888 || dst_fmt == RK_FORMAT_BGR_888)) {
+                (dst_fmt == RK_FORMAT_RGB_565 || dst_fmt == RK_FORMAT_RGB_888 ||
+                 dst_fmt == RK_FORMAT_BGR_888))) {
+            imErrorMsg("Blend mode 'dst_over' unsupported dst format without alpha.");
+            return IM_STATUS_NOT_SUPPORTED;
+        } else if (!(src_isRGB && dst_isRGB) ||
+                   (src_fmt == RK_FORMAT_RGB_565 || src_fmt == RK_FORMAT_RGB_888 ||
+                    src_fmt == RK_FORMAT_BGR_888 || dst_fmt == RK_FORMAT_RGB_565 ||
+                    dst_fmt == RK_FORMAT_RGB_888 || dst_fmt == RK_FORMAT_BGR_888)) {
             imErrorMsg("Blend mode unsupported format without alpha.");
             return IM_STATUS_NOT_SUPPORTED;
         }
     }
 
-	  return IM_STATUS_NOERROR;
+    return IM_STATUS_NOERROR;
 }
 
 IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync) {

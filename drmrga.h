@@ -93,13 +93,13 @@ typedef struct rga_rect {
 } rga_rect_t;
 
 typedef struct rga_nn {
-   int nn_flag;
-   int scale_r;
-   int scale_g;
-   int scale_b;
-   int offset_r;
-   int offset_g;
-   int offset_b;
+    int nn_flag;
+    int scale_r;
+    int scale_g;
+    int scale_b;
+    int offset_r;
+    int offset_g;
+    int offset_b;
 } rga_nn_t;
 
 /*

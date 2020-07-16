@@ -507,8 +507,8 @@ int main(int argc, char*  argv[]) {
             dst.format = HAL_PIXEL_FORMAT_YCrCb_NV12;
 #endif
 #ifdef LINUX
-      			src.format = RK_FORMAT_RGBA_8888;
-      			dst.format = RK_FORMAT_YCbCr_420_SP;
+            src.format = RK_FORMAT_RGBA_8888;
+            dst.format = RK_FORMAT_YCbCr_420_SP;
 #endif
 
             ret = imcheck(src, dst, src_rect, dst_rect);
@@ -557,7 +557,7 @@ int main(int argc, char*  argv[]) {
 
     /********** output buf data to file **********/
 #ifdef ANDROID
-	char* outbuf = NULL;
+    char* outbuf = NULL;
 #if USE_AHARDWAREBUFFER
     sp<GraphicBuffer> gbuffer = reinterpret_cast<GraphicBuffer*>(dst_buf);
     if (gbuffer != NULL) {

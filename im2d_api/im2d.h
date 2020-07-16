@@ -288,7 +288,7 @@ IM_API const char* querystring(int name);
  *
  * @returns no error or else negative error code.
  */
- #define imcheck(src, dst, src_rect, dst_rect, ...) \
+#define imcheck(src, dst, src_rect, dst_rect, ...) \
     ({ \
         IM_STATUS ret = IM_STATUS_NOERROR; \
         int args[] = {__VA_ARGS__}; \
