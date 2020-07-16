@@ -41,7 +41,7 @@ $ ./cmake-linux.sh
 $ make
 ```
 
-* **Makefile(Buildroot/Debian)**
+* **Makefile(buildroot/debian)**
 
 librga也提供了Makefile文件，可以在开发板上直接执行make命令，或修改Makefile自行定义交叉编译工具后执行make完成编译。
 
