@@ -13,7 +13,7 @@
 #include "NormalRgaContext.h"
 
 #ifdef ANDROID
-#include "../GraphicBuffer.h"
+#include "../GrallocOps.h"
 #include <cutils/properties.h>
 
 #define RGA_VERSION "1.00"

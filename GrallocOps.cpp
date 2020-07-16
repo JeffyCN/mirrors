@@ -11,7 +11,7 @@
  */
 #ifdef ANDROID
 
-#include "GraphicBuffer.h"
+#include "GrallocOps.h"
 
 gralloc_module_t const *mAllocMod = NULL;
 

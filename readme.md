@@ -43,11 +43,23 @@ $ make
 
 * **Makefile(Buildroot/Debian)**
 
-librga也提供了Makefile文件，可以在开发板上或修改Makefile自行定义交叉编译工具后，执行make完成编译。
+librga也提供了Makefile文件，可以在开发板上直接执行make命令，或修改Makefile自行定义交叉编译工具后执行make完成编译。
 
-### 接口说明
+### 使用说明
 
-librga应用开发接口说明参考以下文件：
+* **头文件引用**
 
-[API document](im2d_api/readme.md)
+  RockchipRga.h
+
+  im2d_api/im2d.h
+
+  im2d_api/im2d.hpp
+
+* **库文件**
+
+  librga.so
+
+* librga应用开发接口说明参考以下文件：
+
+  [API document](im2d_api/readme.md)
 

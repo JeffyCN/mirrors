@@ -13,7 +13,7 @@
 #include "NormalRga.h"
 #include "NormalRgaContext.h"
 #ifdef ANDROID
-#include "../GraphicBuffer.h"
+#include "../GrallocOps.h"
 #elif LINUX /* LINUX */
 #include "../rga.h"
 

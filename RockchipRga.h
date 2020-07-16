@@ -14,26 +14,18 @@
 #define _rockchip_rga_h_
 
 #include <stdint.h>
-
 #include <sys/types.h>
-
-//////////////////////////////////////////////////////////////////////////////////
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <time.h>
 #include <unistd.h>
-
 #include <sys/mman.h>
 #include <linux/stddef.h>
 
-#include "stdio.h"
-
 #include "drmrga.h"
-
-#include "GraphicBuffer.h"
+#include "GrallocOps.h"
 
 //////////////////////////////////////////////////////////////////////////////////
 #ifndef ANDROID
@@ -48,11 +40,8 @@
 
 namespace android {
 #endif
-// -------------------------------------------------------------------------------
 
     class RockchipRga :public Singleton<RockchipRga> {
-        /************************************public**************************************/
-
       public:
 
         static inline RockchipRga& get() {
@@ -90,7 +79,6 @@ namespace android {
             return mSupportRga;
         }
 
-        /************************************private***********************************/
       private:
         bool                            mSupportRga;
         int                             mLogOnce;
@@ -100,12 +88,8 @@ namespace android {
         friend class Singleton<RockchipRga>;
         RockchipRga();
         ~RockchipRga();
-
-
-
     };
 
-// ---------------------------------------------------------------------------
 #ifdef ANDROID
 }; // namespace android
 #endif
