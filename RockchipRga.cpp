@@ -52,8 +52,6 @@
 
 #include <gui/ISurfaceComposer.h>
 
-#include "RgaApi.h"
-
 #endif
 
 #include "RockchipRga.h"

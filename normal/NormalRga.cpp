@@ -14,7 +14,6 @@
 
 #ifdef ANDROID
 #include "../GraphicBuffer.h"
-#include "../RgaApi.h"
 #include <cutils/properties.h>
 
 #define RGA_VERSION "1.00"

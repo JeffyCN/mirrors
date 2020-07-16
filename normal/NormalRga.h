@@ -54,14 +54,13 @@
 #include "../drmrga.h"
 #include "../rga.h"
 
+#endif
 
 int         RgaInit(void **ctx);
 int         RgaDeInit(void *ctx);
 int         RgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
 int         RgaFlush();
 int         RgaCollorFill(rga_info_t *dst);
-
-#endif
 
 int         NormalRgaInitTables();
 
