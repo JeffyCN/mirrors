@@ -15,12 +15,12 @@
 
 #ifdef ANDROID
 #include <RockchipRga.h>
-#include "normal/NormalRga.h"
+#include "core/NormalRga.h"
 #endif
 
 #ifdef LINUX
-#include "../RockchipRga.h"
-#include "../normal/NormalRga.h"
+#include "../include/RockchipRga.h"
+#include "../core/NormalRga.h"
 #endif
 
 #include <sstream>

@@ -34,14 +34,17 @@ cc_library_shared {
         "liblog_headers",
     ],
     srcs: [
-        "RockchipRga.cpp",
-        "GrallocOps.cpp",
-		"RockchipFileOps.cpp",
-        "normal/NormalRga.cpp",
-        "normal/NormalRgaApi.cpp",
+        "core/RockchipRga.cpp",
+        "core/GrallocOps.cpp",
+        "core/NormalRga.cpp",
+        "core/NormalRgaApi.cpp",
+        "core/RgaUtils.cpp",
         "im2d_api/im2d.cpp"
     ],
-
+    export_include_dirs: [
+        "include",
+        "core"
+    ],
     include_dirs: [
         "external/libdrm",
         "external/libdrm/include/drm",

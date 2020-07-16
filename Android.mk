@@ -28,7 +28,7 @@
 
 LOCAL_PATH:= $(call my-dir)
 ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \< 28)))
-#================================================================
+
 ifneq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
@@ -48,7 +48,7 @@ LOCAL_C_INCLUDES += external/tinyalsa/include
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
 LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/normal
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 
 LOCAL_CFLAGS := \
         -DLOG_TAG=\"librga\"
@@ -76,11 +76,11 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
-    RockchipRga.cpp \
-    GrallocOps.cpp \
-	RockchipFileOps.cpp \
-    normal/NormalRga.cpp \
-    normal/NormalRgaApi.cpp \
+    core/RockchipRga.cpp \
+    core/GrallocOps.cpp \
+    core/NormalRga.cpp \
+    core/NormalRgaApi.cpp \
+    core/RgaUtils.cpp \
     im2d_api/im2d.cpp
 
 ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.0)))
@@ -114,23 +114,21 @@ endif
 
 LOCAL_MODULE:= librga
 include $(BUILD_SHARED_LIBRARY)
-endif
+endif #end of BOARD_USE_DRM=false
 #############################################################################################
+
 #############################################################################################
 ifeq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
 $(info $(shell $(LOCAL_PATH)/version.sh))
 
-ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \> 25)))
-LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
-endif
-
 LOCAL_SRC_FILES += \
-    RockchipRga.cpp \
-    GrallocOps.cpp \
-    normal/NormalRga.cpp \
-    normal/NormalRgaApi.cpp \
+    core/RockchipRga.cpp \
+    core/GrallocOps.cpp \
+    core/NormalRga.cpp \
+    core/NormalRgaApi.cpp \
+    core/RgaUtils.cpp \
     im2d_api/im2d.cpp
 
 LOCAL_MODULE := librga
@@ -140,6 +138,8 @@ LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
 LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
 LOCAL_C_INCLUDES += hardware/libhardware/modules/gralloc
+LOCAL_C_INCLUDES += frameworks/native/libs/nativewindow/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 
 LOCAL_SHARED_LIBRARIES := libdrm
 LOCAL_SHARED_LIBRARIES += \
@@ -151,6 +151,10 @@ LOCAL_SHARED_LIBRARIES += \
 
 LOCAL_CFLAGS := \
         -DLOG_TAG=\"librga\"
+
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \> 25)))
+LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
+endif
 
 ifneq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
 LOCAL_SHARED_LIBRARIES += libgralloc_drm 
@@ -179,23 +183,21 @@ LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
 
 include $(BUILD_SHARED_LIBRARY)
-endif
-#===================================================================
-ifeq ($(strip $(BOARD_USE_DRM)), future)
+endif #end of BOARD_USE_DRM = true
 #############################################################################################
+
+#############################################################################################
+ifeq ($(strip $(BOARD_USE_DRM)), future)
 ifeq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
 $(info $(shell $(LOCAL_PATH)/version.sh))
 
-ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \> 25)))
-LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
-endif
-
 LOCAL_SRC_FILES += \
-    RockchipRga.cpp \
-    GrallocOps.cpp \
+    core/RockchipRga.cpp \
+    core/GrallocOps.cpp \
     drm/DrmmodeRga.cpp \
+    core/RgaUtils.cpp \
     im2d_api/im2d.cpp
 
 LOCAL_MODULE := librga
@@ -216,14 +218,18 @@ LOCAL_SHARED_LIBRARIES += \
 LOCAL_CFLAGS := \
         -DLOG_TAG=\"librga-drm\"
 
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \> 25)))
+LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
+endif
+
 LOCAL_MODULE_TAGS := optional
 #LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
 
 include $(BUILD_SHARED_LIBRARY)
-endif
-#===================================================================
-endif #it will be used when upstrean in the future
+endif #end of BOARD_USE_DRM=true
+#############################################################################################
+endif #end of BOARD_USE_DRM=future it will be used when upstrean in the future
 
-endif
+endif #end of PLATFORM_SDK_VERSION < 28

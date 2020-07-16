@@ -50,6 +50,7 @@ project(librga)
 
 include_directories(
     ./
+    ./include
     external/libdrm
     external/libdrm/include/drm
     hardware/libhardware/include/hardware
@@ -59,11 +60,11 @@ include_directories(
     )
 
 set(IM2D_SRCS
-    RockchipFileOps.cpp
-    RockchipRga.cpp
-    GrallocOps.cpp
-    normal/NormalRga.cpp
-    normal/NormalRgaApi.cpp
+    core/RockchipRga.cpp
+    core/GrallocOps.cpp
+    core/NormalRga.cpp
+    core/NormalRgaApi.cpp
+    core/RgaUtils.cpp
     im2d_api/im2d.cpp)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -76,16 +77,9 @@ if(CMAKE_BUILD_TARGET STREQUAL ndk)
     remove_flag_from_target(rga -DANDROID)
 endif()
 
-
-#find_library(native-log-lib
-#    log)
-
-#target_link_libraries(rga
-#    ${native-log-lib})
-
 set(IM2D_DEMO_SRCS
-    demo/im2d_api_demo/rgaImDemo.cpp
-    demo/im2d_api_demo/args.cpp)
+    samples/im2d_api_demo/rgaImDemo.cpp
+    samples/im2d_api_demo/args.cpp)
 
 add_executable(im2d ${IM2D_DEMO_SRCS})
 
