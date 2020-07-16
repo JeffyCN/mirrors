@@ -11,7 +11,7 @@ SpiImageTools         | 烧录器升级工具
 DriverAssitant        | 驱动安装工具
 RKImageMaker          | 打包工具
 SpeakerPCBATool       | 音箱PCBA测试工具
-Rockchip_Develop_Tool | Firmware.img打包格式固件烧录工具
+RKDevTool_Release     | 固件烧录工具
 ParameterTool         | 分区表修改工具
 RKISP2.x_Tuner        | ISP工具
 
