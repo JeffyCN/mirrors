@@ -1,14 +1,18 @@
 
-1¡¢ RKDevTool				·ÖÁ¢Éı¼¶¹Ì¼ş¼°Õû¸öupdateÉı¼¶¹Ì¼ş¹¤¾ß
-2¡¢ FactoryTool				Á¿²úÉı¼¶¹¤¾ß
-3¡¢ SecureBootTool			¹Ì¼şÇ©Ãû¹¤¾ß
-4¡¢ efuseTool				efuseÉÕĞ´¹¤¾ß
-5¡¢ rk_provision_tool		Ğ´ºÅ¹¤¾ß
-6¡¢ SDDiskTool				SD¿¨¾µÏñÖÆ×÷
-7¡¢ SpiImageTools			ÉÕÂ¼Æ÷Éı¼¶¹¤¾ß
-8¡¢ DriverAssitant			Çı¶¯°²×°¹¤¾ß
-9¡¢ RKImageMaker			´ò°ü¹¤¾ß
-10¡¢SpeakerPCBATool			ÒôÏäPCBA²âÊÔ¹¤¾ß
-11¡¢Rockchip_Develop_Tool	Firmware.img´ò°ü¸ñÊ½¹Ì¼şÉÕÂ¼¹¤¾ß
-12¡¢ParameterTool_v1.0.zip  ·ÖÇø±íĞŞ¸Ä¹¤¾ß
+å·¥å…·åç§°              | å·¥å…·ç”¨é€”
+----------------------|-------------------------------------------
+RKDevTool             | åˆ†ç«‹å‡çº§å›ºä»¶åŠæ•´ä¸ªupdateå‡çº§å›ºä»¶å·¥å…·
+FactoryTool           | é‡äº§å‡çº§å·¥å…·
+SecureBootTool        | å›ºä»¶ç­¾åå·¥å…·
+efuseTool             | efuseçƒ§å†™å·¥å…·
+rk_provision_tool     | å†™å·å·¥å…·
+SDDiskTool            | SDå¡é•œåƒåˆ¶ä½œ
+SpiImageTools         | çƒ§å½•å™¨å‡çº§å·¥å…·
+DriverAssitant        | é©±åŠ¨å®‰è£…å·¥å…·
+RKImageMaker          | æ‰“åŒ…å·¥å…·
+SpeakerPCBATool       | éŸ³ç®±PCBAæµ‹è¯•å·¥å…·
+Rockchip_Develop_Tool | Firmware.imgæ‰“åŒ…æ ¼å¼å›ºä»¶çƒ§å½•å·¥å…·
+ParameterTool         | åˆ†åŒºè¡¨ä¿®æ”¹å·¥å…·
+RKISP2.x_Tuner        | ISPå·¥å…·
+RKDevInfoWriteTool    | å†™å·å·¥å…·
 
