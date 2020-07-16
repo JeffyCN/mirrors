@@ -242,7 +242,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>Lincoln</td>
       <td>RK3288/3288w</td>
       <td rowspan="2">ARGB888/888p/565/4444/5551<br/>YUV420/YUV422</td>
-      <td rowspan="2">ARGB888/888p/565/4444/5551<br/>YUV420/YUV422 8bit</td>
+      <td rowspan="2">ARGB888/888p/565/4444/5551<br/>YUV420/YUV422</td>
    </tr>
    <tr>
       <td>Capricorn</td>
@@ -252,8 +252,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
-      <td rowspan="2">ARGB888/888p/565/4444/5551<br/>YUV420/YUV422</td>
-      <td rowspan="2">ARGB888/888p/565/4444/5551<br/>YUV420/YUV422 (8/10bit)<br/>YUV400/Y4<br/>YVYU422/YUYV420</td>
+      <td rowspan="2">ARGB888/888p/565/4444/5551<br/>YUV420/YUV422 (8/10bit)</td>
+      <td rowspan="2">ARGB888/888p/565/4444/5551<br/>YUV420/YUV422<br/>YUV400/Y4<br/>YVYU422/YUYV420</td>
    </tr>
    <tr>
       <td>Mercury</td>
@@ -274,8 +274,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">RGA2-Lite1</td>
       <td>Benz</td>
       <td>RK3228</td>
-      <td rowspan="4">ARGB888/888p/565/4444/5551<br/>YUV420/YUV422</td>
       <td rowspan="4">ARGB888/888p/565/4444/5551<br/>YUV420/YUV422 (8/10bit)</td>
+      <td rowspan="4">ARGB888/888p/565/4444/5551<br/>YUV420/YUV422</td>
    </tr>
    <tr>
       <td>Infiniti</td>
@@ -293,10 +293,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RGA2-Enhance-Plus</td>
       <td>Puma</td>
       <td>RV1126/ RV1109</td>
-      <td>ARGB888/888p/565/4444/5551<br/>YUV420/YUV422<br/>YVYU422/YUYV420</td>
-      <td>ARGB888/888p/565/4444/5551<br/>YUV420/YUV422 (8/10bit)<br/>YUV400/Y4<br/>YVYU422/YUYV420</td>
+      <td>ARGB888/888p/565/4444/5551<br/>YUV420/YUV422 (8/10bit)<br/>YVYU422/YUYV420</td>
+      <td>ARGB888/888p/565/4444/5551<br/>YUV420/YUV422<br/>YUV400/Y4<br/>YVYU422/YUYV420</td>
    </tr>
 </table>
+
 
 
 
