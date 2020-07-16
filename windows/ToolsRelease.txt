@@ -5,7 +5,7 @@ RKDevTool             | 分立升级固件及整个update升级固件工具
 FactoryTool           | 量产升级工具
 SecureBootTool        | 固件签名工具
 efuseTool             | efuse烧写工具
-rk_provision_tool     | 写号工具
+RKDevInfoWriteTool    | 写号工具
 SDDiskTool            | SD卡镜像制作
 SpiImageTools         | 烧录器升级工具
 DriverAssitant        | 驱动安装工具
@@ -14,5 +14,4 @@ SpeakerPCBATool       | 音箱PCBA测试工具
 Rockchip_Develop_Tool | Firmware.img打包格式固件烧录工具
 ParameterTool         | 分区表修改工具
 RKISP2.x_Tuner        | ISP工具
-RKDevInfoWriteTool    | 写号工具
 
