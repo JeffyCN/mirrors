@@ -22,26 +22,26 @@ Rockchip rk3066 | rk3188 | rk2926 | rk2928 | rk3026 | rk3028 | rk3128 | Sofia3gr
 ```bash
 $ mkdir build
 $ cd build
-$ cp ../ndk-android.sh ./
-$ chmod +x ./ndk-android.sh
-$ ./ndk-android.sh
+$ cp ../cmake-android.sh ./
+$ chmod +x ./cmake-android.sh
+$ ./cmake-android.sh
 $ make
 ```
 
-* **Android NDK (build for buildroot/debian)**
+* **Cmake (buildroot/debian)**
 
 修改librga源码根目录下的**buildroot.cmake**文件，指定**TOOLCHAIN_HOME**为交叉编译工具的路径。执行以下操作完成编译:
 
 ```bash
 $ mkdir build
 $ cd build
-$ cp ../ndk-linux.sh ./
-$ chmod +x ./ndk-linux.sh
-$ ./ndk-linux.sh
+$ cp ../cmake-linux.sh ./
+$ chmod +x ./cmake-linux.sh
+$ ./cmake-linux.sh
 $ make
 ```
 
-* **Buildroot/Debian**
+* **Makefile(Buildroot/Debian)**
 
 librga也提供了Makefile文件，可以在开发板上或修改Makefile自行定义交叉编译工具后，执行make完成编译。
 

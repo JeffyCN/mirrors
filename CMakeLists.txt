@@ -1,3 +1,18 @@
+#
+# Removes the specified compile flag from the specified target.
+#   _target     - The target to remove the compile flag from
+#   _flag       - The compile flag to remove
+#
+# Pre: apply_global_cxx_flags_to_all_targets() must be invoked.
+#
+macro(remove_flag_from_target _target _flag)
+    get_target_property(_target_cxx_flags ${_target} COMPILE_OPTIONS)
+    if(_target_cxx_flags)
+        list(REMOVE_ITEM _target_cxx_flags ${_flag})
+        set_target_properties(${_target} PROPERTIES COMPILE_OPTIONS "${_target_cxx_flags}")
+    endif()
+endmacro()
+
 if(NOT CMAKE_BUILD_TYPE)
     message("default to Release build for GCC builds")
     set(CMAKE_BUILD_TYPE Release CACHE STRING
@@ -7,28 +22,9 @@ endif()
 
 if(CMAKE_BUILD_TARGET STREQUAL ndk)
     message("set ndk toolchain")
-    set(ANDROID_NDK_HOME
-         "/home/cc/mksdk/build/android-ndk-r21d"
-         CACHE INTERNAL "ANDROID_NDK_HOME")
-    set(ANDROID_NDK
-         "${ANDROID_NDK_HOME}"
-         CACHE INTERNAL "ANDROID_NDK")
-    set(ANDROID_ABI
-         "armeabi-v7a"
-         CACHE INTERNAL "ANDROID_ABI")
-    set(ANDROID_TOOLCHAIN
-         "clang"
-         CACHE INTERNAL "ANDROID_TOOLCHAIN")
-    set(ANDROID_PLATFORM
-         "android-27"
-         CACHE INTERNAL "ANDROID_PLATFORM")
-    set(ANDROID_STL
-         "c++_shared"
-         CACHE INTERNAL "ANDROID_STL")
-    set(CMAKE_TOOLCHAIN_FILE 
-         "${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake"
-         CACHE INTERNAL "CMAKE_TOOLCHAIN_FILE")
-    include(${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake)
+    set(CMAKE_CXX_FLAGS_RELEASE "-Wno-error -DLOG_TAG=\"librga\" -DRK_DRM_GRALLOC=1 -DANDROID_8 -DANDROID_7_DRM")
+    add_compile_options(-DLINUX)
+    add_compile_options(-DANDROID_VNDK)
 endif()
 
 if(CMAKE_BUILD_TARGET STREQUAL buildroot)
@@ -36,6 +32,7 @@ if(CMAKE_BUILD_TARGET STREQUAL buildroot)
     set(CMAKE_TOOLCHAIN_FILE 
         ${CMAKE_SOURCE_DIR}/buildroot.cmake)
     include(${CMAKE_SOURCE_DIR}/buildroot.cmake)
+    add_compile_options(-DLINUX)
 endif()
 
 set(CC "${CMAKE_C_COMPILER}")
@@ -62,6 +59,7 @@ include_directories(
     )
 
 set(IM2D_SRCS
+    RockchipFileOps.cpp
     RockchipRga.cpp
     GraphicBuffer.cpp
     normal/NormalRga.cpp
@@ -70,13 +68,14 @@ set(IM2D_SRCS
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUN_NEED_GL")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUN_NEED_GL -std=c++1y")
-#set(CMAKE_CXX_FLAGS  "-DANDROID")
-add_compile_options(-std=c++1y)
-
-set(CMAKE_CXX_FLAGS_RELEASE "-Wno-error -DLOG_TAG=\"librga\" -DRK_DRM_GRALLOC=1 -DANDROID_8 -DANDROID_7_DRM")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUN_NEED_GL")
 
 add_library(rga SHARED ${IM2D_SRCS})
+
+if(CMAKE_BUILD_TARGET STREQUAL ndk)
+    remove_flag_from_target(rga -DANDROID)
+endif()
+
 
 #find_library(native-log-lib
 #    log)
@@ -85,7 +84,6 @@ add_library(rga SHARED ${IM2D_SRCS})
 #    ${native-log-lib})
 
 set(IM2D_DEMO_SRCS
-    demo/im2d_api_demo/RockchipFileOps.cpp
     demo/im2d_api_demo/rgaImDemo.cpp
     demo/im2d_api_demo/args.cpp)
 

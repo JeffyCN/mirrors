@@ -131,7 +131,6 @@ int get_string_by_format(char *value, int format)
             break;
 #endif
 #ifdef LINUX
-    switch (format) {
         case RK_FORMAT_RGB_565:
             memcpy(value, "rgb565", sizeof("rgb565"));
             break;
