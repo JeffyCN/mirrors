@@ -570,9 +570,10 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
  *
  * @returns success or else negative error code.
  */
-#define imblend(srcA, srcB, dst, ...) \
+#define imblend(srcA, dst, ...) \
     ({ \
         IM_STATUS ret = IM_STATUS_SUCCESS; \
+        rga_buffer_t srcB; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \

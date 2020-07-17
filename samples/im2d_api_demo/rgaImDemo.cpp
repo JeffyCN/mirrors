@@ -445,7 +445,14 @@ int main(int argc, char*  argv[]) {
 
             ROTATE = (IM_USAGE)parm_data[MODE_ROTATE];
 
-            ret = imcheck(src, dst, src_rect, dst_rect);
+            if (IM_HAL_TRANSFORM_ROT_90 ==  ROTATE || IM_HAL_TRANSFORM_ROT_270 == ROTATE) {
+                dst.width   = src.height;
+                dst.height  = src.width;
+                dst.wstride = src.hstride;
+                dst.hstride = src.wstride;
+            }
+
+            ret = imcheck(src, dst, src_rect, dst_rect, ROTATE);
             if (IM_STATUS_NOERROR != ret) {
                 printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
                 return -1;
@@ -495,7 +502,7 @@ int main(int argc, char*  argv[]) {
                 return -1;
             }
 
-            STATUS = imblend(src, src, dst);
+            STATUS = imblend(src, dst);
             printf("blending .... %s\n", imStrError(STATUS));
 
             break;
