@@ -4,12 +4,22 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 ### 版本说明
 
-librga 版本: v1.03
-librga API版本: v1.00
+**librga** 版本: v1.03<br/>
+**librga API ** 版本: v1.00
 
 ### 适用芯片平台
 
 Rockchip RK3066 | RK3188 | RK2926 | RK2928 | RK3026 | RK3028 | RK3128 | Sofia3gr | RK3288 | RK3288w | RK3190 | RK1108 | RK3368 | RK3326 | RK3228 | RK3228H | RK3326 | RK1808 | RV1126 | RV1109 | RK3399 | RK3399pro
+
+### 目录说明
+
+**core:** RGA用户空间驱动实现
+
+**include:** 相关头文件
+
+**im2d_api:** RGA API相关实现及头文件
+
+**samples:** librga使用例程
 
 ### 编译说明
 

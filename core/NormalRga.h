@@ -13,16 +13,9 @@
 #ifndef _rockchip_normal_rga_h_
 #define _rockchip_normal_rga_h_
 
-#ifdef ANDROID_7_DRM
-#define RGA_BUF_GEM_TYPE_MASK      0xC0
-#define RGA_BUF_GEM_TYPE_DMA       0x80
-#endif
-
 #include <stdint.h>
 #include <vector>
 #include <sys/types.h>
-
-//////////////////////////////////////////////////////////////////////////////////
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,30 +23,28 @@
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
-
 #include <sys/mman.h>
 #include <linux/stddef.h>
-
-#include "NormalRgaContext.h"
-
-#include "stdio.h"
 
 #ifdef ANDROID
 #include <utils/Atomic.h>
 #include <utils/Errors.h>
 #include <utils/Log.h>
 #include <ui/PixelFormat.h>
-
 #include <utils/Thread.h>
 #include <hardware/hardware.h>
 #include <hardware/rga.h>
 #include "drmrga.h"
-
 #elif LINUX
-
 #include "drmrga.h"
 #include "rga.h"
+#endif
 
+#include "NormalRgaContext.h"
+
+#ifdef ANDROID_7_DRM
+#define RGA_BUF_GEM_TYPE_MASK      0xC0
+#define RGA_BUF_GEM_TYPE_DMA       0x80
 #endif
 
 int         RgaInit(void **ctx);
@@ -63,7 +54,6 @@ int         RgaFlush();
 int         RgaCollorFill(rga_info_t *dst);
 
 int         NormalRgaInitTables();
-
 int         NormalRgaScale();
 int         NormalRgaRoate();
 int         NormalRgaRoateScale();
