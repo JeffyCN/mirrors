@@ -5,7 +5,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 ### 版本说明
 
 **librga** 版本: v1.03<br/>
-**librga API ** 版本: v1.00
+**librga API** 版本: v1.00
 
 ### 适用芯片平台
 
