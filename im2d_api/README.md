@@ -929,8 +929,14 @@ setprop vendor.rga.log 0		关闭RGA log打印
 > demo中提供了两种buffer用于RGA合成——Graphicbuffer、AHardwareBuffer。这两种buffer通过宏USE_AHARDWAREBUFFER区分。
 >
 
-```
-#define USE_AHARDWAREBUFFER  0		//为1则使用AHardwareBuffer，为0使用Graphicbuffer
+```c++
+目录：librga/samples/im2d_api_demo/Android.mk 
+（line +15）
+    
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \> 25)))
+/*USE_AHARDWAREBUFFER为1则使用AHardwareBuffer，为0使用Graphicbuffer*/
+LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
+endif
 ```
 
 
@@ -1004,7 +1010,7 @@ rk3399_Android10:/ # rgaImDemo
 librga:RGA_GET_VERSION:3.02,3.020000
 ctx=0x7864d7c520,ctx->rgaFd=3
 
-=================================================================================
+=============================================================================================
    usage: rgaImDemo [--help/-h] [--querystring/--querystring=<options>]
                     [--copy] [--resize=<up/down>] [--crop] [--rotate=90/180/270]
                     [--flip=H/V] [--translate] [--blend] [--cvtcolor]
@@ -1012,6 +1018,15 @@ ctx=0x7864d7c520,ctx->rgaFd=3
          --help/-h     Call help
          --querystring You can print the version or support information corresponding to the current version of RGA according to the options.
                        If there is no input options, all versions and support information of the current version of RGA will be printed.
+                       <options>:
+                       vendor           Print vendor information.
+                       version          Print RGA version, and librga/im2d_api version.
+                       maxinput         Print max input resolution.
+                       maxoutput        Print max output resolution.
+                       scalelimit       Print scale limit.
+                       inputformat      Print supported input formats.
+                       outputformat     Print supported output formats.
+                       all              Print all information.
          --copy        Copy the image by RGA.The default is 720p to 720p.
          --resize      resize the image by RGA.You can choose to up(720p->1080p) or down(720p->480p).
          --crop        Crop the image by RGA.By default, a picture of 300*300 size is cropped from (100,100).
@@ -1021,7 +1036,7 @@ ctx=0x7864d7c520,ctx->rgaFd=3
          --blend       Blend the image by RGA.Default, Porter-Duff 'SRC over DST'.
          --cvtcolor    Modify the image format and color space by RGA.The default is RGBA8888 to NV12.
          --fill        Fill the image by RGA to blue, green, red, when you set the option to the corresponding color.
-=================================================================================
+=============================================================================================
 ```
 
 > 所有的参数解析在目录/librga/demo/im2d_api_demo/args.cpp中。
@@ -1121,7 +1136,7 @@ options：
 	/*将rga_buffer_t格式的结构体src、dst传入imresize()*/
 	STATUS = imresize(src, dst);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
-	printf("resizing .... %s\n", ImGetError(STATUS));
+	printf("resizing .... %s\n", imStrError(STATUS));
 ```
 
 
@@ -1155,7 +1170,7 @@ rgaImDemo --crop
 	/*将im_rect格式的结构体src_rect与rga_buffer_t格式的结构体src、dst传入imcrop()*/
 	STATUS = imcrop(src, dst, src_rect);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
-	printf("cropping .... %s\n", ImGetError(STATUS));
+	printf("cropping .... %s\n", imStrError(STATUS));
 ```
 
 
@@ -1195,7 +1210,7 @@ options：
 	/*将标识旋转角度的IM_USAGE枚举值与rga_buffer_t格式的结构体src、dst一同传入imrotate()*/
 	STATUS = imrotate(src, dst, ROTATE);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
-	printf("rotating .... %s\n", ImGetError(STATUS));
+	printf("rotating .... %s\n", imStrError(STATUS));
 ```
 
 
@@ -1233,7 +1248,7 @@ options：
 	/*将标识镜像反转方向的IM_USAGE枚举值与rga_buffer_t格式的结构体src、dst一同传入imflip()*/
 	STATUS = imflip(src, dst, FLIP);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
-	printf("flipping .... %s\n", ImGetError(STATUS));
+	printf("flipping .... %s\n", imStrError(STATUS));
 ```
 
 
@@ -1278,7 +1293,7 @@ options：
 	/*将im_rect格式的结构体dst_rect、对应颜色的16进制数与rga_buffer_t格式的结构体src、dst一同传入imfill()*/
 	STATUS = imfill(dst, dst_rect, COLOR);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
-	printf("filling .... %s\n", ImGetError(STATUS));
+	printf("filling .... %s\n", imStrError(STATUS));
 ```
 
 
@@ -1310,7 +1325,7 @@ rgaImDemo --translate
 	/*将im_rect格式的结构体src_rect与rga_buffer_t格式的结构体src、dst一同传入imtranslate()*/
 	STATUS = imtranslate(src, dst, src_rect.x, src_rect.y);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
-	printf("translating .... %s\n", ImGetError(STATUS));
+	printf("translating .... %s\n", imStrError(STATUS));
 ```
 
 
@@ -1338,7 +1353,7 @@ rgaImDemo --copy
 	/*rga_buffer_t格式的结构体src、dst传入imcopy()*/	
 	STATUS = imcopy(src, dst);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
-	printf("copying .... %s\n", ImGetError(STATUS));
+	printf("copying .... %s\n", imStrError(STATUS));
 ```
 
 
@@ -1366,7 +1381,7 @@ rgaImDemo --blend
 	/*rga_buffer_t格式的结构体src、dst传入imblend()*/	
 	STATUS = imblend(src, dst);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
-	printf("blending .... %s\n", ImGetError(STATUS));
+	printf("blending .... %s\n", imStrError(STATUS));
 ```
 
 
@@ -1397,5 +1412,5 @@ rgaImDemo --cvtcolor
 	/*将需要转换的格式与rga_buffer_t格式的结构体src、dst一同传入imcvtcolor()*/	
 	STATUS = imcvtcolor(src, dst, src.format, dst.format);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
-	printf("cvtcolor .... %s\n", ImGetError(STATUS));
+	printf("cvtcolor .... %s\n", imStrError(STATUS));
 ```
