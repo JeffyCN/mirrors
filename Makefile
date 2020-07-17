@@ -65,7 +65,7 @@ RM    	:= rm -rf
 
 
 # Get .c, .cpp source files by searching from current directory.
-CUR_SRC_DIR	= $(shell ls -AxR $(CURDIR)|grep ":"|tr -d ':'|grep -v "demo")
+CUR_SRC_DIR	= $(shell ls -AxR $(CURDIR)|grep ":"|tr -d ':'|grep -v "samples")
 CUR_SRC 	:= $(foreach subdir,$(CUR_SRC_DIR),$(wildcard $(subdir)/*.c $(subdir)/*.cpp))
 #CUR_SRC 	:= $(shell find . -name "*.c" -o -name "*.cpp"|sed -e 's,./,,')
 CUR_C   	:= $(filter %.c, $(CUR_SRC))
@@ -91,7 +91,7 @@ CFLAGS     	+= $(if $(GEN_DYN_LIB), $(addprefix -fPIC -I ,$(sort $(dir $(SRC_H))
 CXXFLAGS   	= $(CFLAGS)
 LDFLAGS    	:=
 LD_LIB_DIR 	:= #-L $(PRG_LIB_DIR)
-LD_LIBS	   	:= #-lsrcpbl -lmysqlclient
+LD_LIBS	   	:= -lpthread #-lsrcpbl -lmysqlclient
 XLD_FLG	   	:= -Xlinker "-(" $(LDFLAGS) -Xlinker "-)"
 
 ifeq ($(LIBDRM),y)
