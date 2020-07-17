@@ -26,6 +26,7 @@
 #ifdef ANDROID
 #include <utils/misc.h>
 #include <cutils/properties.h>
+#include "core/NormalRga.h"
 
 #ifndef ANDROID_8
 #include <gui/Surface.h>
@@ -49,9 +50,9 @@
 #endif
 
 #include "RockchipRga.h"
-#include "core/NormalRga.h"
 
 #ifdef LINUX
+#include "NormalRga.h"
 #if LIBDRM
 #include <drm.h>
 #include "drm_mode.h"
