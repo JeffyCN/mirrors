@@ -49,11 +49,11 @@ LOCAL_C_INCLUDES += \
 LOCAL_C_INCLUDES += bionic
 endif
 
-ifeq ($(strip $(BOARD_USE_DRM)), true)
-ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.9)))
-LOCAL_CFLAGS += -DANDROID_7_DRM
-endif
-endif
+#ifeq ($(strip $(BOARD_USE_DRM)), true)
+#ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.9)))
+LOCAL_CFLAGS += -DANDROID_7_DRM -DANDROID
+#endif
+#endif
 
 ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
 LOCAL_CFLAGS += -DRK3368
