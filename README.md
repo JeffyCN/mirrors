@@ -1,6 +1,6 @@
 ## librga
 
-RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可用于加速点/线绘制，执行图像缩放、旋转、bitBlt、alpha混合等常见的2D图形操作。本仓库实现了RGA用户空间驱动，并提供了一系列2D图形操作API。
+RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可用于加速点/线绘制，执行图像缩放、旋转、bitBlt、alpha混合等常见的2D图形操作。本仓库代码实现了RGA用户空间驱动，并提供了一系列2D图形操作API。
 
 ### 版本说明
 
@@ -51,7 +51,7 @@ librga也提供了Makefile文件，可以在开发板上直接执行make命令�
 
 * **头文件引用**
 
-  RockchipRga.h
+  include/RockchipRga.h
 
   im2d_api/im2d.h
 
