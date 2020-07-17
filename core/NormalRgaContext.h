@@ -12,7 +12,6 @@
 
 #ifndef _rockchip_normal_rga_context_h_
 #define _rockchip_normal_rga_context_h_
-#define UNUSED(...) (void)(__VA_ARGS__)
 
 #ifdef LINUX
 #define __DEBUG 0
