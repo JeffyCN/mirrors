@@ -73,5 +73,5 @@ librga也提供了Makefile文件，可以在开发板上直接执行make命令�
 
 * librga应用开发接口说明参考以下文件：
 
-  [API document](im2d_api/README.md)
+  [API document](docs/README.md)
 
