@@ -40,7 +40,9 @@ float get_bpp_from_format(int format) {
             bpp = 1.5;
             break;
         case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
-            bpp = 1.875;
+            /*RK encoder requires alignment of odd multiples of 256.*/
+            /*Here bpp=2 guarantee to read complete data.*/
+            bpp = 2;
             break;
 #endif
 #ifdef LINUX
@@ -70,7 +72,9 @@ float get_bpp_from_format(int format) {
             break;
         case RK_FORMAT_YCbCr_420_SP_10B:
         case RK_FORMAT_YCrCb_420_SP_10B:
-            bpp = 1.875;
+            /*RK encoder requires alignment of odd multiples of 256.*/
+            /*Here bpp=2 guarantee to read complete data.*/
+            bpp = 2;
             break;
 #endif
         default:
