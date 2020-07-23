@@ -1,0 +1,2 @@
+option('libdrm', type: 'combo', choices: ['true', 'false', 'auto'], value: 'auto',
+       description: 'With libdrm (default: auto)')
