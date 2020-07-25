@@ -251,7 +251,7 @@ endef
 
 define do_generate_dynamic_list_file
 	(echo '{';							\
-	$(NM) -u -D $1 | awk 'NF>1 {print "\t"$$2";"}' | sort -u;	\
+	$(NM) -u -D $1 | awk 'NF>1 {sub("@.*", "", $$2); print "\t"$$2";"}' | sort -u;	\
 	echo '};';							\
 	) > $2
 endef
