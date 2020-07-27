@@ -535,7 +535,7 @@ IM_STATUS imfill(rga_buffer_t buf,
                  int sync = 1);
 ```
 
-对RGBA 格式的图像的指定区域进行颜色填充。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+对RGBA 格式的图像的指定区域rect进行颜色填充。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
 ```C++
 IM_STATUS imreset(rga_buffer_t buf, 
                  im_rect rect, 
@@ -543,7 +543,7 @@ IM_STATUS imreset(rga_buffer_t buf,
                  int sync = 1);
 ```
 
-对RGBA 格式的图像的指定区域内存中的内容全部设置为指定的值color。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+对RGBA 格式的图像的指定区域rect内存中的内容全部设置为指定的值color。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
 ```C++
 IM_STATUS imdraw(rga_buffer_t buf, 
                  im_rect rect, 
@@ -551,14 +551,17 @@ IM_STATUS imdraw(rga_buffer_t buf,
                  int sync = 1);
 ```
 
-对RGBA 格式的图像的指定区域根据指定颜色color进行绘制。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
-| Parameter | Description                                         |
-| --------- | --------------------------------------------------- |
-| src       | **[required]** input image                          |
-| dst       | **[required]** output image                         |
-| rect      | **[required]** image region to fill specified color |
-| color     | **[required]** fill with color, default=0x00000000  |
-| sync      | **[optional]** wait until operation complete        |
+对RGBA 格式的图像的指定区域rect根据指定颜色color进行绘制。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+
+【注意】填充区域rect宽高需大于或等于2
+
+| Parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| src       | **[required]** input image                                   |
+| dst       | **[required]** output image                                  |
+| rect      | **[required]** image region to fill specified color<br/>width and height of rect must be greater than or equal to 2 |
+| color     | **[required]** fill with color, default=0x00000000           |
+| sync      | **[optional]** wait until operation complete                 |
 
 **Return** 0 on success or else negative error code.
 
