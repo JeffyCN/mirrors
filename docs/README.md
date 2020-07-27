@@ -386,7 +386,7 @@ rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf);
 
 
 
-### 图像缩放
+### 图像缩放、图像金字塔
 
 ------
 
@@ -522,21 +522,36 @@ IM_STATUS imflip (const rga_buffer_t src,
 
 
 
-### 图像颜色填充
+### 图像颜色填充、内存赋值、图形绘制
 
 ------
 
 #### imfill/imreset/imdraw
 
 ```C++
-IM_STATUS imfill(rga_buffer_t dst, 
+IM_STATUS imfill(rga_buffer_t buf, 
                  im_rect rect, 
                  int color = 0x00000000, 
                  int sync = 1);
 ```
 
 对RGBA 格式的图像的指定区域进行颜色填充。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+```C++
+IM_STATUS imreset(rga_buffer_t buf, 
+                 im_rect rect, 
+                 int color = 0x00000000, 
+                 int sync = 1);
+```
 
+对RGBA 格式的图像的指定区域内存中的内容全部设置为指定的值color。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+```C++
+IM_STATUS imdraw(rga_buffer_t buf, 
+                 im_rect rect, 
+                 int color = 0x00000000, 
+                 int sync = 1);
+```
+
+对RGBA 格式的图像的指定区域根据指定颜色color进行绘制。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
 | Parameter | Description                                         |
 | --------- | --------------------------------------------------- |
 | src       | **[required]** input image                          |

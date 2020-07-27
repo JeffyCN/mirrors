@@ -451,15 +451,15 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
  *
  * @returns success or else negative error code.
  */
-#define imfill(src, dst, color, ...) \
+#define imfill(buf, rect, color, ...) \
     ({ \
         IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
-            ret = imfill_t(src, dst, color, 1); \
+            ret = imfill_t(buf, rect, color, 1); \
         } else if (argc == 1){ \
-            ret = imfill_t(src, dst, color, args[0]);; \
+            ret = imfill_t(buf, rect, color, args[0]);; \
         } else { \
             ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -467,15 +467,15 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
         ret; \
     })
 
-#define imreset(src, dst, color, ...) \
+#define imreset(buf, rect, color, ...) \
     ({ \
         IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
-            ret = imfill_t(src, dst, color, 1); \
+            ret = imfill_t(buf, rect, color, 1); \
         } else if (argc == 1){ \
-            ret = imfill_t(src, dst, color, args[0]);; \
+            ret = imfill_t(buf, rect, color, args[0]);; \
         } else { \
             ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -483,15 +483,15 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
         ret; \
     })
 
-#define imdraw(src, dst, color, ...) \
+#define imdraw(buf, rect, color, ...) \
     ({ \
         IM_STATUS ret = IM_STATUS_SUCCESS; \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
-            ret = imfill_t(src, dst, color, 1); \
+            ret = imfill_t(buf, rect, color, 1); \
         } else if (argc == 1){ \
-            ret = imfill_t(src, dst, color, args[0]);; \
+            ret = imfill_t(buf, rect, color, args[0]);; \
         } else { \
             ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
