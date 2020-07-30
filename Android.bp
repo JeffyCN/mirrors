@@ -63,5 +63,5 @@ cc_library_shared {
 		"libion",
     ],
 
-    cflags: ["-Wno-error"] +["-DLOG_TAG=\"librga\""] + ["-DRK_DRM_GRALLOC=1"] + ["-DANDROID_8"] + ["-DANDROID_7_DRM"] + ["-DUSE_AHARDWAREBUFFER=1"],
+    cflags: ["-Wno-error"] +["-DLOG_TAG=\"librga\""] + ["-DRK_DRM_GRALLOC=1"] + ["-DANDROID_8"] + ["-DANDROID_7_DRM"] + ["-DUSE_AHARDWAREBUFFER=1"] + ["-DANDROID"],
 }

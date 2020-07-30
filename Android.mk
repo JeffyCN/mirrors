@@ -152,6 +152,8 @@ LOCAL_SHARED_LIBRARIES += \
 LOCAL_CFLAGS := \
         -DLOG_TAG=\"librga\"
 
+LOCAL_CFLAGS += -DANDROID
+
 ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \> 25)))
 LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
 endif
