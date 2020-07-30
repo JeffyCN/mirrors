@@ -7,4 +7,4 @@ override_dh_auto_configure:
 	dh_auto_configure -- -Dlibdrm=true
 
 %:
-	dh $@ --with quilt --buildsystem=meson
+	dh $@ --buildsystem=meson

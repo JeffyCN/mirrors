@@ -5,8 +5,7 @@ Uploaders: Jeffy Chen <jeffy.chen@rock-chips.com>
 Build-Depends: debhelper (>= 11),
                libdrm-dev (>= 2.4.0),
                meson,
-               pkg-config,
-               quilt
+               pkg-config
 Standards-Version: 4.1.3
 Section: libs
 Homepage: https://github.com/rockchip-linux/linux-rga
