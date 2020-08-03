@@ -299,6 +299,16 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 </table>
 
 
+### 图像格式对齐说明
+
+------
+
+| Format                               | Alignment                               |
+| :----------------------------------- | --------------------------------------- |
+| YUV420/422 YUV400/Y4 YVYU422/YUYV420 | 所有参数均须2对齐                       |
+| YUV420/422 10bit                     | width stride须要16对齐，其余参数须2对齐 |
+| RGB888                               | width stride须4对齐                     |
+
 
 
 ## 应用接口说明
