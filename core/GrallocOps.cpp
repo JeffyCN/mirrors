@@ -210,6 +210,14 @@ int RkRgaGetHandleMapAddress(buffer_handle_t handle,
 
 int RkRgaGetRgaFormat(int format) {
     switch (format) {
+        case HAL_PIXEL_FORMAT_BPP_1:
+            return RK_FORMAT_BPP1;
+        case HAL_PIXEL_FORMAT_BPP_2:
+            return RK_FORMAT_BPP2;
+        case HAL_PIXEL_FORMAT_BPP_4:
+            return RK_FORMAT_BPP4;
+        case HAL_PIXEL_FORMAT_BPP_8:
+            return RK_FORMAT_BPP8;
         case HAL_PIXEL_FORMAT_RGB_565:
             return RK_FORMAT_RGB_565;
         case HAL_PIXEL_FORMAT_RGB_888:
@@ -234,9 +242,16 @@ int RkRgaGetRgaFormat(int format) {
     }
 }
 
-
 int RkRgaGetRgaFormatFromAndroid(int format) {
     switch (format) {
+        case HAL_PIXEL_FORMAT_BPP_1:
+            return RK_FORMAT_BPP1;
+        case HAL_PIXEL_FORMAT_BPP_2:
+            return RK_FORMAT_BPP2;
+        case HAL_PIXEL_FORMAT_BPP_4:
+            return RK_FORMAT_BPP4;
+        case HAL_PIXEL_FORMAT_BPP_8:
+            return RK_FORMAT_BPP8;
         case HAL_PIXEL_FORMAT_RGB_565:
             return RK_FORMAT_RGB_565;
         case HAL_PIXEL_FORMAT_RGB_888:
