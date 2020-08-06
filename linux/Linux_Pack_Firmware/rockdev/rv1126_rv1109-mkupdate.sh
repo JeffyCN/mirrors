@@ -16,17 +16,8 @@ if [ ! -f "package-file" ]; then
 fi
 ./afptool -pack ./ Image/update.img || pause
 
-# RK_CHIP define on device/rockchip/rv1126_rv1109/BoardConfig*.mk
-case $RK_CHIP in
-	RV1109)
-		chip_name="-RK1109"
-		;;
-	RV1126 | *)
-		chip_name="-RK1126"
-		;;
-esac
-./rkImageMaker $chip_name Image/MiniLoaderAll.bin Image/update.img update.img -os_type:androidos || pause
-echo "Making $RK_CHIP update.img OK."
+./rkImageMaker -RK1126 Image/MiniLoaderAll.bin Image/update.img update.img -os_type:androidos || pause
+echo "Making -RK1126 update.img OK."
 #echo "Press any key to quit:"
 #read -n1 -s key
 exit $?
