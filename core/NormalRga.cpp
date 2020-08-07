@@ -404,6 +404,129 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     srcFd = dstFd = src1Fd = -1;
 
 #ifdef ANDROID
+	if (is_out_log()) {
+		ALOGD("src->hnd = %p , dst->hnd = %p \n",src->hnd,dst->hnd);
+		ALOGD("src: Fd = %.2d , phyAddr = %p , virAddr = %p\n",src->fd,src->phyAddr,src->virAddr);
+		ALOGD("dst: Fd = %.2d , phyAddr = %p , virAddr = %p\n",dst->fd,dst->phyAddr,dst->virAddr);
+	}
+#endif
+	/*********** get src addr *************/
+		if (src && src->phyAddr) {
+			srcBuf = src->phyAddr;
+		} else if (src && src->fd > 0) {
+			srcFd = src->fd;
+			src->mmuFlag = 1;
+		} else if (src && src->virAddr) {
+			srcBuf = src->virAddr;
+			ALOGD("srcBuf = %p, src->virAddr = %p\n", srcBuf, src->virAddr);
+			src->mmuFlag = 1;
+		}
+#ifdef ANDROID
+		else if (src && src->hnd) {
+#ifndef RK3188
+			/* RK3188 is special, cannot configure rga through fd. */
+			RkRgaGetHandleFd(src->hnd, &srcFd);
+#endif
+#ifndef ANDROID_8
+			if (srcFd < 0 || srcFd == 0) {
+				RkRgaGetHandleMapAddress(src->hnd, &srcBuf);
+			}
+#endif
+			if ((srcFd < 0 || srcFd == 0) && srcBuf == NULL) {
+				ALOGE("src handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &src->hnd);
+				printf("src handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &src->hnd);
+				return ret;
+			}
+			else {
+				srcType = 1;
+			}
+		}
+
+		if (!isRectValid(relSrcRect)) {
+			ret = NormalRgaGetRect(src->hnd, &tmpSrcRect);
+			if (ret) {
+				ALOGE("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);
+				printf("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);
+				return ret;
+			}
+			memcpy(&relSrcRect, &tmpSrcRect, sizeof(rga_rect_t));
+		}
+#endif
+		if (srcFd == -1 && !srcBuf) {
+			ALOGE("%d:src has not fd and address for render", __LINE__);
+			return ret;
+		}
+		if (srcFd == 0 && !srcBuf) {
+			ALOGE("srcFd is zero, now driver not support");
+			return -EINVAL;
+		}
+		/* Old rga driver cannot support fd as zero. */
+		if (srcFd == 0)
+			srcFd = -1;
+
+		/*********** get dst addr *************/
+		if (dst && dst->phyAddr) {
+			dstBuf = dst->phyAddr;
+		} else if (dst && dst->fd > 0) {
+			dstFd = dst->fd;
+			dst->mmuFlag = 1;
+		} else if (dst && dst->virAddr) {
+			dstBuf = dst->virAddr;
+			dst->mmuFlag = 1;
+		}
+#ifdef ANDROID
+		else if (dst && dst->hnd) {
+#ifndef RK3188
+			/* RK3188 is special, cannot configure rga through fd. */
+			RkRgaGetHandleFd(dst->hnd, &dstFd);
+#endif
+#ifndef ANDROID_8
+			if (dstFd < 0 || dstFd == 0) {
+				RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
+			}
+#endif
+			if ((dstFd < 0 || dstFd == 0) && dstBuf == NULL) {
+				ALOGE("dst handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &dst->hnd);
+				printf("dst handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &dst->hnd);
+				return ret;
+			}
+			else {
+				dstType = 1;
+			}
+		}
+
+		if (!isRectValid(relDstRect)) {
+			ret = NormalRgaGetRect(dst->hnd, &tmpDstRect);
+			if (ret) {
+				ALOGE("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &dst->hnd);
+				printf("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &dst->hnd);
+				return ret;
+			}
+			memcpy(&relDstRect, &tmpDstRect, sizeof(rga_rect_t));
+		}
+#endif
+
+		if (dstFd == -1 && !dstBuf) {
+			ALOGE("%d:dst has not fd and address for render", __LINE__);
+			return ret;
+		}
+		if (dstFd == 0 && !dstBuf) {
+			ALOGE("dstFd is zero, now driver not support");
+			return -EINVAL;
+		}
+		/* Old rga driver cannot support fd as zero. */
+		if (dstFd == 0)
+			dstFd = -1;
+
+#ifdef ANDROID
+	if(is_out_log()) {
+		ALOGD("src: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", srcFd, srcBuf, src->mmuFlag, srcType);
+		ALOGD("dst: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", dstFd, dstBuf, dst->mmuFlag, dstType);
+	}
+#endif
+
+#if 0
+#ifdef ANDROID
     if(is_out_log())
         ALOGD("src->hnd = %p , dst->hnd = %p \n",src->hnd,dst->hnd);
 
@@ -548,6 +671,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
     if (src1Fd == 0)
         src1Fd = -1;
+ #endif
 
 #ifdef RK3126C
     if ( (relSrcRect.width == relDstRect.width) && (relSrcRect.height == relDstRect.height ) &&
