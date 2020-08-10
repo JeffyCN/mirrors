@@ -66,6 +66,9 @@ struct _GstMppVideoDec
   MppApi *mpi;
 
   GstBufferPool *pool;          /* Pool of output frames */
+
+  GstClockTime last_timestamp_out;
+  gboolean use_oldest_frame;
 };
 
 struct _GstMppVideoDecClass

@@ -199,6 +199,9 @@ gst_mpp_video_dec_start (GstVideoDecoder * decoder)
   g_atomic_int_set (&self->active, TRUE);
   self->output_flow = GST_FLOW_OK;
 
+  self->last_timestamp_out = GST_CLOCK_TIME_NONE;
+  self->use_oldest_frame = FALSE;
+
   return TRUE;
 }
 
@@ -450,11 +453,18 @@ device_error:
 static GstVideoCodecFrame *
 gst_mpp_video_dec_get_frame (GstVideoDecoder * decoder, GstBuffer * buffer)
 {
+  GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
   GstVideoCodecFrame *frame = NULL;
   GList *frames, *l;
 
-  /* Use oldest frame for invalid PTS */
-  if (!GST_BUFFER_PTS (buffer))
+  /* Use oldest frame for invalid or reordered PTS */
+  if (!GST_BUFFER_PTS (buffer) ||
+      GST_BUFFER_PTS (buffer) <= self->last_timestamp_out)
+    self->use_oldest_frame = TRUE;
+
+  self->last_timestamp_out = GST_BUFFER_PTS (buffer);
+
+  if (self->use_oldest_frame)
     return gst_video_decoder_get_oldest_frame (decoder);
 
   /* MPP outputs frames in display order, so let's guessing a best frame for
