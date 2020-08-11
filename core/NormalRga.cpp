@@ -411,112 +411,122 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 	}
 #endif
 	/*********** get src addr *************/
-		if (src && src->phyAddr) {
-			srcBuf = src->phyAddr;
-		} else if (src && src->fd > 0) {
-			srcFd = src->fd;
-			src->mmuFlag = 1;
-		} else if (src && src->virAddr) {
-			srcBuf = src->virAddr;
-			ALOGD("srcBuf = %p, src->virAddr = %p\n", srcBuf, src->virAddr);
-			src->mmuFlag = 1;
-		}
+	if (src && src->phyAddr) {
+		srcBuf = src->phyAddr;
+	} else if (src && src->fd > 0) {
+		srcFd = src->fd;
+		src->mmuFlag = 1;
+	} else if (src && src->virAddr) {
+		srcBuf = src->virAddr;
+		ALOGD("srcBuf = %p, src->virAddr = %p\n", srcBuf, src->virAddr);
+		src->mmuFlag = 1;
+	}
+	/*
+	 * After getting the fd or virtual address through the handle,
+	 * set 'srcType' to 1, and at the end, and then judge
+	 * the 'srcType' at the end whether to enable mmu.
+	 */
 #ifdef ANDROID
-		else if (src && src->hnd) {
+	else if (src && src->hnd) {
 #ifndef RK3188
-			/* RK3188 is special, cannot configure rga through fd. */
-			RkRgaGetHandleFd(src->hnd, &srcFd);
+		/* RK3188 is special, cannot configure rga through fd. */
+		RkRgaGetHandleFd(src->hnd, &srcFd);
 #endif
 #ifndef ANDROID_8
-			if (srcFd < 0 || srcFd == 0) {
-				RkRgaGetHandleMapAddress(src->hnd, &srcBuf);
-			}
-#endif
-			if ((srcFd < 0 || srcFd == 0) && srcBuf == NULL) {
-				ALOGE("src handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &src->hnd);
-				printf("src handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &src->hnd);
-				return ret;
-			}
-			else {
-				srcType = 1;
-			}
-		}
-
-		if (!isRectValid(relSrcRect)) {
-			ret = NormalRgaGetRect(src->hnd, &tmpSrcRect);
-			if (ret) {
-				ALOGE("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);
-				printf("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);
-				return ret;
-			}
-			memcpy(&relSrcRect, &tmpSrcRect, sizeof(rga_rect_t));
+		if (srcFd < 0 || srcFd == 0) {
+			RkRgaGetHandleMapAddress(src->hnd, &srcBuf);
 		}
 #endif
-		if (srcFd == -1 && !srcBuf) {
-			ALOGE("%d:src has not fd and address for render", __LINE__);
+		if ((srcFd < 0 || srcFd == 0) && srcBuf == NULL) {
+			ALOGE("src handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &src->hnd);
+			printf("src handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &src->hnd);
 			return ret;
 		}
-		if (srcFd == 0 && !srcBuf) {
-			ALOGE("srcFd is zero, now driver not support");
-			return -EINVAL;
+		else {
+			srcType = 1;
 		}
-		/* Old rga driver cannot support fd as zero. */
-		if (srcFd == 0)
-			srcFd = -1;
+	}
 
-		/*********** get dst addr *************/
-		if (dst && dst->phyAddr) {
-			dstBuf = dst->phyAddr;
-		} else if (dst && dst->fd > 0) {
-			dstFd = dst->fd;
-			dst->mmuFlag = 1;
-		} else if (dst && dst->virAddr) {
-			dstBuf = dst->virAddr;
-			dst->mmuFlag = 1;
+	if (!isRectValid(relSrcRect)) {
+		ret = NormalRgaGetRect(src->hnd, &tmpSrcRect);
+		if (ret) {
+			ALOGE("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);
+			printf("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);
+			return ret;
 		}
+		memcpy(&relSrcRect, &tmpSrcRect, sizeof(rga_rect_t));
+	}
+#endif
+	if (srcFd == -1 && !srcBuf) {
+		ALOGE("%d:src has not fd and address for render", __LINE__);
+		return ret;
+	}
+	if (srcFd == 0 && !srcBuf) {
+		ALOGE("srcFd is zero, now driver not support");
+		return -EINVAL;
+	}
+	/* Old rga driver cannot support fd as zero. */
+	if (srcFd == 0)
+		srcFd = -1;
+
+	/*********** get dst addr *************/
+	if (dst && dst->phyAddr) {
+		dstBuf = dst->phyAddr;
+	} else if (dst && dst->fd > 0) {
+		dstFd = dst->fd;
+		dst->mmuFlag = 1;
+	} else if (dst && dst->virAddr) {
+		dstBuf = dst->virAddr;
+		dst->mmuFlag = 1;
+	}
+	/*
+	 * After getting the fd or virtual address through the handle,
+	 * set 'dstType' to 1, and at the end, and then judge
+	 * the 'dstType' at the end whether to enable mmu.
+	 */
 #ifdef ANDROID
-		else if (dst && dst->hnd) {
+	else if (dst && dst->hnd) {
 #ifndef RK3188
-			/* RK3188 is special, cannot configure rga through fd. */
-			RkRgaGetHandleFd(dst->hnd, &dstFd);
+		/* RK3188 is special, cannot configure rga through fd. */
+		RkRgaGetHandleFd(dst->hnd, &dstFd);
 #endif
 #ifndef ANDROID_8
-			if (dstFd < 0 || dstFd == 0) {
-				RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
-			}
-#endif
-			if ((dstFd < 0 || dstFd == 0) && dstBuf == NULL) {
-				ALOGE("dst handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &dst->hnd);
-				printf("dst handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &dst->hnd);
-				return ret;
-			}
-			else {
-				dstType = 1;
-			}
-		}
-
-		if (!isRectValid(relDstRect)) {
-			ret = NormalRgaGetRect(dst->hnd, &tmpDstRect);
-			if (ret) {
-				ALOGE("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &dst->hnd);
-				printf("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &dst->hnd);
-				return ret;
-			}
-			memcpy(&relDstRect, &tmpDstRect, sizeof(rga_rect_t));
+		if (dstFd < 0 || dstFd == 0) {
+			RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
 		}
 #endif
-
-		if (dstFd == -1 && !dstBuf) {
-			ALOGE("%d:dst has not fd and address for render", __LINE__);
+		if ((dstFd < 0 || dstFd == 0) && dstBuf == NULL) {
+			ALOGE("dst handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &dst->hnd);
+			printf("dst handle get fd and vir_addr fail ret = %d,hnd=%p", ret, &dst->hnd);
 			return ret;
 		}
-		if (dstFd == 0 && !dstBuf) {
-			ALOGE("dstFd is zero, now driver not support");
-			return -EINVAL;
+		else {
+			dstType = 1;
 		}
-		/* Old rga driver cannot support fd as zero. */
-		if (dstFd == 0)
-			dstFd = -1;
+	}
+
+	if (!isRectValid(relDstRect)) {
+		ret = NormalRgaGetRect(dst->hnd, &tmpDstRect);
+		if (ret) {
+			ALOGE("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &dst->hnd);
+			printf("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &dst->hnd);
+			return ret;
+		}
+		memcpy(&relDstRect, &tmpDstRect, sizeof(rga_rect_t));
+	}
+#endif
+
+	if (dstFd == -1 && !dstBuf) {
+		ALOGE("%d:dst has not fd and address for render", __LINE__);
+		return ret;
+	}
+	if (dstFd == 0 && !dstBuf) {
+		ALOGE("dstFd is zero, now driver not support");
+		return -EINVAL;
+	}
+	/* Old rga driver cannot support fd as zero. */
+	if (dstFd == 0)
+		dstFd = -1;
 
 #ifdef ANDROID
 	if(is_out_log()) {
@@ -524,154 +534,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 		ALOGD("dst: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", dstFd, dstBuf, dst->mmuFlag, dstType);
 	}
 #endif
-
-#if 0
-#ifdef ANDROID
-    if(is_out_log())
-        ALOGD("src->hnd = %p , dst->hnd = %p \n",src->hnd,dst->hnd);
-
-    if (src && src->hnd) {
-#ifndef RK3188
-        /* RK3188 is special, cannot configure rga through fd. */
-        if(src->fd <= 0 ) {
-            ret = RkRgaGetHandleFd(src->hnd, &srcFd);
-            if (ret) {
-                ALOGE("dst handle get fd fail ret = %d,hnd=%p", ret, &src->hnd);
-                printf("dst handle get fd fail ret = %d,hnd=%p", ret, &src->hnd);
-                return ret;
-            }
-        }
-#endif
-        /* first to use user's parameter if user has passed effective parameter.if not, choose to use handle as using parameter. */
-        if (!isRectValid(relSrcRect)) {
-            ret = NormalRgaGetRect(src->hnd, &tmpSrcRect);
-            if (ret) {
-                ALOGE("src handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);
-                printf("src handleGetRect fail ,ret = %d,hnd=%p", ret, &src->hnd);
-                return ret;
-            }
-            memcpy(&relSrcRect, &tmpSrcRect, sizeof(rga_rect_t));
-        }
-        NormalRgaGetMmuType(src->hnd, &srcType);
-    }
-
-    if (dst && dst->hnd) {
-#ifndef RK3188
-        if(src->fd <= 0 ) {
-            ret = RkRgaGetHandleFd(dst->hnd, &dstFd);
-            if (ret) {
-                ALOGE("dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
-                printf("dst handle get fd fail ret = %d,hnd=%p", ret, &dst->hnd);
-                return ret;
-            }
-        }
-#endif
-        if (!isRectValid(relDstRect)) {
-            ret = NormalRgaGetRect(dst->hnd, &tmpDstRect);
-            if (ret) {
-                ALOGE("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &dst->hnd);
-                printf("dst handleGetRect fail ,ret = %d,hnd=%p", ret, &dst->hnd);
-                return ret;
-            }
-            memcpy(&relDstRect, &tmpDstRect, sizeof(rga_rect_t));
-        }
-        NormalRgaGetMmuType(dst->hnd, &dstType);
-    }
-
-#endif
-
-
-    if (src && srcFd < 0) {
-        srcFd = src->fd;
-        src->mmuFlag = 1;
-    }
-
-#ifdef ANDROID
-    if(is_out_log())
-        ALOGD("srcFd = %.2d , phyAddr = %p , virAddr = %p\n",srcFd,src->phyAddr,src->virAddr);
-#endif
-
-    /*
-     * First to use phyical address or fd, second to usr virtual address. Phyical address can save time beacause cpu
-     * don't need to set up mmu linked list.
-     * */
-    if (src && src->phyAddr)
-        srcBuf = src->phyAddr;
-    else if (src && src->virAddr) {
-        srcBuf = src->virAddr;
-        src->mmuFlag = 1;
-    }
-#ifdef ANDROID
-#ifndef ANDROID_8
-    else if (src && src->hnd)
-        //Get virtual addresss by lock action(on libgralloc)
-        ret = RkRgaGetHandleMapAddress(src->hnd, &srcBuf);
-#endif      //ANDROID_8
-#endif
-
-    if (srcFd == -1 && !srcBuf) {
-        ALOGE("%d:src has not fd and address for render", __LINE__);
-        return ret;
-    }
-
-    if (srcFd == 0 && !srcBuf) {
-        ALOGE("srcFd is zero, now driver not support");
-        return -EINVAL;
-    }
-
-    /* Old rga driver cannot support fd as zero. */
-    if (srcFd == 0)
-        srcFd = -1;
-
-    if (dst && dstFd < 0) {
-        dstFd = dst->fd;
-        dst->mmuFlag = 1;
-    }
-
-#ifdef ANDROID
-    if(is_out_log())
-        ALOGD("dstFd = %.2d , phyAddr = %p , virAddr = %p\n",dstFd,dst->phyAddr,dst->virAddr);
-#endif
-
-    /*
-     * First to use phyical address or fd, second to usr virtual address. Phyical address can save time beacause cpu
-     * don't need to set up mmu linked list.
-     * */
-    if (dst && dst->phyAddr)
-        dstBuf = dst->phyAddr;
-    else if (dst && dst->virAddr) {
-        dstBuf = dst->virAddr;
-        dst->mmuFlag = 1;
-    }
-
-#ifdef ANDROID
-#ifndef ANDROID_8
-    else if (dst && dst->hnd)
-        ret = RkRgaGetHandleMapAddress(dst->hnd, &dstBuf);
-#endif      //ANDROID_8
-
-#ifdef ANDROID
-    if(is_out_log())
-        ALOGD("srcBuf = %p , dstBuf = %p\n",srcBuf,dstBuf);
-#endif
-#endif
-
-    if (dst && dstFd == -1 && !dstBuf) {
-        ALOGE("%d:dst has not fd and address for render", __LINE__);
-        return ret;
-    }
-
-    if (dst && dstFd == 0 && !dstBuf) {
-        ALOGE("dstFd is zero, now driver not support");
-        return -EINVAL;
-    }
-
-    if (dstFd == 0)
-        dstFd = -1;
-
-    if (src1Fd == 0)
-        src1Fd = -1;
- #endif
 
 #ifdef RK3126C
     if ( (relSrcRect.width == relDstRect.width) && (relSrcRect.height == relDstRect.height ) &&
