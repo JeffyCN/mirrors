@@ -60,5 +60,4 @@ pkgconfig.generate(
     name : 'librga',
     version : meson.project_version(),
     description : 'Userspace interface to Rockchip RGA 2D accelerator',
-    requires_private : libdrm_dep,
 )
