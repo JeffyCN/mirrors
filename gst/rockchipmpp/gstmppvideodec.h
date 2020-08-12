@@ -67,8 +67,7 @@ struct _GstMppVideoDec
 
   GstBufferPool *pool;          /* Pool of output frames */
 
-  GstClockTime last_timestamp_out;
-  gboolean use_oldest_frame;
+  gboolean seen_valid_pts;
 };
 
 struct _GstMppVideoDecClass

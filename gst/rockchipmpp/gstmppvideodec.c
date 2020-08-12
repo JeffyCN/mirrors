@@ -199,8 +199,7 @@ gst_mpp_video_dec_start (GstVideoDecoder * decoder)
   g_atomic_int_set (&self->active, TRUE);
   self->output_flow = GST_FLOW_OK;
 
-  self->last_timestamp_out = GST_CLOCK_TIME_NONE;
-  self->use_oldest_frame = FALSE;
+  self->seen_valid_pts = FALSE;
 
   return TRUE;
 }
@@ -455,54 +454,71 @@ gst_mpp_video_dec_get_frame (GstVideoDecoder * decoder, GstBuffer * buffer)
 {
   GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
   GstVideoCodecFrame *frame = NULL;
+  GstClockTime pts;
   GList *frames, *l;
 
-  /* Use oldest frame for invalid or reordered PTS */
-  if (!GST_BUFFER_PTS (buffer) ||
-      GST_BUFFER_PTS (buffer) <= self->last_timestamp_out)
-    self->use_oldest_frame = TRUE;
+  /**
+   * Somehow, the MPP might provide different kinds of PTS:
+   * 1. Original frame PTS
+   * 2. Zero PTS
+   * 3. Generated PTS(in millisecond)
+   */
+  pts = GST_BUFFER_PTS (buffer);
+  if (!pts)
+    pts = GST_CLOCK_TIME_NONE;
+  else if (!self->seen_valid_pts && GST_CLOCK_TIME_IS_VALID (pts))
+    pts *= 1000000;
 
-  self->last_timestamp_out = GST_BUFFER_PTS (buffer);
-
-  if (self->use_oldest_frame)
-    return gst_video_decoder_get_oldest_frame (decoder);
-
-  /* MPP outputs frames in display order, so let's guessing a best frame for
-   * target PTS, and discard all out-dated ones */
   frames = gst_video_decoder_get_frames (decoder);
+  if (!frames)
+    return NULL;
+
+  /* Use oldest frame for invalid PTS */
+  if (!self->seen_valid_pts) {
+    frame = frames->data;
+    goto out;
+  }
+
+  /* Prefer frame with close PTS(within 3ms) */
   for (l = frames; l != NULL; l = l->next) {
     GstVideoCodecFrame *f = l->data;
-
-    /* Filter out future frames */
-    if (GST_CLOCK_TIME_IS_VALID (f->pts) && f->pts > GST_BUFFER_PTS (buffer))
-      continue;
-
-    if (!frame) {
+    if (abs (f->pts - pts) < 3000000) {
       frame = f;
-      continue;
-    }
-
-    if (GST_CLOCK_TIME_IS_VALID (f->pts)) {
-      GstVideoCodecFrame *to_rm;
-
-      /* Get the earliest one and discard the rest */
-      if (f->pts >= frame->pts) {
-        to_rm = f;
-      } else {
-        to_rm = frame;
-        frame = f;
-      }
-
-      GST_WARNING_OBJECT (decoder, "Discarding out-dated frame (#%d)",
-          to_rm->system_frame_number);
-
-      gst_video_codec_frame_ref (to_rm);
-      gst_video_decoder_release_frame (decoder, to_rm);
+      goto out;
     }
   }
 
-  if (frame)
+  /* MPP outputs frames in display order, so let's find the earliest one */
+  for (l = frames; l != NULL; l = l->next) {
+    GstVideoCodecFrame *f = l->data;
+
+    /* Consider frames with invalid PTS are decode-only */
+    if (!GST_CLOCK_TIME_IS_VALID (f->pts)) {
+      GST_WARNING_OBJECT (decoder, "Discarding decode-only frame (#%d)",
+          f->system_frame_number);
+
+      gst_video_codec_frame_ref (f);
+      gst_video_decoder_release_frame (decoder, f);
+      continue;
+    }
+
+    /* Filter out future frames */
+    if (GST_CLOCK_TIME_IS_VALID (pts) && f->pts > pts)
+      continue;
+
+    /* Find the earliest frame */
+    if (!frame || frame->pts > f->pts)
+      frame = f;
+  }
+
+out:
+  if (frame) {
     gst_video_codec_frame_ref (frame);
+
+    /* Prefer MPP PTS */
+    if (GST_CLOCK_TIME_IS_VALID (pts))
+      frame->pts = pts;
+  }
 
   g_list_free_full (frames, (GDestroyNotify) gst_video_codec_frame_unref);
   return frame;
@@ -530,9 +546,6 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
           frame->system_frame_number);
       gst_video_decoder_release_frame (decoder, frame);
     } else {
-      if (!GST_CLOCK_TIME_IS_VALID (frame->pts))
-        frame->pts = GST_BUFFER_PTS (frame->output_buffer) * 1000000;
-
       GST_TRACE_OBJECT (self, "finish frame ts=%" GST_TIME_FORMAT,
           GST_TIME_ARGS (frame->pts));
       ret = gst_video_decoder_finish_frame (decoder, frame);
@@ -702,6 +715,12 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
   if (!processed) {
     gst_buffer_map (frame->input_buffer, &mapinfo, GST_MAP_READ);
     mpp_packet_init (&mpkt, mapinfo.data, mapinfo.size);
+
+    if (!frame->pts)
+      frame->pts = GST_CLOCK_TIME_NONE;
+
+    if (GST_CLOCK_TIME_IS_VALID (frame->pts))
+      self->seen_valid_pts = TRUE;
 
     mpp_packet_set_pts (mpkt, frame->pts);
     mpp_packet_set_dts (mpkt, frame->dts);
