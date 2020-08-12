@@ -60,6 +60,8 @@ static void gst_x_image_sink_xwindow_update_geometry (GstRkXImageSink *
 static void gst_x_image_sink_expose (GstVideoOverlay * overlay);
 static void gst_x_image_sink_xwindow_clear (GstRkXImageSink * ximagesink,
     GstXWindow * xwindow);
+static GstFlowReturn
+gst_x_image_sink_show_frame (GstVideoSink * vsink, GstBuffer * buf);
 
 static GstStaticPadTemplate gst_x_image_sink_sink_template_factory =
 GST_STATIC_PAD_TEMPLATE ("sink",
@@ -811,6 +813,48 @@ event_failed:
         g_strerror (errno), errno);
     return FALSE;
   }
+}
+
+static void
+gst_kms_sink_drain (GstRkXImageSink * self)
+{
+  GstParentBufferMeta *parent_meta;
+
+  GST_DEBUG_OBJECT (self, "draining");
+
+  if (!self->last_buffer)
+    return;
+
+  /* We only need to return the last_buffer if it depends on upstream buffer.
+   * In this case, the last_buffer will have a GstParentBufferMeta set. */
+  parent_meta = gst_buffer_get_parent_buffer_meta (self->last_buffer);
+  if (parent_meta) {
+    GstBuffer *dumb_buf;
+    dumb_buf = gst_kms_sink_copy_to_dumb_buffer (self, parent_meta->buffer);
+
+    gst_kms_allocator_clear_cache (self->allocator);
+    gst_x_image_sink_show_frame (GST_VIDEO_SINK (self), dumb_buf);
+    gst_buffer_unref (dumb_buf);
+  }
+}
+
+static gboolean
+gst_kms_sink_query (GstBaseSink * bsink, GstQuery * query)
+{
+  GstRkXImageSink *self = GST_X_IMAGE_SINK (bsink);
+
+  switch (GST_QUERY_TYPE (query)) {
+    case GST_QUERY_ALLOCATION:
+    case GST_QUERY_DRAIN:
+    {
+      gst_kms_sink_drain (self);
+      break;
+    }
+    default:
+      break;
+  }
+
+  return GST_BASE_SINK_CLASS (parent_class)->query (bsink, query);
 }
 
 /*ximagesink*/
@@ -1741,6 +1785,11 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
   if (!ximagesink->xcontext)
     return FALSE;
 
+  /* We are going to change the internal buffer pool, which means it will no
+   * longer be compatbile with the last_buffer size. Drain now, as we won't be
+   * able to do that later on. */
+  gst_kms_sink_drain (ximagesink);
+
   GST_DEBUG_OBJECT (ximagesink, "given caps %" GST_PTR_FORMAT, caps);
 
   if (!gst_video_info_from_caps (&info, caps))
@@ -2636,6 +2685,7 @@ gst_x_image_sink_class_init (GstRkXImageSinkClass * klass)
   gstbasesink_class->get_times = GST_DEBUG_FUNCPTR (gst_x_image_sink_get_times);
   gstbasesink_class->propose_allocation =
       GST_DEBUG_FUNCPTR (gst_kms_sink_propose_allocation);
+  gstbasesink_class->query = GST_DEBUG_FUNCPTR (gst_kms_sink_query);
   gstbasesink_class->event = GST_DEBUG_FUNCPTR (gst_x_image_sink_event);
 
   videosink_class->show_frame = GST_DEBUG_FUNCPTR (gst_x_image_sink_show_frame);
