@@ -23,7 +23,7 @@ extern "C" {
 #define IM_API /* define API export as needed */
 #endif
 
-#define RGA_IM2D_VERSION "1.00"
+#define RGA_IM2D_VERSION "1.10"
 
 typedef enum {
     /* Rotation */
@@ -54,7 +54,8 @@ typedef enum {
     IM_SYNC                     = 1 << 15,
     IM_CROP                     = 1 << 16,
     IM_COLOR_FILL               = 1 << 17,
-    IM_NN_QUANTIZE              = 1 << 18,
+    IM_COLOR_PALETTE            = 1 << 18,
+    IM_NN_QUANTIZE              = 1 << 19,
 } IM_USAGE;
 
 typedef enum {
@@ -186,6 +187,7 @@ typedef struct {
     int color_space_mode;               /* color_space_mode */
     int color;                          /* color, used by color fill */
     int global_alpha;                   /* global_alpha */
+    unsigned long lut_addr;             /* LUT/ pattern load base address */
     im_nn_t nn;
 } rga_buffer_t;
 
@@ -501,6 +503,34 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
 IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync);
 
 /*
+ * palette
+ *
+ * @param src
+ * @param dst
+ * @param lut
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#define impalette(src, dst, lut,  ...) \
+    ({ \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
+        int args[] = {__VA_ARGS__}; \
+        int argc = sizeof(args)/sizeof(int); \
+        if (argc == 0) { \
+            ret = impalette_t(src, dst, lut, 1); \
+        } else if (argc == 1){ \
+            ret = impalette_t(src, dst, lut, args[0]);; \
+        } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
+            printf("invalid parameter\n"); \
+        } \
+        ret; \
+    })
+IM_API IM_STATUS impalette_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut, int sync);
+
+/*
  * translate
  *
  * @param src
@@ -665,7 +695,7 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, im_rect srect, im_rect drect, int usage);
+IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat, im_rect srect, im_rect drect, im_rect prect, int usage);
 
 /*
  * block until all execution is complete
