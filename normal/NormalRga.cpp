@@ -38,7 +38,7 @@ void NormalRgaSetAlwaysLogFlag(int log)
 int NormalRgaOpen(void **context)
 {
 	struct rgaContext *ctx = NULL;
-	char buf[30];
+	char buf[30] = {};
 	int fd = -1;
 	int ret = 0;
 
