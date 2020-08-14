@@ -281,6 +281,11 @@ buffer_to_file (struct decoder *dec, GstBuffer * buf)
   GstMemory *mem;
   GstMapInfo map_info;
   gchar filename[128];
+  GstVideoFormat pixfmt;
+  const char *pixfmt_str;
+
+  pixfmt = GST_VIDEO_INFO_FORMAT (&(dec->info));
+  pixfmt_str = gst_video_format_to_string (pixfmt);
 
   /* TODO: Query gst_is_dmabuf_memory() here, since the gstmemory
    * block might get merged below by gst_buffer_map(), meaning
@@ -317,12 +322,6 @@ buffer_to_file (struct decoder *dec, GstBuffer * buf)
 
   /* output some information at the beginning (= when the first frame is handled) */
   if (dec->frame == 0) {
-    GstVideoFormat pixfmt;
-    const char *pixfmt_str;
-
-    pixfmt = GST_VIDEO_INFO_FORMAT (&(dec->info));
-    pixfmt_str = gst_video_format_to_string (pixfmt);
-
     printf ("===================================\n");
     printf ("GStreamer video stream information:\n");
     printf ("  size: %u x %u pixel\n", width, height);
@@ -334,7 +333,7 @@ buffer_to_file (struct decoder *dec, GstBuffer * buf)
 
   g_snprintf (filename, sizeof (filename), "img%05d.%s", dec->frame,
       pixfmt_str);
-  g_file_set_contents (filename, map_info.data, map_info.size, NULL);
+  g_file_set_contents (filename, (char *) map_info.data, map_info.size, NULL);
 
   gst_buffer_unmap (buf, &map_info);
 
