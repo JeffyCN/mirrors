@@ -28,6 +28,14 @@ int         cosa_table[360];
 #ifdef LINUX
 int RkRgaGetRgaFormat(int format) {
     switch (format) {
+        case RK_FORMAT_BPP1:
+            return RK_FORMAT_BPP1;
+        case RK_FORMAT_BPP2:
+            return RK_FORMAT_BPP2;
+        case RK_FORMAT_BPP4:
+            return RK_FORMAT_BPP4;
+        case RK_FORMAT_BPP8:
+            return RK_FORMAT_BPP8;
         case RK_FORMAT_RGB_565:
             return RK_FORMAT_RGB_565;
         case RK_FORMAT_BGR_888:
@@ -76,6 +84,11 @@ uint32_t bytesPerPixel(int format) {
         case RK_FORMAT_RGBA_5551:
         case RK_FORMAT_RGBA_4444:
             return 2;
+        case RK_FORMAT_BPP1:
+        case RK_FORMAT_BPP2:
+        case RK_FORMAT_BPP4:
+        case RK_FORMAT_BPP8:
+            return 1;
     }
     return 0;
 }

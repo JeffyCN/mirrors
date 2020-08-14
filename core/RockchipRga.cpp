@@ -261,6 +261,17 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         return ret;
     }
 
+    int RockchipRga::RkRgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
+        int ret = 0;
+        ret = RgaCollorPalette(src, dst, lut);
+        if (ret) {
+            RkRgaLogOutUserPara(src);
+            RkRgaLogOutUserPara(dst);
+            ALOGE("This output the user patamaters when rga call CollorPalette fail");
+        }
+        return ret;
+    }
+
     int RockchipRga::RkRgaLogOutUserPara(rga_info *rgaInfo) {
         if (!rgaInfo)
             return -EINVAL;
