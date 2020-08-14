@@ -22,6 +22,8 @@
 #include <sys/ioctl.h>
 #endif
 
+#define RGA_SRCOVER_EN 1
+
 volatile int32_t refCount = 0;
 struct rgaContext *rgaCtx = NULL;
 
@@ -998,6 +1000,76 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
         return -errno;
     }
     return 0;
+}
+
+int RgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1) {
+#if RGA_SRCOVER_EN
+    int ret = 0;
+    rga_info temp;
+    void *temp_buf = NULL;
+
+    if (!(0x0205 == (src->blend & 0xFFFF) &&
+        ((src->rect.format == HAL_PIXEL_FORMAT_RGBA_8888 && dst->rect.format == HAL_PIXEL_FORMAT_YCrCb_NV12) ||
+        (src->rect.format == RK_FORMAT_RGBA_8888 && dst->rect.format == RK_FORMAT_YCbCr_420_SP)))) {
+        printf("Not src over mode\n");
+        return -1;
+    }
+
+    temp_buf= (char*)malloc(src->rect.wstride*src->rect.hstride*(src->rect.format*4));
+    if (temp_buf == NULL) 
+    	goto ERR_FREE_BUF;
+    memset(&temp,0x00,sizeof(temp));
+    
+    temp.fd = -1;
+    temp.virAddr = temp_buf;
+    temp.mmuFlag = 1;
+    temp.rect.width = src->rect.width;
+    temp.rect.height = src->rect.height;
+    temp.rect.wstride = src->rect.wstride;
+    temp.rect.hstride = src->rect.hstride;
+    temp.rect.xoffset = src->rect.xoffset;
+    temp.rect.yoffset = src->rect.yoffset;
+    temp.rect.format = src->rect.format;
+
+    /*dst_YUV(crop & cvtcolor)->L_RGBA*/
+    {
+        ret = RgaBlit(dst, &temp, src1);
+        if (ret) {
+            printf("rgaBlit error : %s\n", strerror(errno));
+            goto ERR_FREE_BUF;
+        }
+    }
+
+    /*src_RGBA + temp_RGBA(blend) -> temp_RGBA*/
+    {
+        src->blend = 0xff0105;
+
+        ret = RgaBlit(src, &temp, src1);
+        if (ret) {
+            printf("rgaBlit error : %s\n", strerror(errno));
+            goto ERR_FREE_BUF;
+        }
+    }
+
+    /*temp_RGBA(cvtcolor & translate)->dst_YUV*/
+    {
+        ret = RgaBlit(&temp, dst, src1);
+        if (ret) {
+            printf("rgaBlit error : %s\n", strerror(errno));
+            goto ERR_FREE_BUF;
+        }
+    }
+
+	free(temp_buf);
+	return 0;
+	
+ERR_FREE_BUF:
+	free(temp_buf);
+	return -1;
+#else
+
+	return -1;
+#endif
 }
 
 int RgaFlush() {
