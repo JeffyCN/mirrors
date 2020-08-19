@@ -157,7 +157,7 @@ bus_watch_cb (GstBus * bus, GstMessage * msg, gpointer user_data)
     case GST_MESSAGE_ERROR:{
       GError *error = NULL;
       gchar *debug_info = NULL;
-      gchar const *prefix;
+      gchar const *prefix = "";
 
       switch (GST_MESSAGE_TYPE (msg)) {
         case GST_MESSAGE_INFO:
@@ -268,17 +268,9 @@ video_init (const char *filename)
 static void *
 buffer_to_file (struct decoder *dec, GstBuffer * buf)
 {
-  struct
-  {
-    int fd, offset, stride;
-  } planes[MAX_NUM_PLANES];
   GstVideoMeta *meta = gst_buffer_get_video_meta (buf);
-  guint nmems = gst_buffer_n_memory (buf);
   guint nplanes = GST_VIDEO_INFO_N_PLANES (&(dec->info));
-  guint i;
   guint width, height;
-  gboolean is_dmabuf_mem;
-  GstMemory *mem;
   GstMapInfo map_info;
   gchar filename[128];
   GstVideoFormat pixfmt;
@@ -287,35 +279,9 @@ buffer_to_file (struct decoder *dec, GstBuffer * buf)
   pixfmt = GST_VIDEO_INFO_FORMAT (&(dec->info));
   pixfmt_str = gst_video_format_to_string (pixfmt);
 
-  /* TODO: Query gst_is_dmabuf_memory() here, since the gstmemory
-   * block might get merged below by gst_buffer_map(), meaning
-   * that the mem pointer would become invalid */
-  mem = gst_buffer_peek_memory (buf, 0);
-
   /* TODO: use the DMABUF directly */
 
   gst_buffer_map (buf, &map_info, GST_MAP_READ);
-
-  /* Usually, a videometa should be present, since by using the internal kmscube
-   * video_appsink element instead of the regular appsink, it is guaranteed that
-   * video meta support is declared in the video_appsink's allocation query.
-   * However, this assumes that upstream elements actually look at the allocation
-   * query's contents properly, or that they even send a query at all. If this
-   * is not the case, then upstream might decide to push frames without adding
-   * a meta. It can happen, and in this case, look at the video info data as
-   * a fallback (it is computed out of the input caps).
-   */
-  if (meta) {
-    for (i = 0; i < nplanes; i++) {
-      planes[i].offset = meta->offset[i];
-      planes[i].stride = meta->stride[i];
-    }
-  } else {
-    for (i = 0; i < nplanes; i++) {
-      planes[i].offset = GST_VIDEO_INFO_PLANE_OFFSET (&(dec->info), i);
-      planes[i].stride = GST_VIDEO_INFO_PLANE_STRIDE (&(dec->info), i);
-    }
-  }
 
   width = GST_VIDEO_INFO_WIDTH (&(dec->info));
   height = GST_VIDEO_INFO_HEIGHT (&(dec->info));
@@ -326,7 +292,6 @@ buffer_to_file (struct decoder *dec, GstBuffer * buf)
     printf ("GStreamer video stream information:\n");
     printf ("  size: %u x %u pixel\n", width, height);
     printf ("  pixel format: %s  number of planes: %u\n", pixfmt_str, nplanes);
-    printf ("  can use zero-copy: %s\n", yesno (is_dmabuf_mem));
     printf ("  video meta found: %s\n", yesno (meta != NULL));
     printf ("===================================\n");
   }

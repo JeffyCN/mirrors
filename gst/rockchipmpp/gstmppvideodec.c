@@ -23,6 +23,7 @@
 #include "config.h"
 #endif
 
+#include <stdlib.h>
 #include <gst/gst.h>
 #include <gst/gst-compat-private.h>
 

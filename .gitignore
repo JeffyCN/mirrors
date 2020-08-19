@@ -49,6 +49,7 @@ Makefile
 tmp-orc.c
 *orc.h
 
+tests/examples/app-interface/gst-decoder-app
 /tests/examples/player/ayamero-player
 /tests/examples/camera/camera-demo
 
