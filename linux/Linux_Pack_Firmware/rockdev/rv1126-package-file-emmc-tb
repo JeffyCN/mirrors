@@ -10,9 +10,9 @@ parameter	Image/parameter.txt
 # file Image/uboot.img
 # Image/uboot.img: Device Tree Blob version 17
 #
-trust		Image/trust.img
+#trust		Image/trust.img
 #
-#uboot		Image/uboot.img
+uboot		Image/uboot.img
 # misc		Image/misc.img
 #resource	Image/resource.img
 #kernel		Image/kernel.img
