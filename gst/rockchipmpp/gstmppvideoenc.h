@@ -56,6 +56,8 @@ struct _GstMppVideoEnc
   /* < private > */
   MppCtx mpp_ctx;
   MppApi *mpi;
+  MppCodingType type;
+
   /* Buffer */
   MppBufferGroup input_group;
   MppBufferGroup output_group;

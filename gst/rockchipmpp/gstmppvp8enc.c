@@ -115,24 +115,6 @@ gst_mpp_vp8_enc_get_property (GObject * object,
   }
 }
 
-static gboolean
-gst_mpp_vp8_enc_open (GstVideoEncoder * encoder)
-{
-  GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
-
-  GST_DEBUG_OBJECT (self, "Opening");
-
-  if (mpp_create (&self->mpp_ctx, &self->mpi))
-    goto failure;
-  if (mpp_init (self->mpp_ctx, MPP_CTX_ENC, MPP_VIDEO_CodingVP8))
-    goto failure;
-
-  return TRUE;
-
-failure:
-  return FALSE;
-}
-
 static void
 gst_mpp_vp8_enc_update_properties (GstVideoEncoder * encoder)
 {
@@ -197,6 +179,8 @@ gst_mpp_vp8_enc_handle_frame (GstVideoEncoder * encoder,
 static void
 gst_mpp_vp8_enc_init (GstMppVP8Enc * self)
 {
+  self->parent.type = MPP_VIDEO_CodingVP8;
+
   self->qp_init = DEFAULT_PROP_QP_INIT;
   self->qp_min = DEFAULT_PROP_QP_MIN;
   self->qp_max = DEFAULT_PROP_QP_MAX;
@@ -225,7 +209,6 @@ gst_mpp_vp8_enc_class_init (GstMppVP8EncClass * klass)
   gobject_class->get_property =
       GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_get_property);
 
-  video_encoder_class->open = GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_open);
   video_encoder_class->set_format =
       GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_set_format);
   video_encoder_class->handle_frame =

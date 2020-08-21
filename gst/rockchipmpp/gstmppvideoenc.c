@@ -214,17 +214,6 @@ gst_mpp_video_enc_get_property (GObject * object,
   }
 }
 
-static gboolean
-gst_mpp_video_enc_close (GstVideoEncoder * encoder)
-{
-  GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
-
-  if (self->mpp_ctx)
-    mpp_destroy (self->mpp_ctx);
-
-  return TRUE;
-}
-
 static void
 gst_mpp_video_enc_update_properties (GstVideoEncoder * encoder)
 {
@@ -298,6 +287,12 @@ gst_mpp_video_enc_start (GstVideoEncoder * encoder)
 {
   GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
 
+  if (mpp_create (&self->mpp_ctx, &self->mpi))
+    return FALSE;
+
+  if (mpp_init (self->mpp_ctx, MPP_CTX_ENC, self->type))
+    return FALSE;
+
   GST_DEBUG_OBJECT (self, "Starting");
   g_atomic_int_set (&self->active, TRUE);
   self->output_flow = GST_FLOW_OK;
@@ -364,6 +359,9 @@ gst_mpp_video_enc_stop (GstVideoEncoder * encoder)
     mpp_buffer_group_put (self->output_group);
     self->output_group = NULL;
   }
+
+  if (self->mpp_ctx)
+    mpp_destroy (self->mpp_ctx);
 
   GST_DEBUG_OBJECT (self, "Stopped");
 
@@ -850,6 +848,8 @@ done:
 static void
 gst_mpp_video_enc_init (GstMppVideoEnc * self)
 {
+  self->type = MPP_VIDEO_CodingUnused;
+
   self->header_mode = DEFAULT_PROP_HEADER_MODE;
   self->sei_mode = DEFAULT_PROP_SEI_MODE;
   self->rc_mode = DEFAULT_PROP_RC_MODE;
@@ -954,7 +954,6 @@ gst_mpp_video_enc_class_init (GstMppVideoEncClass * klass)
   gobject_class->get_property =
       GST_DEBUG_FUNCPTR (gst_mpp_video_enc_get_property);
 
-  video_encoder_class->close = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_close);
   video_encoder_class->start = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_start);
   video_encoder_class->stop = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_stop);
   video_encoder_class->flush = GST_DEBUG_FUNCPTR (gst_mpp_video_enc_flush);
