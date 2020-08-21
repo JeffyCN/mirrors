@@ -98,35 +98,13 @@ gst_mpp_jpeg_dec_unlock_stop (GstMppJpegDec * self)
 }
 
 static gboolean
-gst_mpp_jpeg_dec_close (GstVideoDecoder * decoder)
-{
-  GstMppJpegDec *self = GST_MPP_JPEG_DEC (decoder);
-  if (self->mpp_ctx != NULL) {
-    mpp_destroy (self->mpp_ctx);
-    self->mpp_ctx = NULL;
-  }
-
-  GST_DEBUG_OBJECT (self, "Rockchip MPP context closed");
-
-  return TRUE;
-}
-
-/* Open the device */
-static gboolean
-gst_mpp_jpeg_dec_open (GstVideoDecoder * decoder)
+gst_mpp_jpeg_dec_start (GstVideoDecoder * decoder)
 {
   GstMppJpegDec *self = GST_MPP_JPEG_DEC (decoder);
   if (mpp_create (&self->mpp_ctx, &self->mpi))
     return FALSE;
 
   GST_DEBUG_OBJECT (self, "created mpp context %p", self->mpp_ctx);
-  return TRUE;
-}
-
-static gboolean
-gst_mpp_jpeg_dec_start (GstVideoDecoder * decoder)
-{
-  GstMppJpegDec *self = GST_MPP_JPEG_DEC (decoder);
 
   GST_DEBUG_OBJECT (self, "Starting");
   gst_mpp_jpeg_dec_unlock (self);
@@ -283,6 +261,13 @@ gst_mpp_jpeg_dec_stop (GstVideoDecoder * decoder)
     mpp_buffer_group_put (self->input_group);
     self->input_group = NULL;
   }
+
+  if (self->mpp_ctx != NULL) {
+    mpp_destroy (self->mpp_ctx);
+    self->mpp_ctx = NULL;
+  }
+
+  GST_DEBUG_OBJECT (self, "Rockchip MPP context closed");
 
   if (self->input_state) {
     gst_video_codec_state_unref (self->input_state);
@@ -755,8 +740,6 @@ gst_mpp_jpeg_dec_class_init (GstMppJpegDecClass * klass)
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_mpp_jpeg_dec_sink_template));
 
-  video_decoder_class->open = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_open);
-  video_decoder_class->close = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_close);
   video_decoder_class->start = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_start);
   video_decoder_class->stop = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_stop);
   video_decoder_class->finish = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_finish);
