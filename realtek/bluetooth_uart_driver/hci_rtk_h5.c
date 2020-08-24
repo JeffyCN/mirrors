@@ -65,8 +65,6 @@ struct h5_struct {
 
 	unsigned long rx_count;
 	struct sk_buff *rx_skb;
-	u8 rxseq_txack;		/* rxseq == txack. */
-	u8 rxack;		/* Last packet sent by us that the peer ack'ed */
 	struct delayed_work	retrans_work;
 	struct hci_uart		*hu;		/* Parent HCI UART */
 
@@ -83,12 +81,17 @@ struct h5_struct {
 		H5_ESCSTATE_ESC
 	} rx_esc_state;
 
-	u8 use_crc;
 	u16 message_crc;
-	u8 txack_req;		/* Do we need to send ack's to the peer? */
+	u8 use_crc;
+	u8 rxack;		/* Last packet sent by us that the peer ack'ed */
 
+	u8 rxseq_txack;		/* rxseq == txack. */
+	u8 txack_req;		/* Do we need to send ack's to the peer? */
 	/* Reliable packet sequence number - used to assign seq to each rel pkt. */
 	u8 msgq_txseq;
+
+	/* The spin lock protects seq, ack and ack req */
+	spinlock_t lock;
 };
 
 /* ---- H5 CRC calculation ---- */
@@ -198,6 +201,8 @@ static struct sk_buff *h5_prepare_pkt(struct h5_struct *h5, u8 * data,
 	u8 hdr[4], chan;
 	u16 H5_CRC_INIT(h5_txmsg_crc);
 	int rel, i;
+	u8 tmp;
+	unsigned long flags;
 
 	switch (pkt_type) {
 	case HCI_ACLDATA_PKT:
@@ -246,14 +251,20 @@ static struct sk_buff *h5_prepare_pkt(struct h5_struct *h5, u8 * data,
 
 	h5_slip_msgdelim(nskb);
 
+	spin_lock_irqsave(&h5->lock, flags);
+	tmp = h5->rxseq_txack;
 	hdr[0] = h5->rxseq_txack << 3;
 	h5->txack_req = 0;
-	BT_DBG("We request packet no %u to card", h5->rxseq_txack);
+	spin_unlock_irqrestore(&h5->lock, flags);
+	BT_DBG("We request packet no %u to card", tmp);
 
 	if (rel) {
+		spin_lock_irqsave(&h5->lock, flags);
+		tmp = h5->msgq_txseq;
 		hdr[0] |= 0x80 + h5->msgq_txseq;
-		BT_DBG("Sending packet with seqno %u", h5->msgq_txseq);
 		h5->msgq_txseq = (h5->msgq_txseq + 1) & 0x07;
+		spin_unlock_irqrestore(&h5->lock, flags);
+		BT_DBG("Sending packet with seqno %u", tmp);
 	}
 
 	if (h5->use_crc)
@@ -562,19 +573,25 @@ static void h5_complete_rx_pkt(struct hci_uart *hu)
 	int pass_up;
 
 	if (h5->rx_skb->data[0] & 0x80) {	/* reliable pkt */
-		BT_DBG("Received seqno %u from card", h5->rxseq_txack);
+		unsigned long flags;
+		u8 rxseq;
+
+		spin_lock_irqsave(&h5->lock, flags);
+		rxseq = h5->rxseq_txack;
 		h5->rxseq_txack++;
 		h5->rxseq_txack %= 0x8;
 		h5->txack_req = 1;
+		spin_unlock_irqrestore(&h5->lock, flags);
 
-		/* If needed, transmit an ack pkt */
-		hci_uart_tx_wakeup(hu);
+		BT_DBG("Received seqno %u from card", rxseq);
 	}
 
 	h5->rxack = (h5->rx_skb->data[0] >> 3) & 0x07;
 	BT_DBG("Request for pkt %u from card", h5->rxack);
 
 	h5_pkt_cull(h5);
+
+	hci_uart_tx_wakeup(hu);
 
 	if ((h5->rx_skb->data[1] & 0x0f) == 2 && h5->rx_skb->data[0] & 0x80) {
 		bt_cb(h5->rx_skb)->pkt_type = HCI_ACLDATA_PKT;
@@ -661,6 +678,8 @@ static int h5_recv(struct hci_uart *hu, void *data, int count)
 {
 	struct h5_struct *h5 = hu->priv;
 	register unsigned char *ptr;
+	u8 rxseq;
+	unsigned long flags;
 
 	BT_DBG("hu %p count %d rx_state %d rx_count %ld",
 	       hu, count, h5->rx_state, h5->rx_count);
@@ -693,14 +712,15 @@ static int h5_recv(struct hci_uart *hu, void *data, int count)
 				h5->rx_count = 0;
 				continue;
 			}
+			rxseq = h5->rxseq_txack;
 			if (h5->rx_skb->data[0] & 0x80	/* reliable pkt */
-			    && (h5->rx_skb->data[0] & 0x07) != h5->rxseq_txack) {
-				BT_ERR
-				    ("Out-of-order packet arrived, got %u expected %u",
-				     h5->rx_skb->data[0] & 0x07,
-				     h5->rxseq_txack);
+			    && (h5->rx_skb->data[0] & 0x07) != rxseq) {
+				BT_ERR("Out-of-order packet arrived, got %u expected %u",
+				       h5->rx_skb->data[0] & 0x07, rxseq);
 
+				spin_lock_irqsave(&h5->lock, flags);
 				h5->txack_req = 1;
+				spin_unlock_irqrestore(&h5->lock, flags);
 				hci_uart_tx_wakeup(hu);
 				kfree_skb(h5->rx_skb);
 				h5->rx_state = H5_W4_PKT_DELIMITER;
@@ -788,6 +808,7 @@ static void h5_timed_event(struct work_struct *work)
 	struct h5_struct *h5;
 	struct hci_uart *hu;
 	unsigned long flags;
+	unsigned long flags2;
 	struct sk_buff *skb;
 
 	h5 = container_of(work, struct h5_struct, retrans_work.work);
@@ -801,7 +822,9 @@ static void h5_timed_event(struct work_struct *work)
 	 * roll back the tx seq number
 	 */
 	while ((skb = __skb_dequeue_tail(&h5->unack)) != NULL) {
+		spin_lock_irqsave(&h5->lock, flags2);
 		h5->msgq_txseq = (h5->msgq_txseq - 1) & 0x07;
+		spin_unlock_irqrestore(&h5->lock, flags2);
 		skb_queue_head(&h5->rel, skb);
 	}
 
@@ -825,6 +848,7 @@ static int h5_open(struct hci_uart *hu)
 	skb_queue_head_init(&h5->unack);
 	skb_queue_head_init(&h5->rel);
 	skb_queue_head_init(&h5->unrel);
+	spin_lock_init(&h5->lock);
 
 	h5->hu = hu;
 	INIT_DELAYED_WORK(&h5->retrans_work, (void *)h5_timed_event);

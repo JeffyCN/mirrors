@@ -27,7 +27,7 @@
 #define BTRTL_HCIUSB    0
 #define BTRTL_HCIUART   1
 
-#define BTRTL_HCI_IF    BTRTL_HCIUART
+#define BTRTL_HCI_IF    BTRTL_HCIUSB
 
 #define TRUE                1
 #define FALSE               0

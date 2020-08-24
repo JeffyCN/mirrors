@@ -44,7 +44,7 @@
 #include "hciattach.h"
 #include "hciattach_h4.h"
 
-#define RTK_VERSION "3.1.a2a2042.20191024-161739"
+#define RTK_VERSION "3.1.8905594.20200602-140152"
 
 #define TIMESTAMP_PR
 
@@ -63,8 +63,6 @@
 uint8_t DBG_ON = 1;
 
 #define HCI_EVENT_HDR_SIZE          2
-/* #define RTK_PATCH_LENGTH_MAX        24576	*/ //24*1024
-#define RTB_PATCH_LENGTH_MAX        (40 * 1024)
 #define PATCH_DATA_FIELD_MAX_SIZE   252
 
 #define HCI_CMD_READ_BD_ADDR		0x1009
@@ -1651,7 +1649,7 @@ void rtb_read_chip_type(int dd)
 {
 	/* 0xB000A094 */
 	unsigned char cmd_buff[] = {
-		0x61, 0xfc, 0x05, 0x00, 0x94, 0xa0, 0x00, 0xb0
+		0x61, 0xfc, 0x05, 0x10, 0xa6, 0xa0, 0x00, 0xb0
 	};
 	struct sk_buff *nskb;
 	int result;
@@ -1733,6 +1731,7 @@ static int rtb_config(int fd, int proto, int speed, struct termios *ti)
 {
 	int final_speed = 0;
 	int ret = 0;
+	int max_patch_size = 0;
 
 	rtb_cfg.proto = proto;
 
@@ -1811,6 +1810,7 @@ static int rtb_config(int fd, int proto, int speed, struct termios *ti)
 	case ROM_LMP_8821a:
 		break;
 	case ROM_LMP_8761a:
+		rtb_read_chip_type(fd);
 		break;
 	case ROM_LMP_8703b:
 		rtb_read_chip_type(fd);
@@ -1824,11 +1824,13 @@ static int rtb_config(int fd, int proto, int speed, struct termios *ti)
 			rtb_cfg.patch_ent->patch_file,
 			rtb_cfg.patch_ent->config_file);
 	} else {
-		RS_ERR("Can not find firmware/config entry\n");
+		RS_ERR("Can not find firmware/config entry");
 		return -1;
 	}
 
-	rtb_cfg.config_buf = rtb_read_config(&rtb_cfg, &rtb_cfg.config_len);
+	rtb_cfg.config_buf = rtb_read_config(rtb_cfg.patch_ent->config_file,
+					     &rtb_cfg.config_len,
+					     rtb_cfg.patch_ent->chip_type);
 	if (!rtb_cfg.config_buf) {
 		RS_ERR("Read Config file error, use eFuse settings");
 		rtb_cfg.config_len = 0;
@@ -1867,7 +1869,23 @@ static int rtb_config(int fd, int proto, int speed, struct termios *ti)
 		}
 	}
 
-	if (rtb_cfg.total_len > RTB_PATCH_LENGTH_MAX) {
+	switch ((rtb_cfg.patch_ent)->chip_type) {
+	case CHIP_8822BS:
+		max_patch_size = 25 * 1024;
+		break;
+	case CHIP_8821CS:
+	case CHIP_8723DS:
+	case CHIP_8822CS:
+	case CHIP_8761B:
+	case CHIP_8725AS:
+		max_patch_size = 40 * 1024;
+		break;
+	default:
+		max_patch_size = 24 * 1024;
+		break;
+	}
+
+	if (rtb_cfg.total_len > max_patch_size) {
 		RS_ERR("Total length of fwc is larger than allowed");
 		goto buf_free;
 	}

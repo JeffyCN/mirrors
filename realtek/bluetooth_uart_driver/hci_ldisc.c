@@ -44,11 +44,15 @@
 
 #include "hci_uart.h"
 
+#if WOBT_NOTIFY
+#include <linux/suspend.h>
+#endif
+
 #ifdef BTCOEX
 #include "rtk_coex.h"
 #endif
 
-#define VERSION "2.2.3b3fa69.20191024-161739"
+#define VERSION "2.2.407c1dd.20200602-140151"
 
 #if HCI_VERSION_CODE > KERNEL_VERSION(3, 4, 0)
 #define GET_DRV_DATA(x)		hci_get_drvdata(x)
@@ -57,6 +61,17 @@
 #endif
 
 #define SEMWAIT_TIMEOUT		50
+
+#if WOBT_NOTIFY
+struct hci_rsp_read_local {
+	__u8     status;
+	__u8     hci_ver;
+	__le16   hci_rev;
+	__u8     lmp_ver;
+	__le16   manufacturer;
+	__le16   lmp_subver;
+} __packed;
+#endif
 
 #if HCI_VERSION_CODE < KERNEL_VERSION(3, 4, 0)
 static int reset = 0;
@@ -314,29 +329,30 @@ static int hci_uart_open(struct hci_dev *hdev)
 	return 0;
 }
 
-static void hci_flush_sync(struct hci_dev *hdev)
-{
-#if HCI_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
-	u8 buf[2] = { 0, 0 };
-	struct sk_buff *skb;
-
-	BT_INFO("hci flush sync");
-
-	set_bit(HCI_INIT, &hdev->flags);
-	skb = __hci_cmd_sync(hdev, 0xfc19, 2, buf, msecs_to_jiffies(2000));
-	clear_bit(HCI_INIT, &hdev->flags);
-
-	if (IS_ERR(skb)) {
-		BT_ERR("command 0xfc19 tx failed (%ld)\n", PTR_ERR(skb));
-		return;
-	}
-
-	if (skb->len == 1)
-		BT_INFO("hci flush sync status %u", skb->data[0]);
-
-	kfree_skb(skb);
-#endif
-}
+/* static void hci_flush_sync(struct hci_dev *hdev)
+ * {
+ * #if HCI_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
+ * 	u8 buf[2] = { 0, 0 };
+ * 	struct sk_buff *skb;
+ * 
+ * 	BT_INFO("hci flush sync");
+ * 
+ * 	set_bit(HCI_INIT, &hdev->flags);
+ * 	skb = __hci_cmd_sync(hdev, 0xfc19, 2, buf, msecs_to_jiffies(2000));
+ * 	clear_bit(HCI_INIT, &hdev->flags);
+ * 
+ * 	if (IS_ERR(skb)) {
+ * 		BT_ERR("command 0xfc19 tx failed (%ld)\n", PTR_ERR(skb));
+ * 		return;
+ * 	}
+ * 
+ * 	if (skb->len == 1)
+ * 		BT_INFO("hci flush sync status %u", skb->data[0]);
+ * 
+ * 	kfree_skb(skb);
+ * #endif
+ * }
+ */
 
 static int __hci_uart_flush(struct hci_dev *hdev, u8 sync)
 {
@@ -346,8 +362,9 @@ static int __hci_uart_flush(struct hci_dev *hdev, u8 sync)
 	BT_INFO("%s: hdev %p tty %p", __func__, hdev, tty);
 
 	/* Make sure all HCI packets has been transmitted */
-	if (sync && test_bit(HCI_RUNNING, &hdev->flags))
-		hci_flush_sync(hdev);
+	/* if (sync && test_bit(HCI_RUNNING, &hdev->flags))
+	 * 	hci_flush_sync(hdev);
+	 */
 
 	if (hu->tx_skb) {
 		kfree_skb(hu->tx_skb);
@@ -355,8 +372,14 @@ static int __hci_uart_flush(struct hci_dev *hdev, u8 sync)
 	}
 
 	/* Flush any pending characters in the driver and discipline. */
-	tty_ldisc_flush(tty);
-	tty_driver_flush_buffer(tty);
+	/* tty_ldisc_flush(tty);
+	 * tty_driver_flush_buffer(tty);
+	 */
+	/* Don't flush the tty. Sometime, the hdev is closed abnormally.
+	 * There may be cmd complete event in rx buf or the sent ack in tx buf.
+	 * tty flush will result in hciX: command 0xXXXX tx timeout
+	 */
+	tty_wait_until_sent(tty, msecs_to_jiffies(500));
 
 	hci_proto_read_lock(hu);
 
@@ -463,6 +486,168 @@ static void hci_uart_destruct(struct hci_dev *hdev)
 }
 #endif
 
+#if WOBT_NOTIFY
+static int hci_uart_async_send(struct hci_uart *hu, u16 opcode,
+			       u32 plen, const void *param)
+{
+	int len = HCI_COMMAND_HDR_SIZE + plen;
+	struct hci_command_hdr *hdr;
+	struct sk_buff *skb;
+
+	skb = bt_skb_alloc(len, GFP_ATOMIC);
+	if (!skb)
+		return -ENOMEM;
+
+	hdr = (struct hci_command_hdr *)skb_put(skb, HCI_COMMAND_HDR_SIZE);
+	hdr->opcode = cpu_to_le16(opcode);
+	hdr->plen   = plen;
+
+	if (plen)
+		memcpy(skb_put(skb, plen), param, plen);
+
+	BT_INFO("rtl: skb len %d", skb->len);
+
+	bt_cb(skb)->pkt_type = HCI_COMMAND_PKT;
+
+#if HCI_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if HCI_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
+	bt_cb(skb)->opcode = opcode;
+#else
+	bt_cb(skb)->hci.opcode = opcode;
+#endif
+#endif
+
+	/* Stand-alone HCI commands must be flagged as
+	 * single-command requests.
+	 */
+#if HCI_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
+#if HCI_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
+	bt_cb(skb)->req.start = true;
+#else
+
+#if HCI_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+	bt_cb(skb)->hci.req_start = true;
+#else
+
+	bt_cb(skb)->hci.req_flags |= HCI_REQ_START;
+#endif
+#endif /* 4.4.0 */
+#endif /* 3.10.0 */
+
+#if HCI_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
+	hci_uart_send_frame(skb);
+#else
+	hci_uart_send_frame(hu->hdev, skb);
+#endif
+
+	/* hci_proto_read_lock(hu);
+
+	 * if (!test_bit(HCI_UART_PROTO_READY, &hu->flags)) {
+	 * 	hci_proto_read_unlock(hu);
+	 * 	BT_ERR("rtl send: proto not ready");
+	 * 	return -EUNATCH;
+	 * }
+
+	 * hu->proto->enqueue(hu, skb);
+	 * hci_proto_read_unlock(hu);
+
+	 * hci_uart_tx_wakeup(hu);
+	 */
+
+	return 0;
+}
+
+static int rtl_read_local_version(struct hci_dev *hdev, u8 *hci_ver,
+				  u16 *hci_rev, u16 *lmp_subver)
+{
+	struct hci_rsp_read_local *ver;
+	struct sk_buff *skb;
+
+	skb = __hci_cmd_sync(hdev, 0x1001, 0, NULL, HCI_INIT_TIMEOUT);
+	if (IS_ERR(skb)) {
+		BT_ERR("rtl: Could not read lmp subversion");
+		return PTR_ERR(skb);
+	}
+
+	if (skb->len != sizeof(struct hci_rsp_read_local)) {
+		BT_ERR("%s: rtl: Local version length mismatch", hdev->name);
+		kfree_skb(skb);
+		return -EIO;
+	}
+
+	ver = (struct hci_rsp_read_local *)skb->data;
+	*hci_ver = ver->hci_ver;
+	*hci_rev = le16_to_cpu(ver->hci_rev);
+	*lmp_subver = le16_to_cpu(ver->lmp_subver);
+
+	kfree_skb(skb);
+
+	return 0;
+}
+
+static int hci_uart_pm_notifier(struct notifier_block *b, unsigned long v, void *d)
+{
+	int result;
+	struct hci_uart *hu = container_of(b, struct hci_uart, pm_notify_block);
+	u8 hci_ver = 0;
+	u16 hci_rev = 0;
+	u16 lmp_subver = 0;
+#if WOBT_NOTIFY_BG_SCAN_LE_WHITELIST_ONLY
+	u8 params_bg_scan[5] = { 0x60, 0x01, 0x10, 0x00, 0x01 };
+#endif
+	u8 params_suspend_notify[1] = { 0x01 };
+
+	BT_INFO("%s: %lu", __func__, v);
+	switch (v) {
+	case PM_SUSPEND_PREPARE:
+		BT_INFO("rtl: bt suspending");
+#if WOBT_NOTIFY_BG_SCAN_LE_WHITELIST_ONLY
+		/* Send set back ground scan parameters to Controller for power-on mode */
+		result = hci_uart_async_send(hu, 0xfc7a, 5, params_bg_scan);
+		if (result)
+			BT_ERR("Realtek bg-scan h5-bt failed");
+		/* FIXME: Ensure the above vendor command is sent to Controller
+		 * and we received the h5 ack from Controller
+		 * */
+		 msleep(500);
+
+#endif
+		/* Send host sleep notification to Controller */
+		/* skb = __hci_cmd_sync(hu->hdev, 0xfc28, 1, &param,
+		 * 		     HCI_INIT_TIMEOUT);
+		 * if (IS_ERR(skb)) {
+		 * 	BT_ERR("Realtek Suspend h5-bt failed");
+		 * 	goto done;
+		 * }
+		 * kfree_skb(skb);
+		 */
+		result = hci_uart_async_send(hu, 0xfc28, 1, params_suspend_notify);
+		if (result)
+			BT_ERR("Realtek suspend h5-bt failed");
+
+		/* FIXME: Ensure the above vendor command is sent to Controller
+		 * and we received the h5 ack from Controller
+		 * */
+		msleep(500);
+
+		break;
+	case PM_POST_SUSPEND:
+		result = rtl_read_local_version(hu->hdev, &hci_ver, &hci_rev,
+						&lmp_subver);
+		if (result)
+			break;
+		BT_INFO("rtl resume: hci ver %u, hci rev %04x, lmp subver %04x",
+			hci_ver, hci_rev, lmp_subver);
+		break;
+	default:
+		BT_INFO("Caught msg %lu other than SUSPEND_PREPARE", v);
+		break;
+	}
+
+	return 0;
+}
+#endif
+
 /* ------ LDISC part ------ */
 /* hci_uart_tty_open
  *
@@ -524,6 +709,11 @@ static int hci_uart_tty_open(struct tty_struct *tty)
 		tty->ldisc->ops->flush_buffer(tty);
 	tty_driver_flush_buffer(tty);
 
+#if WOBT_NOTIFY
+	hu->pm_notify_block.notifier_call = hci_uart_pm_notifier;
+	register_pm_notifier(&hu->pm_notify_block);
+#endif
+
 	return 0;
 }
 
@@ -566,6 +756,10 @@ static void hci_uart_tty_close(struct tty_struct *tty)
 	clear_bit(HCI_UART_PROTO_SET, &hu->flags);
 
 	hci_proto_free_rwlock(hu);
+#if WOBT_NOTIFY
+	unregister_pm_notifier(&hu->pm_notify_block);
+#endif
+
 	kfree(hu);
 }
 

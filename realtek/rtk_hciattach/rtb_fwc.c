@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -33,16 +34,13 @@
 #include "hciattach.h"
 #include "rtb_fwc.h"
 
-#define USE_CUSTOMER_ADDRESS
+//#define BT_ADDR_FROM_VENDOR_STORAGE
 
-#define FIRMWARE_DIRECTORY  "/lib/firmware/rtlbt/"
-#define BT_CONFIG_DIRECTORY "/lib/firmware/rtlbt/"
-
-#ifdef USE_CUSTOMER_ADDRESS
-#define BT_ADDR_FROM_VENDOR_STORAGE
+#define FIRMWARE_DIRECTORY	"/lib/firmware/rtlbt/"
+#define BT_CONFIG_DIRECTORY	"/lib/firmware/rtlbt/"
+#define EXTRA_CONFIG_FILE	"/opt/rtk_btconfig.txt"
 #define BT_ADDR_FILE        "/opt/bdaddr"
-static uint8_t customer_bdaddr = 0;
-#endif
+#define BDADDR_STRING_LEN	17
 
 struct list_head {
 	struct list_head *next, *prev;
@@ -50,15 +48,13 @@ struct list_head {
 
 struct cfg_list_item {
 	struct list_head list;
-	uint8_t *cfg_data;
 	uint16_t offset;
 	uint8_t len;
 	uint8_t data[0];
 };
 
+const uint8_t cfg_magic[4] = { 0x55, 0xab, 0x23, 0x87 };
 static struct list_head list_configs;
-
-#define EXTRA_CONFIG_FILE	"/opt/rtk_btconfig.txt"
 static struct list_head list_extracfgs;
 
 struct rtb_cfg_item {
@@ -155,6 +151,11 @@ static struct patch_info patch_table[] = {
 	{ RTL_FW_MATCH_HCI_VER | RTL_FW_MATCH_HCI_REV, 0,
 		ROM_LMP_8761a, ROM_LMP_8761a, 0x06, 0x000a,
 		"rtl8761a_fw", "rtl8761a_config", "RTL8761ATV"},
+	/* RTL8725AS */
+	{ RTL_FW_MATCH_CHIP_TYPE | RTL_FW_MATCH_HCI_VER | RTL_FW_MATCH_HCI_REV,
+		CHIP_8725AS,
+		ROM_LMP_8761a, ROM_LMP_8761a, 0x0a, 0x000b,
+		"rtl8725as_fw", "rtl8725as_config", "RTL8725AS"},
 	/* RTL8761BTV */
 	{ RTL_FW_MATCH_HCI_VER | RTL_FW_MATCH_HCI_REV, CHIP_8761B,
 		ROM_LMP_8761a, ROM_LMP_8761a, 0x0a, 0x000b,
@@ -294,6 +295,22 @@ static inline void list_splice_tail(struct list_head *list,
 		__list_splice(list, head->prev, head);
 }
 
+static inline void list_replace(struct list_head *old,
+				struct list_head *new)
+{
+	new->next = old->next;
+	new->next->prev = new;
+	new->prev = old->prev;
+	new->prev->next = new;
+}
+
+static inline void list_replace_init(struct list_head *old,
+					struct list_head *new)
+{
+	list_replace(old, new);
+	INIT_LIST_HEAD(old);
+}
+
 static int config_lists_init(void)
 {
 	INIT_LIST_HEAD(&list_configs);
@@ -354,7 +371,6 @@ static void line_process(char *buf, int len /*@unused@*/)
 
 	offset = strtoul(argv[0], NULL, 16);
 	offset = offset | (strtoul(argv[1], NULL, 16) << 8);
-	RS_INFO("Extra Config offset %04lx", offset);
 	l = (uint8_t)strtoul(argv[2], NULL, 16);
 	if (l != (uint8_t)(argc - 3)) {
 		RS_ERR("Invalid Config item len %u", l);
@@ -368,7 +384,6 @@ static void line_process(char *buf, int len /*@unused@*/)
 		return;
 	}
 	memset(item, 0, sizeof(*item));
-	item->cfg_data = item->data;
 	item->offset = (uint16_t)offset;
 	item->len = l;
 	for (i = 0; i < l; i++)
@@ -451,7 +466,6 @@ struct patch_info *get_patch_entry(struct rtb_struct *btrtl)
 	return n;
 }
 
-#ifdef USE_CUSTOMER_ADDRESS
 static int is_mac(uint8_t chip_type, uint16_t offset)
 {
 	int result = 0;
@@ -486,196 +500,123 @@ static int is_mac(uint8_t chip_type, uint16_t offset)
 	return result;
 }
 
-static void fill_mac_offset(uint8_t chip_type, uint8_t b[2])
+static uint16_t get_mac_offset(uint8_t chip_type)
 {
 	switch (chip_type) {
 	case CHIP_8822BS:
 	case CHIP_8723DS:
 	case CHIP_8821CS:
-		b[0] = 0x44;
-		b[1] = 0x00;
-		break;
+		return 0x0044;
 	case CHIP_8822CS:
 	case CHIP_8761B:
-		b[0] = 0x30;
-		b[1] = 0x00;
-		break;
+		return 0x0030;
 	case 0: /* special for not setting chip_type */
 	case CHIP_8761AT:
 	case CHIP_8761ATF:
 	case CHIP_8761BTC:
 	case CHIP_8723BS:
-		b[0] = 0x3c;
-		b[1] = 0x00;
-		break;
+		return 0x003c;
+	default:
+		return 0x003c;
 	}
 }
-#endif
 
-static void merge_configs(uint8_t *cfg_buf, size_t *plen)
+static void merge_configs(struct list_head *head, struct list_head *head2)
 {
-	struct list_head *iter, *tmp;
-	struct cfg_list_item *item;
-	uint8_t *buf;
-	uint16_t tmp_len;
+	struct list_head *epos, *enext;
+	struct list_head *pos, *next;
+	struct cfg_list_item *n;
+	struct cfg_list_item *extra;
 
-	list_for_each_safe(iter, tmp, &list_extracfgs) {
-		struct list_head *iter2, *tmp2;
+	if (!head || !head2)
+		return;
 
-		item = list_entry(iter, struct cfg_list_item, list);
-		list_for_each_safe(iter2, tmp2, &list_configs) {
-			struct cfg_list_item *n;
+	if (list_empty(head2))
+		return;
 
-			n = list_entry(iter2, struct cfg_list_item, list);
-			if (item->offset == n->offset) {
-				if (item->len == n->len) {
-					RS_INFO("Update cfg: %04x, %u",
+	if (list_empty(head)) {
+		list_splice_tail(head2, head);
+		INIT_LIST_HEAD(head2);
+		return;
+	}
+
+	/* Add or update & replace */
+	list_for_each_safe(epos, enext, head2) {
+		extra = list_entry(epos, struct cfg_list_item, list);
+
+		list_for_each_safe(pos, next, head) {
+			n = list_entry(pos, struct cfg_list_item, list);
+			if (extra->offset == n->offset) {
+				if (extra->len < n->len) {
+					/* Update the cfg data */
+					RS_INFO("Update cfg: ofs %04x len %u",
 						n->offset, n->len);
-					memcpy(n->data, item->data, n->len);
-					if (n->cfg_data)
-						memcpy(n->cfg_data, item->data,
-						       n->len);
-					list_del(&item->list);
-					free(item);
-					break;
+					memcpy(n->data, extra->data,
+					       extra->len);
+					list_del(epos);
+					free(extra);
+				} else {
+					/* Replace the item */
+					list_del(epos);
+					list_replace_init(pos, epos);
+					/* free the old item */
+					free(n);
 				}
-
-				RS_WARN("item mismatch %04x %u %u",
-					item->offset, item->len,
-					n->len);
-				list_del(&item->list);
-				free(item);
 			}
+
 		}
+
 	}
 
-	buf = cfg_buf + *plen;
-	list_for_each_safe(iter, tmp, &list_extracfgs) {
-		item = list_entry(iter, struct cfg_list_item, list);
-		buf[0] = item->offset & 0xff;
-		buf[1] = (item->offset >> 8) & 0xff;
-		buf[2] = item->len;
-		memcpy(buf + 3, item->data, item->len);
-		buf += (3 + item->len);
-		*plen += (3 + item->len);
-		list_del(&item->list);
-		free(item);
+	if (list_empty(head2))
+		return;
+	list_for_each_safe(epos, enext, head2) {
+		extra = list_entry(epos, struct cfg_list_item, list);
+		RS_INFO("Add new cfg: ofs %04x, len %u", extra->offset,
+			extra->len);
+		/* Add the item to list */
+		list_del(epos);
+		list_add_tail(epos, head);
 	}
-
-	tmp_len = *plen - 6;
-
-	cfg_buf[4] = (tmp_len & 0xff);
-	cfg_buf[5] = ((tmp_len >> 8) & 0xff);
 }
 
 /*
  * Parse realtek Bluetooth config file.
  * The content starts with vendor magic: 55 ab 23 87
  */
-int rtb_parse_config(uint8_t *cfg_buf, size_t *plen, uint8_t bdaddr[6])
+int rtb_parse_config(uint8_t *cfg_buf, size_t len)
 {
-	const uint8_t hdr[4] = { 0x55, 0xab, 0x23, 0x87 };
 	uint16_t cfg_len;
 	uint16_t tmp;
 	struct rtb_cfg_item *entry;
 	uint16_t i;
-	uint32_t baudrate = 0;
-#ifdef USE_CUSTOMER_ADDRESS
-	uint8_t j = 0;
-	struct patch_info *pent = rtb_cfg.patch_ent;
-	int addr_found = 0;
-#endif
 	struct cfg_list_item *item;
 
-	if (!cfg_buf || !plen) {
+	if (!cfg_buf || !len) {
 		RS_ERR("%s: Invalid parameter", __func__);
 		return -1;
 	}
 
-	RS_INFO("Original Cfg len %u", (uint16_t)*plen);
-	if (memcmp(cfg_buf, hdr, 4)) {
+	if (memcmp(cfg_buf, cfg_magic, 4)) {
 		RS_ERR("Signature %02x %02x %02x %02x is incorrect",
 		       cfg_buf[0], cfg_buf[1], cfg_buf[2], cfg_buf[3]);
 		return -1;
 	}
 
 	cfg_len = ((uint16_t)cfg_buf[5] << 8) + cfg_buf[4];
-	if (cfg_len != *plen - RTB_CFG_HDR_LEN) {
+	if (cfg_len != len - RTB_CFG_HDR_LEN) {
 		RS_ERR("Config len %u is incorrect(%zd)", cfg_len,
-		       *plen - RTB_CFG_HDR_LEN);
+		       len - RTB_CFG_HDR_LEN);
 		return -1;
 	}
 
 	entry = (struct rtb_cfg_item *)(cfg_buf + 6);
 	i = 0;
 	while (i < cfg_len) {
-		switch (le16_to_cpu(entry->offset)) {
-#ifdef USE_CUSTOMER_ADDRESS
-		case 0x003c:
-		case 0x0044:
-		case 0x0030:
-			if (!customer_bdaddr)
-				break;
-			if (!is_mac(pent->chip_type, le16_to_cpu(entry->offset)))
-				break;
-			/* Replace the content with input bdaddr from extra
-			 * config file
-			 */
-			for (j = 0; j < entry->len; j++)
-				entry->data[j] = bdaddr[j];
-			addr_found = 1;
-			RS_INFO("BT MAC found %02x:%02x:%02x:%02x:%02x:%02x",
-				entry->data[5], entry->data[4], entry->data[3],
-				entry->data[2], entry->data[1], entry->data[0]);
-			break;
-#endif
-		case 0x000c:
-#ifdef BAUDRATE_4BYTES
-			baudrate = get_unaligned_le32(entry->data);
-#else
-			baudrate = get_unaligned_le16(entry->data);
-#endif
-			RS_INFO("Config baudrate: %08x", baudrate);
-
-			if (entry->len > 12) {
-				uint8_t d = entry->data[12];
-				rtb_cfg.uart_flow_ctrl = (d & 0x4) ? 1 : 0;
-				RS_INFO("uart flow ctrl: %u",
-					rtb_cfg.uart_flow_ctrl);
-			}
-			break;
-#ifdef RTL8723DSH4_UART_HWFLOWC
-		case 0x0018:
-			if (pent->chip_type == CHIP_8723DS &&
-			    rtb_cfg.proto == HCI_UART_H4) {
-				if (entry->data[0] & (1 << 2))
-					rtb_cfg.uart_flow_ctrl = 1;
-				RS_INFO("8723DSH4: hw flow control %u",
-					rtb_cfg.uart_flow_ctrl);
-				if (entry->data[0] & 0x01) {
-					rtb_cfg.parenb = 1;
-					if (entry->data[0] & 0x02)
-						rtb_cfg.pareven = 1;
-					else
-						rtb_cfg.pareven = 0;
-				}
-				RS_INFO("8723DSH4: parity %u, even %u",
-					rtb_cfg.parenb,
-					rtb_cfg.pareven);
-			}
-			break;
-#endif
-		default:
-			RS_DBG("cfg offset %04x, length %u", entry->offset,
-			       entry->len);
-			break;
-		}
-
 		/* Add config item to list */
 		item = malloc(sizeof(*item) + entry->len);
 		if (item) {
 			memset(item, 0, sizeof(*item));
-			item->cfg_data = entry->data;
 			item->offset = le16_to_cpu(entry->offset);
 			item->len = entry->len;
 			memcpy(item->data, entry->data, item->len);
@@ -690,51 +631,9 @@ int rtb_parse_config(uint8_t *cfg_buf, size_t *plen, uint8_t bdaddr[6])
 		entry = (struct rtb_cfg_item *)((uint8_t *)entry + tmp);
 	}
 
-#ifdef USE_CUSTOMER_ADDRESS
-	if (!addr_found && customer_bdaddr) {
-		uint8_t *b;
-		uint16_t ofs;
-
-		b = cfg_buf + *plen;
-		fill_mac_offset(pent->chip_type, b);
-		ofs = (((uint16_t)b[1] << 8) | b[0]);
-
-		RS_INFO("Add bdaddr section, offset %02x%02x", b[1], b[0]);
-		b[2] = 6;
-		for (j = 0; j < 6; j++)
-			b[3 + j] = bdaddr[j];
-
-		*plen += 9;
-		tmp = *plen - 6;
-
-		cfg_buf[4] = (tmp & 0xff);
-		cfg_buf[5] = ((tmp >> 8) & 0xff);
-
-		/* Add address item to list */
-		item = malloc(sizeof(*item) + 6);
-		if (item) {
-			memset(item, 0, sizeof(*item));
-			item->cfg_data = b + 3;
-			item->offset = ofs;
-			item->len = b[2];
-			memcpy(item->data, b + 3, 6);
-			list_add_tail(&item->list, &list_configs);
-		} else {
-			RS_ERR("Cannot alloc mem for entry %04x, %u",
-			       entry->offset, entry->len);
-		}
-	}
-#endif
-
-	/* plen, cfg_buf, head */
-	/* Merge configs */
-	merge_configs(cfg_buf, plen);
-
-	rtb_cfg.vendor_baud = baudrate;
 	return 0;
 }
 
-#ifdef USE_CUSTOMER_ADDRESS
 int bachk(const char *str)
 {
 	if (!str)
@@ -951,73 +850,89 @@ static int vendor_storage_write_bt_addr(uint8_t *tbuf)
  * 	}
  * }
  */
-#endif
+
 
 /*
  * Read and parse Realtek Bluetooth Config file.
  */
-uint8_t *rtb_read_config(struct rtb_struct *btrtl, int *cfg_len)
+uint8_t *rtb_read_config(const char *file, int *cfg_len, uint8_t chip_type)
 {
 	char *file_name;
-	uint8_t bdaddr[6];
 	struct stat st;
-	size_t file_len;
-	size_t tlength;
+	ssize_t file_len;
 	int fd;
 	uint8_t *buf;
-#ifdef USE_CUSTOMER_ADDRESS
-#define BDADDR_STRING_LEN	17
 #ifndef BT_ADDR_FROM_VENDOR_STORAGE
 	size_t size;
 #endif
 	size_t result;
-	char tbuf[BDADDR_STRING_LEN + 1];
-	char *str;
-	int i = 0;
-#endif
-	struct list_head *tmp, *iter;
+	struct list_head *pos, *next;
+	struct cfg_list_item *n;
+	uint16_t config_len;
+	uint16_t dlen;
+	uint32_t baudrate;
+	uint8_t *p;
 
-	if (!btrtl || !cfg_len) {
+	if (!file || !cfg_len) {
 		RS_ERR("%s: Invalid parameter", __func__);
 		return NULL;
 	}
 
 	config_lists_init();
 
-#ifdef USE_CUSTOMER_ADDRESS
+	/* All extra configs will be added to list_extracfgs */
+	parse_extra_config(EXTRA_CONFIG_FILE);
+	list_for_each_safe(pos, next, &list_extracfgs) {
+		n = list_entry(pos, struct cfg_list_item, list);
+		RS_INFO("extra cfg: ofs %04x, len %u", n->offset, n->len);
+	}
+	
 #ifdef BT_ADDR_FROM_VENDOR_STORAGE
-		int ret = 0;
+	int ret = 0;
+	uint8_t bdaddr[6];
+	uint16_t ofs;
+	char tbuf[BDADDR_STRING_LEN + 1];
+	char *str;
+	int i = 0;
 
-		ret = vendor_storage_read_bt_addr(tbuf);
-		if (ret >= 0 && bachk(tbuf) < 0) {
-			ret = -1;
-			RS_ERR("vendor_storage bt addr chechk failed");
+	ret = vendor_storage_read_bt_addr(tbuf);
+	if (ret >= 0 && bachk(tbuf) < 0) {
+		ret = -1;
+		RS_ERR("vendor_storage bt addr chechk failed");
+	}
+	if (ret < 0) {
+		RS_ERR("vendor storage read bt addr failed, generate one");
+
+		rknand_get_randeom_btaddr(bdaddr);
+		vendor_storage_write_bt_addr(bdaddr);
+	} else {
+		str = tbuf;
+		for (i = 5; i >= 0; i--) {
+			bdaddr[i] = (uint8_t)strtoul(str, NULL, 16);
+			str += 3;
 		}
-		if (ret < 0) {
-			RS_ERR("vendor storage read bt addr failed, generate one");
 
-			rknand_get_randeom_btaddr(bdaddr);
-			vendor_storage_write_bt_addr(bdaddr);
-			customer_bdaddr = 1;
+		/*reserve LAP addr from 0x9e8b00 to 0x9e8b3f, change to 0x008b** */
+		if (0x9e == bdaddr[3] && 0x8b == bdaddr[4]
+			&& (bdaddr[5] <= 0x3f)) {
+			bdaddr[3] = 0x00;
+		}
+
+		RS_DBG("BT MAC is %02x:%02x:%02x:%02x:%02x:%02x",
+			   bdaddr[5], bdaddr[4],
+			   bdaddr[3], bdaddr[2],
+			   bdaddr[1], bdaddr[0]);
+		ofs = get_mac_offset(chip_type);
+		n = malloc(sizeof(*n) + 6);
+		if (n) {
+			n->offset = ofs;
+			n->len = 6;
+			memcpy(n->data, bdaddr, 6);
+			list_add_tail(&n->list, &list_extracfgs);
 		} else {
-			str = tbuf;
-			for (i = 5; i >= 0; i--) {
-				bdaddr[i] = (uint8_t)strtoul(str, NULL, 16);
-				str += 3;
-			}
-
-			/*reserve LAP addr from 0x9e8b00 to 0x9e8b3f, change to 0x008b** */
-			if (0x9e == bdaddr[3] && 0x8b == bdaddr[4]
-				&& (bdaddr[5] <= 0x3f)) {
-				bdaddr[3] = 0x00;
-			}
-
-			RS_DBG("BT MAC is %02x:%02x:%02x:%02x:%02x:%02x",
-				   bdaddr[5], bdaddr[4],
-				   bdaddr[3], bdaddr[2],
-				   bdaddr[1], bdaddr[0]);
-			customer_bdaddr = 1;
+			RS_ERR("Couldn't alloc cfg item for bdaddr");
 		}
+	}
 #else
 	if (stat(BT_ADDR_FILE, &st) < 0) {
 		RS_INFO("Couldnt access customer BT MAC file %s",
@@ -1036,6 +951,12 @@ uint8_t *rtb_read_config(struct rtb_struct *btrtl, int *cfg_len)
 		RS_INFO("Couldnt open BT MAC file %s, %s", BT_ADDR_FILE,
 			strerror(errno));
 	} else {
+		uint16_t ofs;
+		char *str;
+		int i = 0;
+		uint8_t bdaddr[6];
+		uint8_t tbuf[BDADDR_STRING_LEN + 1];
+
 		memset(tbuf, 0, sizeof(tbuf));
 		result = read(fd, tbuf, size);
 		close(fd);
@@ -1064,12 +985,21 @@ uint8_t *rtb_read_config(struct rtb_struct *btrtl, int *cfg_len)
 		RS_DBG("BT MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		       bdaddr[5], bdaddr[4], bdaddr[3], bdaddr[2],
 		       bdaddr[1], bdaddr[0]);
-		customer_bdaddr = 1;
+		ofs = get_mac_offset(chip_type);
+		n = malloc(sizeof(*n) + 6);
+		if (n) {
+			n->offset = ofs;
+			n->len = 6;
+			memcpy(n->data, bdaddr, 6);
+			list_add_tail(&n->list, &list_extracfgs);
+		} else {
+			RS_ERR("Couldn't alloc cfg item for bdaddr");
+		}
 	}
 
 read_cfg:
 #endif
-#endif
+
 	*cfg_len = 0;
 	file_name = malloc(PATH_MAX);
 	if (!file_name) {
@@ -1077,8 +1007,7 @@ read_cfg:
 		return NULL;
 	}
 	memset(file_name, 0, PATH_MAX);
-	snprintf(file_name, PATH_MAX, "%s%s", BT_CONFIG_DIRECTORY,
-		 btrtl->patch_ent->config_file);
+	snprintf(file_name, PATH_MAX, "%s%s", BT_CONFIG_DIRECTORY, file);
 	if (stat(file_name, &st) < 0) {
 		RS_ERR("Can't access Config file: %s, %s",
 		       file_name, strerror(errno));
@@ -1092,24 +1021,9 @@ read_cfg:
 		goto err_open;
 	}
 
-	tlength = file_len;
-#ifdef USE_CUSTOMER_ADDRESS
-	tlength += 9;
-#endif
-
-	parse_extra_config(EXTRA_CONFIG_FILE);
-	if (!list_empty(&list_extracfgs)) {
-		struct cfg_list_item *item;
-
-		list_for_each_safe(iter, tmp, &list_extracfgs) {
-			item = list_entry(iter, struct cfg_list_item, list);
-			tlength += (item->len + 3);
-		}
-	}
-
-	buf = malloc(tlength);
+	buf = malloc(file_len);
 	if (!buf) {
-		RS_ERR("Couldnt malloc buffer for Config %zd", tlength);
+		RS_ERR("Couldnt malloc buffer for Config %zd", file_len);
 		goto err_malloc;
 	}
 
@@ -1121,19 +1035,116 @@ read_cfg:
 	close(fd);
 	free(file_name);
 
-	result = rtb_parse_config(buf, &file_len, bdaddr);
-	config_lists_free();
+	result = rtb_parse_config(buf, file_len);
 	if (result < 0) {
 		RS_ERR("Invalid Config content");
 		close(fd);
 		free(buf);
+		config_lists_free();
 		exit(EXIT_FAILURE);
 	}
+	RS_INFO("Origin cfg len %u", (uint16_t)file_len);
 	util_hexdump((const uint8_t *)buf, file_len);
-	RS_INFO("Cfg length %u", (uint16_t)file_len);
+
+	merge_configs(&list_configs, &list_extracfgs);
+
+	config_len = 4; /* magic word length */
+	config_len += 2; /* data length field */
+	/* Calculate the config_len */
+	dlen = 0;
+	list_for_each_safe(pos, next, &list_configs) {
+		n = list_entry(pos, struct cfg_list_item, list);
+		switch (n->offset) {
+		case 0x003c:
+		case 0x0030:
+		case 0x0044:
+			if (is_mac(chip_type, n->offset) && n->len == 6) {
+				char s[18];
+				sprintf(s, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
+					n->data[5], n->data[4],
+					n->data[3], n->data[2],
+					n->data[1], n->data[0]);
+				RS_INFO("bdaddr ofs %04x, %s", n->offset, s);
+			}
+			break;
+		case 0x000c:
+#ifdef BAUDRATE_4BYTES
+			baudrate = get_unaligned_le32(n->data);
+#else
+			baudrate = get_unaligned_le16(n->data);
+#endif
+			rtb_cfg.vendor_baud = baudrate;
+			RS_INFO("Config baudrate: %08x", baudrate);
+
+			if (n->len > 12) {
+				uint8_t d = n->data[12];
+				rtb_cfg.uart_flow_ctrl = (d & 0x4) ? 1 : 0;
+				RS_INFO("uart flow ctrl: %u",
+					rtb_cfg.uart_flow_ctrl);
+			}
+			break;
+#ifdef RTL8723DSH4_UART_HWFLOWC
+		case 0x0018:
+			if (chip_type == CHIP_8723DS &&
+			    rtb_cfg.proto == HCI_UART_H4) {
+				if (n->data[0] & (1 << 2))
+					rtb_cfg.uart_flow_ctrl = 1;
+				RS_INFO("8723DSH4: hw flow control %u",
+					rtb_cfg.uart_flow_ctrl);
+				if (n->data[0] & 0x01) {
+					rtb_cfg.parenb = 1;
+					if (n->data[0] & 0x02)
+						rtb_cfg.pareven = 1;
+					else
+						rtb_cfg.pareven = 0;
+				}
+				RS_INFO("8723DSH4: parity %u, even %u",
+					rtb_cfg.parenb,
+					rtb_cfg.pareven);
+			}
+			break;
+#endif
+		default:
+			break;
+		}
+
+		config_len += (3 + n->len);
+		dlen += (3 + n->len);
+
+	}
+	p = realloc(buf, config_len);
+	if (!p) {
+		/* block is left untouched; it is not freed or moved */
+		RS_ERR("Couldn't realloc buf for configs");
+		free(buf);
+		buf = NULL;
+		*cfg_len = 0;
+		goto done;
+	}
+	buf = p;
+
+	memcpy(buf, cfg_magic, 4);
+	buf[4] = dlen & 0xff;
+	buf[5] = (dlen >> 8) & 0xff;
+	p = buf + 6;
+	list_for_each_safe(pos, next, &list_configs) {
+		n = list_entry(pos, struct cfg_list_item, list);
+		p[0] = n->offset & 0xff;
+		p[1] = (n->offset >> 8) & 0xff;
+		p[2] = n->len;
+		memcpy(p + 3, n->data, n->len);
+		p += (3 + n->len);
+	}
+
 	RS_INFO("Vendor baud from Config file: %08x", rtb_cfg.vendor_baud);
 
-	*cfg_len = file_len;
+	RS_INFO("New cfg len %u", config_len);
+	util_hexdump((const uint8_t *)buf, config_len);
+
+	*cfg_len = config_len;
+
+done:
+	config_lists_free();
 
 	return buf;
 
@@ -1286,10 +1297,10 @@ struct rtb_patch_entry *rtb_get_patch_entry(void)
 						entry->soffset +
 						entry->patch_len - 12);
 
-			RS_INFO("Svn version: %8d", entry->svn_ver);
+			RS_INFO("Svn version: %8u", entry->svn_ver);
 			tmp = ((entry->coex_ver >> 16) & 0x7ff) +
 			      (entry->coex_ver >> 27) * 10000;
-			RS_INFO("Coexistence: BTCOEX_20%06d-%04x\n", tmp,
+			RS_INFO("Coexistence: BTCOEX_20%06u-%04x\n", tmp,
 				(entry->coex_ver & 0xffff));
 
 			break;
@@ -1348,7 +1359,7 @@ uint8_t *rtb_get_final_patch(int fd, int proto, int *rlen)
 			RS_INFO("Svn version: %u\n", svn_ver);
 			tmp = ((coex_ver >> 16) & 0x7ff) +
 			      (coex_ver >> 27) * 10000;
-			RS_INFO("Coexistence: BTCOEX_20%06d-%04x\n", tmp,
+			RS_INFO("Coexistence: BTCOEX_20%06u-%04x\n", tmp,
 				(coex_ver & 0xffff));
 
 			/* Copy Patch and Config */

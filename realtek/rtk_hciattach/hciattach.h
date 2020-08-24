@@ -154,7 +154,7 @@ typedef struct rtb_struct {
 	uint32_t vendor_baud;
 	uint8_t dl_fw_flag;
 	int serial_fd;
-	int uart_flow_ctrl;
+	uint32_t uart_flow_ctrl;
 	uint32_t parenb:   16;
 	uint32_t pareven: 16;
 	int final_speed;

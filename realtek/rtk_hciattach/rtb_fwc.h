@@ -39,6 +39,7 @@ struct rtb_struct;
 #define CHIP_8723CS_VF 4
 #define CHIP_8723CS_XX 5
 #define CHIP_8703BS   7
+#define CHIP_8725AS   0x05
 
 /* software id */
 #define CHIP_UNKNOWN	0x00
@@ -70,6 +71,6 @@ struct patch_info {
 };
 
 struct patch_info *get_patch_entry(struct rtb_struct *btrtl);
-uint8_t *rtb_read_config(struct rtb_struct *btrtl, int *cfg_len);
+uint8_t *rtb_read_config(const char *file, int *cfg_len, uint8_t chip_type);
 uint8_t *rtb_read_firmware(struct rtb_struct *btrtl, int *fw_len);
 uint8_t *rtb_get_final_patch(int fd, int proto, int *rlen);

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+killall rtk_hciattach
+
 echo 0 > /sys/class/rfkill/rfkill0/state
 sleep 2
 echo 1 > /sys/class/rfkill/rfkill0/state
