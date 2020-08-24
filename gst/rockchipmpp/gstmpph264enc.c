@@ -30,6 +30,27 @@
 #define parent_class gst_mpp_h264_enc_parent_class
 G_DEFINE_TYPE (GstMppH264Enc, gst_mpp_h264_enc, GST_TYPE_MPP_VIDEO_ENC);
 
+#define DEFAULT_PROP_LEVEL 40   /* 1080p@30fps */
+#define DEFAULT_PROP_PROFILE GST_MPP_H264_PROFILE_HIGH
+#define DEFAULT_PROP_QP_INIT 26
+#define DEFAULT_PROP_QP_MIN 0   /* Auto */
+#define DEFAULT_PROP_QP_MAX 0   /* Auto */
+#define DEFAULT_PROP_QP_MAX_STEP -1     /* Auto */
+#define DEFAULT_PROP_SEI_MODE MPP_ENC_SEI_MODE_DISABLE
+
+enum
+{
+  PROP_0,
+  PROP_PROFILE,
+  PROP_LEVEL,
+  PROP_QP_INIT,
+  PROP_QP_MIN,
+  PROP_QP_MAX,
+  PROP_QP_MAX_STEP,
+  PROP_SEI_MODE,
+  PROP_LAST,
+};
+
 static GstStaticPadTemplate gst_mpp_h264_enc_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
@@ -39,8 +60,116 @@ GST_STATIC_PAD_TEMPLATE ("src",
         "height = (int) [ 32, 1088 ], "
         "framerate = (fraction) [0/1, 60/1], "
         "stream-format = (string) { byte-stream }, "
-        "alignment = (string) { au }, " "profile = (string) { high }")
+        "alignment = (string) { au }, "
+        "profile = (string) { baseline, main, high }")
     );
+
+static void
+gst_mpp_h264_enc_set_property (GObject * object,
+    guint prop_id, const GValue * value, GParamSpec * pspec)
+{
+  GstVideoEncoder *encoder = GST_VIDEO_ENCODER (object);
+  GstMppH264Enc *self = GST_MPP_H264_ENC (encoder);
+
+  switch (prop_id) {
+    case PROP_PROFILE:{
+      GstMppH264Profile profile = g_value_get_enum (value);
+      if (self->profile == profile)
+        return;
+
+      self->profile = profile;
+      break;
+    }
+    case PROP_LEVEL:{
+      guint level = g_value_get_uint (value);
+      if (self->level == level)
+        return;
+
+      self->level = level;
+      break;
+    }
+    case PROP_QP_INIT:{
+      guint qp_init = g_value_get_uint (value);
+      if (self->qp_init == qp_init)
+        return;
+
+      self->qp_init = qp_init;
+      break;
+    }
+    case PROP_QP_MIN:{
+      guint qp_min = g_value_get_uint (value);
+      if (self->qp_min == qp_min)
+        return;
+
+      self->qp_min = qp_min;
+      break;
+    }
+    case PROP_QP_MAX:{
+      guint qp_max = g_value_get_uint (value);
+      if (self->qp_max == qp_max)
+        return;
+
+      self->qp_max = qp_max;
+      break;
+    }
+    case PROP_QP_MAX_STEP:{
+      gint qp_max_step = g_value_get_int (value);
+      if (self->qp_max_step == qp_max_step)
+        return;
+
+      self->qp_max_step = qp_max_step;
+      break;
+    }
+    case PROP_SEI_MODE:{
+      MppEncSeiMode sei_mode = g_value_get_enum (value);
+      if (self->sei_mode == sei_mode)
+        return;
+
+      self->sei_mode = sei_mode;
+      break;
+    }
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      return;
+  }
+
+  self->prop_dirty = TRUE;
+}
+
+static void
+gst_mpp_h264_enc_get_property (GObject * object,
+    guint prop_id, GValue * value, GParamSpec * pspec)
+{
+  GstVideoEncoder *encoder = GST_VIDEO_ENCODER (object);
+  GstMppH264Enc *self = GST_MPP_H264_ENC (encoder);
+
+  switch (prop_id) {
+    case PROP_PROFILE:
+      g_value_set_enum (value, self->profile);
+      break;
+    case PROP_LEVEL:
+      g_value_set_uint (value, self->level);
+      break;
+    case PROP_QP_INIT:
+      g_value_set_uint (value, self->qp_init);
+      break;
+    case PROP_QP_MIN:
+      g_value_set_uint (value, self->qp_min);
+      break;
+    case PROP_QP_MAX:
+      g_value_set_uint (value, self->qp_max);
+      break;
+    case PROP_QP_MAX_STEP:
+      g_value_set_int (value, self->qp_max_step);
+      break;
+    case PROP_SEI_MODE:
+      g_value_set_enum (value, self->sei_mode);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
 
 static gboolean
 gst_mpp_h264_enc_open (GstVideoEncoder * encoder)
@@ -60,92 +189,100 @@ failure:
   return FALSE;
 }
 
+static void
+gst_mpp_h264_enc_update_properties (GstVideoEncoder * encoder)
+{
+  GstMppH264Enc *self = GST_MPP_H264_ENC (encoder);
+  GstMppVideoEnc *mppenc = GST_MPP_VIDEO_ENC (encoder);
+  MppEncCfg cfg;
+
+  if (!mppenc->prop_dirty && !self->prop_dirty)
+    return;
+
+  if (mpp_enc_cfg_init (&cfg)) {
+    GST_WARNING_OBJECT (self, "Init enc cfg failed");
+    goto out;
+  }
+
+  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_GET_CFG, cfg)) {
+    GST_WARNING_OBJECT (self, "Get enc cfg failed");
+    mpp_enc_cfg_deinit (cfg);
+    goto out;
+  }
+
+  mpp_enc_cfg_set_s32 (cfg, "h264:qp_init", self->qp_init);
+
+  if (mppenc->rc_mode == MPP_ENC_RC_MODE_FIXQP) {
+    mpp_enc_cfg_set_s32 (cfg, "h264:qp_max", self->qp_init);
+    mpp_enc_cfg_set_s32 (cfg, "h264:qp_min", self->qp_init);
+    mpp_enc_cfg_set_s32 (cfg, "h264:qp_step", 0);
+  } else if (mppenc->rc_mode == MPP_ENC_RC_MODE_CBR) {
+    /* NOTE: These settings have been tuned for better quality */
+    mpp_enc_cfg_set_s32 (cfg, "h264:qp_max", self->qp_max ? self->qp_max : 28);
+    mpp_enc_cfg_set_s32 (cfg, "h264:qp_min", self->qp_min ? self->qp_min : 4);
+    mpp_enc_cfg_set_s32 (cfg, "h264:qp_step",
+        self->qp_max_step >= 0 ? self->qp_max_step : 8);
+  } else if (mppenc->rc_mode == MPP_ENC_RC_MODE_VBR) {
+    mpp_enc_cfg_set_s32 (cfg, "h264:qp_max", self->qp_max ? self->qp_max : 40);
+    mpp_enc_cfg_set_s32 (cfg, "h264:qp_min", self->qp_min ? self->qp_min : 12);
+    mpp_enc_cfg_set_s32 (cfg, "h264:qp_step",
+        self->qp_max_step >= 0 ? self->qp_max_step : 8);
+  }
+
+  if (self->prop_dirty) {
+    mpp_enc_cfg_set_s32 (cfg, "h264:profile", self->profile);
+    mpp_enc_cfg_set_s32 (cfg, "h264:level", self->level);
+
+    mpp_enc_cfg_set_s32 (cfg, "h264:trans8x8",
+        self->profile == GST_MPP_H264_PROFILE_HIGH);
+    mpp_enc_cfg_set_s32 (cfg, "h264:cabac_en",
+        self->profile != GST_MPP_H264_PROFILE_BASELINE);
+    mpp_enc_cfg_set_s32 (cfg, "h264:cabac_idc", 0);
+  }
+
+  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_SET_CFG, cfg))
+    GST_WARNING_OBJECT (self, "Set enc cfg failed");
+
+  mpp_enc_cfg_deinit (cfg);
+
+out:
+  if (!self->prop_dirty)
+    return;
+
+  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_SET_SEI_CFG,
+          &self->sei_mode))
+    GST_WARNING_OBJECT (self, "Set sei mode failed");
+
+  self->prop_dirty = FALSE;
+}
+
 static gboolean
 gst_mpp_h264_enc_set_format (GstVideoEncoder * encoder,
     GstVideoCodecState * state)
 {
   GstMppH264Enc *self = GST_MPP_H264_ENC (encoder);
-  GstMppVideoEnc *mpp_video_enc = GST_MPP_VIDEO_ENC (encoder);
-  MppEncCodecCfg codec_cfg;
-  MppEncRcCfg rc_cfg;
+  GstMppVideoEnc *mppenc = GST_MPP_VIDEO_ENC (encoder);
+  MppEncCfg cfg;
 
-  memset (&rc_cfg, 0, sizeof (rc_cfg));
-  memset (&codec_cfg, 0, sizeof (codec_cfg));
-
-  rc_cfg.change = MPP_ENC_RC_CFG_CHANGE_ALL;
-  rc_cfg.rc_mode = MPP_ENC_RC_MODE_CBR;
-  rc_cfg.quality = MPP_ENC_RC_QUALITY_MEDIUM;
-
-  rc_cfg.fps_in_flex = 0;
-  rc_cfg.fps_in_num = GST_VIDEO_INFO_FPS_N (&state->info);
-  rc_cfg.fps_in_denorm = GST_VIDEO_INFO_FPS_D (&state->info);
-  rc_cfg.fps_out_flex = 0;
-  rc_cfg.fps_out_num = GST_VIDEO_INFO_FPS_N (&state->info);
-  rc_cfg.fps_out_denorm = GST_VIDEO_INFO_FPS_D (&state->info);
-  rc_cfg.gop = GST_VIDEO_INFO_FPS_N (&state->info)
-      / GST_VIDEO_INFO_FPS_D (&state->info);
-  rc_cfg.skip_cnt = 0;
-  rc_cfg.max_reenc_times = 1;
-
-  codec_cfg.h264.qp_init = 26;
-
-  if (rc_cfg.rc_mode == MPP_ENC_RC_MODE_CBR) {
-    codec_cfg.h264.qp_max = 28;
-    codec_cfg.h264.qp_min = 4;
-    codec_cfg.h264.qp_max_step = 8;
-
-    /* Bits of a GOP */
-    rc_cfg.bps_target = GST_VIDEO_INFO_WIDTH (&state->info)
-        * GST_VIDEO_INFO_HEIGHT (&state->info)
-        / 8 * GST_VIDEO_INFO_FPS_N (&state->info)
-        / GST_VIDEO_INFO_FPS_D (&state->info);
-    rc_cfg.bps_max = rc_cfg.bps_target * 17 / 16;
-    rc_cfg.bps_min = rc_cfg.bps_target * 15 / 16;
-  } else if (rc_cfg.rc_mode == MPP_ENC_RC_MODE_VBR) {
-    if (rc_cfg.quality == MPP_ENC_RC_QUALITY_CQP) {
-      codec_cfg.h264.qp_max = 26;
-      codec_cfg.h264.qp_min = 26;
-      codec_cfg.h264.qp_max_step = 0;
-
-      rc_cfg.bps_target = -1;
-      rc_cfg.bps_max = -1;
-      rc_cfg.bps_min = -1;
-    } else {
-      codec_cfg.h264.qp_max = 40;
-      codec_cfg.h264.qp_min = 12;
-      codec_cfg.h264.qp_max_step = 0;
-      codec_cfg.h264.qp_init = 0;
-
-      rc_cfg.bps_target = GST_VIDEO_INFO_WIDTH (&state->info)
-          * GST_VIDEO_INFO_HEIGHT (&state->info)
-          / 8 * GST_VIDEO_INFO_FPS_N (&state->info)
-          / GST_VIDEO_INFO_FPS_D (&state->info);
-      rc_cfg.bps_max = rc_cfg.bps_target * 17 / 16;
-      rc_cfg.bps_min = rc_cfg.bps_target * 1 / 16;
-    }
-  }
-
-  if (mpp_video_enc->mpi->control (mpp_video_enc->mpp_ctx, MPP_ENC_SET_RC_CFG,
-          &rc_cfg)) {
-    GST_DEBUG_OBJECT (self, "Setting rate control for rockchip mpp failed");
+  if (mpp_enc_cfg_init (&cfg)) {
+    GST_WARNING_OBJECT (self, "Init enc cfg failed");
     return FALSE;
   }
 
-  codec_cfg.coding = MPP_VIDEO_CodingAVC;
-  codec_cfg.h264.change = MPP_ENC_H264_CFG_CHANGE_PROFILE |
-      MPP_ENC_H264_CFG_CHANGE_ENTROPY |
-      MPP_ENC_H264_CFG_CHANGE_TRANS_8x8 | MPP_ENC_H264_CFG_CHANGE_QP_LIMIT;
-  codec_cfg.h264.profile = 100;
-  codec_cfg.h264.level = 40;
-  codec_cfg.h264.entropy_coding_mode = 1;
-  codec_cfg.h264.cabac_init_idc = 0;
-  codec_cfg.h264.transform8x8_mode = 1;
-
-  if (mpp_video_enc->mpi->control (mpp_video_enc->mpp_ctx,
-          MPP_ENC_SET_CODEC_CFG, &codec_cfg)) {
-    GST_DEBUG_OBJECT (self, "Setting codec info for rockchip mpp failed");
+  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_GET_CFG, cfg)) {
+    GST_WARNING_OBJECT (self, "Get enc cfg failed");
+    mpp_enc_cfg_deinit (cfg);
     return FALSE;
   }
+
+  mpp_enc_cfg_set_s32 (cfg, "codec:type", MPP_VIDEO_CodingAVC);
+
+  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_SET_CFG, cfg))
+    GST_WARNING_OBJECT (self, "Set enc cfg failed");
+
+  mpp_enc_cfg_deinit (cfg);
+
+  gst_mpp_h264_enc_update_properties (encoder);
 
   return GST_MPP_VIDEO_ENC_CLASS (parent_class)->set_format (encoder, state);
 }
@@ -154,15 +291,26 @@ static GstFlowReturn
 gst_mpp_h264_enc_handle_frame (GstVideoEncoder * encoder,
     GstVideoCodecFrame * frame)
 {
+  GstMppH264Enc *self = GST_MPP_H264_ENC (encoder);
   GstCaps *outcaps;
   GstStructure *structure;
   GstFlowReturn ret;
+
+  static const char *profile_names[] = {
+    [GST_MPP_H264_PROFILE_BASELINE] = "baseline",
+    [GST_MPP_H264_PROFILE_MAIN] = "main",
+    [GST_MPP_H264_PROFILE_HIGH] = "high",
+  };
 
   outcaps = gst_caps_new_empty_simple ("video/x-h264");
   structure = gst_caps_get_structure (outcaps, 0);
   gst_structure_set (structure, "stream-format",
       G_TYPE_STRING, "byte-stream", NULL);
   gst_structure_set (structure, "alignment", G_TYPE_STRING, "au", NULL);
+  gst_structure_set (structure, "profile", G_TYPE_STRING,
+      profile_names[self->profile], NULL);
+
+  gst_mpp_h264_enc_update_properties (encoder);
 
   ret = GST_MPP_VIDEO_ENC_CLASS (parent_class)->handle_frame (encoder, frame,
       outcaps);
@@ -173,15 +321,62 @@ gst_mpp_h264_enc_handle_frame (GstVideoEncoder * encoder,
 static void
 gst_mpp_h264_enc_init (GstMppH264Enc * self)
 {
+  self->profile = DEFAULT_PROP_PROFILE;
+  self->level = DEFAULT_PROP_LEVEL;
+  self->qp_init = DEFAULT_PROP_QP_INIT;
+  self->qp_min = DEFAULT_PROP_QP_MIN;
+  self->qp_max = DEFAULT_PROP_QP_MAX;
+  self->qp_max_step = DEFAULT_PROP_QP_MAX_STEP;
+  self->sei_mode = DEFAULT_PROP_SEI_MODE;
+  self->prop_dirty = TRUE;
+}
+
+#define GST_TYPE_MPP_H264_ENC_PROFILE (gst_mpp_h264_enc_profile_get_type ())
+static GType
+gst_mpp_h264_enc_profile_get_type (void)
+{
+  static GType profile = 0;
+
+  if (!profile) {
+    static const GEnumValue profiles[] = {
+      {GST_MPP_H264_PROFILE_BASELINE, "Baseline", "baseline"},
+      {GST_MPP_H264_PROFILE_MAIN, "Main", "main"},
+      {GST_MPP_H264_PROFILE_HIGH, "High", "high"},
+      {0, NULL, NULL}
+    };
+    profile = g_enum_register_static ("GstMppH264Profile", profiles);
+  }
+  return profile;
+}
+
+#define GST_TYPE_MPP_ENC_SEI_MODE (gst_mpp_enc_sei_mode_get_type ())
+static GType
+gst_mpp_enc_sei_mode_get_type (void)
+{
+  static GType sei_mode = 0;
+
+  if (!sei_mode) {
+    static const GEnumValue modes[] = {
+      {MPP_ENC_SEI_MODE_DISABLE, "SEI disabled", "disable"},
+      {MPP_ENC_SEI_MODE_ONE_SEQ, "One SEI per sequence", "one-seq"},
+      {MPP_ENC_SEI_MODE_ONE_FRAME, "One SEI per frame(if changed)",
+          "one-frame"},
+      {0, NULL, NULL}
+    };
+    sei_mode = g_enum_register_static ("GstMppEncSeiMode", modes);
+  }
+  return sei_mode;
 }
 
 static void
 gst_mpp_h264_enc_class_init (GstMppH264EncClass * klass)
 {
   GstElementClass *element_class;
+  GObjectClass *gobject_class;
   GstVideoEncoderClass *video_encoder_class;
 
   element_class = (GstElementClass *) klass;
+  gobject_class = (GObjectClass *) klass;
   video_encoder_class = (GstVideoEncoderClass *) klass;
 
   gst_element_class_set_static_metadata (element_class,
@@ -189,6 +384,11 @@ gst_mpp_h264_enc_class_init (GstMppH264EncClass * klass)
       "Codec/Encoder/Video",
       "Encode video streams via Rockchip Mpp",
       "Randy Li <randy.li@rock-chips.com>");
+
+  gobject_class->set_property =
+      GST_DEBUG_FUNCPTR (gst_mpp_h264_enc_set_property);
+  gobject_class->get_property =
+      GST_DEBUG_FUNCPTR (gst_mpp_h264_enc_get_property);
 
   video_encoder_class->open = GST_DEBUG_FUNCPTR (gst_mpp_h264_enc_open);
   video_encoder_class->set_format =
@@ -198,4 +398,44 @@ gst_mpp_h264_enc_class_init (GstMppH264EncClass * klass)
 
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_mpp_h264_enc_src_template));
+
+  g_object_class_install_property (gobject_class, PROP_PROFILE,
+      g_param_spec_enum ("profile", "H264 profile",
+          "H264 profile",
+          GST_TYPE_MPP_H264_ENC_PROFILE, DEFAULT_PROP_PROFILE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_LEVEL,
+      g_param_spec_uint ("level", "H264 level",
+          "H264 level (40~41 = 1080p@30fps, 42 = 1080p60fps, 50~52 = 4K@30fps)",
+          10, 62, DEFAULT_PROP_LEVEL,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_QP_INIT,
+      g_param_spec_uint ("qp-init", "Initial QP",
+          "Initial QP (lower value means higher quality)",
+          0, 51, DEFAULT_PROP_QP_INIT,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_QP_MIN,
+      g_param_spec_uint ("qp-min", "Min QP",
+          "Min QP (0 = default)", 0, 51, DEFAULT_PROP_QP_MIN,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_QP_MAX,
+      g_param_spec_uint ("qp-max", "Max QP",
+          "Max QP (0 = default)", 0, 51, DEFAULT_PROP_QP_MAX,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_QP_MAX_STEP,
+      g_param_spec_int ("qp-max-step", "Max QP step",
+          "Max delta QP step between two frames (-1 = default)", -1, 51,
+          DEFAULT_PROP_QP_MAX_STEP,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_SEI_MODE,
+      g_param_spec_enum ("sei-mode", "SEI mode",
+          "SEI mode",
+          GST_TYPE_MPP_ENC_SEI_MODE, DEFAULT_PROP_SEI_MODE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }

@@ -41,6 +41,10 @@ typedef struct _GstMppJpegEncClass GstMppJpegEncClass;
 struct _GstMppJpegEnc
 {
   GstMppVideoEnc parent;
+
+  guint quant;
+
+  gboolean prop_dirty;
 };
 
 struct _GstMppJpegEncClass

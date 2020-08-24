@@ -76,6 +76,19 @@ struct _GstMppVideoEnc
   gboolean processing;
   gboolean active;
   GstFlowReturn output_flow;
+
+  MppEncHeaderMode header_mode;
+  MppEncRcMode rc_mode;
+  MppEncRotationCfg rotation;
+
+  gint gop;
+  guint max_reenc;
+
+  guint bps;
+  guint bps_min;
+  guint bps_max;
+
+  gboolean prop_dirty;
 };
 
 struct _GstMppVideoEncClass
