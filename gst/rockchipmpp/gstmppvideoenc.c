@@ -321,10 +321,14 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer ** buffer)
   if (0 == gst_buffer_get_size (*buffer)) {
     mpp_frame_set_eos (mpp_frame, 1);
   } else {
+    gsize len = gst_buffer_get_size (*buffer);
+    if (len > mpp_buffer_get_size (frame_in))
+      len = mpp_buffer_get_size (frame_in);
+
     ptr = mpp_buffer_get_ptr (frame_in);
 
     gst_buffer_ref (*buffer);
-    gst_buffer_extract (*buffer, 0, ptr, gst_buffer_get_size (*buffer));
+    gst_buffer_extract (*buffer, 0, ptr, len);
     gst_buffer_unref (*buffer);
 
     mpp_frame_set_eos (mpp_frame, 0);
