@@ -437,6 +437,10 @@ drm_prepare_planes (GstRkXImageSink * self, drmModeRes * res,
   GST_DEBUG_OBJECT (self, "applied colorkey = 0x%x to plane %d",
       RKXIMAGE_COLOR_KEY, plane->plane_id);
 
+  /* Uper primary plane */
+  if (!drm_plane_set_property (self, plane, "ZPOS", 1))
+    goto out;
+
   drmModeFreePlane (plane);
 
   /* Lower overlay plane */
