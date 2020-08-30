@@ -107,6 +107,7 @@ int NormalRgaClose(void *context)
 		return -ENODEV;
 	}
 
+#if 0
 	if (refCount <= 0) {
 		DEBUG("This can not be happened \n");
 		return 0;
@@ -115,6 +116,7 @@ int NormalRgaClose(void *context)
 	if (refCount > 0)
 	//if (refCount > 0 && android_atomic_dec(&refCount) != 1)
 		return 0;
+#endif
 
 	rgaCtx = NULL;
 
