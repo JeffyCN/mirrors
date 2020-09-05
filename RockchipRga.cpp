@@ -77,7 +77,7 @@ void RockchipRga::RkRgaDeInit()
 }
 
 int RockchipRga::RkRgaAllocBuffer(int drm_fd, bo_t *bo_info, int width,
-                                  int height, int bpp) {
+                                  int height, int bpp, int flags) {
 #if LIBDRM
     struct drm_mode_create_dumb arg;
     int ret;
@@ -86,6 +86,7 @@ int RockchipRga::RkRgaAllocBuffer(int drm_fd, bo_t *bo_info, int width,
     arg.bpp = bpp;
     arg.width = width;
     arg.height = height;
+    arg.flags = flags;
 
     ret = drmIoctl(drm_fd, DRM_IOCTL_MODE_CREATE_DUMB, &arg);
     if (ret) {
@@ -125,7 +126,7 @@ int RockchipRga::RkRgaFreeBuffer(int drm_fd, bo_t *bo_info) {
 #endif
 }
 
-int RockchipRga::RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp)
+int RockchipRga::RkRgaGetAllocBufferExt(bo_t *bo_info, int width, int height, int bpp, int flags)
 {
     static const char* card = "/dev/dri/card0";
     int ret;
@@ -141,13 +142,23 @@ int RockchipRga::RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int b
         fprintf(stderr, "Fail to open %s: %m\n", card);
         return -errno;
     }
-    ret = RkRgaAllocBuffer(drm_fd, bo_info, width, height, bpp);
+    ret = RkRgaAllocBuffer(drm_fd, bo_info, width, height, bpp, flags);
     if (ret) {
         close(drm_fd);
         return ret;
     }
     bo_info->fd = drm_fd;
     return 0;
+}
+
+int RockchipRga::RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp)
+{
+    return RkRgaGetAllocBufferExt(bo_info, width, height, bpp, 0);
+}
+
+int RockchipRga::RkRgaGetAllocBufferCache(bo_t *bo_info, int width, int height, int bpp)
+{
+    return RkRgaGetAllocBufferExt(bo_info, width, height, bpp, ROCKCHIP_BO_CACHABLE);
 }
 
 int RockchipRga::RkRgaGetMmap(bo_t *bo_info)

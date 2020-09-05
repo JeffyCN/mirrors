@@ -25,6 +25,12 @@ int c_RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp)
     return 0;
 }
 
+int c_RkRgaGetAllocBufferCache(bo_t *bo_info, int width, int height, int bpp)
+{
+    rkRga.RkRgaGetAllocBufferCache(bo_info, width, height, bpp);
+    return 0;
+}
+
 int c_RkRgaGetMmap(bo_t *bo_info)
 {
     rkRga.RkRgaGetMmap(bo_info);
