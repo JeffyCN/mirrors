@@ -1,0 +1,16 @@
+[binaries]
+c = '/home/lee/rv1126/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-gcc'
+cpp = '/home/lee/rv1126/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-g++'
+ar = '/home/lee/rv1126/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-ar'
+strip = '/home/lee/rv1126/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-gcc-strip'
+pkgconfig = '/home/lee/rv1126/buildroot/output/rockchip_puma/host/bin/pkg-config'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'arm'
+cpu = 'arm'
+endian = 'little'
+
+[properties]
+needs_exe_wrapper = true
+c_args = ['-I/home/lee/rv1126/buildroot/output/rockchip_puma/host/arm-buildroot-linux-gnueabihf/sysroot/usr/include', '-L/home/lee/rv1126/buildroot/output/rockchip_puma/host/arm-buildroot-linux-gnueabihf/sysroot/usr/lib', '-L/home/lee/rv1126/buildroot/output/rockchip_puma/host/lib', '-I/home/lee/rv1126/buildroot/output/rockchip_puma/host/include']

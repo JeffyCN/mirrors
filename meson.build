@@ -29,29 +29,35 @@ git_version_h = vcs_tag(
     input : 'version.h.in', output : 'version.h',
 )
 add_project_arguments('-include', 'version.h', language : 'cpp')
+add_project_arguments('-DLINUX=1', language : 'cpp')
 
 librga_srcs = [
-    git_version_h,
-    'RgaApi.cpp',
-    'RockchipRga.cpp',
-    'normal/NormalRga.cpp',
-    'normal/NormalRgaApi.cpp',
+    'core/GrallocOps.cpp',
+    'core/NormalRgaApi.cpp',
+	'core/NormalRga.cpp',
+	'core/RgaUtils.cpp',
+	'core/RockchipRga.cpp',
 ]
+
+incdir = include_directories('include')
 
 librga = shared_library(
     'rga',
     librga_srcs,
     dependencies : libdrm_dep,
+	include_directories : incdir,
     version : meson.project_version(),
     install : true,
 )
 
 install_headers(
-    'rga.h',
-    'drmrga.h',
-    'RgaApi.h',
-    'RockchipRga.h',
-    'RockchipRgaMacro.h',
+    'include/rga.h',
+    'include/drmrga.h',
+    'include/GrallocOps.h',
+    'include/RockchipRga.h',
+    'include/RgaMutex.h',
+	'include/RgaSingleton.h',
+	'include/RgaUtils.h',
     subdir : 'rga',
 )
 
