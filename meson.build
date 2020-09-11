@@ -2,7 +2,7 @@ project(
     'librga',
     'cpp',
     version : '2.0.0',
-    meson_version : '>=0.44.0',
+    meson_version : '>=0.47.0',
     default_options : ['warning_level=3', 'cpp_std=c++14']
 )
 
@@ -17,8 +17,6 @@ if libdrm_option != 'false'
     endif
 endif
 
-libpthread_dep = dependency('libpthread', required : true)
-
 if libdrm_dep.found()
     message('Building with libdrm.')
     add_project_arguments('-DLIBDRM=1', language : 'cpp')
@@ -26,9 +24,15 @@ else
     message('Building without libdrm.')
 endif
 
+git_version_h = vcs_tag(
+    command : ['git', 'rev-parse', '--short', 'HEAD'],
+    input : 'version.h.in', output : 'version.h',
+)
+add_project_arguments('-include', 'version.h', language : 'cpp')
 add_project_arguments('-DLINUX=1', language : 'cpp')
 
 librga_srcs = [
+	git_version_h,
     'core/GrallocOps.cpp',
     'core/NormalRgaApi.cpp',
 	'core/NormalRga.cpp',
