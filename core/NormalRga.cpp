@@ -420,7 +420,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 		src->mmuFlag = 1;
 	} else if (src && src->virAddr) {
 		srcBuf = src->virAddr;
-		ALOGD("srcBuf = %p, src->virAddr = %p\n", srcBuf, src->virAddr);
 		src->mmuFlag = 1;
 	}
 	/*
@@ -1008,12 +1007,12 @@ int RgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1) {
     rga_info temp;
     void *temp_buf = NULL;
 
-    if (!(0x0205 == (src->blend & 0xFFFF) &&
-        ((src->rect.format == HAL_PIXEL_FORMAT_RGBA_8888 && dst->rect.format == HAL_PIXEL_FORMAT_YCrCb_NV12) ||
-        (src->rect.format == RK_FORMAT_RGBA_8888 && dst->rect.format == RK_FORMAT_YCbCr_420_SP)))) {
-        printf("Not src over mode\n");
-        return -1;
-    }
+	if (!(0x0205 == (src->blend & 0xFFFF) &&
+		NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src->rect.format)) &&
+		NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst->rect.format)))) {
+		printf("Not src over mode\n");
+		return -1;
+	}
 
     temp_buf= (char*)malloc(src->rect.wstride*src->rect.hstride*(src->rect.format*4));
     if (temp_buf == NULL) 
