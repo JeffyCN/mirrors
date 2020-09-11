@@ -32,6 +32,7 @@ add_project_arguments('-include', 'version.h', language : 'cpp')
 add_project_arguments('-DLINUX=1', language : 'cpp')
 
 librga_srcs = [
+	git_version_h,
     'core/GrallocOps.cpp',
     'core/NormalRgaApi.cpp',
 	'core/NormalRga.cpp',
