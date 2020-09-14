@@ -239,28 +239,6 @@ static gboolean
 gst_mpp_h264_enc_set_format (GstVideoEncoder * encoder,
     GstVideoCodecState * state)
 {
-  GstMppH264Enc *self = GST_MPP_H264_ENC (encoder);
-  GstMppVideoEnc *mppenc = GST_MPP_VIDEO_ENC (encoder);
-  MppEncCfg cfg;
-
-  if (mpp_enc_cfg_init (&cfg)) {
-    GST_WARNING_OBJECT (self, "Init enc cfg failed");
-    return FALSE;
-  }
-
-  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_GET_CFG, cfg)) {
-    GST_WARNING_OBJECT (self, "Get enc cfg failed");
-    mpp_enc_cfg_deinit (cfg);
-    return FALSE;
-  }
-
-  mpp_enc_cfg_set_s32 (cfg, "codec:type", MPP_VIDEO_CodingAVC);
-
-  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_SET_CFG, cfg))
-    GST_WARNING_OBJECT (self, "Set enc cfg failed");
-
-  mpp_enc_cfg_deinit (cfg);
-
   gst_mpp_h264_enc_update_properties (encoder);
 
   return GST_MPP_VIDEO_ENC_CLASS (parent_class)->set_format (encoder, state);

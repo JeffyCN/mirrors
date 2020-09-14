@@ -143,28 +143,6 @@ static gboolean
 gst_mpp_jpeg_enc_set_format (GstVideoEncoder * encoder,
     GstVideoCodecState * state)
 {
-  GstMppJpegEnc *self = GST_MPP_JPEG_ENC (encoder);
-  GstMppVideoEnc *mppenc = GST_MPP_VIDEO_ENC (encoder);
-  MppEncCfg cfg;
-
-  if (mpp_enc_cfg_init (&cfg)) {
-    GST_WARNING_OBJECT (self, "Init enc cfg failed");
-    return FALSE;
-  }
-
-  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_GET_CFG, cfg)) {
-    GST_WARNING_OBJECT (self, "Get enc cfg failed");
-    mpp_enc_cfg_deinit (cfg);
-    return FALSE;
-  }
-
-  mpp_enc_cfg_set_s32 (cfg, "codec:type", MPP_VIDEO_CodingMJPEG);
-
-  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_SET_CFG, cfg))
-    GST_WARNING_OBJECT (self, "Set enc cfg failed");
-
-  mpp_enc_cfg_deinit (cfg);
-
   gst_mpp_jpeg_enc_update_properties (encoder);
 
   return GST_MPP_VIDEO_ENC_CLASS (parent_class)->set_format (encoder, state);
