@@ -33,6 +33,7 @@ G_DEFINE_ABSTRACT_TYPE (GstMppVideoEnc, gst_mpp_video_enc,
     GST_TYPE_VIDEO_ENCODER);
 
 #define DEFAULT_PROP_HEADER_MODE MPP_ENC_HEADER_MODE_DEFAULT    /* First frame */
+#define DEFAULT_PROP_SEI_MODE MPP_ENC_SEI_MODE_DISABLE
 #define DEFAULT_PROP_RC_MODE MPP_ENC_RC_MODE_CBR
 #define DEFAULT_PROP_ROTATION MPP_ENC_ROT_0
 #define DEFAULT_PROP_GOP -1     /* Same as FPS */
@@ -47,6 +48,7 @@ enum
   PROP_HEADER_MODE,
   PROP_RC_MODE,
   PROP_ROTATION,
+  PROP_SEI_MODE,
   PROP_GOP,
   PROP_MAX_REENC,
   PROP_BPS,
@@ -97,6 +99,14 @@ gst_mpp_video_enc_set_property (GObject * object,
         return;
 
       self->header_mode = header_mode;
+      break;
+    }
+    case PROP_SEI_MODE:{
+      MppEncSeiMode sei_mode = g_value_get_enum (value);
+      if (self->sei_mode == sei_mode)
+        return;
+
+      self->sei_mode = sei_mode;
       break;
     }
     case PROP_RC_MODE:{
@@ -173,6 +183,9 @@ gst_mpp_video_enc_get_property (GObject * object,
   switch (prop_id) {
     case PROP_HEADER_MODE:
       g_value_set_enum (value, self->header_mode);
+      break;
+    case PROP_SEI_MODE:
+      g_value_set_enum (value, self->sei_mode);
       break;
     case PROP_RC_MODE:
       g_value_set_enum (value, self->rc_mode);
@@ -270,6 +283,10 @@ gst_mpp_video_enc_update_properties (GstVideoEncoder * encoder)
   mpp_enc_cfg_deinit (cfg);
 
 out:
+  if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_SEI_CFG,
+          &self->sei_mode))
+    GST_WARNING_OBJECT (self, "Set sei mode failed");
+
   if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_HEADER_MODE,
           &self->header_mode))
     GST_WARNING_OBJECT (self, "Set header mode failed");
@@ -812,6 +829,7 @@ static void
 gst_mpp_video_enc_init (GstMppVideoEnc * self)
 {
   self->header_mode = DEFAULT_PROP_HEADER_MODE;
+  self->sei_mode = DEFAULT_PROP_SEI_MODE;
   self->rc_mode = DEFAULT_PROP_RC_MODE;
   self->rotation = DEFAULT_PROP_ROTATION;
   self->gop = DEFAULT_PROP_GOP;
@@ -837,6 +855,25 @@ gst_mpp_enc_header_mode_get_type (void)
     header_mode = g_enum_register_static ("MppEncHeaderMode", modes);
   }
   return header_mode;
+}
+
+#define GST_TYPE_MPP_ENC_SEI_MODE (gst_mpp_enc_sei_mode_get_type ())
+static GType
+gst_mpp_enc_sei_mode_get_type (void)
+{
+  static GType sei_mode = 0;
+
+  if (!sei_mode) {
+    static const GEnumValue modes[] = {
+      {MPP_ENC_SEI_MODE_DISABLE, "SEI disabled", "disable"},
+      {MPP_ENC_SEI_MODE_ONE_SEQ, "One SEI per sequence", "one-seq"},
+      {MPP_ENC_SEI_MODE_ONE_FRAME, "One SEI per frame(if changed)",
+          "one-frame"},
+      {0, NULL, NULL}
+    };
+    sei_mode = g_enum_register_static ("GstMppEncSeiMode", modes);
+  }
+  return sei_mode;
 }
 
 #define GST_TYPE_MPP_ENC_RC_MODE (gst_mpp_enc_rc_mode_get_type ())
@@ -912,6 +949,12 @@ gst_mpp_video_enc_class_init (GstMppVideoEncClass * klass)
       g_param_spec_enum ("header-mode", "Header mode",
           "Header mode",
           GST_TYPE_MPP_ENC_HEADER_MODE, DEFAULT_PROP_HEADER_MODE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_SEI_MODE,
+      g_param_spec_enum ("sei-mode", "SEI mode",
+          "SEI mode",
+          GST_TYPE_MPP_ENC_SEI_MODE, DEFAULT_PROP_SEI_MODE,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_RC_MODE,

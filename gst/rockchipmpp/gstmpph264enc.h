@@ -57,9 +57,6 @@ struct _GstMppH264Enc
   guint qp_max;
   gint qp_max_step;
 
-  /* Although this is a common config, but seems only h264e implements it */
-  MppEncSeiMode sei_mode;
-
   gboolean prop_dirty;
 };
 

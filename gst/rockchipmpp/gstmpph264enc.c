@@ -36,7 +36,6 @@ G_DEFINE_TYPE (GstMppH264Enc, gst_mpp_h264_enc, GST_TYPE_MPP_VIDEO_ENC);
 #define DEFAULT_PROP_QP_MIN 0   /* Auto */
 #define DEFAULT_PROP_QP_MAX 0   /* Auto */
 #define DEFAULT_PROP_QP_MAX_STEP -1     /* Auto */
-#define DEFAULT_PROP_SEI_MODE MPP_ENC_SEI_MODE_DISABLE
 
 enum
 {
@@ -47,7 +46,6 @@ enum
   PROP_QP_MIN,
   PROP_QP_MAX,
   PROP_QP_MAX_STEP,
-  PROP_SEI_MODE,
   PROP_LAST,
 };
 
@@ -120,14 +118,6 @@ gst_mpp_h264_enc_set_property (GObject * object,
       self->qp_max_step = qp_max_step;
       break;
     }
-    case PROP_SEI_MODE:{
-      MppEncSeiMode sei_mode = g_value_get_enum (value);
-      if (self->sei_mode == sei_mode)
-        return;
-
-      self->sei_mode = sei_mode;
-      break;
-    }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       return;
@@ -161,9 +151,6 @@ gst_mpp_h264_enc_get_property (GObject * object,
       break;
     case PROP_QP_MAX_STEP:
       g_value_set_int (value, self->qp_max_step);
-      break;
-    case PROP_SEI_MODE:
-      g_value_set_enum (value, self->sei_mode);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -201,13 +188,13 @@ gst_mpp_h264_enc_update_properties (GstVideoEncoder * encoder)
 
   if (mpp_enc_cfg_init (&cfg)) {
     GST_WARNING_OBJECT (self, "Init enc cfg failed");
-    goto out;
+    return;
   }
 
   if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_GET_CFG, cfg)) {
     GST_WARNING_OBJECT (self, "Get enc cfg failed");
     mpp_enc_cfg_deinit (cfg);
-    goto out;
+    return;
   }
 
   mpp_enc_cfg_set_s32 (cfg, "h264:qp_init", self->qp_init);
@@ -244,14 +231,6 @@ gst_mpp_h264_enc_update_properties (GstVideoEncoder * encoder)
     GST_WARNING_OBJECT (self, "Set enc cfg failed");
 
   mpp_enc_cfg_deinit (cfg);
-
-out:
-  if (!self->prop_dirty)
-    return;
-
-  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_SET_SEI_CFG,
-          &self->sei_mode))
-    GST_WARNING_OBJECT (self, "Set sei mode failed");
 
   self->prop_dirty = FALSE;
 }
@@ -327,7 +306,6 @@ gst_mpp_h264_enc_init (GstMppH264Enc * self)
   self->qp_min = DEFAULT_PROP_QP_MIN;
   self->qp_max = DEFAULT_PROP_QP_MAX;
   self->qp_max_step = DEFAULT_PROP_QP_MAX_STEP;
-  self->sei_mode = DEFAULT_PROP_SEI_MODE;
   self->prop_dirty = TRUE;
 }
 
@@ -347,25 +325,6 @@ gst_mpp_h264_enc_profile_get_type (void)
     profile = g_enum_register_static ("GstMppH264Profile", profiles);
   }
   return profile;
-}
-
-#define GST_TYPE_MPP_ENC_SEI_MODE (gst_mpp_enc_sei_mode_get_type ())
-static GType
-gst_mpp_enc_sei_mode_get_type (void)
-{
-  static GType sei_mode = 0;
-
-  if (!sei_mode) {
-    static const GEnumValue modes[] = {
-      {MPP_ENC_SEI_MODE_DISABLE, "SEI disabled", "disable"},
-      {MPP_ENC_SEI_MODE_ONE_SEQ, "One SEI per sequence", "one-seq"},
-      {MPP_ENC_SEI_MODE_ONE_FRAME, "One SEI per frame(if changed)",
-          "one-frame"},
-      {0, NULL, NULL}
-    };
-    sei_mode = g_enum_register_static ("GstMppEncSeiMode", modes);
-  }
-  return sei_mode;
 }
 
 static void
@@ -431,11 +390,5 @@ gst_mpp_h264_enc_class_init (GstMppH264EncClass * klass)
       g_param_spec_int ("qp-max-step", "Max QP step",
           "Max delta QP step between two frames (-1 = default)", -1, 51,
           DEFAULT_PROP_QP_MAX_STEP,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-
-  g_object_class_install_property (gobject_class, PROP_SEI_MODE,
-      g_param_spec_enum ("sei-mode", "SEI mode",
-          "SEI mode",
-          GST_TYPE_MPP_ENC_SEI_MODE, DEFAULT_PROP_SEI_MODE,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }

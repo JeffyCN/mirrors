@@ -80,6 +80,7 @@ struct _GstMppVideoEnc
   MppEncHeaderMode header_mode;
   MppEncRcMode rc_mode;
   MppEncRotationCfg rotation;
+  MppEncSeiMode sei_mode;
 
   gint gop;
   guint max_reenc;
