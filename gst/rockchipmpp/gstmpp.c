@@ -23,6 +23,7 @@
 #endif
 #include <string.h>
 #include "gstmpph264enc.h"
+#include "gstmppvp8enc.h"
 #include "gstmppjpegenc.h"
 #include "gstmppjpegdec.h"
 #include "gstmppvideodec.h"
@@ -36,6 +37,10 @@ plugin_init (GstPlugin * plugin)
 
   if (!gst_element_register (plugin, "mpph264enc", GST_RANK_PRIMARY + 1,
           gst_mpp_h264_enc_get_type ()))
+    return FALSE;
+
+  if (!gst_element_register (plugin, "mppvp8enc", GST_RANK_PRIMARY + 1,
+          gst_mpp_vp8_enc_get_type ()))
     return FALSE;
 
   if (!gst_element_register (plugin, "mppjpegenc", GST_RANK_PRIMARY,
