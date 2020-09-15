@@ -24,6 +24,8 @@ else
     message('Building without libdrm.')
 endif
 
+libthreads_dep = dependency('threads')
+
 git_version_h = vcs_tag(
     command : ['git', 'rev-parse', '--short', 'HEAD'],
     input : 'version.h.in', output : 'version.h',
@@ -45,7 +47,7 @@ incdir = include_directories('include')
 librga = shared_library(
     'rga',
     librga_srcs,
-    dependencies : libdrm_dep,
+    dependencies : [libdrm_dep, libthreads_dep],
 	include_directories : incdir,
     version : meson.project_version(),
     install : true,
