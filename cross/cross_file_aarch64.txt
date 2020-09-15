@@ -1,0 +1,16 @@
+[binaries]
+c = '/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/bin/aarch64-buildroot-linux-gnu-gcc'
+cpp = '/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/bin/aarch64-buildroot-linux-gnu-g++'
+ar = '/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/bin/aarch64-buildroot-linux-gnu-ar'
+strip = '/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/bin/aarch64-buildroot-linux-gnu-strip'
+pkgconfig = '/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/bin/pkg-config'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'aarch64'
+cpu = 'aarch64'
+endian = 'little'
+
+[properties]
+needs_exe_wrapper = true
+c_args = ['-I/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/aarch64-buildroot-linux-gnu/sysroot/usr/include', '-L/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/aarch64-buildroot-linux-gnu/sysroot/usr/lib', '-L/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/lib', '-I/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/include']
