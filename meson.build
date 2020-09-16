@@ -40,6 +40,7 @@ librga_srcs = [
 	'core/NormalRga.cpp',
 	'core/RgaUtils.cpp',
 	'core/RockchipRga.cpp',
+	'core/RgaApi.cpp',
 ]
 
 incdir = include_directories('include')
@@ -61,6 +62,7 @@ install_headers(
     'include/RgaMutex.h',
 	'include/RgaSingleton.h',
 	'include/RgaUtils.h',
+	'include/RgaApi.h',
     subdir : 'rga',
 )
 
