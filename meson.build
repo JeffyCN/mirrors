@@ -41,6 +41,7 @@ librga_srcs = [
 	'core/RgaUtils.cpp',
 	'core/RockchipRga.cpp',
 	'core/RgaApi.cpp',
+	'im2d_api/im2d.cpp',
 ]
 
 incdir = include_directories('include')
@@ -63,6 +64,8 @@ install_headers(
 	'include/RgaSingleton.h',
 	'include/RgaUtils.h',
 	'include/RgaApi.h',
+	'im2d_api/im2d.h'
+	'im2d_api/im2d.hpp'
     subdir : 'rga',
 )
 

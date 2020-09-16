@@ -827,7 +827,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
                 imErrorMsg("Err src wstride is not align to 16 or yuv not align to 2.");
                 return IM_STATUS_INVALID_PARAM;
             }
-            ALOGD("If it is an RK encoder output, it needs to be aligned with an odd multiple of 256.\n");
+            ALOGE("If it is an RK encoder output, it needs to be aligned with an odd multiple of 256.\n");
             src_isYUV_10 = 1;
         } else if (src_fmt == -1) {
             if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUYV) {
@@ -899,7 +899,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
             imErrorMsg("Err dst wstride is not align to 16 or yuv not align to 2.");
             return IM_STATUS_INVALID_PARAM;
         }
-        ALOGD("If you want to input to the RK encoder, you need to align with an odd multiple of 256.\n");
+        ALOGE("If you want to input to the RK encoder, you need to align with an odd multiple of 256.\n");
         dst_isYUV_10 = 1;
     } else if (dst_fmt == -1) {
         if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUYV) {
