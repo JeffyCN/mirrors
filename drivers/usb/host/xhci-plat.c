@@ -330,6 +330,9 @@ static int xhci_plat_probe(struct platform_device *pdev)
 		xhci->shared_hcd->usb_phy = NULL;
 	}
 
+	if (xhci->quirks & XHCI_SKIP_PHY_INIT)
+		hcd->skip_phy_initialization = 1;
+
 	ret = usb_add_hcd(hcd, irq, IRQF_SHARED);
 	if (ret)
 		goto disable_usb_phy;
