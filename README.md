@@ -53,6 +53,17 @@ $ ./cmake-linux.sh
 $ make
 ```
 
+* **Meson(buildroot/debian)**
+
+librga提供了meson.build，最新buildroot支持meson 编译。单独编译可以使用meson.sh 脚本进行config，需要自行修改meson.sh 内指定install 路径，以及PATH等环境变量，cross目录下是交叉编译工具配置文件，也需要自行修改为对应交叉编译工具路径。
+
+执行以下操作完成编译:
+
+```bash
+$ ./meson.sh
+$ ninja -C build-rga install
+```
+
 * **Makefile(buildroot/debian)**
 
 librga也提供了Makefile文件，可以在开发板上直接执行make命令，或修改Makefile自行定义交叉编译工具后执行make完成编译。
@@ -62,6 +73,8 @@ librga也提供了Makefile文件，可以在开发板上直接执行make命令�
 * **头文件引用**
 
   include/RockchipRga.h
+
+  Include/RgaApi.h
 
   im2d_api/im2d.h
 
