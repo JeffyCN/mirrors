@@ -20,6 +20,9 @@
 
 #elif LINUX
 #include <sys/ioctl.h>
+#include <pthread.h>
+
+pthread_mutex_t mMutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 #define RGA_SRCOVER_EN 1
@@ -113,6 +116,10 @@ int NormalRgaOpen(void **context) {
 init:
 #ifdef ANDROID
     android_atomic_inc(&refCount);
+#elif LINUX
+	pthread_mutex_lock(&mMutex);
+	refCount++;
+	pthread_mutex_unlock(&mMutex);
 #endif
     *context = (void *)ctx;
     return ret;
@@ -142,13 +149,23 @@ int NormalRgaClose(void *context) {
     }
 
     if (refCount <= 0) {
-        ALOGE("This can not be happened");
+        ALOGE("This can not be happened, close before init");
         return 0;
     }
 
 #ifdef ANDROID
     if (refCount > 0 && android_atomic_dec(&refCount) != 1)
         return 0;
+#elif LINUX
+	pthread_mutex_lock(&mMutex);
+	refCount--;
+	if (refCount < 0) {
+		refCount = 0;
+		return 0;
+	}
+	if (refCount > 0)
+		return 0;
+	pthread_mutex_unlock(&mMutex);
 #endif
 
     rgaCtx = NULL;
