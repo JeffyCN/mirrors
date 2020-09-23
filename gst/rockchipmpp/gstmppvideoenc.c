@@ -283,8 +283,7 @@ gst_mpp_video_enc_update_properties (GstVideoEncoder * encoder)
   mpp_enc_cfg_deinit (cfg);
 
 out:
-  if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_SEI_CFG,
-          &self->sei_mode))
+  if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_SEI_CFG, &self->sei_mode))
     GST_WARNING_OBJECT (self, "Set sei mode failed");
 
   if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_HEADER_MODE,

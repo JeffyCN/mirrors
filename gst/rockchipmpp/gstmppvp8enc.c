@@ -49,8 +49,7 @@ GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-vp8, "
         "width  = (int) [ 32, 1920 ], "
-        "height = (int) [ 32, 1088 ], "
-        "framerate = (fraction) [0/1, 60/1]")
+        "height = (int) [ 32, 1088 ], " "framerate = (fraction) [0/1, 60/1]")
     );
 
 static void
@@ -219,10 +218,10 @@ gst_mpp_vp8_enc_class_init (GstMppVP8EncClass * klass)
       "Encode video streams via Rockchip Mpp",
       "Jeffy Chen <jeffy.chen@rock-chips.com>");
 
-    gobject_class->set_property =
-                  GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_set_property);
-    gobject_class->get_property =
-                  GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_get_property);
+  gobject_class->set_property =
+      GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_set_property);
+  gobject_class->get_property =
+      GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_get_property);
 
   video_encoder_class->open = GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_open);
   video_encoder_class->set_format =
