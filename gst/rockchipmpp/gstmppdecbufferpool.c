@@ -239,6 +239,9 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   gint buf_index, ret, mode;
 
   ret = dec->mpi->decode_get_frame (dec->mpp_ctx, &mframe);
+  if (ret == MPP_ERR_TIMEOUT)
+    goto mpp_timeout;
+
   if (ret || NULL == mframe)
     goto mpp_error;
 
@@ -346,7 +349,13 @@ drop_frame:
     GST_BUFFER_PTS (*buffer) = mpp_frame_get_pts (mframe);
 
     mpp_frame_deinit (&mframe);
-    return GST_FLOW_CUSTOM_ERROR_1;
+    return GST_FLOW_CUSTOM_DROP;
+  }
+mpp_timeout:
+  {
+    *buffer = NULL;
+    GST_INFO_OBJECT (pool, "mpp timeout %d", ret);
+    return GST_FLOW_CUSTOM_TIMEOUT;
   }
 }
 

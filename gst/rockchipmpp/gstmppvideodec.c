@@ -37,6 +37,7 @@ GST_DEBUG_CATEGORY (mpp_video_dec_debug);
 G_DEFINE_TYPE (GstMppVideoDec, gst_mpp_video_dec, GST_TYPE_VIDEO_DECODER);
 
 #define NB_OUTPUT_BUFS 22       /* nb frames necessary for display pipeline */
+#define OUTPUT_TIMEOUT_MS 200   /* Block timeout for MPP output queue */
 
 /* GstVideoDecoder base class method */
 static GstStaticPadTemplate gst_mpp_video_dec_sink_template =
@@ -519,7 +520,10 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
   GstFlowReturn ret = GST_FLOW_OK;
 
   ret = gst_buffer_pool_acquire_buffer (self->pool, &buffer, NULL);
-  if (ret != GST_FLOW_OK && ret != GST_FLOW_CUSTOM_ERROR_1)
+  if (ret == GST_FLOW_CUSTOM_TIMEOUT)
+    return;
+
+  if (ret != GST_FLOW_OK && ret != GST_FLOW_CUSTOM_DROP)
     goto beach;
 
   frame = gst_mpp_video_dec_get_frame (decoder, buffer);
@@ -527,7 +531,7 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
     frame->output_buffer = buffer;
     buffer = NULL;
 
-    if (ret == GST_FLOW_CUSTOM_ERROR_1) {
+    if (ret == GST_FLOW_CUSTOM_DROP) {
       GST_WARNING_OBJECT (self, "Discarding error frame (#%d)",
           frame->system_frame_number);
       gst_video_decoder_release_frame (decoder, frame);
@@ -586,7 +590,11 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
   if (!gst_buffer_pool_is_active (pool)) {
     GstBuffer *codec_data;
     MppFrame mframe = NULL;
-    gint block_flag;
+    gint timeout;
+
+    timeout = OUTPUT_TIMEOUT_MS;
+    self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK_TIMEOUT,
+        (gpointer) & timeout);
 
     codec_data = self->input_state->codec_data;
     if (codec_data) {
@@ -628,11 +636,6 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
     gst_buffer_unmap (codec_data, &mapinfo);
     gst_buffer_unref (codec_data);
 
-    GST_DEBUG_OBJECT (self, "Set MppDecode TiemOut");
-    block_flag = 200;
-    self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK_TIMEOUT,
-        (gpointer) & block_flag);
-
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
     /* Aquire format frame frome mpp decode */
     mret = self->mpi->decode_get_frame (self->mpp_ctx, &mframe);
@@ -668,10 +671,6 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
         goto error_activate_pool;
 
       self->mpi->control (self->mpp_ctx, MPP_DEC_SET_INFO_CHANGE_READY, NULL);
-      GST_DEBUG_OBJECT (self, "Set MppDecode Block");
-      block_flag = MPP_POLL_BLOCK;
-      self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_BLOCK,
-          (gpointer) & block_flag);
     } else {
       /* free unexpected frame */
       mpp_frame_deinit (&mframe);

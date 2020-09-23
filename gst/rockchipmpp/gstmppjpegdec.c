@@ -36,6 +36,7 @@ GST_DEBUG_CATEGORY (mpp_jpeg_dec_debug);
 G_DEFINE_TYPE (GstMppJpegDec, gst_mpp_jpeg_dec, GST_TYPE_VIDEO_DECODER);
 
 #define NB_OUTPUT_BUFS 22       /* nb frames necessary for display pipeline */
+#define OUTPUT_TIMEOUT_MS 200   /* Block timeout for MPP output queue */
 
 /* GstVideoDecoder base class method */
 static GstStaticPadTemplate gst_mpp_jpeg_dec_sink_template =
@@ -457,8 +458,8 @@ gst_mpp_jpeg_dec_loop (GstVideoDecoder * decoder)
   MppFrame mframe = NULL;
   MppMeta meta;
 
-  if (self->mpi->poll (self->mpp_ctx, MPP_PORT_OUTPUT, MPP_POLL_BLOCK))
-    goto flow_error;
+  if (self->mpi->poll (self->mpp_ctx, MPP_PORT_OUTPUT, OUTPUT_TIMEOUT_MS))
+    return;
 
   self->mpi->dequeue (self->mpp_ctx, MPP_PORT_OUTPUT, &mtask);
   if (!mtask)

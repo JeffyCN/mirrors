@@ -35,6 +35,9 @@ typedef struct _GstMppDecBufferPoolClass GstMppDecBufferPoolClass;
 #define GST_MPP_DEC_BUFFER_POOL(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_MPP_DEC_BUFFER_POOL, GstMppDecBufferPool))
 #define GST_MPP_DEC_BUFFER_POOL_CAST(obj) ((GstMppDecBufferPool *)(obj))
 
+#define GST_FLOW_CUSTOM_DROP    GST_FLOW_CUSTOM_ERROR_1
+#define GST_FLOW_CUSTOM_TIMEOUT GST_FLOW_CUSTOM_ERROR_2
+
 struct _GstMppDecBufferPool
 {
   GstBufferPool parent;
