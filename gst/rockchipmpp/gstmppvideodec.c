@@ -319,6 +319,7 @@ gst_mpp_video_dec_stop (GstVideoDecoder * decoder)
 
   /* Release all the internal references of the buffer */
   if (self->pool) {
+    self->mpi->control (self->mpp_ctx, MPP_DEC_SET_EXT_BUF_GROUP, NULL);
     gst_object_unref (self->pool);
     self->pool = NULL;
   }
@@ -401,6 +402,7 @@ gst_mpp_video_dec_set_format (GstVideoDecoder * decoder,
     gst_pad_stop_task (decoder->srcpad);
 
     if (self->pool) {
+      self->mpi->control (self->mpp_ctx, MPP_DEC_SET_EXT_BUF_GROUP, NULL);
       self->mpi->reset (self->mpp_ctx);
       gst_object_unref (self->pool);
       self->pool = NULL;
