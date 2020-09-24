@@ -38,12 +38,11 @@
 // ---------------------------------------------------------------------------
 
 RockchipRga::RockchipRga():
-    mSupportRga(false),
     mLogOnce(0),
     mLogAlways(0),
     mContext(NULL)
 {
-    RkRgaInit();
+    // RkRgaInit();
     printf("Rga built version:%s \n", RK_GRAPHICS_VER);
 }
 
@@ -54,26 +53,12 @@ RockchipRga::~RockchipRga()
 
 int RockchipRga::RkRgaInit()
 {
-    int ret = 0;
-
-    if (mSupportRga)
-        return 0;
-
-    ret = RgaInit(&mContext);
-    if(ret == 0)
-        mSupportRga = true;
-    else
-        mSupportRga = false;
-
-    return ret;
+    return RgaInit(&mContext);
 }
 
 void RockchipRga::RkRgaDeInit()
 {
-    if (mSupportRga)
-        RgaDeInit(mContext);
-
-    mSupportRga = false;
+    RgaDeInit(mContext);
 }
 
 int RockchipRga::RkRgaAllocBuffer(int drm_fd, bo_t *bo_info, int width,

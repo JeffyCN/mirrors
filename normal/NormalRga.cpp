@@ -14,10 +14,12 @@
 //#include "../GraphicBuffer.h"
 //#include "../RgaApi.h"
 #include <sys/ioctl.h> 
+#include <pthread.h>
 //#include <cutils/properties.h>
 
 volatile int32_t refCount = 0;
-struct rgaContext *rgaCtx = NULL;
+pthread_mutex_t gMutex = PTHREAD_MUTEX_INITIALIZER;
+static struct rgaContext *rgaCtx = NULL;
 
 void NormalRgaSetLogOnceFlag(int log)
 {
@@ -78,7 +80,6 @@ int NormalRgaOpen(void **context)
 	rgaCtx = ctx;
 
 init:
-	//android_atomic_inc(&refCount);
 	*context = (void *)ctx;
 	return ret;
 
@@ -107,19 +108,7 @@ int NormalRgaClose(void *context)
 		return -ENODEV;
 	}
 
-#if 0
-	if (refCount <= 0) {
-		DEBUG("This can not be happened \n");
-		return 0;
-	}
-
-	if (refCount > 0)
-	//if (refCount > 0 && android_atomic_dec(&refCount) != 1)
-		return 0;
-#endif
-
 	rgaCtx = NULL;
-
 	close(ctx->rgaFd);
 
 	free(ctx);
@@ -130,14 +119,28 @@ int NormalRgaClose(void *context)
 int RgaInit(void **ctx)
 {
 	int ret = 0;
-	ret = NormalRgaOpen(ctx);
+	pthread_mutex_lock(&gMutex);
+	if (refCount == 0) {
+		ret = NormalRgaOpen(ctx);
+	}
+	refCount++;
+	pthread_mutex_unlock(&gMutex);
 	return ret;
 }
 
 int RgaDeInit(void *ctx)
 {
 	int ret = 0;
-	ret = NormalRgaClose(ctx);
+	pthread_mutex_lock(&gMutex);
+	if (refCount <= 0) {
+		refCount = 0;
+	} else if (refCount == 1) {
+		refCount = 0;
+		ret = NormalRgaClose(ctx);
+	} else {
+		refCount--;
+	}
+	pthread_mutex_unlock(&gMutex);
 	return ret;
 }
 
