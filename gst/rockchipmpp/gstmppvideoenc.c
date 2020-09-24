@@ -551,7 +551,6 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer ** buffer)
   GstBuffer *new_buffer = NULL;
   static gint8 current_index = 0;
   GstVideoCodecFrame *frame;
-  gpointer ptr = NULL;
   MppFrame mpp_frame = self->mpp_frame;
   MppBuffer frame_in = self->input_buffer[current_index];
   MppPacket packet = NULL;
@@ -562,15 +561,39 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer ** buffer)
   if (0 == gst_buffer_get_size (*buffer)) {
     mpp_frame_set_eos (mpp_frame, 1);
   } else {
-    gsize len = gst_buffer_get_size (*buffer);
-    if (len > mpp_buffer_get_size (frame_in))
-      len = mpp_buffer_get_size (frame_in);
+    /* Convert input buffer to mpp frame */
+    /* TODO: Use RGA */
 
-    ptr = mpp_buffer_get_ptr (frame_in);
+    GstVideoMeta *meta = gst_buffer_get_video_meta (*buffer);
+    GstVideoInfo *info = &self->info;
+    GstMapInfo mapinfo = { 0, };
+    gconstpointer *ptr = mpp_buffer_get_ptr (frame_in);
+    guint8 *src, *dst;
+    gint i, j, src_stride, dst_stride, cr_h;
 
-    gst_buffer_ref (*buffer);
-    gst_buffer_extract (*buffer, 0, ptr, len);
-    gst_buffer_unref (*buffer);
+    cr_h = GST_VIDEO_INFO_HEIGHT (info);
+    if (info->finfo->format == GST_VIDEO_FORMAT_NV12 ||
+        info->finfo->format == GST_VIDEO_FORMAT_I420)
+      cr_h /= 2;
+
+    gst_buffer_map (*buffer, &mapinfo, GST_MAP_READ);
+    for (i = 0, src = mapinfo.data; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
+      gint height = i ? cr_h : GST_VIDEO_INFO_HEIGHT (info);
+      dst = (guint8 *) ptr + GST_VIDEO_INFO_PLANE_OFFSET (info, i);
+
+      src_stride = dst_stride = GST_VIDEO_INFO_PLANE_STRIDE (info, i);
+      if (meta) {
+        src = mapinfo.data + meta->offset[i];
+        src_stride = meta->stride[i];
+      }
+
+      for (j = 0; j < height; j++) {
+        memcpy (dst, src, src_stride > dst_stride ? dst_stride : src_stride);
+        src += src_stride;
+        dst += dst_stride;
+      }
+    }
+    gst_buffer_unmap (*buffer, &mapinfo);
 
     mpp_frame_set_eos (mpp_frame, 0);
   }
