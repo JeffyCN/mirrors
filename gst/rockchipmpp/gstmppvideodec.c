@@ -190,6 +190,9 @@ gst_mpp_video_dec_sendeos (GstVideoDecoder * decoder)
   GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
   MppPacket mpkt;
 
+  if (!self->pool || !gst_buffer_pool_is_active (self->pool))
+    return FALSE;
+
   mpp_packet_init (&mpkt, NULL, 0);
   mpp_packet_set_eos (mpkt);
 

@@ -122,6 +122,9 @@ gst_mpp_jpeg_dec_sendeos (GstVideoDecoder * decoder)
   MppTask mtask = NULL;
   MppFrame mframe = NULL;
 
+  if (!self->pool || !gst_buffer_pool_is_active (self->pool))
+    return FALSE;
+
   if (self->mpi->poll (self->mpp_ctx, MPP_PORT_INPUT, MPP_POLL_BLOCK))
     return FALSE;
 
