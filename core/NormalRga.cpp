@@ -645,13 +645,25 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
     /* blend bit[0:15] is to set which way to blend,such as whether need glabal alpha,and so on. */
     switch ((blend & 0xFFFF)) {
-        case 0x0105:
+        case 0x0001:/* src */
+            NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 1, 0);
+            break;
+
+        case 0x0100:/* dst */
+            NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 2, 0);
+            break;
+
+        case 0x0105:/* src over */
             if (perpixelAlpha && planeAlpha < 255) {
                 NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha, 1, 9, 0);
             } else if (perpixelAlpha)
                 NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0, 1, 3, 0);
             else
                 NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
+            break;
+
+        case 0x0501:/* dst over */
+            NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 4, 0);
             break;
 
         case 0x0405:
@@ -663,7 +675,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
                 NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
             break;
 
-        case 0x0100:
         default:
             /* Tips: BLENDING_NONE is non-zero value, handle zero value as
              * BLENDING_NONE. */
@@ -1165,26 +1176,28 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 		NormalRgaSetPatActiveInfo(&rgaReg, src1ActW, src1ActH, src1XPos, src1YPos);
 
 	if (src1) {
-	    /* special config for yuv + rgba => yuv on src1 */
+		/* special config for yuv + rgb => rgb */
+		/* src0 y2r, src1 bupass, dst bupass */
+		if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relSrc1Rect.format)) &&
+			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
+			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relDstRect.format)))
+			yuvToRgbMode |= 0x1 << 0;
+
+		/* special config for yuv + rgba => yuv on src1 */
 		/* src0 y2r, src1 bupass, dst y2r */
 		if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
 			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrc1Rect.format)) &&
 			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format))) {
 				yuvToRgbMode |= 0x1 << 0;		//src0
-				yuvToRgbMode |= 0x1 << 4;		//dst
+				yuvToRgbMode |= 0x2 << 2;		//dst
 			}
 
 		/* special config for rgb + rgb => yuv on dst */
+		/* src0 bupass, src1 bupass, dst y2r */
 		if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrc1Rect.format)) &&
 			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
 			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format)))
-			yuvToRgbMode |= 0x2 << 4;
-
-		/* special config for rgb + yuv => rgb */
-		if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrc1Rect.format)) &&
-			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
-			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relDstRect.format)))
-			yuvToRgbMode |= 0x1 << 0;
+			yuvToRgbMode |= 0x2 << 2;
 	} else {
 		/* special config for yuv to rgb */
 	    if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
@@ -1194,7 +1207,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 	    /* special config for rgb to yuv */
 	    if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
 	        NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format)))
-	        yuvToRgbMode |= 0x2 << 4;
+	        yuvToRgbMode |= 0x2 << 2;
     }
 
     if(dst->color_space_mode > 0)
