@@ -1288,8 +1288,12 @@ int RgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1) {
 		printf("Not src over mode\n");
 		return -1;
 	}
+#ifdef ANDROID
+	temp_buf= (char*)malloc(src->rect.wstride*src->rect.hstride*android::bytesPerPixel(RkRgaGetRgaFormat(src->rect.format)));
+#elif LINUX
+    temp_buf= (char*)malloc(src->rect.wstride*src->rect.hstride*bytesPerPixel(RkRgaGetRgaFormat(src->rect.format)));
+#endif
 
-    temp_buf= (char*)malloc(src->rect.wstride*src->rect.hstride*(src->rect.format*4));
     if (temp_buf == NULL)
     	goto ERR_FREE_BUF;
     memset(&temp,0x00,sizeof(temp));
@@ -1307,7 +1311,7 @@ int RgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1) {
 
     /*dst_YUV(crop & cvtcolor)->L_RGBA*/
     {
-        ret = RgaBlit(dst, &temp, src1);
+        ret = RgaBlit(dst, &temp, NULL);
         if (ret) {
             printf("rgaBlit error : %s\n", strerror(errno));
             goto ERR_FREE_BUF;
@@ -1318,7 +1322,7 @@ int RgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1) {
     {
         src->blend = 0xff0105;
 
-        ret = RgaBlit(src, &temp, src1);
+        ret = RgaBlit(src, &temp, NULL);
         if (ret) {
             printf("rgaBlit error : %s\n", strerror(errno));
             goto ERR_FREE_BUF;
@@ -1327,7 +1331,7 @@ int RgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1) {
 
     /*temp_RGBA(cvtcolor & translate)->dst_YUV*/
     {
-        ret = RgaBlit(&temp, dst, src1);
+        ret = RgaBlit(&temp, dst, NULL);
         if (ret) {
             printf("rgaBlit error : %s\n", strerror(errno));
             goto ERR_FREE_BUF;
