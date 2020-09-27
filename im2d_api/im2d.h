@@ -40,22 +40,23 @@ typedef enum {
      * If none of the below is set, the default "SRC over DST" is applied.
      */
     IM_ALPHA_BLEND_SRC_OVER     = 1 << 5,     /* Default, Porter-Duff "SRC over DST" */
-    IM_ALPHA_BLEND_DST          = 1 << 6,     /* Porter-Duff "DST" */
-    IM_ALPHA_BLEND_SRC_IN       = 1 << 7,     /* Porter-Duff "SRC in DST" */
-    IM_ALPHA_BLEND_DST_IN       = 1 << 8,     /* Porter-Duff "DST in SRC" */
-    IM_ALPHA_BLEND_SRC_OUT      = 1 << 9,     /* Porter-Duff "SRC out DST" */
-    IM_ALPHA_BLEND_DST_OUT      = 1 << 10,    /* Porter-Duff "DST out SRC" */
-    IM_ALPHA_BLEND_DST_OVER     = 1 << 11,    /* Porter-Duff "DST over SRC" */
-    IM_ALPHA_BLEND_SRC_ATOP     = 1 << 12,    /* Porter-Duff "SRC ATOP" */
-    IM_ALPHA_BLEND_DST_ATOP     = 1 << 13,    /* Porter-Duff "DST ATOP" */
-    IM_ALPHA_BLEND_XOR          = 1 << 14,    /* Xor */
-    IM_ALPHA_BLEND_MASK         = 0x7fe0,
+    IM_ALPHA_BLEND_SRC          = 1 << 6,     /* Porter-Duff "SRC" */
+    IM_ALPHA_BLEND_DST          = 1 << 7,     /* Porter-Duff "DST" */
+    IM_ALPHA_BLEND_SRC_IN       = 1 << 8,     /* Porter-Duff "SRC in DST" */
+    IM_ALPHA_BLEND_DST_IN       = 1 << 9,     /* Porter-Duff "DST in SRC" */
+    IM_ALPHA_BLEND_SRC_OUT      = 1 << 10,    /* Porter-Duff "SRC out DST" */
+    IM_ALPHA_BLEND_DST_OUT      = 1 << 11,    /* Porter-Duff "DST out SRC" */
+    IM_ALPHA_BLEND_DST_OVER     = 1 << 12,    /* Porter-Duff "DST over SRC" */
+    IM_ALPHA_BLEND_SRC_ATOP     = 1 << 13,    /* Porter-Duff "SRC ATOP" */
+    IM_ALPHA_BLEND_DST_ATOP     = 1 << 14,    /* Porter-Duff "DST ATOP" */
+    IM_ALPHA_BLEND_XOR          = 1 << 15,    /* Xor */
+    IM_ALPHA_BLEND_MASK         = 0xffe0,
 
-    IM_SYNC                     = 1 << 15,
-    IM_CROP                     = 1 << 16,
-    IM_COLOR_FILL               = 1 << 17,
-    IM_COLOR_PALETTE            = 1 << 18,
-    IM_NN_QUANTIZE              = 1 << 19,
+    IM_SYNC                     = 1 << 16,
+    IM_CROP                     = 1 << 17,
+    IM_COLOR_FILL               = 1 << 18,
+    IM_COLOR_PALETTE            = 1 << 19,
+    IM_NN_QUANTIZE              = 1 << 20,
 } IM_USAGE;
 
 typedef enum {
@@ -607,7 +608,24 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
-            ret = imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_DST, 1); \
+            ret = imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_SRC_OVER, 1); \
+        } else if (argc == 1){ \
+            ret = imblend_t(srcA, srcB, dst, args[0], 1); \
+        } else if (argc == 2){ \
+            ret = imblend_t(srcA, srcB, dst, args[0], args[1]); \
+        } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
+            printf("invalid parameter\n"); \
+        } \
+        ret; \
+    })
+#define imcomposite(srcA, srcB, dst, ...) \
+    ({ \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
+        int args[] = {__VA_ARGS__}; \
+        int argc = sizeof(args)/sizeof(int); \
+        if (argc == 0) { \
+            ret = imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_SRC_OVER, 1); \
         } else if (argc == 1){ \
             ret = imblend_t(srcA, srcB, dst, args[0], 1); \
         } else if (argc == 2){ \

@@ -233,6 +233,10 @@ INVAILD:
 #endif
 #endif
 
+IM_API static bool rga_is_buffer_valid(rga_buffer_t buf) {
+    return (buf.phy_addr != NULL || buf.fd > 0 || buf.vir_addr != NULL);
+}
+
 IM_API IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo) {
     if(NULL == dstinfo) {
         ALOGE("rga_im2d: invaild dstinfo");
@@ -1197,15 +1201,12 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
     memset(&srcinfo, 0, sizeof(rga_info_t));
     memset(&dstinfo, 0, sizeof(rga_info_t));
-    memset(&patinfo, 0, sizeof(rga_info_t));
 
     if (usage & IM_COLOR_FILL)
         ret = rga_set_buffer_info(dst, &dstinfo);
-    else if (usage & IM_COLOR_PALETTE) {
-        ret = rga_set_buffer_info(pat, &patinfo);
+    else
         ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
-    } else
-        ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
+
     if (ret <= 0)
         return (IM_STATUS)ret;
 
@@ -1228,14 +1229,24 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         dst.height = drect.height;
     }
 
-    if (prect.width > 0 && prect.height > 0) {
-        pat.width = prect.width;
-        pat.height = prect.height;
-    }
-
     rga_set_rect(&srcinfo.rect, srect.x, srect.y, src.width, src.height, src.wstride, src.hstride, src.format);
     rga_set_rect(&dstinfo.rect, drect.x, drect.y, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
-    rga_set_rect(&patinfo.rect, prect.x, prect.y, pat.width, pat.height, pat.wstride, pat.hstride, pat.format);
+
+    if (((usage & IM_COLOR_PALETTE) || (usage & IM_ALPHA_BLEND_MASK)) &&
+        rga_is_buffer_valid(pat)) {
+        memset(&patinfo, 0, sizeof(rga_info_t));
+
+        ret = rga_set_buffer_info(pat, &patinfo);
+        if (ret <= 0)
+            return (IM_STATUS)ret;
+
+        if (prect.width > 0 && prect.height > 0) {
+            pat.width = prect.width;
+            pat.height = prect.height;
+        }
+
+        rga_set_rect(&patinfo.rect, prect.x, prect.y, pat.width, pat.height, pat.wstride, pat.hstride, pat.format);
+    }
 
     if((usage & (IM_ALPHA_BLEND_MASK+IM_HAL_TRANSFORM_MASK)) != 0) {
         /* Transform */
@@ -1259,10 +1270,14 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
         /* Blend */
         switch(usage & IM_ALPHA_BLEND_MASK) {
+            case IM_ALPHA_BLEND_SRC:
+                srcinfo.blend = 0xff0001;
+                break;
             case IM_ALPHA_BLEND_DST:
-                srcinfo.blend = 0xff0105;
+                srcinfo.blend = 0xff0100;
                 break;
             case IM_ALPHA_BLEND_SRC_OVER:
+                srcinfo.blend = 0xff0105;
                 break;
             case IM_ALPHA_BLEND_SRC_IN:
                 break;
@@ -1331,8 +1346,12 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         ret = rkRga.RkRgaCollorFill(&dstinfo);
     } else if (usage & IM_COLOR_PALETTE) {
         ret = rkRga.RkRgaCollorPalette(&srcinfo, &dstinfo, &patinfo);
-    } else
+    } else if (rga_is_buffer_valid(pat)) {
+        dstinfo.color_space_mode = IM_COLOR_SPACE_DEFAULT;
+        ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, &patinfo);
+    }else {
         ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
+    }
 
     if (ret) {
         imErrorMsg("Failed to call Blit/ColorFill, query log to find the cause of failure.");
