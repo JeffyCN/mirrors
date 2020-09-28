@@ -31,6 +31,7 @@ extern "C"{
 int c_RkRgaInit();
 void c_RkRgaDeInit();
 int c_RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp);
+int c_RkRgaGetAllocBufferCache(bo_t *bo_info, int width, int height, int bpp);
 int c_RkRgaGetMmap(bo_t *bo_info);
 int c_RkRgaUnmap(bo_t *bo_info);
 int c_RkRgaGetBufferFd(bo_t *bo_info, int *fd);
