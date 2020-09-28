@@ -13,6 +13,4 @@ RKImageMaker          | 打包工具
 SpeakerPCBATool       | 音箱PCBA测试工具
 RKDevTool_Release     | 固件烧录工具
 ParameterTool         | 分区表修改工具
-RKISP2.x_Tuner        | ISP工具
 CameraFactoryTestTool	| 摄像头模组厂测工具
-
