@@ -27,49 +27,7 @@ int         cosa_table[360];
 
 #ifdef LINUX
 int RkRgaGetRgaFormat(int format) {
-    switch (format) {
-        case RK_FORMAT_BPP1:
-            return RK_FORMAT_BPP1;
-        case RK_FORMAT_BPP2:
-            return RK_FORMAT_BPP2;
-        case RK_FORMAT_BPP4:
-            return RK_FORMAT_BPP4;
-        case RK_FORMAT_BPP8:
-            return RK_FORMAT_BPP8;
-        case RK_FORMAT_RGB_565:
-            return RK_FORMAT_RGB_565;
-        case RK_FORMAT_BGR_888:
-            return RK_FORMAT_BGR_888;
-        case RK_FORMAT_RGB_888:
-            return RK_FORMAT_RGB_888;
-        case RK_FORMAT_RGBA_8888:
-            return RK_FORMAT_RGBA_8888;
-        case RK_FORMAT_RGBX_8888:
-            return RK_FORMAT_RGBX_8888;
-        case RK_FORMAT_BGRA_8888:
-            return RK_FORMAT_BGRA_8888;
-        case RK_FORMAT_YCrCb_420_SP:
-            return RK_FORMAT_YCrCb_420_SP;
-        case RK_FORMAT_YCbCr_420_SP:
-            return RK_FORMAT_YCbCr_420_SP;
-        case RK_FORMAT_YCrCb_420_P:
-            return RK_FORMAT_YCrCb_420_P;
-        case RK_FORMAT_YCbCr_422_SP:
-            return RK_FORMAT_YCbCr_422_SP;
-        case RK_FORMAT_YCbCr_422_P:
-            return RK_FORMAT_YCbCr_422_P;
-        case RK_FORMAT_YCbCr_420_P:
-            return RK_FORMAT_YCbCr_420_P;
-        case RK_FORMAT_YCrCb_422_SP:
-            return RK_FORMAT_YCrCb_422_SP;
-        case RK_FORMAT_YCrCb_422_P:
-            return RK_FORMAT_YCrCb_422_P;
-        case RK_FORMAT_YCbCr_420_SP_10B:
-            return RK_FORMAT_YCbCr_420_SP_10B; //0x20
-        default:
-            ALOGE("Is unsupport format now,please fix \n");
-            return -1;
-    }
+    return format;
 }
 
 uint32_t bytesPerPixel(int format) {
@@ -77,8 +35,10 @@ uint32_t bytesPerPixel(int format) {
         case RK_FORMAT_RGBA_8888:
         case RK_FORMAT_RGBX_8888:
         case RK_FORMAT_BGRA_8888:
+		case RK_FORMAT_BGRX_8888:
             return 4;
         case RK_FORMAT_RGB_888:
+		case RK_FORMAT_BGR_888:
             return 3;
         case RK_FORMAT_RGB_565:
         case RK_FORMAT_RGBA_5551:
@@ -504,8 +464,20 @@ bool NormalRgaIsYuvFormat(int format) {
         case RK_FORMAT_YCrCb_422_P:
         case RK_FORMAT_YCrCb_420_SP:
         case RK_FORMAT_YCrCb_420_P:
-        case RK_FORMAT_YCbCr_420_SP_10B:
-        case RK_FORMAT_YCrCb_420_SP_10B:
+		case RK_FORMAT_YVYU_422:
+		case RK_FORMAT_YVYU_420:
+		case RK_FORMAT_VYUY_422:
+		case RK_FORMAT_VYUY_420:
+		case RK_FORMAT_YUYV_422:
+		case RK_FORMAT_YUYV_420:
+		case RK_FORMAT_UYVY_422:
+		case RK_FORMAT_UYVY_420:
+		case RK_FORMAT_Y4:
+		case RK_FORMAT_YCbCr_400:
+		case RK_FORMAT_YCbCr_420_SP_10B:
+		case RK_FORMAT_YCrCb_420_SP_10B:
+		case RK_FORMAT_YCrCb_422_10b_SP:
+		case RK_FORMAT_YCbCr_422_10b_SP:
             ret = true;
             break;
     }
@@ -521,6 +493,7 @@ bool NormalRgaIsRgbFormat(int format) {
         case RK_FORMAT_RGBX_8888:
         case RK_FORMAT_RGB_888:
         case RK_FORMAT_BGRA_8888:
+		case RK_FORMAT_BGRX_8888:
         case RK_FORMAT_RGB_565:
         case RK_FORMAT_RGBA_5551:
         case RK_FORMAT_RGBA_4444:
@@ -574,8 +547,6 @@ int NormalRgaSetBitbltMode(struct rga_req *msg,
 
     if (msg->src_trans_mode)
         msg->scale_mode = 0;
-
-    msg->alpha_rop_flag |= (dither_en << 5);
 
     return 0;
 }
@@ -786,6 +757,28 @@ int NormalRgaNNQuantizeMode(struct rga_req *msg, rga_info *dst) {
     }
 
     return 0;
+}
+
+int NormalRgaDitherMode(struct rga_req *msg, rga_info *dst, int format)
+{
+	if (dst->dither.enable == 1)
+	{
+		printf("rk-debug enable dither \n");
+		msg->alpha_rop_flag = 1;
+		msg->alpha_rop_flag |= (dst->dither.enable << 5);
+	}
+
+	if (format == RK_FORMAT_Y4)
+	{
+		msg->dither_mode = dst->dither.mode;
+
+		msg->gr_color.gr_x_r = dst->dither.lut0_l;
+		msg->gr_color.gr_x_g = dst->dither.lut0_h;
+		msg->gr_color.gr_y_r = dst->dither.lut1_l;
+		msg->gr_color.gr_y_g = dst->dither.lut1_h;
+	}
+
+	return 0;
 }
 
 int NormalRgaInitTables() {

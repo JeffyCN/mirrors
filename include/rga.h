@@ -127,8 +127,25 @@ typedef enum _Rga_SURF_FORMAT {
     RK_FORMAT_BPP2         = 0x11,
     RK_FORMAT_BPP4         = 0x12,
     RK_FORMAT_BPP8         = 0x13,
+
+	RK_FORMAT_Y4           = 0x14,
+	RK_FORMAT_YCbCr_400    = 0x15,
+
+	RK_FORMAT_BGRX_8888    = 0x16,
+
+	RK_FORMAT_YVYU_422     = 0x18,
+	RK_FORMAT_YVYU_420     = 0x19,
+	RK_FORMAT_VYUY_422     = 0x1a,
+	RK_FORMAT_VYUY_420     = 0x1b,
+	RK_FORMAT_YUYV_422     = 0x1c,
+	RK_FORMAT_YUYV_420     = 0x1d,
+	RK_FORMAT_UYVY_422     = 0x1e,
+	RK_FORMAT_UYVY_420     = 0x1f,
+
     RK_FORMAT_YCbCr_420_SP_10B = 0x20,
-    RK_FORMAT_YCrCb_420_SP_10B = 0x21,
+	RK_FORMAT_YCrCb_420_SP_10B = 0x21,
+	RK_FORMAT_YCbCr_422_10b_SP = 0x22,
+	RK_FORMAT_YCrCb_422_10b_SP = 0x23,
     RK_FORMAT_UNKNOWN       = 0x100,
 } RgaSURF_FORMAT;
 
@@ -317,6 +334,8 @@ struct rga_req {
     /* ([5]   dst   alpha mode) */
 
     unsigned char  src_trans_mode;
+
+	unsigned char  dither_mode;
 
     unsigned char CMD_fin_int_enable;
 

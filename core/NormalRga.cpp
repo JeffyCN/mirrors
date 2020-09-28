@@ -1225,6 +1225,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
     NormalRgaNNQuantizeMode(&rgaReg, dst);
 
+	NormalRgaDitherMode(&rgaReg, dst, relDstRect.format);
+
     if (srcMmuFlag || dstMmuFlag) {
         NormalRgaMmuInfo(&rgaReg, 1, 0, 0, 0, 0, 2);
         NormalRgaMmuFlag(&rgaReg, srcMmuFlag, dstMmuFlag);
@@ -1398,7 +1400,7 @@ int RgaCollorFill(rga_info *dst) {
     dstType = dstMmuFlag = 0;
 
     if (!dst) {
-        ALOGE("src = %p, dst = %p", dst, dst);
+        ALOGE("dst = %p", dst);
         return -EINVAL;
     }
 

@@ -68,18 +68,29 @@ float get_bpp_from_format(int format) {
         case RK_FORMAT_RGBA_8888:
         case RK_FORMAT_RGBX_8888:
         case RK_FORMAT_BGRA_8888:
+		case RK_FORMAT_BGRX_8888:
             bpp = 4;
             break;
         case RK_FORMAT_YCbCr_422_SP:
         case RK_FORMAT_YCbCr_422_P:
         case RK_FORMAT_YCrCb_422_SP:
         case RK_FORMAT_YCrCb_422_P:
+		/* yuyv */
+		case RK_FORMAT_YVYU_422:
+		case RK_FORMAT_VYUY_422:
+		case RK_FORMAT_YUYV_422:
+		case RK_FORMAT_UYVY_422:
             bpp = 2;
             break;
         case RK_FORMAT_YCbCr_420_SP:
         case RK_FORMAT_YCbCr_420_P:
         case RK_FORMAT_YCrCb_420_P:
         case RK_FORMAT_YCrCb_420_SP:
+		/* yuyv */
+		case RK_FORMAT_YVYU_420:
+		case RK_FORMAT_VYUY_420:
+		case RK_FORMAT_YUYV_420:
+		case RK_FORMAT_UYVY_420:
             bpp = 1.5;
             break;
         case RK_FORMAT_YCbCr_420_SP_10B:
@@ -88,9 +99,15 @@ float get_bpp_from_format(int format) {
             /*Here bpp=2 guarantee to read complete data.*/
             bpp = 2;
             break;
+		case RK_FORMAT_YCbCr_400:
+			bpp = 1;
+			break;
+		case RK_FORMAT_Y4:
+			bpp = 0.5;
+			break;
 #endif
         default:
-            printf("Is unsupport format now,please fix \n");
+            printf("Is unsupport format now, please fix \n");
             return 0;
     }
 
@@ -206,15 +223,51 @@ int get_string_by_format(char *value, int format) {
         case RK_FORMAT_YCrCb_422_P:
             memcpy(value, "crcb422p", sizeof("crcb422p"));
             break;
+		case RK_FORMAT_Y4:
+			memcpy(value, "y4", sizeof("y4"));
+			break;
+		case RK_FORMAT_YCbCr_400:
+			memcpy(value, "cbcr400", sizeof("cbcr400"));
+			break;
+		case RK_FORMAT_YVYU_422:
+			memcpy(value, "yvyu422", sizeof("yvyu422"));
+			break;
+		case RK_FORMAT_YVYU_420:
+			memcpy(value, "yvyu420", sizeof("yvyu420"));
+			break;
+		case RK_FORMAT_VYUY_422:
+			memcpy(value, "vyuy422", sizeof("vyuy422"));
+			break;
+		case RK_FORMAT_VYUY_420:
+			memcpy(value, "vyuy420", sizeof("vyuy420"));
+			break;
+		case RK_FORMAT_YUYV_422:
+			memcpy(value, "yuyv422", sizeof("yuyv422"));
+			break;
+		case RK_FORMAT_YUYV_420:
+			memcpy(value, "yuyv420", sizeof("yuyv420"));
+			break;
+		case RK_FORMAT_UYVY_422:
+			memcpy(value, "uyvy422", sizeof("uyvy422"));
+			break;
+		case RK_FORMAT_UYVY_420:
+			memcpy(value, "uyvy420", sizeof("uyvy420"));
+			break;
         case RK_FORMAT_YCbCr_420_SP_10B:
             memcpy(value, "nv12_10", sizeof("nv12_10"));
             break;
         case RK_FORMAT_YCrCb_420_SP_10B:
             memcpy(value, "crcb420sp_10", sizeof("crcb420sp_10"));
             break;
+		case RK_FORMAT_YCbCr_422_10b_SP:
+			memcpy(value, "cbcr422_10b", sizeof("cbcr422_10b"));
+			break;
+		case RK_FORMAT_YCrCb_422_10b_SP:
+			memcpy(value, "crcb422_10b", sizeof("crcb422_10b"));
+			break;
 #endif
         default:
-            printf("Is unsupport format now,please fix");
+            printf("Is unsupport format now, please fix");
             return 0;
     }
 
