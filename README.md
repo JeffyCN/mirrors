@@ -29,7 +29,7 @@ Rockchip RK3066 | RK3188 | RK2926 | RK2928 | RK3026 | RK3028 | RK3128 | Sofia3gr
 
 * **Android NDK (build for android)**
 
-修改librga源码根目录下的文件**ndk-android.sh**，指定**ANDROID_NDK_HOME**为NDK开发包的路径。执行以下操作完成编译：
+修改librga源码根目录下的文件**cmake-android.sh**。执行以下操作完成编译：
 
 ```bash
 $ mkdir build
@@ -40,9 +40,16 @@ $ ./cmake-android.sh
 $ make
 ```
 
+**[编译选项]**
+
+1. 指定ANDROID_NDK_HOME为NDK开发包的路径
+2. 指定CMAKE_ANDROID为android SDK包中cmake可执行文件的路径
+3. 根据需要选择不同架构，设置-DANDROID_ABI等于armeabi-v7a或arm64-v8a
+4. 根据需要选择不同的android平台版本，设置-DANDROID_PLATFORM
+
 * **Cmake (buildroot/debian)**
 
-修改librga源码根目录下的**buildroot.cmake**文件，指定**TOOLCHAIN_HOME**为交叉编译工具的路径。执行以下操作完成编译:
+修改librga源码根目录下的**buildroot.cmake**文件。执行以下操作完成编译:
 
 ```bash
 $ mkdir build
@@ -52,6 +59,12 @@ $ chmod +x ./cmake-linux.sh
 $ ./cmake-linux.sh
 $ make
 ```
+
+**[编译选项]**
+
+1. 指定TOOLCHAIN_HOME为交叉编译工具的路径
+2. 指定CMAKE_C_COMPILER为gcc编译命令的路径
+3. 指定CMAKE_CXX_COMPILER为g++编译命令的路径
 
 * **Meson(buildroot/debian)**
 

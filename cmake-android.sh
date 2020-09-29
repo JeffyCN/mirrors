@@ -1,8 +1,9 @@
 #!/bin/bash
 
-ANDROID_NDK_HOME=/home/cc/mksdk/build/android-ndk-r21d
+ANDROID_NDK_HOME=/Users/jacobchen/Library/Android/sdk/ndk/21.3.6528147
+CMAKE_ANDROID=/Users/jacobchen/Library/Android/sdk/cmake/3.6.4111459/bin/cmake
 
-cmake -DCMAKE_BUILD_TARGET=ndk -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+${CMAKE_ANDROID} -DCMAKE_BUILD_TARGET=ndk -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
       -DANDROID_NDK=$ANDROID_NDK_HOME \
       -DANDROID_ABI=armeabi-v7a \
       -DANDROID_TOOLCHAIN=clang \
