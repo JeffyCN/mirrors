@@ -18,6 +18,7 @@ if(CMAKE_BUILD_TARGET STREQUAL buildroot)
         ${CMAKE_SOURCE_DIR}/buildroot.cmake)
     include(${CMAKE_SOURCE_DIR}/buildroot.cmake)
     add_compile_options(-DLINUX)
+    set(CMAKE_CXX_FLAGS "-std=c++11 -O2 -pthread")
 endif()
 
 cmake_minimum_required(VERSION 2.8)
