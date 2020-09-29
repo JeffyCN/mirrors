@@ -48,7 +48,7 @@ RockchipRga::RockchipRga():
 
 RockchipRga::~RockchipRga()
 {
-    RgaDeInit(mContext);
+    // RgaDeInit(mContext);
 }
 
 int RockchipRga::RkRgaInit()
