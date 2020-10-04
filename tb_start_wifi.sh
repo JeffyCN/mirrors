@@ -12,6 +12,7 @@ up_cnt=0
 insmod_cnt=0
 check_cnt=0
 FORCE_CONFIG_WIFI=$3
+NEW_SSID=
 
 if [ -z $WIFISSID ]; then
 	echo -e "\033[33m WIFISSID is invalid, assume to Rockchip-guest \033[0m"
@@ -60,6 +61,22 @@ function check_wlan0() {
 	done
 }
 
+function tcpka_del() {
+	while true
+	do
+		IPID=`dhd_priv wl tcpka_conn_sess_info 1 | grep ipid`
+		if [ "$IPID" != "" ]; then
+			sleep 0.05
+			dhd_priv wl tcpka_conn_enable 1 0 0 0 0
+			sleep 0.05
+			dhd_priv wl tcpka_conn_del 1
+			sleep 0.05
+		else
+			break
+		fi
+	done
+}
+
 function wlan_up() {
 	while true
 	do
@@ -69,10 +86,6 @@ function wlan_up() {
 			sleep 0.1
 		else
 			echo "wlan0 up succeed"
-			sleep 0.05
-			dhd_priv wl tcpka_conn_enable 1 0 0 0 0
-			sleep 0.05
-			dhd_priv wl tcpka_conn_del 1
 			break
 		fi
 
@@ -85,8 +98,9 @@ function wlan_up() {
 
 check_wlan0
 wlan_up
+tcpka_del
 
-SSID=`dhd_priv isam_status | grep bssid`
+SSID=`dhd_priv isam_status | awk -F, '{print $5}' | sed -n '4p' | cut -d '"' -f 2`
 
 if [ "$SSID" ==  "" ] || [ "$FORCE_CONFIG_WIFI" == "true" ];then
 	echo "WIFI INFO: $SSID, CONFIG: $FORCE_CONFIG_WIFI"
@@ -112,11 +126,16 @@ if [ "$SSID" ==  "" ] || [ "$FORCE_CONFIG_WIFI" == "true" ];then
 		fi
 	done
 
+	if [ "$SSID" !=  "" ] && [ "$FORCE_CONFIG_WIFI" == "true" ];then
+		echo "waiting $SSID disconnect ..."
+		sleep 2
+	fi
+
 	while true
 	do
-		SSID=`dhd_priv isam_status | awk '{print $9}' | sed -n '4p' | cut -d '"' -f 2`
-		if [ "$SSID" !=  "" ];then
-			echo $SSID
+		NEW_SSID=`dhd_priv isam_status | awk -F, '{print $5}' | sed -n '4p' | cut -d '"' -f 2`
+		if [ "$NEW_SSID" !=  "" ];then
+			echo "$NEW_SSID connecting..."
 			break
 		fi
 	done
