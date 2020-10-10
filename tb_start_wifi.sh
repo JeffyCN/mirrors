@@ -38,6 +38,7 @@ function getdhcp() {
 			echo "nameserver $DNS" > /etc/resolv.conf
 
 			echo $IPADDR $NETMASK $GW $DNS
+			echo 255 > /sys/class/leds/blue/brightness
 			break
 		fi
 	done
