@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest>
-  <project name="android/rk/u-boot" path="npu/u-boot" revision="c5ef40e3706b5ca34e7f43dbebe697a4b4c866f1" upstream="next-dev"/>
+  <project name="android/rk/u-boot" path="npu/u-boot" revision="d30345d69073dced694d4a1a1f8e6f6f6c1ac56c" upstream="next-dev"/>
   <project name="linux/app/n4" path="npu/app/n4" revision="6e3fc43844746cfbf4498f63f27472023c01f0a0" upstream="master"/>
   <project name="linux/buildroot/dl" path="npu/buildroot/dl" revision="cd79e8e74ad0246112627fe9815dccad52fb6763" upstream="master"/>
-  <project name="linux/device/rockchip" path="npu/device/rockchip" revision="edec765e8c999403d94b5873e3bb50fc511f849f" upstream="master">
+  <project name="linux/device/rockchip" path="npu/device/rockchip" revision="cc45e08b4814060b635177ef14de462441e5c835" upstream="master">
     <linkfile dest="npu/mkfirmware.sh" src="common/mkfirmware.sh"/>
     <linkfile dest="npu/build.sh" src="common/build.sh"/>
     <linkfile dest="npu/rkflash.sh" src="common/rkflash.sh"/>
-    <linkfile dest="npu/device/rockchip/.BoardConfig.mk" src="rk3399pro-npu/BoardConfig.mk"/>
+    <linkfile dest="device/rockchip/.target_product" src="rk3399pro"/>
   </project>
   <project name="linux/external/camera_engine_rkisp" path="npu/external/camera_engine_rkisp" revision="a79d36dac4d357ec156506c84775a4e53c501939" upstream="master"/>
   <project name="linux/external/powermanager" path="npu/external/powermanager" revision="17921d6b75395df5478613973e58916a6cf7c7ad" upstream="master"/>
-  <project name="linux/external/rknpu" path="npu/external/rknpu" revision="96aae19fc654e8568e9c39a381d87fecd012c7fb" upstream="master"/>
+  <project name="linux/external/rknpu" path="npu/external/rknpu" revision="8ac4e76b44104c145fcea8245d5a49aa0e1edf4c" upstream="master"/>
   <project name="linux/external/rkscript" path="npu/external/rkscript" revision="324143e744f6d1a227a524c63a7ac3046d5f7915" upstream="master"/>
   <project name="linux/external/rktoolkit" path="npu/external/rktoolkit" revision="fc1ddcf4f804d1dbb55e2695a32b2aabe6016e8e" upstream="master"/>
   <project name="linux/linux-rga" path="npu/external/linux-rga" revision="72e7764a9fe358e6ad50eb1b21176cc95802c7fb" upstream="master"/>
@@ -22,5 +22,5 @@
     <linkfile dest="npu/Makefile" src="build/Makefile"/>
     <linkfile dest="npu/envsetup.sh" src="build/envsetup.sh"/>
   </project>
-  <project name="rk/rkbin" path="npu/rkbin" revision="c12df872d14f9d67b59da3b846642a35b51a48f6" upstream="master"/>
+  <project name="rk/rkbin" path="npu/rkbin" revision="2112f458bc492e497ff5579c96b67068ba95de14" upstream="master"/>
 </manifest>
