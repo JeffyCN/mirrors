@@ -69,3 +69,12 @@ v1.48 revision:
 
 v1.49 revision:
 1.support to switch uvc into rockusb
+
+v1.5 revision
+1.add log on download image
+
+v1.51 revision
+1.support nor flash erase
+
+v1.52 revision
+1.support ubi image download
