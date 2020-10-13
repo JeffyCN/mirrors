@@ -682,8 +682,8 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         return IM_STATUS_ILLEGAL_PARAM;
     }
 
-    if ((src_rect.width + src_rect.x > src.width) || (src_rect.height + src_rect.y > src.height)) {
-        imErrorMsg("Invaild src rect, rect widtn or height is less than src width or height.");
+    if ((src_rect.width + src_rect.x > src.wstride) || (src_rect.height + src_rect.y > src.hstride)) {
+        imErrorMsg("Invaild src rect, the sum of widtn and height of rect needs to be less than src wstride or hstride.");
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -698,8 +698,8 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         return IM_STATUS_ILLEGAL_PARAM;
     }
 
-    if ((dst_rect.width + dst_rect.x > dst.width) || (dst_rect.height + dst_rect.y > dst.height)) {
-        imErrorMsg("Invaild dst rect, rect widtn or height is less than src width or height.");
+    if ((dst_rect.width + dst_rect.x > dst.wstride) || (dst_rect.height + dst_rect.y > dst.hstride)) {
+        imErrorMsg("Invaild dst rect, the sum of widtn and height of rect needs to be less than dst wstride or hstride.");
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -1201,6 +1201,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
     memset(&srcinfo, 0, sizeof(rga_info_t));
     memset(&dstinfo, 0, sizeof(rga_info_t));
+    memset(&patinfo, 0, sizeof(rga_info_t));
 
     if (usage & IM_COLOR_FILL)
         ret = rga_set_buffer_info(dst, &dstinfo);
@@ -1234,7 +1235,6 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
     if (((usage & IM_COLOR_PALETTE) || (usage & IM_ALPHA_BLEND_MASK)) &&
         rga_is_buffer_valid(pat)) {
-        memset(&patinfo, 0, sizeof(rga_info_t));
 
         ret = rga_set_buffer_info(pat, &patinfo);
         if (ret <= 0)
@@ -1346,7 +1346,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         ret = rkRga.RkRgaCollorFill(&dstinfo);
     } else if (usage & IM_COLOR_PALETTE) {
         ret = rkRga.RkRgaCollorPalette(&srcinfo, &dstinfo, &patinfo);
-    } else if (rga_is_buffer_valid(pat)) {
+    } else if ((usage & IM_ALPHA_BLEND_MASK) && rga_is_buffer_valid(pat)) {
         dstinfo.color_space_mode = IM_COLOR_SPACE_DEFAULT;
         ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, &patinfo);
     }else {
