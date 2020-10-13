@@ -674,7 +674,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 
 	if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
 			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format)))
-		yuvToRgbMode |= 0x2 << 4;
+		yuvToRgbMode |= 0x2 << 2;
 
 	/*mode*/
 	NormalRgaSetBitbltMode(&rgaReg, scaleMode, rotateMode, orientation,
