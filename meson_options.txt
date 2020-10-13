@@ -1,2 +1,4 @@
 option('libdrm', type: 'combo', choices: ['true', 'false', 'auto'], value: 'auto',
        description: 'With libdrm (default: auto)')
+option('librga_demo', type: 'combo', choices: ['true', 'false', 'auto'], value: 'false',
+       description: 'With librga_demo (default: false)')

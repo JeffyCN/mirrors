@@ -71,14 +71,17 @@ pkgconfig.generate(
     description : 'Userspace interface to Rockchip RGA 2D accelerator',
 )
 
-demo_src = ['samples/im2d_api_demo/rgaImDemo.cpp', 'samples/im2d_api_demo/args.cpp']
-demo_incdir = include_directories('include', 'im2d_api')
-librga_dep = dependency('librga')
-executable(
-            'rgaImDemo',
+librga_demo_option = get_option('librga_demo')
+if librga_demo_option != 'false'
+    demo_src = ['samples/im2d_api_demo/rgaImDemo.cpp', 'samples/im2d_api_demo/args.cpp']
+    demo_incdir = include_directories('include', 'im2d_api')
+    librga_dep = dependency('librga')
+	executable(
+			'rgaImDemo',
             demo_src,
             include_directories : demo_incdir,
             dependencies : librga_dep,
             cpp_args : ['-Wno-pedantic'],
             install : true,
-)
+	)
+endif
