@@ -527,6 +527,7 @@ int NormalRgaSetBitbltMode(struct rga_req *msg,
 
     msg->yuv2rgb_mode = yuv2rgb_mode;
 
+    msg->alpha_rop_flag |= ((dither_en << 5) & 0x20);
     msg->alpha_rop_flag |= ((AA_en << 7) & 0x80);
 
     alpha_mode = msg->alpha_rop_mode & 3;

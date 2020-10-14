@@ -942,16 +942,15 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     clip.ymin = 0;
     clip.ymax = dstVirH - 1;
 
-#ifdef ANDROID
-    ditherEn = (android::bytesPerPixel(relSrcRect.format)
-                != android::bytesPerPixel(relSrcRect.format) ? 1 : 0);
+    if  (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
+         RkRgaGetRgaFormat(relSrcRect.format) != RK_FORMAT_RGB_565 &&
+         RkRgaGetRgaFormat(relDstRect.format) == RK_FORMAT_RGB_565)
+        ditherEn = 1;
+    else
+        ditherEn = 0;
 
     if(is_out_log())
         ALOGE("rgaVersion = %lf  , ditherEn =%d ",ctx->mVersion,ditherEn);
-#elif LINUX
-    ditherEn = (bytesPerPixel(relSrcRect.format)
-                != bytesPerPixel(relSrcRect.format) ? 1 : 0);
-#endif
 
     /* only to configure the parameter by driver version, because rga driver has too many version. */
     if (ctx->mVersion <= (float)1.003) {
