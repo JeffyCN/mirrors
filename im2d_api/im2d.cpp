@@ -158,6 +158,49 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
 #ifdef ANDROID
 /*When wrapbuffer_GraphicBuffer and wrapbuffer_AHardwareBuffer are used, */
 /*it is necessary to check whether fd and virtual address of the return rga_buffer_t are valid parameters*/
+IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
+    int ret = 0;
+    rga_buffer_t buffer;
+    std::vector<int> dstAttrs;
+
+    memset(&buffer, 0, sizeof(rga_buffer_t));
+
+    ret = rkRga.RkRgaGetBufferFd(hnd, &buffer.fd);
+    if (ret)
+        ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(hnd));
+
+    if (buffer.fd <= 0) {
+        ret = RkRgaGetHandleMapAddress(hnd, &buffer.vir_addr);
+        if(!buffer.vir_addr) {
+            ALOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
+            imErrorMsg("invaild GraphicBuffer, can not get fd and virtual address.");
+            goto INVAILD;
+        }
+    }
+
+    ret = RkRgaGetHandleAttributes(hnd, &dstAttrs);
+    if (ret) {
+        ALOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
+        imErrorMsg("handle get Attributes fail.");
+        goto INVAILD;
+    }
+
+    buffer.width   = dstAttrs.at(AWIDTH);
+    buffer.height  = dstAttrs.at(AHEIGHT);
+    buffer.wstride = dstAttrs.at(ASTRIDE);
+    buffer.hstride = dstAttrs.at(AHEIGHT);
+    buffer.format  = dstAttrs.at(AFORMAT);
+
+    if (buffer.width % 16) {
+        ALOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+        imErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+        goto INVAILD;
+    }
+
+INVAILD:
+    return buffer;
+}
+
 IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
     rga_buffer_t buffer;
     int ret = 0;

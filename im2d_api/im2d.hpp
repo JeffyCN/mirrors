@@ -19,6 +19,7 @@
 
 using namespace android;
 
+IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd);
 IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
 
 #if USE_AHARDWAREBUFFER
