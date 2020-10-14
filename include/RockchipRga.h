@@ -56,7 +56,7 @@ namespace android {
         }
 
         int         RkRgaInit();
-#ifdef LINUX
+#ifndef ANDROID /* LINUX */
         void        RkRgaDeInit();
         int         RkRgaAllocBuffer(int drm_fd /* input */, bo_t *bo_info,
                                      int width, int height, int bpp, int flags);
@@ -68,7 +68,7 @@ namespace android {
         int         RkRgaUnmap(bo_t *bo_info);
         int         RkRgaFree(bo_t *bo_info);
         int         RkRgaGetBufferFd(bo_t *bo_info, int *fd);
-#elif ANDROID
+#else
         int         RkRgaGetBufferFd(buffer_handle_t handle, int *fd);
 #endif
         int         RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1);
