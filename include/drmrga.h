@@ -31,7 +31,7 @@
 #include <cutils/native_handle.h>
 #endif
 
-#ifdef LINUX
+#ifndef ANDROID /* LINUX */
 #include "rga.h"
 
 /* flip source image horizontally (around the vertical axis) */
@@ -73,7 +73,7 @@ enum {
 };
 /*****************************************************************************/
 
-#ifdef LINUX
+#ifndef ANDROID
 /* memory type definitions. */
 enum drm_rockchip_gem_mem_type {
     /* Physically Continuous memory and used as default. */
@@ -140,7 +140,7 @@ typedef struct rga_info {
     int fd;
     void *virAddr;
     void *phyAddr;
-#ifdef LINUX
+#ifndef ANDROID /* LINUX */
     unsigned hnd;
 #else /* Android */
     buffer_handle_t hnd;
@@ -194,7 +194,7 @@ static inline int rga_set_rect(rga_rect_t *rect,
     return 0;
 }
 
-#ifdef LINUX
+#ifndef ANDROID /* LINUX */
 static inline void rga_set_rotation(rga_info_t *info, int angle) {
     if (angle == 90)
         info->rotation = HAL_TRANSFORM_ROT_90;
