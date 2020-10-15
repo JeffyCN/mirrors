@@ -949,8 +949,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     else
         ditherEn = 0;
 
+#ifdef ANDROID
     if(is_out_log())
         ALOGE("rgaVersion = %lf  , ditherEn =%d ",ctx->mVersion,ditherEn);
+#endif
 
     /* only to configure the parameter by driver version, because rga driver has too many version. */
     if (ctx->mVersion <= (float)1.003) {
