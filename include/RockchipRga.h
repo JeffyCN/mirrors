@@ -90,6 +90,8 @@ namespace android {
             return mSupportRga;
         }
 
+        RockchipRga();
+        ~RockchipRga();
       private:
         bool                            mSupportRga;
         int                             mLogOnce;
@@ -97,8 +99,6 @@ namespace android {
         void *                          mContext;
 
         friend class Singleton<RockchipRga>;
-        RockchipRga();
-        ~RockchipRga();
     };
 
 #ifdef ANDROID

@@ -1260,7 +1260,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
         NormalRgaLogOutRgaReq(rgaReg);
     }
 #elif LINUX
-#ifdef __DEBUG
+#if __DEBUG
     NormalRgaLogOutRgaReq(rgaReg);
 #endif
 #endif
@@ -1564,7 +1564,7 @@ int RgaCollorFill(rga_info *dst) {
     }
 
 #ifdef LINUX
-#ifdef __DEBUG
+#if __DEBUG
     NormalRgaLogOutRgaReq(rgaReg);
 #endif
 #endif
@@ -2109,7 +2109,7 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
         NormalRgaLogOutRgaReq(rgaReg);
     }
 #elif LINUX
-#ifdef __DEBUG
+#if __DEBUG
     NormalRgaLogOutRgaReq(rgaReg);
 #endif
 #endif
