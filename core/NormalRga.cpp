@@ -1315,10 +1315,8 @@ int RgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1) {
     /*dst_YUV(crop & cvtcolor)->L_RGBA*/
     {
         ret = RgaBlit(dst, &temp, NULL);
-        if (ret) {
-            printf("rgaBlit error : %s\n", strerror(errno));
+        if (ret)
             goto ERR_FREE_BUF;
-        }
     }
 
     /*src_RGBA + temp_RGBA(blend) -> temp_RGBA*/
@@ -1326,19 +1324,15 @@ int RgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1) {
         src->blend = 0xff0105;
 
         ret = RgaBlit(src, &temp, NULL);
-        if (ret) {
-            printf("rgaBlit error : %s\n", strerror(errno));
+        if (ret)
             goto ERR_FREE_BUF;
-        }
     }
 
     /*temp_RGBA(cvtcolor & translate)->dst_YUV*/
     {
         ret = RgaBlit(&temp, dst, NULL);
-        if (ret) {
-            printf("rgaBlit error : %s\n", strerror(errno));
+        if (ret)
             goto ERR_FREE_BUF;
-        }
     }
 
 	free(temp_buf);
@@ -1346,6 +1340,10 @@ int RgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1) {
 
 ERR_FREE_BUF:
 	free(temp_buf);
+
+	printf(" %s(%d) RGA_SRCOVER fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+	ALOGE(" %s(%d) RGA_SRCOVER fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+
 	return -1;
 #else
 
@@ -1576,8 +1574,9 @@ int RgaCollorFill(rga_info *dst) {
     }
 
     if(ioctl(ctx->rgaFd, sync_mode, &rgaReg)) {
-        printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
-        ALOGE(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        printf(" %s(%d) RGA_COLORFILL fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        ALOGE(" %s(%d) RGA_COLORFILL fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        return -errno;
     }
 
     return 0;
