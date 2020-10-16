@@ -17,6 +17,8 @@ getdhcp_cnt=0
 connect_cnt=0
 wpa_cnt=0
 
+trap "echo 'ifconfig wlan0 down'; ifconfig wlan0 down; exit" SIGTERM
+
 if [ -z $WIFISSID ]; then
 	echo -e "\033[33m WIFISSID is invalid, assume to Rockchip-guest \033[0m"
 	WIFISSID=Rockchip-guest
@@ -42,6 +44,14 @@ function getdhcp() {
 
 			echo $IPADDR $NETMASK $GW $DNS
 			echo 255 > /sys/class/leds/blue/brightness
+
+			if [ "$FORCE_CONFIG_WIFI" == "true" ];then
+				echo "reconnect, restart mediaserver..."
+				killall -9 mediaserver
+				sleep 1
+				mediaserver -a -d -c /usr/share/mediaserver/tb_rtsp-link.conf > /dev/kmsg 2>&1 &
+			fi
+
 			break
 		fi
 
@@ -135,6 +145,11 @@ SSID=`dhd_priv isam_status | awk -F, '{print $5}' | sed -n '4p' | cut -d '"' -f 
 
 if [ "$SSID" ==  "" ] || [ "$FORCE_CONFIG_WIFI" == "true" ];then
 
+	if [ "$SSID" ==  "" ] && [ "$FORCE_CONFIG_WIFI" != "true" ];then
+		echo "SSID is empty, and FORCE_CONFIG_WIFI not true"
+		exit
+	fi
+
 	if [ "$SSID" == "$WIFISSID" ];then
 		echo "$WIFISSID already connected"
 		return
@@ -151,6 +166,11 @@ if [ "$SSID" ==  "" ] || [ "$FORCE_CONFIG_WIFI" == "true" ];then
 		killall wpa_supplicant
 		sleep 0.5
 	fi
+
+	ifconfig wlan0 down
+	sleep 0.5
+	ifconfig wlan0 up
+	sleep 0.5
 
 	while true
 	do
