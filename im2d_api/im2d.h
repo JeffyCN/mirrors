@@ -324,16 +324,16 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
 #define imresize(src, dst, ...) \
     ({ \
         IM_STATUS ret = IM_STATUS_SUCCESS; \
-        int args[] = {__VA_ARGS__}; \
-        int argc = sizeof(args)/sizeof(int); \
+        double args[] = {__VA_ARGS__}; \
+        int argc = sizeof(args)/sizeof(double); \
         if (argc == 0) { \
             ret = imresize_t(src, dst, 0, 0, INTER_LINEAR, 1); \
         } else if (argc == 2){ \
             ret = imresize_t(src, dst, args[0], args[1], INTER_LINEAR, 1); \
         } else if (argc == 3){ \
-            ret = imresize_t(src, dst, args[0], args[1], args[2], 1); \
+            ret = imresize_t(src, dst, args[0], args[1], (int)args[2], 1); \
         } else if (argc == 4){ \
-            ret = imresize_t(src, dst, args[0], args[1], args[2], args[3]); \
+            ret = imresize_t(src, dst, args[0], args[1], (int)args[2], (int)args[3]); \
         } else { \
             ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
