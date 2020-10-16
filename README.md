@@ -4,8 +4,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 ### 版本说明
 
-**librga** 版本: v1.03<br/>
-**librga API** 版本: v1.00
+**librga** 版本: v1.04<br/>
+**librga API** 版本: v1.11
 
 ### 适用芯片平台
 
@@ -85,13 +85,13 @@ librga也提供了Makefile文件，可以在开发板上直接执行make命令�
 
 * **头文件引用**
 
-  include/RockchipRga.h
+  * 调用librga
 
-  Include/RgaApi.h
+    include/RockchipRga.h
 
-  im2d_api/im2d.h
+  * 调用im2d api
 
-  im2d_api/im2d.hpp
+    im2d_api/im2d.hpp
 
 * **库文件**
 

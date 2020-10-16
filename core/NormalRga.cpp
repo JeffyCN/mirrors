@@ -22,7 +22,7 @@
 #include "GrallocOps.h"
 #include <cutils/properties.h>
 
-#define RGA_VERSION "1.03"
+#define RGA_VERSION "1.04"
 
 #elif LINUX
 #include <sys/ioctl.h>

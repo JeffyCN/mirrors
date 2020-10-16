@@ -29,7 +29,7 @@ extern "C" {
 #define IM_API /* define API export as needed */
 #endif
 
-#define RGA_IM2D_VERSION "1.10"
+#define RGA_IM2D_VERSION "1.11"
 
 typedef enum {
     /* Rotation */

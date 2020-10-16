@@ -2,7 +2,7 @@
 
 文件标识：RK-PC-YF-0002
 
-发布版本：V1.0.0
+发布版本：V1.0.1
 
 日期：2020-07-10
 
@@ -51,10 +51,11 @@ Rockchip Electronics Co., Ltd.
 
 **修订记录**
 
-| **日期**   | **版本** | **作者**   | **修改说明** |
-| ---------- | -------- | ---------- | ------------ |
-| 2020/06/24 | 1.0.0    | 陈城，李煌 | 初始版本     |
-|            |          |            |              |
+| **日期**   | **版本** | **作者**           | **修改说明** |
+| ---------- | -------- | ------------------ | ------------ |
+| 2020/06/24 | 1.0.0    | 陈城，李煌         | 初始版本     |
+| 2020/10/16 | 1.0.1    | 陈城，李煌，余乔伟 | 更新部分接口 |
+|            |          |                    |              |
 
 
 
@@ -427,7 +428,7 @@ imresize(const rga_buffer_t src,
 | interpolation | **[optional]** interpolation method:<br/>INTER_NEAREST - a nearest-neighbor interpolation<br/>INTER_LINEAR - a bilinear interpolation (used by default)<br/>INTER_CUBIC - a bicubic interpolation over 4x4 pixel neighborhood |
 | sync          | **[optional]** wait until operation complete                 |
 
-**Return** 0 on success or else negative error code.
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -447,7 +448,7 @@ IM_STATUS impyramid (const rga_buffer_t src,
 | dst        | **[required]** output image;                                 |
 | direction  | **[required]** scale mode<br/>IM_UP_SCALE  ——  up scale <br/>IM_DOWN_SCALE —— down scale |
 
-**Return** 0 on success or else negative error code.
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -474,7 +475,7 @@ IM_STATUS imcrop(const rga_buffer_t src,
 | rect      | **[required]** crop region<br/>x - upper-left x coordinate<br/>y - upper-left y coordinate<br/>width - region width<br/>height - region height |
 | sync      | **[optional]** wait until operation complete                 |
 
-**Return** 0 on success or else negative error code.
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -502,7 +503,7 @@ IM_STATUS imrotate(const rga_buffer_t src,
 | rotation  | **[required]** rotation angle:<br/>0<br/>IM_HAL_TRANSFORM_ROT_90<br/>IM_HAL_TRANSFORM_ROT_180<br/>IM_HAL_TRANSFORM_ROT_270 |
 | sync      | **[optional]** wait until operation complete                 |
 
-**Return** 0 on success or else negative error code.
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -529,7 +530,7 @@ IM_STATUS imflip (const rga_buffer_t src,
 | mode      | **[optional]** flip mode:<br/>0<br/>IM_HAL_TRANSFORM_FLIP_H<br/>IM_HAL_TRANSFORM_FLIP_V<br/> |
 | sync      | **[optional]** wait until operation complete                 |
 
-**Return** 0 on success or else negative error code.
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -546,7 +547,8 @@ IM_STATUS imfill(rga_buffer_t buf,
                  int sync = 1);
 ```
 
-对RGBA 格式的图像的指定区域rect进行颜色填充。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+> 对RGBA 格式的图像的指定区域rect进行颜色填充。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+
 ```C++
 IM_STATUS imreset(rga_buffer_t buf, 
                  im_rect rect, 
@@ -554,7 +556,8 @@ IM_STATUS imreset(rga_buffer_t buf,
                  int sync = 1);
 ```
 
-对RGBA 格式的图像的指定区域rect内存中的内容全部设置为指定的值color。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+> 对RGBA 格式的图像的指定区域rect内存中的内容全部设置为指定的值color。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+
 ```C++
 IM_STATUS imdraw(rga_buffer_t buf, 
                  im_rect rect, 
@@ -562,7 +565,7 @@ IM_STATUS imdraw(rga_buffer_t buf,
                  int sync = 1);
 ```
 
-对RGBA 格式的图像的指定区域rect根据指定颜色color进行绘制。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+> 对RGBA 格式的图像的指定区域rect根据指定颜色color进行绘制。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
 
 【注意】填充区域rect宽高需大于或等于2
 
@@ -574,7 +577,7 @@ IM_STATUS imdraw(rga_buffer_t buf,
 | color     | **[required]** fill with color, default=0x00000000           |
 | sync      | **[optional]** wait until operation complete                 |
 
-**Return** 0 on success or else negative error code.
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -603,7 +606,7 @@ IM_STATUS imtranslate(const rga_buffer_t src,
 | y         | **[optional]** vertical translation          |
 | sync      | **[optional]** wait until operation complete |
 
-**Return** 0 on success or else negative error code.
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -628,7 +631,7 @@ IM_STATUS imcopy(const rga_buffer_t src,
 | dst       | **[required]** output image                  |
 | sync      | **[optional]** wait until operation complete |
 
-**Return** 0 on success or else negative error code.
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -636,7 +639,7 @@ IM_STATUS imcopy(const rga_buffer_t src,
 
 ------
 
-#### imblend
+#### imblend/imcomposite
 
 ```c++
 IM_STATUS imblend(const rga_buffer_t srcA, 
@@ -645,29 +648,51 @@ IM_STATUS imblend(const rga_buffer_t srcA,
                   int sync = 1);
 ```
 
-> RGA支持A+B -> B 的图像合成。mode 可以配置图像合成公式**[Alpha, Color]**：
+> RGA使用A+B -> B 的图像合成模式。
+>
+
+```c++
+IM_STATUS imcomposite(const rga_buffer_t srcA,
+                      const rga_buffer_t srcB,
+                      rga_buffer_t dst,
+                      int mode = IM_ALPHA_BLEND_SRC_OVER,
+                      int sync = 1);
+```
+
+> RGA使用A+B -> C 的图像合成模式。
+>
+> 两种图像合成模式中mode 可以配置图像合成公式**[Alpha, Color]**：
+>
+> IM_ALPHA_BLEND_SRC:
+>
+> ​		[Sa, Sc]
 >
 > IM_ALPHA_BLEND_DST:
 >
-> ​		[Sa + (1 - Sa) * Da, Dc + (1 - Da) * Sc]
+> ​		[Da, Dc]
 >
-> IM_ALPHA_BLEND_DST_OUT:
+> IM_ALPHA_BLEND_SRC_OVER：
 >
-> ​		[Da, Sc * Da + (1 - Sa) * Dc]
+> ​		[Sa + (1 - Sa)*Da]
 >
 > IM_ALPHA_BLEND_DST_OVER:
 >
 > ​		[Sa * Da, Sc * Da]
 >
+> IM_ALPHA_BLEND_DST_OUT:
+>
+> ​		[Da, Sc * Da + (1 - Sa) * Dc]
+>
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
 | srcA      | **[required]** input image A                                 |
+| srcB      | **[required]** input image B                                 |
 | dst       | **[required]** output image                                  |
-| mode      | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_DST  <br/>IM_ALPHA_BLEND_DST_OUT  <br/>IM_ALPHA_BLEND_DST_OVER |
+| mode      | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC<br/>IM_ALPHA_BLEND_DST  <br/>IM_ALPHA_BLEND_SRC_OVER<br/>IM_ALPHA_BLEND_DST_OVER<br/>IM_ALPHA_BLEND_DST_OUT |
 | sync      | **[optional]** wait until operation complete                 |
 
-**Return** 0 on success or else negative error code.
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -700,7 +725,7 @@ IM_STATUS imcvtcolor(rga_buffer_t src,
 | Mode      | **[optional]** color space mode:<br/>IM_YUV_TO_RGB_BT601_LIMIT<br/>IM_YUV_TO_RGB_BT601_FULL<br/>IM_YUV_TO_RGB_BT709_LIMIT<br/>IM_RGB_TO_YUV_BT601_LIMIT<br/>IM_RGB_TO_YUV_BT601_FULL<br/>IM_RGB_TO_YUV_BT709_LIMIT |
 | sync      | **[optional]** wait until operation complete                 |
 
-**Return** 0 on success or else negative error code.
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
 
 
 
@@ -740,7 +765,7 @@ dst = 【(src + offset) * scale 】
 | nn_info   | **[required]** rga_nn_t结构体对RGB三个通道offset及scale进行单独配置<br />typedef struct rga_nn { <br/>  int nn_flag;<br/>  int scale_r;<br/>  int scale_g;<br/>  int scale_b;<br/>  int offset_r;<br/>  int offset_g;<br/>  int offset_b;<br/>} rga_nn_t; |
 | sync      | **[optional]** wait until operation complete                 |
 
-**Return** 0 on success or else negative error code
+**Return** IM_STATUS_SUCCESS on success or else negative error code
 
 
 
