@@ -165,12 +165,19 @@ int NormalRgaClose(void *context) {
 #elif LINUX
 	pthread_mutex_lock(&mMutex);
 	refCount--;
+
 	if (refCount < 0) {
 		refCount = 0;
+		pthread_mutex_unlock(&mMutex);
 		return 0;
 	}
+
 	if (refCount > 0)
+	{
+		pthread_mutex_unlock(&mMutex);
 		return 0;
+	}
+
 	pthread_mutex_unlock(&mMutex);
 #endif
 
