@@ -1254,7 +1254,7 @@ IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code,
 
     usage |= IM_ROP;
 
-    src.rop_code = rop_code;
+    dst.rop_code = rop_code;
 
     if (sync == 0)
         usage |= IM_SYNC;
@@ -1384,7 +1384,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
     /* set ROP */
     if (usage & IM_ROP) {
-        srcinfo.rop_code = src.rop_code;
+        srcinfo.rop_code = dst.rop_code;
     }
 
     /* set global alpha */
