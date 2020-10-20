@@ -662,7 +662,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
             NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 1, 0);
             break;
 
-        case 0x0100:/* dst */
+        case 0x0002:/* dst */
             NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 2, 0);
             break;
 
@@ -688,6 +688,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
                 NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
             break;
 
+		case 0x0100:
         default:
             /* Tips: BLENDING_NONE is non-zero value, handle zero value as
              * BLENDING_NONE. */

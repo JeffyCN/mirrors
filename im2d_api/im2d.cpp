@@ -1323,7 +1323,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                 srcinfo.blend = 0xff0001;
                 break;
             case IM_ALPHA_BLEND_DST:
-                srcinfo.blend = 0xff0100;
+                srcinfo.blend = 0xff0002;
                 break;
             case IM_ALPHA_BLEND_SRC_OVER:
                 srcinfo.blend = 0xff0105;
