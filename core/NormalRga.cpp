@@ -1255,6 +1255,15 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 		rgaReg.bsfilter_flag = 1;
 	}
 
+	/* ROP */
+	/* This special Interface can do some basic logical operations */
+	if(src->rop_code > 0)
+	{
+		rgaReg.rop_code = src->rop_code;
+		rgaReg.alpha_rop_flag = 0x3;
+		rgaReg.alpha_rop_mode = 0x1;
+	}
+
     /*color key*/
     /* if need this funtion, maybe should patch the rga driver. */
     if(src->colorkey_en == 1) {

@@ -161,6 +161,7 @@ typedef struct rga_info {
     int sync_mode;
     rga_nn_t nn;
 	rga_dither_t dither;
+	int rop_code;
     int reserve[128];
 } rga_info_t;
 

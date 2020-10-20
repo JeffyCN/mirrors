@@ -1242,6 +1242,28 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
     return ret;
 }
 
+IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code, int sync) {
+    int usage = 0;
+    IM_STATUS ret = IM_STATUS_NOERROR;
+
+    rga_buffer_t pat;
+
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    usage |= IM_ROP;
+
+    src.rop_code = rop_code;
+
+    if (sync == 0)
+        usage |= IM_SYNC;
+
+    ret = improcess(src, dst, pat, srect, drect, prect, usage);
+
+    return ret;
+}
+
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat, im_rect srect, im_rect drect, im_rect prect, int usage) {
     rga_info_t srcinfo;
     rga_info_t dstinfo;
@@ -1358,6 +1380,11 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         dstinfo.nn.offset_r = dst.nn.offset_r;
         dstinfo.nn.offset_g = dst.nn.offset_g;
         dstinfo.nn.offset_b = dst.nn.offset_b;
+    }
+
+    /* set ROP */
+    if (usage & IM_ROP) {
+        srcinfo.rop_code = src.rop_code;
     }
 
     /* set global alpha */

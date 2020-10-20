@@ -63,6 +63,7 @@ typedef enum {
     IM_COLOR_FILL               = 1 << 18,
     IM_COLOR_PALETTE            = 1 << 19,
     IM_NN_QUANTIZE              = 1 << 20,
+    IM_ROP                      = 1 << 21,
 } IM_USAGE;
 
 typedef enum {
@@ -196,6 +197,7 @@ typedef struct {
     int global_alpha;                   /* global_alpha */
     unsigned long lut_addr;             /* LUT/ pattern load base address */
     im_nn_t nn;
+	int rop_code;
 } rga_buffer_t;
 
 /*
@@ -707,6 +709,34 @@ IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int 
     })
 
 IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info, int sync);
+
+/*
+ * ROP
+ *
+ * @param src
+ * @param dst
+ * @param rop_code
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#define imrop(src, dst, rop_code, ...) \
+    ({ \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
+        int args[] = {__VA_ARGS__}; \
+        int argc = sizeof(args)/sizeof(int); \
+        if (argc == 0) { \
+            ret = imrop_t(src, dst, rop_code, 1); \
+        } else if (argc == 1){ \
+            ret = imrop_t(src, dst, rop_code, args[0]);; \
+        } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
+            printf("invalid parameter\n"); \
+        } \
+        ret; \
+    })
+IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code, int sync);
 
 /*
  * process
