@@ -769,6 +769,32 @@ dst = 【(src + offset) * scale 】
 
 
 
+### ROP 与或非运算
+
+------
+
+#### imrop
+
+```C++
+IM_STATUS imquantize(const rga_buffer_t src,
+                     rga_buffer_t dst,
+                     int rop_code,
+                     int sync = 1)
+```
+
+> 对两个图形做ROP 与或非运算
+
+| parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| src       | **[required]** input image                                   |
+| dst       | **[required]** output image                                  |
+| rop_code  | **[required]** rop code mode <br /><br/> IM_ROP_AND : dst = dst **AND** src;<br/> IM_ROP_OR : dst = dst **OR** src <br/> IM_ROP_NOT_DST : dst = **NOT** dst<br/> IM_ROP_NOT_SRC : dst = **NOT** src<br/> IM_ROP_XOR : dst = dst **XOR** src<br/> IM_ROP_NOT_XOR : dst = **NOT** (dst **XOR** src)<br/> |
+| sync      | **[optional]** wait until operation complete                 |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code
+
+
+
 ### 图像处理
 
 ------

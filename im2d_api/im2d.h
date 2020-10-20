@@ -67,6 +67,15 @@ typedef enum {
 } IM_USAGE;
 
 typedef enum {
+    IM_ROP_AND                  = 0x88,
+    IM_ROP_OR                   = 0xee,
+    IM_ROP_NOT_DST              = 0x55,
+    IM_ROP_NOT_SRC              = 0x33,
+    IM_ROP_XOR                  = 0xf6,
+    IM_ROP_NOT_XOR              = 0xf9,
+} IM_ROP_CODE;
+
+typedef enum {
     /*RGA version*/
     IM_RGA_INFO_VERSION_RGA_1           = 1<< 0,
     IM_RGA_INFO_VERSION_RGA_1_PLUS      = 1<< 1,
