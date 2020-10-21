@@ -1,3 +1,7 @@
+
+
+
+
 # RGA IM2D API
 
 文件标识：RK-PC-YF-0002
@@ -887,8 +891,9 @@ IM_STATUS imsync(void);
 
 ------
 
-> 用于测试的输入与输出二进制文件需提前准备好并存储在/data/目录下，文件命名规则如下：
+> 用于测试的输入与输出二进制文件需提前准备好，在/sample/data目录下，存放着默认的源图可以直接使用。
 >
+> Android系统须将源图片存储在设备/data/目录下，Linux系统须将源图储存在设备/usr/data目录下，文件命名规则如下：
 
 ```
 in%dw%d-h%d-%s.bin
@@ -926,9 +931,11 @@ out%dw%d-h%d-%s.bin
 
 > 运行demo后打印日志如下（以图像拷贝为例）：
 >
+> Android中打印日志如下：
 
 ```C++
 # rgaImDemo --copy
+
 librga:RGA_GET_VERSION:3.02,3.020000					//RGA版本
 ctx=0x7ba35c1520,ctx->rgaFd=3							//RGA上下文
 Start selecting mode
@@ -942,11 +949,23 @@ lock buffer ok
 unlock buffer ok
 copying .... Succed!									//标志运行成功
 open /data/out0w1280-h720-rgba8888.bin and write ok		//输出文件名以及目录
-rk3399_Android10:/d/rga2_debug #
 ```
 
-> 当需要查看RGA运行更加详细的日志时，可以通过设置属性vendor.rga.log（Android 8及以下是sys.rga.log）来打开RGA配置log打印：
->
+> Linux系统中打印日志如下：
+
+```C++
+# rgaImDemo --copy
+librga:RGA_GET_VERSION:3.02,3.020000
+ctx=0x2b070,ctx->rgaFd=3
+Rga built version:version:1.00
+Start selecting mode
+im2d copy ..
+open file
+copying .... Run successfully
+open /usr/data/out0w1280-h720-rgba8888.bin and write ok
+```
+
+> 当需要查看RGA运行更加详细的日志时，Android系统可以通过设置属性vendor.rga.log（Android 8及以下是sys.rga.log）来打开RGA配置log打印：
 
 ```
 setprop vendor.rga.log 1		打开RGA log打印
@@ -954,8 +973,18 @@ logcat -s librga				开启并过滤log打印
 setprop vendor.rga.log 0		关闭RGA log打印
 ```
 
+> Linux系统中需要打开代码core/NormalRgaContext.h，将__DEBUG设置为1，重新编译即可
+
+```
+#ifdef LINUX
+
+-#define __DEBUG 0
++#define __DEBUG 1
+```
+
 > 一般打印log如下，可将此log上传至RedMine，由RK有关工程师分析：
 >
+> Android系统中打印日志如下：
 
 ```
  D librga  : <<<<-------- print rgaLog -------->>>>
@@ -977,6 +1006,22 @@ setprop vendor.rga.log 0		关闭RGA log打印
  D librga  : MMU:[1,0,80000521]
  D librga  : mode[0,0,0,0]
 ```
+
+> Linux系统打印日志如下：
+
+```C++
+render_mode=0 rotate_mode=0
+src:[0,a681a008,a68fb008],x-y[0,0],w-h[1280,720],vw-vh[1280,720],f=0
+dst:[0,a6495008,a6576008],x-y[0,0],w-h[1280,720],vw-vh[1280,720],f=0
+pat:[0,0,0],x-y[0,0],w-h[0,0],vw-vh[0,0],f=0
+ROP:[0,0,0],LUT[0]
+color:[0,0,0,0,0]
+MMU:[1,0,80000521]
+mode[0,0,0,0,0]
+gr_color_x [0, 0, 0]
+gr_color_x [0, 0, 0]
+```
+
 
 
 
