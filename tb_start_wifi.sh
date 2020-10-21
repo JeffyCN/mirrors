@@ -18,6 +18,7 @@ connect_cnt=0
 wpa_cnt=0
 
 trap "echo 'ifconfig wlan0 down'; ifconfig wlan0 down; exit" SIGTERM
+echo timer > /sys/class/leds/blue/trigger
 
 if [ -z $WIFISSID ]; then
 	echo -e "\033[33m WIFISSID is invalid, assume to Rockchip-guest \033[0m"
@@ -43,6 +44,7 @@ function getdhcp() {
 			echo "nameserver $DNS" > /etc/resolv.conf
 
 			echo $IPADDR $NETMASK $GW $DNS
+			echo none > /sys/class/leds/blue/trigger
 			echo 255 > /sys/class/leds/blue/brightness
 
 			if [ "$FORCE_CONFIG_WIFI" == "true" ];then
@@ -60,6 +62,7 @@ function getdhcp() {
 		let getdhcp_cnt++
 		if [ $getdhcp_cnt -gt 3000 ]; then
 			echo "$NEW_SSID getdhcp failed!!!"
+			echo 0 > /sys/class/leds/blue/brightness
 			exit
 		fi
 	done
@@ -80,6 +83,7 @@ function check_wlan0() {
 		let insmod_cnt++
 		if [ $insmod_cnt -gt 10 ]; then
 			echo "insmod failed !!!"
+			echo 0 > /sys/class/leds/blue/brightness
 			exit
 		fi
 	done
@@ -98,6 +102,7 @@ function check_wlan0() {
 		let check_cnt++
 		if [ $check_cnt -gt 10 ]; then
 			echo "check wlan0 failed!!!"
+			echo 0 > /sys/class/leds/blue/brightness
 			exit
 		fi
 	done
@@ -134,6 +139,7 @@ function wlan_up() {
 		let up_cnt++
 		if [ $up_cnt -gt 10 ]; then
 			echo "wlan0 up failed!!!"
+			echo 0 > /sys/class/leds/blue/brightness
 			exit
 		fi
 	done
@@ -147,6 +153,7 @@ if [ "$SSID" ==  "" ] || [ "$FORCE_CONFIG_WIFI" == "true" ];then
 
 	if [ "$SSID" ==  "" ] && [ "$FORCE_CONFIG_WIFI" != "true" ];then
 		echo "SSID is empty, and FORCE_CONFIG_WIFI not true"
+		echo 0 > /sys/class/leds/blue/brightness
 		exit
 	fi
 
@@ -186,6 +193,7 @@ if [ "$SSID" ==  "" ] || [ "$FORCE_CONFIG_WIFI" == "true" ];then
 		let wpa_cnt++
 		if [ $wpa_cnt -gt 10 ]; then
 			echo "wpa_supplicant up failed!!!"
+			echo 0 > /sys/class/leds/blue/brightness
 			exit
 		fi
 	done
@@ -207,6 +215,7 @@ if [ "$SSID" ==  "" ] || [ "$FORCE_CONFIG_WIFI" == "true" ];then
 		let connect_cnt++
 		if [ $connect_cnt -gt 60 ]; then
 			echo "connect $NEW_SSID failed!!!"
+			echo 0 > /sys/class/leds/blue/brightness
 			exit
 		fi
 	done
