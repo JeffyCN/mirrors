@@ -79,7 +79,11 @@ pkgconfig.generate(
 
 librga_demo_option = get_option('librga_demo')
 if librga_demo_option != 'false'
-    demo_src = ['samples/im2d_api_demo/rgaImDemo.cpp', 'samples/im2d_api_demo/args.cpp']
+    demo_src = [
+		git_version_h,
+		'samples/im2d_api_demo/rgaImDemo.cpp',
+		'samples/im2d_api_demo/args.cpp'
+	]
     demo_incdir = include_directories('include', 'im2d_api')
     librga_dep = dependency('librga')
     executable(
