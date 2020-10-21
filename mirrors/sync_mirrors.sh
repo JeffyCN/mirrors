@@ -8,7 +8,8 @@ function sync_mirror() {
 	cd -
 	cd misc
 	git fetch ../mirrors/$1
-	git push origin FETCH_HEAD:$1
+	git checkout FETCH_HEAD -B $1
+	git push origin $1:$1&
 	cd -
 }
 

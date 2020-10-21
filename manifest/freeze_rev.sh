@@ -20,7 +20,7 @@ function freeze {
 
 	mv $TEMP_XML yocto.xml
 	git reset HEAD^
-	git commit -a --no-edit -m \
+	git commit -s -a --no-edit -m \
 		"Bump revisions for ${BRANCH} at $(date +%Y_%m_%d)" || :
 }
 
