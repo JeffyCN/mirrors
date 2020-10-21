@@ -22,7 +22,7 @@
 #ifdef LINUX
 #define __DEBUG 0
 
-#define ALOGE(...) printf(__VA_ARGS__)
+#define ALOGE(...) printf(__VA_ARGS__); printf("\n")
 #endif
 
 struct rgaContext {
