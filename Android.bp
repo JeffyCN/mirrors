@@ -51,7 +51,6 @@ cc_library_shared {
         "hardware/libhardware/include/hardware",
         "hardware/libhardware/modules/gralloc",
         "system/core/liblog/include",
-		"system/core/libion/kernel-headers",
     ],
 
     shared_libs: [
