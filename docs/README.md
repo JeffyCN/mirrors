@@ -891,7 +891,7 @@ IM_STATUS imsync(void);
 
 ------
 
-> 用于测试的输入与输出二进制文件需提前准备好，在/sample/data目录下，存放着默认的源图可以直接使用。
+> 用于测试的输入与输出二进制文件需提前准备好，在/sample/sample_file目录下，存放着默认的RGBA8888格式的源图像文件可以直接使用。
 >
 > Android系统须将源图片存储在设备/data/目录下，Linux系统须将源图储存在设备/usr/data目录下，文件命名规则如下：
 
@@ -920,7 +920,7 @@ out%dw%d-h%d-%s.bin
 | HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO | "nv12"      |
 | HAL_PIXEL_FORMAT_YCrCb_NV12_10    | "nv12_10"   |
 
-> demo中默认的输入图像文件分辨率为1280x720，格式为RGBA8888， 则须在/data/目录下提前准备好名为in0w1280-h720-rgba8888.bin的源图像文件。
+> demo中默认的输入图像文件分辨率为1280x720，格式为RGBA8888， 则须在/data或/usr/data目录下提前准备好名为in0w1280-h720-rgba8888.bin的源图像文件，图像合成模式还须额外在/data或/usr/data目录下提前准备好名为in1w1280-h720-rgba8888.bin的源图像文件。
 >
 
 
@@ -943,11 +943,11 @@ im2d copy ..											//RGA运行模式
 GraphicBuffer check ok
 GraphicBuffer check ok
 lock buffer ok
-open file ok											//src文件的打开状态，如果/data/目录下没有对应文件这里会报错
+open file ok											//src文件的状态，如果/data/目录下没有对应文件这里会报错
 unlock buffer ok
 lock buffer ok
 unlock buffer ok
-copying .... Succed!									//标志运行成功
+copying .... successfully								//标志运行成功
 open /data/out0w1280-h720-rgba8888.bin and write ok		//输出文件名以及目录
 ```
 
@@ -955,14 +955,15 @@ open /data/out0w1280-h720-rgba8888.bin and write ok		//输出文件名以及目�
 
 ```C++
 # rgaImDemo --copy
-librga:RGA_GET_VERSION:3.02,3.020000
-ctx=0x2b070,ctx->rgaFd=3
+
+librga:RGA_GET_VERSION:3.02,3.020000					//RGA版本
+ctx=0x2b070,ctx->rgaFd=3								//RGA上下文
 Rga built version:version:1.00
 Start selecting mode
-im2d copy ..
-open file
-copying .... Run successfully
-open /usr/data/out0w1280-h720-rgba8888.bin and write ok
+im2d copy ..											//RGA运行模式
+open file												//src文件的状态，如果/usr/data/目录下没有对应文件这里会报错
+copying .... Run successfully							//标志运行成功
+open /usr/data/out0w1280-h720-rgba8888.bin and write ok	//输出文件名以及目录
 ```
 
 > 当需要查看RGA运行更加详细的日志时，Android系统可以通过设置属性vendor.rga.log（Android 8及以下是sys.rga.log）来打开RGA配置log打印：
