@@ -1291,8 +1291,8 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         src.height = srect.height;
         /* for imcrop_t api */
         if (usage & IM_CROP) {
-            dst.width = srect.width;
-            dst.height = srect.height;
+            dst.width = srect.width < dst.width ? srect.width : dst.width;
+            dst.height = srect.height < dst.height ? srect.height : dst.height;
         }
     }
 
