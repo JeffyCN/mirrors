@@ -70,6 +70,7 @@ namespace android {
         int         RkRgaGetBufferFd(bo_t *bo_info, int *fd);
 #else
         int         RkRgaGetBufferFd(buffer_handle_t handle, int *fd);
+        int         RkRgaGetHandleMapCpuAddress(buffer_handle_t handle, void **buf);
 #endif
         int         RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1);
         int         RkRgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1);

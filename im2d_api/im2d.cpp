@@ -177,7 +177,7 @@ IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
         ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(hnd));
 
     if (buffer.fd <= 0) {
-        ret = RkRgaGetHandleMapAddress(hnd, &buffer.vir_addr);
+        ret = rkRga.RkRgaGetHandleMapCpuAddress(hnd, &buffer.vir_addr);
         if(!buffer.vir_addr) {
             ALOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
             imErrorMsg("invaild GraphicBuffer, can not get fd and virtual address.");
@@ -219,7 +219,7 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
         ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(buf->handle));
 
     if (buffer.fd <= 0) {
-        ret = RkRgaGetHandleMapAddress(buf->handle, &buffer.vir_addr);
+        ret = rkRga.RkRgaGetHandleMapCpuAddress(buf->handle, &buffer.vir_addr);
         if(!buffer.vir_addr) {
             ALOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
             imErrorMsg("invaild GraphicBuffer, can not get fd and virtual address.");
@@ -257,7 +257,7 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
         ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(gbuffer->handle));
 
     if (buffer.fd <= 0) {
-        ret = RkRgaGetHandleMapAddress(gbuffer->handle, &buffer.vir_addr);
+        ret = rkRga.RkRgaGetHandleMapCpuAddress(gbuffer->handle, &buffer.vir_addr);
         if(!buffer.vir_addr) {
             ALOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
             imErrorMsg("invaild GraphicBuffer, can not get fd and virtual address.");

@@ -19,6 +19,10 @@
 
 #include "GrallocOps.h"
 
+#if USE_GRALLOC_4
+
+#else //old gralloc 0.3
+
 gralloc_module_t const *mAllocMod = NULL;
 
 #ifdef RK3368
@@ -213,6 +217,8 @@ int RkRgaGetHandleMapAddress(buffer_handle_t handle,
 
     return ret;
 }
+
+#endif //USE_GRALLOC_4
 
 int RkRgaGetRgaFormat(int format) {
     switch (format) {

@@ -247,6 +247,12 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         ret = RkRgaGetHandleFd(handle, fd);
         return ret;
     }
+
+	int RockchipRga::RkRgaGetHandleMapCpuAddress(buffer_handle_t handle, void **buf) {
+		int ret = 0;
+		ret = RkRgaGetHandleMapAddress(handle, buf);
+		return ret;
+	}
 #endif
 
     int RockchipRga::RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {

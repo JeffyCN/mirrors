@@ -25,15 +25,10 @@
 #include <vector>
 #include <sys/types.h>
 
-//#include <system/window.h>
 #include <system/graphics.h>
 
 #include <utils/Thread.h>
 
-#include <EGL/egl.h>
-#include <GLES/gl.h>
-
-//////////////////////////////////////////////////////////////////////////////////
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -62,6 +57,10 @@
 #ifndef RK_FORMAT_YCrCb_420_SP_10B
 #define RK_FORMAT_YCrCb_420_SP_10B  0x21
 #endif
+
+#if USE_GRALLOC_4
+
+#else //old gralloc 0.3
 
 #ifndef RK3368
 
@@ -92,6 +91,8 @@
 #endif
 #endif
 
+#endif //USE_GRALLOC_4
+
 // -------------------------------------------------------------------------------
 int         RkRgaGetHandleFd(buffer_handle_t handle, int *fd);
 int         RkRgaGetHandleAttributes(buffer_handle_t handle,
@@ -100,6 +101,7 @@ int         RkRgaGetHandleMapAddress(buffer_handle_t handle,
                                      void **buf);
 
 int         RkRgaGetRgaFormat(int format);
-#endif
 
-#endif
+#endif  //Android
+
+#endif  //_rk_graphic_buffer_h_

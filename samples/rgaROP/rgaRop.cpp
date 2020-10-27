@@ -61,7 +61,9 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <linux/stddef.h>
-#include "RockchipFileOps.h"
+
+#include "RockchipRga.h"
+#include "RgaUtils.h"
 ///////////////////////////////////////////////////////
 using namespace android;
 int main() {
