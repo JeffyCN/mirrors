@@ -176,10 +176,10 @@ typedef enum {
 
 /* Rectangle definition */
 typedef struct {
-    int x = 0;        /* upper-left x */
-    int y = 0;        /* upper-left y */
-    int width = 0;    /* width */
-    int height = 0;   /* height */
+    int x;        /* upper-left x */
+    int y;        /* upper-left y */
+    int width;    /* width */
+    int height;   /* height */
 } im_rect;
 
 typedef struct im_nn {
