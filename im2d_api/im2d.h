@@ -17,6 +17,9 @@
  * limitations under the License.
  */
 
+#ifndef _im2d_h_
+#define _im2d_h_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -158,6 +161,7 @@ typedef enum {
     RGA_SCALE_LIMIT,
     RGA_INPUT_FORMAT,
     RGA_OUTPUT_FORMAT,
+    RGA_EXPECTED,
     RGA_ALL,
 } IM_INFORMATION;
 
@@ -295,7 +299,9 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
  *
  * @returns a string describing properties of RGA.
  */
+
 IM_API const char* querystring(int name);
+
 
 /*
  * check RGA basic information, supported resolution, supported format, etc.
@@ -770,3 +776,5 @@ IM_API IM_STATUS imsync(void);
 #ifdef __cplusplus
 }
 #endif
+#endif /* _im2d_h_ */
+

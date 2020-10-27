@@ -16,6 +16,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef _im2d_hpp_
+#define _im2d_hpp_
 
 #include "im2d.h"
 #include "RgaUtils.h"
@@ -32,7 +34,8 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
 #if USE_AHARDWAREBUFFER
 #include <android/hardware_buffer.h>
 IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf);
-#endif
 
-#endif
+#endif /* USE_AHARDWAREBUFFER */
+#endif /* ANDROID */
+#endif /* _im2d_hpp_ */
 
