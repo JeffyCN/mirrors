@@ -39,6 +39,7 @@ cc_library_shared {
         "core/NormalRga.cpp",
         "core/NormalRgaApi.cpp",
         "core/RgaUtils.cpp",
+        "core/platform_gralloc4.cpp",
         "im2d_api/im2d.cpp"
     ],
     export_include_dirs: [
@@ -51,15 +52,23 @@ cc_library_shared {
         "hardware/libhardware/include/hardware",
         "hardware/libhardware/modules/gralloc",
         "system/core/liblog/include",
+        "system/core/libsync",
+        "system/core/libsync/include",
+        "hardware/rockchip/libgralloc/bifrost",
+        "hardware/rockchip/libgralloc/bifrost/src",
     ],
 
     shared_libs: [
         "liblog",
         "libui",
+        "libutils",
         "libcutils",
         "libhardware",
         "libdrm",
-		"libion",
+        "libsync",
+        "libgralloctypes",
+        "libhidlbase",
+        "android.hardware.graphics.mapper@4.0",
     ],
 
     cflags: ["-Wno-error"] +["-DLOG_TAG=\"librga\""] + ["-DRK_DRM_GRALLOC=1"] + ["-DANDROID_8"] + ["-DANDROID_7_DRM"] + ["-DUSE_AHARDWAREBUFFER=1"] + ["-DANDROID"],
