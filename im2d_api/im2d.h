@@ -114,7 +114,11 @@ typedef enum {
     IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_10   = 1 << 23,
     IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUYV     = 1 << 24,
     IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV400   = 1 << 25,
-    IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_MASK     = 0x3f00000
+    IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_MASK     = 0x3f00000,
+    IM_RGA_INFO_PERFORMANCE_300         = 1 << 26,
+    IM_RGA_INFO_PERFORMANCE_520         = 1 << 27,
+    IM_RGA_INFO_PERFORMANCE_600         = 1 << 28,
+    IM_RGA_INFO_PERFORMANCE_MASK        = 0x1C000000,
 } IM_RGA_INFO_USAGE;
 
 /* Status codes, returned by any blit function */
@@ -295,13 +299,12 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
  *      RGA_MAX_OUTPUT
  *      RGA_INPUT_FORMAT
  *      RGA_OUTPUT_FORMAT
+ *      RGA_EXPECTED
  *      RGA_ALL
  *
  * @returns a string describing properties of RGA.
  */
-
 IM_API const char* querystring(int name);
-
 
 /*
  * check RGA basic information, supported resolution, supported format, etc.

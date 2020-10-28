@@ -402,6 +402,7 @@ IM_API long rga_get_info() {
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
+            usage |= IM_RGA_INFO_PERFORMANCE_300;
             break;
         case RGA_1_PLUS :
             usage |= IM_RGA_INFO_VERSION_RGA_1_PLUS;
@@ -413,6 +414,7 @@ IM_API long rga_get_info() {
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
+            usage |= IM_RGA_INFO_PERFORMANCE_300;
             break;
         case RGA_2 :
             usage |= IM_RGA_INFO_VERSION_RGA_2;
@@ -423,6 +425,7 @@ IM_API long rga_get_info() {
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
+            usage |= IM_RGA_INFO_PERFORMANCE_600;
             break;
         case RGA_2_LITE0 :
             usage |= IM_RGA_INFO_VERSION_RGA_2_LITE0;
@@ -433,6 +436,7 @@ IM_API long rga_get_info() {
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
+            usage |= IM_RGA_INFO_PERFORMANCE_520;
             break;
         case RGA_2_LITE1 :
             usage |= IM_RGA_INFO_VERSION_RGA_2_LITE1;
@@ -444,6 +448,7 @@ IM_API long rga_get_info() {
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_10;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
+            usage |= IM_RGA_INFO_PERFORMANCE_520;
             break;
         case RGA_2_ENHANCE :
             usage |= IM_RGA_INFO_VERSION_RGA_2_ENHANCE;
@@ -456,6 +461,7 @@ IM_API long rga_get_info() {
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUYV;
+            usage |= IM_RGA_INFO_PERFORMANCE_600;
             break;
         case RGA_V_ERR :
             usage = IM_STATUS_FAILED;
@@ -484,7 +490,8 @@ IM_API const char* querystring(int name) {
         "Max output            : ",
         "Scale limit           : ",
         "Input support format  : ",
-        "output support format : "
+        "output support format : ",
+        "expected performance  : ",
     };
     const char *version_name[] = {
         "librga version        : ",
@@ -518,6 +525,12 @@ IM_API const char* querystring(int name) {
         "YUV420_10bit/YUV422_10bit ",
         "YUYV ",
         "YUV400/Y4 "
+    };
+    const char *performance[] = {
+        "unknown",
+        "300M pix/s ",
+        "520M pix/s ",
+        "600M pix/s ",
     };
     ostringstream out;
     static string info;
@@ -656,6 +669,23 @@ IM_API const char* querystring(int name) {
                 if(!(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_MASK))
                     out << output_format[RGA_V_ERR];
                 out << endl;
+                break;
+
+            case RGA_EXPECTED :
+				switch(usage & IM_RGA_INFO_PERFORMANCE_MASK) {
+                    case IM_RGA_INFO_PERFORMANCE_300 :
+                        out << output_name[name] << performance[1] << endl;
+                        break;
+                    case IM_RGA_INFO_PERFORMANCE_520 :
+                        out << output_name[name] << performance[2] << endl;
+                        break;
+                    case IM_RGA_INFO_PERFORMANCE_600 :
+                        out << output_name[name] << performance[3] << endl;
+                        break;
+                    default :
+                        out << output_name[name] << performance[RGA_V_ERR] << endl;
+                        break;
+                }
                 break;
 
             case RGA_ALL :
