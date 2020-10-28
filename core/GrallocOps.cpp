@@ -21,6 +21,106 @@
 
 #if USE_GRALLOC_4
 
+#include "src/mali_gralloc_formats.h"
+#include "platform_gralloc4.h"
+
+int RkRgaGetHandleFd(buffer_handle_t handle, int *fd) {
+    int err = 0;
+
+    err = gralloc4::get_share_fd(handle, fd);
+    if (err != android::OK)
+    {
+        ALOGE("Failed to get buffer share_fd, err : %d", err);
+        return -1;
+    }
+
+    return err;
+}
+
+int RkRgaGetHandleAttributes(buffer_handle_t handle,
+                             std::vector<int> *attrs) {
+    uint64_t w, h, size;
+    int pixel_stride, format;
+    int err = 0;
+
+    err = gralloc4::get_width(handle, &w);
+    if (err != android::OK)
+    {
+        ALOGE("Failed to get buffer width, err : %d", err);
+        return -1;
+    }
+
+    err = gralloc4::get_height(handle, &h);
+    if (err != android::OK)
+    {
+        ALOGE("Failed to get buffer height, err : %d", err);
+        return -1;
+    }
+
+    err = gralloc4::get_pixel_stride(handle, &pixel_stride);
+    if (err != android::OK)
+    {
+        ALOGE("Failed to get buffer pixel_stride, err : %d", err);
+        return -1;
+    }
+
+    err = gralloc4::get_format_requested(handle, &format);
+    if (err != android::OK)
+    {
+        ALOGE("Failed to get buffer format, err : %d", err);
+        return -1;
+    }
+
+    err = gralloc4::get_allocation_size(handle, &size);
+    if (err != android::OK)
+    {
+        ALOGE("Failed to get buffer size, err : %d", err);
+        return -1;
+    }
+
+    //add to attrs.
+    attrs->emplace_back(w);
+    attrs->emplace_back(h);
+    attrs->emplace_back(pixel_stride);
+    attrs->emplace_back(format);
+    attrs->emplace_back(size);
+
+    return err;
+}
+
+int RkRgaGetHandleMapAddress(buffer_handle_t handle,
+                             void **buf) {
+    int err;
+    uint64_t w, h;
+
+    err = gralloc4::get_width(handle, &w);
+    if (err != android::OK)
+    {
+        ALOGE("Failed to get buffer width, err : %d", err);
+        return -1;
+    }
+
+    err = gralloc4::get_height(handle, &h);
+    if (err != android::OK)
+    {
+        ALOGE("Failed to get buffer height, err : %d", err);
+        return -1;
+    }
+
+    err = gralloc4::lock(handle, GRALLOC_USAGE_SW_READ_MASK, 0, 0, w, h,
+                    buf);
+    if (err != android::OK)
+    {
+        ALOGE("Failed to lock buffer, err : %d", err);
+        return -1;
+    }
+
+    gralloc4::unlock(handle);
+
+    return err;
+}
+
+/* ========================================================================== */
 #else //old gralloc 0.3
 
 gralloc_module_t const *mAllocMod = NULL;

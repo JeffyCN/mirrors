@@ -30,8 +30,13 @@ func globalDefaults(ctx android.BaseContext) ([]string) {
 	//该打印输出为: TARGET_PRODUCT:rk3328 fmt.Println("TARGET_PRODUCT:",ctx.AConfig().Getenv("TARGET_PRODUCT")) //通过 strings.EqualFold 比较字符串，可参考go语言字符串对比
 	if (strings.EqualFold(ctx.AConfig().Getenv("TARGET_BOARD_PLATFORM"),"rk3368") ) {
 	//添加 DEBUG 宏定义
-        cppflags = append(cppflags,"-DRK3368=1 -DANDROID")
+        cppflags = append(cppflags,"-DRK3368=1")
 	}
+
+    if (strings.EqualFold(ctx.AConfig().Getenv("TARGET_BOARD_PLATFORM"),"rk3326") ) {
+        cppflags = append(cppflags,"-DUSE_GRALLOC_4")
+    }
+
 	//将需要区分的环境变量在此区域添加 //....
 	return cppflags
 }
