@@ -58,41 +58,6 @@
 #define RK_FORMAT_YCrCb_420_SP_10B  0x21
 #endif
 
-#if USE_GRALLOC_4
-
-#else //old gralloc 0.3
-
-#ifndef RK3368
-
-#ifdef ANDROID_7_DRM
-#include <hardware/gralloc.h>
-#else
-#include <gralloc_priv.h>
-#endif
-
-#else
-#include <hardware/gralloc.h>
-#include <hardware/img_gralloc_public.h>
-
-#ifndef GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD
-#define GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD 0x08100002
-#endif
-
-#ifndef GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES
-#define GRALLOC_MODULE_PERFORM_GET_HADNLE_ATTRIBUTES 0x08100004
-#endif
-
-#ifndef GRALLOC_MODULE_PERFORM_GET_INTERNAL_FORMAT
-#define GRALLOC_MODULE_PERFORM_GET_INTERNAL_FORMAT 0x08100006
-#endif
-
-#ifndef GRALLOC_MODULE_PERFORM_GET_USAGE
-#define GRALLOC_MODULE_PERFORM_GET_USAGE 0x0feeff03
-#endif
-#endif
-
-#endif //USE_GRALLOC_4
-
 // -------------------------------------------------------------------------------
 int         RkRgaGetHandleFd(buffer_handle_t handle, int *fd);
 int         RkRgaGetHandleAttributes(buffer_handle_t handle,
