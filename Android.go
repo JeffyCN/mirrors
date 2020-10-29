@@ -18,12 +18,14 @@ func DefaultsFactory() (android.Module) {
 
 func Defaults(ctx android.LoadHookContext) {
     type props struct {
+		Srcs []string
         Cflags []string
 		Shared_libs []string
 		Include_dirs []string
     }
 
     p := &props{}
+	p.Srcs = getSrcs(ctx)
     p.Cflags = getCflags(ctx)
 	p.Shared_libs = getSharedLibs(ctx)
 	p.Include_dirs = getIncludeDirs(ctx)
@@ -84,3 +86,16 @@ func getIncludeDirs(ctx android.BaseContext) ([]string) {
     return dirs
 }
 
+func getSrcs(ctx android.BaseContext) ([]string) {
+    var src []string
+
+    sdkVersion := ctx.AConfig().PlatformSdkVersionInt()
+
+    if (strings.EqualFold(ctx.AConfig().Getenv("TARGET_BOARD_PLATFORM"),"rk3326") ) {
+        if (sdkVersion >= 30 ) {
+            src = append(src, "core/platform_gralloc4.cpp")
+        }
+    }
+
+    return src
+}

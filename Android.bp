@@ -39,7 +39,6 @@ cc_library_shared {
         "core/NormalRga.cpp",
         "core/NormalRgaApi.cpp",
         "core/RgaUtils.cpp",
-        "core/platform_gralloc4.cpp",
         "im2d_api/im2d.cpp"
     ],
     export_include_dirs: [
