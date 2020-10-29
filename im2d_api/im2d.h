@@ -134,14 +134,14 @@ typedef enum {
 
 /* Status codes, returned by any blit function */
 typedef enum {
-    IM_YUV_TO_RGB_BT601_LIMIT     = 1 << 0,
-    IM_YUV_TO_RGB_BT601_FULL      = 2 << 0,
+    IM_YUV_TO_RGB_BT601_FULL      = 1 << 0,
+    IM_YUV_TO_RGB_BT601_LIMIT     = 2 << 0,
     IM_YUV_TO_RGB_BT709_LIMIT     = 3 << 0,
     IM_YUV_TO_RGB_MASK            = 3 << 0,
-    IM_RGB_TO_YUV_BT601_LIMIT     = 1 << 4,
-    IM_RGB_TO_YUV_BT601_FULL      = 2 << 4,
-    IM_RGB_TO_YUV_BT709_LIMIT     = 3 << 4,
-    IM_RGB_TO_YUV_MASK            = 3 << 4,
+    IM_RGB_TO_YUV_BT601_LIMIT     = 1 << 2,
+    IM_RGB_TO_YUV_BT601_FULL      = 2 << 2,
+    IM_RGB_TO_YUV_BT709_LIMIT     = 3 << 2,
+    IM_RGB_TO_YUV_MASK            = 3 << 2,
     IM_COLOR_SPACE_DEFAULT        = 0,
 } IM_COLOR_SPACE_MODE;
 
