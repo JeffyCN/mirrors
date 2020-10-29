@@ -19,13 +19,20 @@ func DefaultsFactory() (android.Module) {
 func Defaults(ctx android.LoadHookContext) {
     type props struct {
         Cflags []string
+		Shared_libs []string
+		Include_dirs []string
     }
+
     p := &props{}
-    p.Cflags = globalDefaults(ctx)
+    p.Cflags = getCflags(ctx)
+	p.Shared_libs = getSharedLibs(ctx)
+	p.Include_dirs = getIncludeDirs(ctx)
+
     ctx.AppendProperties(p)
 }
+
 //条件编译主要修改函数
-func globalDefaults(ctx android.BaseContext) ([]string) {
+func getCflags(ctx android.BaseContext) ([]string) {
 	var cppflags []string
 
 	sdkVersion := ctx.AConfig().PlatformSdkVersionInt()
@@ -45,3 +52,35 @@ func globalDefaults(ctx android.BaseContext) ([]string) {
 	//将需要区分的环境变量在此区域添加 //....
 	return cppflags
 }
+
+func getSharedLibs(ctx android.BaseContext) ([]string) {
+    var libs []string
+
+    sdkVersion := ctx.AConfig().PlatformSdkVersionInt()
+
+    if (strings.EqualFold(ctx.AConfig().Getenv("TARGET_BOARD_PLATFORM"),"rk3326") ) {
+        if (sdkVersion >= 30 ) {
+            libs = append(libs, "libgralloctypes")
+            libs = append(libs, "libhidlbase")
+			libs = append(libs, "android.hardware.graphics.mapper@4.0")
+        }
+    }
+
+    return libs
+}
+
+func getIncludeDirs(ctx android.BaseContext) ([]string) {
+    var dirs []string
+
+    sdkVersion := ctx.AConfig().PlatformSdkVersionInt()
+
+    if (strings.EqualFold(ctx.AConfig().Getenv("TARGET_BOARD_PLATFORM"),"rk3326") ) {
+        if (sdkVersion >= 30 ) {
+			dirs = append(dirs, "hardware/rockchip/libgralloc/bifrost")
+			dirs = append(dirs, "hardware/rockchip/libgralloc/bifrost/src")
+        }
+    }
+
+    return dirs
+}
+
