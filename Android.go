@@ -27,14 +27,19 @@ func Defaults(ctx android.LoadHookContext) {
 //条件编译主要修改函数
 func globalDefaults(ctx android.BaseContext) ([]string) {
 	var cppflags []string
+
+	sdkVersion := ctx.AConfig().PlatformSdkVersionInt()
+
 	//该打印输出为: TARGET_PRODUCT:rk3328 fmt.Println("TARGET_PRODUCT:",ctx.AConfig().Getenv("TARGET_PRODUCT")) //通过 strings.EqualFold 比较字符串，可参考go语言字符串对比
 	if (strings.EqualFold(ctx.AConfig().Getenv("TARGET_BOARD_PLATFORM"),"rk3368") ) {
 	//添加 DEBUG 宏定义
         cppflags = append(cppflags,"-DRK3368=1")
 	}
 
-    if (strings.EqualFold(ctx.AConfig().Getenv("TARGET_BOARD_PLATFORM"),"rk3326") ) {
-        cppflags = append(cppflags,"-DUSE_GRALLOC_4")
+	if (strings.EqualFold(ctx.AConfig().Getenv("TARGET_BOARD_PLATFORM"),"rk3326") ) {
+		if (sdkVersion >= 30 ) {
+			cppflags = append(cppflags,"-DUSE_GRALLOC_4")
+		}
     }
 
 	//将需要区分的环境变量在此区域添加 //....
