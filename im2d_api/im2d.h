@@ -290,6 +290,23 @@ IM_API rga_buffer_t wrapbuffer_physicaladdr_t(void* phy_addr, int width, int hei
 IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, int hstride, int format);
 
 /*
+ * Get RGA basic information, supported resolution, supported format, etc.
+ *
+ * @param name
+ *      RGA_VENDOR
+ *      RGA_VERSION
+ *      RGA_MAX_INPUT
+ *      RGA_MAX_OUTPUT
+ *      RGA_INPUT_FORMAT
+ *      RGA_OUTPUT_FORMAT
+ *      RGA_EXPECTED
+ *      RGA_ALL
+ *
+ * @returns a usage describing properties of RGA.
+ */
+IM_API long rga_get_info();
+
+/*
  * Query RGA basic information, supported resolution, supported format, etc.
  *
  * @param name

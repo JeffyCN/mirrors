@@ -24,15 +24,16 @@
 #include <unistd.h>
 #include <getopt.h>
 #include "args.h"
-#include "im2d_api/im2d.h"
+#include "im2d_api/im2d.hpp"
 
 void help_function() {
     printf("\n=============================================================================================\n");
-    printf( "   usage: rgaImDemo [--help/-h] [--querystring/--querystring=<options>]\n"
+    printf( "   usage: rgaImDemo [--help/-h] [--while/-w=(time)] [--querystring/--querystring=<options>]\n"
             "                    [--copy] [--resize=<up/down>] [--crop] [--rotate=90/180/270]\n"
             "                    [--flip=H/V] [--translate] [--blend] [--cvtcolor]\n"
             "                    [--fill=blue/green/red]\n");
     printf( "\t --help/-h     Call help\n"
+            "\t --while/w     Set the loop mode. Users can set the number of cycles by themselves.\n"
             "\t --querystring You can print the version or support information corresponding to the current version of RGA according to the options.\n"
             "\t               If there is no input options, all versions and support information of the current version of RGA will be printed.\n"
             "\t               <options>:\n"
@@ -43,6 +44,7 @@ void help_function() {
             "\t               scalelimit   \tPrint scale limit.\n"
             "\t               inputformat  \tPrint supported input formats.\n"
             "\t               outputformat \tPrint supported output formats.\n"
+            "\t               expected     \tPrint expected performance.\n"
             "\t               all          \tPrint all information.\n"
             "\t --copy        Copy the image by RGA.The default is 720p to 720p.\n"
             "\t --resize      resize the image by RGA.You can choose to up(720p->1080p) or down(720p->480p).\n"
@@ -56,11 +58,9 @@ void help_function() {
     printf("=============================================================================================\n\n");
 }
 
-MODE_CODE readArguments(int argc, char *argv[], int* parm) {
-    int opt = 0;
-    int option_index = 0;
-
-    char string[] = "h";
+int readArguments(int argc, char *argv[], int* parm) {
+    int opt = 0, option_index = 0, mode_code = 0;
+    char string[] = "hw:";
     static struct option mode_options[] = {
         { "querystring", optional_argument, NULL, MODE_QUERYSTRING_CHAR   },
         {        "copy",       no_argument, NULL, MODE_COPY_CHAR          },
@@ -73,11 +73,12 @@ MODE_CODE readArguments(int argc, char *argv[], int* parm) {
         {    "cvtcolor",       no_argument, NULL, MODE_CVTCOLOR_CHAR      },
         {        "fill", required_argument, NULL, MODE_FILL_CHAR          },
         {        "help",       no_argument, NULL, 'h'                     },
-        {         NULL,                 0, NULL, 0                       },
+        {		"while", required_argument, NULL, 'w'                     },
+        {         NULL ,                 0, NULL, 0                       },
     };
 
     while((opt = getopt_long(argc, argv, string, mode_options, &option_index))!= -1) {
-        printf("Start selecting mode\n");
+        printf("Start selecting mode %x\n", mode_code);
         switch (opt) {
             case MODE_QUERYSTRING_CHAR :
                 printf("im2d querystring ..\n");
@@ -85,13 +86,15 @@ MODE_CODE readArguments(int argc, char *argv[], int* parm) {
                 if (optarg != NULL)
                     parm[MODE_QUERYSTRING] = readInfo(optarg);
                 else
-                    parm[MODE_QUERYSTRING] = INFO_ALL;
+                    parm[MODE_QUERYSTRING] = RGA_ALL;
 
                 return MODE_QUERYSTRING;
 
             case MODE_COPY_CHAR :
                 printf("im2d copy ..\n");
-                return MODE_COPY;
+
+                mode_code |= MODE_COPY;
+                return mode_code;
 
             case MODE_RESIZE_CHAR :
                 printf("im2d resize ..\n");
@@ -101,11 +104,14 @@ MODE_CODE readArguments(int argc, char *argv[], int* parm) {
                 if (parm[MODE_RESIZE] == -1)
                     goto out;
 
-                return MODE_RESIZE;
+                mode_code |= MODE_RESIZE;
+                return mode_code;
 
             case MODE_CROP_CHAR :
                 printf("im2d crop ..\n");
-                return MODE_CROP;
+
+                mode_code |= MODE_CROP;
+                return mode_code;
 
             case MODE_ROTATE_CHAR :
                 printf("im2d rotate ..\n");
@@ -115,7 +121,8 @@ MODE_CODE readArguments(int argc, char *argv[], int* parm) {
                 if (parm[MODE_ROTATE] == -1)
                     goto out;
 
-                return MODE_ROTATE;
+                mode_code |= MODE_ROTATE;
+                return mode_code;
 
             case MODE_FLIP_CHAR :
                 printf("im2d flip ..\n");
@@ -125,19 +132,26 @@ MODE_CODE readArguments(int argc, char *argv[], int* parm) {
                 if (parm[MODE_FLIP] == -1)
                     goto out;
 
-                return MODE_FLIP;
+                mode_code |= MODE_FLIP;
+                return mode_code;
 
             case MODE_TRANSLATE_CHAR :
                 printf("im2d translate ..\n");
-                return MODE_TRANSLATE;
+
+                mode_code |= MODE_TRANSLATE;
+                return mode_code;
 
             case MODE_BLEND_CHAR :
                 printf("im2d blend ..\n");
-                return MODE_BLEND;
+
+                mode_code |= MODE_BLEND;
+                return mode_code;
 
             case MODE_CVTCOLOR_CHAR :
                 printf("im2d cvtcolor ..\n");
-                return MODE_CVTCOLOR;
+
+                mode_code |= MODE_CVTCOLOR;
+                return mode_code;
 
             case MODE_FILL_CHAR :
                 printf("im2d fill ..\n");
@@ -147,16 +161,31 @@ MODE_CODE readArguments(int argc, char *argv[], int* parm) {
                 if (parm[MODE_FILL] == -1)
                     goto out;
 
-                return MODE_FILL;
+                mode_code |= MODE_FILL;
+                return mode_code;
 
             case 'h' :
                 help_function();
-                return MODE_NONE;
+                mode_code |= MODE_NONE;
+                return mode_code;
+
+            case 'w' :
+                printf("im2d while .. ");
+
+                if (optarg != NULL)
+                    parm[MODE_WHILE] = atoi(optarg);
+                if (parm[MODE_WHILE] == 0) {
+                    printf("Option must be a non-zero number.\n");
+                    break;
+                }
+
+                printf("%d time.\n", parm[MODE_WHILE]);
+                mode_code |= WHILE_FLAG;
+                break;
 
             default :
                 printf("%s, no options!\n", __FUNCTION__);
-                help_function();
-                return MODE_NONE;
+                goto out;
         }
     }
 out:
@@ -164,34 +193,37 @@ out:
     return MODE_NONE;
 }
 
-QUERYSTRING_INFO readInfo(char* targ) {
+IM_INFORMATION readInfo(char* targ) {
     if (strcmp(targ,"d") == 0 || strcmp(targ,"vendor") == 0 ) {
         printf("im2d querystring .. vendor ...\n");
-        return INFO_VENDOR;
+        return RGA_VENDOR;
     } else if (strcmp(targ,"v") == 0 || strcmp(targ,"version") == 0 ) {
         printf("im2d querystring .. vendor ...\n");
-        return INFO_VERSION;
+        return RGA_VERSION;
     } else if (strcmp(targ,"i") == 0 || strcmp(targ,"maxinput") == 0 ) {
         printf("im2d querystring .. max input ...\n");
-        return INFO_MAX_INPUT;
+        return RGA_MAX_INPUT;
     } else if (strcmp(targ,"o") == 0 || strcmp(targ,"maxoutput") == 0 ) {
         printf("im2d querystring .. max output ...\n");
-        return INFO_MAX_OUTPUT;
+        return RGA_MAX_OUTPUT;
     } else if (strcmp(targ,"s") == 0 || strcmp(targ,"scalelimit") == 0 ) {
         printf("im2d querystring .. scale limit ...\n");
-        return INFO_SCALE_LIMIT;
+        return RGA_SCALE_LIMIT;
     } else if (strcmp(targ,"n") == 0 || strcmp(targ,"inputformat") == 0 ) {
         printf("im2d querystring .. input format ...\n");
-        return INFO_INPUT_FORMAT;
+        return RGA_INPUT_FORMAT;
     } else if (strcmp(targ,"u") == 0 || strcmp(targ,"outputformat") == 0 ) {
         printf("im2d querystring .. output format ...\n");
-        return INFO_OUTPUT_FORMAT;
+        return RGA_OUTPUT_FORMAT;
+    } else if (strcmp(targ,"e") == 0 || strcmp(targ,"expected") == 0 ) {
+        printf("im2d querystring .. expected ...\n");
+        return RGA_EXPECTED;
     } else if (strcmp(targ,"a") == 0 || strcmp(targ,"all") == 0 || strcmp(targ," ") == 0) {
         printf("im2d querystring .. all ...\n");
-        return INFO_ALL;
+        return RGA_ALL;
     } else {
         printf("%s, Invalid instruction\n", __FUNCTION__);
-        return INFO_ERR;
+        return RGA_ALL;
     }
 }
 

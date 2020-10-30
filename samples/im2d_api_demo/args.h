@@ -20,6 +20,8 @@
 #ifndef ARGS_H
 #define ARGS_H
 
+#include "im2d_api/im2d.hpp"
+
 typedef enum _mode_code {
     MODE_QUERYSTRING = 0,
     MODE_COPY,
@@ -31,21 +33,10 @@ typedef enum _mode_code {
     MODE_BLEND,
     MODE_CVTCOLOR,
     MODE_FILL,
+    MODE_WHILE,
     MODE_NONE,
     MODE_MAX
 } MODE_CODE;
-
-typedef enum {
-    INFO_VENDOR = 0,
-    INFO_VERSION,
-    INFO_MAX_INPUT,
-    INFO_MAX_OUTPUT,
-    INFO_SCALE_LIMIT,
-    INFO_INPUT_FORMAT,
-    INFO_OUTPUT_FORMAT,
-    INFO_ALL,
-    INFO_ERR
-} QUERYSTRING_INFO;
 
 #define MODE_QUERYSTRING_CHAR     (char) (MODE_QUERYSTRING+'0')
 #define MODE_COPY_CHAR            (char) (MODE_COPY       +'0')
@@ -62,9 +53,10 @@ typedef enum {
 #define BLUE_COLOR  0xffff0000
 #define GREEN_COLOR 0xff00ff00
 #define RED_COLOR   0xff0000ff
+#define WHILE_FLAG  (1 << 7)
 
-MODE_CODE readArguments(int argc, char *argv[], int* parm);
-QUERYSTRING_INFO readInfo(char* targ);
+int readArguments(int argc, char *argv[], int* parm);
+IM_INFORMATION readInfo(char* targ);
 int readParm(char* targ);
 
 #endif
