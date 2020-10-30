@@ -33,17 +33,22 @@
 extern "C"{
 #endif
 
-
-int c_RkRgaInit();
+int  c_RkRgaInit();
 void c_RkRgaDeInit();
+int  c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
+int  c_RkRgaColorFill(rga_info_t *dst);
+int  c_RgaFlush();
+
+
+#ifndef ANDROID //linux
 int c_RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp);
 int c_RkRgaGetAllocBufferCache(bo_t *bo_info, int width, int height, int bpp);
 int c_RkRgaGetMmap(bo_t *bo_info);
 int c_RkRgaUnmap(bo_t *bo_info);
 int c_RkRgaFree(bo_t *bo_info);
 int c_RkRgaGetBufferFd(bo_t *bo_info, int *fd);
-int c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
-int c_RkRgaColorFill(rga_info_t *dst);
+#endif /* ANDROID */
+
 #ifdef __cplusplus
 }
 #endif

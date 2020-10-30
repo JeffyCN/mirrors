@@ -56,8 +56,8 @@ namespace android {
         }
 
         int         RkRgaInit();
-#ifndef ANDROID /* LINUX */
         void        RkRgaDeInit();
+#ifndef ANDROID /* LINUX */
         int         RkRgaAllocBuffer(int drm_fd /* input */, bo_t *bo_info,
                                      int width, int height, int bpp, int flags);
         int         RkRgaFreeBuffer(int drm_fd /* input */, bo_t *bo_info);

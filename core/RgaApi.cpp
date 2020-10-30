@@ -34,6 +34,24 @@ void c_RkRgaDeInit()
     c_rkRga.RkRgaDeInit();
 }
 
+int c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1)
+{
+    int ret;
+    ret = c_rkRga.RkRgaBlit(src, dst, NULL);
+    return ret ;
+}
+
+int c_RkRgaColorFill(rga_info_t *dst)
+{
+    return c_rkRga.RkRgaCollorFill(dst);
+}
+
+int c_RgaFlush(rga_info_t *dst)
+{
+    return c_rkRga.RkRgaFlush();
+}
+
+#ifndef ANDROID /* linux */
 int c_RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp)
 {
     c_rkRga.RkRgaGetAllocBuffer(bo_info, width, height, bpp);
@@ -69,16 +87,5 @@ int c_RkRgaGetBufferFd(bo_t *bo_info, int *fd)
     c_rkRga.RkRgaGetBufferFd(bo_info, fd);
     return 0;
 }
-
-int c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1)
-{
-    int ret;
-    ret = c_rkRga.RkRgaBlit(src, dst, NULL);
-    return ret ;
-}
-
-int c_RkRgaColorFill(rga_info_t *dst)
-{
-    return c_rkRga.RkRgaCollorFill(dst);
-}
+#endif /* #ifndef Andorid */
 

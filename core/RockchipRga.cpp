@@ -103,7 +103,6 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         return ret;
     }
 
-#ifdef LINUX
     void RockchipRga::RkRgaDeInit() {
         if (mSupportRga)
             RgaDeInit(mContext);
@@ -111,6 +110,7 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         mSupportRga = false;
     }
 
+#ifdef LINUX
     int RockchipRga::RkRgaAllocBuffer(int drm_fd, bo_t *bo_info, int width,
                                       int height, int bpp, int flags) {
 #if LIBDRM
