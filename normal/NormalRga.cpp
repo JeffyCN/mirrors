@@ -363,16 +363,16 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1)
 			hScale = (float)relSrcRect.width / relDstRect.height;
 			vScale = (float)relSrcRect.height / relDstRect.width;
 		}
-		if (hScale < 1/16 || hScale > 16 || vScale < 1/16 || vScale > 16) {
+		if (hScale < 1.0/16 || hScale > 16 || vScale < 1.0/16 || vScale > 16) {
 			DEBUG("Error scale[%f,%f] line %d \n", hScale, vScale, __LINE__);
 			return -EINVAL;
 		}
-		if (ctx->mVersion < 2.0 && (hScale < 1/8 ||
-					hScale > 8 || vScale < 1/8 || vScale > 8)) {
+		if (ctx->mVersion < 2.0 && (hScale < 1.0/8 ||
+					hScale > 8 || vScale < 1.0/8 || vScale > 8)) {
 			DEBUG("Error scale[%f,%f] line %d \n", hScale, vScale, __LINE__);
 			return -EINVAL;
 		}
-		if (ctx->mVersion <= 1.003 && (hScale < 1/2 || vScale < 1/2)) {
+		if (ctx->mVersion <= 1.003 && (hScale < 1.0/2 || vScale < 1.0/2)) {
 			DEBUG("e scale[%f,%f] ver[%f] \n", hScale, vScale, ctx->mVersion);
 			return -EINVAL;
 		}
