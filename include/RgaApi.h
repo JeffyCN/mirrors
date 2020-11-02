@@ -33,21 +33,33 @@
 extern "C"{
 #endif
 
+/* Compatible with the old version of C interface. */
+#define RgaInit(ctx) { \
+	ctx = ctx; \
+	c_RkRgaInit(); \
+}
+#define RgaDeInit(ctx) { \
+	ctx = ctx; \
+	c_RkRgaDeInit(); \
+}
+#define RgaBlit(...) c_RkRgaBlit(__VA_ARGS__)
+#define RgaCollorFill(...) c_RkRgaColorFill(__VA_ARGS__)
+#define RgaFlush() c_RkRgaFlush()
+
 int  c_RkRgaInit();
 void c_RkRgaDeInit();
 int  c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
 int  c_RkRgaColorFill(rga_info_t *dst);
-int  c_RgaFlush();
+int  c_RkRgaFlush();
 
-
-#ifndef ANDROID //linux
+#ifndef ANDROID /* linux */
 int c_RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp);
 int c_RkRgaGetAllocBufferCache(bo_t *bo_info, int width, int height, int bpp);
 int c_RkRgaGetMmap(bo_t *bo_info);
 int c_RkRgaUnmap(bo_t *bo_info);
 int c_RkRgaFree(bo_t *bo_info);
 int c_RkRgaGetBufferFd(bo_t *bo_info, int *fd);
-#endif /* ANDROID */
+#endif /* #ifndef ANDROID */
 
 #ifdef __cplusplus
 }

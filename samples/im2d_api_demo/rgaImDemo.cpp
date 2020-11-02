@@ -26,6 +26,8 @@
 #include <math.h>
 #include <fcntl.h>
 #include <memory.h>
+#include <unistd.h>
+#include <sys/time.h>
 
 #include "RgaUtils.h"
 #include "rga.h"
@@ -57,21 +59,14 @@
 #define DST_FORMAT RK_FORMAT_RGBA_8888
 #endif
 
+struct timeval start, end;
+long usec1;
+
 #ifdef ANDROID
 enum {
     FILL_BUFF  = 0,
     EMPTY_BUFF = 1
 };
-
-struct timeval start, end;
-long usec1, volume;
-long ex_time;
-
-#define GetTimeStart() gettimeofday(start, NULL)
-#define GetTimeEnd() { \
-	gettimeofday(end, NULL); \
-    printf("cost_time=%ld us\n", 1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)); \
-}
 
 sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format) {
 #ifdef ANDROID_7_DRM
