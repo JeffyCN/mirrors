@@ -51,7 +51,7 @@ int c_RkRgaColorFill(rga_info_t *dst)
     return c_rkRga.RkRgaCollorFill(dst);
 }
 
-int c_RgaFlush()
+int c_RkRgaFlush()
 {
     return c_rkRga.RkRgaFlush();
 }
