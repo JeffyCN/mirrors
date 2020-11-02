@@ -38,6 +38,7 @@ cc_library_shared {
         "core/GrallocOps.cpp",
         "core/NormalRga.cpp",
         "core/NormalRgaApi.cpp",
+        "core/RgaApi.cpp",
         "core/RgaUtils.cpp",
         "im2d_api/im2d.cpp"
     ],

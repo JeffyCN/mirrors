@@ -20,7 +20,12 @@
 
 #include "RockchipRga.h"
 
+
+#ifndef ANDROID  /* LINUX */
 RockchipRga& c_rkRga(RockchipRga::get());
+#else
+android::RockchipRga& c_rkRga(android::RockchipRga::get());
+#endif
 
 int c_RkRgaInit()
 {
@@ -37,7 +42,7 @@ void c_RkRgaDeInit()
 int c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1)
 {
     int ret;
-    ret = c_rkRga.RkRgaBlit(src, dst, NULL);
+    ret = c_rkRga.RkRgaBlit(src, dst, src1);
     return ret ;
 }
 
@@ -46,7 +51,7 @@ int c_RkRgaColorFill(rga_info_t *dst)
     return c_rkRga.RkRgaCollorFill(dst);
 }
 
-int c_RgaFlush(rga_info_t *dst)
+int c_RgaFlush()
 {
     return c_rkRga.RkRgaFlush();
 }
