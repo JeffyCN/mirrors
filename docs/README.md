@@ -906,19 +906,19 @@ out%dw%d-h%d-%s.bin
 > --->第一个%d 是文件的索引， 一般为 0， 用于区别格式及宽高完全相同的文件
 > --->第二个%d 是宽的意思， 这里的宽一般指虚宽
 > --->第三个%d 是高的意思， 这里的高一般指虚高
-> --->第四个%s 是格式的名字， 预置的测试图像格式包括：
+> --->第四个%s 是格式的名字， 预置测试的部分常用图像格式如下：
 
-| format                            | name        |
-| :-------------------------------- | ----------- |
-| HAL_PIXEL_FORMAT_RGB_565          | "rgb565"    |
-| HAL_PIXEL_FORMAT_RGB_888          | "rgb888"    |
-| HAL_PIXEL_FORMAT_RGBA_8888        | "rgba8888"  |
-| HAL_PIXEL_FORMAT_RGBX_8888        | "rgbx8888"  |
-| HAL_PIXEL_FORMAT_BGRA_8888        | "bgra8888"  |
-| HAL_PIXEL_FORMAT_YCrCb_420_SP     | "crcb420sp" |
-| HAL_PIXEL_FORMAT_YCrCb_NV12       | "nv12"      |
-| HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO | "nv12"      |
-| HAL_PIXEL_FORMAT_YCrCb_NV12_10    | "nv12_10"   |
+| format（Android）                 | format（Linux）            | name        |
+| :-------------------------------- | -------------------------- | ----------- |
+| HAL_PIXEL_FORMAT_RGB_565          | RK_FORMAT_RGB_565          | "rgb565"    |
+| HAL_PIXEL_FORMAT_RGB_888          | RK_FORMAT_RGB_888          | "rgb888"    |
+| HAL_PIXEL_FORMAT_RGBA_8888        | RK_FORMAT_RGBA_8888        | "rgba8888"  |
+| HAL_PIXEL_FORMAT_RGBX_8888        | RK_FORMAT_RGBX_8888        | "rgbx8888"  |
+| HAL_PIXEL_FORMAT_BGRA_8888        | RK_FORMAT_BGRA_8888        | "bgra8888"  |
+| HAL_PIXEL_FORMAT_YCrCb_420_SP     | RK_FORMAT_YCrCb_420_SP     | "crcb420sp" |
+| HAL_PIXEL_FORMAT_YCrCb_NV12       | RK_FORMAT_YCbCr_420_SP     | "nv12"      |
+| HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO | /                          | "nv12"      |
+| HAL_PIXEL_FORMAT_YCrCb_NV12_10    | RK_FORMAT_YCbCr_420_SP_10B | "nv12_10"   |
 
 > demo中默认的输入图像文件分辨率为1280x720，格式为RGBA8888， 则须在/data或/usr/data目录下提前准备好名为in0w1280-h720-rgba8888.bin的源图像文件，图像合成模式还须额外在/data或/usr/data目录下提前准备好名为in1w1280-h720-rgba8888.bin的源图像文件。
 >
