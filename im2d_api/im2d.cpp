@@ -229,7 +229,6 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
     if (buf->getWidth() % 16) {
         ALOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
         imErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
-        goto INVAILD;
     }
 
     buffer.width   = buf->getWidth();
@@ -905,11 +904,11 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
                 return IM_STATUS_NOT_SUPPORTED;
             }
             /*Align check*/
-            if ((src.wstride % 8) || (src.hstride % 2) ||
+            if ((src.wstride % 2) || (src.hstride % 2) ||
                 (src.width % 2)  || (src.height % 2) ||
                 (src_rect.x % 2) || (src_rect.y % 2) ||
                 (src_rect.width % 2) || (src_rect.height % 2)) {
-                imErrorMsg("Err src wstride is not align to 8 or yuv not align to 2.");
+                imErrorMsg("Err yuv not align to 2.");
                 return IM_STATUS_INVALID_PARAM;
             }
             src_isYUV_8 = 1;
