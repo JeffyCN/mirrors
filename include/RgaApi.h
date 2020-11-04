@@ -33,13 +33,19 @@
 extern "C"{
 #endif
 
-/* Compatible with the old version of C interface. */
+/*
+ * Compatible with the old version of C interface.The new
+ * version of the C interface no longer requires users to
+ * initialize rga, so RgaInit and RgaDeInit are just for
+ * compatibility with the old C interface, so please do
+ * not use ctx, because it is usually a NULL.
+ */
 #define RgaInit(ctx) { \
-	ctx = ctx; \
+	(void)ctx;		/* unused */ \
 	c_RkRgaInit(); \
 }
 #define RgaDeInit(ctx) { \
-	ctx = ctx; \
+	(void)ctx;		/* unused */ \
 	c_RkRgaDeInit(); \
 }
 #define RgaBlit(...) c_RkRgaBlit(__VA_ARGS__)
