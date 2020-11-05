@@ -44,6 +44,8 @@
 #define HAL_TRANSFORM_ROT_270    0x07
 #endif
 
+#define HAL_TRANSFORM_FLIP_H_V   0x08
+
 /*****************************************************************************/
 
 /* for compatibility */

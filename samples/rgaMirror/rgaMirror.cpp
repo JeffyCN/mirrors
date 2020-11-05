@@ -225,6 +225,7 @@ int main() {
         /************ set the rga_mod ,rotation\composition\scale\copy .... **********/
         src.rotation = HAL_TRANSFORM_FLIP_V;
         //src.rotation = HAL_TRANSFORM_FLIP_H;
+        //src.rotation = HAL_TRANSFORM_FLIP_H | HAL_TRANSFORM_FLIP_V << 4;
 
         /********** call rga_Interface **********/
         struct timeval tpend1, tpend2;

@@ -228,6 +228,8 @@ int main() {
         src.rotation = HAL_TRANSFORM_ROT_90;
         //src.rotation = HAL_TRANSFORM_ROT_180;
         //src.rotation = HAL_TRANSFORM_ROT_270;
+        /* Rotate and mirror at the same time. */
+        //src.rotation = HAL_TRANSFORM_ROT_90 | HAL_TRANSFORM_FLIP_H << 4;
 
         /********** call rga_Interface **********/
         struct timeval tpend1, tpend2;

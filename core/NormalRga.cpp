@@ -799,7 +799,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
      * according to the rotation to set corresponding parameter.It's diffrient from the opengl.
      * Following's config which use frequently
      * */
-    switch (rotation) {
+    switch (rotation & 0x0f) {
         case HAL_TRANSFORM_FLIP_H:
             orientation = 0;
             rotateMode = 2;
@@ -827,6 +827,30 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
         case HAL_TRANSFORM_FLIP_V:
             orientation = 0;
             rotateMode = 3;
+            srcVirW = relSrcRect.wstride;
+            srcVirH = relSrcRect.hstride;
+            srcXPos = relSrcRect.xoffset;
+            srcYPos = relSrcRect.yoffset;
+            srcActW = relSrcRect.width;
+            srcActH = relSrcRect.height;
+
+            src1VirW = relSrc1Rect.wstride;
+            src1VirH = relSrc1Rect.hstride;
+            src1XPos = relSrc1Rect.xoffset;
+            src1YPos = relSrc1Rect.yoffset;
+            src1ActW = relSrc1Rect.width;
+            src1ActH = relSrc1Rect.height;
+
+            dstVirW = relDstRect.wstride;
+            dstVirH = relDstRect.hstride;
+            dstXPos = relDstRect.xoffset;
+            dstYPos = relDstRect.yoffset;
+            dstActW = relDstRect.width;
+            dstActH = relDstRect.height;
+            break;
+        case HAL_TRANSFORM_FLIP_H_V:
+            orientation = 0;
+            rotateMode = 4;
             srcVirW = relSrcRect.wstride;
             srcVirH = relSrcRect.hstride;
             srcXPos = relSrcRect.xoffset;
@@ -943,6 +967,18 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
             dstYPos = relDstRect.yoffset;
             dstActW = relDstRect.width;
             dstActH = relDstRect.height;
+            break;
+    }
+
+    switch ((rotation & 0xF0) >> 4) {
+        case HAL_TRANSFORM_FLIP_H :
+            rotateMode |= (2 << 4);
+            break;
+        case HAL_TRANSFORM_FLIP_V :
+            rotateMode |= (3 << 4);
+            break;
+        case HAL_TRANSFORM_FLIP_H_V:
+            rotateMode |= (4 << 4);
             break;
     }
 
