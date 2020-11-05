@@ -209,25 +209,25 @@ typedef struct RANGE {
 }
 RANGE;
 
-typedef struct POINT_t {
+typedef struct POINT {
     unsigned short x;
     unsigned short y;
 }
-POINT_t;
+POINT;
 
-typedef struct RECT_t {
+typedef struct RECT {
     unsigned short xmin;
     unsigned short xmax; // width - 1
     unsigned short ymin;
     unsigned short ymax; // height - 1
-} RECT_t;
+} RECT;
 
-typedef struct RGT_t {
+typedef struct RGB {
     unsigned char r;
     unsigned char g;
     unsigned char b;
     unsigned char res;
-} RGB_t;
+}RGB;
 
 
 typedef struct MMU {
@@ -267,8 +267,8 @@ FADING;
 
 
 typedef struct line_draw_t {
-    POINT_t start_point;              /* LineDraw_start_point                */
-    POINT_t end_point;                /* LineDraw_end_point                  */
+    POINT start_point;                  /* LineDraw_start_point                */
+    POINT end_point;                    /* LineDraw_end_point                  */
     unsigned int   color;               /* LineDraw_color                      */
     unsigned int   flag;                /* (enum) LineDrawing mode sel         */
     unsigned int   line_width;          /* range 1~16 */
@@ -282,41 +282,41 @@ struct rga_req {
 
     rga_img_info_t src;                   /* src image info */
     rga_img_info_t dst;                   /* dst image info */
-    rga_img_info_t pat;             /* patten image info */
+    rga_img_info_t pat;                   /* patten image info */
 
 #if defined(__arm64__) || defined(__aarch64__)
-    unsigned long rop_mask_addr;         /* rop4 mask addr */
-    unsigned long LUT_addr;              /* LUT addr */
+    unsigned long rop_mask_addr;          /* rop4 mask addr */
+    unsigned long LUT_addr;               /* LUT addr */
 #else
-    unsigned int rop_mask_addr;         /* rop4 mask addr */
-    unsigned int LUT_addr;              /* LUT addr */
+    unsigned int rop_mask_addr;           /* rop4 mask addr */
+    unsigned int LUT_addr;                /* LUT addr */
 #endif
 
-    RECT_t clip;                      /* dst clip window default value is dst_vir */
-    /* value from [0, w-1] / [0, h-1]*/
+    RECT clip;                            /* dst clip window default value is dst_vir */
+                                          /* value from [0, w-1] / [0, h-1]*/
 
-    int sina;                   /* dst angle  default value 0  16.16 scan from table */
-    int cosa;                   /* dst angle  default value 0  16.16 scan from table */
+    int sina;                             /* dst angle  default value 0  16.16 scan from table */
+    int cosa;                             /* dst angle  default value 0  16.16 scan from table */
 
     unsigned short alpha_rop_flag;        /* alpha rop process flag           */
-    /* ([0] = 1 alpha_rop_enable)       */
-    /* ([1] = 1 rop enable)             */
-    /* ([2] = 1 fading_enable)          */
-    /* ([3] = 1 PD_enable)              */
-    /* ([4] = 1 alpha cal_mode_sel)     */
-    /* ([5] = 1 dither_enable)          */
-    /* ([6] = 1 gradient fill mode sel) */
-    /* ([7] = 1 AA_enable)              */
+                                          /* ([0] = 1 alpha_rop_enable)       */
+                                          /* ([1] = 1 rop enable)             */
+                                          /* ([2] = 1 fading_enable)          */
+                                          /* ([3] = 1 PD_enable)              */
+                                          /* ([4] = 1 alpha cal_mode_sel)     */
+                                          /* ([5] = 1 dither_enable)          */
+                                          /* ([6] = 1 gradient fill mode sel) */
+                                          /* ([7] = 1 AA_enable)              */
 
     unsigned char  scale_mode;            /* 0 nearst / 1 bilnear / 2 bicubic */
 
-    unsigned int color_key_max;         /* color key max */
-    unsigned int color_key_min;         /* color key min */
+    unsigned int color_key_max;           /* color key max */
+    unsigned int color_key_min;           /* color key min */
 
-    unsigned int fg_color;              /* foreground color */
-    unsigned int bg_color;              /* background color */
+    unsigned int fg_color;                /* foreground color */
+    unsigned int bg_color;                /* background color */
 
-    COLOR_FILL gr_color;            /* color fill use gradient */
+    COLOR_FILL gr_color;                  /* color fill use gradient */
 
     line_draw_t line_draw_info;
 
@@ -337,19 +337,19 @@ struct rga_req {
     unsigned char endian_mode;            /* 0/big endian 1/little endian*/
 
     unsigned char rotate_mode;            /* (enum) rotate mode  */
-    /* 0x0,     no rotate  */
-    /* 0x1,     rotate     */
-    /* 0x2,     x_mirror   */
-    /* 0x3,     y_mirror   */
+                                          /* 0x0,     no rotate  */
+                                          /* 0x1,     rotate     */
+                                          /* 0x2,     x_mirror   */
+                                          /* 0x3,     y_mirror   */
 
     unsigned char color_fill_mode;        /* 0 solid color / 1 patten color */
 
-    MMU mmu_info;                   /* mmu information */
+    MMU mmu_info;                         /* mmu information */
 
     unsigned char  alpha_rop_mode;        /* ([0~1] alpha mode)       */
-    /* ([2~3] rop   mode)       */
-    /* ([4]   zero  mode en)    */
-    /* ([5]   dst   alpha mode) */
+                                          /* ([2~3] rop   mode)       */
+                                          /* ([4]   zero  mode en)    */
+                                          /* ([5]   dst   alpha mode) */
 
     unsigned char  src_trans_mode;
 
@@ -445,7 +445,7 @@ TILE_INFO;
 #define RGA_DST_VIR_INFO         0x150
 
 #define RGA_DST_CTR_INFO         0x154
-#define RGA_LINE_DRAW_XY_INFO    0x154  //repeat 
+#define RGA_LINE_DRAW_XY_INFO    0x154  //repeat
 
 //Alpha/ROP Registers
 #define RGA_ALPHA_CON            0x158
@@ -485,12 +485,12 @@ RGA_set_src_act_info(
 int
 RGA_set_src_vir_info(
     struct rga_req *req,
-    unsigned long   yrgb_addr,       /* yrgb_addr  */
-    unsigned long   uv_addr,         /* uv_addr    */
-    unsigned long   v_addr,          /* v_addr     */
+    unsigned long   yrgb_addr,      /* yrgb_addr  */
+    unsigned long   uv_addr,        /* uv_addr    */
+    unsigned long   v_addr,         /* v_addr     */
     unsigned int   vir_w,           /* vir width  */
     unsigned int   vir_h,           /* vir height */
-    unsigned char   format,          /* format     */
+    unsigned char   format,         /* format     */
     unsigned char  a_swap_en        /* only for 32bit RGB888 format */
 );
 #else
@@ -519,29 +519,29 @@ RGA_set_dst_act_info(
 #if defined(__arm64__) || defined(__aarch64__)
 int
 RGA_set_dst_vir_info(
-    struct rga_req *msg,
-    unsigned long   yrgb_addr,   /* yrgb_addr   */
-    unsigned long   uv_addr,     /* uv_addr     */
-    unsigned long   v_addr,      /* v_addr      */
-    unsigned int   vir_w,       /* vir width   */
-    unsigned int   vir_h,       /* vir height  */
-    RECT_t           *clip,        /* clip window */
-    unsigned char  format,      /* format      */
-    unsigned char  a_swap_en
-);
+		struct rga_req *msg,
+		unsigned long   yrgb_addr,  /* yrgb_addr   */
+		unsigned long   uv_addr,    /* uv_addr     */
+		unsigned long   v_addr,     /* v_addr      */
+		unsigned int   vir_w,       /* vir width   */
+		unsigned int   vir_h,       /* vir height  */
+		RECT           *clip,       /* clip window */
+		unsigned char  format,      /* format      */
+		unsigned char  a_swap_en
+		);
 #else
 int
 RGA_set_dst_vir_info(
-    struct rga_req *msg,
-    unsigned int   yrgb_addr,   /* yrgb_addr   */
-    unsigned int   uv_addr,     /* uv_addr     */
-    unsigned int   v_addr,      /* v_addr      */
-    unsigned int   vir_w,       /* vir width   */
-    unsigned int   vir_h,       /* vir height  */
-    RECT_t           *clip,        /* clip window */
-    unsigned char  format,      /* format      */
-    unsigned char  a_swap_en
-);
+		struct rga_req *msg,
+		unsigned int   yrgb_addr,   /* yrgb_addr   */
+		unsigned int   uv_addr,     /* uv_addr     */
+		unsigned int   v_addr,      /* v_addr      */
+		unsigned int   vir_w,       /* vir width   */
+		unsigned int   vir_h,       /* vir height  */
+		RECT           *clip,       /* clip window */
+		unsigned char  format,      /* format      */
+		unsigned char  a_swap_en
+		);
 #endif
 
 int
@@ -636,7 +636,7 @@ RGA_set_color_palette_mode(
 int
 RGA_set_color_fill_mode(
     struct rga_req *msg,
-    COLOR_FILL  *gr_color,                    /* gradient color part         */
+    COLOR_FILL  *gr_color,                   /* gradient color part         */
     unsigned char  gr_satur_mode,            /* saturation mode             */
     unsigned char  cf_mode,                  /* patten fill or solid fill   */
     unsigned int color,                      /* solid color                 */
@@ -650,14 +650,14 @@ RGA_set_color_fill_mode(
 
 int
 RGA_set_line_point_drawing_mode(
-    struct rga_req *msg,
-    POINT_t sp,                     /* start point              */
-    POINT_t ep,                     /* end   point              */
-    unsigned int color,           /* line point drawing color */
-    unsigned int line_width,      /* line width               */
-    unsigned char AA_en,          /* AA en                    */
-    unsigned char last_point_en   /* last point en            */
-);
+		struct rga_req *msg,
+		POINT sp,                     /* start point              */
+		POINT ep,                     /* end   point              */
+		unsigned int color,           /* line point drawing color */
+		unsigned int line_width,      /* line width               */
+		unsigned char AA_en,          /* AA en                    */
+		unsigned char last_point_en   /* last point en            */
+		);
 
 
 int
@@ -678,7 +678,7 @@ RGA_set_pre_scaling_mode(
 int
 RGA_update_palette_table_mode(
     struct rga_req *msg,
-    unsigned long LUT_addr,      /* LUT table addr      */
+    unsigned long LUT_addr,     /* LUT table addr      */
     unsigned int palette_mode   /* 1bpp/2bpp/4bpp/8bpp */
 );
 #else

@@ -18,11 +18,9 @@
 
 #include "NormalRga.h"
 #include "NormalRgaContext.h"
+#include "rga.h"
 #ifdef ANDROID
 #include "GrallocOps.h"
-#elif LINUX /* LINUX */
-#include "rga.h"
-
 #endif
 
 int         sina_table[360];
@@ -280,11 +278,7 @@ int NormalRgaSetDstVirtualInfo(struct rga_req *msg,
 int NormalRgaSetDstVirtualInfo(struct rga_req *msg,
                                unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr,
                                unsigned int vir_w,    unsigned int vir_h,
-#ifdef ANDROID
                                RECT *clip,
-#elif LINUX
-                               RECT_t *clip,
-#endif
                                unsigned char  format, unsigned char a_swap_en)
 #endif
 {
@@ -319,21 +313,13 @@ int NormalRgaSetPatActiveInfo(struct rga_req *req,
 int NormalRgaSetPatVirtualInfo(struct rga_req *msg,
                                unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,
                                unsigned int  vir_w,    unsigned int vir_h,
-#ifdef ANDROID
                                RECT *clip,
-#elif LINUX
-                               RECT_t *clip,
-#endif
                                unsigned char format, unsigned char a_swap_en)
 #else
 int NormalRgaSetPatVirtualInfo(struct rga_req *msg,
                                unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr,
                                unsigned int vir_w,    unsigned int vir_h,
-#ifdef ANDROID
                                RECT *clip,
-#elif LINUX
-                               RECT_t *clip,
-#endif
                                unsigned char  format, unsigned char a_swap_en)
 #endif
 {
@@ -628,11 +614,7 @@ int NormalRgaSetColorFillMode(
 /* AA en                    */
 /* last point en            */
 int NormalRgaSetLineDrawingMode(struct rga_req *msg,
-#ifdef ANDROID
                                 POINT sp,                     POINT  ep,
-#elif LINUX
-                                POINT_t sp,                   POINT_t ep,
-#endif
                                 unsigned int color,           unsigned int line_width,
                                 unsigned char AA_en,          unsigned char last_point_en)
 

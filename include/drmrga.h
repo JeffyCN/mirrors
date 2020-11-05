@@ -32,8 +32,6 @@
 #endif
 
 #ifndef ANDROID /* LINUX */
-#include "rga.h"
-
 /* flip source image horizontally (around the vertical axis) */
 #define HAL_TRANSFORM_FLIP_H     0x01
 /* flip source image vertically (around the horizontal axis)*/

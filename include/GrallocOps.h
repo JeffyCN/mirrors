@@ -39,9 +39,6 @@
 #include <sys/mman.h>
 #include <linux/stddef.h>
 
-#include <hardware/rga.h>
-#include "stdio.h"
-
 #include <utils/Atomic.h>
 #include <utils/Errors.h>
 #include <android/log.h>
@@ -49,6 +46,7 @@
 #include <log/log_main.h>
 
 #include "drmrga.h"
+#include "rga.h"
 
 #ifndef RK_FORMAT_YCbCr_420_SP_10B
 #define RK_FORMAT_YCbCr_420_SP_10B  0x20

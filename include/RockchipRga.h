@@ -33,6 +33,7 @@
 #include "drmrga.h"
 #include "GrallocOps.h"
 #include "RgaUtils.h"
+#include "rga.h"
 
 //////////////////////////////////////////////////////////////////////////////////
 #ifndef ANDROID
@@ -43,7 +44,6 @@
 #include <utils/Singleton.h>
 #include <utils/Thread.h>
 #include <hardware/hardware.h>
-#include <hardware/rga.h>
 
 namespace android {
 #endif

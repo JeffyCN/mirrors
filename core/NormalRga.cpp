@@ -377,11 +377,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     void *srcBuf = NULL;
     void *dstBuf = NULL;
     void *src1Buf = NULL;
-#ifdef ANDROID
     RECT clip;
-#elif LINUX
-    RECT_t clip;
-#endif
     int sync_mode = RGA_BLIT_SYNC;
 
     //init context
@@ -1405,11 +1401,8 @@ int RgaCollorFill(rga_info *dst) {
     struct rga_req rgaReg;
     COLOR_FILL fillColor ;
     void *dstBuf = NULL;
-#ifdef ANDROID
     RECT clip;
-#elif LINUX
-    RECT_t  clip;
-#endif
+
     int sync_mode = RGA_BLIT_SYNC;
 
     if (!ctx) {
@@ -1623,11 +1616,7 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
     void *srcBuf = NULL;
     void *dstBuf = NULL;
     void *lutBuf = NULL;
-#ifdef ANDROID
     RECT clip;
-#elif LINUX
-    RECT_t clip;
-#endif
 
     //init context
     if (!ctx) {

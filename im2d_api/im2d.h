@@ -24,10 +24,6 @@
 extern "C" {
 #endif
 
-#ifdef ANDROID
-#include <hardware/rga.h>
-#endif
-
 #ifndef IM_API
 #define IM_API /* define API export as needed */
 #endif
