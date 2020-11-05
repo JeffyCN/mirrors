@@ -1304,6 +1304,8 @@ int RgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1) {
     rga_info temp;
     void *temp_buf = NULL;
 
+    (void)src1; /* unused src1 */
+
 	if (!(0x0205 == (src->blend & 0xFFFF) &&
 		NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src->rect.format)) &&
 		NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst->rect.format)))) {

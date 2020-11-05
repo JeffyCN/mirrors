@@ -437,6 +437,7 @@ bool NormalRgaIsBppFormat(int format) {
         case RK_FORMAT_BPP4:
         case RK_FORMAT_BPP8:
             ret = true;
+            break;
         default:
             break;
     }
