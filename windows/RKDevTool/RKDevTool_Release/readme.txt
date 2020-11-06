@@ -11,3 +11,12 @@ v2.73 revision(20200520):
 v2.74 revision(20200723):
 1.take small slice to erase nor flash
 
+v2.75 revision(20200915):
+1.fix virtual list grid msg collision
+
+v2.76 revision(20200925):
+1.complete to download new idblock
+
+v2.78 revision(20201102):
+1.support to create download list from parameter
+
