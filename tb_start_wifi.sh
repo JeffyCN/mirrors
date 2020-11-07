@@ -168,7 +168,7 @@ if [ "$SSID" ==  "" ] || [ "$FORCE_CONFIG_WIFI" == "true" ];then
 	sed -i "s/SSID/$WIFISSID/g" /tmp/wpa_supplicant.conf
 	sed -i "s/PASSWORD/$WIFIPWD/g" /tmp/wpa_supplicant.conf
 
-	WPAPID=`ps | grep wpa_supplicant | grep -v grep | awk '{print $1}'`
+	WPAPID=`busybox ps | grep wpa_supplicant | grep -v grep | awk '{print $1}'`
 	if [ "$WPAPID" != "" ];then
 		killall wpa_supplicant
 		sleep 0.5
@@ -182,7 +182,7 @@ if [ "$SSID" ==  "" ] || [ "$FORCE_CONFIG_WIFI" == "true" ];then
 	while true
 	do
 		wpa_supplicant -B -i wlan0 -c /tmp/wpa_supplicant.conf
-		WPAPID=`ps | grep wpa_supplicant | grep -v grep | awk '{print $1}'`
+		WPAPID=`busybox ps | grep wpa_supplicant | grep -v grep | awk '{print $1}'`
 		if [ "$WPAPID" == "" ];then
 			sleep 0.5
 		else
