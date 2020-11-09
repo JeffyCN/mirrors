@@ -22,12 +22,12 @@ echo timer > /sys/class/leds/blue/trigger
 
 if [ -z $WIFISSID ]; then
 	echo -e "\033[33m WIFISSID is invalid, assume to Rockchip-guest \033[0m"
-	WIFISSID=Rockchip-guest
+	WIFISSID=rockchip
 fi
 
 if [ -z $WIFIPWD ]; then
 	echo -e "\033[33m WIFIPWD is invalid, assume to RKguest2.4 \033[0m"
-	WIFIPWD=RKguest2.4
+	WIFIPWD=12345678
 fi
 
 function getdhcp() {
