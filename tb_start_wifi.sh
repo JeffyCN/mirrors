@@ -41,7 +41,7 @@ function getdhcp() {
 				echo "reconnect, restart mediaserver..."
 				killall -9 mediaserver
 				sleep 1
-				mediaserver -a -d -c /usr/share/mediaserver/tb_rtsp-link.conf > /dev/kmsg 2>&1 &
+				mediaserver -a -d -c /usr/share/mediaserver/tb.conf > /dev/kmsg 2>&1 &
 			fi
 
 			break
