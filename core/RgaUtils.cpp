@@ -41,12 +41,6 @@ float get_bpp_from_format(int format) {
 
     switch (format) {
 #ifdef ANDROID
-        case HAL_PIXEL_FORMAT_BPP_1:
-        case HAL_PIXEL_FORMAT_BPP_2:
-        case HAL_PIXEL_FORMAT_BPP_4:
-        case HAL_PIXEL_FORMAT_BPP_8:
-            bpp = 1;
-            break;
         case HAL_PIXEL_FORMAT_RGB_565:
             bpp = 2;
             break;
@@ -69,7 +63,6 @@ float get_bpp_from_format(int format) {
             bpp = 2;
             break;
 #endif
-#ifdef LINUX
         case RK_FORMAT_BPP1:
         case RK_FORMAT_BPP2:
         case RK_FORMAT_BPP4:
@@ -123,7 +116,6 @@ float get_bpp_from_format(int format) {
 		case RK_FORMAT_Y4:
 			bpp = 0.5;
 			break;
-#endif
         default:
             printf("Is unsupport format now, please fix \n");
             return 0;
@@ -146,18 +138,6 @@ int get_string_by_format(char *value, int format) {
 
     switch (format) {
 #ifdef ANDROID
-        case HAL_PIXEL_FORMAT_BPP_1:
-            memcpy(value, "bpp1", sizeof("bpp1"));
-            break;
-        case HAL_PIXEL_FORMAT_BPP_2:
-            memcpy(value, "bpp2", sizeof("bpp2"));
-            break;
-        case HAL_PIXEL_FORMAT_BPP_4:
-            memcpy(value, "bpp4", sizeof("bpp4"));
-            break;
-        case HAL_PIXEL_FORMAT_BPP_8:
-            memcpy(value, "bpp8", sizeof("bpp8"));
-            break;
         case HAL_PIXEL_FORMAT_RGB_565:
             memcpy(value, "rgb565", sizeof("rgb565"));
             break;
@@ -186,7 +166,6 @@ int get_string_by_format(char *value, int format) {
             memcpy(value, "nv12_10", sizeof("nv12_10"));
             break;
 #endif
-#ifdef LINUX
         case RK_FORMAT_BPP1:
             memcpy(value, "bpp1", sizeof("bpp1"));
             break;
@@ -283,7 +262,6 @@ int get_string_by_format(char *value, int format) {
 		case RK_FORMAT_YCrCb_422_10b_SP:
 			memcpy(value, "crcb422_10b", sizeof("crcb422_10b"));
 			break;
-#endif
         default:
             printf("Is unsupport format now, please fix");
             return 0;

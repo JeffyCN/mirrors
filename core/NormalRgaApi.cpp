@@ -29,10 +29,64 @@ int         cosa_table[360];
   =======================================================================
  **********************************************************************/
 
-#ifdef LINUX
 int RkRgaGetRgaFormat(int format) {
-    return format;
+	/* Because the format of librga is the value of driver format << 8 . */
+#ifdef ANDROID
+	switch (format & 0xFF) {
+        case HAL_PIXEL_FORMAT_RGB_565:
+            return RK_FORMAT_RGB_565 >> 8;
+        case HAL_PIXEL_FORMAT_RGB_888:
+            return RK_FORMAT_RGB_888 >> 8;
+        case HAL_PIXEL_FORMAT_RGBA_8888:
+            return RK_FORMAT_RGBA_8888 >> 8;
+        case HAL_PIXEL_FORMAT_RGBX_8888:
+            return RK_FORMAT_RGBX_8888 >> 8;
+        case HAL_PIXEL_FORMAT_BGRA_8888:
+            return RK_FORMAT_BGRA_8888 >> 8;
+        case HAL_PIXEL_FORMAT_YCrCb_420_SP:
+            return RK_FORMAT_YCrCb_420_SP >> 8;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12:
+            return RK_FORMAT_YCbCr_420_SP >> 8;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
+            return RK_FORMAT_YCbCr_420_SP >> 8;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
+            return RK_FORMAT_YCbCr_420_SP_10B >> 8; //0x20
+    }
+#endif
+    if (format & 0xFF00 || format == 0)
+        return format >> 8;
+
+    ALOGE("Is unsupport format now,pilese fix.");
+    return -1;
 }
+
+#ifdef ANDROID
+int RkRgaGetRgaFormatFromAndroid(int format) {
+    switch (format) {
+        case HAL_PIXEL_FORMAT_RGB_565:
+            return RK_FORMAT_RGB_565;
+        case HAL_PIXEL_FORMAT_RGB_888:
+            return RK_FORMAT_RGB_888;
+        case HAL_PIXEL_FORMAT_RGBA_8888:
+            return RK_FORMAT_RGBA_8888;
+        case HAL_PIXEL_FORMAT_RGBX_8888:
+            return RK_FORMAT_RGBX_8888;
+        case HAL_PIXEL_FORMAT_BGRA_8888:
+            return RK_FORMAT_BGRA_8888;
+        case HAL_PIXEL_FORMAT_YCrCb_420_SP:
+            return RK_FORMAT_YCrCb_420_SP;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12:
+            return RK_FORMAT_YCbCr_420_SP;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
+            return RK_FORMAT_YCbCr_420_SP;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
+            return RK_FORMAT_YCbCr_420_SP_10B;//0x20
+        default:
+            ALOGE("Is unsupport format now,please fix");
+            return -1;
+    }
+}
+#endif
 
 uint32_t bytesPerPixel(int format) {
     switch (format) {
@@ -56,8 +110,6 @@ uint32_t bytesPerPixel(int format) {
     }
     return 0;
 }
-
-#endif
 
 int checkRectForRga(rga_rect_t rect) {
     if (rect.xoffset < 0 || rect.yoffset < 0) {

@@ -71,10 +71,10 @@ int         NormalRgaGetRect(buffer_handle_t hnd, rga_rect_t *rect);
 int         NormalRgaGetMmuType(buffer_handle_t hnd, int *mmuType);
 #endif
 
-#ifdef LINUX
 int         RkRgaGetRgaFormat(int format);
+int         RkRgaGetRgaFormatFromAndroid(int format);
+
 uint32_t    bytesPerPixel(int format);
-#endif
 
 /*
 @fun NormalRgaSetRects:For use to set the rects esayly
