@@ -51,6 +51,7 @@ cc_library_shared {
         "external/libdrm/include/drm",
         "hardware/libhardware/include/hardware",
         "hardware/libhardware/modules/gralloc",
+        "frameworks/native/libs/nativewindow/include",
         "system/core/liblog/include",
         "system/core/libsync",
         "system/core/libsync/include",
