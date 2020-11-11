@@ -62,7 +62,6 @@ cc_library_shared {
         "libutils",
         "libcutils",
         "libhardware",
-        "libdrm",
         "libsync",
     ],
 

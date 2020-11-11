@@ -3,10 +3,12 @@ package librga
 import (
         "android/soong/android"
         "android/soong/cc"
+        "fmt"
         "strings"
 )
 
 func init() {
+    fmt.Println("librga want to conditional Compile")
     android.RegisterModuleType("cc_librga", DefaultsFactory)
 }
 
@@ -17,20 +19,43 @@ func DefaultsFactory() (android.Module) {
 }
 
 func Defaults(ctx android.LoadHookContext) {
-    type props struct {
-        Srcs []string
-        Cflags []string
-        Shared_libs []string
-        Include_dirs []string
+    sdkVersion := ctx.AConfig().PlatformSdkVersionInt()
+
+    if (sdkVersion >= 29 ) {
+        type props struct {
+            Srcs []string
+            Cflags []string
+            Shared_libs []string
+            Include_dirs []string
+            Double_loadable *bool
+        }
+
+        p := &props{}
+        p.Srcs = getSrcs(ctx)
+        p.Cflags = getCflags(ctx)
+        p.Shared_libs = getSharedLibs(ctx)
+        p.Include_dirs = getIncludeDirs(ctx)
+
+        double_loadable := true
+        p.Double_loadable = &double_loadable
+
+        ctx.AppendProperties(p)
+    } else {
+        type props struct {
+            Srcs []string
+            Cflags []string
+            Shared_libs []string
+            Include_dirs []string
+        }
+
+        p := &props{}
+        p.Srcs = getSrcs(ctx)
+        p.Cflags = getCflags(ctx)
+        p.Shared_libs = getSharedLibs(ctx)
+        p.Include_dirs = getIncludeDirs(ctx)
+
+        ctx.AppendProperties(p)
     }
-
-    p := &props{}
-    p.Srcs = getSrcs(ctx)
-    p.Cflags = getCflags(ctx)
-    p.Shared_libs = getSharedLibs(ctx)
-    p.Include_dirs = getIncludeDirs(ctx)
-
-    ctx.AppendProperties(p)
 }
 
 //条件编译主要修改函数
@@ -66,6 +91,10 @@ func getSharedLibs(ctx android.BaseContext) ([]string) {
             libs = append(libs, "libhidlbase")
             libs = append(libs, "android.hardware.graphics.mapper@4.0")
         }
+    }
+
+    if (sdkVersion < 29 ) {
+        libs = append(libs, "libdrm")
     }
 
     return libs
