@@ -91,3 +91,6 @@ v1.55 revision
 v1.56 revision
 1.support to download loader on spi/sfc nand flash(4k page)
 
+v1.57 revision
+1.fix download ubi image bug
+
