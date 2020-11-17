@@ -479,8 +479,7 @@ gst_mpp_jpeg_dec_loop (GstVideoDecoder * decoder)
   if (!mpkt)
     goto meta_error;
 
-  /* HACK: Should use mpp_meta_set_ptr when supported */
-  mpp_meta_get_frame (meta, KEY_OUTPUT_FRAME, (MppFrame *) & buffer);
+  mpp_meta_get_ptr (meta, KEY_USER_DATA, (void **) &buffer);
   if (!buffer)
     goto meta_error;
 
@@ -669,9 +668,7 @@ gst_mpp_jpeg_dec_handle_frame (GstVideoDecoder * decoder,
     goto drop;
 
   mpp_meta_set_packet (meta, KEY_INPUT_PACKET, mpkt);
-
-  /* HACK: Should use mpp_meta_set_ptr when supported */
-  mpp_meta_set_frame (meta, KEY_OUTPUT_FRAME, (MppFrame) outbuf);
+  mpp_meta_set_ptr (meta, KEY_USER_DATA, outbuf);
 
   ret = gst_mpp_bare_buffer_pool_fill_frame (mframe, outbuf);
   if (ret != GST_FLOW_OK)
