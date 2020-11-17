@@ -333,19 +333,39 @@ IM_API const char* querystring(int name);
 #define imcheck(src, dst, src_rect, dst_rect, ...) \
     ({ \
         IM_STATUS ret = IM_STATUS_NOERROR; \
+        rga_buffer_t pat; \
+        im_rect pat_rect; \
+        memset(&pat, 0, sizeof(rga_buffer_t)); \
+        memset(&pat_rect, 0, sizeof(im_rect)); \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
-            ret = imcheck_t(src, dst, src_rect, dst_rect, 0); \
+            ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, 0); \
         } else if (argc == 1){ \
-            ret = imcheck_t(src, dst, src_rect, dst_rect, args[0]); \
+            ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, args[0]); \
         } else { \
             ret = IM_STATUS_FAILED; \
             printf("check failed\n"); \
         } \
         ret; \
     })
-IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const im_rect src_rect, const im_rect dst_rect, const int mdoe_usage);
+#define imcheck_composite(src, dst, pat, src_rect, dst_rect, pat_rect, ...) \
+    ({ \
+        IM_STATUS ret = IM_STATUS_NOERROR; \
+        int args[] = {__VA_ARGS__}; \
+        int argc = sizeof(args)/sizeof(int); \
+        if (argc == 0) { \
+            ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, 0); \
+        } else if (argc == 1){ \
+            ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, args[0]); \
+        } else { \
+            ret = IM_STATUS_FAILED; \
+            printf("check failed\n"); \
+        } \
+        ret; \
+    })
+IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
+                           const im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect, const int mdoe_usage);
 
 /*
  * Resize
@@ -644,6 +664,7 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
     ({ \
         IM_STATUS ret = IM_STATUS_SUCCESS; \
         rga_buffer_t srcB; \
+        memset(&srcB, 0x00, sizeof(rga_buffer_t)); \
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \

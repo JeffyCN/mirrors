@@ -301,6 +301,10 @@ IM_API static bool rga_is_buffer_valid(rga_buffer_t buf) {
     return (buf.phy_addr != NULL || buf.fd > 0 || buf.vir_addr != NULL);
 }
 
+IM_API static bool rga_is_rect_valid(im_rect rect) {
+    return (rect.x > 0 || rect.y > 0 || (rect.width > 0 && rect.height > 0));
+}
+
 IM_API IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo) {
     if(NULL == dstinfo) {
         ALOGE("rga_im2d: invaild dstinfo");
@@ -729,16 +733,26 @@ IM_API const char* querystring(int name) {
     return temp;
 }
 
-IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const im_rect src_rect, const im_rect dst_rect, int mode_usage) {
+IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
+                           im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect, int mode_usage) {
     bool src_isRGB = 0, src_isBP = 0, src_isYUV_8 = 0, src_isYUV_10 = 0, src_isYUYV = 0, src_isYUV400 = 0;
     bool dst_isRGB = 0, dst_isBP = 0, dst_isYUV_8 = 0, dst_isYUV_10 = 0, dst_isYUYV = 0, dst_isYUV400 = 0;
-    int src_fmt, dst_fmt;
+    bool pat_isRGB = 0, pat_isBP = 0, pat_isYUV_8 = 0, pat_isYUV_10 = 0, pat_isYUYV = 0, pat_isYUV400 = 0;
+    bool pat_buffer_isValid = 0, pat_rect_isValid = 0;
+    int src_fmt, dst_fmt, pat_fmt;
     long usage = 0;
 
     usage = rga_get_info();
     if (IM_STATUS_FAILED == usage) {
         imErrorMsg("Get rga info failed, can not continue check.");
         return IM_STATUS_FAILED;
+    }
+
+    if (mode_usage & IM_ALPHA_BLEND_MASK) {
+        if (rga_is_buffer_valid(pat))
+            pat_buffer_isValid = 1;
+        if (rga_is_rect_valid(pat_rect))
+            pat_rect_isValid = 1;
     }
 
     /**************** src/dst judgment ****************/
@@ -762,6 +776,18 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     if (dst.wstride < dst.width || dst.hstride < dst.height) {
         imErrorMsg("Invaild dst, virtual width or height is less than actual width or height.");
         return IM_STATUS_INVALID_PARAM;
+    }
+
+    if (pat_buffer_isValid) {
+        if (pat.width <= 0 || pat.height <= 0 || pat.format < 0) {
+            imErrorMsg("Illegal pat, the parameter cannot be negative or 0.");
+            return IM_STATUS_ILLEGAL_PARAM;
+        }
+
+        if (pat.wstride < pat.width || pat.hstride < pat.height) {
+            imErrorMsg("Invaild pat, virtual width or height is less than actual width or height.");
+            return IM_STATUS_INVALID_PARAM;
+        }
     }
 
     /**************** rect judgment ****************/
@@ -797,25 +823,55 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         return IM_STATUS_INVALID_PARAM;
     }
 
+    if (pat_rect_isValid) {
+        if ((pat_rect.width > 0  && pat_rect.width < 2) ||
+            (pat_rect.height > 0 && pat_rect.height < 2)) {
+            imErrorMsg("Invaild pat rect, unsupported width and height less than 2.");
+            return IM_STATUS_INVALID_PARAM;
+        }
+
+        if (pat_rect.width < 0 || pat_rect.height < 0 || pat_rect.x < 0 || pat_rect.y < 0) {
+            imErrorMsg("Illegal pat rect, the parameter cannot be negative.");
+            return IM_STATUS_ILLEGAL_PARAM;
+        }
+
+        if ((pat_rect.width + pat_rect.x > pat.wstride) || (pat_rect.height + pat_rect.y > pat.hstride)) {
+            imErrorMsg("Invaild pat rect, the sum of widtn and height of rect needs to be less than dst wstride or hstride.");
+            return IM_STATUS_INVALID_PARAM;
+        }
+    }
+
     /**************** resolution check ****************/
     switch (usage & IM_RGA_INFO_RESOLUTION_INPUT_MASK) {
         case IM_RGA_INFO_RESOLUTION_INPUT_2048 :
             if (src.width > 2048 || src.height > 2048) {
-                imErrorMsg("Unsupported to input resolution more than 2048.");
+                imErrorMsg("Unsupported src to input resolution more than 2048.");
+                return IM_STATUS_NOT_SUPPORTED;
+            } else if ((src_rect.width > 0 && src_rect.width > 2048) ||
+                    (src_rect.height > 0 && src_rect.height > 2048)) {
+                imErrorMsg("Unsupported src rect to output resolution more than 2048.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             break;
 
         case IM_RGA_INFO_RESOLUTION_INPUT_4096 :
             if (src.width > 4096 || src.height > 4096) {
-                imErrorMsg("Unsupported to input resolution more than 4096.");
+                imErrorMsg("Unsupported src to input resolution more than 4096.");
+                return IM_STATUS_NOT_SUPPORTED;
+            } else if ((src_rect.width > 0 && src_rect.width > 4096) ||
+                       (src_rect.height > 0 && src_rect.height > 4096)) {
+                imErrorMsg("Unsupported src rect to output resolution more than 4096.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             break;
 
         case IM_RGA_INFO_RESOLUTION_INPUT_8192 :
             if (src.width > 8192 || src.height > 8192) {
-                imErrorMsg("Unsupported to input resolution more than 8192.");
+                imErrorMsg("Unsupported src to input resolution more than 8192.");
+                return IM_STATUS_NOT_SUPPORTED;
+            } else if ((src_rect.width > 0 && src_rect.width > 8192) ||
+                       (src_rect.height > 0 && src_rect.height > 8192)) {
+                imErrorMsg("Unsupported src rect to output resolution more than 8192.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             break;
@@ -824,24 +880,73 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     switch (usage & IM_RGA_INFO_RESOLUTION_OUTPUT_MASK) {
         case IM_RGA_INFO_RESOLUTION_OUTPUT_2048 :
             if (dst.width > 2048 || dst.height > 2048) {
-                imErrorMsg("Unsupported to output resolution more than 2048.");
+                imErrorMsg("Unsupported dst to output resolution more than 2048.");
+                return IM_STATUS_NOT_SUPPORTED;
+            } else if ((dst_rect.width > 0 && dst_rect.width > 2048) ||
+                       (dst_rect.height > 0 && dst_rect.height > 2048)) {
+                imErrorMsg("Unsupported dst rect to output resolution more than 2048.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             break;
 
         case IM_RGA_INFO_RESOLUTION_OUTPUT_4096 :
             if (dst.width > 4096 || dst.height > 4096) {
-                imErrorMsg("Unsupported to output resolution more than 4096.");
+                imErrorMsg("Unsupported dst to output resolution more than 4096.");
+                return IM_STATUS_NOT_SUPPORTED;
+            } else if ((dst_rect.width > 0 && dst_rect.width > 4096) ||
+                       (dst_rect.height > 0 && dst_rect.height > 4096)) {
+                imErrorMsg("Unsupported dst rect to output resolution more than 4096.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             break;
 
         case IM_RGA_INFO_RESOLUTION_OUTPUT_8192 :
             if (dst.width > 8192 || dst.height > 8192) {
-                imErrorMsg("Unsupported to output resolution more than 8192.");
+                imErrorMsg("Unsupported dst to output resolution more than 8192.");
+                return IM_STATUS_NOT_SUPPORTED;
+            } else if ((dst_rect.width > 0 && dst_rect.width > 8192) ||
+                       (dst_rect.height > 0 && dst_rect.height > 8192)) {
+                imErrorMsg("Unsupported dst rect to output resolution more than 4096.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             break;
+    }
+
+    if (pat_buffer_isValid) {
+        switch (usage & IM_RGA_INFO_RESOLUTION_OUTPUT_MASK) {
+            case IM_RGA_INFO_RESOLUTION_INPUT_2048 :
+                if (pat.width > 2048 || pat.height > 2048) {
+                    imErrorMsg("Unsupported pat to input resolution more than 2048.");
+                    return IM_STATUS_NOT_SUPPORTED;
+                } else if ((pat_rect.width > 0 && pat_rect.width > 2048) ||
+                           (pat_rect.height > 0 && pat_rect.height > 2048)) {
+                    imErrorMsg("Unsupported pat rect to input resolution more than 2048.");
+                    return IM_STATUS_NOT_SUPPORTED;
+                }
+                break;
+
+            case IM_RGA_INFO_RESOLUTION_INPUT_4096 :
+                if (pat.width > 4096 || pat.height > 4096) {
+                    imErrorMsg("Unsupported pat to input resolution more than 4096.");
+                    return IM_STATUS_NOT_SUPPORTED;
+                } else if ((pat_rect.width > 0 && pat_rect.width > 4096) ||
+                           (pat_rect.height > 0 && pat_rect.height > 4096)) {
+                    imErrorMsg("Unsupported pat rect to input resolution more than 4096.");
+                    return IM_STATUS_NOT_SUPPORTED;
+                }
+                break;
+
+            case IM_RGA_INFO_RESOLUTION_INPUT_8192 :
+                if (pat.width > 8192 || pat.height > 8192) {
+                    imErrorMsg("Unsupported pat to input resolution more than 8192.");
+                    return IM_STATUS_NOT_SUPPORTED;
+                } else if ((pat_rect.width > 0 && pat_rect.width > 8192) ||
+                           (pat_rect.height > 0 && pat_rect.height > 8192)) {
+                    imErrorMsg("Unsupported pat rect to input resolution more than 8192.");
+                    return IM_STATUS_NOT_SUPPORTED;
+                }
+                break;
+        }
     }
 
     /**************** scale check ****************/
@@ -945,6 +1050,79 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         }
     }
 
+    if (pat_buffer_isValid) {
+        pat_fmt = RkRgaGetRgaFormat(src.format);
+        if (-1 == pat_fmt) {
+            imErrorMsg("Is pat unsupport format ,please query and fix.");
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+
+        if (pat_fmt == RK_FORMAT_RGB_565   || pat_fmt == RK_FORMAT_RGB_888	 ||
+            pat_fmt == RK_FORMAT_BGR_888   || pat_fmt == RK_FORMAT_RGBX_8888 ||
+            pat_fmt == RK_FORMAT_BGRA_8888 || pat_fmt == RK_FORMAT_RGBA_8888 ||
+            pat_fmt == RK_FORMAT_RGBA_4444 || pat_fmt == RK_FORMAT_RGBA_5551) {
+            if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_RGB) {
+                imErrorMsg("Pat unsupported input RGB format.");
+                return IM_STATUS_NOT_SUPPORTED;
+            }
+            pat_isRGB = 1;
+        } else if (pat_fmt == RK_FORMAT_BPP1 || pat_fmt == RK_FORMAT_BPP2 ||
+                   pat_fmt == RK_FORMAT_BPP4 || pat_fmt == RK_FORMAT_BPP8) {
+            if ((~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_BP) && !(mode_usage & IM_COLOR_PALETTE)) {
+                imErrorMsg("Pat unsupported input BP format.");
+                return IM_STATUS_NOT_SUPPORTED;
+            }
+            pat_isBP = 1;
+        } else if (pat_fmt == RK_FORMAT_YCrCb_420_SP || pat_fmt == RK_FORMAT_YCbCr_420_SP ||
+                   pat_fmt == RK_FORMAT_YCrCb_420_P  || pat_fmt == RK_FORMAT_YCbCr_420_P  ||
+                   pat_fmt == RK_FORMAT_YCrCb_422_SP || pat_fmt == RK_FORMAT_YCbCr_422_SP ||
+                   pat_fmt == RK_FORMAT_YCrCb_422_P  || pat_fmt == RK_FORMAT_YCbCr_422_P) {
+            if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8) {
+                imErrorMsg("Pat unsupported input YUV 8bit format.");
+                return IM_STATUS_NOT_SUPPORTED;
+            }
+            /*Align check*/
+            if ((pat.wstride % 2) || (pat.hstride % 2) ||
+                (pat.width % 2)  || (pat.height % 2) ||
+                (pat_rect.x % 2) || (pat_rect.y % 2) ||
+                (pat_rect.width % 2) || (pat_rect.height % 2)) {
+                imErrorMsg("Err pat yuv not align to 2.");
+                return IM_STATUS_INVALID_PARAM;
+            }
+            pat_isYUV_8 = 1;
+        } else if (pat_fmt == RK_FORMAT_YCbCr_420_SP_10B || pat_fmt == RK_FORMAT_YCrCb_420_SP_10B) {
+            if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_10) {
+                imErrorMsg("Pat unsupported input YUV 10bit format.");
+                return IM_STATUS_NOT_SUPPORTED;
+            }
+            /*Align check*/
+            if ((pat.wstride % 16) || (pat.hstride % 2) ||
+                (pat.width % 2)  || (pat.height % 2) ||
+                (pat_rect.x % 2) || (pat_rect.y % 2) ||
+                (pat_rect.width % 2) || (pat_rect.height % 2)) {
+                imErrorMsg("Err pat wstride is not align to 16 or yuv not align to 2.");
+                return IM_STATUS_INVALID_PARAM;
+            }
+            ALOGE("If it is an RK encoder output, it needs to be aligned with an odd multiple of 256.\n");
+            pat_isYUV_10 = 1;
+        } else if (pat_fmt == -1) {
+            if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUYV) {
+                imErrorMsg("Pat unsupported input YUYV format.");
+                return IM_STATUS_NOT_SUPPORTED;
+            }
+            src_isYUYV = 1;
+        } else if (pat_fmt == -1) {
+            if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV400) {
+                imErrorMsg("Pat unsupported input YUV400 format.");
+                return IM_STATUS_NOT_SUPPORTED;
+            }
+            pat_isYUV400 = 1;
+        } else {
+            imErrorMsg("Pat unsupported input this format.");
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+    }
+
     dst_fmt = RkRgaGetRgaFormat(dst.format);
     if (-1 == dst_fmt) {
         imErrorMsg("Is dst unsupport format ,please query and fix.");
@@ -975,12 +1153,13 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
             imErrorMsg("Dst unsupported output YUV 8bit format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
+
         /*Align check*/
-        if ((dst.wstride % 8) || (dst.hstride % 2) ||
+        if ((dst.wstride % 2) || (dst.hstride % 2) ||
             (dst.width % 2)  || (dst.height % 2) ||
             (dst_rect.x % 2) || (dst_rect.y % 2) ||
             (dst_rect.width % 2) || (dst_rect.height % 2)) {
-            imErrorMsg("Err dst wstride is not align to 8 or yuv not align to 2.");
+            imErrorMsg("Err dst yuv not align to 2.");
             return IM_STATUS_INVALID_PARAM;
         }
         dst_isYUV_8 = 1;
@@ -989,6 +1168,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
             imErrorMsg("Dst unsupported output YUV 10bit format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
+
         /*Align check*/
         if ((dst.wstride % 16) || (dst.hstride % 2) ||
             (dst.width % 2)  || (dst.height % 2) ||
@@ -1018,17 +1198,46 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
 
     /**************** blend mode check ****************/
     if (mode_usage & IM_ALPHA_BLEND_MASK) {
-        if ((mode_usage & IM_ALPHA_BLEND_DST_OVER) && (!dst_isRGB ||
-                (dst_fmt == RK_FORMAT_RGB_565 || dst_fmt == RK_FORMAT_RGB_888 ||
-                 dst_fmt == RK_FORMAT_BGR_888))) {
-            imErrorMsg("Blend mode 'dst_over' unsupported dst format without alpha.");
+        if (!dst_isRGB || (pat_buffer_isValid && !pat_isRGB)) {
+            imErrorMsg("dst/pat channel unsupported formats other than RGB.");
             return IM_STATUS_NOT_SUPPORTED;
-        } else if (!(src_isRGB && dst_isRGB) ||
+        }
+        switch (mode_usage & IM_ALPHA_BLEND_MASK) {
+            case IM_ALPHA_BLEND_SRC :
+            case IM_ALPHA_BLEND_DST :
+                break;
+            case IM_ALPHA_BLEND_SRC_OVER :
+                if (!src_isRGB || (src_fmt == RK_FORMAT_RGB_565 ||
+                    src_fmt == RK_FORMAT_RGB_888 || src_fmt == RK_FORMAT_BGR_888)) {
+                    imErrorMsg("Blend mode 'src_over' unsupported src format without alpha.");
+                    return IM_STATUS_NOT_SUPPORTED;
+                }
+                break;
+            case IM_ALPHA_BLEND_DST_OVER :
+                if (pat_buffer_isValid) {
+                    if (!pat_isRGB || (pat_fmt == RK_FORMAT_RGB_565 ||
+                        pat_fmt == RK_FORMAT_RGB_888 || pat_fmt == RK_FORMAT_BGR_888)) {
+                        imErrorMsg("Blend mode 'dst_over' unsupported pat format without alpha.");
+                        return IM_STATUS_NOT_SUPPORTED;
+                    }
+                } else {
+                    if (!dst_isRGB || (dst_fmt == RK_FORMAT_RGB_565 ||
+                        dst_fmt == RK_FORMAT_RGB_888 || dst_fmt == RK_FORMAT_BGR_888)) {
+                        imErrorMsg("Blend mode 'dst_over' unsupported dst format without alpha.");
+                        return IM_STATUS_NOT_SUPPORTED;
+                    }
+                }
+
+                break;
+            default :
+                if (!(src_isRGB && dst_isRGB) ||
                    (src_fmt == RK_FORMAT_RGB_565 || src_fmt == RK_FORMAT_RGB_888 ||
                     src_fmt == RK_FORMAT_BGR_888 || dst_fmt == RK_FORMAT_RGB_565 ||
                     dst_fmt == RK_FORMAT_RGB_888 || dst_fmt == RK_FORMAT_BGR_888)) {
-            imErrorMsg("Blend mode unsupported format without alpha.");
-            return IM_STATUS_NOT_SUPPORTED;
+                    imErrorMsg("Blend mode unsupported format without alpha.");
+                    return IM_STATUS_NOT_SUPPORTED;
+                }
+                break;
         }
     }
     /**************** rotate mode check ****************/
@@ -1352,7 +1561,10 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     if (ret <= 0)
         return (IM_STATUS)ret;
 
-    ret = imcheck(src, dst, srect, drect, usage);
+    if ((usage & IM_ALPHA_BLEND_MASK) && rga_is_buffer_valid(pat)) /* A+B->C */
+        imcheck_composite(src, dst, pat, srect, drect, prect, usage);
+    else
+        ret = imcheck(src, dst, srect, drect, usage);
     if(ret <= 0)
         return (IM_STATUS)ret;
 
