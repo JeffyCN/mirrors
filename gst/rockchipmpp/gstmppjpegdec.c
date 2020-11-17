@@ -394,20 +394,18 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   gst_video_info_set_format (info, format, GST_VIDEO_INFO_WIDTH (&state->info),
       GST_VIDEO_INFO_HEIGHT (&state->info));
 
+  info->stride[0] = GST_ROUND_UP_16 (info->stride[0]);
+  info->stride[1] = info->stride[0];
+  ver_stride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
+  info->offset[0] = 0;
+  info->offset[1] = info->stride[0] * ver_stride;
+
   switch (format) {
     case GST_VIDEO_FORMAT_NV12:
-      info->stride[0] = GST_ROUND_UP_16 (info->stride[0]);
-      ver_stride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
-      info->offset[0] = 0;
-      info->offset[1] = info->stride[0] * ver_stride;
       cr_h = GST_ROUND_UP_2 (ver_stride) / 2;
       info->size = info->offset[1] + info->stride[0] * cr_h;
       break;
     case GST_VIDEO_FORMAT_NV16:
-      info->stride[0] = GST_ROUND_UP_16 (info->stride[0]);
-      ver_stride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
-      info->offset[0] = 0;
-      info->offset[1] = info->stride[0] * ver_stride;
       cr_h = GST_ROUND_UP_2 (ver_stride);
       info->size = info->stride[0] * cr_h * 2;
       break;
