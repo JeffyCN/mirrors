@@ -492,12 +492,11 @@ gst_mpp_jpeg_dec_loop (GstVideoDecoder * decoder)
     gst_memory_resize (mem, 0, self->info.size);
 
     frame->output_buffer = buffer;
-
     buffer = NULL;
-    ret = gst_video_decoder_finish_frame (decoder, frame);
 
     GST_TRACE_OBJECT (self, "finish buffer ts=%" GST_TIME_FORMAT,
         GST_TIME_ARGS (GST_BUFFER_TIMESTAMP (frame->output_buffer)));
+    ret = gst_video_decoder_finish_frame (decoder, frame);
 
     if (self->active && ret != GST_FLOW_OK)
       goto finish_frame_error;
