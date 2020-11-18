@@ -28,6 +28,7 @@
 #include <linux/stddef.h>
 
 #include "drmrga.h"
+#include "rga.h"
 
 #ifdef __cplusplus
 extern "C"{
