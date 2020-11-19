@@ -18,7 +18,6 @@ connect_cnt=0
 wpa_cnt=0
 
 trap "echo 'ifconfig wlan0 down'; ifconfig wlan0 down; exit" SIGTERM
-echo timer > /sys/class/leds/blue/trigger
 
 function getdhcp() {
 	while true
