@@ -41,6 +41,7 @@ float get_bpp_from_format(int format)
             bpp = 4;
             break;
         case RK_FORMAT_BGRA_8888:
+        case RK_FORMAT_BGRX_8888:
             bpp = 4;
             break;
         case RK_FORMAT_YCbCr_422_SP:
@@ -101,6 +102,9 @@ int get_string_by_format(char *value, int format)
             break;
         case RK_FORMAT_BGRA_8888:
             memcpy(value, "bgra8888", sizeof("bgra8888"));
+            break;
+        case RK_FORMAT_BGRX_8888:
+            memcpy(value, "bgrx8888", sizeof("bgrx8888"));
             break;
 	    case RK_FORMAT_YCrCb_420_SP:
             memcpy(value, "crcb420sp", sizeof("crcb420sp"));

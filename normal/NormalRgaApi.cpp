@@ -37,6 +37,8 @@ int RkRgaGetRgaFormat(int format)
 			return RK_FORMAT_RGBX_8888;
 		case RK_FORMAT_BGRA_8888:
 			return RK_FORMAT_BGRA_8888;
+		case RK_FORMAT_BGRX_8888:
+			return RK_FORMAT_BGRX_8888;
 		case RK_FORMAT_YCrCb_420_SP:
 			return RK_FORMAT_YCrCb_420_SP;
 		case RK_FORMAT_YCbCr_420_SP:
@@ -68,6 +70,7 @@ uint32_t bytesPerPixel(int format)
 		case RK_FORMAT_RGBA_8888:
 		case RK_FORMAT_RGBX_8888:
 		case RK_FORMAT_BGRA_8888:
+		case RK_FORMAT_BGRX_8888:
 			return 4;
 		case RK_FORMAT_RGB_888:
 			return 3;
@@ -496,6 +499,7 @@ bool NormalRgaIsRgbFormat(int format)
 		case RK_FORMAT_RGBX_8888:
 		case RK_FORMAT_RGB_888:
 		case RK_FORMAT_BGRA_8888:
+		case RK_FORMAT_BGRX_8888:
 		case RK_FORMAT_RGB_565:
 		case RK_FORMAT_RGBA_5551:
 		case RK_FORMAT_RGBA_4444:

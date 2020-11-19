@@ -104,6 +104,7 @@ enum
 {  4, 24, {{ 0, 0,   8, 0,  16, 8,  24,16 }}, GGL_RGB  },   // RK_FORMAT_RGBX_8888    
 {  3, 24, {{ 0, 0,   8, 0,  16, 8,  24,16 }}, GGL_RGB  },   // RK_FORMAT_RGB_888
 {  4, 32, {{32,24,  24,16,  16, 8,   8, 0 }}, GGL_BGRA },   // RK_FORMAT_BGRA_8888
+{  4, 32, {{ 0, 0,  24,16,  16, 8,   8, 0 }}, GGL_BGR  },   // RK_FORMAT_BGRX_8888
 {  2, 16, {{ 0, 0,  16,11,  11, 5,   5, 0 }}, GGL_RGB  },   // RK_FORMAT_RGB_565        
 {  2, 16, {{ 1, 0,  16,11,  11, 6,   6, 1 }}, GGL_RGBA },   // RK_FORMAT_RGBA_5551    
 {  2, 16, {{ 4, 0,  16,12,  12, 8,   8, 4 }}, GGL_RGBA },   // RK_FORMAT_RGBA_4444
@@ -135,6 +136,9 @@ typedef enum _Rga_SURF_FORMAT
     RK_FORMAT_BPP2         = 0x11,
     RK_FORMAT_BPP4         = 0x12,
     RK_FORMAT_BPP8         = 0x13,
+
+    RK_FORMAT_BGRX_8888    = 0x16,
+
     RK_FORMAT_YCbCr_420_SP_10B = 0x20,
     RK_FORMAT_YCrCb_420_SP_10B = 0x21,
     RK_FORMAT_UNKNOWN       = 0x100, 
