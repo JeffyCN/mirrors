@@ -20,3 +20,6 @@ v2.76 revision(20200925):
 v2.78 revision(20201102):
 1.support to create download list from parameter
 
+v2.79 revision(20201111):
+1.support new loader format
+
