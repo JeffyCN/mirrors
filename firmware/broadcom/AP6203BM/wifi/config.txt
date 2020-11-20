@@ -1,4 +1,4 @@
-dhcpc_enable=1
+keep_alive_period=120000
 garp=1
 suspend_bcn_li_dtim=10
 wl_preinit=pm2_sleep_ret=20
