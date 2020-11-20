@@ -158,6 +158,8 @@ gst_mpp_vp8_enc_update_properties (GstVideoEncoder * encoder)
   mpp_enc_cfg_set_s32 (cfg, "vp8:qp_max", self->qp_max);
   mpp_enc_cfg_set_s32 (cfg, "vp8:qp_min", self->qp_min);
 
+  mpp_enc_cfg_set_s32 (cfg, "vp8:disable_ivf", 1);
+
   if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_SET_CFG, cfg))
     GST_WARNING_OBJECT (self, "Set enc cfg failed");
 
