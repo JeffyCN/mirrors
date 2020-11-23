@@ -40,6 +40,8 @@ function udhcpcd() {
 		route add default gw $GW
 		echo "nameserver $DNS" > /etc/resolv.conf
 		echo $IPADDR $NETMASK $GW $DNS
+		echo none > /sys/class/leds/blue/trigger
+		echo 255 > /sys/class/leds/blue/brightness
 		wl PM 0
 		exit
 	fi
@@ -55,9 +57,12 @@ function udhcpcd() {
 		DNS=`cat /etc/resolv.conf | grep nameserver | awk '{print $2}'`
 		echo "ip_info: $IPADDR $NETMASK $GW $DNS"
 		vendor_storage -w VENDOR_CUSTOM_ID_1E -t string -i 1,$WIFISSID,$WIFIPWD,$IPADDR,$NETMASK,$GW,$DNS
+		echo none > /sys/class/leds/blue/trigger
+		echo 255 > /sys/class/leds/blue/brightness
 		wl PM 0
 	else
 		echo "dhcp failed !!!"
+		echo 0 > /sys/class/leds/blue/brightness
 		exit
 	fi
 }
@@ -139,6 +144,14 @@ function check_wlan0() {
 			exit
 		fi
 	done
+}
+
+function check_wakeup_cause() {
+	echo "check_wakeup_cause ..."
+	CAUSE=`dhd_priv wl wowl_wakeind | awk -F= '{print $3}' | sed -n '3p' | cut -d ' ' -f 1`
+	if [ "$CAUSE" != "0x0" ]; then
+		touch /tmp/wifi_wake
+	fi
 }
 
 function tcpka_del() {
@@ -284,6 +297,7 @@ fi
 
 check_wlan0
 wlan_up
+check_wakeup_cause
 tcpka_del
 connect_wifi
 udhcpcd
