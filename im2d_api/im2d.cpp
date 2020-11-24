@@ -480,6 +480,7 @@ IM_API long rga_get_info() {
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8;
             usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUYV;
+            usage |= IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV400;
             usage |= IM_RGA_INFO_PERFORMANCE_600;
             break;
         case RGA_V_ERR :
@@ -1032,13 +1033,14 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
             }
             ALOGE("If it is an RK encoder output, it needs to be aligned with an odd multiple of 256.\n");
             src_isYUV_10 = 1;
-        } else if (src_fmt == -1) {
+        } else if (src_fmt == RK_FORMAT_YUYV_420 || src_fmt == RK_FORMAT_YUYV_422 ||
+                   src_fmt == RK_FORMAT_YVYU_420 || src_fmt == RK_FORMAT_YVYU_422) {
             if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUYV) {
                 imErrorMsg("Src unsupported input YUYV format.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             src_isYUYV = 1;
-        } else if (src_fmt == -1) {
+        } else if (src_fmt == RK_FORMAT_YCbCr_400 || src_fmt == RK_FORMAT_Y4) {
             if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV400) {
                 imErrorMsg("Src unsupported input YUV400 format.");
                 return IM_STATUS_NOT_SUPPORTED;
@@ -1105,13 +1107,14 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
             }
             ALOGE("If it is an RK encoder output, it needs to be aligned with an odd multiple of 256.\n");
             pat_isYUV_10 = 1;
-        } else if (pat_fmt == -1) {
+        } else if (pat_fmt == RK_FORMAT_YUYV_420 || pat_fmt == RK_FORMAT_YUYV_422 ||
+                   pat_fmt == RK_FORMAT_YVYU_420 || pat_fmt == RK_FORMAT_YVYU_422) {
             if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUYV) {
                 imErrorMsg("Pat unsupported input YUYV format.");
                 return IM_STATUS_NOT_SUPPORTED;
             }
             src_isYUYV = 1;
-        } else if (pat_fmt == -1) {
+        } else if (pat_fmt == RK_FORMAT_YCbCr_400 || pat_fmt == RK_FORMAT_Y4) {
             if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV400) {
                 imErrorMsg("Pat unsupported input YUV400 format.");
                 return IM_STATUS_NOT_SUPPORTED;
@@ -1179,13 +1182,14 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         }
         ALOGE("If you want to input to the RK encoder, you need to align with an odd multiple of 256.\n");
         dst_isYUV_10 = 1;
-    } else if (dst_fmt == -1) {
+    } else if (dst_fmt == RK_FORMAT_YUYV_420 || dst_fmt == RK_FORMAT_YUYV_422 ||
+               dst_fmt == RK_FORMAT_YVYU_420 || dst_fmt == RK_FORMAT_YVYU_422) {
         if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUYV) {
             imErrorMsg("Dst unsupported output YUYV format.");
             return IM_STATUS_NOT_SUPPORTED;
         }
         dst_isYUYV = 1;
-    } else if (dst_fmt == -1) {
+    } else if (dst_fmt == RK_FORMAT_YCbCr_400 || dst_fmt == RK_FORMAT_Y4) {
         if (~usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV400) {
             imErrorMsg("Dst unsupported output YUV400 format.");
             return IM_STATUS_NOT_SUPPORTED;
