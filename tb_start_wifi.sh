@@ -41,7 +41,7 @@ function udhcpcd() {
 		echo "nameserver $DNS" > /etc/resolv.conf
 		echo $IPADDR $NETMASK $GW $DNS
 		echo none > /sys/class/leds/blue/trigger
-		echo 255 > /sys/class/leds/blue/brightness
+		echo 5 > /sys/class/leds/blue/brightness
 		wl PM 0
 		exit
 	fi
@@ -58,7 +58,7 @@ function udhcpcd() {
 		echo "ip_info: $IPADDR $NETMASK $GW $DNS"
 		vendor_storage -w VENDOR_CUSTOM_ID_1E -t string -i 1,$WIFISSID,$WIFIPWD,$IPADDR,$NETMASK,$GW,$DNS
 		echo none > /sys/class/leds/blue/trigger
-		echo 255 > /sys/class/leds/blue/brightness
+		echo 5 > /sys/class/leds/blue/brightness
 		wl PM 0
 	else
 		echo "dhcp failed !!!"
@@ -82,7 +82,7 @@ function getdhcp() {
 
 			echo $IPADDR $NETMASK $GW $DNS
 			echo none > /sys/class/leds/blue/trigger
-			echo 255 > /sys/class/leds/blue/brightness
+			echo 5 > /sys/class/leds/blue/brightness
 
 			if [ "$FORCE_CONFIG_WIFI" == "true" ];then
 				echo "reconnect, restart mediaserver..."
