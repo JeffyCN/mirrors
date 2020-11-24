@@ -1700,6 +1700,31 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         }
     }
 
+    if (dst.format == RK_FORMAT_Y4) {
+        switch (dst.color_space_mode) {
+            case IM_RGB_TO_Y4 :
+                dstinfo.dither.enable = 0;
+                dstinfo.dither.mode = 0;
+                break;
+            case IM_RGB_TO_Y4_DITHER :
+                dstinfo.dither.enable = 1;
+                dstinfo.dither.mode = 0;
+                break;
+            case IM_RGB_TO_Y1_DITHER :
+                dstinfo.dither.enable = 1;
+                dstinfo.dither.mode = 1;
+                break;
+            default :
+                dstinfo.dither.enable = 1;
+                dstinfo.dither.mode = 0;
+                break;
+        }
+        dstinfo.dither.lut0_l = 0x3210;
+        dstinfo.dither.lut0_h = 0x7654;
+        dstinfo.dither.lut1_l = 0xba98;
+        dstinfo.dither.lut1_h = 0xfedc;
+    }
+
     if (usage & IM_SYNC)
         dstinfo.sync_mode = RGA_BLIT_ASYNC;
 
