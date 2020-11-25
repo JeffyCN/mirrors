@@ -1225,8 +1225,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 	if (src1) {
 		/* special config for yuv + rgb => rgb */
 		/* src0 y2r, src1 bupass, dst bupass */
-		if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relSrc1Rect.format)) &&
-			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
+		if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
+			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrc1Rect.format)) &&
 			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relDstRect.format)))
 			yuvToRgbMode |= 0x1 << 0;
 
@@ -1241,8 +1241,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
 		/* special config for rgb + rgb => yuv on dst */
 		/* src0 bupass, src1 bupass, dst y2r */
-		if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrc1Rect.format)) &&
-			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
+		if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
+			NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrc1Rect.format)) &&
 			NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format)))
 			yuvToRgbMode |= 0x2 << 2;
 	} else {
