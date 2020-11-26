@@ -689,10 +689,10 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
         "height", G_TYPE_INT, self->input_state->info.height, NULL);
 
     /* Allocator buffers */
-    if (mpp_buffer_group_get_internal (&self->input_group, MPP_BUFFER_TYPE_ION))
+    if (mpp_buffer_group_get_internal (&self->input_group, MPP_BUFFER_TYPE_DRM))
       goto activate_failed;
     if (mpp_buffer_group_get_internal (&self->output_group,
-            MPP_BUFFER_TYPE_ION))
+            MPP_BUFFER_TYPE_DRM))
       goto activate_failed;
 
     for (i = 0; i < MPP_MAX_BUFFERS; i++) {

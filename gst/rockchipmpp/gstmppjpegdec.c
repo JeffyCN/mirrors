@@ -597,7 +597,7 @@ gst_mpp_jpeg_dec_handle_frame (GstVideoDecoder * decoder,
     if (gst_buffer_pool_set_active (self->pool, TRUE) == FALSE)
       goto error_activate_pool;
 
-    if (mpp_buffer_group_get_internal (&self->input_group, MPP_BUFFER_TYPE_ION))
+    if (mpp_buffer_group_get_internal (&self->input_group, MPP_BUFFER_TYPE_DRM))
       goto error_activate_pool;
 
     mpp_buffer_get (self->input_group, &mbuf, 1);

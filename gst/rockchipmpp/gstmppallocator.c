@@ -260,9 +260,9 @@ gst_mpp_allocator_drm_buf (GstMppAllocator * allocator, gsize size,
   MppBuffer temp_buf[VIDEO_MAX_FRAME];
 
   /* FIXME the rockchip mpp should support DRM type properly */
-  mpp_buffer_group_get_internal (&group, MPP_BUFFER_TYPE_ION);
+  mpp_buffer_group_get_internal (&group, MPP_BUFFER_TYPE_DRM);
 
-  mpp_buffer_group_get_external (&allocator->mpp_mem_pool, MPP_BUFFER_TYPE_ION);
+  mpp_buffer_group_get_external (&allocator->mpp_mem_pool, MPP_BUFFER_TYPE_DRM);
   if (allocator->mpp_mem_pool == NULL)
     goto mpp_mem_pool_error;
 
