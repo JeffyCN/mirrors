@@ -1,4 +1,5 @@
 PM=0
+pm_in_suspend=2
 keep_alive_period=120000
 garp=1
 suspend_bcn_li_dtim=10
