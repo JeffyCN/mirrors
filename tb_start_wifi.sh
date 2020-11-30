@@ -97,7 +97,7 @@ function getdhcp() {
 		sleep 0.01
 
 		let getdhcp_cnt++
-		if [ $getdhcp_cnt -gt 3000 ]; then
+		if [ "$getdhcp_cnt" -gt 3000 ]; then
 			echo "$NEW_SSID getdhcp failed!!!"
 			echo 0 > /sys/class/leds/blue/brightness
 			exit
@@ -119,7 +119,7 @@ function check_wlan0() {
 		fi
 
 		let insmod_cnt++
-		if [ $insmod_cnt -gt 3 ]; then
+		if [ "$insmod_cnt" -gt 3 ]; then
 			echo "insmod failed !!!"
 			echo 0 > /sys/class/leds/blue/brightness
 			exit
@@ -138,7 +138,7 @@ function check_wlan0() {
 		fi
 
 		let check_cnt++
-		if [ $check_cnt -gt 3]; then
+		if [ "$check_cnt" -gt 3 ]; then
 			echo "check wlan0 failed!!!"
 			echo 0 > /sys/class/leds/blue/brightness
 			exit
@@ -170,7 +170,7 @@ function tcpka_del() {
 		fi
 
 		let tcpka_cnt++
-		if [ $tcpka_cnt -gt 3 ]; then
+		if [ "$tcpka_cnt" -gt 3 ]; then
 			echo "tcpka_conn_del failed"
 			exit
 		fi
@@ -192,7 +192,7 @@ function wlan_up() {
 		fi
 
 		let up_cnt++
-		if [ $up_cnt -gt 3 ]; then
+		if [ "$up_cnt" -gt 3 ]; then
 			echo "wlan0 up failed!!!"
 			echo 0 > /sys/class/leds/blue/brightness
 			exit
@@ -263,7 +263,7 @@ if [ "$SSID" ==  "" ] || [ "$FORCE_CONFIG_WIFI" == "true" ];then
 		fi
 
 		let wpa_cnt++
-		if [ $wpa_cnt -gt 3 ]; then
+		if [ "$wpa_cnt" -gt 3 ]; then
 			echo "wpa_supplicant up failed!!!"
 			echo 0 > /sys/class/leds/blue/brightness
 			exit
@@ -286,7 +286,7 @@ if [ "$SSID" ==  "" ] || [ "$FORCE_CONFIG_WIFI" == "true" ];then
 		fi
 
 		let connect_cnt++
-		if [ $connect_cnt -gt 35 ]; then
+		if [ "$connect_cnt" -gt 35 ]; then
 			echo "connect $NEW_SSID failed!!!"
 			echo 0 > /sys/class/leds/blue/brightness
 			exit
