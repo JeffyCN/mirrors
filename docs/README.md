@@ -193,7 +193,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>≈600Mpix/s</td>
    </tr>
 </table>
-* 实际运行性能表现与内存频率等相关，列表数据仅供参考
+* 预期性能为默认RGA频率下计算得出，实际运行性能表现与内存频率等相关，列表数据仅供参考。
 
 
 
@@ -302,7 +302,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>ARGB888/888/565/4444/5551<br/>YUV420/YUV422<br/>YUV400/Y4<br/>YVYU422/YUYV420</td>
    </tr>
 </table>
-
+> 注：Y4格式即2的4次方色阶灰度图，Y400格式即2的8次方色阶灰度图。
 
 
 ### 图像格式对齐说明
@@ -341,7 +341,7 @@ const char* querystring(int name);
 
 | **Parameters** | **Description**                                              |
 | -------------- | ------------------------------------------------------------ |
-| name           | RGA_VENDOR - 厂商信息<br/>RGA_VERSION - 版本信息<br/>RGA_MAX_INPUT - 支持的最大输入分辨率<br/>RGA_MAX_OUTPUT – 支持的最大输出分辨率<br/>RGA_SCALE_LIMIT - 支持得缩放倍数<br/>RGA_INPUT_FORMAT - 支持的输入格式<br/>RGA_OUTPUT_FORMAT - 支持的输出格式<br/>RGA_ALL – 输出所有信息 |
+| name           | RGA_VENDOR                 - 厂商信息<br/>RGA_VERSION                 - 版本信息<br/>RGA_MAX_INPUT            - 支持的最大输入分辨率<br/>RGA_MAX_OUTPUT        - 支持的最大输出分辨率<br/>RGA_SCALE_LIMIT           - 支持得缩放倍数<br/>RGA_INPUT_FORMAT     - 支持的输入格式<br/>RGA_OUTPUT_FORMAT - 支持的输出格式<br/>RGA_EXPECTED               - 预期性能<br/>RGA_ALL                           - 输出所有信息 |
 
  **Returns** a string describing properties of RGA.
 
@@ -364,6 +364,12 @@ const char* querystring(int name);
 | buffer handle     | buffer_handle_t<br/>gralloc_drm_handle_t<br/>gralloc_drm_bo_t | 图像缓冲区handle, 包含缓冲区地址，文件描述符，分辨率及格式等信息 |
 | GraphicBuffer     | GraphicBuffer                                                | android graphic buffer                                       |
 | AHardwareBuffer   | AHardwareBuffer                                              | chunks of memory that can be accessed by various hardware components in the system.<br/>https://developer.android.com/ndk/reference/group/a-hardware-buffer |
+
+> 不同的buffer类型调用RGA的性能是不同的，性能排序如下所示：
+>
+> physical address > fd = buffer handle = GraphicBuffer = AHardwareBuffer > virtual address
+>
+> 一般推荐使用fd作为buffer类型。
 
 ```C++
 rga_buffer_t wrapbuffer_virtualaddr(void* vir_addr, 
@@ -599,7 +605,7 @@ IM_STATUS imtranslate(const rga_buffer_t src,
                       int sync = 1)
 ```
 
-> 对图像做平移操作，移动到（x, y）坐标位置，src和dst 宽高须一致，超出部分会被裁减。
+> 对图像做平移操作，移动到（x, y）坐标位置，src和dst 宽高须一致，超出部分会被裁剪。
 >
 
 | Parameter | Description                                  |
@@ -686,7 +692,8 @@ IM_STATUS imcomposite(const rga_buffer_t srcA,
 > IM_ALPHA_BLEND_DST_OUT:
 >
 > ​		[Da, Sc * Da + (1 - Sa) * Dc]
->
+
+【注意】图像合成模式不支持YUV格式之间合成，imblend函数dst图像不支持YUV格式，imcomposite函数srcB图像不支持YUV格式。
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
@@ -808,8 +815,10 @@ IM_STATUS imquantize(const rga_buffer_t src,
 ```C++
 IM_STATUS improcess(rga_buffer_t src,
                     rga_buffer_t dst, 
+                    rga_buffer_t pat,
                     im_rect srect, 
-                    im_rect drect, 
+                    im_rect drect,
+                    im_rect prect,
                     int usage)
 ```
 
@@ -820,10 +829,12 @@ IM_STATUS improcess(rga_buffer_t src,
 
 | Parameter | Description                          |
 | --------- | ------------------------------------ |
-| src       | **[required]** input image           |
+| src       | **[required]** input imageA          |
 | dst       | **[required]** output image          |
+| pat       | **[required]** input imageB          |
 | srect     | **[optional]** src crop region       |
 | drect     | **[optional]** dst crop region       |
+| prect     | **[optional]** pat crop region       |
 | usage     | **[optional]** image operation usage |
 
 usage 参照定义：
@@ -855,9 +866,12 @@ typedef enum {
     IM_ALPHA_BLEND_XOR          = 1 << 14,    /* Xor */
     IM_ALPHA_BLEND_MASK         = 0x7fe0,
 
-    IM_SYNC                     = 1 << 15,
-    IM_CROP                     = 1 << 16,
-    IM_COLOR_FILL               = 1 << 17,
+    IM_SYNC                     = 1 << 16,
+    IM_CROP                     = 1 << 17,
+    IM_COLOR_FILL               = 1 << 18,
+    IM_COLOR_PALETTE            = 1 << 19,
+    IM_NN_QUANTIZE              = 1 << 20,
+    IM_ROP                      = 1 << 21,
 } IM_USAGE;
 ```
 
@@ -1137,11 +1151,12 @@ librga:RGA_GET_VERSION:3.02,3.020000
 ctx=0x7864d7c520,ctx->rgaFd=3
 
 =============================================================================================
-   usage: rgaImDemo [--help/-h] [--querystring/--querystring=<options>]
+   usage: rgaImDemo [--help/-h] [--while/-w=(time)] [--querystring/--querystring=<options>]
                     [--copy] [--resize=<up/down>] [--crop] [--rotate=90/180/270]
                     [--flip=H/V] [--translate] [--blend] [--cvtcolor]
                     [--fill=blue/green/red]
          --help/-h     Call help
+         --while/w     Set the loop mode. Users can set the number of cycles by themselves.
          --querystring You can print the version or support information corresponding to the current version of RGA according to the options.
                        If there is no input options, all versions and support information of the current version of RGA will be printed.
                        <options>:
@@ -1152,11 +1167,13 @@ ctx=0x7864d7c520,ctx->rgaFd=3
                        scalelimit       Print scale limit.
                        inputformat      Print supported input formats.
                        outputformat     Print supported output formats.
+                       expected         Print expected performance.
                        all              Print all information.
          --copy        Copy the image by RGA.The default is 720p to 720p.
          --resize      resize the image by RGA.You can choose to up(720p->1080p) or down(720p->480p).
          --crop        Crop the image by RGA.By default, a picture of 300*300 size is cropped from (100,100).
          --rotate      Rotate the image by RGA.You can choose to rotate 90/180/270 degrees.
+
          --flip        Flip the image by RGA.You can choice of horizontal flip or vertical flip.
          --translate   Translate the image by RGA.Default translation (300,300).
          --blend       Blend the image by RGA.Default, Porter-Duff 'SRC over DST'.
@@ -1167,6 +1184,19 @@ ctx=0x7864d7c520,ctx->rgaFd=3
 
 > 所有的参数解析在目录/librga/demo/im2d_api_demo/args.cpp中。
 >
+
+
+
+#### 循环执行demo
+
+------
+
+> 使用如下命令循环执行示例demo，循环命令必须在所有参数之前，循环次数为int型，默认每次循环间隔200ms。
+
+```
+rgaImDemo -w6 --copy
+rgaImDemo --while=6 --copy
+```
 
 
 
@@ -1194,6 +1224,7 @@ options：
 	=scalelimit			打印支持的缩放倍数
 	=inputformat		打印支持的输入格式
 	=outputformat		打印支持的输出格式
+	=expected			打印预期性能
 	=all				打印所有信息
 ```
 
