@@ -17,12 +17,11 @@
  */
 #include "NormalRga.h"
 #include "NormalRgaContext.h"
+#include "version.h"
 
 #ifdef ANDROID
 #include "GrallocOps.h"
 #include <cutils/properties.h>
-
-#define RGA_VERSION "1.04"
 
 #elif LINUX
 #include <sys/ioctl.h>
@@ -194,7 +193,9 @@ int RgaInit(void **ctx) {
     int ret = 0;
     ret = NormalRgaOpen(ctx);
 #ifdef ANDROID
-    property_set("vendor.rga.version", RGA_VERSION);
+    property_set("vendor.rga_lib.version", RGA_LIB_VERSION);
+    property_set("vendor.rga_im2d.version", RGA_IM2D_VERSION);
+    property_set("vendor.rga_built.version", RGA_BUILT_VERSION);
 #endif
     return ret;
 }

@@ -26,15 +26,15 @@ endif
 
 libthreads_dep = dependency('threads')
 
-git_version_h = vcs_tag(
-    command : ['git', 'rev-parse', '--short', 'HEAD'],
-    input : 'version.h.in', output : 'version.h',
-)
-add_project_arguments('-include', 'version.h', language : 'cpp')
+gen_version = vcs_tag(
+	command : ['./version.sh', 'meson'],
+	replace_string : ['$FULL_VERSION'],
+	input : 'version.h.template', output : 'version.h',
+ )
 add_project_arguments('-DLINUX=1', language : 'cpp')
 
 librga_srcs = [
-	git_version_h,
+	gen_version,
     'core/GrallocOps.cpp',
     'core/NormalRgaApi.cpp',
 	'core/NormalRga.cpp',
@@ -80,7 +80,6 @@ pkgconfig.generate(
 librga_demo_option = get_option('librga_demo')
 if librga_demo_option != 'false'
     demo_src = [
-		git_version_h,
 		'samples/im2d_api_demo/rgaImDemo.cpp',
 		'samples/im2d_api_demo/args.cpp'
 	]

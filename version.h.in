@@ -1,6 +1,0 @@
-#ifndef _rk_graphics_version_h_
-#define _rk_graphics_version_h_
-
-#define RK_GRAPHICS_VER "@VCS_TAG@"
-
-#endif //_rk_graphics_version_h_

@@ -1,6 +1,8 @@
-#ifndef _rk_graphics_version_h_
-#define _rk_graphics_version_h_
+#ifndef _rk_graphics_rga_version_h_
+#define _rk_graphics_rga_version_h_
 
-#define RK_GRAPHICS_VER "version:$FULL_VERSION"
+#define RGA_IM2D_VERSION "1.11"
+#define RGA_LIB_VERSION "1.04"
+#define RGA_BUILT_VERSION "$FULL_VERSION"
 
-#endif // VERSION_H
+#endif /* _rk_graphics_rga_version_h_ */

@@ -29,6 +29,8 @@
 #include "../core/NormalRga.h"
 #endif
 
+#include "version.h"
+
 #include <sstream>
 
 #ifdef ANDROID
@@ -47,8 +49,9 @@ using namespace android;
 #endif
 
 typedef enum {
-    LIBRGA = 0,
-    RGA_IM2D
+    RGA_LIB = 0,
+    RGA_IM2D,
+    RGA_BUILT,
 } QUERYSTRING_API;
 
 RockchipRga& rkRga(RockchipRga::get());
@@ -496,9 +499,6 @@ IM_API long rga_get_info() {
 
 IM_API const char* querystring(int name) {
     bool all_output = 0, all_output_prepared = 0;
-#ifdef ANDROID
-    char version_value[PROPERTY_VALUE_MAX];
-#endif
     int rga_version = 0;
     long usage = 0;
     const char *temp;
@@ -514,8 +514,9 @@ IM_API const char* querystring(int name) {
         "expected performance  : ",
     };
     const char *version_name[] = {
-        "librga version        : ",
-        "rga_im2d version      : "
+        "RGA_lib_version       : ",
+        "RGA_im2d_version      : ",
+        "RGA_built_version     : "
     };
     const char *output_version[] = {
         "unknown",
@@ -555,10 +556,6 @@ IM_API const char* querystring(int name) {
     ostringstream out;
     static string info;
 
-#ifdef ANDROID
-    property_set("vendor.rga_im2d.version", RGA_IM2D_VERSION);
-#endif
-
     usage = rga_get_info();
     if (IM_STATUS_FAILED == usage) {
         ALOGE("rga im2d: rga2 get info failed!\n");
@@ -596,13 +593,10 @@ IM_API const char* querystring(int name) {
                 break;
 
             case RGA_VERSION :
+                out << version_name[RGA_LIB] << "v" << RGA_LIB_VERSION << endl;
+                out << version_name[RGA_IM2D] << "v" << RGA_IM2D_VERSION << endl;
+                out << version_name[RGA_BUILT] << RGA_BUILT_VERSION <<endl;
                 out << output_name[name] << output_version[rga_version] << endl;
-#ifdef ANDROID
-                property_get("vendor.rga.version", version_value, "0");
-                out << version_name[LIBRGA] << "v" << version_value << endl;
-                property_get("vendor.rga_im2d.version", version_value, "0");
-                out << version_name[RGA_IM2D] << "v" << version_value << endl;
-#endif
                 break;
 
             case RGA_MAX_INPUT :

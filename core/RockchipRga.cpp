@@ -66,7 +66,8 @@
 #endif
 #endif
 
-#define RK_GRAPHICS_VER "version:1.00"
+#include "version.h"
+
 #ifdef ANDROID
 namespace android {
 // ---------------------------------------------------------------------------
@@ -81,7 +82,7 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         mLogAlways(0),
         mContext(NULL) {
         RkRgaInit();
-        ALOGE("Rga built version:%s", RK_GRAPHICS_VER);
+        ALOGE("Rga built version:%s %s", RGA_LIB_VERSION, RGA_BUILT_VERSION);
     }
 
     RockchipRga::~RockchipRga() {

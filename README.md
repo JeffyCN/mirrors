@@ -57,7 +57,6 @@ $ cd build
 $ cp ../cmake-linux.sh ./
 $ chmod +x ./cmake-linux.sh
 $ ./cmake-linux.sh
-$ make
 ```
 
 **[编译选项]**

@@ -15,6 +15,18 @@ bootstrap_go_package {
     pluginFor: ["soong_build"],
 }
 
+genrule {
+	name: "gen_rga_version",
+	srcs: [
+		"version.h.template",
+		".git/COMMIT_EDITMSG",
+		".git/logs/HEAD"
+	],
+	out: ["version.h"],
+	cmd: "rm -f $(location version.h) && " + "bash $(location version.sh) < $(in) > $(out)",
+	tool_files: ["version.sh"],
+}
+
 cc_librga {
    name: "cc_librga_defaults"
 }
@@ -26,6 +38,10 @@ cc_library_shared {
     ],
 
     vendor_available: true,
+
+	generated_headers: [
+        "gen_rga_version",
+    ],
 
     header_libs: [
         "gl_headers",
