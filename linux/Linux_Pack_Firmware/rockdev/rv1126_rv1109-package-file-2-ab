@@ -4,8 +4,9 @@
 package-file	package-file
 bootloader	Image/MiniLoaderAll.bin
 parameter	Image/parameter.txt
-#trust       Image/trust.img
-uboot       Image/uboot.img
+misc       Image/misc.img
+uboot_a       Image/uboot.img
+uboot_b       Image/uboot.img
 boot_a      Image/boot.img
 boot_b      Image/boot.img
 system_a    Image/rootfs.img
