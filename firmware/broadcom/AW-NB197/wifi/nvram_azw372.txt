@@ -1,6 +1,6 @@
 # NVRAM file for BCM943430WLSELG
 # 2.4 GHz, 20 MHz BW mode
-# Modify by AZ_Joe for DS power table V1.1 1801105
+#Modify by AZ_Joe for DS power table 180419 
 # The following parameter values are just placeholders, need to be updated.
 manfid=0x2d0
 prodid=0x0726
@@ -16,7 +16,8 @@ xtalfreq=26000
 nocrc=1
 ag0=255
 aa2g=1
-ccode=ALL
+ccode=CN
+regrev=84
 
 pa0itssit=0x20
 extpagain2g=0
@@ -41,10 +42,10 @@ papdmode=1
 papdvalidtest=1
 
 # LTECX flags
-#ltecxmux=1
-#ltecxpadnum=0x02030401
-#ltecxfnsel=0x3003
-#ltecxgcigpio=0x3012
+ltecxmux=1
+ltecxpadnum=0x02030401
+ltecxfnsel=0x3003
+ltecxgcigpio=0x3012
 
 il0macaddr=00:90:4c:c5:12:38
 wl0id=0x431b
@@ -54,5 +55,22 @@ deadman_to=0xffffffff
 muxenab=0x10
 # CLDO PWM voltage settings - 0x4 - 1.1 volt
 #cldo_pwm=0x4
+wowl_gpiopol=0
+wowl_gpio=1
+#gpioint_en=1
 
+#Adaptive test setting
+#For 2G, please check in these into nvram.
+edonthd20u=-38
+edonthd20l=-38
+edoffthd20ul=-44
+
+ed_thresh2g=-38
+eu_edthresh2g=-44
+
+
+#VCO freq 326.4MHz
+spurconfig=0x3 
+
+sdioctrl_gpio=2
 
