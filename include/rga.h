@@ -307,6 +307,8 @@ struct rga_req {
                                           /* ([5] = 1 dither_enable)          */
                                           /* ([6] = 1 gradient fill mode sel) */
                                           /* ([7] = 1 AA_enable)              */
+                                          /* ([8] = 1 nn_quantize)            */
+                                          /* ([9] = 1 Real color mode)        */
 
     unsigned char  scale_mode;            /* 0 nearst / 1 bilnear / 2 bicubic */
 

@@ -1300,7 +1300,15 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     /*color key*/
     /* if need this funtion, maybe should patch the rga driver. */
     if(src->colorkey_en == 1) {
-        NormalRgaSetSrcTransModeInfo(&rgaReg, 0, 1, 1, 1, 1, src->colorkey_min, src->colorkey_max, 1);
+        rgaReg.alpha_rop_flag |= (1 << 9);  //real color mode
+        switch (src->colorkey_mode) {
+            case 0 :
+                NormalRgaSetSrcTransModeInfo(&rgaReg, 0, 1, 1, 1, 1, src->colorkey_min, src->colorkey_max, 1);
+                break;
+            case 1 :
+                NormalRgaSetSrcTransModeInfo(&rgaReg, 1, 1, 1, 1, 1, src->colorkey_min, src->colorkey_max, 1);
+                break;
+        }
     }
 
 #ifdef ANDROID

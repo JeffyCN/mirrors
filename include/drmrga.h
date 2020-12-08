@@ -154,6 +154,7 @@ typedef struct rga_info {
     int testLog;
     int mmuFlag;
     int colorkey_en;
+    int colorkey_mode;
     int colorkey_max;
     int colorkey_min;
     int scale_mode;
@@ -162,7 +163,7 @@ typedef struct rga_info {
     rga_nn_t nn;
 	rga_dither_t dither;
 	int rop_code;
-    int reserve[128];
+    int reserve[127];
 } rga_info_t;
 
 
