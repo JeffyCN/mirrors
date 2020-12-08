@@ -707,6 +707,43 @@ IM_STATUS imcomposite(const rga_buffer_t srcA,
 
 
 
+###色键（Color Key）
+
+------
+
+#### imcolorkey
+
+```C++
+IM_STATUS imcolorkey(const rga_buffer_t src,
+                     rga_buffer_t dst,
+                     im_colorkey_range range,
+                     int mode = IM_ALPHA_COLORKEY_NORMAL,
+                     int sync = 1)
+```
+
+> Color Key技术是对源图像进行预处理，将符合色键过滤条件的像素的alpha分量置零，其中所述色键过滤条件为非透明的颜色值，并将预处理后的源图像与目标图像进行alpha混合模式。
+>
+> 该模式仅支持在源图像（src）区域的图像上针对设定的颜色范围实现Color Key功能，并叠加在目标图像（dst）区域上。
+
+> IM_ALPHA_COLORKEY_NORMAL为正常模式，即在设定的颜色范围内的颜色作为过滤条件，在该色彩范围内的像素点Alpha分量清零，IM_ALPHA_COLORKEY_INVERTED则反之。
+
+| **Parameters** | **Range**        | **Description**                           |
+| -------------- | ---------------- | ----------------------------------------- |
+| max            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最大值，排列为ABGR |
+| min            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最小值，排列为ABGR |
+
+| parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| src       | **[required]** input image                                   |
+| dst       | **[required]** output image                                  |
+| range     | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
+| Mode      | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED<br/> |
+| sync      | **[optional]** wait until operation complete                 |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
 ### 图像格式转换
 
 ------

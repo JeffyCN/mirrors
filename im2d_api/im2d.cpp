@@ -1449,6 +1449,30 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync) {
     return ret;
 }
 
+IM_API IM_STATUS imcolorkey_t(const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode, int sync) {
+    int usage = 0;
+    IM_STATUS ret = IM_STATUS_NOERROR;
+
+    rga_buffer_t pat;
+
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect);
+
+    usage |= mode;
+
+    dst.colorkey_range = range;
+
+    if (sync == 0)
+        usage |= IM_SYNC;
+
+    ret = improcess(src, dst, pat, srect, drect, prect, usage);
+
+    return ret;
+}
+
 IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode, int sync) {
     int usage = 0;
     IM_STATUS ret = IM_STATUS_NOERROR;
@@ -1649,6 +1673,23 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         }
         if(srcinfo.blend == 0 && srcinfo.rotation ==0)
             ALOGE("rga_im2d: Could not find blend/rotate/flip usage : 0x%x \n", usage);
+    }
+
+    /* color key */
+    if (usage & IM_ALPHA_COLORKEY_MASK) {
+        srcinfo.blend = 0xff0105;
+
+        srcinfo.colorkey_en = 1;
+        srcinfo.colorkey_min = dst.colorkey_range.min;
+        srcinfo.colorkey_max = dst.colorkey_range.max;
+        switch (usage & IM_ALPHA_COLORKEY_MASK) {
+            case IM_ALPHA_COLORKEY_NORMAL:
+                srcinfo.colorkey_mode = 0;
+                break;
+            case IM_ALPHA_COLORKEY_INVERTED:
+                srcinfo.colorkey_mode = 1;
+                break;
+        }
     }
 
     /* set NN quantize */

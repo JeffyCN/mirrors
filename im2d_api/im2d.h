@@ -35,32 +35,38 @@ typedef enum {
     IM_HAL_TRANSFORM_ROT_270    = 1 << 2,
     IM_HAL_TRANSFORM_FLIP_H     = 1 << 3,
     IM_HAL_TRANSFORM_FLIP_V     = 1 << 4,
-    IM_HAL_TRANSFORM_MASK       = 0x1f,
+    IM_HAL_TRANSFORM_FLIP_H_V   = 1 << 5,
+    IM_HAL_TRANSFORM_MASK       = 0x3f,
 
     /*
      * Blend
      * Additional blend usage, can be used with both source and target configs.
      * If none of the below is set, the default "SRC over DST" is applied.
      */
-    IM_ALPHA_BLEND_SRC_OVER     = 1 << 5,     /* Default, Porter-Duff "SRC over DST" */
-    IM_ALPHA_BLEND_SRC          = 1 << 6,     /* Porter-Duff "SRC" */
-    IM_ALPHA_BLEND_DST          = 1 << 7,     /* Porter-Duff "DST" */
-    IM_ALPHA_BLEND_SRC_IN       = 1 << 8,     /* Porter-Duff "SRC in DST" */
-    IM_ALPHA_BLEND_DST_IN       = 1 << 9,     /* Porter-Duff "DST in SRC" */
-    IM_ALPHA_BLEND_SRC_OUT      = 1 << 10,    /* Porter-Duff "SRC out DST" */
-    IM_ALPHA_BLEND_DST_OUT      = 1 << 11,    /* Porter-Duff "DST out SRC" */
-    IM_ALPHA_BLEND_DST_OVER     = 1 << 12,    /* Porter-Duff "DST over SRC" */
-    IM_ALPHA_BLEND_SRC_ATOP     = 1 << 13,    /* Porter-Duff "SRC ATOP" */
-    IM_ALPHA_BLEND_DST_ATOP     = 1 << 14,    /* Porter-Duff "DST ATOP" */
-    IM_ALPHA_BLEND_XOR          = 1 << 15,    /* Xor */
-    IM_ALPHA_BLEND_MASK         = 0xffe0,
+    IM_ALPHA_BLEND_SRC_OVER     = 1 << 6,     /* Default, Porter-Duff "SRC over DST" */
+    IM_ALPHA_BLEND_SRC          = 1 << 7,     /* Porter-Duff "SRC" */
+    IM_ALPHA_BLEND_DST          = 1 << 8,     /* Porter-Duff "DST" */
+    IM_ALPHA_BLEND_SRC_IN       = 1 << 9,     /* Porter-Duff "SRC in DST" */
+    IM_ALPHA_BLEND_DST_IN       = 1 << 10,    /* Porter-Duff "DST in SRC" */
+    IM_ALPHA_BLEND_SRC_OUT      = 1 << 11,    /* Porter-Duff "SRC out DST" */
+    IM_ALPHA_BLEND_DST_OUT      = 1 << 12,    /* Porter-Duff "DST out SRC" */
+    IM_ALPHA_BLEND_DST_OVER     = 1 << 13,    /* Porter-Duff "DST over SRC" */
+    IM_ALPHA_BLEND_SRC_ATOP     = 1 << 14,    /* Porter-Duff "SRC ATOP" */
+    IM_ALPHA_BLEND_DST_ATOP     = 1 << 15,    /* Porter-Duff "DST ATOP" */
+    IM_ALPHA_BLEND_XOR          = 1 << 16,    /* Xor */
+    IM_ALPHA_BLEND_MASK         = 0x1ffc0,
 
-    IM_SYNC                     = 1 << 16,
-    IM_CROP                     = 1 << 17,
-    IM_COLOR_FILL               = 1 << 18,
-    IM_COLOR_PALETTE            = 1 << 19,
-    IM_NN_QUANTIZE              = 1 << 20,
-    IM_ROP                      = 1 << 21,
+    IM_ALPHA_COLORKEY_NORMAL    = 1 << 17,
+    IM_ALPHA_COLORKEY_INVERTED  = 1 << 18,
+    IM_ALPHA_COLORKEY_MASK      = 0x60000,
+
+    IM_SYNC                     = 1 << 19,
+    IM_CROP                     = 1 << 20,
+    IM_COLOR_FILL               = 1 << 21,
+    IM_COLOR_PALETTE            = 1 << 22,
+    IM_NN_QUANTIZE              = 1 << 23,
+    IM_ROP                      = 1 << 24,
+
 } IM_USAGE;
 
 typedef enum {
@@ -187,6 +193,12 @@ typedef struct {
     int height;   /* height */
 } im_rect;
 
+typedef struct im_colorkey_range {
+    int max;                    /* The Maximum value of the color key */
+    int min;                    /* The minimum value of the color key */
+} im_colorkey_value;
+
+
 typedef struct im_nn {
     int scale_r;                /* scaling factor on R channal */
     int scale_g;                /* scaling factor on G channal */
@@ -209,7 +221,7 @@ typedef struct {
     int color_space_mode;               /* color_space_mode */
     int color;                          /* color, used by color fill */
     int global_alpha;                   /* global_alpha */
-    unsigned long lut_addr;             /* LUT/ pattern load base address */
+    im_colorkey_range colorkey_range;   /* range value of color key */
     im_nn_t nn;
 	int rop_code;
 } rga_buffer_t;
@@ -697,8 +709,39 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
         } \
         ret; \
     })
-
 IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode, int sync);
+
+/*
+ * color key
+ *
+ * @param src
+ * @param dst
+ * @param colorkey_range
+ *      max color
+ *      min color
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#define imcolorkey(src, dst, range, ...) \
+    ({ \
+        IM_STATUS ret = IM_STATUS_SUCCESS; \
+        int args[] = {__VA_ARGS__}; \
+        int argc = sizeof(args)/sizeof(int); \
+        if (argc == 0) { \
+            ret = imcolorkey_t(src, dst, range, IM_ALPHA_COLORKEY_NORMAL, 1); \
+        } else if (argc == 1){ \
+            ret = imcolorkey_t(src, dst, range, args[0], 1); \
+        } else if (argc == 2){ \
+            ret = imcolorkey_t(src, dst, range, args[0], args[1]); \
+        } else { \
+            ret = IM_STATUS_INVALID_PARAM; \
+            printf("invalid parameter\n"); \
+        } \
+        ret; \
+    })
+IM_API IM_STATUS imcolorkey_t(const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode, int sync);
 
 /*
  * format convert

@@ -643,15 +643,12 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     planeAlpha = (blend & 0xFF0000) >> 16;
 
     /* determined by format, need pixel alpha or not. */
-#ifdef ANDROID
     perpixelAlpha = relSrcRect.format == HAL_PIXEL_FORMAT_RGBA_8888 ||
-                    relSrcRect.format == HAL_PIXEL_FORMAT_BGRA_8888;
+                    relSrcRect.format == HAL_PIXEL_FORMAT_BGRA_8888 ||
+                    relSrcRect.format == RK_FORMAT_RGBA_8888 ||
+                    relSrcRect.format == RK_FORMAT_BGRA_8888;
     if(is_out_log())
         ALOGE("blend = %x , perpixelAlpha = %d",blend,perpixelAlpha);
-#elif LINUX
-    perpixelAlpha = relSrcRect.format == RK_FORMAT_RGBA_8888 ||
-                    relSrcRect.format == RK_FORMAT_BGRA_8888;
-#endif
 
     /* blend bit[0:15] is to set which way to blend,such as whether need glabal alpha,and so on. */
     switch ((blend & 0xFFFF)) {
