@@ -13,13 +13,13 @@ parameter	Image/parameter.txt
 # trust		Image/trust.img
 #
 uboot		Image/uboot.img
-# misc		Image/misc.img
+misc		Image/misc.img
 #resource	Image/resource.img
 #kernel		Image/kernel.img
 boot		Image/boot.img
-# recovery	Image/recovery.img
+recovery	Image/recovery.img
 rootfs		Image/rootfs.img
-# oem		Image/oem.img
+oem			Image/oem.img
 # userdata	Image/userdata.img
 # 要写入backup分区的文件就是自身（update.img）
 # SELF 是关键字，表示升级文件（update.img）自身
