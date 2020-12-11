@@ -111,11 +111,9 @@ int NormalRgaOpen(void **context) {
 
     ret = ioctl(fd, RGA_GET_VERSION, buf);
     ctx->mVersion = atof(buf);
-    fprintf(stderr, "librga:RGA_GET_VERSION:%s,%f\n", buf, ctx->mVersion);
 
     NormalRgaInitTables();
 
-    fprintf(stderr, "ctx=%p,ctx->rgaFd=%d\n",ctx, ctx->rgaFd );
     rgaCtx = ctx;
 
 init:
