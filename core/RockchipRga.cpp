@@ -111,6 +111,10 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         mSupportRga = false;
     }
 
+    void RockchipRga::RkRgaGetContext(void **ctx) {
+        memcpy(ctx, &mContext, sizeof(ctx));
+    }
+
 #ifdef LINUX
     int RockchipRga::RkRgaAllocBuffer(int drm_fd, bo_t *bo_info, int width,
                                       int height, int bpp, int flags) {

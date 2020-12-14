@@ -15,6 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef _rockchip_rga_c_h_
+#define _rockchip_rga_c_h_
+
 #include <stdint.h>
 #include <sys/types.h>
 #include <stdlib.h>
@@ -42,8 +45,8 @@ extern "C"{
  * not use ctx, because it is usually a NULL.
  */
 #define RgaInit(ctx) { \
-	(void)ctx;		/* unused */ \
 	c_RkRgaInit(); \
+	c_RkRgaGetContext(ctx); \
 }
 #define RgaDeInit(ctx) { \
 	(void)ctx;		/* unused */ \
@@ -55,6 +58,7 @@ extern "C"{
 
 int  c_RkRgaInit();
 void c_RkRgaDeInit();
+void c_RkRgaGetContext(void **ctx);
 int  c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
 int  c_RkRgaColorFill(rga_info_t *dst);
 int  c_RkRgaFlush();
@@ -71,3 +75,5 @@ int c_RkRgaGetBufferFd(bo_t *bo_info, int *fd);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* #ifndef _rockchip_rga_c_h_ */

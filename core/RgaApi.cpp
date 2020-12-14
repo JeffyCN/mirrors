@@ -39,6 +39,10 @@ void c_RkRgaDeInit()
     c_rkRga.RkRgaDeInit();
 }
 
+void c_RkRgaGetContext(void **ctx) {
+    c_rkRga.RkRgaGetContext(ctx);
+}
+
 int c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1)
 {
     int ret;
