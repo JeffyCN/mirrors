@@ -730,7 +730,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
     /* check the scale magnification. */
     if (src1 && src) {
-		printf("debug: is a+b=c\n");
 		hScale = (float)relSrcRect.width / relSrc1Rect.width;
         vScale = (float)relSrcRect.height / relSrc1Rect.height;
         if (rotation == HAL_TRANSFORM_ROT_90 || rotation == HAL_TRANSFORM_ROT_270) {
