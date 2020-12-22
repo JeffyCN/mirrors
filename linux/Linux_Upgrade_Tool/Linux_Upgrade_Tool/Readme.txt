@@ -94,3 +94,9 @@ v1.56 revision
 v1.57 revision
 1.fix download ubi image bug
 
+v1.58 revision
+1.move libusb_init into search step
+
+v1.59 revision
+1.fix check download size bug at RKA_File_Download
+
