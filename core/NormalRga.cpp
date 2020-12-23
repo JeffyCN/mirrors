@@ -1612,6 +1612,13 @@ int RgaCollorFill(rga_info *dst) {
 #endif
     }
 
+    if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(relDstRect.format))) {
+        rgaReg.yuv2rgb_mode |= 0x2 << 2;
+    }
+
+    if(dst->color_space_mode > 0)
+        rgaReg.yuv2rgb_mode = dst->color_space_mode;
+
     NormalRgaSetDstActiveInfo(&rgaReg, dstActW, dstActH, dstXPos, dstYPos);
 
     memset(&fillColor, 0x0, sizeof(COLOR_FILL));
