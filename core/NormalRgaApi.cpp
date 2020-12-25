@@ -320,7 +320,11 @@ int NormalRgaSetDstActiveInfo(struct rga_req *req,
 int NormalRgaSetDstVirtualInfo(struct rga_req *msg,
                                unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,
                                unsigned int  vir_w,    unsigned int vir_h,
+#ifdef ANDROID
                                RECT *clip,
+#elif LINUX
+                               RECT_t *clip,
+#endif
                                unsigned int format, unsigned char a_swap_en)
 #else
 int NormalRgaSetDstVirtualInfo(struct rga_req *msg,
