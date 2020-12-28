@@ -29,6 +29,24 @@ int         cosa_table[360];
   =======================================================================
  **********************************************************************/
 
+/* In order to be compatible with RK_FORMAT_XX and HAL_PIXEL_FORMAT_XX,
+ * RK_FORMAT_XX is shifted to the left by 8 bits to distinguish. In order
+ * to be compatible with the old RK_FORMAT_XX definition, a conversion
+ * function is made here. */
+int RkRgaCompatibleFormat(int format) {
+#if LINUX
+    if (format == 0)
+        return format;
+
+    if ((format >> 8) != 0) {
+        return format;
+    } else {
+        return format << 8;
+    }
+#endif
+    return format;
+}
+
 int RkRgaGetRgaFormat(int format) {
 	/* Because the format of librga is the value of driver format << 8 . */
 #ifdef ANDROID
@@ -55,8 +73,13 @@ int RkRgaGetRgaFormat(int format) {
 #endif
     if (format & 0xFF00 || format == 0)
         return format;
+    else {
+        format = RkRgaCompatibleFormat(format);
+        if (format & 0xFF00 || format == 0)
+            return format;
+    }
 
-    ALOGE("Is unsupport format now,pilese fix.");
+    ALOGE("%x is unsupport format now,pilese fix.", format);
     return -1;
 }
 
@@ -82,13 +105,17 @@ int RkRgaGetRgaFormatFromAndroid(int format) {
         case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
             return RK_FORMAT_YCbCr_420_SP_10B;//0x20
         default:
-            ALOGE("Is unsupport format now,please fix");
+            ALOGE("%x is unsupport format now,pilese fix.", format);
             return -1;
     }
 }
 #endif
 
 uint32_t bytesPerPixel(int format) {
+    if (!(format & 0xFF00 || format == 0)) {
+        format = RkRgaCompatibleFormat(format);
+    }
+
     switch (format) {
         case RK_FORMAT_RGBA_8888:
         case RK_FORMAT_RGBX_8888:

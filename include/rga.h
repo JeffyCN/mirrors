@@ -121,6 +121,8 @@ enum {
 {  3, 24, {{ 0, 0,  24,16,  16, 8,   8, 0 }}, GGL_BGR  },   // RK_FORMAT_BGB_888
 
 */
+/* In order to be compatible with RK_FORMAT_XX and HAL_PIXEL_FORMAT_XX,
+ * RK_FORMAT_XX is shifted to the left by 8 bits to distinguish.  */
 typedef enum _Rga_SURF_FORMAT {
     RK_FORMAT_RGBA_8888    = 0x0 << 8,
     RK_FORMAT_RGBX_8888    = 0x1 << 8,

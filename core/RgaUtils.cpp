@@ -35,9 +35,16 @@
 
 #include "RgaUtils.h"
 #include "RockchipRga.h"
+#include "core/NormalRga.h"
 
 float get_bpp_from_format(int format) {
     float bpp = 0;
+
+#ifdef LINUX
+    if (!(format & 0xFF00 || format == 0)) {
+        format = RkRgaCompatibleFormat(format);
+    }
+#endif
 
     switch (format) {
 #ifdef ANDROID
@@ -135,6 +142,12 @@ int get_buf_size_by_w_h_f(int w, int h, int f) {
 int get_string_by_format(char *value, int format) {
     if (!value)
         return -EINVAL;
+
+#ifdef LINUX
+        if (!(format & 0xFF00 || format == 0)) {
+            format = RkRgaCompatibleFormat(format);
+        }
+#endif
 
     switch (format) {
 #ifdef ANDROID

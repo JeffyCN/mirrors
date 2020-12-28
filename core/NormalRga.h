@@ -71,6 +71,7 @@ int         NormalRgaGetRect(buffer_handle_t hnd, rga_rect_t *rect);
 int         NormalRgaGetMmuType(buffer_handle_t hnd, int *mmuType);
 #endif
 
+int         RkRgaCompatibleFormat(int format);
 int         RkRgaGetRgaFormat(int format);
 int         RkRgaGetRgaFormatFromAndroid(int format);
 

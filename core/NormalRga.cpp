@@ -625,6 +625,11 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 	}
 #endif
 
+    relSrcRect.format = RkRgaCompatibleFormat(relSrcRect.format);
+    relDstRect.format = RkRgaCompatibleFormat(relDstRect.format);
+    if (isRectValid(relSrc1Rect))
+        relSrc1Rect.format = RkRgaCompatibleFormat(relSrc1Rect.format);
+
 #ifdef RK3126C
     if ( (relSrcRect.width == relDstRect.width) && (relSrcRect.height == relDstRect.height ) &&
          (relSrcRect.width + 2*relSrcRect.xoffset == relSrcRect.wstride) &&
@@ -1519,6 +1524,8 @@ int RgaCollorFill(rga_info *dst) {
         return -EINVAL;
     }
 
+    relDstRect.format = RkRgaCompatibleFormat(relDstRect.format);
+
     if (dstFd == 0)
         dstFd = -1;
 
@@ -1877,6 +1884,10 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
         ALOGD("lut: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", lutFd, lutBuf, lut->mmuFlag, lutType);
     }
 #endif
+
+    relSrcRect.format = RkRgaCompatibleFormat(relSrcRect.format);
+    relDstRect.format = RkRgaCompatibleFormat(relDstRect.format);
+    relLutRect.format = RkRgaCompatibleFormat(relLutRect.format);
 
 #ifdef RK3126C
     if ( (relSrcRect.width == relDstRect.width) && (relSrcRect.height == relDstRect.height ) &&

@@ -973,7 +973,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
 
     /**************** format check ****************/
     if (~mode_usage & IM_COLOR_FILL) {
-        src_fmt = RkRgaGetRgaFormat(src.format);
+        src_fmt = RkRgaGetRgaFormat(RkRgaCompatibleFormat(src.format));
         if (-1 == src_fmt) {
             imErrorMsg("Is src unsupport format ,please query and fix.");
             return IM_STATUS_NOT_SUPPORTED;
@@ -1047,7 +1047,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     }
 
     if (pat_buffer_isValid) {
-        pat_fmt = RkRgaGetRgaFormat(src.format);
+        pat_fmt = RkRgaGetRgaFormat(RkRgaCompatibleFormat(src.format));
         if (-1 == pat_fmt) {
             imErrorMsg("Is pat unsupport format ,please query and fix.");
             return IM_STATUS_NOT_SUPPORTED;
@@ -1120,7 +1120,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         }
     }
 
-    dst_fmt = RkRgaGetRgaFormat(dst.format);
+    dst_fmt = RkRgaGetRgaFormat(RkRgaCompatibleFormat(dst.format));
     if (-1 == dst_fmt) {
         imErrorMsg("Is dst unsupport format ,please query and fix.");
         return IM_STATUS_NOT_SUPPORTED;
@@ -1570,6 +1570,10 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     rga_info_t dstinfo;
     rga_info_t patinfo;
     int ret;
+
+    src.format = RkRgaCompatibleFormat(src.format);
+    dst.format = RkRgaCompatibleFormat(dst.format);
+    pat.format = RkRgaCompatibleFormat(pat.format);
 
     memset(&srcinfo, 0, sizeof(rga_info_t));
     memset(&dstinfo, 0, sizeof(rga_info_t));

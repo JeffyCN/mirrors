@@ -193,10 +193,10 @@ typedef struct {
     int height;   /* height */
 } im_rect;
 
-typedef struct im_colorkey_range {
+typedef struct {
     int max;                    /* The Maximum value of the color key */
     int min;                    /* The minimum value of the color key */
-} im_colorkey_value;
+} im_colorkey_range;
 
 
 typedef struct im_nn {
