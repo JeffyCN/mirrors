@@ -29,10 +29,64 @@ int         cosa_table[360];
   =======================================================================
  **********************************************************************/
 
-#ifdef LINUX
 int RkRgaGetRgaFormat(int format) {
-    return format;
+	/* Because the format of librga is the value of driver format << 8 . */
+#ifdef ANDROID
+	switch (format & 0xFF) {
+        case HAL_PIXEL_FORMAT_RGB_565:
+            return RK_FORMAT_RGB_565;
+        case HAL_PIXEL_FORMAT_RGB_888:
+            return RK_FORMAT_RGB_888;
+        case HAL_PIXEL_FORMAT_RGBA_8888:
+            return RK_FORMAT_RGBA_8888;
+        case HAL_PIXEL_FORMAT_RGBX_8888:
+            return RK_FORMAT_RGBX_8888;
+        case HAL_PIXEL_FORMAT_BGRA_8888:
+            return RK_FORMAT_BGRA_8888;
+        case HAL_PIXEL_FORMAT_YCrCb_420_SP:
+            return RK_FORMAT_YCrCb_420_SP;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12:
+            return RK_FORMAT_YCbCr_420_SP;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
+            return RK_FORMAT_YCbCr_420_SP;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
+            return RK_FORMAT_YCbCr_420_SP_10B; //0x20
+    }
+#endif
+    if (format & 0xFF00 || format == 0)
+        return format;
+
+    ALOGE("Is unsupport format now,pilese fix.");
+    return -1;
 }
+
+#ifdef ANDROID
+int RkRgaGetRgaFormatFromAndroid(int format) {
+    switch (format) {
+        case HAL_PIXEL_FORMAT_RGB_565:
+            return RK_FORMAT_RGB_565;
+        case HAL_PIXEL_FORMAT_RGB_888:
+            return RK_FORMAT_RGB_888;
+        case HAL_PIXEL_FORMAT_RGBA_8888:
+            return RK_FORMAT_RGBA_8888;
+        case HAL_PIXEL_FORMAT_RGBX_8888:
+            return RK_FORMAT_RGBX_8888;
+        case HAL_PIXEL_FORMAT_BGRA_8888:
+            return RK_FORMAT_BGRA_8888;
+        case HAL_PIXEL_FORMAT_YCrCb_420_SP:
+            return RK_FORMAT_YCrCb_420_SP;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12:
+            return RK_FORMAT_YCbCr_420_SP;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
+            return RK_FORMAT_YCbCr_420_SP;
+        case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
+            return RK_FORMAT_YCbCr_420_SP_10B;//0x20
+        default:
+            ALOGE("Is unsupport format now,please fix");
+            return -1;
+    }
+}
+#endif
 
 uint32_t bytesPerPixel(int format) {
     switch (format) {
@@ -56,8 +110,6 @@ uint32_t bytesPerPixel(int format) {
     }
     return 0;
 }
-
-#endif
 
 int checkRectForRga(rga_rect_t rect) {
     if (rect.xoffset < 0 || rect.yoffset < 0) {
@@ -233,12 +285,12 @@ int NormalRgaSetFdsOffsets(struct rga_req *req,
 #if defined(__arm64__) || defined(__aarch64__)
 int NormalRgaSetSrcVirtualInfo(struct rga_req *req,
                                unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,
-                               unsigned int vir_w,unsigned int vir_h, unsigned char format,
+                               unsigned int vir_w,unsigned int vir_h, unsigned int format,
                                unsigned char a_swap_en)
 #else
 int NormalRgaSetSrcVirtualInfo(struct rga_req *req,
                                unsigned int yrgb_addr, unsigned int uv_addr,unsigned int v_addr,
-                               unsigned int vir_w, unsigned int vir_h, unsigned char format,
+                               unsigned int vir_w, unsigned int vir_h, unsigned int format,
                                unsigned char a_swap_en)
 #endif
 {
@@ -247,7 +299,7 @@ int NormalRgaSetSrcVirtualInfo(struct rga_req *req,
     req->src.v_addr   = v_addr;
     req->src.vir_w = vir_w;
     req->src.vir_h = vir_h;
-    req->src.format = format;
+    req->src.format = format >> 8;
     req->src.alpha_swap |= (a_swap_en & 1);
 
     return 1;
@@ -268,18 +320,14 @@ int NormalRgaSetDstActiveInfo(struct rga_req *req,
 int NormalRgaSetDstVirtualInfo(struct rga_req *msg,
                                unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,
                                unsigned int  vir_w,    unsigned int vir_h,
-#ifdef ANDROID
                                RECT *clip,
-#elif LINUX
-                               RECT_t *clip,
-#endif
-                               unsigned char format, unsigned char a_swap_en)
+                               unsigned int format, unsigned char a_swap_en)
 #else
 int NormalRgaSetDstVirtualInfo(struct rga_req *msg,
                                unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr,
                                unsigned int vir_w,    unsigned int vir_h,
                                RECT *clip,
-                               unsigned char  format, unsigned char a_swap_en)
+                               unsigned int  format, unsigned char a_swap_en)
 #endif
 {
     msg->dst.yrgb_addr = yrgb_addr;
@@ -287,7 +335,7 @@ int NormalRgaSetDstVirtualInfo(struct rga_req *msg,
     msg->dst.v_addr   = v_addr;
     msg->dst.vir_w = vir_w;
     msg->dst.vir_h = vir_h;
-    msg->dst.format = format;
+    msg->dst.format = format >> 8;
 
     msg->clip.xmin = clip->xmin;
     msg->clip.xmax = clip->xmax;
@@ -314,13 +362,13 @@ int NormalRgaSetPatVirtualInfo(struct rga_req *msg,
                                unsigned long yrgb_addr,unsigned long uv_addr,unsigned long v_addr,
                                unsigned int  vir_w,    unsigned int vir_h,
                                RECT *clip,
-                               unsigned char format, unsigned char a_swap_en)
+                               unsigned int format, unsigned char a_swap_en)
 #else
 int NormalRgaSetPatVirtualInfo(struct rga_req *msg,
                                unsigned int yrgb_addr,unsigned int uv_addr,  unsigned int v_addr,
                                unsigned int vir_w,    unsigned int vir_h,
                                RECT *clip,
-                               unsigned char  format, unsigned char a_swap_en)
+                               unsigned int  format, unsigned char a_swap_en)
 #endif
 {
     msg->pat.yrgb_addr = yrgb_addr;
@@ -328,7 +376,7 @@ int NormalRgaSetPatVirtualInfo(struct rga_req *msg,
     msg->pat.v_addr   = v_addr;
     msg->pat.vir_w = vir_w;
     msg->pat.vir_h = vir_h;
-    msg->pat.format = format;
+    msg->pat.format = format >> 8;
 
     msg->clip.xmin = clip->xmin;
     msg->clip.xmax = clip->xmax;
@@ -348,7 +396,7 @@ int NormalRgaSetPatInfo(struct rga_req *msg,
     msg->pat.x_offset = x_off;
     msg->pat.y_offset = y_off;
 
-    msg->pat.format = pat_format;
+    msg->pat.format = pat_format >> 8;
 
     return 1;
 }
