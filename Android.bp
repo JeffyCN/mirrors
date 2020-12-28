@@ -19,7 +19,6 @@ genrule {
 	name: "gen_rga_version",
 	srcs: [
 		"version.h.template",
-		".git/COMMIT_EDITMSG",
 		".git/logs/HEAD"
 	],
 	out: ["version.h"],
