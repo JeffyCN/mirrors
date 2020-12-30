@@ -19,7 +19,7 @@ genrule {
 	name: "gen_rga_version",
 	srcs: [
 		"version.h.template",
-		".git/logs/HEAD"
+		".git/"
 	],
 	out: ["version.h"],
 	cmd: "rm -f $(location version.h) && " + "bash $(location version.sh) < $(in) > $(out)",
