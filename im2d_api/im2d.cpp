@@ -44,7 +44,7 @@ using namespace android;
 
 #include <sys/ioctl.h>
 
-#define ALOGE(...) printf(__VA_ARGS__); printf("\n")
+#define ALOGE(...) { printf(__VA_ARGS__); printf("\n"); }
 
 #endif
 

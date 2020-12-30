@@ -930,7 +930,7 @@ int NormalRgaInitTables() {
 
 void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
 #if defined(__arm64__) || defined(__aarch64__)
-    ALOGE("render_mode=%d rotate_mode=%d\n",
+    ALOGE("render_mode=%d rotate_mode=%d",
           rgaReg.render_mode, rgaReg.rotate_mode);
     ALOGE("src:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
           rgaReg.src.yrgb_addr, rgaReg.src.uv_addr, rgaReg.src.v_addr,
@@ -960,10 +960,10 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
     ALOGE("mode[%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
           rgaReg.endian_mode, rgaReg.src_trans_mode);
 
-    ALOGE("gr_color_x [%x, %x, %x] \n", rgaReg.gr_color.gr_x_r, rgaReg.gr_color.gr_x_g, rgaReg.gr_color.gr_x_b);
-    ALOGE("gr_color_x [%x, %x, %x] \n", rgaReg.gr_color.gr_y_r, rgaReg.gr_color.gr_y_g, rgaReg.gr_color.gr_y_b);
+    ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_x_r, rgaReg.gr_color.gr_x_g, rgaReg.gr_color.gr_x_b);
+    ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_y_r, rgaReg.gr_color.gr_y_g, rgaReg.gr_color.gr_y_b);
 #else
-    ALOGE("render_mode=%d rotate_mode=%d\n",
+    ALOGE("render_mode=%d rotate_mode=%d",
           rgaReg.render_mode, rgaReg.rotate_mode);
     ALOGE("src:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
           rgaReg.src.yrgb_addr, rgaReg.src.uv_addr, rgaReg.src.v_addr,
@@ -993,8 +993,8 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
     ALOGE("mode[%d,%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
           rgaReg.endian_mode, rgaReg.src_trans_mode,rgaReg.scale_mode);
 
-    ALOGE("gr_color_x [%x, %x, %x] \n", rgaReg.gr_color.gr_x_r, rgaReg.gr_color.gr_x_g, rgaReg.gr_color.gr_x_b);
-    ALOGE("gr_color_x [%x, %x, %x] \n", rgaReg.gr_color.gr_y_r, rgaReg.gr_color.gr_y_g, rgaReg.gr_color.gr_y_b);
+    ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_x_r, rgaReg.gr_color.gr_x_g, rgaReg.gr_color.gr_x_b);
+    ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_y_r, rgaReg.gr_color.gr_y_g, rgaReg.gr_color.gr_y_b);
 #endif
     return;
 }
