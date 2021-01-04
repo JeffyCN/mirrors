@@ -58,10 +58,12 @@ RockchipRga& rkRga(RockchipRga::get());
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 #define UNUSED(...) (void)(__VA_ARGS__)
+#define ERR_MSG_LEN 256
 
 using namespace std;
 
 ostringstream err_msg;
+char *err_str = NULL;
 
 IM_API void imErrorMsg(const char* msg) {
     err_msg.str("");
@@ -80,9 +82,9 @@ IM_API const char* imStrError_t(IM_STATUS status) {
         "unkown status"
     };
     ostringstream error;
-    static string msg;
 
-    msg = err_msg.str();
+    if (err_str == NULL)
+        err_str = (char *)malloc(ERR_MSG_LEN*sizeof(char));
 
     switch(status) {
         case IM_STATUS_NOERROR :
@@ -93,31 +95,32 @@ IM_API const char* imStrError_t(IM_STATUS status) {
             break;
 
         case IM_STATUS_NOT_SUPPORTED :
-            error << error_type[2] << msg.c_str() << endl;
+            error << error_type[2] << err_msg.str().c_str() << endl;
             break;
 
         case IM_STATUS_OUT_OF_MEMORY :
-            error << error_type[3] << msg.c_str() << endl;
+            error << error_type[3] << err_msg.str().c_str() << endl;
             break;
 
         case IM_STATUS_INVALID_PARAM :
-            error << error_type[4] << msg.c_str() << endl;
+            error << error_type[4] << err_msg.str().c_str() << endl;
             break;
 
         case IM_STATUS_ILLEGAL_PARAM :
-            error << error_type[5] << msg.c_str() << endl;
+            error << error_type[5] << err_msg.str().c_str() << endl;
             break;
 
         case IM_STATUS_FAILED :
-            error << error_type[6] << msg.c_str() << endl;
+            error << error_type[6] << err_msg.str().c_str() << endl;
             break;
         default :
             error << error_type[7] << endl;
     }
 
-    msg = error.str();
+    memcpy(err_str, error.str().c_str(), ERR_MSG_LEN);
     imErrorMsg("No error message, it has been cleared.");
-    return msg.c_str();
+
+    return err_str;
 }
 
 IM_API rga_buffer_t wrapbuffer_virtualaddr_t(void* vir_addr, int width, int height, int wstride, int hstride, int format) {
