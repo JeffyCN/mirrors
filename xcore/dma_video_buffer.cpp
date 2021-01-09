@@ -44,7 +44,7 @@ DmaVideoBuffer::DmaVideoBuffer (const VideoBufferInfo &info, int dma_fd, bool ne
 
 DmaVideoBuffer::~DmaVideoBuffer ()
 {
-    if (_need_close_fd && _dma_fd > 0)
+    if (_need_close_fd && _dma_fd >= 0)
         close (_dma_fd);
 }
 
@@ -96,7 +96,7 @@ external_buf_to_dma_buf (XCamVideoBuffer *buf)
         buffer_fd = xcam_video_buffer_get_fd(buf);
 
     XCAM_FAIL_RETURN (
-        ERROR, buffer_fd > 0, NULL,
+        ERROR, buffer_fd >= 0, NULL,
         "external_buf_to_dma_buf failed, can't get buf file-handle");
 
     buf_info.init (buf->info.format, buf->info.width, buf->info.height,

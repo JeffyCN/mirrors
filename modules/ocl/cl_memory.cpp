@@ -93,7 +93,7 @@ CLMemory::export_fd ()
 void
 CLMemory::release_fd ()
 {
-    if (_mem_fd <= 0)
+    if (_mem_fd < 0)
         return;
 
     close (_mem_fd);

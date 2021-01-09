@@ -215,7 +215,7 @@ int
 V4l2Device::io_control (int cmd, void *arg)
 
 {
-    if (_fd <= 0)
+    if (_fd < 0)
         return -1;
 
     return xcam_device_ioctl (_fd, cmd, arg);
@@ -228,7 +228,7 @@ V4l2Device::poll_event (int timeout_msec, int stop_fd)
     struct pollfd poll_fds[num_fds];
     int ret = 0;
 
-    XCAM_ASSERT (_fd > 0);
+    XCAM_ASSERT (_fd >= 0);
 
     memset(poll_fds, 0, sizeof(poll_fds));
     poll_fds[0].fd = _fd;
