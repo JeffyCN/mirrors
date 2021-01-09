@@ -127,8 +127,15 @@ RkispDeviceManager::set_control_params(const int request_frame_id,
 {
     XCamReturn ret = XCAM_RETURN_NO_ERROR;
     static bool stillcap_sync_cmd_end_delay = false;
+    bool need_alloc = true;
+    XCam::SmartPtr<AiqInputParams> inputParams;
 
-    XCam::SmartPtr<AiqInputParams> inputParams = new AiqInputParams();
+    SmartLock lock(_settingsMutex);
+    if (!_settings.empty()) {
+        inputParams = *_settings.begin();
+        need_alloc = false;
+    } else
+        inputParams = new AiqInputParams();
     inputParams->reqId = request_frame_id;
     inputParams->settings = metas;
     inputParams->staticMeta = &RkispDeviceManager::staticMeta;
@@ -160,7 +167,6 @@ RkispDeviceManager::set_control_params(const int request_frame_id,
          __FUNCTION__, request_frame_id, inputParams->frameUseCase,
          aeparams.flash_mode, inputParams->stillCapSyncCmd);
     {
-        SmartLock lock(_settingsMutex);
         // to speed up flash off routine
         if (inputParams->stillCapSyncCmd == RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD_SYNCEND) {
             float power[2] = {0.0f, 0.0f};
@@ -177,7 +183,8 @@ RkispDeviceManager::set_control_params(const int request_frame_id,
                 stillcap_sync_cmd_end_delay = false;
                 inputParams->stillCapSyncCmd = RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD_SYNCEND;
             }
-            _settings.push_back(inputParams);
+            if (need_alloc)
+                _settings.push_back(inputParams);
         } else {
             // merged to next params
             if (inputParams->stillCapSyncCmd == RKCAMERA3_PRIVATEDATA_STILLCAP_SYNC_CMD_SYNCEND) {
