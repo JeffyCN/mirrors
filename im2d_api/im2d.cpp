@@ -57,6 +57,8 @@ typedef enum {
 RockchipRga& rkRga(RockchipRga::get());
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
+#define DOWN_ALIGN(val, align) ((val) & ~((align) - 1))
+
 #define UNUSED(...) (void)(__VA_ARGS__)
 #define ERR_MSG_LEN 256
 
@@ -951,22 +953,22 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     if ((~mode_usage & IM_COLOR_FILL) && (~mode_usage & IM_CROP)) {
         switch (usage & IM_RGA_INFO_SCALE_LIMIT_MASK) {
             case IM_RGA_INFO_SCALE_LIMIT_8 :
-                if (((src.width >> 3) >= dst.width) || ((src.height >> 3) >= dst.height)) {
+                if (((src.width >> 3) > dst.width) || ((src.height >> 3) > dst.height)) {
                     imErrorMsg("Unsupported to scaling less than 1/8 times.");
                     return IM_STATUS_NOT_SUPPORTED;
                 }
-                if (((dst.width >> 3) >= src.width) || ((dst.height >> 3) >= src.height)) {
+                if (((dst.width >> 3) > src.width) || ((dst.height >> 3) > src.height)) {
                     imErrorMsg("Unsupported to scaling more than 8 times.");
                     return IM_STATUS_NOT_SUPPORTED;
                 }
                 break;
 
             case IM_RGA_INFO_SCALE_LIMIT_16 :
-                if (((src.width >> 4) >= dst.width) || ((src.height >> 4) >= dst.height)) {
+                if (((src.width >> 4) > dst.width) || ((src.height >> 4) > dst.height)) {
                     imErrorMsg("Unsupported to scaling less than 1/16 times.");
                     return IM_STATUS_NOT_SUPPORTED;
                 }
-                if (((dst.width >> 4) >= src.width) || ((dst.height >> 4) >= src.height)) {
+                if (((dst.width >> 4) > src.width) || ((dst.height >> 4) > src.height)) {
                     imErrorMsg("Unsupported to scaling more than 16 times.");
                     return IM_STATUS_NOT_SUPPORTED;
                 }
@@ -1255,6 +1257,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
 
 IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync) {
     int usage = 0;
+    int width = 0, height = 0;
     IM_STATUS ret = IM_STATUS_NOERROR;
 
     rga_buffer_t pat;
@@ -1272,8 +1275,18 @@ IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx,
         dst.width = (int)(src.width * fx);
         dst.height = (int)(src.height * fy);
 
-        if(NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)))
-            dst.width = ALIGN(dst.width, 2);
+        if(NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format))) {
+            width = dst.width;
+            height = dst.height;
+            dst.width = DOWN_ALIGN(dst.width, 2);
+            dst.height = DOWN_ALIGN(dst.height, 2);
+
+            ret = imcheck(src, dst, srect, drect, usage);
+            if (ret != IM_STATUS_NOERROR) {
+                ALOGE("imresize error, factor[fx,fy]=[%lf,%lf], ALIGN[dw,dh]=[%d,%d][%d,%d]", fx, fy, width, height, dst.width, dst.height);
+                return ret;
+            }
+        }
     }
     UNUSED(interpolation);
 

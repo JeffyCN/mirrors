@@ -737,7 +737,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     if (dst) {
         ret = checkRectForRga(relDstRect);
         if (ret) {
-            printf("Error srcRect\n");
+            printf("Error dstRect\n");
             ALOGE("[%s,%d]Error dstRect \n", __func__, __LINE__);
             return ret;
         }
