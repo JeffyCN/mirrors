@@ -5,7 +5,7 @@ package-file	package-file
 bootloader	Image/MiniLoaderAll.bin
 parameter	Image/parameter.txt
 #trust       Image/trust.img
-uboot       Image/uboot.img
+#uboot       Image/uboot.img
 boot        Image/boot.img
 rootfs      Image/rootfs.img
 #recovery	Image/recovery.img
