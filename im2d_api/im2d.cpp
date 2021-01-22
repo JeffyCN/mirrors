@@ -54,8 +54,6 @@ typedef enum {
     RGA_BUILT,
 } QUERYSTRING_API;
 
-RockchipRga& rkRga(RockchipRga::get());
-
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 #define DOWN_ALIGN(val, align) ((val) & ~((align) - 1))
 
@@ -178,6 +176,8 @@ IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
     rga_buffer_t buffer;
     std::vector<int> dstAttrs;
 
+    RockchipRga& rkRga(RockchipRga::get());
+
     memset(&buffer, 0, sizeof(rga_buffer_t));
 
     ret = rkRga.RkRgaGetBufferFd(hnd, &buffer.fd);
@@ -220,6 +220,8 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
     rga_buffer_t buffer;
     int ret = 0;
 
+    RockchipRga& rkRga(RockchipRga::get());
+
     memset(&buffer, 0, sizeof(rga_buffer_t));
 
     ret = rkRga.RkRgaGetBufferFd(buf->handle, &buffer.fd);
@@ -254,6 +256,8 @@ INVAILD:
 IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
     rga_buffer_t buffer;
     int ret = 0;
+
+    RockchipRga& rkRga(RockchipRga::get());
 
     memset(&buffer, 0, sizeof(rga_buffer_t));
 
@@ -1587,6 +1591,8 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     rga_info_t patinfo;
     int ret;
 
+    RockchipRga& rkRga(RockchipRga::get());
+
     src.format = RkRgaCompatibleFormat(src.format);
     dst.format = RkRgaCompatibleFormat(dst.format);
     pat.format = RkRgaCompatibleFormat(pat.format);
@@ -1805,6 +1811,9 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
 IM_API IM_STATUS imsync(void) {
     int ret = 0;
+
+    RockchipRga& rkRga(RockchipRga::get());
+
     ret = rkRga.RkRgaFlush();
     if (ret)
         return IM_STATUS_FAILED;
