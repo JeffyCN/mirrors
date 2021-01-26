@@ -16,6 +16,7 @@ obj-$(CONFIG_PCIE_KIRIN) += pcie-kirin.o
 obj-$(CONFIG_PCIE_HISI_STB) += pcie-histb.o
 obj-$(CONFIG_PCIE_DW_ROCKCHIP) += pcie-dw-rockchip.o
 obj-$(CONFIG_PCIE_DW_DMATEST) += pcie-dw-dmatest.o
+obj-$(CONFIG_PCIE_DW_ROCKCHIP_EP) += pcie-dw-ep-rockchip.o
 
 # The following drivers are for devices that use the generic ACPI
 # pci_root.c driver but don't support standard ECAM config access.
