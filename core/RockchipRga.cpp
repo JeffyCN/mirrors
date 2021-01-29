@@ -272,18 +272,6 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         return ret;
     }
 
-    int RockchipRga::RkRgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1) {
-        int ret = 0;
-        ret = RgaSrcOver(src, dst, src1);
-        if (ret) {
-            RkRgaLogOutUserPara(src);
-            RkRgaLogOutUserPara(dst);
-            RkRgaLogOutUserPara(src1);
-            ALOGE("This output the user patamaters when rga call SrcOver fail");
-        }
-        return ret;
-    }
-
     int RockchipRga::RkRgaFlush() {
         int ret = 0;
         ret = RgaFlush();

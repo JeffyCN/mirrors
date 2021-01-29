@@ -54,7 +54,6 @@
 int         RgaInit(void **ctx);
 int         RgaDeInit(void *ctx);
 int         RgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
-int         RgaSrcOver(rga_info *src, rga_info *dst, rga_info *src1);
 int         RgaFlush();
 int         RgaCollorFill(rga_info_t *dst);
 int         RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut);
