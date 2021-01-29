@@ -70,14 +70,50 @@ float get_bpp_from_format(int format) {
             bpp = 2;
             break;
 #endif
+        case RK_FORMAT_Y4:
+            bpp = 0.5;
+            break;
         case RK_FORMAT_BPP1:
         case RK_FORMAT_BPP2:
         case RK_FORMAT_BPP4:
         case RK_FORMAT_BPP8:
+        case RK_FORMAT_YCbCr_400:
             bpp = 1;
             break;
+        case RK_FORMAT_YCbCr_420_SP:
+        case RK_FORMAT_YCbCr_420_P:
+        case RK_FORMAT_YCrCb_420_P:
+        case RK_FORMAT_YCrCb_420_SP:
+        /* yuyv */
+        case RK_FORMAT_YVYU_420:
+        case RK_FORMAT_VYUY_420:
+        case RK_FORMAT_YUYV_420:
+        case RK_FORMAT_UYVY_420:
+            bpp = 1.5;
+            break;
         case RK_FORMAT_RGB_565:
+        case RK_FORMAT_RGBA_5551:
+        case RK_FORMAT_RGBA_4444:
+        case RK_FORMAT_YCbCr_422_SP:
+        case RK_FORMAT_YCbCr_422_P:
+        case RK_FORMAT_YCrCb_422_SP:
+        case RK_FORMAT_YCrCb_422_P:
+        /* yuyv */
+        case RK_FORMAT_YVYU_422:
+        case RK_FORMAT_VYUY_422:
+        case RK_FORMAT_YUYV_422:
+        case RK_FORMAT_UYVY_422:
             bpp = 2;
+            break;
+        /*RK encoder requires alignment of odd multiples of 256.*/
+        /*Here bpp=2 guarantee to read complete data.*/
+        case RK_FORMAT_YCbCr_420_SP_10B:
+        case RK_FORMAT_YCrCb_420_SP_10B:
+            bpp = 2;
+            break;
+        case RK_FORMAT_YCbCr_422_10b_SP:
+        case RK_FORMAT_YCrCb_422_10b_SP:
+            bpp = 2.5;
             break;
         case RK_FORMAT_BGR_888:
         case RK_FORMAT_RGB_888:
@@ -86,43 +122,9 @@ float get_bpp_from_format(int format) {
         case RK_FORMAT_RGBA_8888:
         case RK_FORMAT_RGBX_8888:
         case RK_FORMAT_BGRA_8888:
-		case RK_FORMAT_BGRX_8888:
+        case RK_FORMAT_BGRX_8888:
             bpp = 4;
             break;
-        case RK_FORMAT_YCbCr_422_SP:
-        case RK_FORMAT_YCbCr_422_P:
-        case RK_FORMAT_YCrCb_422_SP:
-        case RK_FORMAT_YCrCb_422_P:
-		/* yuyv */
-		case RK_FORMAT_YVYU_422:
-		case RK_FORMAT_VYUY_422:
-		case RK_FORMAT_YUYV_422:
-		case RK_FORMAT_UYVY_422:
-            bpp = 2;
-            break;
-        case RK_FORMAT_YCbCr_420_SP:
-        case RK_FORMAT_YCbCr_420_P:
-        case RK_FORMAT_YCrCb_420_P:
-        case RK_FORMAT_YCrCb_420_SP:
-		/* yuyv */
-		case RK_FORMAT_YVYU_420:
-		case RK_FORMAT_VYUY_420:
-		case RK_FORMAT_YUYV_420:
-		case RK_FORMAT_UYVY_420:
-            bpp = 1.5;
-            break;
-        case RK_FORMAT_YCbCr_420_SP_10B:
-        case RK_FORMAT_YCrCb_420_SP_10B:
-            /*RK encoder requires alignment of odd multiples of 256.*/
-            /*Here bpp=2 guarantee to read complete data.*/
-            bpp = 2;
-            break;
-		case RK_FORMAT_YCbCr_400:
-			bpp = 1;
-			break;
-		case RK_FORMAT_Y4:
-			bpp = 0.5;
-			break;
         default:
             printf("Is unsupport format now, please fix \n");
             return 0;
@@ -205,6 +207,12 @@ int get_string_by_format(char *value, int format) {
             break;
         case RK_FORMAT_BGRA_8888:
             memcpy(value, "bgra8888", sizeof("bgra8888"));
+            break;
+        case RK_FORMAT_RGBA_5551:
+            memcpy(value, "rgba5551", sizeof("rgba5551"));
+            break;
+        case RK_FORMAT_RGBA_4444:
+            memcpy(value, "rgba4444", sizeof("rgba4444"));
             break;
         case RK_FORMAT_YCrCb_420_SP:
             memcpy(value, "crcb420sp", sizeof("crcb420sp"));
