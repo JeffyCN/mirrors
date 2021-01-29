@@ -217,8 +217,9 @@ INVAILD:
 }
 
 IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
-    rga_buffer_t buffer;
     int ret = 0;
+    rga_buffer_t buffer;
+    std::vector<int> dstAttrs;
 
     RockchipRga& rkRga(RockchipRga::get());
 
@@ -236,16 +237,25 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
             goto INVAILD;
         }
     }
-    if (buf->getWidth() % 16) {
-        ALOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
-        imErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+
+    ret = RkRgaGetHandleAttributes(buf->handle, &dstAttrs);
+    if (ret) {
+        ALOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &buf->handle);
+        imErrorMsg("handle get Attributes fail.");
+        goto INVAILD;
     }
 
-    buffer.width   = buf->getWidth();
-    buffer.height  = buf->getHeight();
-    buffer.wstride = buf->getStride();
-    buffer.hstride = buf->getHeight();
-    buffer.format  = buf->getPixelFormat();
+    buffer.width   = dstAttrs.at(AWIDTH);
+    buffer.height  = dstAttrs.at(AHEIGHT);
+    buffer.wstride = dstAttrs.at(ASTRIDE);
+    buffer.hstride = dstAttrs.at(AHEIGHT);
+    buffer.format  = dstAttrs.at(AFORMAT);
+
+    if (buffer.width % 16) {
+        ALOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+        imErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+        goto INVAILD;
+    }
 
 INVAILD:
     return buffer;
@@ -254,8 +264,9 @@ INVAILD:
 #if USE_AHARDWAREBUFFER
 #include <android/hardware_buffer.h>
 IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
-    rga_buffer_t buffer;
     int ret = 0;
+    rga_buffer_t buffer;
+    std::vector<int> dstAttrs;
 
     RockchipRga& rkRga(RockchipRga::get());
 
@@ -276,17 +287,24 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
         }
     }
 
-    if (gbuffer->getWidth() % 16) {
-        ALOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16or use other buffer types");
-        imErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+    ret = RkRgaGetHandleAttributes(gbuffer->handle, &dstAttrs);
+    if (ret) {
+        ALOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &gbuffer->handle);
+        imErrorMsg("handle get Attributes fail.");
         goto INVAILD;
     }
 
-    buffer.width   = gbuffer->getWidth();
-    buffer.height  = gbuffer->getHeight();
-    buffer.wstride = gbuffer->getStride();
-    buffer.hstride = gbuffer->getHeight();
-    buffer.format  = gbuffer->getPixelFormat();
+    buffer.width   = dstAttrs.at(AWIDTH);
+    buffer.height  = dstAttrs.at(AHEIGHT);
+    buffer.wstride = dstAttrs.at(ASTRIDE);
+    buffer.hstride = dstAttrs.at(AHEIGHT);
+    buffer.format  = dstAttrs.at(AFORMAT);
+
+    if (buffer.width % 16) {
+        ALOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+        imErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+        goto INVAILD;
+    }
 
 INVAILD:
     return buffer;
