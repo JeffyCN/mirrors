@@ -238,3 +238,4 @@ endif #end of BOARD_USE_DRM=true
 endif #end of BOARD_USE_DRM=future it will be used when upstrean in the future
 
 endif #end of PLATFORM_SDK_VERSION < 28
+include $(call first-makefiles-under,$(LOCAL_PATH))
