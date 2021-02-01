@@ -43,11 +43,11 @@ plugin_init (GstPlugin * plugin)
           gst_mpp_vp8_enc_get_type ()))
     return FALSE;
 
-  if (!gst_element_register (plugin, "mppjpegenc", GST_RANK_PRIMARY,
+  if (!gst_element_register (plugin, "mppjpegenc", GST_RANK_PRIMARY + 1,
           gst_mpp_jpeg_enc_get_type ()))
     return FALSE;
 
-  if (!gst_element_register (plugin, "mppjpegdec", GST_RANK_PRIMARY,
+  if (!gst_element_register (plugin, "mppjpegdec", GST_RANK_PRIMARY + 1,
           gst_mpp_jpeg_dec_get_type ()))
     return FALSE;
 
