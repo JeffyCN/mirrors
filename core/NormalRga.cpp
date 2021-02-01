@@ -1340,8 +1340,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 #endif
 #endif
 #endif
-    if(dst->sync_mode == RGA_BLIT_ASYNC) {
-        sync_mode = dst->sync_mode;
+    if(src->sync_mode == RGA_BLIT_ASYNC || dst->sync_mode == RGA_BLIT_ASYNC) {
+        sync_mode = RGA_BLIT_ASYNC;
     }
     /* using sync to pass config to rga driver. */
     if(ioctl(ctx->rgaFd, sync_mode, &rgaReg)) {
