@@ -11,7 +11,7 @@
   </project>
   <project name="linux/external/camera_engine_rkisp" path="npu/external/camera_engine_rkisp" revision="a79d36dac4d357ec156506c84775a4e53c501939" upstream="master"/>
   <project name="linux/external/powermanager" path="npu/external/powermanager" revision="17921d6b75395df5478613973e58916a6cf7c7ad" upstream="master"/>
-  <project name="linux/external/rknpu" path="npu/external/rknpu" revision="8ac4e76b44104c145fcea8245d5a49aa0e1edf4c" upstream="master"/> 
+  <project name="linux/external/rknpu" path="npu/external/rknpu" revision="b010399b7595945381ddd63853ecf1218a130427" upstream="master"/> 
   <project name="linux/external/rkscript" path="npu/external/rkscript" revision="324143e744f6d1a227a524c63a7ac3046d5f7915" upstream="master"/>
   <project name="linux/external/rktoolkit" path="npu/external/rktoolkit" revision="fc1ddcf4f804d1dbb55e2695a32b2aabe6016e8e" upstream="master"/>
   <project name="linux/linux-rga" path="npu/external/linux-rga" revision="72e7764a9fe358e6ad50eb1b21176cc95802c7fb" upstream="master"/>
