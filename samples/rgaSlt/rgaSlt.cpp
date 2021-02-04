@@ -295,10 +295,13 @@ int main() {
             }
 
             printf("errCount=%d,rightCount=%d\n", errCount, rightCount);
-            if(errCount != 0)
+            if(errCount != 0) {
                 printf("rga slt err !! \n");
-            else
+                return 1;
+            } else {
                 printf("rga slt sucess !! \n");
+                return 0;
+            }
         }
         break;
     }
