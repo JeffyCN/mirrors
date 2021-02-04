@@ -79,6 +79,32 @@ typedef enum {
 } IM_ROP_CODE;
 
 typedef enum {
+    IM_RGA_SUPPORT_FORMAT_ERROR_INDEX = 0,
+    IM_RGA_SUPPORT_FORMAT_RGB_INDEX,
+    IM_RGA_SUPPORT_FORMAT_RGB_OTHER_INDEX,
+    IM_RGA_SUPPORT_FORMAT_BPP_INDEX,
+    IM_RGA_SUPPORT_FORMAT_YUV_8_INDEX,
+    IM_RGA_SUPPORT_FORMAT_YUV_10_INDEX,
+    IM_RGA_SUPPORT_FORMAT_YUYV_420_INDEX,
+    IM_RGA_SUPPORT_FORMAT_YUYV_422_INDEX,
+    IM_RGA_SUPPORT_FORMAT_YUV_400_INDEX,
+    IM_RGA_SUPPORT_FORMAT_MASK_INDEX,
+} IM_RGA_SUPPORT_FORMAT_INDEX;
+
+typedef enum {
+    IM_RGA_SUPPORT_FORMAT_ERROR     = 1 << IM_RGA_SUPPORT_FORMAT_ERROR_INDEX,
+    IM_RGA_SUPPORT_FORMAT_RGB       = 1 << IM_RGA_SUPPORT_FORMAT_RGB_INDEX,
+    IM_RGA_SUPPORT_FORMAT_RGB_OTHER = 1 << IM_RGA_SUPPORT_FORMAT_RGB_OTHER_INDEX,
+    IM_RGA_SUPPORT_FORMAT_BPP       = 1 << IM_RGA_SUPPORT_FORMAT_BPP_INDEX,
+    IM_RGA_SUPPORT_FORMAT_YUV_8     = 1 << IM_RGA_SUPPORT_FORMAT_YUV_8_INDEX,
+    IM_RGA_SUPPORT_FORMAT_YUV_10    = 1 << IM_RGA_SUPPORT_FORMAT_YUV_10_INDEX,
+    IM_RGA_SUPPORT_FORMAT_YUYV_420  = 1 << IM_RGA_SUPPORT_FORMAT_YUYV_420_INDEX,
+    IM_RGA_SUPPORT_FORMAT_YUYV_422  = 1 << IM_RGA_SUPPORT_FORMAT_YUYV_422_INDEX,
+    IM_RGA_SUPPORT_FORMAT_YUV_400    = 1 << IM_RGA_SUPPORT_FORMAT_YUV_400_INDEX,
+    IM_RGA_SUPPORT_FORMAT_MASK      = ~((~0x0 << IM_RGA_SUPPORT_FORMAT_MASK_INDEX) | 1),
+} IM_RGA_SUPPORT_FORMAT;
+
+typedef enum {
     /*RGA version*/
     IM_RGA_INFO_VERSION_RGA_1           = 1<< 0,
     IM_RGA_INFO_VERSION_RGA_1_PLUS      = 1<< 1,
@@ -184,6 +210,17 @@ typedef enum {
 } RGA_VERSION_NUM;
 
 //struct AHardwareBuffer AHardwareBuffer;
+
+typedef struct {
+    RGA_VERSION_NUM version;
+    unsigned int input_resolution;
+    unsigned int output_resolution;
+    unsigned int scale_limit;
+    unsigned int performance;
+    unsigned int input_format;
+    unsigned int output_format;
+    char reserved[32];
+} RGA_INFO_TABLE_ENTRY;
 
 /* Rectangle definition */
 typedef struct {
@@ -313,7 +350,9 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
  *
  * @returns a usage describing properties of RGA.
  */
+//IM_API int rga_get_info(RGA_INFO_TABLE_ENTRY *);
 IM_API long rga_get_info();
+
 
 /*
  * Query RGA basic information, supported resolution, supported format, etc.

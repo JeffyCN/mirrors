@@ -402,6 +402,100 @@ IM_API IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, r
     return IM_STATUS_SUCCESS;
 }
 
+IM_API int rga_get_info(RGA_INFO_TABLE_ENTRY *return_table) {
+    char buf[16];
+    int  rgafd, rga_version = 0;
+
+    static RGA_INFO_TABLE_ENTRY table[] = {
+        { RGA_V_ERR     ,    0,     0,  0, 0,   0, 0, {0} },
+        { RGA_1         , 8192, 2048,   8, 1,   IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_BPP |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8, {0} },
+        { RGA_1_PLUS    , 8192, 2048,   8, 1,   IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_BPP |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8, {0} },
+        { RGA_2         , 8192, 4096, 16, 2,    IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8, {0} },
+        { RGA_2_LITE0   , 8192, 4096,   8, 2,   IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8, {0} },
+        { RGA_2_LITE1   , 8192, 4096,   8, 2,   IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8 |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_10,
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8, {0} },
+        { RGA_2_ENHANCE , 8192, 4096, 16,  2,   IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8 |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_10 |
+                                                IM_RGA_SUPPORT_FORMAT_YUYV_422,
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8 |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_10 |
+                                                IM_RGA_SUPPORT_FORMAT_YUYV_420 |
+                                                IM_RGA_SUPPORT_FORMAT_YUYV_422 |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_400, {0} }
+    };
+
+    /*open /dev/rga node in order to get rga vesion*/
+    rgafd = open("/dev/rga", O_RDWR, 0);
+    if (rgafd < 0) {
+        ALOGE("rga_im2d: failed to open /dev/rga: %s.",strerror(errno));
+        return -1;
+    }
+    if (ioctl(rgafd, RGA_GET_VERSION, buf)) {
+        ALOGE("rga_im2d: rga get version fail: %s",strerror(errno));
+        return -1;
+    }
+    if (strncmp(buf,"1.3",3) == 0)
+        rga_version = RGA_1;
+    else if (strncmp(buf,"1.6",3) == 0)
+        rga_version = RGA_1_PLUS;
+    /*3288 vesion is 2.00*/
+    else if (strncmp(buf,"2.00",4) == 0)
+        rga_version = RGA_2;
+    /*3288w version is 3.00*/
+    else if (strncmp(buf,"3.00",4) == 0)
+        rga_version = RGA_2;
+    else if (strncmp(buf,"3.02",4) == 0)
+        rga_version = RGA_2_ENHANCE;
+    else if (strncmp(buf,"4.00",4) == 0)
+        rga_version = RGA_2_LITE0;
+    /*The version number of lite1 cannot be obtained temporarily.*/
+    else if (strncmp(buf,"4.00",4) == 0)
+        rga_version = RGA_2_LITE1;
+    else
+        rga_version = RGA_V_ERR;
+
+    memcpy(return_table, &table[rga_version], sizeof(RGA_INFO_TABLE_ENTRY));
+
+    close(rgafd);
+    rgafd = -1;
+
+    if (rga_version == RGA_V_ERR)
+        return IM_STATUS_FAILED;
+
+    return IM_STATUS_SUCCESS;
+}
+
 IM_API long rga_get_info() {
     char buf[16];
     int  rgafd, rga_version = 0;
@@ -523,7 +617,6 @@ IM_API long rga_get_info() {
     return usage;
 }
 
-
 IM_API const char* querystring(int name) {
     bool all_output = 0, all_output_prepared = 0;
     int rga_version = 0;
@@ -567,11 +660,13 @@ IM_API const char* querystring(int name) {
     };
     const char *output_format[] = {
         "unknown",
-        "RGBA_8888 RGBA_4444 RGBA_5551 RGB_565 RGB_888 ",
+        "RGBA_8888 RGB_888 RGB_565 ",
+        "RGBA_4444 RGBA_5551 ",
         "BPP8 BPP4 BPP2 BPP1 ",
         "YUV420/YUV422 ",
         "YUV420_10bit/YUV422_10bit ",
-        "YUYV ",
+        "YUYV420 ",
+        "YUYV422 ",
         "YUV400/Y4 "
     };
     const char *performance[] = {
@@ -583,34 +678,12 @@ IM_API const char* querystring(int name) {
     ostringstream out;
     static string info;
 
-    usage = rga_get_info();
+    RGA_INFO_TABLE_ENTRY rga_info;
+
+    usage = rga_get_info(&rga_info);
     if (IM_STATUS_FAILED == usage) {
         ALOGE("rga im2d: rga2 get info failed!\n");
         return "get info failed";
-    }
-
-    switch(usage & IM_RGA_INFO_VERSION_MASK) {
-        case IM_RGA_INFO_VERSION_RGA_1 :
-            rga_version = RGA_1;
-            break;
-        case IM_RGA_INFO_VERSION_RGA_1_PLUS :
-            rga_version = RGA_1_PLUS;
-            break;
-        case IM_RGA_INFO_VERSION_RGA_2 :
-            rga_version = RGA_2;
-            break;
-        case IM_RGA_INFO_VERSION_RGA_2_LITE0 :
-            rga_version = RGA_2_LITE0;
-            break;
-        case IM_RGA_INFO_VERSION_RGA_2_LITE1 :
-            rga_version = RGA_2_LITE1;
-            break;
-        case IM_RGA_INFO_VERSION_RGA_2_ENHANCE :
-            rga_version = RGA_2_ENHANCE;
-            break;
-        default :
-            rga_version = RGA_V_ERR;
-            break;
     }
 
     do {
@@ -623,18 +696,18 @@ IM_API const char* querystring(int name) {
                 out << version_name[RGA_LIB] << "v" << RGA_LIB_VERSION << endl;
                 out << version_name[RGA_IM2D] << "v" << RGA_IM2D_VERSION << endl;
                 out << version_name[RGA_BUILT] << RGA_BUILT_VERSION <<endl;
-                out << output_name[name] << output_version[rga_version] << endl;
+                out << output_name[name] << output_version[rga_info.version] << endl;
                 break;
 
             case RGA_MAX_INPUT :
-                switch(usage & IM_RGA_INFO_RESOLUTION_INPUT_MASK) {
-                    case IM_RGA_INFO_RESOLUTION_INPUT_2048 :
+                switch (rga_info.input_resolution) {
+                    case 2048 :
                         out << output_name[name] << output_resolution[1] << endl;
                         break;
-                    case IM_RGA_INFO_RESOLUTION_INPUT_4096 :
+                    case 4096 :
                         out << output_name[name] << output_resolution[2] << endl;
                         break;
-                    case IM_RGA_INFO_RESOLUTION_INPUT_8192 :
+                    case 8192 :
                         out << output_name[name] << output_resolution[3] << endl;
                         break;
                     default :
@@ -644,14 +717,14 @@ IM_API const char* querystring(int name) {
                 break;
 
             case RGA_MAX_OUTPUT :
-                switch(usage & IM_RGA_INFO_RESOLUTION_OUTPUT_MASK) {
-                    case IM_RGA_INFO_RESOLUTION_OUTPUT_2048 :
+                switch(rga_info.output_resolution) {
+                    case 2048 :
                         out << output_name[name] << output_resolution[1] << endl;
                         break;
-                    case IM_RGA_INFO_RESOLUTION_OUTPUT_4096 :
+                    case 4096 :
                         out << output_name[name] << output_resolution[2] << endl;
                         break;
-                    case IM_RGA_INFO_RESOLUTION_OUTPUT_8192 :
+                    case 8192 :
                         out << output_name[name] << output_resolution[3] << endl;
                         break;
                     default :
@@ -661,11 +734,11 @@ IM_API const char* querystring(int name) {
                 break;
 
             case RGA_SCALE_LIMIT :
-                switch(usage & IM_RGA_INFO_SCALE_LIMIT_MASK) {
-                    case IM_RGA_INFO_SCALE_LIMIT_8 :
+                switch(rga_info.scale_limit) {
+                    case 8 :
                         out << output_name[name] << output_scale_limit[1] << endl;
                         break;
-                    case IM_RGA_INFO_SCALE_LIMIT_16 :
+                    case 16 :
                         out << output_name[name] << output_scale_limit[2] << endl;
                         break;
                     default :
@@ -676,52 +749,60 @@ IM_API const char* querystring(int name) {
 
             case RGA_INPUT_FORMAT :
                 out << output_name[name];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_RGB)
-                    out << output_format[1];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_BP)
-                    out << output_format[2];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_8)
-                    out << output_format[3];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV_10)
-                    out << output_format[4];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUYV)
-                    out << output_format[5];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_YUV400)
-                    out << output_format[6];
-                if(!(usage & IM_RGA_INFO_SUPPORT_FORMAT_INPUT_MASK))
-                    out << output_format[RGA_V_ERR];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_RGB)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_RGB_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_RGB_OTHER)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_RGB_OTHER_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_BPP)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_BPP_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_8)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_8_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_10)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_10_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUYV_420)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUYV_420_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUYV_422)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUYV_422_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_400)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_400_INDEX];
+                if(!(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_MASK))
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_ERROR_INDEX];
                 out << endl;
                 break;
 
             case RGA_OUTPUT_FORMAT :
                 out << output_name[name];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_RGB)
-                    out << output_format[1];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_BP)
-                    out << output_format[2];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_8)
-                    out << output_format[3];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV_10)
-                    out << output_format[4];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUYV)
-                    out << output_format[5];
-                if(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_YUV400)
-                    out << output_format[6];
-                if(!(usage & IM_RGA_INFO_SUPPORT_FORMAT_OUTPUT_MASK))
-                    out << output_format[RGA_V_ERR];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_RGB)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_RGB_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_RGB_OTHER)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_RGB_OTHER_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_BPP)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_BPP_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_8)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_8_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_10)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_10_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUYV_420)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUYV_420_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUYV_422)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUYV_422_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_400)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_400_INDEX];
+                if(!(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_MASK))
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_ERROR_INDEX];
                 out << endl;
                 break;
 
             case RGA_EXPECTED :
-				switch(usage & IM_RGA_INFO_PERFORMANCE_MASK) {
-                    case IM_RGA_INFO_PERFORMANCE_300 :
+                switch(rga_info.performance) {
+                    case 1 :
                         out << output_name[name] << performance[1] << endl;
                         break;
-                    case IM_RGA_INFO_PERFORMANCE_520 :
-                        out << output_name[name] << performance[2] << endl;
-                        break;
-                    case IM_RGA_INFO_PERFORMANCE_600 :
-                        out << output_name[name] << performance[3] << endl;
+                    case 2 :
+                        if (rga_info.version == RGA_2_LITE0 || rga_info.version == RGA_2_LITE1)
+                            out << output_name[name] << performance[2] << endl;
+                        else
+                            out << output_name[name] << performance[3] << endl;
                         break;
                     default :
                         out << output_name[name] << performance[RGA_V_ERR] << endl;
