@@ -13,7 +13,7 @@ parameter	Image/parameter.txt
 # trust		Image/trust.img
 #
 uboot		Image/uboot.img
-# misc		Image/misc.img
+misc		Image/misc.img
 boot		Image/boot.img
 recovery	Image/recovery.img
 rootfs		Image/rootfs.img
