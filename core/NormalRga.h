@@ -206,6 +206,7 @@ bool        NormalRgaIsYuvFormat(int format);
 
 bool        NormalRgaIsRgbFormat(int format);
 
+bool        NormalRgaFormatHasAlpha(int format);
 
 // 0/near  1/bilnear  2/bicubic
 // 0/copy 1/rotate_scale 2/x_mirror 3/y_mirror

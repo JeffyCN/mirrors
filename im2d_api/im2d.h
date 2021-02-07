@@ -220,7 +220,7 @@ typedef struct {
     unsigned int input_format;
     unsigned int output_format;
     char reserved[32];
-} RGA_INFO_TABLE_ENTRY;
+} rga_info_table_entry;
 
 /* Rectangle definition */
 typedef struct {
@@ -350,7 +350,7 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
  *
  * @returns a usage describing properties of RGA.
  */
-//IM_API int rga_get_info(RGA_INFO_TABLE_ENTRY *);
+//IM_API int rga_get_info(rga_info_table_entry *);
 IM_API long rga_get_info();
 
 

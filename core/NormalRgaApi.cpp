@@ -575,6 +575,23 @@ bool NormalRgaIsRgbFormat(int format) {
     return ret;
 }
 
+bool NormalRgaFormatHasAlpha(int format) {
+    bool ret = false;
+
+    switch (format) {
+        case RK_FORMAT_RGBA_8888:
+        case RK_FORMAT_BGRA_8888:
+        case RK_FORMAT_RGBA_5551:
+        case RK_FORMAT_RGBA_4444:
+            ret = true;
+            break;
+        default:
+            break;
+    }
+
+    return ret;
+}
+
 // 0/near  1/bilnear  2/bicubic
 // 0/copy 1/rotate_scale 2/x_mirror 3/y_mirror
 // rotate angle
