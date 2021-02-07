@@ -65,13 +65,14 @@
 
 ///////////////////////////////////////////////////////
 
+#define EN_GRAPHICBUFFER 0
+
 using namespace android;
 
 int main() {
     int ret = 0;
     int srcWidth,srcHeight,srcFormat;
     int dstWidth,dstHeight,dstFormat;
-    char* buf = NULL;
 
     srcWidth = 1280;
     srcHeight = 720;
@@ -83,6 +84,8 @@ int main() {
 
     RockchipRga& rkRga(RockchipRga::get());
 
+#if EN_GRAPHICBUFFER
+    char* buf = NULL;
 //    GraphicBufferMapper &mgbMapper = GraphicBufferMapper::get();
 
     /********** apply for src_buffer **********/
@@ -169,61 +172,95 @@ int main() {
     } else
         printf("unlock buffer_src %s \n","ok");
 
-    while(1) {
-        /********** rga_info_t Init **********/
-        rga_info_t src;
-        rga_info_t dst;
+    /********** rga_info_t Init **********/
+    rga_info_t src;
+    rga_info_t dst;
 
-        memset(&src, 0, sizeof(rga_info_t));
-        src.fd = -1;
-        src.mmuFlag = 1;
-        src.hnd = gbs->handle;
+    memset(&src, 0, sizeof(rga_info_t));
+    src.fd = -1;
+    src.mmuFlag = 1;
+    src.hnd = gbs->handle;
 
-        memset(&dst, 0, sizeof(rga_info_t));
-        dst.fd = -1;
-        dst.mmuFlag = 1;
-        dst.hnd = gbd->handle;
+    memset(&dst, 0, sizeof(rga_info_t));
+    dst.fd = -1;
+    dst.mmuFlag = 1;
+    dst.hnd = gbd->handle;
 
-        /********** get src_Fd **********/
-        ret = rkRga.RkRgaGetBufferFd(gbs->handle, &src.fd);
-        printf("src.fd =%d\n",src.fd);
-        ALOGD("src.fd =%d\n",src.fd);
-        if (ret) {
-            printf("rgaGetsrcFd fail : %s,hnd=%p \n",
-                   strerror(errno),(void*)(gbd->handle));
-        }
-        /********** get dst_Fd **********/
-        ret = rkRga.RkRgaGetBufferFd(gbd->handle, &dst.fd);
-        printf("dst.fd =%d \n",dst.fd);
-        if (ret) {
-            printf("rgaGetdstFd error : %s,hnd=%p\n",
-                   strerror(errno),(void*)(gbd->handle));
-        }
-        /********** if not fd, try to check phyAddr and virAddr **************/
+    /********** get src_Fd **********/
+    ret = rkRga.RkRgaGetBufferFd(gbs->handle, &src.fd);
+    printf("src.fd =%d\n",src.fd);
+    ALOGD("src.fd =%d\n",src.fd);
+    if (ret) {
+        printf("rgaGetsrcFd fail : %s,hnd=%p \n",
+               strerror(errno),(void*)(gbd->handle));
+    }
+    /********** get dst_Fd **********/
+    ret = rkRga.RkRgaGetBufferFd(gbd->handle, &dst.fd);
+    printf("dst.fd =%d \n",dst.fd);
+    if (ret) {
+        printf("rgaGetdstFd error : %s,hnd=%p\n",
+               strerror(errno),(void*)(gbd->handle));
+    }
+    /********** if not fd, try to check phyAddr and virAddr **************/
 #ifndef RK3188
-        if(src.fd <= 0|| dst.fd <= 0)
-#endif
-        {
-            /********** check phyAddr and virAddr ,if none to get virAddr **********/
-            if (( src.phyAddr != 0 || src.virAddr != 0 ) || src.hnd != NULL ) {
-                ret = RkRgaGetHandleMapAddress( gbs->handle, &src.virAddr );
-                printf("src.virAddr =%p\n",src.virAddr);
-                if(!src.virAddr) {
-                    printf("err! src has not fd and address for render ,Stop!\n");
-                    break;
-                }
-            }
+    if(src.fd <= 0|| dst.fd <= 0)
 
-            /********** check phyAddr and virAddr ,if none to get virAddr **********/
-            if (( dst.phyAddr != 0 || dst.virAddr != 0 ) || dst.hnd != NULL ) {
-                ret = RkRgaGetHandleMapAddress( gbd->handle, &dst.virAddr );
-                printf("dst.virAddr =%p\n",dst.virAddr);
-                if(!dst.virAddr) {
-                    printf("err! dst has not fd and address for render ,Stop!\n");
-                    break;
-                }
+    {
+        /********** check phyAddr and virAddr ,if none to get virAddr **********/
+        if (( src.phyAddr != 0 || src.virAddr != 0 ) || src.hnd != NULL ) {
+            ret = RkRgaGetHandleMapAddress( gbs->handle, &src.virAddr );
+            printf("src.virAddr =%p\n",src.virAddr);
+            if(!src.virAddr) {
+                printf("err! src has not fd and address for render ,Stop!\n");
+                break;
             }
         }
+
+        /********** check phyAddr and virAddr ,if none to get virAddr **********/
+        if (( dst.phyAddr != 0 || dst.virAddr != 0 ) || dst.hnd != NULL ) {
+            ret = RkRgaGetHandleMapAddress( gbd->handle, &dst.virAddr );
+            printf("dst.virAddr =%p\n",dst.virAddr);
+            if(!dst.virAddr) {
+                printf("err! dst has not fd and address for render ,Stop!\n");
+                break;
+            }
+        }
+    }
+#endif /* #ifndef RK3188 */
+#else
+    char *src_va = NULL;
+    char *dst_va = NULL;
+
+    src_va = (char *)malloc(srcWidth*srcHeight*get_bpp_from_format(srcFormat));
+    dst_va = (char *)malloc(dstWidth*dstHeight*get_bpp_from_format(dstFormat));
+
+#if 1
+    get_buf_from_file(src_va, srcFormat, srcWidth, srcHeight, 0);
+#else
+    memset(src_va,0x00,srcWidth*srcHeight*get_bpp_from_format(srcFormat));
+#endif
+
+#if 0
+    get_buf_from_file(dst_va, dstFormat, dstWidth, dstHeight, 0);
+#else
+    memset(dst_va,0x00,dstWidth*dstHeight*get_bpp_from_format(dstFormat));
+#endif
+
+    /********** rga_info_t Init **********/
+    rga_info_t src;
+    rga_info_t dst;
+
+    memset(&src, 0, sizeof(rga_info_t));
+    memset(&dst, 0, sizeof(rga_info_t));
+
+    src.virAddr = src_va;
+    src.mmuFlag = 1;
+
+    dst.virAddr =dst_va;
+    dst.mmuFlag = 1;
+#endif /* #if EN_GRAPHICBUFFER */
+
+    while(1) {
         /********** set the rect_info **********/
         rga_set_rect(&src.rect, 0,0,srcWidth,srcHeight,srcWidth/*stride*/,srcHeight,srcFormat);
         rga_set_rect(&dst.rect, 0,0,dstWidth,dstHeight,dstWidth/*stride*/,dstHeight,dstFormat);
@@ -233,13 +270,15 @@ int main() {
         /********** call rga_Interface **********/
         ret = rkRga.RkRgaBlit(&src, &dst, NULL);
         if (ret) {
-            printf("rgaFillColor error : %s,hnd=%p\n",
-                   strerror(errno),(void*)(gbd->handle));
+            printf("rgaFillColor error : %s\n",
+                   strerror(errno));
         }
 
+#if EN_GRAPHICBUFFER
         {
             /********** output buf data to file **********/
             char* dstbuf = NULL;
+
             ret = gbd->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&dstbuf);
             output_buf_data_to_file(dstbuf, dstFormat, dstWidth, dstHeight, 0);
             ret = gbd->unlock();
@@ -303,7 +342,51 @@ int main() {
                 return 0;
             }
         }
+#else
+        {
+            /********** output buf data to file **********/
+            output_buf_data_to_file(dst_va, dstFormat, dstWidth, dstHeight, 0);
+
+            int size = dstWidth * dstHeight * 4;
+            unsigned int *pstd = (unsigned int *)src_va;
+            unsigned int *pnow = (unsigned int *)dst_va;
+            int errCount = 0;
+            int rightCount = 0;
+            printf("[  num   : srcInfo    dstInfo ] \n");
+            for (int i = 0; i < size / 4; i++) {
+                if (*pstd != *pnow) {
+                    printf("[X%.8d:0x%x 0x%x]  ", i, *pstd,*pnow);
+                    if (i % 4 == 0 )
+                        printf("\n");
+                    errCount ++;
+
+                } else {
+                    if (i % (640*1024) == 0)
+                        printf("[Y%.8d:0x%.8x 0x%.8x]\n", i, *pstd,*pnow);
+                    rightCount++;
+                }
+                pstd++;
+                pnow++;
+                if (errCount > 64)
+                    break;
+            }
+
+            printf("errCount=%d,rightCount=%d\n", errCount, rightCount);
+            if(errCount != 0) {
+                printf("rga slt err !! \n");
+                return 1;
+            } else {
+                printf("rga slt sucess !! \n");
+                return 0;
+            }
+        }
+#endif /* #if EN_GRAPHICBUFFER */
         break;
     }
+
+#if !EN_GRAPHICBUFFER
+    free(src_va);
+    free(dst_va);
+#endif
     return 0;
 }
