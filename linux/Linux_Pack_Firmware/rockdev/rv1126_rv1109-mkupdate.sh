@@ -18,6 +18,9 @@ fi
 
 ./rkImageMaker -RK1126 Image/MiniLoaderAll.bin Image/update.img update.img -os_type:androidos || pause
 echo "Making -RK1126 update.img OK."
+
+# remove temporay image
+rm -f Image/update.img
 #echo "Press any key to quit:"
 #read -n1 -s key
 exit $?
