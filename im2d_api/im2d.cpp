@@ -880,18 +880,31 @@ IM_API IM_STATUS rga_check_info(const char *name, const rga_buffer_t info, const
     return IM_STATUS_NOERROR;
 }
 
-IM_API IM_STATUS rga_check_limit(rga_buffer_t src, rga_buffer_t dst, int scale_usage) {
+IM_API IM_STATUS rga_check_limit(rga_buffer_t src, rga_buffer_t dst, int scale_usage, int mode_usage) {
     char err[ERR_MSG_LEN] = {0};
+    int src_width = 0, src_height = 0;
+    int dst_width = 0, dst_height = 0;
 
-    if (((src.width >> (int)(log(scale_usage)/log(2))) > dst.width) ||
-       ((src.height >> (int)(log(scale_usage)/log(2))) > dst.height)) {
-        sprintf(err, "Unsupported to scaling less than 1/%d ~ %d times.", (int)(log(scale_usage)/log(2)), (int)(log(scale_usage)/log(2)));
+    if (mode_usage & IM_HAL_TRANSFORM_ROT_270 || mode_usage & IM_HAL_TRANSFORM_ROT_90) {
+        src_width = src.height;
+        src_height = src.width;
+        dst_width = dst.height;
+        dst_height = dst.width;
+    } else {
+        src_width = src.width;
+        src_height = src.height;
+        dst_width = dst.width;
+        dst_height = dst.height;
+    }
+    if (((src_width >> (int)(log(scale_usage)/log(2))) > dst_width) ||
+       ((src_height >> (int)(log(scale_usage)/log(2))) > dst_height)) {
+        sprintf(err, "Unsupported to scaling less than 1/%d ~ %d times.", scale_usage, scale_usage);
         imErrorMsg(err);
         return IM_STATUS_NOT_SUPPORTED;
     }
-    if (((dst.width >> (int)(log(scale_usage)/log(2))) > src.width) ||
-       ((dst.height >> (int)(log(scale_usage)/log(2))) > src.height)) {
-        sprintf(err, "Unsupported to scaling more than 1/%d ~ %d times.", (int)(log(scale_usage)/log(2)), (int)(log(scale_usage)/log(2)));
+    if (((dst_width >> (int)(log(scale_usage)/log(2))) > src_width) ||
+       ((dst_height >> (int)(log(scale_usage)/log(2))) > src_height)) {
+        sprintf(err, "Unsupported to scaling more than 1/%d ~ %d times.", scale_usage, scale_usage);
         imErrorMsg(err);
         return IM_STATUS_NOT_SUPPORTED;
     }
@@ -1062,11 +1075,6 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     IM_STATUS ret = IM_STATUS_NOERROR;
     rga_info_table_entry rga_info;
 
-    if (!(rga_is_buffer_valid(src) && rga_is_buffer_valid(dst))) {
-        imErrorMsg("No address available in src or dst buffer.");
-        return IM_STATUS_INVALID_PARAM;
-    }
-
     ret = rga_get_info(&rga_info);
     if (IM_STATUS_FAILED == ret) {
         ALOGE("rga im2d: rga2 get info failed!\n");
@@ -1102,9 +1110,11 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     if (ret != IM_STATUS_NOERROR)
         return ret;
 
-    ret = rga_check_limit(src, dst, rga_info.scale_limit);
-    if (ret != IM_STATUS_NOERROR)
-        return ret;
+    if ((~mode_usage & IM_COLOR_FILL)) {
+        ret = rga_check_limit(src, dst, rga_info.scale_limit, mode_usage);
+        if (ret != IM_STATUS_NOERROR)
+            return ret;
+    }
 
     if (mode_usage & IM_ALPHA_BLEND_MASK) {
         ret = rga_check_blend(src, pat, dst, pat_enable, mode_usage);
