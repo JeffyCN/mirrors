@@ -978,13 +978,15 @@ IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect r
             return IM_STATUS_INVALID_PARAM;
         }
         ALOGE("If it is an RK encoder output, it needs to be aligned with an odd multiple of 256.\n");
-    } else if (format == RK_FORMAT_YUYV_420 || format == RK_FORMAT_YVYU_420) {
+    } else if (format == RK_FORMAT_YUYV_420 || format == RK_FORMAT_YVYU_420 ||
+               format == RK_FORMAT_UYVY_420 || format == RK_FORMAT_VYUY_420) {
         if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUYV_420) {
             sprintf(err, "%s unsupported input YUYV format.", name);
             imErrorMsg(err);
             return IM_STATUS_NOT_SUPPORTED;
         }
-    } else if (format == RK_FORMAT_YUYV_422 || format == RK_FORMAT_YVYU_422) {
+    } else if (format == RK_FORMAT_YUYV_422 || format == RK_FORMAT_YVYU_422 ||
+               format == RK_FORMAT_UYVY_422 || format == RK_FORMAT_VYUY_422) {
         if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUYV_422) {
             sprintf(err, "%s unsupported input YUYV format.", name);
             imErrorMsg(err);
