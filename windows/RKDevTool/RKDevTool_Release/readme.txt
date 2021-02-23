@@ -23,3 +23,9 @@ v2.78 revision(20201102):
 v2.79 revision(20201111):
 1.support new loader format
 
+v2.8 revision(20210104):
+1.fix chunk size beyond 4g in sparse download
+
+v2.81 revision(20210128)
+1.support to list storage and switch storage
+
