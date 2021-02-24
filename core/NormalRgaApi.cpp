@@ -50,7 +50,15 @@ int RkRgaCompatibleFormat(int format) {
 int RkRgaGetRgaFormat(int format) {
 	/* Because the format of librga is the value of driver format << 8 . */
 #ifdef ANDROID
-	switch (format & 0xFF) {
+    switch (format & 0xFF) {
+        case HAL_PIXEL_FORMAT_BPP_1:
+            return RK_FORMAT_BPP1;
+        case HAL_PIXEL_FORMAT_BPP_2:
+            return RK_FORMAT_BPP2;
+        case HAL_PIXEL_FORMAT_BPP_4:
+            return RK_FORMAT_BPP4;
+        case HAL_PIXEL_FORMAT_BPP_8:
+            return RK_FORMAT_BPP8;
         case HAL_PIXEL_FORMAT_RGB_565:
             return RK_FORMAT_RGB_565;
         case HAL_PIXEL_FORMAT_RGB_888:
@@ -86,6 +94,14 @@ int RkRgaGetRgaFormat(int format) {
 #ifdef ANDROID
 int RkRgaGetRgaFormatFromAndroid(int format) {
     switch (format) {
+        case HAL_PIXEL_FORMAT_BPP_1:
+            return RK_FORMAT_BPP1;
+        case HAL_PIXEL_FORMAT_BPP_2:
+            return RK_FORMAT_BPP2;
+        case HAL_PIXEL_FORMAT_BPP_4:
+            return RK_FORMAT_BPP4;
+        case HAL_PIXEL_FORMAT_BPP_8:
+            return RK_FORMAT_BPP8;
         case HAL_PIXEL_FORMAT_RGB_565:
             return RK_FORMAT_RGB_565;
         case HAL_PIXEL_FORMAT_RGB_888:

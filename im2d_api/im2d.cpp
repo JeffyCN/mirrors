@@ -912,7 +912,7 @@ IM_API IM_STATUS rga_check_limit(rga_buffer_t src, rga_buffer_t dst, int scale_u
     return IM_STATUS_NOERROR;
 }
 
-IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, int format_usage) {
+IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, int format_usage, int mode_usgae) {
     char err[ERR_MSG_LEN] = {0};
     int format = -1;
 
@@ -939,7 +939,7 @@ IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect r
         }
     } else if (format == RK_FORMAT_BPP1 || format == RK_FORMAT_BPP2 ||
                format == RK_FORMAT_BPP4 || format == RK_FORMAT_BPP8) {
-        if ((~format_usage & IM_RGA_SUPPORT_FORMAT_BPP) && !(format_usage & IM_COLOR_PALETTE)) {
+        if ((~format_usage & IM_RGA_SUPPORT_FORMAT_BPP) && !(mode_usgae & IM_COLOR_PALETTE)) {
             sprintf(err, "%s unsupported input BPP format.", name);
             imErrorMsg(err);
             return IM_STATUS_NOT_SUPPORTED;
@@ -1020,11 +1020,6 @@ IM_API IM_STATUS rga_check_blend(rga_buffer_t src, rga_buffer_t pat, rga_buffer_
     dst_isRGB = NormalRgaIsRgbFormat(dst_fmt);
 
     /**************** blend mode check ****************/
-    if (!dst_isRGB || (pat_enable && !pat_isRGB)) {
-        imErrorMsg("dst/pat channel unsupported formats other than RGB.");
-        return IM_STATUS_NOT_SUPPORTED;
-    }
-
     switch (mode_usage & IM_ALPHA_BLEND_MASK) {
         case IM_ALPHA_BLEND_SRC :
         case IM_ALPHA_BLEND_DST :
@@ -1093,7 +1088,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         ret = rga_check_info("src", src, src_rect, rga_info.input_resolution);
         if (ret != IM_STATUS_NOERROR)
             return ret;
-        ret = rga_check_format("src", src, src_rect, rga_info.input_format);
+        ret = rga_check_format("src", src, src_rect, rga_info.input_format, mode_usage);
         if (ret != IM_STATUS_NOERROR)
             return ret;
     }
@@ -1101,14 +1096,14 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         ret = rga_check_info("pat", pat, pat_rect, rga_info.input_resolution);
         if (ret != IM_STATUS_NOERROR)
             return ret;
-        ret = rga_check_format("pat", pat, pat_rect, rga_info.input_format);
+        ret = rga_check_format("pat", pat, pat_rect, rga_info.input_format, mode_usage);
         if (ret != IM_STATUS_NOERROR)
             return ret;
     }
     ret = rga_check_info("dst", dst, dst_rect, rga_info.output_resolution);
     if (ret != IM_STATUS_NOERROR)
         return ret;
-    ret = rga_check_format("dst", dst, dst_rect, rga_info.output_format);
+    ret = rga_check_format("dst", dst, dst_rect, rga_info.output_format, mode_usage);
     if (ret != IM_STATUS_NOERROR)
         return ret;
 

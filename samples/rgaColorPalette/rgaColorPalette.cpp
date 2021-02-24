@@ -30,6 +30,7 @@
 #include <gui/ISurfaceComposer.h>
 #include <RockchipRga.h>
 #include "RgaUtils.h"
+#include "core/NormalRga.h"
 
 #include "im2d_api/im2d.hpp"
 
@@ -68,10 +69,10 @@ int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int flag, int index) {
         printf("lock buffer %s \n","ok");
 
     if(flag) {
-        memset(buf,0xFF,get_bpp_from_format(gb->getPixelFormat())*gb->getWidth()*gb->getHeight());
+        memset(buf,0xFF,get_bpp_from_format(RkRgaGetRgaFormatFromAndroid(gb->getPixelFormat()))*gb->getWidth()*gb->getHeight());
     }
     else {
-        ret = get_buf_from_file(buf, gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index);
+        ret = get_buf_from_file(buf, RkRgaGetRgaFormatFromAndroid(gb->getPixelFormat()), gb->getWidth(), gb->getHeight(), index);
         if (!ret)
             printf("open file %s \n", "ok");
         else {
@@ -230,9 +231,9 @@ int main()
     dstFormat = HAL_PIXEL_FORMAT_RGBA_8888;
 
     /*
-     * The minimum page size set by mmu is 64k, 
-     * and mmu will report an error if it is 
-     * smaller than this size. Actually only 
+     * The minimum page size set by mmu is 64k,
+     * and mmu will report an error if it is
+     * smaller than this size. Actually only
      * use 256*1*4 byte.
      */
     /********** LutInfo set **********/
