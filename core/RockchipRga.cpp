@@ -112,7 +112,7 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
     }
 
     void RockchipRga::RkRgaGetContext(void **ctx) {
-        memcpy(ctx, &mContext, sizeof(ctx));
+        memcpy(ctx, &mContext, sizeof(*ctx));
     }
 
 #ifdef LINUX
