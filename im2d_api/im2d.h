@@ -351,8 +351,7 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
  * @returns a usage describing properties of RGA.
  */
 //IM_API int rga_get_info(rga_info_table_entry *);
-IM_API long rga_get_info();
-
+IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table);
 
 /*
  * Query RGA basic information, supported resolution, supported format, etc.

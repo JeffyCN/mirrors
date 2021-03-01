@@ -157,29 +157,26 @@ int AHardwareBuffer_Fill(AHardwareBuffer** buffer, int flag, int index) {
 #endif
 
 int print_expected(rga_buffer_t src, rga_buffer_t dst) {
-    long usage = 0, volume = 0, time = 0;
+    int ret;
+    long volume = 0, time = 0;
+    rga_info_table_entry info_table;
+
     volume = src.wstride*src.hstride*get_bpp_from_format(src.format);
     printf("Expected read data	: %ld bit\n", volume);
     volume = dst.wstride*dst.hstride*get_bpp_from_format(dst.format);
     printf("Expected write data	: %ld bit\n", volume );
 
-    usage = rga_get_info();
-    switch(usage & IM_RGA_INFO_PERFORMANCE_MASK) {
-        case IM_RGA_INFO_PERFORMANCE_300 :
-            time = ((src.wstride*src.hstride) / (300)) *1000000;
-            printf("Expected time	 	: %ld us\n", time);
-            break;
-        case IM_RGA_INFO_PERFORMANCE_520 :
-            time = ((src.wstride*src.hstride) / (520)) *1000000;
-            printf("Expected time	 	: %ld us\n", time);
-            break;
-        case IM_RGA_INFO_PERFORMANCE_600 :
-            time = ((src.wstride*src.hstride) / (600));
-            printf("Expected time	 	: %ld us\n", time);
-            break;
-        default :
-            break;
+    ret = rga_get_info(&info_table);
+    if (ret == IM_STATUS_FAILED) {
+        printf("RGA get info error\n");
+        return -1;
     }
+
+    /* The calculation formula only supports RGA copy mode:
+     * Number of pixels / pixels that aclk can process per second */
+    time = (src.wstride*src.hstride) / (info_table.performance*300);
+    printf("Expected time	 	: %ld us\n", time);
+
     return 0;
 }
 
