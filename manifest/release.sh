@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
-VERSION=${1:-1.3.0}
-BRANCHES="warrior zeus dunfell default"
+VERSION=${1:-1.4.0}
+BRANCHES="warrior zeus dunfell default gatesgarth"
 DEFAULT="dunfell"
 
 function release {

@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 TEMP_XML=freeze.xml
-BRANCHES="master warrior zeus dunfell gatesgarth chromium-zeus"
+BRANCHES="flutter-zeus"
 
 function freeze {
 	BRANCH=${1}

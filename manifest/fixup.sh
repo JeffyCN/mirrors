@@ -5,8 +5,9 @@ release-1.0.0_20191016
 release-1.1.0_20191030
 release-1.2.0_20191227
 release-1.3.0_20200915"
+#VERSIONS="release-1.3.0_20200915"
 
-BRANCHES="default thud warrior zeus dunfell"
+BRANCHES="default thud warrior zeus dunfell gatesgarth"
 
 function fixup {
 	BRANCH=${1}
@@ -28,7 +29,7 @@ function fixup {
 	[ -f ${XML} ] || XML=default.xml
 	sed -i "s#\(^.*meta-rockchip.*revision=\"\).*\(\".*\)#\1${COMMIT}\2#" ${XML}
 	git add ${XML}
-	git commit -s -m "meta-rockchip: Use mirrors for Rockchip BSP repositories"
+	git commit -s -m "meta-rockchip: Fix xserver-xorg fetch error"
 	git push origin ${RELEASE}:${RELEASE}&
 }
 
