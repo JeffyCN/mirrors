@@ -111,6 +111,14 @@ func getIncludeDirs(ctx android.BaseContext) ([]string) {
             dirs = append(dirs, "hardware/rockchip/libgralloc/bifrost/src")
         }
     }
+    // Add libion for RK3368
+    if (sdkVersion >= 29) {
+        if (sdkVersion >= 30) {
+            dirs = append(dirs, "system/memory/libion/original-kernel-headers")
+        } else {
+            dirs = append(dirs, "system/core/libion/original-kernel-headers")
+        }
+    }
 
     return dirs
 }
