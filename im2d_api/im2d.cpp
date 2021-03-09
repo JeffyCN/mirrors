@@ -717,6 +717,12 @@ IM_API IM_STATUS rga_check_info(const char *name, const rga_buffer_t info, const
         return IM_STATUS_ILLEGAL_PARAM;
     }
 
+    if (info.width < 2 || info.height < 2) {
+        sprintf(err, "Hardware limitation %s, unsupported operation of images smaller than 2 pixels.", name);
+        imErrorMsg(err);
+        return IM_STATUS_ILLEGAL_PARAM;
+    }
+
     if (info.wstride < info.width || info.hstride < info.height) {
         sprintf(err, "Invaild %s, Virtual width or height is less than actual width and height.", name);
         imErrorMsg(err);
@@ -730,9 +736,9 @@ IM_API IM_STATUS rga_check_info(const char *name, const rga_buffer_t info, const
         return IM_STATUS_ILLEGAL_PARAM;
     }
 
-    if ((rect.width > 0  && rect.width < 2) ||
-        (rect.height > 0 && rect.height < 2)) {
-        sprintf(err, "Invaild %s rect, unsupported width and height less than 2.", name);
+    if ((rect.width > 0  && rect.width < 2) || (rect.height > 0 && rect.height < 2) ||
+        (rect.x > 0 && rect.x < 2)          || (rect.y > 0 && rect.y < 2)) {
+        sprintf(err, "Hardware limitation %s rect, unsupported operation of images smaller than 2 pixels.", name);
         imErrorMsg(err);
         return IM_STATUS_INVALID_PARAM;
     }
@@ -764,14 +770,13 @@ IM_API IM_STATUS rga_check_limit(rga_buffer_t src, rga_buffer_t dst, int scale_u
     int src_width = 0, src_height = 0;
     int dst_width = 0, dst_height = 0;
 
+    src_width = src.width;
+    src_height = src.height;
+
     if (mode_usage & IM_HAL_TRANSFORM_ROT_270 || mode_usage & IM_HAL_TRANSFORM_ROT_90) {
-        src_width = src.height;
-        src_height = src.width;
         dst_width = dst.height;
         dst_height = dst.width;
     } else {
-        src_width = src.width;
-        src_height = src.height;
         dst_width = dst.width;
         dst_height = dst.height;
     }
