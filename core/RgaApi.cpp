@@ -25,16 +25,10 @@ using namespace android;
 #endif
 
 int c_RkRgaInit() {
-    RockchipRga& c_rkRga(RockchipRga::get());
-
     return 0;
 }
 
-void c_RkRgaDeInit() {
-    RockchipRga& c_rkRga(RockchipRga::get());
-
-    c_rkRga.RkRgaDeInit();
-}
+void c_RkRgaDeInit() {}
 
 void c_RkRgaGetContext(void **ctx) {
     RockchipRga& c_rkRga(RockchipRga::get());
@@ -45,9 +39,7 @@ void c_RkRgaGetContext(void **ctx) {
 int c_RkRgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1) {
     RockchipRga& c_rkRga(RockchipRga::get());
 
-    int ret;
-    ret = c_rkRga.RkRgaBlit(src, dst, src1);
-    return ret ;
+    return c_rkRga.RkRgaBlit(src, dst, src1);
 }
 
 int c_RkRgaColorFill(rga_info_t *dst) {
@@ -66,43 +58,37 @@ int c_RkRgaFlush() {
 int c_RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp) {
     RockchipRga& c_rkRga(RockchipRga::get());
 
-    c_rkRga.RkRgaGetAllocBuffer(bo_info, width, height, bpp);
-    return 0;
+    return c_rkRga.RkRgaGetAllocBuffer(bo_info, width, height, bpp);
 }
 
 int c_RkRgaGetAllocBufferCache(bo_t *bo_info, int width, int height, int bpp) {
     RockchipRga& c_rkRga(RockchipRga::get());
 
-    c_rkRga.RkRgaGetAllocBufferCache(bo_info, width, height, bpp);
-    return 0;
+    return c_rkRga.RkRgaGetAllocBufferCache(bo_info, width, height, bpp);
 }
 
 int c_RkRgaGetMmap(bo_t *bo_info) {
     RockchipRga& c_rkRga(RockchipRga::get());
 
-    c_rkRga.RkRgaGetMmap(bo_info);
-    return 0;
+    return c_rkRga.RkRgaGetMmap(bo_info);
 }
 
 int c_RkRgaUnmap(bo_t *bo_info) {
     RockchipRga& c_rkRga(RockchipRga::get());
 
-    c_rkRga.RkRgaUnmap(bo_info);
-    return 0;
+    return c_rkRga.RkRgaUnmap(bo_info);
 }
 
 int c_RkRgaFree(bo_t *bo_info) {
     RockchipRga& c_rkRga(RockchipRga::get());
 
-    c_rkRga.RkRgaFree(bo_info);
-    return 0;
+    return c_rkRga.RkRgaFree(bo_info);
 }
 
 int c_RkRgaGetBufferFd(bo_t *bo_info, int *fd) {
     RockchipRga& c_rkRga(RockchipRga::get());
 
-    c_rkRga.RkRgaGetBufferFd(bo_info, fd);
-    return 0;
+    return c_rkRga.RkRgaGetBufferFd(bo_info, fd);
 }
 #endif /* #ifndef Andorid */
 
