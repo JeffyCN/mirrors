@@ -1,0 +1,14 @@
+v1.38 revision(2020\11\16):
+1.support new loader format
+
+v1.39 revision(2020\12\04):
+1.support to 1109 and 1126
+2.fix pem key with non pem extension bug
+
+v1.4 revision(2021\03\01):
+1.merge ssl function into sl command
+
+v1.41 revision(2021\03\04):
+1.si command support to sign resc image
+2.sf command support to sign firmware.img
+3.sl command modify to sign loader without 472
