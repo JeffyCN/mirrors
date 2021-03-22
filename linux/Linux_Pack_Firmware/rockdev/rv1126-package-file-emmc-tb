@@ -19,7 +19,7 @@ uboot		Image/uboot.img
 boot		Image/boot.img
 # recovery	Image/recovery.img
 #rootfs		Image/rootfs.img
-# oem         Image/oem.img
+oem		Image/oem.img
 userdata	Image/userdata.img
 # 要写入backup分区的文件就是自身（update.img）
 # SELF 是关键字，表示升级文件（update.img）自身
