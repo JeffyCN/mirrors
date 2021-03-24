@@ -2910,12 +2910,13 @@ static void vcodec_spec_config_rk3328(struct vpu_subdev_data *data)
 	u32 *dst = data->dec_dev.regs;
 	struct vpu_reg *reg = data->pservice->reg_codec;
 	u32 cfg;
+	enum FORMAT_TYPE fmt = rkv_dec_get_fmt(reg->reg);
 
 	/*
-	 * HW defeat workaround: VP9 power save optimization cause decoding
+	 * HW defeat workaround: VP9 and H.265 power save optimization cause decoding
 	 * corruption, disable optimization here.
 	 */
-	if (rkv_dec_get_fmt(reg->reg) == FMT_VP9D) {
+	if (fmt == FMT_VP9D || fmt == FMT_H265D) {
 		cfg = readl(dst + 99);
 		writel(cfg & (~(1 << 12)), dst + 99);
 	}
