@@ -370,10 +370,18 @@ gst_mpp_video_dec_set_format (GstVideoDecoder * decoder,
 {
   GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
   GstStructure *structure;
+  GstVideoInfo info;
+  MppCodingType codingtype;
+  MppFrame mframe;
 
   GST_DEBUG_OBJECT (self, "Setting format: %" GST_PTR_FORMAT, state->caps);
 
   structure = gst_caps_get_structure (state->caps, 0);
+  gst_video_info_from_caps (&info, state->caps);
+
+  codingtype = to_mpp_codec (structure);
+  if (MPP_VIDEO_CodingUnused == codingtype)
+    goto format_error;
 
   if (self->input_state) {
     GstQuery *query = gst_query_new_drain ();
@@ -412,14 +420,16 @@ gst_mpp_video_dec_set_format (GstVideoDecoder * decoder,
 
     self->output_flow = GST_FLOW_OK;
   } else {
-    MppCodingType codingtype;
-    codingtype = to_mpp_codec (structure);
-    if (MPP_VIDEO_CodingUnused == codingtype)
-      goto format_error;
-
     if (!gst_mpp_video_set_format (self, codingtype))
       goto device_error;
   }
+
+  mpp_frame_init (&mframe);
+  mpp_frame_set_width (mframe, info.width);
+  mpp_frame_set_height (mframe, info.height);
+  mpp_frame_set_fmt (mframe, (MppFrameFormat) codingtype);
+  self->mpi->control (self->mpp_ctx, MPP_DEC_SET_FRAME_INFO, (MppParam) mframe);
+  mpp_frame_deinit (&mframe);
 
   self->input_state = gst_video_codec_state_ref (state);
 
