@@ -838,7 +838,7 @@ IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect r
             return IM_STATUS_NOT_SUPPORTED;
         }
         /*Align check*/
-        if ((info.wstride % 2) || (info.hstride % 2) ||
+        if ((info.wstride % 4) || (info.hstride % 2) ||
             (info.width % 2)  || (info.height % 2) ||
             (rect.x % 2) || (rect.y % 2) ||
             (rect.width % 2) || (rect.height % 2)) {

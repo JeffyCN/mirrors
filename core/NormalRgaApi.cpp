@@ -176,7 +176,7 @@ int checkRectForRga(rga_rect_t rect) {
     }
 
     if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(rect.format)) &&
-        ((rect.wstride % 2) ||(rect.xoffset % 2) || (rect.width % 2) ||
+        ((rect.wstride % 4) ||(rect.xoffset % 2) || (rect.width % 2) ||
          (rect.yoffset % 2) || (rect.height % 2) || (rect.hstride % 2))) {
         ALOGE("err yuv not align to 2");
         return -EINVAL;
