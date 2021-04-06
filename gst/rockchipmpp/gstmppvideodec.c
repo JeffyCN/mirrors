@@ -205,7 +205,7 @@ gst_mpp_video_dec_sendeos (GstVideoDecoder * decoder)
 static gboolean
 gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
 {
-  gsize hor_stride, ver_stride, mv_size, cr_h;
+  gsize hor_stride, ver_stride, cr_h;
   GstVideoFormat format;
   GstVideoInterlaceMode mode;
 
@@ -240,8 +240,6 @@ gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
       info->offset[1] = hor_stride * ver_stride;
       cr_h = GST_ROUND_UP_2 (ver_stride) / 2;
       info->size = info->offset[1] + info->stride[0] * cr_h;
-      mv_size = info->size / 3;
-      info->size += mv_size;
       break;
     case GST_VIDEO_FORMAT_NV16:
       info->stride[0] = hor_stride;
@@ -250,8 +248,6 @@ gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
       info->offset[1] = hor_stride * ver_stride;
       cr_h = GST_ROUND_UP_2 (ver_stride);
       info->size = info->offset[1] + info->stride[0] * cr_h;
-      mv_size = info->size / 3;
-      info->size += mv_size;
     default:
       g_assert_not_reached ();
       break;
@@ -533,6 +529,9 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
 
   frame = gst_mpp_video_dec_get_frame (decoder, buffer);
   if (frame) {
+    GstMemory *mem = gst_buffer_peek_memory (buffer, 0);
+    gst_memory_resize (mem, 0, self->info.size);
+
     frame->output_buffer = buffer;
     buffer = NULL;
 
@@ -655,9 +654,6 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
       GstVideoInfo *info = &self->info;
       GstStructure *config = gst_buffer_pool_get_config (pool);
 
-      /* free format frame */
-      mpp_frame_deinit (&mframe);
-
       output_state =
           gst_video_decoder_set_output_state (decoder,
           info->finfo->format, info->width, info->height, self->input_state);
@@ -667,7 +663,10 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
       /* NOTE: if you suffer from the reconstruction of buffer pool which slows
        * down the decoding, then don't allocate more than 10 buffers here */
       gst_buffer_pool_config_set_params (config, output_state->caps,
-          self->info.size, NB_OUTPUT_BUFS, NB_OUTPUT_BUFS);
+          mpp_frame_get_buf_size (mframe), NB_OUTPUT_BUFS, NB_OUTPUT_BUFS);
+
+      /* free format frame */
+      mpp_frame_deinit (&mframe);
 
       if (!gst_buffer_pool_set_config (pool, config))
         goto error_activate_pool;
