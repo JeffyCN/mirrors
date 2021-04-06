@@ -587,9 +587,10 @@ gst_mpp_jpeg_dec_handle_frame (GstVideoDecoder * decoder,
         info->finfo->format, info->width, info->height, self->input_state);
     gst_video_codec_state_unref (output_state);
 
-    /* The MPP requires 2*w*h for both of NV12 and NV16 */
+    /* The MPP requires hor_stride * ver_stride / 2 for extra info */
     gst_buffer_pool_config_set_params (config, output_state->caps,
-        info->stride[0] * ver_stride * 2, NB_OUTPUT_BUFS, NB_OUTPUT_BUFS);
+        info->size + info->stride[0] * ver_stride / 2,
+        NB_OUTPUT_BUFS, NB_OUTPUT_BUFS);
 
     if (!gst_buffer_pool_set_config (pool, config))
       goto error_activate_pool;
