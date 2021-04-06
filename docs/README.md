@@ -305,15 +305,17 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 > 注：Y4格式即2的4次方色阶灰度图，Y400格式即2的8次方色阶灰度图。
 
 
+
 ### 图像格式对齐说明
 
 ------
 
 | Format                               | Alignment                               |
 | :----------------------------------- | --------------------------------------- |
-| YUV420/422 YUV400/Y4 YVYU422/YUYV420 | 所有参数均须2对齐                       |
-| YUV420/422 10bit                     | width stride须要16对齐，其余参数须2对齐 |
+| YUV420/422 YUV400/Y4 YVYU422/YUYV420 | width stride须4对齐，其余参数均须2对齐  |
+| YUV420/422 10bit                     | width stride须16对齐，其余参数均须2对齐 |
 | RGB888                               | width stride须4对齐                     |
+| RGB565                               | width stride须2对齐                     |
 
 
 
@@ -708,7 +710,7 @@ IM_STATUS imcomposite(const rga_buffer_t srcA,
 
 
 
-###色键（Color Key）
+### 色键（Color Key）
 
 ------
 
