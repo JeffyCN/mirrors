@@ -1400,22 +1400,37 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
     if((usage & (IM_ALPHA_BLEND_MASK+IM_HAL_TRANSFORM_MASK)) != 0) {
         /* Transform */
-        switch(usage & IM_HAL_TRANSFORM_MASK) {
-            case IM_HAL_TRANSFORM_ROT_90:
-                srcinfo.rotation = HAL_TRANSFORM_ROT_90;
-                break;
-            case IM_HAL_TRANSFORM_ROT_180:
-                srcinfo.rotation = HAL_TRANSFORM_ROT_180;
-                break;
-            case IM_HAL_TRANSFORM_ROT_270:
-                srcinfo.rotation = HAL_TRANSFORM_ROT_270;
-                break;
-            case IM_HAL_TRANSFORM_FLIP_V:
-                srcinfo.rotation = HAL_TRANSFORM_FLIP_V;
-                break;
-            case IM_HAL_TRANSFORM_FLIP_H:
-                srcinfo.rotation = HAL_TRANSFORM_FLIP_H;
-                break;
+        if (usage & IM_HAL_TRANSFORM_MASK) {
+            switch (usage & (IM_HAL_TRANSFORM_ROT_90 + IM_HAL_TRANSFORM_ROT_180 + IM_HAL_TRANSFORM_ROT_270)) {
+                case IM_HAL_TRANSFORM_ROT_90:
+                    srcinfo.rotation = HAL_TRANSFORM_ROT_90;
+                    break;
+                case IM_HAL_TRANSFORM_ROT_180:
+                    srcinfo.rotation = HAL_TRANSFORM_ROT_180;
+                    break;
+                case IM_HAL_TRANSFORM_ROT_270:
+                    srcinfo.rotation = HAL_TRANSFORM_ROT_270;
+                    break;
+            }
+
+            switch (usage & (IM_HAL_TRANSFORM_FLIP_V + IM_HAL_TRANSFORM_FLIP_H + IM_HAL_TRANSFORM_FLIP_H_V)) {
+                case IM_HAL_TRANSFORM_FLIP_V:
+
+                    srcinfo.rotation |= srcinfo.rotation ?
+                                        HAL_TRANSFORM_FLIP_V << 4 :
+                                        HAL_TRANSFORM_FLIP_V;
+                    break;
+                case IM_HAL_TRANSFORM_FLIP_H:
+                    srcinfo.rotation |= srcinfo.rotation ?
+                                        HAL_TRANSFORM_FLIP_H << 4 :
+                                        HAL_TRANSFORM_FLIP_H;
+                    break;
+                case IM_HAL_TRANSFORM_FLIP_H_V:
+                    srcinfo.rotation |= srcinfo.rotation ?
+                                        HAL_TRANSFORM_FLIP_H_V << 4 :
+                                        HAL_TRANSFORM_FLIP_H_V;
+                    break;
+            }
         }
 
         /* Blend */
