@@ -131,7 +131,7 @@ _mppmem_is_span (GstMppMemory * mem1, GstMppMemory * mem2, gsize * offset)
 }
 
 /*
- * GstVpuAllocator Implementation
+ * GstMppAllocator Implementation
  */
 
 /* Auto clean up methods */

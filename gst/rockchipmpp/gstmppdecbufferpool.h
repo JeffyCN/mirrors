@@ -43,7 +43,7 @@ struct _GstMppDecBufferPool
   GstBufferPool parent;
   GstMppVideoDec *dec;
 
-  guint num_queued;             /* number of buffers queued in the mpp/libvpu and gstvpudecbufferpool */
+  guint num_queued;             /* number of buffers queued in the mpp and gstmppdecbufferpool */
 
   guint size;
   GstBuffer *buffers[VIDEO_MAX_FRAME];

@@ -314,7 +314,6 @@ dnl *** plug-ins to include ***
 dnl these are all the gst plug-ins, compilable without additional libs
 dnl of EXT plugins
 AM_CONDITIONAL(USE_ROCKCHIPMPP, false)
-AM_CONDITIONAL(USE_VPUDEC, false)
 AM_CONDITIONAL(USE_RKXIMAGE, false)
 
 dnl *** finalize CFLAGS, LDFLAGS, LIBS
@@ -388,13 +387,6 @@ AG_GST_CHECK_FEATURE(ROCKCHIPMPP, [rockchip mpp libraries], rockchipmpp, [
     HAVE_ROCKCHIPMPP=yes, HAVE_ROCKCHIPMPP=no)
 ])
 
-dnl *** rockchip vpu dec ***
-translit(dnm, m, l) AM_CONDITIONAL(USE_VPUDEC, true)
-AG_GST_CHECK_FEATURE(VPUDEC, [rockchip vpu legacy libraries], vpudec, [
-  PKG_CHECK_MODULES([ROCKCHIP_VPU], [rockchip_vpu < 0.3.0],
-    HAVE_VPUDEC=yes, HAVE_VPUDEC=no)
-])
-
 translit(dnm, m, l) AM_CONDITIONAL(USE_RKXIMAGE, true)
 AG_GST_CHECK_FEATURE(RKXIMAGE, [drm/kms and x11 libraries], rkximage, [
   PKG_CHECK_MODULES([RKXIMAGE], [x11 libdrm], HAVE_RKXIMAGE=yes, HAVE_RKXIMAGE=no)
@@ -409,10 +401,8 @@ Makefile
 gst/Makefile
 gst/rkximage/Makefile
 gst/rockchipmpp/Makefile
-gst/vpudec/Makefile
 gst-libs/Makefile
 gst-libs/gst/Makefile
-gst-libs/gst/vpudec/Makefile
 tests/Makefile
 tests/examples/Makefile
 tests/examples/app-interface/Makefile
