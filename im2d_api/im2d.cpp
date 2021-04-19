@@ -54,7 +54,7 @@ char *err_str = NULL;
 
 IM_API void imErrorMsg(const char* msg) {
     err_msg.str("");
-    err_msg << msg << endl;
+    err_msg << msg << " ";
 }
 
 IM_API const char* imStrError_t(IM_STATUS status) {
@@ -82,23 +82,23 @@ IM_API const char* imStrError_t(IM_STATUS status) {
             break;
 
         case IM_STATUS_NOT_SUPPORTED :
-            error << error_type[2] << err_msg.str().c_str() << endl;
+            error << error_type[2] << err_msg.str().c_str();
             break;
 
         case IM_STATUS_OUT_OF_MEMORY :
-            error << error_type[3] << err_msg.str().c_str() << endl;
+            error << error_type[3] << err_msg.str().c_str();
             break;
 
         case IM_STATUS_INVALID_PARAM :
-            error << error_type[4] << err_msg.str().c_str() << endl;
+            error << error_type[4] << err_msg.str().c_str();
             break;
 
         case IM_STATUS_ILLEGAL_PARAM :
-            error << error_type[5] << err_msg.str().c_str() << endl;
+            error << error_type[5] << err_msg.str().c_str();
             break;
 
         case IM_STATUS_FAILED :
-            error << error_type[6] << err_msg.str().c_str() << endl;
+            error << error_type[6] << err_msg.str().c_str();
             break;
         default :
             error << error_type[7] << endl;
@@ -938,7 +938,21 @@ IM_API IM_STATUS rga_check_blend(rga_buffer_t src, rga_buffer_t pat, rga_buffer_
     return IM_STATUS_NOERROR;
 }
 
-IM_API IM_STATUS rga_check_rotate(rga_buffer_t src, rga_buffer_t dst, im_rect src_rect, im_rect dst_rect,int mode_usage) {
+IM_API IM_STATUS rga_check_rotate(rga_buffer_t src, rga_buffer_t dst, im_rect src_rect, im_rect dst_rect,
+                                  int mode_usage, rga_info_table_entry &table) {
+    if (table.version == RGA_1 || table.version == RGA_1_PLUS) {
+        if (mode_usage & IM_HAL_TRANSFORM_FLIP_H_V) {
+            imErrorMsg("RGA1/RGA1_PLUS cannot support H_V mirror.");
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+
+        if ((mode_usage & (IM_HAL_TRANSFORM_ROT_90 + IM_HAL_TRANSFORM_ROT_180 + IM_HAL_TRANSFORM_ROT_270)) &&
+            (mode_usage & (IM_HAL_TRANSFORM_FLIP_H + IM_HAL_TRANSFORM_FLIP_V + IM_HAL_TRANSFORM_FLIP_H_V))) {
+            imErrorMsg("RGA1/RGA1_PLUS cannot support rotate with mirror.");
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+    }
+
     if ((mode_usage & IM_HAL_TRANSFORM_ROT_90) || (mode_usage & IM_HAL_TRANSFORM_ROT_270)) {
         if ((src.width != dst.height) || (src.height != dst.width) ||
             (src_rect.width != dst_rect.height) || (src_rect.height != dst_rect.width)) {
@@ -959,6 +973,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     ret = rga_get_info(&rga_info);
     if (IM_STATUS_FAILED == ret) {
         ALOGE("rga im2d: rga2 get info failed!\n");
+        imErrorMsg("RGA im2d api get info failed!");
         return IM_STATUS_FAILED;
     }
 
@@ -977,6 +992,13 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
             return ret;
     }
     if (pat_enable) {
+        /* RGA1 cannot support src1. */
+        if (rga_info.version == RGA_1 || rga_info.version == RGA_1_PLUS) {
+            imErrorMsg("RGA1/RGA1_PLUS cannot support src1.");
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+
+
         ret = rga_check_info("pat", pat, pat_rect, rga_info.input_resolution);
         if (ret != IM_STATUS_NOERROR)
             return ret;
@@ -1003,7 +1025,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
             return ret;
     }
 
-    ret = rga_check_rotate(src, dst, src_rect, dst_rect, mode_usage);
+    ret = rga_check_rotate(src, dst, src_rect, dst_rect, mode_usage, rga_info);
     if (ret != IM_STATUS_NOERROR)
         return ret;
 
@@ -1209,8 +1231,10 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync) {
 
     empty_structure(NULL, NULL, &pat, &srect, &drect, &prect);
 
-    if ((src.width != dst.width) || (src.height != dst.height))
+    if ((src.width != dst.width) || (src.height != dst.height)) {
+        imErrorMsg("imcopy cannot support scale.");
         return IM_STATUS_INVALID_PARAM;
+    }
 
     if (sync == 0)
         usage |= IM_SYNC;
