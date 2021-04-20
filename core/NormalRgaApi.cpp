@@ -842,7 +842,6 @@ int NormalRgaMmuFlag(struct rga_req *msg,
 
 int NormalRgaNNQuantizeMode(struct rga_req *msg, rga_info *dst) {
     if (dst->nn.nn_flag == 1) {
-        msg->alpha_rop_flag = 1;
         msg->alpha_rop_flag |= (dst->nn.nn_flag << 8);
 
         msg->gr_color.gr_x_r = dst->nn.scale_r;
