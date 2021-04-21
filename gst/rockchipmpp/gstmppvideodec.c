@@ -71,12 +71,13 @@ static GstStaticPadTemplate gst_mpp_video_dec_src_template =
         ";"
         "video/x-raw, "
         "format = (string) NV16, "
-        "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]"
-        ";"
+        "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]" ";"
+#ifdef HAVE_NV12_10LE40
         "video/x-raw, "
-        "format = (string) P010_10LE, "
-        "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]" ";")
-    );
+        "format = (string) NV12_10LE40, "
+        "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]" ";"
+#endif
+    ));
 
 static MppCodingType
 to_mpp_codec (GstStructure * s)
@@ -123,9 +124,10 @@ mpp_frame_type_to_gst_video_format (MppFrameFormat fmt)
     case MPP_FMT_YUV420SP:
       return GST_VIDEO_FORMAT_NV12;
       break;
+#ifdef HAVE_NV12_10LE40
     case MPP_FMT_YUV420SP_10BIT:
-      /* FIXME it is platform special pixel format */
-      return GST_VIDEO_FORMAT_P010_10LE;
+      return GST_VIDEO_FORMAT_NV12_10LE40;
+#endif
       break;
     case MPP_FMT_YUV422SP:
       return GST_VIDEO_FORMAT_NV16;
@@ -232,8 +234,9 @@ gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
   switch (info->finfo->format) {
     case GST_VIDEO_FORMAT_NV12:
     case GST_VIDEO_FORMAT_NV21:
-      /* FIXME: use NV12_10LE40 since 1.16 */
-    case GST_VIDEO_FORMAT_P010_10LE:
+#ifdef HAVE_NV12_10LE40
+    case GST_VIDEO_FORMAT_NV12_10LE40:
+#endif
       info->stride[0] = hor_stride;
       info->stride[1] = hor_stride;
       info->offset[0] = 0;

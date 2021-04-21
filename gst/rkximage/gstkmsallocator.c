@@ -147,6 +147,9 @@ extrapolate_stride (const GstVideoFormatInfo * finfo, gint plane, gint stride)
   switch (finfo->format) {
     case GST_VIDEO_FORMAT_NV12:
     case GST_VIDEO_FORMAT_NV12_64Z32:
+#ifdef HAVE_NV12_10LE40
+    case GST_VIDEO_FORMAT_NV12_10LE40:
+#endif
     case GST_VIDEO_FORMAT_NV21:
     case GST_VIDEO_FORMAT_NV16:
     case GST_VIDEO_FORMAT_NV61:
@@ -460,13 +463,6 @@ gst_kms_allocator_add_fb (GstKMSAllocator * alloc, GstKMSMemory * kmsmem,
 
     pitches[i] = GST_VIDEO_INFO_PLANE_STRIDE (vinfo, i);
     offsets[i] = in_offsets[i];
-
-    if ((GST_VIDEO_INFO_FORMAT (vinfo) == GST_VIDEO_FORMAT_P010_10LE)
-        && (w >= 3840)) {
-      pitches[i] *= 2;
-      h = GST_VIDEO_INFO_HEIGHT (vinfo) / 2;
-    }
-  }
 
   GST_DEBUG_OBJECT (alloc, "bo handles: %d, %d, %d, %d", bo_handles[0],
       bo_handles[1], bo_handles[2], bo_handles[3]);

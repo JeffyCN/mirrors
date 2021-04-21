@@ -205,6 +205,14 @@ AC_SUBST(GST_TOOLS_DIR)
 AC_MSG_NOTICE(Using GStreamer Core Plugins in $GST_PLUGINS_DIR)
 AC_MSG_NOTICE(Using GStreamer Base Plugins in $GSTPB_PLUGINS_DIR)
 
+dnl checks for GST_VIDEO_FORMAT_NV12_10LE40
+SAVED_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $GST_CFLAGS"
+AC_CHECK_DECL(GST_VIDEO_FORMAT_NV12_10LE40,
+  AC_DEFINE(HAVE_NV12_10LE40, 1, [Have NV12_10LE40]), [],
+  [#include <gst/video/video-format.h>])
+CFLAGS="$SAVED_CFLAGS"
+
 dnl Check for documentation xrefs
 GLIB_PREFIX="`$PKG_CONFIG --variable=prefix glib-2.0`"
 GST_PREFIX="`$PKG_CONFIG --variable=prefix gstreamer-$GST_API_VERSION`"
