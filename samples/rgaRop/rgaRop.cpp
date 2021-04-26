@@ -18,6 +18,7 @@
  */
 #define LOG_NDEBUG 0
 #define LOG_TAG "rgaBlit"
+
 #include <stdint.h>
 #include <sys/types.h>
 #include <math.h>
@@ -25,34 +26,8 @@
 #include <utils/misc.h>
 #include <signal.h>
 #include <time.h>
-#include <cutils/properties.h>
-#ifndef ANDROID_8
-#include <binder/IPCThreadState.h>
-#endif
-#include <utils/Atomic.h>
-#include <utils/Errors.h>
-#include <utils/Log.h>
-#include <ui/PixelFormat.h>
-#include <ui/Rect.h>
-#include <ui/Region.h>
-#include <ui/DisplayInfo.h>
-#include <ui/GraphicBufferMapper.h>
-#include <RockchipRga.h>
-#include <gui/ISurfaceComposer.h>
-#include <gui/Surface.h>
-#include <gui/SurfaceComposerClient.h>
-#include <GLES/gl.h>
-#include <GLES/glext.h>
-#include <EGL/eglext.h>
 #include <stdint.h>
 #include <sys/types.h>
-//#include <system/window.h>
-#include <utils/Thread.h>
-#include <EGL/egl.h>
-#include <GLES/gl.h>
-///////////////////////////////////////////////////////
-//#include "../drmrga.h"
-#include <hardware/hardware.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -61,6 +36,29 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <linux/stddef.h>
+
+#include <utils/Thread.h>
+#include <utils/Atomic.h>
+#include <utils/Errors.h>
+#include <utils/Log.h>
+#include <cutils/properties.h>
+#include <ui/PixelFormat.h>
+#include <ui/Rect.h>
+#include <ui/Region.h>
+#include <ui/DisplayInfo.h>
+#include <ui/GraphicBuffer.h>
+#include <ui/GraphicBufferMapper.h>
+#include <gui/ISurfaceComposer.h>
+#include <hardware/hardware.h>
+
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <GLES/gl.h>
+#include <GLES/glext.h>
+
+#ifndef ANDROID_8
+#include <binder/IPCThreadState.h>
+#endif
 
 #include "RockchipRga.h"
 #include "RgaUtils.h"
