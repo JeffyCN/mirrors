@@ -82,7 +82,7 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         mLogAlways(0),
         mContext(NULL) {
         RkRgaInit();
-        ALOGE("Rga built version:%s %s", RGA_LIB_VERSION, RGA_BUILT_VERSION);
+        ALOGE("%s", RGA_API_FULL_VERSION);
     }
 
     RockchipRga::~RockchipRga() {

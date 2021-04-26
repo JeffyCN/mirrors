@@ -5,7 +5,7 @@ if(NOT CMAKE_BUILD_TYPE)
         FORCE)
 endif()
 
-execute_process(COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/version.sh)
+execute_process(COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/genversion.sh cmake)
 
 if(CMAKE_BUILD_TARGET STREQUAL ndk)
     message("set ndk toolchain")

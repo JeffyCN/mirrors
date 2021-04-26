@@ -488,8 +488,7 @@ IM_API const char* querystring(int name) {
     int rga_version = 0;
     long usage = 0;
     enum {
-        RGA_LIB = 0,
-        RGA_IM2D,
+        RGA_API = 0,
         RGA_BUILT,
     };
     const char *temp;
@@ -505,9 +504,8 @@ IM_API const char* querystring(int name) {
         "expected performance  : ",
     };
     const char *version_name[] = {
-        "RGA_lib_version       : ",
-        "RGA_im2d_version      : ",
-        "RGA_built_version     : "
+        "RGA_api version       : ",
+        "RGA_built version     : "
     };
     const char *output_version[] = {
         "unknown",
@@ -564,9 +562,8 @@ IM_API const char* querystring(int name) {
                 break;
 
             case RGA_VERSION :
-                out << version_name[RGA_LIB] << "v" << RGA_LIB_VERSION << endl;
-                out << version_name[RGA_IM2D] << "v" << RGA_IM2D_VERSION << endl;
-                out << version_name[RGA_BUILT] << RGA_BUILT_VERSION <<endl;
+                out << version_name[RGA_API] << "v" << RGA_API_VERSION << endl;
+                out << version_name[RGA_BUILT] << RGA_API_GIT_BUILD_VERSION <<endl;
                 out << output_name[name] << output_version[rga_info.version] << endl;
                 break;
 

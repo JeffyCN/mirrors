@@ -1,7 +1,7 @@
 project(
     'librga',
     'cpp',
-    version : '2.0.0',
+    version : '1.2.0_[0]',
     meson_version : '>=0.47.0',
     default_options : ['warning_level=3', 'cpp_std=c++14']
 )
@@ -27,8 +27,8 @@ endif
 libthreads_dep = dependency('threads')
 
 gen_version = vcs_tag(
-	command : ['./version.sh', 'meson'],
-	replace_string : ['$FULL_VERSION'],
+	command : ['./genversion.sh', 'meson'],
+	replace_string : ['$GIT_BUILD_VERSION'],
 	input : 'version.h.template', output : 'version.h',
  )
 add_project_arguments('-DLINUX=1', language : 'cpp')

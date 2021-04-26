@@ -191,9 +191,8 @@ int RgaInit(void **ctx) {
     int ret = 0;
     ret = NormalRgaOpen(ctx);
 #ifdef ANDROID
-    property_set("vendor.rga_lib.version", RGA_LIB_VERSION);
-    property_set("vendor.rga_im2d.version", RGA_IM2D_VERSION);
-    property_set("vendor.rga_built.version", RGA_BUILT_VERSION);
+    property_set("vendor.rga_api.version", RGA_API_VERSION);
+    property_set("vendor.rga_built.version", RGA_API_GIT_BUILD_VERSION);
 #endif
     return ret;
 }
@@ -393,6 +392,12 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     rotation = 0;
     blend = 0;
     yuvToRgbMode = 0;
+
+    printf("yqw, --debug, %s, %s, %d, %d, %d, %d\n", RGA_API_GIT_BUILD_VERSION, RGA_API_PRODUCT_BASE, RGA_API_MAJOR_VERSION, RGA_API_MINOR_VERSION, RGA_API_REVISION_VERSION, RGA_API_BUILD_VERSION);
+
+    printf("yqw ,--debug, %s\n", RGA_API_VERSION);
+
+    printf("yqw ,--debug, %s\n\n", RGA_API_FULL_VERSION);
 
 #ifdef ANDROID
     /* print debug log by setting property vendor.rga.log as 1 */
