@@ -267,6 +267,12 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
   GST_BUFFER_DTS (outbuf) = mpp_frame_get_dts (mframe);
   GST_BUFFER_PTS (outbuf) = mpp_frame_get_pts (mframe);
 
+#ifdef MPP_FRAME_FLAG_IEP_DEI_MASK
+  /* IEP deinterlaced */
+  if (mode & MPP_FRAME_FLAG_IEP_DEI_MASK)
+    interlace_mode = GST_VIDEO_INTERLACE_MODE_PROGRESSIVE;
+#endif
+
   mode = mpp_frame_get_mode (mframe);
   interlace_mode = GST_VIDEO_INTERLACE_MODE_PROGRESSIVE;
   switch (mode & MPP_FRAME_FLAG_FIELD_ORDER_MASK) {
@@ -287,12 +293,6 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
       GST_BUFFER_FLAG_UNSET (outbuf, GST_VIDEO_BUFFER_FLAG_TFF);
       break;
   }
-
-#ifdef MPP_FRAME_FLAG_IEP_DEI_MASK
-  /* IEP deinterlaced */
-  if (mode & MPP_FRAME_FLAG_IEP_DEI_MASK)
-    interlace_mode = GST_VIDEO_INTERLACE_MODE_PROGRESSIVE;
-#endif
 
   if (dec->info.interlace_mode != interlace_mode) {
     GstVideoCodecState *output_state =
