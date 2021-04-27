@@ -393,12 +393,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     blend = 0;
     yuvToRgbMode = 0;
 
-    printf("yqw, --debug, %s, %s, %d, %d, %d, %d\n", RGA_API_GIT_BUILD_VERSION, RGA_API_PRODUCT_BASE, RGA_API_MAJOR_VERSION, RGA_API_MINOR_VERSION, RGA_API_REVISION_VERSION, RGA_API_BUILD_VERSION);
-
-    printf("yqw ,--debug, %s\n", RGA_API_VERSION);
-
-    printf("yqw ,--debug, %s\n\n", RGA_API_FULL_VERSION);
-
 #ifdef ANDROID
     /* print debug log by setting property vendor.rga.log as 1 */
     is_debug_log();

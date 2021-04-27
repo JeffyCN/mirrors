@@ -17,10 +17,10 @@ VERSION_TARGET="$(cat version.h.template | sed  -e 's/\$GIT_BUILD_VERSION/'"$git
 #Only when compiling with CMAKE in linux, will the current directory generate version.h.
 if [ $TARGET_PRODUCT ];then
 	if [ "$1" = "Android.mk" ];then
-        	echo RGA is compiling with Android.mk
+		echo RGA is compiling with Android.mk
 		echo "${VERSION_TARGET}" > version.h
 	elif [ "$1" = "Android.bp" ];then
-        	echo RGA is compiling with Android.bp
+		echo RGA is compiling with Android.bp
 		echo "${VERSION_TARGET}" > version.h
 		#echo "${VERSION_TARGET}"
 	else
