@@ -4,12 +4,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 ### 版本说明
 
-**librga** 版本: v1.04<br/>
-**librga API** 版本: v1.11
+**librga API** 版本: 1.2.0
 
 ### 适用芯片平台
 
-Rockchip RK3066 | RK3188 | RK2926 | RK2928 | RK3026 | RK3028 | RK3128 | Sofia3gr | RK3288 | RK3288w | RK3190 | RK1108 | RK3368 | RK3326 | RK3228 | RK3228H | RK3326 | RK1808 | RV1126 | RV1109 | RK3399 | RK3399pro
+Rockchip RK3066 | RK3188 | RK2926 | RK2928 | RK3026 | RK3028 | RK3128 | Sofia3gr | RK3288 | RK3288w | RK3190 | RK1108 | RK3368 | RK3326 | RK3228 | RK3228H | RK3326 | RK1808 | RV1126 | RV1109 | RK3399 | RK3399pro | RK3566 | RK3568
 
 ### 目录说明
 
@@ -20,6 +19,8 @@ Rockchip RK3066 | RK3188 | RK2926 | RK2928 | RK3026 | RK3028 | RK3128 | Sofia3gr
 **im2d_api:** RGA API相关实现及头文件
 
 **samples:** librga使用例程
+
+**samples/sample_file：**示例图片。
 
 ### 编译说明
 
@@ -87,6 +88,10 @@ $ ninja -C build-rga install
   * 调用im2d api
 
     im2d_api/im2d.hpp
+
+  * C_API
+
+    include/RgaApi.h
 
 * **库文件**
 
