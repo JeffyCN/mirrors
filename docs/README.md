@@ -319,6 +319,114 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 
 
+## API版本说明
+
+RGA的支持库librga.so随着开发进展，会按照一定规则更新版本号，标识着功能新增、兼容性、问题修正的更新提交，并提供几种方式查询版本号，方便开发者在使用librga.so时可以清楚的辨别当前的库文件版本是否适合于当前的开发环境。详细版本更新日志可以查阅源码根目录下CHANGLOG.md。
+
+
+
+### 版本号格式与递增规则
+
+#### API版本号
+
+##### 格式
+
+```
+major.minor.revision_[build]
+```
+
+> 例：
+>
+> 1.2.1_[1]
+
+
+
+##### 递增规则
+
+| 名称     | 规则                                                   |
+| -------- | ------------------------------------------------------ |
+| major    | 主版本号，当提交不向下兼容的版本。                     |
+| minor    | 次版本号，当向下兼容的功能性API新增。                  |
+| revision | 修订版本号，当提交向下兼容的功能补充或致命的问题修正。 |
+| build    | 编译版本号，当向下兼容的问题修正。                     |
+
+
+
+#### API 编译版本号
+
+##### 格式
+
+```
+(git_commit build: build_time base: build_platform)
+```
+
+> 例：
+>
+> (be7518a build: 2021-04-29 12:01:46 base: rk3566_r)
+
+
+
+##### 递增规则
+
+| 名称           | 规则                            |
+| -------------- | ------------------------------- |
+| git_commit     | 代码版本提交commit。            |
+| build_time     | 编译时间。                      |
+| build_paltform | 芯片平台（仅支持Android系统）。 |
+
+
+
+### 版本号查询
+
+#### strings命令查询：
+
+以Android R 64位为例：
+
+```shell
+:/# strings vendor/lib64/librga.so |grep rga_api |grep version
+rga_api version 1.2.1_[1] (be7518a build: 2021-04-29 12:01:46 base: rk3566_r)
+```
+
+
+
+#### 日志打印：
+
+当每个进程首次调用RGA API时，会打印版本号。
+
+```
+rockchiprga: Rga built version:1.04 e332789+2021-04-01 10:14:57
+```
+
+
+
+#### 函数接口查询
+
+调用以下API，可以查询代码版本号、编译版本号、RGA硬件版本信息。具体使用说明可以查看 **应用接口说明** 章节。
+
+```
+querystring(RGA_VERSION);
+```
+
+> 字符串格式如下：
+>
+> RGA_api version       : v1.2.1_[1]
+> RGA_built version     : be7518a build: 2021-04-29 12:01:46
+> RGA version               : RGA_2_Enhance
+
+
+
+#### 属性查询
+
+该方式查询版本号仅Android系统支持，并且须已有进程调用RGA后，属性设置方生效。
+
+```shell
+:/# getprop |grep rga
+[vendor.rga_api.version]: 1.2.1_1
+[vendor.rga_built.version]: [be7518a build: 2021-04-29 12:01:46]
+```
+
+
+
 ## 应用接口说明
 
 RGA模块支持库为librga.so，通过对图像缓冲区结构体struct rga_info进行配置，实现相应的2D图形操作。为了获得更友好的开发体验，在此基础上进一步封装常用的2D图像操作接口。新的接口主要包含以下特点：
