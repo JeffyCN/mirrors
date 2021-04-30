@@ -394,7 +394,7 @@ rga_api version 1.2.1_[1] (be7518a build: 2021-04-29 12:01:46 base: rk3566_r)
 当每个进程首次调用RGA API时，会打印版本号。
 
 ```
-rockchiprga: Rga built version:1.04 e332789+2021-04-01 10:14:57
+rockchiprga: rga_api version 1.2.1_[1] (5519100 build: 2021-04-30 15:17:33 base: rk3566_r)
 ```
 
 
@@ -421,7 +421,7 @@ querystring(RGA_VERSION);
 
 ```shell
 :/# getprop |grep rga
-[vendor.rga_api.version]: 1.2.1_1
+[vendor.rga_api.version]: [1.2.1_[1]]
 [vendor.rga_built.version]: [be7518a build: 2021-04-29 12:01:46]
 ```
 
