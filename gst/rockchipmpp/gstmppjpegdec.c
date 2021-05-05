@@ -23,9 +23,7 @@
 #include "config.h"
 #endif
 
-#include <gst/gst.h>
-#include <gst/gst-compat-private.h>
-
+#include "gstmpp.h"
 #include "gstmppbarebufferpool.h"
 #include "gstmppjpegdec.h"
 
@@ -322,7 +320,6 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   GstStructure *structure;
   GstVideoFormat format;
   GstVideoInfo *info;
-  gsize ver_stride, cr_h;
 
   GST_DEBUG_OBJECT (self, "Setting format: %" GST_PTR_FORMAT, state->caps);
 
@@ -394,25 +391,8 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   gst_video_info_set_format (info, format, GST_VIDEO_INFO_WIDTH (&state->info),
       GST_VIDEO_INFO_HEIGHT (&state->info));
 
-  info->stride[0] = GST_ROUND_UP_16 (info->stride[0]);
-  info->stride[1] = info->stride[0];
-  ver_stride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
-  info->offset[0] = 0;
-  info->offset[1] = info->stride[0] * ver_stride;
-
-  switch (format) {
-    case GST_VIDEO_FORMAT_NV12:
-      cr_h = GST_ROUND_UP_2 (ver_stride) / 2;
-      info->size = info->offset[1] + info->stride[0] * cr_h;
-      break;
-    case GST_VIDEO_FORMAT_NV16:
-      cr_h = GST_ROUND_UP_2 (ver_stride);
-      info->size = info->stride[0] * cr_h * 2;
-      break;
-    default:
-      g_assert_not_reached ();
-      return FALSE;
-  }
+  if (!gst_mpp_video_info_align (info, 0, 0))
+    return FALSE;
 
   self->input_state = gst_video_codec_state_ref (state);
 
@@ -580,7 +560,6 @@ gst_mpp_jpeg_dec_handle_frame (GstVideoDecoder * decoder,
     GstVideoCodecState *output_state;
     GstVideoInfo *info = &self->info;
     GstStructure *config = gst_buffer_pool_get_config (pool);
-    gsize ver_stride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
 
     output_state =
         gst_video_decoder_set_output_state (decoder,
@@ -589,8 +568,7 @@ gst_mpp_jpeg_dec_handle_frame (GstVideoDecoder * decoder,
 
     /* The MPP requires hor_stride * ver_stride / 2 for extra info */
     gst_buffer_pool_config_set_params (config, output_state->caps,
-        info->size + info->stride[0] * ver_stride / 2,
-        NB_OUTPUT_BUFS, NB_OUTPUT_BUFS);
+        info->size + info->offset[1] / 2, NB_OUTPUT_BUFS, NB_OUTPUT_BUFS);
 
     if (!gst_buffer_pool_set_config (pool, config))
       goto error_activate_pool;

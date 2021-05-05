@@ -23,6 +23,7 @@
 #endif
 #include <string.h>
 
+#include "gstmpp.h"
 #include "gstmppvideoenc.h"
 
 GST_DEBUG_CATEGORY (mppvideoenc_debug);
@@ -404,7 +405,6 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
 {
   GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
   GstVideoInfo *info;
-  gsize ver_stride, cr_h;
   GstVideoFormat format;
   MppEncCfg cfg;
 
@@ -424,28 +424,8 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
   gst_video_info_set_format (info, format, GST_VIDEO_INFO_WIDTH (&state->info),
       GST_VIDEO_INFO_HEIGHT (&state->info));
 
-  info->stride[0] = GST_ROUND_UP_16 (info->stride[0]);
-  info->stride[1] = info->stride[0];
-
-  switch (info->finfo->format) {
-    case GST_VIDEO_FORMAT_NV12:
-    case GST_VIDEO_FORMAT_I420:
-      ver_stride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
-      info->offset[0] = 0;
-      info->offset[1] = info->stride[0] * ver_stride;
-      cr_h = GST_ROUND_UP_2 (ver_stride) / 2;
-      info->size = info->offset[1] + info->stride[0] * cr_h;
-      break;
-    case GST_VIDEO_FORMAT_YUY2:
-    case GST_VIDEO_FORMAT_UYVY:
-      ver_stride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
-      cr_h = GST_ROUND_UP_2 (ver_stride);
-      info->size = info->stride[0] * cr_h;
-      break;
-    default:
-      g_assert_not_reached ();
-      return FALSE;
-  }
+  if (!gst_mpp_video_info_align (info, 0, 0))
+    return FALSE;
 
   if (mpp_enc_cfg_init (&cfg)) {
     GST_WARNING_OBJECT (self, "Init enc cfg failed");
@@ -463,8 +443,10 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
   mpp_enc_cfg_set_s32 (cfg, "prep:width", GST_VIDEO_INFO_WIDTH (&state->info));
   mpp_enc_cfg_set_s32 (cfg, "prep:height",
       GST_VIDEO_INFO_HEIGHT (&state->info));
-  mpp_enc_cfg_set_s32 (cfg, "prep:hor_stride", info->stride[0]);
-  mpp_enc_cfg_set_s32 (cfg, "prep:ver_stride", ver_stride);
+  mpp_enc_cfg_set_s32 (cfg, "prep:hor_stride",
+      GST_MPP_VIDEO_INFO_HSTRIDE (&self->info));
+  mpp_enc_cfg_set_s32 (cfg, "prep:ver_stride",
+      GST_MPP_VIDEO_INFO_VSTRIDE (&self->info));
 
   mpp_enc_cfg_set_s32 (cfg, "rc:fps_in_flex", 0);
   mpp_enc_cfg_set_s32 (cfg, "rc:fps_in_num",
@@ -710,9 +692,9 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
     mpp_frame_set_width (self->mpp_frame, GST_VIDEO_INFO_WIDTH (&self->info));
     mpp_frame_set_height (self->mpp_frame, GST_VIDEO_INFO_HEIGHT (&self->info));
     mpp_frame_set_hor_stride (self->mpp_frame,
-        GST_VIDEO_INFO_PLANE_STRIDE (&self->info, 0));
+        GST_MPP_VIDEO_INFO_HSTRIDE (&self->info));
     mpp_frame_set_ver_stride (self->mpp_frame,
-        GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (&self->info)));
+        GST_MPP_VIDEO_INFO_VSTRIDE (&self->info));
 
     if (self->mpi->poll (self->mpp_ctx, MPP_PORT_INPUT, MPP_POLL_BLOCK))
       GST_ERROR_OBJECT (self, "mpp input poll failed");

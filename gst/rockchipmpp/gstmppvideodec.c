@@ -24,9 +24,8 @@
 #endif
 
 #include <stdlib.h>
-#include <gst/gst.h>
-#include <gst/gst-compat-private.h>
 
+#include "gstmpp.h"
 #include "gstmppdecbufferpool.h"
 #include "gstmppvideodec.h"
 
@@ -207,9 +206,9 @@ gst_mpp_video_dec_sendeos (GstVideoDecoder * decoder)
 static gboolean
 gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
 {
-  gsize hor_stride, ver_stride, cr_h;
   GstVideoFormat format;
   GstVideoInterlaceMode mode;
+  guint hstride, vstride;
 
   if (NULL == mframe || NULL == info)
     return FALSE;
@@ -228,35 +227,10 @@ gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
 
   info->interlace_mode = mpp_frame_mode_to_gst_interlace_mode (mode);
 
-  hor_stride = mpp_frame_get_hor_stride (mframe);
-  ver_stride = mpp_frame_get_ver_stride (mframe);
+  hstride = mpp_frame_get_hor_stride (mframe);
+  vstride = mpp_frame_get_ver_stride (mframe);
 
-  switch (info->finfo->format) {
-    case GST_VIDEO_FORMAT_NV12:
-    case GST_VIDEO_FORMAT_NV21:
-#ifdef HAVE_NV12_10LE40
-    case GST_VIDEO_FORMAT_NV12_10LE40:
-#endif
-      info->stride[0] = hor_stride;
-      info->stride[1] = hor_stride;
-      info->offset[0] = 0;
-      info->offset[1] = hor_stride * ver_stride;
-      cr_h = GST_ROUND_UP_2 (ver_stride) / 2;
-      info->size = info->offset[1] + info->stride[0] * cr_h;
-      break;
-    case GST_VIDEO_FORMAT_NV16:
-      info->stride[0] = hor_stride;
-      info->stride[1] = hor_stride;
-      info->offset[0] = 0;
-      info->offset[1] = hor_stride * ver_stride;
-      cr_h = GST_ROUND_UP_2 (ver_stride);
-      info->size = info->offset[1] + info->stride[0] * cr_h;
-    default:
-      g_assert_not_reached ();
-      break;
-  }
-
-  return TRUE;
+  return gst_mpp_video_info_align (info, hstride, vstride);
 }
 
 static gboolean
