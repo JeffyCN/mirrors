@@ -424,6 +424,9 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
   gst_video_info_set_format (info, format, GST_VIDEO_INFO_WIDTH (&state->info),
       GST_VIDEO_INFO_HEIGHT (&state->info));
 
+  info->stride[0] = GST_ROUND_UP_16 (info->stride[0]);
+  info->stride[1] = info->stride[0];
+
   switch (info->finfo->format) {
     case GST_VIDEO_FORMAT_NV12:
     case GST_VIDEO_FORMAT_I420:
