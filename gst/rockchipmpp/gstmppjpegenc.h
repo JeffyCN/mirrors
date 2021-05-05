@@ -2,6 +2,9 @@
  * Copyright 2018 Rockchip Electronics Co., Ltd
  *     Author: Randy Li <randy.li@rock-chips.com>
  *
+ * Copyright 2021 Rockchip Electronics Co., Ltd
+ *     Author: Jeffy Chen <jeffy.chen@rock-chips.com>
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -22,37 +25,14 @@
 #ifndef  __GST_MPP_JPEG_ENC_H__
 #define  __GST_MPP_JPEG_ENC_H__
 
-#include "gstmppvideoenc.h"
+#include "gstmppenc.h"
 
-/* Begin Declaration */
-G_BEGIN_DECLS
-#define GST_TYPE_MPP_JPEG_ENC	(gst_mpp_jpeg_enc_get_type())
-#define GST_MPP_JPEG_ENC(obj) \
-	(G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_MPP_JPEG_ENC, GstMppJpegEnc))
-#define GST_MPP_JPEG_ENC_CLASS(klass) \
-	(G_TYPE_CHECK_CLASS_CAST((klass), GST_TYPE_MPP_JPEG_ENC, GstMppJpegEncClass))
-#define GST_IS_MPP_JPEG_ENC(obj) \
-	(G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_MPP_JPEG_ENC))
-#define GST_IS_MPP_JPEG_ENC_CLASS(obj) \
-	(G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_MPP_JPEG_ENC))
-typedef struct _GstMppJpegEnc GstMppJpegEnc;
-typedef struct _GstMppJpegEncClass GstMppJpegEncClass;
+G_BEGIN_DECLS;
 
-struct _GstMppJpegEnc
-{
-  GstMppVideoEnc parent;
+#define GST_TYPE_MPP_JPEG_ENC (gst_mpp_jpeg_enc_get_type())
+G_DECLARE_FINAL_TYPE (GstMppJpegEnc, gst_mpp_jpeg_enc, GST,
+    MPP_JPEG_ENC, GstMppEnc);
 
-  guint quant;
+G_END_DECLS;
 
-  gboolean prop_dirty;
-};
-
-struct _GstMppJpegEncClass
-{
-  GstMppVideoEncClass parent_class;
-};
-
-GType gst_mpp_jpeg_enc_get_type (void);
-
-G_END_DECLS
 #endif /* __GST_MPP_JPEG_ENC_H__ */

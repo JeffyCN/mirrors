@@ -221,6 +221,13 @@ AC_SUBST(GLIB_PREFIX)
 AC_SUBST(GST_PREFIX)
 AC_SUBST(GSTPB_PREFIX)
 
+dnl check for rockchip RGA
+PKG_CHECK_MODULES(RGA, [librga],
+                  AC_DEFINE(HAVE_RGA, 1, [Have rockchip RGA])],
+                  AC_MSG_NOTICE([Without rockchip RGA]))
+AC_SUBST(RGA_CFLAGS)
+AC_SUBST(RGA_LIBS)
+
 dnl GTK is optional and used in examples
 HAVE_GTK=no
 GTK_REQ=3.0.0

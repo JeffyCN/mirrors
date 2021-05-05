@@ -2,6 +2,9 @@
  * Copyright 2020 Rockchip Electronics Co., Ltd
  *     Author: Jeffy Chen <jeffy.chen@rock-chips.com>
  *
+ * Copyright 2021 Rockchip Electronics Co., Ltd
+ *     Author: Jeffy Chen <jeffy.chen@rock-chips.com>
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -18,17 +21,32 @@
  * Boston, MA 02110-1301, USA.
  *
  */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
 #include <string.h>
 
 #include "gstmppvp8enc.h"
 
-#define GST_CAT_DEFAULT mppvideoenc_debug
+#define GST_MPP_Vp8_ENC(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+    GST_TYPE_MPP_Vp8_ENC, GstMppVp8Enc))
+
+#define GST_CAT_DEFAULT mpp_vp8_enc_debug
+GST_DEBUG_CATEGORY (GST_CAT_DEFAULT);
+
+struct _GstMppVp8Enc
+{
+  GstMppEnc parent;
+
+  guint qp_init;
+  guint qp_min;
+  guint qp_max;
+};
 
 #define parent_class gst_mpp_vp8_enc_parent_class
-G_DEFINE_TYPE (GstMppVP8Enc, gst_mpp_vp8_enc, GST_TYPE_MPP_VIDEO_ENC);
+G_DEFINE_TYPE (GstMppVp8Enc, gst_mpp_vp8_enc, GST_TYPE_MPP_ENC);
 
 #define DEFAULT_PROP_QP_INIT 40
 #define DEFAULT_PROP_QP_MIN 0
@@ -57,7 +75,8 @@ gst_mpp_vp8_enc_set_property (GObject * object,
     guint prop_id, const GValue * value, GParamSpec * pspec)
 {
   GstVideoEncoder *encoder = GST_VIDEO_ENCODER (object);
-  GstMppVP8Enc *self = GST_MPP_VP8_ENC (encoder);
+  GstMppVp8Enc *self = GST_MPP_Vp8_ENC (encoder);
+  GstMppEnc *mppenc = GST_MPP_ENC (encoder);
 
   switch (prop_id) {
     case PROP_QP_INIT:{
@@ -89,7 +108,7 @@ gst_mpp_vp8_enc_set_property (GObject * object,
       return;
   }
 
-  self->prop_dirty = TRUE;
+  mppenc->prop_dirty = TRUE;
 }
 
 static void
@@ -97,7 +116,7 @@ gst_mpp_vp8_enc_get_property (GObject * object,
     guint prop_id, GValue * value, GParamSpec * pspec)
 {
   GstVideoEncoder *encoder = GST_VIDEO_ENCODER (object);
-  GstMppVP8Enc *self = GST_MPP_VP8_ENC (encoder);
+  GstMppVp8Enc *self = GST_MPP_Vp8_ENC (encoder);
 
   switch (prop_id) {
     case PROP_QP_INIT:
@@ -115,107 +134,81 @@ gst_mpp_vp8_enc_get_property (GObject * object,
   }
 }
 
-static void
-gst_mpp_vp8_enc_update_properties (GstVideoEncoder * encoder)
+static gboolean
+gst_mpp_vp8_enc_apply_properties (GstVideoEncoder * encoder)
 {
-  GstMppVP8Enc *self = GST_MPP_VP8_ENC (encoder);
-  GstMppVideoEnc *mppenc = GST_MPP_VIDEO_ENC (encoder);
-  MppEncCfg cfg;
+  GstMppVp8Enc *self = GST_MPP_Vp8_ENC (encoder);
+  GstMppEnc *mppenc = GST_MPP_ENC (encoder);
 
-  if (!self->prop_dirty)
-    return;
+  if (!mppenc->prop_dirty)
+    return TRUE;
 
-  if (mpp_enc_cfg_init (&cfg)) {
-    GST_WARNING_OBJECT (self, "Init enc cfg failed");
-    return;
-  }
+  mpp_enc_cfg_set_s32 (mppenc->mpp_cfg, "vp8:qp_init", self->qp_init);
+  mpp_enc_cfg_set_s32 (mppenc->mpp_cfg, "vp8:qp_max", self->qp_max);
+  mpp_enc_cfg_set_s32 (mppenc->mpp_cfg, "vp8:qp_min", self->qp_min);
+  mpp_enc_cfg_set_s32 (mppenc->mpp_cfg, "vp8:disable_ivf", 1);
 
-  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_GET_CFG, cfg)) {
-    GST_WARNING_OBJECT (self, "Get enc cfg failed");
-    mpp_enc_cfg_deinit (cfg);
-    return;
-  }
-
-  mpp_enc_cfg_set_s32 (cfg, "vp8:qp_init", self->qp_init);
-  mpp_enc_cfg_set_s32 (cfg, "vp8:qp_max", self->qp_max);
-  mpp_enc_cfg_set_s32 (cfg, "vp8:qp_min", self->qp_min);
-
-  mpp_enc_cfg_set_s32 (cfg, "vp8:disable_ivf", 1);
-
-  if (mppenc->mpi->control (mppenc->mpp_ctx, MPP_ENC_SET_CFG, cfg))
-    GST_WARNING_OBJECT (self, "Set enc cfg failed");
-
-  mpp_enc_cfg_deinit (cfg);
-
-  self->prop_dirty = FALSE;
+  return gst_mpp_enc_apply_properties (encoder);
 }
 
 static gboolean
 gst_mpp_vp8_enc_set_format (GstVideoEncoder * encoder,
     GstVideoCodecState * state)
 {
-  gst_mpp_vp8_enc_update_properties (encoder);
+  GstVideoEncoderClass *pclass = GST_VIDEO_ENCODER_CLASS (parent_class);
+  GstCaps *caps;
 
-  return GST_MPP_VIDEO_ENC_CLASS (parent_class)->set_format (encoder, state);
+  if (!pclass->set_format (encoder, state))
+    return FALSE;
+
+  if (!gst_mpp_vp8_enc_apply_properties (encoder))
+    return FALSE;
+
+  caps = gst_caps_new_empty_simple ("video/x-vp8");
+  return gst_mpp_enc_set_src_caps (encoder, caps);
 }
 
 static GstFlowReturn
 gst_mpp_vp8_enc_handle_frame (GstVideoEncoder * encoder,
     GstVideoCodecFrame * frame)
 {
-  GstCaps *outcaps;
-  GstFlowReturn ret;
+  GstVideoEncoderClass *pclass = GST_VIDEO_ENCODER_CLASS (parent_class);
 
-  outcaps = gst_caps_new_empty_simple ("video/x-vp8");
+  if (G_UNLIKELY (!gst_mpp_vp8_enc_apply_properties (encoder))) {
+    gst_video_codec_frame_unref (frame);
+    return GST_FLOW_NOT_NEGOTIATED;
+  }
 
-  gst_mpp_vp8_enc_update_properties (encoder);
-
-  ret = GST_MPP_VIDEO_ENC_CLASS (parent_class)->handle_frame (encoder, frame,
-      outcaps);
-  gst_caps_unref (outcaps);
-  return ret;
+  return pclass->handle_frame (encoder, frame);
 }
 
 static void
-gst_mpp_vp8_enc_init (GstMppVP8Enc * self)
+gst_mpp_vp8_enc_init (GstMppVp8Enc * self)
 {
-  self->parent.type = MPP_VIDEO_CodingVP8;
+  self->parent.mpp_type = MPP_VIDEO_CodingVP8;
 
   self->qp_init = DEFAULT_PROP_QP_INIT;
   self->qp_min = DEFAULT_PROP_QP_MIN;
   self->qp_max = DEFAULT_PROP_QP_MAX;
-  self->prop_dirty = TRUE;
 }
 
 static void
-gst_mpp_vp8_enc_class_init (GstMppVP8EncClass * klass)
+gst_mpp_vp8_enc_class_init (GstMppVp8EncClass * klass)
 {
-  GstElementClass *element_class;
-  GObjectClass *gobject_class;
-  GstVideoEncoderClass *video_encoder_class;
+  GstVideoEncoderClass *encoder_class = GST_VIDEO_ENCODER_CLASS (klass);
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
 
-  element_class = (GstElementClass *) klass;
-  gobject_class = (GObjectClass *) klass;
-  video_encoder_class = (GstVideoEncoderClass *) klass;
+  GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "mppvp8enc", 0, "MPP VP8 encoder");
 
-  gst_element_class_set_static_metadata (element_class,
-      "Rockchip Mpp VP8 Encoder",
-      "Codec/Encoder/Video",
-      "Encode video streams via Rockchip Mpp",
-      "Jeffy Chen <jeffy.chen@rock-chips.com>");
+  encoder_class->set_format = GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_set_format);
+  encoder_class->handle_frame =
+      GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_handle_frame);
 
   gobject_class->set_property =
       GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_set_property);
   gobject_class->get_property =
       GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_get_property);
-
-  video_encoder_class->set_format =
-      GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_set_format);
-  video_encoder_class->handle_frame =
-      GST_DEBUG_FUNCPTR (gst_mpp_vp8_enc_handle_frame);
-
-  gst_element_class_add_pad_template (element_class,
-      gst_static_pad_template_get (&gst_mpp_vp8_enc_src_template));
 
   g_object_class_install_property (gobject_class, PROP_QP_INIT,
       g_param_spec_uint ("qp-init", "Initial QP",
@@ -232,4 +225,12 @@ gst_mpp_vp8_enc_class_init (GstMppVP8EncClass * klass)
       g_param_spec_uint ("qp-max", "Max QP",
           "Max QP", 0, 127, DEFAULT_PROP_QP_MAX,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  gst_element_class_add_pad_template (element_class,
+      gst_static_pad_template_get (&gst_mpp_vp8_enc_src_template));
+
+  gst_element_class_set_static_metadata (element_class,
+      "Rockchip Mpp VP8 Encoder", "Codec/Encoder/Video",
+      "Encode video streams via Rockchip Mpp",
+      "Jeffy Chen <jeffy.chen@rock-chips.com>");
 }

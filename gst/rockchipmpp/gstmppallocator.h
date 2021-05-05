@@ -1,6 +1,6 @@
 /*
- * Copyright 2017 Rockchip Electronics Co., Ltd
- *     Author: Randy Li <randy.li@rock-chips.com>
+ * Copyright 2021 Rockchip Electronics Co., Ltd
+ *     Author: Jeffy Chen <jeffy.chen@rock-chips.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -19,73 +19,31 @@
  *
  */
 
-#ifndef _GST_MPP_MEMORY_H
-#define _GST_MPP_MEMORY_H
+#ifndef  __GST_MPP_ALLOCATOR_H__
+#define  __GST_MPP_ALLOCATOR_H__
 
-#include <gst/allocators/gstdmabuf.h>
+#include <gst/video/video.h>
+
 #include <rockchip/rk_mpi.h>
 
-G_BEGIN_DECLS
-#define	VIDEO_MAX_FRAME	32
-#define GST_MPP_MEMORY_QUARK gst_mpp_memory_quark ()
-#define GST_TYPE_MPP_ALLOCATOR            (gst_mpp_allocator_get_type())
-#define GST_IS_MPP_ALLOCATOR(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_MPP_ALLOCATOR))
-#define GST_IS_MPP_ALLOCATOR_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GST_TYPE_MPP_ALLOCATOR))
-#define GST_MPP_ALLOCATOR(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_MPP_ALLOCATOR, GstMppAllocator))
-#define GST_MPP_ALLOCATOR_CLASS(obj)      (G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_MPP_ALLOCATOR, GstMppAllocatorClass))
-#define GST_MPP_ALLOCATOR_CAST(obj)       ((GstMppAllocator *)(obj))
-typedef struct _GstMppMemory GstMppMemory;
-typedef struct _GstMppAllocator GstMppAllocator;
-typedef struct _GstMppAllocatorClass GstMppAllocatorClass;
+G_BEGIN_DECLS;
 
-#define GST_MPP_MEMORY_CAST(mem) \
-	((GstMppMemory *) (mem))
+GstAllocator *gst_mpp_allocator_new (void);
 
-struct _GstMppMemory
-{
-  GstMemory mem;
+gint gst_mpp_allocator_get_index (GstAllocator * allocator);
 
-  /* < private > */
-  MppBuffer *mpp_buf;
-  gpointer data;
-  gint dmafd;
-  gsize size;
-};
+MppBufferGroup gst_mpp_allocator_get_mpp_group (GstAllocator * allocator);
 
-struct _GstMppAllocator
-{
-  GstAllocator parent;
-  gboolean active;
+MppBuffer gst_mpp_mpp_buffer_from_gst_memory (GstMemory * mem);
 
-  guint32 count;                /* number of buffers allocated by the mpp */
-  MppBufferGroup mpp_mem_pool;
+GstMemory *gst_mpp_allocator_import_mppbuf (GstAllocator * allocator,
+    MppBuffer mbuf);
 
-  GstMppMemory *mems[VIDEO_MAX_FRAME];
-  GstAtomicQueue *free_queue;
-};
+GstMemory *gst_mpp_allocator_import_gst_memory (GstAllocator * allocator,
+    GstMemory * mem);
 
-struct _GstMppAllocatorClass
-{
-  GstAllocatorClass parent_class;
-};
+MppBuffer gst_mpp_allocator_alloc_mppbuf (GstAllocator * allocator, gsize size);
 
-GType gst_mpp_allocator_get_type (void);
+G_END_DECLS;
 
-gboolean gst_is_mpp_memory (GstMemory * mem);
-
-GQuark gst_mpp_memory_quark (void);
-
-GstMppAllocator *gst_mpp_allocator_new (GstObject * parent);
-
-guint
-gst_mpp_allocator_start (GstMppAllocator * allocator,
-    gsize size, guint32 count);
-
-gint gst_mpp_allocator_stop (GstMppAllocator * allocator);
-
-GstMemory *gst_mpp_allocator_alloc_dmabuf (GstMppAllocator * allocator,
-    GstAllocator * dmabuf_allocator);
-
-
-G_END_DECLS
-#endif
+#endif /* __GST_MPP_ALLOCATOR_H__ */

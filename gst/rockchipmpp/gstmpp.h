@@ -24,6 +24,11 @@
 
 #include <gst/video/video.h>
 
+#ifdef HAVE_RGA
+#include <rga/rga.h>
+#include <rga/RgaApi.h>
+#endif
+
 #include <gst/gst-compat-private.h>
 #include <rockchip/rk_mpi.h>
 
@@ -31,7 +36,20 @@ G_BEGIN_DECLS;
 
 #define GST_MPP_VIDEO_INFO_HSTRIDE(i) GST_VIDEO_INFO_PLANE_STRIDE(i, 0)
 #define GST_MPP_VIDEO_INFO_VSTRIDE(i) \
-    GST_VIDEO_INFO_PLANE_OFFSET(i, 1) / GST_MPP_VIDEO_INFO_HSTRIDE(i)
+    (GST_VIDEO_INFO_N_PLANES(i) == 1 ? GST_VIDEO_INFO_HEIGHT(i) : \
+     GST_VIDEO_INFO_PLANE_OFFSET(i, 1) / GST_MPP_VIDEO_INFO_HSTRIDE(i))
+
+GstVideoFormat gst_mpp_mpp_format_to_gst_format (MppFrameFormat mpp_format);
+
+MppFrameFormat gst_mpp_gst_format_to_mpp_format (GstVideoFormat format);
+
+#ifdef HAVE_RGA
+gboolean gst_mpp_rga_convert (GstBuffer * inbuf, GstVideoInfo * src_vinfo,
+    GstMemory * out_mem, GstVideoInfo * dst_vinfo);
+
+gboolean gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
+    GstMemory * out_mem, GstVideoInfo * dst_vinfo);
+#endif
 
 gboolean gst_mpp_video_info_align (GstVideoInfo * info,
     guint hstride, guint vstride);

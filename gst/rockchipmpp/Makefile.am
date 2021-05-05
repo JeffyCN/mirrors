@@ -1,34 +1,35 @@
 plugin_LTLIBRARIES = libgstrockchipmpp.la
 
 libgstrockchipmpp_la_SOURCES =			\
-	gstmppvideoenc.c			\
+	gstmppenc.c			\
 	gstmpph264enc.c				\
 	gstmppjpegenc.c				\
 	gstmppvp8enc.c				\
-	gstmppbarebufferpool.c			\
-	gstmppdecbufferpool.c			\
 	gstmppallocator.c			\
 	gstmppvideodec.c			\
 	gstmppjpegdec.c				\
 	gstmpp.c				\
-        $(NULL)
+	gstmppdec.c				\
+	$(NULL)
 
 libgstrockchipmpp_la_CFLAGS =			\
-        $(GST_CFLAGS)                           \
-        $(GST_BASE_CFLAGS)                      \
-        $(GST_PLUGINS_BASE_CFLAGS)              \
-        $(GST_ALLOCATORS_CFLAGS)                \
-        $(GST_VIDEO_CFLAGS)                     \
-	$(ROCKCHIP_MPP_CFLAGS)                  \
-        $(NULL)
+	$(GST_CFLAGS)				\
+	$(GST_BASE_CFLAGS)			\
+	$(GST_PLUGINS_BASE_CFLAGS)		\
+	$(GST_ALLOCATORS_CFLAGS)		\
+	$(GST_VIDEO_CFLAGS)			\
+	$(ROCKCHIP_MPP_CFLAGS)			\
+	$(RGA_CFLAGS)				\
+	$(NULL)
 
 libgstrockchipmpp_la_LIBADD =			\
 	$(GST_LIBS)				\
 	$(GST_BASE_LIBS)			\
 	$(GST_PLUGINS_BASE_LIBS)		\
-	$(GST_VIDEO_LIBS)                       \
-	$(GST_ALLOCATORS_LIBS)                  \
+	$(GST_VIDEO_LIBS)			\
+	$(GST_ALLOCATORS_LIBS)			\
 	$(ROCKCHIP_MPP_LIBS)			\
+	$(RGA_LIBS)				\
 	$(NULL)
 
 libgstrockchipmpp_la_LDFLAGS =			\
@@ -40,13 +41,11 @@ libgstrockchipmpp_la_LIBTOOLFLAGS =		\
 	$(NULL)
 
 noinst_HEADERS =				\
-	gstmppvideoenc.h			\
+	gstmppenc.h			\
 	gstmpph264enc.h				\
 	gstmppjpegenc.h				\
 	gstmppvp8enc.h				\
-	gstmppbarebufferpool.h			\
-	gstmppdecbufferpool.h			\
 	gstmppallocator.h			\
 	gstmppvideodec.h			\
-	gstmppjpegdec.h				\
+	gstmppdec.h				\
 	$(NULL)

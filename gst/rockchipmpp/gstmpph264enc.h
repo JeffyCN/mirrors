@@ -2,6 +2,9 @@
  * Copyright 2017 Rockchip Electronics Co., Ltd
  *     Author: Randy Li <randy.li@rock-chips.com>
  *
+ * Copyright 2021 Rockchip Electronics Co., Ltd
+ *     Author: Jeffy Chen <jeffy.chen@rock-chips.com>
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -22,50 +25,14 @@
 #ifndef  __GST_MPP_H264_ENC_H__
 #define  __GST_MPP_H264_ENC_H__
 
-#include "gstmppvideoenc.h"
+#include "gstmppenc.h"
 
-/* Begin Declaration */
-G_BEGIN_DECLS
-#define GST_TYPE_MPP_H264_ENC	(gst_mpp_h264_enc_get_type())
-#define GST_MPP_H264_ENC(obj) \
-	(G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_MPP_H264_ENC, GstMppH264Enc))
-#define GST_MPP_H264_ENC_CLASS(klass) \
-	(G_TYPE_CHECK_CLASS_CAST((klass), GST_TYPE_MPP_H264_ENC, GstMppH264EncClass))
-#define GST_IS_MPP_H264_ENC(obj) \
-	(G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_MPP_H264_ENC))
-#define GST_IS_MPP_H264_ENC_CLASS(obj) \
-	(G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_MPP_H264_ENC))
-typedef struct _GstMppH264Enc GstMppH264Enc;
-typedef struct _GstMppH264EncClass GstMppH264EncClass;
+G_BEGIN_DECLS;
 
-typedef enum
-{
-  GST_MPP_H264_PROFILE_BASELINE = 66,
-  GST_MPP_H264_PROFILE_MAIN = 77,
-  GST_MPP_H264_PROFILE_HIGH = 100,
-} GstMppH264Profile;
+#define GST_TYPE_MPP_H264_ENC (gst_mpp_h264_enc_get_type())
+G_DECLARE_FINAL_TYPE (GstMppH264Enc, gst_mpp_h264_enc, GST,
+    MPP_H264_ENC, GstMppEnc);
 
-struct _GstMppH264Enc
-{
-  GstMppVideoEnc parent;
+G_END_DECLS;
 
-  GstMppH264Profile profile;
-  guint level;
-
-  guint qp_init;
-  guint qp_min;
-  guint qp_max;
-  gint qp_max_step;
-
-  gboolean prop_dirty;
-};
-
-struct _GstMppH264EncClass
-{
-  GstMppVideoEncClass parent_class;
-};
-
-GType gst_mpp_h264_enc_get_type (void);
-
-G_END_DECLS
 #endif /* __GST_MPP_H264_ENC_H__ */

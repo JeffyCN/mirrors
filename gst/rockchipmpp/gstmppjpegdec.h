@@ -2,6 +2,9 @@
  * Copyright 2017 Rockchip Electronics Co., Ltd
  *     Author: Randy Li <randy.li@rock-chips.com>
  *
+ * Copyright 2021 Rockchip Electronics Co., Ltd
+ *     Author: Jeffy Chen <jeffy.chen@rock-chips.com>
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
  * License as published by the Free Software Foundation; either
@@ -19,63 +22,17 @@
  *
  */
 
-#ifndef  _GST_MPP_JPEG_DEC_H_
-#define  _GST_MPP_JPEG_DEC_H_
+#ifndef  __GST_MPP_JPEG_DEC_H__
+#define  __GST_MPP_JPEG_DEC_H__
 
-#include <gst/gst.h>
-#include <gst/video/video.h>
-#include <gst/video/gstvideodecoder.h>
-#include <gst/video/gstvideopool.h>
+#include "gstmppdec.h"
 
-#include <rockchip/rk_mpi.h>
+G_BEGIN_DECLS;
 
-/* Begin Declaration */
-G_BEGIN_DECLS
-#define GST_TYPE_MPP_JPEG_DEC	(gst_mpp_jpeg_dec_get_type())
-#define GST_MPP_JPEG_DEC(obj) \
-	(G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_MPP_JPEG_DEC, GstMppJpegDec))
-#define GST_MPP_JPEG_DEC_CLASS(klass) \
-	(G_TYPE_CHECK_CLASS_CAST((klass), GST_TYPE_MPP_JPEG_DEC, GstMppJpegDecClass))
-#define GST_IS_MPP_JPEG_DEC(obj) \
-	(G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_MPP_JPEG_DEC))
-#define GST_IS_MPP_JPEG_DEC_CLASS(obj) \
-	(G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_MPP_JPEG_DEC))
-typedef struct _GstMppJpegDec GstMppJpegDec;
-typedef struct _GstMppJpegDecClass GstMppJpegDecClass;
+#define GST_TYPE_MPP_JPEG_DEC (gst_mpp_jpeg_dec_get_type())
+G_DECLARE_FINAL_TYPE (GstMppJpegDec, gst_mpp_jpeg_dec, GST,
+    MPP_JPEG_DEC, GstMppDec);
 
-struct _GstMppJpegDec
-{
-  GstVideoDecoder parent;
+G_END_DECLS;
 
-  /* add private members here */
-  gint width;
-  gint height;
-  gint framesize;
-
-  GstVideoCodecState *input_state;
-
-  /* the currently format */
-  GstVideoInfo info;
-
-  /* State */
-  gboolean active;
-  GstFlowReturn output_flow;
-
-  /* Rockchip Mpp definitions */
-  MppCtx mpp_ctx;
-  MppApi *mpi;
-  MppBufferGroup input_group;
-  MppPacket eos_packet;
-
-  GstBufferPool *pool;          /* Pool of output frames */
-};
-
-struct _GstMppJpegDecClass
-{
-  GstVideoDecoderClass parent_class;
-};
-
-GType gst_mpp_jpeg_dec_get_type (void);
-
-G_END_DECLS
-#endif /* _GST_MPP_JPEG_DEC_H_ */
+#endif /* __GST_MPP_JPEG_DEC_H__ */

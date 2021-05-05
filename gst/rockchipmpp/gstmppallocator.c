@@ -1,6 +1,6 @@
 /*
- * Copyright 2017 Rockchip Electronics Co., Ltd
- *     Author: Randy Li <randy.li@rock-chips.com>
+ * Copyright 2021 Rockchip Electronics Co., Ltd
+ *     Author: Jeffy Chen <jeffy.chen@rock-chips.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -23,355 +23,273 @@
 #include "config.h"
 #endif
 
-#ifndef _GNU_SOURCE
-# define _GNU_SOURCE            /* O_CLOEXEC */
-#endif
-
 #include <unistd.h>
 
 #include <gst/allocators/gstdmabuf.h>
 
 #include "gstmppallocator.h"
 
-#define GST_MPP_MEMORY_TYPE "MppMemory"
+#define GST_TYPE_MPP_ALLOCATOR (gst_mpp_allocator_get_type())
+G_DECLARE_FINAL_TYPE (GstMppAllocator, gst_mpp_allocator, GST,
+    MPP_ALLOCATOR, GstDmaBufAllocator);
+
+#define GST_MPP_ALLOCATOR(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+    GST_TYPE_MPP_ALLOCATOR, GstMppAllocator))
+
+#define GST_CAT_DEFAULT mppallocator_debug
+GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
+
+#define GST_ALLOCATOR_MPP "mpp"
+
+struct _GstMppAllocator
+{
+  GstDmaBufAllocator parent;
+
+  /* group for buffer-alloc */
+  MppBufferGroup group;
+
+  /* group for buffer-import */
+  MppBufferGroup ext_group;
+
+  /* unique group ID */
+  gint index;
+};
 
 #define gst_mpp_allocator_parent_class parent_class
-G_DEFINE_TYPE (GstMppAllocator, gst_mpp_allocator, GST_TYPE_ALLOCATOR);
+G_DEFINE_TYPE (GstMppAllocator, gst_mpp_allocator, GST_TYPE_DMABUF_ALLOCATOR);
 
-GST_DEBUG_CATEGORY_STATIC (mppallocator_debug);
-#define GST_CAT_DEFAULT mppallocator_debug
-
-gboolean
-gst_is_mpp_memory (GstMemory * mem)
-{
-
-  return gst_memory_is_type (mem, GST_MPP_MEMORY_TYPE);
-}
-
-GQuark
-gst_mpp_memory_quark (void)
+static GQuark
+gst_mpp_buffer_quark (void)
 {
   static GQuark quark = 0;
   if (quark == 0)
-    quark = g_quark_from_string ("GstMppMemory");
+    quark = g_quark_from_string ("MppBuffer");
 
   return quark;
 }
 
-static inline GstMppMemory *
-_mppmem_new (GstMemoryFlags flags, GstAllocator * allocator,
-    GstMemory * parent, gsize maxsize, gsize align, gsize offset, gsize size,
-    gpointer data, int dmafd, MppBuffer * mpp_buf)
+gint
+gst_mpp_allocator_get_index (GstAllocator * allocator)
 {
-  GstMppMemory *mem;
+  GstMppAllocator *self = GST_MPP_ALLOCATOR (allocator);
+  return self->index;
+}
 
-  mem = g_slice_new0 (GstMppMemory);
-  gst_memory_init (GST_MEMORY_CAST (mem),
-      flags, allocator, parent, maxsize, align, offset, size);
+MppBufferGroup
+gst_mpp_allocator_get_mpp_group (GstAllocator * allocator)
+{
+  GstMppAllocator *self = GST_MPP_ALLOCATOR (allocator);
+  return self->group;
+}
 
-  mem->data = data;
-  mem->dmafd = dup (dmafd);
-  mem->mpp_buf = mpp_buf;
-  mem->size = maxsize;
+MppBuffer
+gst_mpp_mpp_buffer_from_gst_memory (GstMemory * mem)
+{
+  if (mem->parent)
+    return gst_mpp_mpp_buffer_from_gst_memory (mem->parent);
+
+  return gst_mini_object_get_qdata (GST_MINI_OBJECT (mem),
+      gst_mpp_buffer_quark ());
+}
+
+static void
+gst_mpp_mem_destroy (gpointer ptr)
+{
+  MppBuffer mbuf = ptr;
+
+  mpp_buffer_put (mbuf);
+}
+
+static GstMemory *
+gst_mpp_allocator_import_dmafd (GstAllocator * allocator, gint fd, guint size)
+{
+  GstMppAllocator *self = GST_MPP_ALLOCATOR (allocator);
+  GstMemory *mem;
+  MppBufferInfo info = { 0, };
+  MppBuffer mbuf = NULL;
+
+  GST_DEBUG_OBJECT (self, "import dmafd: %d (%d)", fd, size);
+
+  info.type = MPP_BUFFER_TYPE_DRM;
+  info.size = size;
+  info.fd = fd;
+
+  /* Avoid caching too much external buffers */
+  mpp_buffer_group_clear (self->ext_group);
+
+  mpp_buffer_import_with_tag (self->ext_group, &info, &mbuf, NULL, __func__);
+  if (!mbuf)
+    return NULL;
+
+  mpp_buffer_set_index (mbuf, self->index);
+
+  mem = gst_mpp_allocator_import_mppbuf (allocator, mbuf);
+  mpp_buffer_put (mbuf);
 
   return mem;
 }
 
-static void
-_mppmem_free (GstMppMemory * mem)
+GstMemory *
+gst_mpp_allocator_import_mppbuf (GstAllocator * allocator, MppBuffer mbuf)
 {
-  g_slice_free (GstMppMemory, mem);
+  GstMppAllocator *self = GST_MPP_ALLOCATOR (allocator);
+  GstMemory *mem;
+  guint size;
+  gint fd;
+
+  GST_DEBUG_OBJECT (self, "import MPP buffer");
+
+  fd = mpp_buffer_get_fd (mbuf);
+  if (fd < 0) {
+    GST_ERROR_OBJECT (self, "failed to get dmafd");
+    return NULL;
+  }
+
+  size = mpp_buffer_get_size (mbuf);
+
+  if (mpp_buffer_get_index (mbuf) != self->index) {
+    GST_DEBUG_OBJECT (self, "import from other group");
+    return gst_mpp_allocator_import_dmafd (allocator, fd, size);
+  }
+
+  mem = gst_dmabuf_allocator_alloc (allocator, dup (fd), size);
+
+  mpp_buffer_inc_ref (mbuf);
+  gst_mini_object_set_qdata (GST_MINI_OBJECT (mem),
+      gst_mpp_buffer_quark (), mbuf, gst_mpp_mem_destroy);
+
+  return mem;
 }
 
-static gpointer
-_mppmem_map (GstMppMemory * mem, gsize maxsize, GstMapFlags flags)
+GstMemory *
+gst_mpp_allocator_import_gst_memory (GstAllocator * allocator, GstMemory * mem)
 {
-  if (!mem->data)
-    mem->data = mpp_buffer_get_ptr (mem->mpp_buf);
+  GstMppAllocator *self = GST_MPP_ALLOCATOR (allocator);
+  MppBuffer mbuf;
+  gsize offset;
+  guint size;
+  gint fd;
 
-  return mem->data;
-}
+  GST_DEBUG_OBJECT (self, "import gst memory");
 
-static void
-_mppmem_unmap (GstMemory * mem)
-{
-  return;
-}
+  if (!gst_is_dmabuf_memory (mem))
+    return NULL;
 
-static GstMppMemory *
-_mppmem_share (GstMppMemory * mem, gssize offset, gssize size)
-{
-  GstMppMemory *sub;
-  GstMemory *parent;
+  mbuf = gst_mpp_mpp_buffer_from_gst_memory (mem);
+  if (mbuf)
+    return gst_mpp_allocator_import_mppbuf (allocator, mbuf);
 
-  /* find the real parent */
-  if ((parent = mem->mem.parent) == NULL)
-    parent = (GstMemory *) mem;
+  fd = gst_dmabuf_memory_get_fd (mem);
+  if (fd < 0) {
+    GST_ERROR_OBJECT (self, "failed to get dmafd");
+    return NULL;
+  }
 
-  if (size == -1)
-    size = mem->mem.size - offset;
-
-  /* the shared memory is always readonly */
-  sub = _mppmem_new (GST_MINI_OBJECT_FLAGS (parent) |
-      GST_MINI_OBJECT_FLAG_LOCK_READONLY, mem->mem.allocator, parent,
-      mem->mem.maxsize, mem->mem.align, offset, size, mem->data,
-      -1, mem->mpp_buf);
-
-  return sub;
-}
-
-static gboolean
-_mppmem_is_span (GstMppMemory * mem1, GstMppMemory * mem2, gsize * offset)
-{
+  size = gst_memory_get_sizes (mem, &offset, NULL);
   if (offset)
-    *offset = mem1->mem.offset - mem1->mem.parent->offset;
+    return NULL;
 
-  /* and memory is contiguous */
-  return mem1->mem.offset + mem1->mem.size == mem2->mem.offset;
+  return gst_mpp_allocator_import_dmafd (allocator, fd, size);
 }
 
-/*
- * GstMppAllocator Implementation
- */
-
-/* Auto clean up methods */
-static void
-gst_mpp_allocator_dispose (GObject * obj)
+MppBuffer
+gst_mpp_allocator_alloc_mppbuf (GstAllocator * allocator, gsize size)
 {
-  GST_LOG_OBJECT (obj, "called");
+  GstMppAllocator *self = GST_MPP_ALLOCATOR (allocator);
+  MppBuffer mbuf = NULL;
 
-  G_OBJECT_CLASS (parent_class)->dispose (obj);
+  mpp_buffer_get (self->group, &mbuf, size);
+  mpp_buffer_set_index (mbuf, self->index);
+
+  return mbuf;
+}
+
+static GstMemory *
+gst_mpp_allocator_alloc (GstAllocator * allocator, gsize size,
+    GstAllocationParams * params)
+{
+  GstMemory *mem;
+  MppBuffer mbuf;
+
+  mbuf = gst_mpp_allocator_alloc_mppbuf (allocator, size);
+  if (!mbuf)
+    return NULL;
+
+  mem = gst_mpp_allocator_import_mppbuf (allocator, mbuf);
+  mpp_buffer_put (mbuf);
+
+  return mem;
+}
+
+GstAllocator *
+gst_mpp_allocator_new (void)
+{
+  GstMppAllocator *alloc;
+  MppBufferGroup group, ext_group;
+
+  static gint num_mpp_alloc = 0;
+
+  if (mpp_buffer_group_get_internal (&group, MPP_BUFFER_TYPE_DRM))
+    return FALSE;
+
+  if (mpp_buffer_group_get_external (&ext_group, MPP_BUFFER_TYPE_DRM)) {
+    mpp_buffer_group_put (group);
+    return FALSE;
+  }
+
+  alloc = g_object_new (GST_TYPE_MPP_ALLOCATOR, NULL);
+  gst_object_ref_sink (alloc);
+
+  alloc->group = group;
+  alloc->ext_group = ext_group;
+  alloc->index = num_mpp_alloc++;
+
+  return GST_ALLOCATOR_CAST (alloc);
 }
 
 static void
 gst_mpp_allocator_finalize (GObject * obj)
 {
-  GstMppAllocator *allocator = (GstMppAllocator *) obj;
+  GstMppAllocator *self = GST_MPP_ALLOCATOR (obj);
 
-  GST_LOG_OBJECT (obj, "called");
-
-  if (allocator->mpp_mem_pool) {
-    mpp_buffer_group_put (allocator->mpp_mem_pool);
-    allocator->mpp_mem_pool = NULL;
-  }
-
-  gst_atomic_queue_unref (allocator->free_queue);
+  mpp_buffer_group_put (self->group);
+  mpp_buffer_group_put (self->ext_group);
 
   G_OBJECT_CLASS (parent_class)->finalize (obj);
-}
-
-/* Manually clean way */
-gint
-gst_mpp_allocator_stop (GstMppAllocator * allocator)
-{
-  guint i = 0;
-  gint ret = 0;
-  GST_DEBUG_OBJECT (allocator, "stop allocator");
-
-  GST_OBJECT_LOCK (allocator);
-
-  if (!g_atomic_int_get (&allocator->active))
-    goto done;
-
-  if (allocator->mpp_mem_pool) {
-    mpp_buffer_group_put (allocator->mpp_mem_pool);
-    allocator->mpp_mem_pool = NULL;
-  }
-
-  if (gst_atomic_queue_length (allocator->free_queue) != allocator->count) {
-    GST_DEBUG_OBJECT (allocator, "allocator is still in use");
-    ret = -EBUSY;
-    goto done;
-  }
-  while (gst_atomic_queue_pop (allocator->free_queue)) {
-    /* Nothing */
-  };
-
-  for (i = 0; i < allocator->count; i++) {
-    GstMppMemory *mem = allocator->mems[i];
-    allocator->mems[i] = NULL;
-    if (mem)
-      _mppmem_free (mem);
-  }
-
-  allocator->count = 0;
-
-  g_atomic_int_set (&allocator->active, FALSE);
-done:
-  GST_OBJECT_UNLOCK (allocator);
-  return ret;
-}
-
-static void
-gst_mpp_allocator_free (GstAllocator * gallocator, GstMemory * gmem)
-{
-  GstMppMemory *mem = (GstMppMemory *) gmem;
-
-  _mppmem_free (mem);
-}
-
-GstMemory *
-gst_mpp_allocator_alloc_dmabuf (GstMppAllocator * allocator,
-    GstAllocator * dmabuf_allocator)
-{
-  GstMppMemory *mem;
-  GstMemory *dma_mem;
-
-  mem = gst_atomic_queue_pop (allocator->free_queue);
-  if (mem == NULL)
-    return NULL;
-
-  if (mem->dmafd < 0) {
-    GST_ERROR_OBJECT (allocator, "Failed to get dmafd");
-    gst_atomic_queue_push (allocator->free_queue, mem);
-
-    return NULL;
-  }
-
-  dma_mem = gst_dmabuf_allocator_alloc (dmabuf_allocator, mem->dmafd,
-      mem->size);
-  gst_mini_object_set_qdata (GST_MINI_OBJECT (dma_mem),
-      GST_MPP_MEMORY_QUARK, mem, (GDestroyNotify) gst_memory_unref);
-
-  return dma_mem;
-}
-
-GstMppAllocator *
-gst_mpp_allocator_new (GstObject * parent)
-{
-  GstMppAllocator *allocator = NULL;
-  gchar *name, *parent_name;
-
-  parent_name = gst_object_get_name (parent);
-  name = g_strconcat (parent_name, ":allocator", NULL);
-  g_free (parent_name);
-
-  allocator = g_object_new (GST_TYPE_MPP_ALLOCATOR, "name", name, NULL);
-  g_free (name);
-
-  return allocator;
-}
-
-static guint
-gst_mpp_allocator_drm_buf (GstMppAllocator * allocator, gsize size,
-    guint32 count)
-{
-  MppBufferGroup group;
-  MppBuffer temp_buf[VIDEO_MAX_FRAME];
-
-  /* FIXME the rockchip mpp should support DRM type properly */
-  mpp_buffer_group_get_internal (&group, MPP_BUFFER_TYPE_DRM);
-
-  mpp_buffer_group_get_external (&allocator->mpp_mem_pool, MPP_BUFFER_TYPE_DRM);
-  if (allocator->mpp_mem_pool == NULL)
-    goto mpp_mem_pool_error;
-
-  /* Create DRM buffer from rockchip mpp internally */
-  for (gint i = 0; i < count; i++) {
-    /*
-     * Create MppBuffer from Rockchip Mpp
-     * included mvc data
-     */
-    if (mpp_buffer_get (group, &temp_buf[i], size)) {
-      GST_ERROR_OBJECT (allocator, "allocate internal buffer %d failed", i);
-      goto error;
-    }
-  }
-
-  for (gint i = 0; i < count; i++) {
-    MppBuffer mpp_buf;
-    MppBufferInfo commit;
-
-    mpp_buf = temp_buf[i];
-    mpp_buffer_set_index (mpp_buf, i);
-    mpp_buffer_info_get (mpp_buf, &commit);
-
-    if (mpp_buffer_commit (allocator->mpp_mem_pool, &commit)) {
-      GST_DEBUG_OBJECT (allocator, "commit buffer %d failed", i);
-      continue;
-    }
-
-    mpp_buffer_put (mpp_buf);
-    /* Remember to release the reference of this buffer */
-    if (!mpp_buffer_get (allocator->mpp_mem_pool, &mpp_buf, size)) {
-
-      allocator->mems[i] = _mppmem_new (0, GST_ALLOCATOR (allocator), NULL,
-          mpp_buffer_get_size (mpp_buf), 0, 0, mpp_buffer_get_size (mpp_buf),
-          NULL, mpp_buffer_get_fd (mpp_buf), mpp_buf);
-
-    }
-    if (gst_is_mpp_memory ((GstMemory *) allocator->mems[i])) {
-      gst_atomic_queue_push (allocator->free_queue, allocator->mems[i]);
-      allocator->count++;
-    } else {
-      GST_ERROR_OBJECT (allocator, "allocate buffer %d failed",
-          mpp_buffer_get_index (mpp_buf));
-      goto error;
-    }
-  }
-
-  mpp_buffer_group_put (group);
-  return (gst_atomic_queue_length (allocator->free_queue));
-
-mpp_mem_pool_error:
-  {
-    GST_ERROR_OBJECT (allocator, "failed to create mpp memory pool");
-    goto error;
-  }
-error:
-  {
-    allocator->count = 0;
-    return 0;
-  }
-}
-
-guint
-gst_mpp_allocator_start (GstMppAllocator * allocator, gsize size, guint32 count)
-{
-  g_return_val_if_fail (count != 0, 0);
-  g_return_val_if_fail (size != 0, 0);
-
-  GST_OBJECT_LOCK (allocator);
-  if (g_atomic_int_get (&allocator->active))
-    goto already_active;
-
-  gst_mpp_allocator_drm_buf (allocator, size, count);
-
-  g_atomic_int_set (&allocator->active, TRUE);
-
-done:
-  GST_OBJECT_UNLOCK (allocator);
-
-  return (gst_atomic_queue_length (allocator->free_queue));
-already_active:
-  {
-    GST_ERROR_OBJECT (allocator, "allocator already active");
-    goto error;
-  }
-error:
-  {
-    allocator->count = 0;
-    goto done;
-  }
 }
 
 static void
 gst_mpp_allocator_class_init (GstMppAllocatorClass * klass)
 {
-  GObjectClass *object_class;
-  GstAllocatorClass *allocator_class;
+  GstAllocatorClass *allocator_class = GST_ALLOCATOR_CLASS (klass);
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
-  allocator_class = (GstAllocatorClass *) klass;
-  object_class = (GObjectClass *) klass;
+  GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "mppallocator", 0, "MPP allocator");
 
-  allocator_class->alloc = NULL;
-  allocator_class->free = gst_mpp_allocator_free;
+  allocator_class->alloc = GST_DEBUG_FUNCPTR (gst_mpp_allocator_alloc);
 
-  object_class->dispose = gst_mpp_allocator_dispose;
-  object_class->finalize = gst_mpp_allocator_finalize;
+  gobject_class->finalize = GST_DEBUG_FUNCPTR (gst_mpp_allocator_finalize);
+}
 
-  GST_DEBUG_CATEGORY_INIT (mppallocator_debug, "mppallocator", 0,
-      "MPP Allocator");
+static gpointer
+gst_mpp_mem_map_full (GstMemory * mem, GstMapInfo * info, gsize size)
+{
+  MppBuffer mbuf;
+  gpointer ptr;
+
+  if (mem->parent)
+    return gst_mpp_mem_map_full (mem->parent, info, size);
+
+  mbuf = gst_mpp_mpp_buffer_from_gst_memory (mem);
+  if (!mbuf)
+    return NULL;
+
+  ptr = mpp_buffer_get_ptr (mbuf);
+  if (ptr)
+    return ptr;
+
+  /* Fallback to default mmap for imported dma buffer */
+  return mem->allocator->mem_map (mem, size, info->flags);
 }
 
 static void
@@ -379,13 +297,9 @@ gst_mpp_allocator_init (GstMppAllocator * allocator)
 {
   GstAllocator *alloc = GST_ALLOCATOR_CAST (allocator);
 
-  alloc->mem_type = GST_MPP_MEMORY_TYPE;
-  alloc->mem_map = (GstMemoryMapFunction) _mppmem_map;
-  alloc->mem_unmap = (GstMemoryUnmapFunction) _mppmem_unmap;
-  alloc->mem_share = (GstMemoryShareFunction) _mppmem_share;
-  alloc->mem_is_span = (GstMemoryIsSpanFunction) _mppmem_is_span;
+  alloc->mem_type = GST_ALLOCATOR_MPP;
 
-  allocator->free_queue = gst_atomic_queue_new (VIDEO_MAX_FRAME);
+  alloc->mem_map_full = GST_DEBUG_FUNCPTR (gst_mpp_mem_map_full);
 
   GST_OBJECT_FLAG_SET (allocator, GST_ALLOCATOR_FLAG_CUSTOM_ALLOC);
 }
