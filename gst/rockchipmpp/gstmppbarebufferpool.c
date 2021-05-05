@@ -381,7 +381,8 @@ gst_mpp_bare_buffer_pool_new (GstMppJpegDec * dec, GstCaps * caps)
     goto allocator_failed;
 
   config = gst_buffer_pool_get_config (GST_BUFFER_POOL_CAST (pool));
-  gst_buffer_pool_config_set_params (config, caps, dec->info.size, 0, 0);
+  gst_buffer_pool_config_set_params (config, caps,
+      GST_VIDEO_INFO_HEIGHT (&dec->info), 0, 0);
   /* This will simply set a default config, but will not configure the pool
    * because min and max are not valid */
   gst_buffer_pool_set_config (GST_BUFFER_POOL_CAST (pool), config);

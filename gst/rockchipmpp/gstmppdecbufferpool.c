@@ -294,13 +294,13 @@ gst_mpp_dec_buffer_pool_acquire_buffer (GstBufferPool * bpool,
       break;
   }
 
-  if (dec->info.interlace_mode != interlace_mode) {
+  if (GST_VIDEO_INFO_INTERLACE_MODE (&dec->info) != interlace_mode) {
     GstVideoCodecState *output_state =
         gst_video_decoder_get_output_state ((GstVideoDecoder *) dec);
 
     if (output_state) {
-      output_state->info.interlace_mode = dec->info.interlace_mode =
-          interlace_mode;
+      GST_VIDEO_INFO_INTERLACE_MODE (&output_state->info) =
+          GST_VIDEO_INFO_INTERLACE_MODE (&dec->info) = interlace_mode;
       gst_video_codec_state_unref (output_state);
     }
   }
@@ -493,7 +493,8 @@ gst_mpp_dec_buffer_pool_new (GstMppVideoDec * dec, GstCaps * caps)
     goto allocator_failed;
 
   config = gst_buffer_pool_get_config (GST_BUFFER_POOL_CAST (pool));
-  gst_buffer_pool_config_set_params (config, caps, dec->info.size, 0, 0);
+  gst_buffer_pool_config_set_params (config, caps,
+      GST_VIDEO_INFO_SIZE (&dec->info), 0, 0);
   /* This will simply set a default config, but will not configure the pool
    * because min and max are not valid */
   gst_buffer_pool_set_config (GST_BUFFER_POOL_CAST (pool), config);

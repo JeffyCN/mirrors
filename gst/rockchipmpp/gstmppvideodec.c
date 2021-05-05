@@ -225,7 +225,8 @@ gst_mpp_video_frame_to_info (MppFrame mframe, GstVideoInfo * info)
   gst_video_info_set_format (info, format, mpp_frame_get_width (mframe),
       mpp_frame_get_height (mframe));
 
-  info->interlace_mode = mpp_frame_mode_to_gst_interlace_mode (mode);
+  GST_VIDEO_INFO_INTERLACE_MODE (info) =
+      mpp_frame_mode_to_gst_interlace_mode (mode);
 
   hstride = mpp_frame_get_hor_stride (mframe);
   vstride = mpp_frame_get_ver_stride (mframe);
@@ -399,8 +400,8 @@ gst_mpp_video_dec_set_format (GstVideoDecoder * decoder,
   }
 
   mpp_frame_init (&mframe);
-  mpp_frame_set_width (mframe, info.width);
-  mpp_frame_set_height (mframe, info.height);
+  mpp_frame_set_width (mframe, GST_VIDEO_INFO_WIDTH (&info));
+  mpp_frame_set_height (mframe, GST_VIDEO_INFO_HEIGHT (&info));
   mpp_frame_set_fmt (mframe, (MppFrameFormat) codingtype);
   self->mpi->control (self->mpp_ctx, MPP_DEC_SET_FRAME_INFO, (MppParam) mframe);
   mpp_frame_deinit (&mframe);
@@ -517,7 +518,7 @@ gst_mpp_video_dec_loop (GstVideoDecoder * decoder)
   frame = gst_mpp_video_dec_get_frame (decoder, buffer);
   if (frame) {
     GstMemory *mem = gst_buffer_peek_memory (buffer, 0);
-    gst_memory_resize (mem, 0, self->info.size);
+    gst_memory_resize (mem, 0, GST_VIDEO_INFO_SIZE (&self->info));
 
     frame->output_buffer = buffer;
     buffer = NULL;
@@ -643,8 +644,10 @@ gst_mpp_video_dec_handle_frame (GstVideoDecoder * decoder,
 
       output_state =
           gst_video_decoder_set_output_state (decoder,
-          info->finfo->format, info->width, info->height, self->input_state);
-      output_state->info.interlace_mode = info->interlace_mode;
+          GST_VIDEO_INFO_FORMAT (info), GST_VIDEO_INFO_WIDTH (info),
+          GST_VIDEO_INFO_HEIGHT (info), self->input_state);
+      GST_VIDEO_INFO_INTERLACE_MODE (&output_state->info) =
+          GST_VIDEO_INFO_INTERLACE_MODE (info);
       gst_video_codec_state_unref (output_state);
 
       /* NOTE: if you suffer from the reconstruction of buffer pool which slows

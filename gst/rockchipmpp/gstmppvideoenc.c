@@ -244,7 +244,9 @@ gst_mpp_video_enc_update_properties (GstVideoEncoder * encoder)
   mpp_enc_cfg_set_s32 (cfg, "rc:mode", self->rc_mode);
 
   if (!self->bps)
-    self->bps = self->info.width * self->info.height / 8 * fps;
+    self->bps =
+        GST_VIDEO_INFO_WIDTH (&self->info) *
+        GST_VIDEO_INFO_HEIGHT (&self->info) / 8 * fps;
 
   if (self->rc_mode == MPP_ENC_RC_MODE_CBR) {
     /* CBR mode has narrow bound */
@@ -404,8 +406,7 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
     GstVideoCodecState * state)
 {
   GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
-  GstVideoInfo *info;
-  GstVideoFormat format;
+  GstVideoInfo *info = &self->info;
   MppEncCfg cfg;
 
   GST_DEBUG_OBJECT (self, "Setting format: %" GST_PTR_FORMAT, state->caps);
@@ -417,11 +418,9 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
     }
   }
 
-  format = state->info.finfo->format;
-
-  info = &self->info;
   gst_video_info_init (info);
-  gst_video_info_set_format (info, format, GST_VIDEO_INFO_WIDTH (&state->info),
+  gst_video_info_set_format (info, GST_VIDEO_INFO_FORMAT (&state->info),
+      GST_VIDEO_INFO_WIDTH (&state->info),
       GST_VIDEO_INFO_HEIGHT (&state->info));
 
   if (!gst_mpp_video_info_align (info, 0, 0))
@@ -444,9 +443,9 @@ gst_mpp_video_enc_set_format (GstVideoEncoder * encoder,
   mpp_enc_cfg_set_s32 (cfg, "prep:height",
       GST_VIDEO_INFO_HEIGHT (&state->info));
   mpp_enc_cfg_set_s32 (cfg, "prep:hor_stride",
-      GST_MPP_VIDEO_INFO_HSTRIDE (&self->info));
+      GST_MPP_VIDEO_INFO_HSTRIDE (info));
   mpp_enc_cfg_set_s32 (cfg, "prep:ver_stride",
-      GST_MPP_VIDEO_INFO_VSTRIDE (&self->info));
+      GST_MPP_VIDEO_INFO_VSTRIDE (info));
 
   mpp_enc_cfg_set_s32 (cfg, "rc:fps_in_flex", 0);
   mpp_enc_cfg_set_s32 (cfg, "rc:fps_in_num",
@@ -555,8 +554,8 @@ gst_mpp_video_enc_process_buffer (GstMppVideoEnc * self, GstBuffer ** buffer)
     gint i, j, src_stride, dst_stride, cr_h;
 
     cr_h = GST_VIDEO_INFO_HEIGHT (info);
-    if (info->finfo->format == GST_VIDEO_FORMAT_NV12 ||
-        info->finfo->format == GST_VIDEO_FORMAT_I420)
+    if (GST_VIDEO_INFO_FORMAT (info) == GST_VIDEO_FORMAT_NV12 ||
+        GST_VIDEO_INFO_FORMAT (info) == GST_VIDEO_FORMAT_I420)
       cr_h /= 2;
 
     gst_buffer_map (*buffer, &mapinfo, GST_MAP_READ);
@@ -648,6 +647,7 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
 {
 
   GstMppVideoEnc *self = GST_MPP_VIDEO_ENC (encoder);
+  GstVideoInfo *info = &self->info;
   GstVideoCodecState *output;
   GstFlowReturn ret = GST_FLOW_OK;
 
@@ -662,14 +662,15 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
     gint i = 0;
 
     GST_DEBUG_OBJECT (self, "Filling src caps with output dimensions %ux%u",
-        self->info.width, self->info.height);
+        GST_VIDEO_INFO_WIDTH (info), GST_VIDEO_INFO_HEIGHT (info));
 
     if (!outcaps)
       goto not_negotiated;
 
     gst_caps_set_simple (outcaps,
-        "width", G_TYPE_INT, self->input_state->info.width,
-        "height", G_TYPE_INT, self->input_state->info.height, NULL);
+        "width", G_TYPE_INT, GST_VIDEO_INFO_WIDTH (&self->input_state->info),
+        "height", G_TYPE_INT, GST_VIDEO_INFO_HEIGHT (&self->input_state->info),
+        NULL);
 
     /* Allocator buffers */
     if (mpp_buffer_group_get_internal (&self->input_group, MPP_BUFFER_TYPE_DRM))
@@ -680,7 +681,7 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
 
     for (i = 0; i < MPP_MAX_BUFFERS; i++) {
       if (mpp_buffer_get (self->input_group, &self->input_buffer[i],
-              self->info.size))
+              GST_VIDEO_INFO_SIZE (info)))
         goto activate_failed;
     }
 
@@ -689,12 +690,12 @@ gst_mpp_video_enc_handle_frame (GstVideoEncoder * encoder,
       goto activate_failed;
     }
 
-    mpp_frame_set_width (self->mpp_frame, GST_VIDEO_INFO_WIDTH (&self->info));
-    mpp_frame_set_height (self->mpp_frame, GST_VIDEO_INFO_HEIGHT (&self->info));
+    mpp_frame_set_width (self->mpp_frame, GST_VIDEO_INFO_WIDTH (info));
+    mpp_frame_set_height (self->mpp_frame, GST_VIDEO_INFO_HEIGHT (info));
     mpp_frame_set_hor_stride (self->mpp_frame,
-        GST_MPP_VIDEO_INFO_HSTRIDE (&self->info));
+        GST_MPP_VIDEO_INFO_HSTRIDE (info));
     mpp_frame_set_ver_stride (self->mpp_frame,
-        GST_MPP_VIDEO_INFO_VSTRIDE (&self->info));
+        GST_MPP_VIDEO_INFO_VSTRIDE (info));
 
     if (self->mpi->poll (self->mpp_ctx, MPP_PORT_INPUT, MPP_POLL_BLOCK))
       GST_ERROR_OBJECT (self, "mpp input poll failed");

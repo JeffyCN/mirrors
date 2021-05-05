@@ -36,8 +36,8 @@ gboolean
 gst_mpp_video_info_align (GstVideoInfo * info, guint hstride, guint vstride)
 {
   GstVideoAlignment align;
-  gint i, n_planes;
   guint stride;
+  gint i;
 
   /* The MPP requires alignment 16 by default */
   if (!hstride)
@@ -52,26 +52,28 @@ gst_mpp_video_info_align (GstVideoInfo * info, guint hstride, guint vstride)
   gst_video_alignment_reset (&align);
 
   /* Apply vstride */
-  align.padding_bottom = vstride - info->height;
+  align.padding_bottom = vstride - GST_VIDEO_INFO_HEIGHT (info);
   if (!gst_video_info_align (info, &align))
     return FALSE;
 
-  if (info->stride[0] == hstride)
+  if (GST_VIDEO_INFO_PLANE_STRIDE (info, 0) == hstride)
     return TRUE;
 
   /* Apply hstride */
-  stride = info->stride[0];
-  n_planes = GST_VIDEO_INFO_N_PLANES (info);
-  for (i = 0; i < n_planes; i++) {
-    info->stride[i] = info->stride[i] * hstride / stride;
-    info->offset[i] = info->offset[i] / stride * hstride;
+  stride = GST_VIDEO_INFO_PLANE_STRIDE (info, 0);
+  for (i = 0; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
+    GST_VIDEO_INFO_PLANE_STRIDE (info, i) =
+        GST_VIDEO_INFO_PLANE_STRIDE (info, i) * hstride / stride;
+    GST_VIDEO_INFO_PLANE_OFFSET (info, i) =
+        GST_VIDEO_INFO_PLANE_OFFSET (info, i) / stride * hstride;
 
-    GST_DEBUG ("plane %d, stride %d, offset %" G_GSIZE_FORMAT,
-        i, info->stride[i], info->offset[i]);
+    GST_DEBUG ("plane %d, stride %d, offset %" G_GSIZE_FORMAT, i,
+        GST_VIDEO_INFO_PLANE_STRIDE (info, i),
+        GST_VIDEO_INFO_PLANE_OFFSET (info, i));
   }
-  info->size = info->size / stride * hstride;
+  GST_VIDEO_INFO_SIZE (info) = GST_VIDEO_INFO_SIZE (info) / stride * hstride;
 
-  GST_DEBUG ("aligned size %" G_GSIZE_FORMAT, info->size);
+  GST_DEBUG ("aligned size %" G_GSIZE_FORMAT, GST_VIDEO_INFO_SIZE (info));
 
   return TRUE;
 }

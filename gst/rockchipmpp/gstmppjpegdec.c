@@ -466,7 +466,7 @@ gst_mpp_jpeg_dec_loop (GstVideoDecoder * decoder)
   frame = gst_video_decoder_get_oldest_frame (decoder);
   if (frame) {
     GstMemory *mem = gst_buffer_peek_memory (buffer, 0);
-    gst_memory_resize (mem, 0, self->info.size);
+    gst_memory_resize (mem, 0, GST_VIDEO_INFO_SIZE (&self->info));
 
     frame->output_buffer = buffer;
     buffer = NULL;
@@ -563,13 +563,14 @@ gst_mpp_jpeg_dec_handle_frame (GstVideoDecoder * decoder,
 
     output_state =
         gst_video_decoder_set_output_state (decoder,
-        info->finfo->format, info->width, info->height, self->input_state);
+        GST_VIDEO_INFO_FORMAT (info), GST_VIDEO_INFO_WIDTH (info),
+        GST_VIDEO_INFO_HEIGHT (info), self->input_state);
     gst_video_codec_state_unref (output_state);
 
     /* The MPP requires hor_stride * ver_stride / 2 for extra info */
     gst_buffer_pool_config_set_params (config, output_state->caps,
-        info->size + info->offset[1] / 2, NB_OUTPUT_BUFS, NB_OUTPUT_BUFS);
-
+        GST_VIDEO_INFO_SIZE (info) + GST_VIDEO_INFO_PLANE_OFFSET (info,
+            1) / 2, NB_OUTPUT_BUFS, NB_OUTPUT_BUFS);
     if (!gst_buffer_pool_set_config (pool, config))
       goto error_activate_pool;
     /* activate the pool: the buffers are allocated */
