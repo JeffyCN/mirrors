@@ -1,0 +1,9 @@
+v1.0 revision(2021/02/04)
+1.fix making partition image align bug 
+2.fix overwritten idblock bug
+
+v1.1 revision(2021/03/29)
+1.generate emmc and nor burning image without specifying block size and page size
+
+v1.2 revision(2021/04/08)
+1.support 356X
