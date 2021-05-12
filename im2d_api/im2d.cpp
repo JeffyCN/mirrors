@@ -950,14 +950,6 @@ IM_API IM_STATUS rga_check_rotate(rga_buffer_t src, rga_buffer_t dst, im_rect sr
         }
     }
 
-    if ((mode_usage & IM_HAL_TRANSFORM_ROT_90) || (mode_usage & IM_HAL_TRANSFORM_ROT_270)) {
-        if ((src.width != dst.height) || (src.height != dst.width) ||
-            (src_rect.width != dst_rect.height) || (src_rect.height != dst_rect.width)) {
-            imErrorMsg("Rotate 90 or 270 need to exchange width and height.");
-            return IM_STATUS_INVALID_PARAM;
-        }
-    }
-
     return IM_STATUS_NOERROR;
 }
 
