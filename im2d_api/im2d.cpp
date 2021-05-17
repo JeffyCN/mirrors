@@ -935,8 +935,7 @@ IM_API IM_STATUS rga_check_blend(rga_buffer_t src, rga_buffer_t pat, rga_buffer_
     return IM_STATUS_NOERROR;
 }
 
-IM_API IM_STATUS rga_check_rotate(rga_buffer_t src, rga_buffer_t dst, im_rect src_rect, im_rect dst_rect,
-                                  int mode_usage, rga_info_table_entry &table) {
+IM_API IM_STATUS rga_check_rotate(int mode_usage, rga_info_table_entry &table) {
     if (table.version == RGA_1 || table.version == RGA_1_PLUS) {
         if (mode_usage & IM_HAL_TRANSFORM_FLIP_H_V) {
             imErrorMsg("RGA1/RGA1_PLUS cannot support H_V mirror.");
@@ -1014,7 +1013,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
             return ret;
     }
 
-    ret = rga_check_rotate(src, dst, src_rect, dst_rect, mode_usage, rga_info);
+    ret = rga_check_rotate(mode_usage, rga_info);
     if (ret != IM_STATUS_NOERROR)
         return ret;
 
