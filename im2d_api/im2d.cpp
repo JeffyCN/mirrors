@@ -432,14 +432,16 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_8 |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_10 |
-                                                IM_RGA_SUPPORT_FORMAT_YUYV_422,
+                                                IM_RGA_SUPPORT_FORMAT_YUYV_422 |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_400,
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_8 |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_10 |
                                                 IM_RGA_SUPPORT_FORMAT_YUYV_420 |
                                                 IM_RGA_SUPPORT_FORMAT_YUYV_422 |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_400, {0} }
+                                                IM_RGA_SUPPORT_FORMAT_YUV_400 |
+                                                IM_RGA_SUPPORT_FORMAT_Y4, {0} }
     };
 
     /*open /dev/rga node in order to get rga vesion*/
@@ -873,9 +875,15 @@ IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect r
             imErrorMsg(err);
             return IM_STATUS_NOT_SUPPORTED;
         }
-    } else if (format == RK_FORMAT_YCbCr_400 || format == RK_FORMAT_Y4) {
+    } else if (format == RK_FORMAT_YCbCr_400) {
         if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUV_400) {
             sprintf(err, "%s unsupported input YUV400 format.", name);
+            imErrorMsg(err);
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+    } else if (format == RK_FORMAT_Y4) {
+        if (~format_usage & IM_RGA_SUPPORT_FORMAT_Y4) {
+            sprintf(err, "%s unsupported input Y4/Y1 format.", name);
             imErrorMsg(err);
             return IM_STATUS_NOT_SUPPORTED;
         }
