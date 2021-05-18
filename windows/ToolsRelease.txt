@@ -9,6 +9,7 @@ RKDevInfoWriteTool    | 写号工具
 SDDiskTool            | SD卡镜像制作
 SpiImageTools         | 烧录器升级工具
 DriverAssitant        | 驱动安装工具
+pin_config_tool       | IO配置工具
 RKImageMaker          | 打包工具
 SpeakerPCBATool       | 音箱PCBA测试工具
 RKDevTool_Release     | 固件烧录工具
