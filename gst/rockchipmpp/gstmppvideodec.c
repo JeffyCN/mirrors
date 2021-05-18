@@ -92,12 +92,11 @@ gst_mpp_video_dec_get_mpp_type (GstStructure * s)
         case 1:
         case 2:
           return MPP_VIDEO_CodingMPEG2;
-          break;
         case 4:
           return MPP_VIDEO_CodingMPEG4;
-          break;
         default:
-          break;
+          g_assert_not_reached ();
+          return MPP_VIDEO_CodingUnused;
       }
     }
   }
@@ -124,23 +123,6 @@ gst_mpp_video_dec_set_format (GstVideoDecoder * decoder,
   g_return_val_if_fail (mppdec->mpp_type != MPP_VIDEO_CodingUnused, FALSE);
 
   return pclass->set_format (decoder, state);
-}
-
-static MppFrame
-gst_mpp_video_dec_poll_mpp_frame (GstVideoDecoder * decoder, gint timeout_ms)
-{
-  GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
-  GstMppDec *mppdec = GST_MPP_DEC (decoder);
-  MppFrame mframe = NULL;
-
-  if (self->poll_timeout != timeout_ms) {
-    self->poll_timeout = timeout_ms;
-    mppdec->mpi->control (mppdec->mpp_ctx, MPP_SET_OUTPUT_TIMEOUT, &timeout_ms);
-  }
-
-  mppdec->mpi->decode_get_frame (mppdec->mpp_ctx, &mframe);
-
-  return mframe;
 }
 
 static gboolean
@@ -213,6 +195,23 @@ gst_mpp_video_dec_send_mpp_packet (GstVideoDecoder * decoder,
   return FALSE;
 }
 
+static MppFrame
+gst_mpp_video_dec_poll_mpp_frame (GstVideoDecoder * decoder, gint timeout_ms)
+{
+  GstMppVideoDec *self = GST_MPP_VIDEO_DEC (decoder);
+  GstMppDec *mppdec = GST_MPP_DEC (decoder);
+  MppFrame mframe = NULL;
+
+  if (self->poll_timeout != timeout_ms) {
+    self->poll_timeout = timeout_ms;
+    mppdec->mpi->control (mppdec->mpp_ctx, MPP_SET_OUTPUT_TIMEOUT, &timeout_ms);
+  }
+
+  mppdec->mpi->decode_get_frame (mppdec->mpp_ctx, &mframe);
+
+  return mframe;
+}
+
 static gboolean
 gst_mpp_video_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
 {
@@ -236,11 +235,7 @@ gst_mpp_video_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
   }
 
   mpp_packet_deinit (&mpkt);
-
-  if (!ret)
-    return TRUE;
-
-  return FALSE;
+  return TRUE;
 }
 
 static void

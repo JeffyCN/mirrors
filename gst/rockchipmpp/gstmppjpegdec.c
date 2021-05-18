@@ -178,82 +178,6 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   return TRUE;
 }
 
-static gboolean
-gst_mpp_jpeg_dec_shutdown (GstVideoDecoder * decoder, gboolean unused)
-{
-  GstMppJpegDec *self = GST_MPP_JPEG_DEC (decoder);
-  GstMppDec *mppdec = GST_MPP_DEC (decoder);
-  MppFrame mframe = NULL;
-  MppTask mtask = NULL;
-
-  GST_DEBUG_OBJECT (self, "sending EOS");
-
-  mppdec->mpi->poll (mppdec->mpp_ctx, MPP_PORT_INPUT, MPP_POLL_BLOCK);
-  mppdec->mpi->dequeue (mppdec->mpp_ctx, MPP_PORT_INPUT, &mtask);
-
-  if (!mtask)
-    goto error;
-
-  mpp_task_meta_set_packet (mtask, KEY_INPUT_PACKET, self->eos_packet);
-
-  mpp_frame_init (&mframe);
-  if (!mframe)
-    goto error;
-
-  mpp_task_meta_set_frame (mtask, KEY_OUTPUT_FRAME, mframe);
-
-  if (mppdec->mpi->enqueue (mppdec->mpp_ctx, MPP_PORT_INPUT, mtask))
-    goto error;
-
-  return TRUE;
-
-error:
-  GST_WARNING_OBJECT (self, "failed to send EOS");
-
-  if (mtask) {
-    mpp_task_meta_set_packet (mtask, KEY_INPUT_PACKET, NULL);
-    mpp_task_meta_set_frame (mtask, KEY_OUTPUT_FRAME, NULL);
-    mppdec->mpi->enqueue (mppdec->mpp_ctx, MPP_PORT_INPUT, mtask);
-  }
-
-  if (mframe)
-    mpp_frame_deinit (&mframe);
-
-  return FALSE;
-}
-
-static MppFrame
-gst_mpp_jpeg_dec_poll_mpp_frame (GstVideoDecoder * decoder, gint timeout_ms)
-{
-  GstMppDec *mppdec = GST_MPP_DEC (decoder);
-  MppPacket mpkt = NULL;
-  MppTask mtask = NULL;
-  MppFrame mframe = NULL;
-  MppMeta meta;
-
-  if (mppdec->mpi->poll (mppdec->mpp_ctx, MPP_PORT_OUTPUT, timeout_ms))
-    return NULL;
-
-  mppdec->mpi->dequeue (mppdec->mpp_ctx, MPP_PORT_OUTPUT, &mtask);
-  if (!mtask)
-    return NULL;
-
-  mpp_task_meta_get_frame (mtask, KEY_OUTPUT_FRAME, &mframe);
-  if (!mframe) {
-    mppdec->mpi->enqueue (mppdec->mpp_ctx, MPP_PORT_OUTPUT, mtask);
-    return NULL;
-  }
-
-  meta = mpp_frame_get_meta (mframe);
-  mpp_meta_get_packet (meta, KEY_INPUT_PACKET, &mpkt);
-  if (mpkt)
-    mpp_packet_deinit (&mpkt);
-
-  mppdec->mpi->enqueue (mppdec->mpp_ctx, MPP_PORT_OUTPUT, mtask);
-
-  return mframe;
-}
-
 static MppPacket
 gst_mpp_jpeg_dec_get_mpp_packet (GstVideoDecoder * decoder,
     GstMapInfo * mapinfo)
@@ -317,6 +241,81 @@ gst_mpp_jpeg_dec_send_mpp_packet (GstVideoDecoder * decoder,
   return TRUE;
 
 error:
+  if (mtask) {
+    mpp_task_meta_set_packet (mtask, KEY_INPUT_PACKET, NULL);
+    mpp_task_meta_set_frame (mtask, KEY_OUTPUT_FRAME, NULL);
+    mppdec->mpi->enqueue (mppdec->mpp_ctx, MPP_PORT_INPUT, mtask);
+  }
+
+  if (mframe)
+    mpp_frame_deinit (&mframe);
+
+  return FALSE;
+}
+
+static MppFrame
+gst_mpp_jpeg_dec_poll_mpp_frame (GstVideoDecoder * decoder, gint timeout_ms)
+{
+  GstMppDec *mppdec = GST_MPP_DEC (decoder);
+  MppPacket mpkt = NULL;
+  MppTask mtask = NULL;
+  MppFrame mframe = NULL;
+  MppMeta meta;
+
+  if (mppdec->mpi->poll (mppdec->mpp_ctx, MPP_PORT_OUTPUT, timeout_ms))
+    return NULL;
+
+  mppdec->mpi->dequeue (mppdec->mpp_ctx, MPP_PORT_OUTPUT, &mtask);
+  if (!mtask)
+    return NULL;
+
+  mpp_task_meta_get_frame (mtask, KEY_OUTPUT_FRAME, &mframe);
+  if (!mframe) {
+    mppdec->mpi->enqueue (mppdec->mpp_ctx, MPP_PORT_OUTPUT, mtask);
+    return NULL;
+  }
+
+  meta = mpp_frame_get_meta (mframe);
+  mpp_meta_get_packet (meta, KEY_INPUT_PACKET, &mpkt);
+  if (mpkt)
+    mpp_packet_deinit (&mpkt);
+
+  mppdec->mpi->enqueue (mppdec->mpp_ctx, MPP_PORT_OUTPUT, mtask);
+
+  return mframe;
+}
+
+static gboolean
+gst_mpp_jpeg_dec_shutdown (GstVideoDecoder * decoder, gboolean unused)
+{
+  GstMppJpegDec *self = GST_MPP_JPEG_DEC (decoder);
+  GstMppDec *mppdec = GST_MPP_DEC (decoder);
+  MppFrame mframe = NULL;
+  MppTask mtask = NULL;
+
+  GST_DEBUG_OBJECT (self, "sending EOS");
+
+  mppdec->mpi->poll (mppdec->mpp_ctx, MPP_PORT_INPUT, MPP_POLL_BLOCK);
+  mppdec->mpi->dequeue (mppdec->mpp_ctx, MPP_PORT_INPUT, &mtask);
+  if (!mtask)
+    goto error;
+
+  mpp_task_meta_set_packet (mtask, KEY_INPUT_PACKET, self->eos_packet);
+
+  mpp_frame_init (&mframe);
+  if (!mframe)
+    goto error;
+
+  mpp_task_meta_set_frame (mtask, KEY_OUTPUT_FRAME, mframe);
+
+  if (mppdec->mpi->enqueue (mppdec->mpp_ctx, MPP_PORT_INPUT, mtask))
+    goto error;
+
+  return TRUE;
+
+error:
+  GST_WARNING_OBJECT (self, "failed to send EOS");
+
   if (mtask) {
     mpp_task_meta_set_packet (mtask, KEY_INPUT_PACKET, NULL);
     mpp_task_meta_set_frame (mtask, KEY_OUTPUT_FRAME, NULL);
