@@ -463,6 +463,7 @@ gst_kms_allocator_add_fb (GstKMSAllocator * alloc, GstKMSMemory * kmsmem,
 
     pitches[i] = GST_VIDEO_INFO_PLANE_STRIDE (vinfo, i);
     offsets[i] = in_offsets[i];
+  }
 
   GST_DEBUG_OBJECT (alloc, "bo handles: %d, %d, %d, %d", bo_handles[0],
       bo_handles[1], bo_handles[2], bo_handles[3]);
