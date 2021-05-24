@@ -64,11 +64,7 @@ static GstStaticPadTemplate gst_mpp_jpeg_dec_src_template =
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw, "
-        "format = (string) NV12, "
-        "width  = (int) [ 48, 8176 ], " "height =  (int) [ 48, 8176 ]"
-        ";"
-        "video/x-raw, "
-        "format = (string) NV16, "
+        "format = (string) { NV12, NV16 }, "
         "width  = (int) [ 48, 8176 ], " "height =  (int) [ 48, 8176 ]" ";")
     );
 
@@ -145,6 +141,7 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   GstVideoInfo *info = &state->info;
   GstStructure *structure;
   GstVideoFormat format;
+  MppFrameFormat mpp_format = MPP_FMT_BUTT;
 
   if (!pclass->set_format (decoder, state))
     return FALSE;
@@ -154,26 +151,36 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   switch (format) {
     case GST_VIDEO_FORMAT_NV12:
     case GST_VIDEO_FORMAT_I420:
-    case GST_VIDEO_FORMAT_YV12:
       format = GST_VIDEO_FORMAT_NV12;
       break;
     case GST_VIDEO_FORMAT_UYVY:
+    case GST_VIDEO_FORMAT_Y42B:
     case GST_VIDEO_FORMAT_NV16:
       format = GST_VIDEO_FORMAT_NV16;
       break;
     default:
-      g_assert_not_reached ();
-      return FALSE;
+      /* FIXME: Gst doesn't support semi-planar version of Y444/Y41B...etc */
+
+      /* Try to convert unsupported formats to NV12 */
+      format = GST_VIDEO_FORMAT_NV12;
+      mpp_format = MPP_FMT_YUV420SP;
+      if (mppdec->mpi->control (mppdec->mpp_ctx, MPP_DEC_SET_OUTPUT_FORMAT,
+              &mpp_format) < 0)
+        return FALSE;
+
+      break;
   }
 
   if (!gst_mpp_dec_update_video_info (decoder, format,
           GST_VIDEO_INFO_WIDTH (info), GST_VIDEO_INFO_HEIGHT (info), 0, 0, 0))
     return FALSE;
 
-  /* The MPP requires hor_stride * ver_stride / 2 for extra info */
   info = &mppdec->info;
-  self->buf_size =
-      GST_VIDEO_INFO_SIZE (info) + GST_VIDEO_INFO_PLANE_OFFSET (info, 1) / 2;
+  self->buf_size = GST_VIDEO_INFO_SIZE (info);
+
+  /* The MPP's maximum output size would be 3*w*h (Y444) */
+  if (mpp_format != MPP_FMT_BUTT)
+    self->buf_size = GST_VIDEO_INFO_PLANE_OFFSET (info, 1) * 3;
 
   return TRUE;
 }
