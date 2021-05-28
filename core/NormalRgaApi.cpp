@@ -856,6 +856,100 @@ int NormalRgaNNQuantizeMode(struct rga_req *msg, rga_info *dst) {
     return 0;
 }
 
+int NormalRgaFullColorSpaceConvert(struct rga_req *msg, int color_space_mode) {
+    typedef struct csc_coe_float_t {
+        float r_v;
+        float g_y;
+        float b_u;
+        float off;
+    } csc_coe_float_t;
+
+    typedef struct full_csc_float_t {
+        csc_coe_float_t coe_y;
+        csc_coe_float_t coe_u;
+        csc_coe_float_t coe_v;
+    } full_csc_float_t;
+
+    int factor = 0;
+    full_csc_float_t *fptr = NULL;
+    full_csc_t default_csc_table;
+
+    /* ABGR => AUYV */
+    static full_csc_float_t default_csc_float_table[] = {
+        /* coe_00 * R + coe_01 * G + coe_02 * B + coe_off */
+        { { 0.299, 0.587, 0.114, 0 }, { -0.169, -0.331, 0.5, 128 }, { 0.5, -0.419, -0.081, 128 } }, //R2Y 601 full
+        { { 0.213, 0.715, 0.072, 0 }, { -0.115, -0.385, 0.5, 128 }, { 0.5, -0.454, -0.046, 128 } }, //R2Y 709 full
+        /* coe_00 * V + coe_01 * Y + coe_02 * U + coe_off */
+        { { -0.1826, 0.8588, -0.1014, 52.3554 }, { 0.1007, -0.0004, 0.8948, 0.5781 }, { 0.9005, 0, 0.0653, 4.3855 } },    //601 full range => 709 limit range
+        { { 0.1916, 1, 0.0993, -37.2476 }, { -0.1106, 0, 0.9895, 15.4669 }, { 0.9827, 0.0002, -0.0723, 11.4231 } },       //709  limit range => 601 limit range
+        { { 0.1685, 0.8588, 0.0872, -16.7232 }, { -0.0971, 0, 0.8695, 29.1335 }, { 0.8638, 0, -0.0637, 25.5824 } },       //709  full range => 601 limit range
+        { { 0.1955, 1, 0.1019, -38.0729 }, { -0.1104, 0, 0.9899, 15.4218 }, { 0.9836, 0, -0.0716, 11.2587 } },            //709  full range => 601 full range
+    };
+
+    factor = 0x3ff;
+
+    switch (color_space_mode) {
+        case rgb2yuv_601_full :
+            fptr = &(default_csc_float_table[0]);
+            break;
+
+        case rgb2yuv_709_full :
+            fptr = &(default_csc_float_table[1]);
+            break;
+
+        case yuv2yuv_709_limit_2_601_limit :
+            fptr = &(default_csc_float_table[3]);
+            break;
+
+        case yuv2yuv_601_full_2_709_limit :
+            fptr = &(default_csc_float_table[2]);
+            break;
+
+        case yuv2yuv_709_full_2_601_limit :
+            fptr = &(default_csc_float_table[4]);
+            break;
+
+        case yuv2yuv_709_full_2_601_full :
+            fptr = &(default_csc_float_table[5]);
+            break;
+
+        case yuv2yuv_601_limit_2_709_limit :
+        case yuv2yuv_601_limit_2_709_full :
+        case yuv2yuv_601_full_2_709_full :
+        case yuv2yuv_709_limit_2_601_full :
+        default :
+            printf("Not support full csc mode [%x]\n", color_space_mode);
+            return -1;
+    }
+
+    /* enable full csc */
+    default_csc_table.flag = 1;
+
+    /* full csc coefficient */
+    default_csc_table.coe_y.r_v = (int)(fptr->coe_y.r_v * factor +0.5);
+    default_csc_table.coe_y.g_y = (int)(fptr->coe_y.g_y * factor +0.5);
+    default_csc_table.coe_y.b_u = (int)(fptr->coe_y.b_u * factor +0.5);
+    default_csc_table.coe_y.off = (int)(fptr->coe_y.off * factor +0.5);
+
+    default_csc_table.coe_u.r_v = (int)(fptr->coe_u.r_v * factor +0.5);
+    default_csc_table.coe_u.g_y = (int)(fptr->coe_u.g_y * factor +0.5);
+    default_csc_table.coe_u.b_u = (int)(fptr->coe_u.b_u * factor +0.5);
+    default_csc_table.coe_u.off = (int)(fptr->coe_u.off * factor +0.5);
+
+    default_csc_table.coe_v.r_v = (int)(fptr->coe_v.r_v * factor +0.5);
+    default_csc_table.coe_v.g_y = (int)(fptr->coe_v.g_y * factor +0.5);
+    default_csc_table.coe_v.b_u = (int)(fptr->coe_v.b_u * factor +0.5);
+    default_csc_table.coe_v.off = (int)(fptr->coe_v.off * factor +0.5);
+
+    if (color_space_mode >> 8) {
+        msg->full_csc.flag = 1;
+        memcpy(&msg->full_csc, &default_csc_table, sizeof(full_csc_t));
+    }
+
+    return 0;
+}
+
+
 int NormalRgaDitherMode(struct rga_req *msg, rga_info *dst, int format)
 {
 	if (dst->dither.enable == 1)
@@ -992,6 +1086,16 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
     ALOGE("mode[%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
           rgaReg.endian_mode, rgaReg.src_trans_mode);
 
+    ALOGE("Full CSC : en[%d]", rgaReg.full_csc.flag);
+    if (rgaReg.full_csc.flag > 0)
+        ALOGE("factor: "
+              "Y[%d, %d, %d, %d] "
+              "U[%d, %d, %d, %d] "
+              "V[%d, %d, %d, %d]",
+              rgaReg.full_csc.coe_y.r_v, rgaReg.full_csc.coe_y.g_y, rgaReg.full_csc.coe_y.b_u, rgaReg.full_csc.coe_y.off,
+              rgaReg.full_csc.coe_u.r_v, rgaReg.full_csc.coe_u.g_y, rgaReg.full_csc.coe_u.b_u, rgaReg.full_csc.coe_u.off,
+              rgaReg.full_csc.coe_v.r_v, rgaReg.full_csc.coe_v.g_y, rgaReg.full_csc.coe_v.b_u, rgaReg.full_csc.coe_v.off);
+
     ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_x_r, rgaReg.gr_color.gr_x_g, rgaReg.gr_color.gr_x_b);
     ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_y_r, rgaReg.gr_color.gr_y_g, rgaReg.gr_color.gr_y_b);
 #else
@@ -1024,6 +1128,12 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
 
     ALOGE("mode[%d,%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
           rgaReg.endian_mode, rgaReg.src_trans_mode,rgaReg.scale_mode);
+
+    ALOGE("Full CSC : EN[%d] FACTOR[%d, %d, %d, %d], [%d, %d, %d, %d], [%d, %d, %d, %d]",
+          rgaReg.full_csc.flag,
+          rgaReg.full_csc.coe_y.r_v, rgaReg.full_csc.coe_y.g_y, rgaReg.full_csc.coe_y.b_u, rgaReg.full_csc.coe_y.off,
+          rgaReg.full_csc.coe_u.r_v, rgaReg.full_csc.coe_u.g_y, rgaReg.full_csc.coe_u.b_u, rgaReg.full_csc.coe_u.off,
+          rgaReg.full_csc.coe_v.r_v, rgaReg.full_csc.coe_v.g_y, rgaReg.full_csc.coe_v.b_u, rgaReg.full_csc.coe_v.off);
 
     ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_x_r, rgaReg.gr_color.gr_x_g, rgaReg.gr_color.gr_x_b);
     ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_y_r, rgaReg.gr_color.gr_y_g, rgaReg.gr_color.gr_y_b);

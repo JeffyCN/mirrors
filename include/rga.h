@@ -74,8 +74,19 @@ enum {
     yuv2rgb_mode0            = 0x0,     /* BT.601 MPEG */
     yuv2rgb_mode1            = 0x1,     /* BT.601 JPEG */
     yuv2rgb_mode2            = 0x2,     /* BT.709      */
-};
 
+    rgb2yuv_601_full                = 0x1 << 8,
+    rgb2yuv_709_full                = 0x2 << 8,
+    yuv2yuv_601_limit_2_709_limit   = 0x3 << 8,
+    yuv2yuv_601_limit_2_709_full    = 0x4 << 8,
+    yuv2yuv_709_limit_2_601_limit   = 0x5 << 8,
+    yuv2yuv_709_limit_2_601_full    = 0x6 << 8,     //not support
+    yuv2yuv_601_full_2_709_limit    = 0x7 << 8,
+    yuv2yuv_601_full_2_709_full     = 0x8 << 8,     //not support
+    yuv2yuv_709_full_2_601_limit    = 0x9 << 8,     //not support
+    yuv2yuv_709_full_2_601_full     = 0xa << 8,     //not support
+    full_csc_mask = 0xf00,
+};
 
 /* RGA rotate mode */
 enum {
@@ -277,7 +288,20 @@ typedef struct line_draw_t {
 }
 line_draw_t;
 
+/* color space convert coefficient. */
+typedef struct csc_coe_t {
+    int16_t r_v;
+    int16_t g_y;
+    int16_t b_u;
+    int32_t off;
+} csc_coe_t;
 
+typedef struct full_csc_t {
+    unsigned char flag;
+    csc_coe_t coe_y;
+    csc_coe_t coe_u;
+    csc_coe_t coe_v;
+} full_csc_t;
 
 struct rga_req {
     unsigned char render_mode;            /* (enum) process mode sel */
@@ -358,6 +382,8 @@ struct rga_req {
     unsigned char  src_trans_mode;
 
 	unsigned char  dither_mode;
+
+    full_csc_t full_csc;            /* full color space convert */
 
     unsigned char CMD_fin_int_enable;
 

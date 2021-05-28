@@ -292,6 +292,8 @@ int         NormalRgaUpdatePattenBuffMode(struct rga_req *msg,
 
 int NormalRgaNNQuantizeMode(struct rga_req *msg, rga_info *dst);
 
+int NormalRgaFullColorSpaceConvert(struct rga_req *msg, int color_space_mode);
+
 int NormalRgaDitherMode(struct rga_req *msg, rga_info *dst, int format);
 
 #if defined(__arm64__) || defined(__aarch64__)
