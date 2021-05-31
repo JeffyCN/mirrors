@@ -429,7 +429,9 @@ gst_mpp_enc_stop (GstVideoEncoder * encoder)
 
   GST_DEBUG_OBJECT (self, "stopping");
 
+  GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
   gst_mpp_enc_reset (encoder, FALSE, TRUE);
+  GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
 
   g_cond_clear (&self->event_cond);
   g_mutex_clear (&self->event_mutex);

@@ -148,7 +148,9 @@ gst_mpp_dec_stop (GstVideoDecoder * decoder)
 
   GST_DEBUG_OBJECT (self, "stopping");
 
+  GST_VIDEO_DECODER_STREAM_LOCK (decoder);
   gst_mpp_dec_reset (decoder, FALSE, TRUE);
+  GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
 
   g_mutex_clear (&self->mutex);
 
