@@ -21,6 +21,20 @@
 
 #define BCNTRIM_SKIP_BEACON			(8)
 
+#define STA_BSS_INDEX				(0)
+#define WPA_SUP_TIMEOUT				(2500)
+#define SCAN_TIMEOUT				(3000)
+#define SCAN_RESULT_WAIT_MS			(100)
+#define SCAN_RESULT_WAIT_US			(SCAN_RESULT_WAIT_MS * 1000)
+#define SCAN_TIMEOUT_COUNT			(SCAN_TIMEOUT / SCAN_RESULT_WAIT_MS)
+
+#define ARP_MAX_AGE_DEFAULT         (1000000)
+
+int wl_get_mac_addr(wl_ether_addr_t *mac_addr)
+{
+	return wl_iovar_get("cur_etheraddr", mac_addr, sizeof(wl_ether_addr_t));
+}
+
 int wl_get_bssid(wl_ether_addr_t *bssid)
 {
 	return wl_ioctl(WLC_GET_BSSID, bssid, sizeof(wl_ether_addr_t), false);
@@ -48,126 +62,41 @@ int wl_get_rssi(int32_t *rssi)
     return wl_ioctl(WLC_GET_RSSI, rssi, sizeof(uint32_t), false);
 }
 
-static int wl_reset_pre_pmk(void)
+int wl_get_pre_pmk(uint8_t* buf, uint32_t len)
 {
-    uint8_t tmp_pmk[32] = { 0 };
-
-	/* Check Parameters */
-
-	return wl_iovar_set("sup_wpa_pre_passhash_pmk", tmp_pmk, 32);
+	return wl_iovar_get("sup_wpa_pre_passhash_pmk", buf, len);
 }
 
-static int wl_set_security(uint32_t security)
+static int wl_check_psk_key(const int8_t* security_key, uint8_t key_length)
 {
-    int ret;
-	uint32_t wsec;
-	uint32_t sup_wpa = 0;
-	uint32_t auth;
-	uint32_t wpa_auth;
-
-	wl_reset_pre_pmk();
-
-	wsec = ((security & 0xFF) & ~WPS_ENABLED);
-
-	WL_DBG("wsec = 0x%0x\n", wsec);
-
-    /* Set Wireless Security Type */
-	ret = wl_ioctl(WLC_SET_WSEC, &wsec, sizeof(uint32_t), true);
-	if (ret < 0)
+	if ((security_key == NULL) ||
+		(key_length > WSEC_MAX_PSK_LEN) ||
+        (key_length < WSEC_MIN_PSK_LEN))
 	{
-		return ret;
+		return WL_E_RANGE;
 	}
-
-	if ((security & (WPA_SECURITY | WPA2_SECURITY)) != 0)
+	else if (key_length == WSEC_MAX_PSK_LEN)
 	{
-		sup_wpa = 1;
-	}
+		int i;
+	
+		for (i = 0; i < WSEC_MAX_PSK_LEN; i++)
+		{
+			int8_t c = security_key[i];
 
-	WL_DBG("set sup_wpa\n");
-	ret = wl_iovar_setint_bsscfg("sup_wpa", sup_wpa, 0);
-	if (ret < 0)
+			if (!(((c >= '0') && (c <='9')) || 
+				 ((c >= 'a') && (c <='f')) || 
+				 ((c >= 'A') && (c <='F'))))
+			{
+				return WL_E_INVALID_KEY;
+			}	
+		}
+
+		return WL_E_OK;
+	}
+	else
 	{
-		return ret;
+		return WL_E_OK;
 	}
-
-    /* Set authentication type */
-    if (security == WL_SECURITY_WEP_SHARED)
-    {
-        auth = 1; /* 1 = Shared Key authentication */
-    }
-    else
-    {
-        auth = 0; /*  0 = Open System authentication */
-    }
-
-	WL_DBG("auth = %d\n", auth);
-
-	ret = wl_ioctl(WLC_SET_AUTH, &auth, sizeof(uint32_t), true);
-	if (ret < 0)
-	{
-		return ret;
-	}
-
-    switch (security)
-    {
-        case WL_SECURITY_OPEN:
-        case WL_SECURITY_WPS_OPEN:
-        case WL_SECURITY_WPS_SECURE:
-            wpa_auth = WL_WPA_AUTH_DISABLED;
-            break;
-
-        case WL_SECURITY_WPA_TKIP_PSK:
-        case WL_SECURITY_WPA_AES_PSK:
-        case WL_SECURITY_WPA_MIXED_PSK:
-            wpa_auth = WL_WPA_AUTH_PSK;
-            break;
-        case WL_SECURITY_WPA2_AES_PSK:
-        case WL_SECURITY_WPA2_TKIP_PSK:
-        case WL_SECURITY_WPA2_MIXED_PSK:
-            wpa_auth = WL_WPA2_AUTH_PSK;
-            break;
-
-        case WL_SECURITY_WPA_TKIP_ENT:
-        case WL_SECURITY_WPA_AES_ENT:
-        case WL_SECURITY_WPA_MIXED_ENT:
-            wpa_auth = WL_WPA_AUTH_UNSPECIFIED;
-            break;
-
-        case WL_SECURITY_WPA2_TKIP_ENT:
-        case WL_SECURITY_WPA2_AES_ENT:
-        case WL_SECURITY_WPA2_MIXED_ENT:
-            wpa_auth = WL_WPA2_AUTH_UNSPECIFIED;
-            break;
-
-        case WL_SECURITY_WEP_PSK:
-        case WL_SECURITY_WEP_SHARED:
-            wpa_auth = WL_WPA_AUTH_DISABLED;
-            break;
-
-        default:
-            wpa_auth = WL_WPA_AUTH_DISABLED;
-            break;
-    }
-
-	WL_DBG("wpa_auth = 0x%x\n", wpa_auth);
-
-	ret = wl_ioctl(WLC_SET_WPA_AUTH, &wpa_auth, sizeof(uint32_t), true);
-
-	return ret;
-}
-
-static int wl_set_passphrase(const int8_t* security_key, uint8_t key_length)
-{
-    wl_wsec_pmk_t psk;
-
-	WL_DBG("enter\n");
-
-    memset(&psk, 0, sizeof(wl_wsec_pmk_t));
-    memcpy(psk.key, security_key, key_length);
-    psk.key_len = key_length;
-    psk.flags = WSEC_PASSPHRASE;
-
-    return wl_ioctl(WLC_SET_WSEC_PMK, &psk, sizeof(wl_wsec_pmk_t), true);
 }
 
 static int wl_set_wep_key(const int8_t* security_key, uint8_t key_length)
@@ -224,48 +153,191 @@ static int wl_set_wep_key(const int8_t* security_key, uint8_t key_length)
 	return ret;
 }
 
-int wl_set_security_key(
-		uint32_t security,
-		const int8_t* security_key,
-		uint8_t key_length)
+static int wl_join_prepare(
+				wl_ssid_t* ssid,
+				uint32_t security,
+				const int8_t* security_key,
+				uint8_t key_length)
 {
     int ret;
+	uint32_t wsec;
+	uint32_t sup_wpa;
+	uint32_t auth;
+	uint32_t wpa_auth = WL_WPA_AUTH_DISABLED;
+    uint32_t infra;
+	uint32_t bss_index = STA_BSS_INDEX;
+	bool is_psk = false;
 
-	WL_DBG("enter\n");
+	WL_DBG("Enter\n");
 
-    switch (security)
+    /* Set Wireless Security Type */
+	wsec = ((security & 0xFF) & ~WPS_ENABLED);
+
+	WL_DBG("wsec = 0x%0x\n", wsec);
+	ret = wl_iovar_bsscfg_setint("wsec", wsec, bss_index);
+	if (ret != WL_E_OK)
+	{
+		WL_ERR("set wsec, error = %d\n", ret);
+		return ret;
+	}
+
+    /* Set WPA Supplicant */
+	if ((security & (WPA_SECURITY | WPA2_SECURITY)) != 0)
+	{
+		sup_wpa = 1;
+	}
+	else
+	{
+		sup_wpa = 0;
+	}
+
+	WL_DBG("set sup_wpa = %d\n", sup_wpa);
+
+	ret = wl_iovar_bsscfg_setint("sup_wpa", sup_wpa, bss_index);
+	if (ret < 0)
+	{
+		WL_ERR("set sup_wpa, error = %d\n", ret);
+		return ret;
+	}
+
+	ret = wl_iovar_bsscfg_setint("sup_wpa2_eapver", -1, bss_index);
+	if (ret != WL_E_OK)
+	{
+		WL_ERR("set sup_wpa2_eapver, error = %d\n", ret);
+		return ret;
+	}
+
+    /* Set authentication type */
+    if (security == WL_SECURITY_WEP_SHARED)
     {
-        case WL_SECURITY_OPEN:
-        case WL_SECURITY_IBSS_OPEN:
-        case WL_SECURITY_WPS_OPEN:
-        case WL_SECURITY_WPS_SECURE:
-        case WL_SECURITY_WPA_TKIP_ENT:
-        case WL_SECURITY_WPA_AES_ENT:
-        case WL_SECURITY_WPA_MIXED_ENT:
-        case WL_SECURITY_WPA2_TKIP_ENT:
-        case WL_SECURITY_WPA2_AES_ENT:
-        case WL_SECURITY_WPA2_MIXED_ENT:
-			ret = WL_E_OK;
-            break;
-
-        case WL_SECURITY_WPA_TKIP_PSK:
-        case WL_SECURITY_WPA_AES_PSK:
-        case WL_SECURITY_WPA_MIXED_PSK:
-        case WL_SECURITY_WPA2_AES_PSK:
-        case WL_SECURITY_WPA2_TKIP_PSK:
-        case WL_SECURITY_WPA2_MIXED_PSK:
-            ret = wl_set_passphrase(security_key, key_length);
-            break;
-
-        case WL_SECURITY_WEP_PSK:
-        case WL_SECURITY_WEP_SHARED:
-			ret = wl_set_wep_key(security_key, key_length);            
-            break;
-
-        default:
-			ret = WL_E_ERROR;
-            break;
+        auth = 1; /* 1 = Shared Key authentication */
     }
+    else
+    {
+        auth = 0; /*  0 = Open System authentication */
+    }
+
+	WL_DBG("auth = %d\n", auth);
+
+	ret = wl_iovar_bsscfg_setint("auth", auth, bss_index);
+	if (ret != WL_E_OK)
+	{
+		WL_ERR("set auth, error = %d\n", ret);
+		return ret;
+	}
+
+	/* Set WPA AUTH */
+	if ((security & ENTERPRISE_ENABLED) != 0)
+	{
+		if ((security & WPA2_SECURITY) != 0)
+		{
+			wpa_auth = WL_WPA2_AUTH_UNSPECIFIED;
+		}
+		else if ((security & WPA_SECURITY) != 0)
+		{
+			wpa_auth = WL_WPA_AUTH_UNSPECIFIED;
+		}
+	}
+	else
+	{
+		if ((security & WPA2_SECURITY) != 0)
+		{
+			is_psk = true;
+			wpa_auth = WL_WPA2_AUTH_PSK;
+		}
+		else if ((security & WPA_SECURITY) != 0)
+		{
+			is_psk = true;
+			wpa_auth = WL_WPA_AUTH_PSK;
+		}
+	}
+
+	WL_DBG("wpa_auth = 0x%x\n", wpa_auth);
+
+	ret = wl_iovar_bsscfg_setint("wpa_auth", wpa_auth, bss_index);
+	if (ret != WL_E_OK)
+	{
+		WL_ERR("set wpa_auth, error = %d\n", ret);
+		return ret;
+	}
+
+    /* Set infrastructure mode */
+	if ((security & IBSS_ENABLED) == 0)
+	{
+	    infra = 1;
+	}
+	else
+	{
+		infra = 0;
+	}
+
+	WL_DBG("infra = %d\n", infra);
+
+    ret = wl_ioctl(WLC_SET_INFRA, &infra, sizeof(uint32_t), true);
+	if (ret != WL_E_OK)
+	{
+		WL_ERR("set infra, error = %d\n", ret);
+		return ret;
+	}
+
+	/* Set security key */
+	if (is_psk)
+	{
+	    wl_wsec_pmk_t pmk;
+
+		ret = wl_check_psk_key(security_key, key_length);
+		if (ret != WL_E_OK)
+		{
+			WL_ERR("set invalid psk key, error = %d\n", ret);
+			return ret;
+		}
+
+		ret = wl_iovar_bsscfg_setint("sup_wpa_tmo", WPA_SUP_TIMEOUT, STA_BSS_INDEX);
+		if (ret != WL_E_OK)
+		{
+			WL_ERR("set sup_wpa_tmo, error = %d\n", ret);
+			return ret;
+		}
+
+	    memset(&pmk, 0, sizeof(wl_wsec_pmk_t));
+
+#ifdef WL_CONFIG_HOST_CALC_PSK
+		if (key_length < WSEC_MAX_PSK_LEN)
+		{
+			ret = wl_calc_psk(pmk.key, security_key, ssid);
+
+			if (ret < 0)
+			{
+				WL_ERR("Calculate security key, error = %d\n", ret);
+				return WL_E_ERROR;
+			}
+
+			pmk.key_len = 32;
+		}
+		else
+#endif /* WL_CONFIG_HOST_CALC_PSK */
+		{
+			memcpy(pmk.key, security_key, key_length);
+		    pmk.key_len = key_length;
+		    pmk.flags = WSEC_PASSPHRASE;
+		}
+
+		WL_DUMP(pmk.key, pmk.key_len);
+
+	    ret = wl_ioctl(WLC_SET_WSEC_PMK, &pmk, sizeof(wl_wsec_pmk_t), true);
+		if (ret != WL_E_OK)
+		{
+			WL_ERR("set pmk, error = %d\n", ret);
+		}
+	}
+	else if ((security & WEP_ENABLED) != 0)
+	{
+		ret = wl_set_wep_key(security_key, key_length);
+		if (ret != WL_E_OK)
+		{
+			WL_ERR("set wep key, error = %d\n", ret);
+		}
+	}
 
 	return ret;
 }
@@ -276,6 +348,23 @@ int wl_join_ap(
 		const int8_t* security_key,
 		uint8_t key_length)
 {
+	return wl_join_ap_specific(
+				ssid,
+				security,
+				security_key,
+				key_length,
+				NULL,
+				WL_INVALID_CHANNEL);
+}
+
+int wl_join_ap_specific(
+		wl_ssid_t* ssid,
+		uint32_t security,
+		const int8_t* security_key,
+		uint8_t key_length,
+		wl_ether_addr_t* bssid,
+		uint16_t channel)
+{
     int ret;
 
 	WL_DBG("ssid = %s, security = 0x%08x, key = %s\n", ssid->value, security, security_key);
@@ -285,30 +374,52 @@ int wl_join_ap(
 		return WL_E_BADARG;
 	}
 
-	ret = wl_set_security(security);
-	if (ret < 0)
-	{
-		return ret;
-	}
-
-	if ((security_key != NULL) && (key_length > 0))
-	{
-		ret = wl_set_security_key(security, security_key, key_length);
-	}
-
-	wl_join_init(security);
+	ret = wl_join_prepare(ssid, security, security_key, key_length);
 
     if (ret == 0)
     {
+		wl_join_params_t join_param;
+
 		WL_DBG("WLC_SET_SSID\n");
 
-		ret = wl_ioctl(WLC_SET_SSID, ssid, sizeof(wl_ssid_t), true);
+		wl_join_init(security);
 
-		ret = wl_join_wait(WL_JOIN_TIMEOUT);
+		memset(&join_param, 0, sizeof(wl_join_params_t));
+		memcpy(&join_param.ssid, ssid, sizeof(wl_ssid_t));
+
+		if (bssid != NULL)
+		{
+			WL_DBG("bssid = " MACDBG "\n", MAC2STRDBG(bssid->octet));
+
+			memcpy(&join_param.params.bssid, bssid, sizeof(wl_ether_addr_t));
+		}
+		else
+		{
+			memset(&join_param.params.bssid, 0xFF, sizeof(wl_ether_addr_t));
+		}
+
+		if (channel > 0)
+		{
+			WL_DBG("channel = %d\n", channel);
+
+			join_param.params.chanspec_num = 1;
+			join_param.params.chanspec_list[0] = CH20MHZ_CHSPEC(channel);
+		}
+
+		ret = wl_ioctl(WLC_SET_SSID, &join_param, sizeof(wl_join_params_t), true);
 
 		if (ret == WL_E_OK)
 		{
-			ret = wl_join_error();
+			ret = wl_join_wait(WL_JOIN_TIMEOUT);
+
+			if (ret == WL_E_OK)
+			{
+				ret = wl_join_error();
+			}
+		}
+		else
+		{
+			WL_ERR("set SSID error\n");
 		}
     }
 
@@ -344,6 +455,7 @@ typedef struct
 	int status;
 	int fetch;
 	int total;
+	int wait_count;
 	wl_ap_info_t ap_info[WL_SCAN_AP_MAX];
 } wl_scan_cntx_t;
 
@@ -602,9 +714,17 @@ int wl_get_scan_results(
 		(cntx->is_completed == false))
 	{
 		WL_INFO("Waiting scan result\n");
+
+		if (cntx->wait_count == SCAN_TIMEOUT_COUNT)
+		{
+			ret = WL_E_TIMEOUT;
+			goto exit;
+		}
+
 		pthread_mutex_unlock(&cntx->mutex);
-		usleep(100000);
+		usleep(SCAN_RESULT_WAIT_US);
 		pthread_mutex_lock(&cntx->mutex);
+		cntx->wait_count++;
 	}
 
 	ret = cntx->status;
@@ -643,12 +763,10 @@ int wl_get_scan_results(
 exit:
 	if ((ret != WL_E_OK) || cntx->is_completed)
 	{
-		printf("#########################\n");
 		wl_scan_deinit(cntx);
 		wl_scan_cntx = NULL;
 	}
 	pthread_mutex_unlock(&cntx->mutex);
-	printf("exit\n");
 	WL_DBG("exit\n");
 
 	return ret;
@@ -662,10 +780,9 @@ int wl_set_hostsleep(bool sleep)
 
 	usleep(10000);
 
-	if (ret == WL_E_OK)
+	if ((ret == WL_E_OK) && sleep)
 	{
-		printf("wl_dhd_iovar_setint set 1 ...\n");
-		ret = wl_dhd_iovar_setint("sleep", 1);
+		ret = wl_dhd_iovar_setint("devsleep", 1);
 	}
 
 	usleep(100000);
@@ -735,23 +852,12 @@ int wl_wowl_enable(
 		const int8_t* pattern,
 		uint32_t pattern_size)
 {
-    int ret;
-
-	ret = wl_wowl_pattern_add(match_offset, pattern, pattern_size);
-	if (ret < 0)
-	{
-		return 0;
-	}
-
-	ret = wl_iovar_setint("wowl", caps);
-	if (ret < 0)
-	{
-		return 0;
-	}
-
-	ret = wl_iovar_setint("wowl_activate", 1);
-
-	return ret;
+    return wl_wowl_secure_enable(
+		        caps,
+		        match_offset,
+		        pattern,
+		        pattern_size,
+		        NULL);
 }
 
 int wl_wowl_disable(void)
@@ -775,6 +881,41 @@ int wl_wowl_disable(void)
 	return ret;
 }
 
+int wl_wowl_secure_enable(
+		uint32_t caps,
+		uint32_t match_offset,
+		const int8_t* pattern,
+		uint32_t pattern_size,
+		wl_tls_param_t *tls_param)
+{
+    int ret;
+
+    ret = wl_wowl_pattern_add(match_offset, pattern, pattern_size);
+    if (ret < 0)
+    {
+        return 0;
+    }
+
+    ret = wl_iovar_setint("wowl", caps);
+    if (ret < 0)
+    {
+        return 0;
+    }
+
+    if (tls_param != NULL)
+    {
+    	ret = wl_iovar_set("wowl_activate_secure", tls_param, sizeof(wl_tls_param_t));
+        if (ret < 0)
+        {
+            return 0;
+        }
+    }
+
+    ret = wl_iovar_setint("wowl_activate", 1);
+
+    return ret;
+}
+
 int wl_wowl_get_wakeind(uint32_t* wakeind)
 {
     int ret;
@@ -796,6 +937,15 @@ int wl_wowl_get_wakeind(uint32_t* wakeind)
 int wl_wowl_clear_wakeind(void)
 {
 	return wl_iovar_set("wowl_wakeind", "clear", sizeof(wl_wowl_wakeind_t));
+}
+
+int wl_wowl_tcp_rst(void)
+{
+#ifdef WL_CONFIG_WOWL_TCP_RST
+	return wl_iovar_setint( "wowl_wakeup", 3);
+#else /* WL_CONFIG_WOWL_TCP_RST */
+	return WL_E_UNSUPPORTED;   
+#endif /* WL_CONFIG_WOWL_TCP_RST */
 }
 
 static int wl_tcpka_conn_add(wl_tcpka_param_t *tcpka_param)
@@ -991,4 +1141,109 @@ int wl_set_listen_interval(uint32_t listen_interval)
 int wl_reset_listen_interval(void)
 {
 	return wl_iovar_setint("bcn_li_dtim", 0);
+}
+
+int wl_wakeup_by_ssid_start(wl_ssid_t* ssid, uint16_t interval)
+{
+#ifdef WL_CONFIG_NOTIFY_SCAN
+	int ret;
+	wl_nfyscan_params_t param;
+
+	if (ssid == NULL)
+	{
+		return WL_E_BADARG;
+	}
+
+	WL_DBG("ssid = %s, interval = %d\n", ssid->value, interval);
+
+	memcpy(&param.ssid, ssid, sizeof(wl_ssid_t));
+	param.interval = interval;
+	param.action = WL_SCAN_ACTION_START;
+
+	ret = wl_iovar_set("nfyscan", &param, sizeof(wl_nfyscan_params_t));
+	if (ret < 0)
+	{
+		return ret;
+	}
+
+	ret = wl_iovar_setint("wowl", WL_WOWL_NFYSCAN_WAKE);
+	if (ret < 0)
+	{
+		return ret;
+	}
+
+	ret = wl_iovar_setint("wowl_activate", 1);
+
+	return ret;
+#else /* WL_CONFIG_NOTIFY_SCAN */
+	return WL_E_UNSUPPORTED;
+#endif /* WL_CONFIG_NOTIFY_SCAN */
+}
+
+int wl_wakeup_by_ssid_stop(void)
+{
+#ifdef WL_CONFIG_NOTIFY_SCAN
+	int ret;
+	wl_nfyscan_params_t param;
+
+	WL_DBG("enter\n");
+
+	memset(&param, 0, sizeof(wl_nfyscan_params_t));
+
+	param.action = WL_SCAN_ACTION_ABORT;
+
+	ret = wl_iovar_set("nfyscan", &param, sizeof(wl_nfyscan_params_t));
+	if (ret < 0)
+	{
+		return ret;
+	}
+
+	ret = wl_wowl_clear_wakeind();
+	if (ret < 0)
+	{
+		return ret;
+	}
+
+	ret = wl_iovar_setint( "wowl_clear", 1);
+
+	return ret;
+#else /* WL_CONFIG_NOTIFY_SCAN */
+	return WL_E_UNSUPPORTED;
+#endif /* WL_CONFIG_NOTIFY_SCAN */
+}
+
+int wl_arp_offload_enable(void)
+{
+    int ret;
+
+	ret = wl_iovar_setint("arpoe", 1);
+	if (ret < 0)
+	{
+		return ret;
+	}
+
+	ret = wl_iovar_setint("arp_ol", 0x0F);
+	if (ret < 0)
+	{
+		return ret;
+	}
+
+	ret = wl_iovar_setint("arp_peerage", ARP_MAX_AGE_DEFAULT);
+
+	return ret;
+}
+
+int wl_arp_offload_disable(void)
+{    
+    int ret;
+
+    ret = wl_iovar_setint("arpoe", 0);
+	if (ret < 0)
+	{
+		return ret;
+	}
+
+	ret = wl_iovar_setint("arp_ol", 0);
+
+    return ret;
 }

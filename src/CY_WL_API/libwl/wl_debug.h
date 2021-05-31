@@ -47,4 +47,27 @@ extern pthread_mutex_t wl_dbg_mutex;
 #define WL_DBG(fmt, ...)
 #endif
 
+#if WL_LOG_LEVEL >= WL_LOG_DUMP
+#define WL_DUMP(buf, len) \
+			do { \
+				int i; \
+				uint8_t *tmp = (uint8_t*)buf; \
+				pthread_mutex_lock(&wl_dbg_mutex); \
+				printf("[WL][DUMP] %s, " #buf "[%d] =", __FUNCTION__, (int)len); \
+				for (i = 0; i < len; i++) \
+				{ \
+					if ((i % 16) == 0) \
+					{ \
+						printf("\n"); \
+					} \
+					printf("%02x", tmp[i]); \
+				} \
+				printf("\n"); \
+				pthread_mutex_unlock(&wl_dbg_mutex); \
+			} while(0)
+#else
+#define WL_DUMP(buf, len)
+#endif
+
+
 #endif /* __WL_DEBUG_H__ */

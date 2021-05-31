@@ -1,13 +1,25 @@
+#include "wl.h"
 #include "wifi.h"
 
+typedef 	unsigned int    	BOOL;
 #define SCAN_DWELL_TIME_PER_CHANNEL	(200)
 #define DEBUG 0
+#define VENDOR_WIFI_INFO_ID 30 // VENDOR_CUSTOM_ID_1E
+#define DEFAULT_IFNAME	"wlan0"
+const char tcpka_payload[] = "sleep";
+const char wowl_pattern[] = "wakeup";
 
-const char tcpka_payload[] = "helloworld";
-const char wowl_pattern[] = "123";
+typedef	struct wifi_info
+{
+	char ssid[64];
+	char psk[64];
+	char ip_addr[64];
+	char netmask[64];
+	char gateway[64];
+	char dns[64];
+} wifi_info_s;
 
-static char gssid[64] = { 0 };
-static char gpsk[64] = { 0 };
+static wifi_info_s g_wifi_info;
 
 static int rk_system_fd_closexec(const char* command)
 {
@@ -105,52 +117,70 @@ void rk_system_return(const char cmdline[], char recv_buff[], int len)
 
 int rk_obtain_ip_from_vendor(char * ifname)
 {
-	char cmd_results1[256];
-	char cmd_results2[256];
-	char cmd_results3[256];
-	char cmd_results4[256];
-	char cmd[128];
+	int fd;
+	struct ifreq ifr; 
+    struct sockaddr_in *sin;
+    struct rtentry	rt;
 
 	pr_info("get dhcp info from vendor\n");
-
-	rk_system_return("vendor_storage -r VENDOR_CUSTOM_ID_1E -t string |  sed -n '4p' | awk '{print $3}' | awk -F, '{print $4}'",
-					 cmd_results1, 256);
-	if (cmd_results1[strlen(cmd_results1) - 1] == '\n')
-		cmd_results1[strlen(cmd_results1) - 1] = 0;
-	pr_info("%s: cmd_results1: %s\n", __FUNCTION__, cmd_results1);
-
-	rk_system_return("vendor_storage -r VENDOR_CUSTOM_ID_1E -t string |  sed -n '4p' | awk '{print $3}' | awk -F, '{print $5}'",
-					 cmd_results2, 256);
-	if (cmd_results2[strlen(cmd_results2) - 1] == '\n')
-		cmd_results2[strlen(cmd_results2) - 1] = 0;
-	pr_info("%s: cmd_results2: %s\n", __FUNCTION__, cmd_results2);
-
-	rk_system_return("vendor_storage -r VENDOR_CUSTOM_ID_1E -t string |  sed -n '4p' | awk '{print $3}' | awk -F, '{print $6}'",
-					 cmd_results3, 256);
-	if (cmd_results3[strlen(cmd_results3) - 1] == '\n')
-		cmd_results3[strlen(cmd_results3) - 1] = 0;
-	pr_info("%s: cmd_results3: %s\n", __FUNCTION__, cmd_results3);
-
-	rk_system_return("vendor_storage -r VENDOR_CUSTOM_ID_1E -t string |  sed -n '4p' | awk '{print $3}' | awk -F, '{print $7}'",
-					 cmd_results4, 256);
-	if (cmd_results4[strlen(cmd_results4) - 1] == '\n')
-		cmd_results4[strlen(cmd_results4) - 1] = 0;
-	pr_info("%s: cmd_results4: %s\n", __FUNCTION__, cmd_results4);
-
-	memset(cmd, 0, 128);
-	sprintf(cmd, "ifconfig wlan0 %s netmask %s", cmd_results1, cmd_results2);
-	pr_info("ifconfig: %s\n", cmd);
-	rk_system(cmd);
-
-	memset(cmd, 0, 128);
-	sprintf(cmd, "route add default gw %s", cmd_results3);
-	pr_info("route : %s\n", cmd);
-	rk_system(cmd);
-
-	memset(cmd, 0, 128);
-	sprintf(cmd, "echo \"nameserver %s\" > /etc/resolv.conf", cmd_results4);
-	pr_info("nameserver : %s\n", cmd);
-	rk_system(cmd);
+	//rkvendor_read(VENDOR_WIFI_INFO_ID, (char *)&g_wifi_info, sizeof(g_wifi_info));
+	pr_info("%s: ip_addr: %s, netmask: %s, gateway: %s, dns: %s\n",
+		__FUNCTION__, g_wifi_info.ip_addr, g_wifi_info.netmask, g_wifi_info.gateway, g_wifi_info.dns);
+	// set
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if(fd < 0) {
+		pr_info("socket error\n");
+		return -1;
+	}
+    memset(&ifr, 0, sizeof(ifr));
+    strcpy(ifr.ifr_name, DEFAULT_IFNAME);
+    sin = (struct sockaddr_in*)&ifr.ifr_addr;
+    sin->sin_family = AF_INET;
+    // ip_addr
+    if(inet_aton(g_wifi_info.ip_addr, &(sin->sin_addr)) < 0) {
+        pr_info("inet_aton error\n");
+        return -2;
+    }
+    if(ioctl(fd, SIOCSIFADDR, &ifr) < 0) {
+        pr_info("ioctl SIOCSIFADDR error\n");
+        return -3;
+    }
+    // netmask
+    if(inet_aton(g_wifi_info.netmask, &(sin->sin_addr)) < 0) {
+        pr_info("inet_pton error\n");
+        return -4;
+    }
+    if(ioctl(fd, SIOCSIFNETMASK, &ifr) < 0) {
+        pr_info("ioctl error\n");
+        return -5;
+    }
+	// dns
+	FILE *fp = NULL;
+	fp = fopen("/etc/resolv.conf", "w");
+	if (!fp) {
+		pr_info("fopen /etc/resolv.conf error\n");
+		return -1;
+	}
+	fwrite(g_wifi_info.dns, strlen(g_wifi_info.dns), 1, fp);
+    fclose(fp);
+    // gateway
+    memset(&rt, 0, sizeof(struct rtentry));
+    memset(sin, 0, sizeof(struct sockaddr_in));
+    sin->sin_family = AF_INET;
+    sin->sin_port = 0;
+    if(inet_aton(g_wifi_info.gateway, &sin->sin_addr) < 0) {
+       pr_info ("inet_aton error\n");
+    }
+    memcpy(&rt.rt_gateway, sin, sizeof(struct sockaddr_in));
+    ((struct sockaddr_in *)&rt.rt_dst)->sin_family = AF_INET;
+    ((struct sockaddr_in *)&rt.rt_genmask)->sin_family = AF_INET;
+    rt.rt_flags = RTF_GATEWAY;
+    if (ioctl(fd, SIOCADDRT, &rt) < 0) {
+        pr_info("ioctl(SIOCADDRT) error in set_default_route or already set\n");
+        close(fd);
+        return 0;
+    }
+    close(fd);
 
 	return 0;
 }
@@ -172,8 +202,8 @@ static int rk_get_local_ip(const char * ifname, char *local_ip)
     }
 
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
-
+    strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
+	ifr.ifr_name[IFNAMSIZ - 1] = '\0';
 	ret = ioctl(sock, SIOCGIFADDR, &ifr);
 
     if (ret == 0)
@@ -191,44 +221,36 @@ static int rk_get_local_ip(const char * ifname, char *local_ip)
 
 static void rk_setnetinfo_to_vendor(void)
 {
-	char cmd[256];
-	char cmd_results1[256];
-	char cmd_results2[256];
-	char cmd_results3[256];
-	char cmd_results4[256];
-
 	pr_info("%s, enter\n", __FUNCTION__);
 
 	rk_system_return("ifconfig wlan0 | grep inet | awk '{print $2}' | awk -F: '{print $2}'",
-					 cmd_results1, 256);
-	if (cmd_results1[strlen(cmd_results1) - 1] == '\n')
-		cmd_results1[strlen(cmd_results1) - 1] = 0;
-	pr_info("%s: cmd_results1: %s\n", __FUNCTION__, cmd_results1);
+					 g_wifi_info.ip_addr, 64);
+	if (g_wifi_info.ip_addr[strlen(g_wifi_info.ip_addr) - 1] == '\n')
+		g_wifi_info.ip_addr[strlen(g_wifi_info.ip_addr) - 1] = 0;
+	pr_info("%s: g_wifi_info.ip_addr: %s\n", __FUNCTION__, g_wifi_info.ip_addr);
 
 	rk_system_return("ifconfig wlan0 | grep inet | awk '{print $4}' | awk -F: '{print $2}'",
-					 cmd_results2, 256);
-	if (cmd_results2[strlen(cmd_results2) - 1] == '\n')
-		cmd_results2[strlen(cmd_results2) - 1] = 0;
-	pr_info("%s: cmd_results2: %s\n", __FUNCTION__, cmd_results2);
+					 g_wifi_info.netmask, 64);
+	if (g_wifi_info.netmask[strlen(g_wifi_info.netmask) - 1] == '\n')
+		g_wifi_info.netmask[strlen(g_wifi_info.netmask) - 1] = 0;
+	pr_info("%s: g_wifi_info.netmask: %s\n", __FUNCTION__, g_wifi_info.netmask);
 
 	rk_system_return("route -n | awk '{print $2}' | sed -n '3p'",
-					 cmd_results3, 256);
-	if (cmd_results3[strlen(cmd_results3) - 1] == '\n')
-		cmd_results3[strlen(cmd_results3) - 1] = 0;
-	pr_info("%s: cmd_results3: %s\n", __FUNCTION__, cmd_results3);
+					 g_wifi_info.gateway, 64);
+	if (g_wifi_info.gateway[strlen(g_wifi_info.gateway) - 1] == '\n')
+		g_wifi_info.gateway[strlen(g_wifi_info.gateway) - 1] = 0;
+	pr_info("%s: g_wifi_info.gateway: %s\n", __FUNCTION__, g_wifi_info.gateway);
 
 	rk_system_return("cat /etc/resolv.conf | grep nameserver | grep wlan0 | awk '{print $2}'",
-					 cmd_results4, 256);
-	if (cmd_results4[strlen(cmd_results4) - 1] == '\n')
-		cmd_results4[strlen(cmd_results4) - 1] = 0;
-	pr_info("%s: cmd_results4: %s\n", __FUNCTION__, cmd_results4);
+					 g_wifi_info.dns, 64);
+	if (g_wifi_info.dns[strlen(g_wifi_info.dns) - 1] == '\n')
+		g_wifi_info.dns[strlen(g_wifi_info.dns) - 1] = 0;
+	pr_info("%s: g_wifi_info.dns: %s\n", __FUNCTION__, g_wifi_info.dns);
 
-	memset(cmd, 0, sizeof(cmd));
-	sprintf(cmd, "vendor_storage -w VENDOR_CUSTOM_ID_1E -t string -i 1,%s,%s,%s,%s,%s,%s",
-			gssid, gpsk, cmd_results1, cmd_results2, cmd_results3, cmd_results4);
-	pr_info("CMD: %s\n", cmd);
-
-	rk_system(cmd);
+	//rkvendor_write(VENDOR_WIFI_INFO_ID, (const char *)&g_wifi_info, sizeof(g_wifi_info));
+	pr_info("%s: ssid:%s, psk:%s, ip_addr:%s, netmask:%s, gateway:%s, dns:%s\n",
+			__FUNCTION__, g_wifi_info.ssid, g_wifi_info.psk, g_wifi_info.ip_addr,
+			g_wifi_info.netmask, g_wifi_info.gateway, g_wifi_info.dns);
 }
 
 int rk_obtain_ip_from_udhcpc(char* ifname)
@@ -292,13 +314,29 @@ int rk_build_tcpka_param(
 	pr_info("%s, retry_interval	: %d\n", __FUNCTION__, param->retry_interval);
 	pr_info("%s, retry_count		: %d\n", __FUNCTION__, param->retry_count);
 
+	printf("*************TCP KEEPALIVE DEBUG.**************\n");
 	len = sizeof(struct sockaddr_in);
-	ret = getsockname(sock, (struct sockaddr*)&localaddr, &len);
-	if (ret < 0)
+	int i = 0;
+	for (i = 0; i < 3; i++)
 	{
-        pr_info("%s, getsockname err = %d\n", __FUNCTION__, ret);
-		return ret;
+		ret = getsockname(sock, (struct sockaddr*)&localaddr, &len);
+		if (ret < 0)
+		{
+	        pr_info("%s, getsockname err = %d  errno:%d\n", __FUNCTION__, ret, errno);
+			//return ret;
+		} 
+		else
+		{
+			break;
+		}
 	}
+
+	if (i == 3)
+	{
+		printf("getsockname : try max cnt:3 err.\n");	
+		return  -1;
+	}
+
     memcpy(&param->src_ip, &localaddr.sin_addr, sizeof(wl_ipv4_addr_t));
     param->srcport = ntohs(localaddr.sin_port);
 
@@ -310,12 +348,27 @@ int rk_build_tcpka_param(
 	pr_info("%s, srcport	: 0x%04x\n", __FUNCTION__, param->srcport);
 
 	len = sizeof(struct sockaddr_in);
-	ret = getpeername(sock, (struct sockaddr*)&peeraddr, &len);
-	if (ret < 0)
+	for (i = 0; i < 3; i++)
 	{
-        pr_info("%s, getsockname err = %d\n", __FUNCTION__, ret);
-		return ret;
+		ret = getpeername(sock, (struct sockaddr*)&peeraddr, &len);
+		if (ret < 0)
+		{
+	        pr_info("%s, getpeername err = %d errno:%d\n", __FUNCTION__, ret, errno);
+			//return ret;
+			//continue;
+		}
+		else
+		{
+			break;
+		}
 	}
+
+	if (i == 3)
+	{
+		printf("getpeername : try max cnt:3 err.\n");	
+		return  -1;
+	}
+	
     memcpy(&param->dst_ip, &peeraddr.sin_addr, sizeof(wl_ipv4_addr_t));
     param->dstport = ntohs(peeraddr.sin_port);
 
@@ -379,21 +432,23 @@ int WIFI_Init(void)
 {
 	int ret = 0;
 	int retry = 20;
-
-	/* insmod Wi-Fi Module */
-	ret = system("insmod /vendor/lib/modules/cywdhd.ko");
-	pr_info("%s, insmod ret = %d\n", __FUNCTION__, ret);
+	
+	//ret = system("insmod /vendor/lib/modules/cywdhd.ko");
+	//pr_info("%s, insmod ret = %d\n", __FUNCTION__, ret);
 
 	while (retry--) {
-		usleep(200 * 1000);
 		ret = system("ifconfig wlan0 up");
 		pr_info("%s, up ret = %d\n", __FUNCTION__, ret);
 		if (ret == 0)
 			break;
+		usleep(200 * 1000);
 	}
 
 	ret = wl_init(DEFAULT_IFNAME);
 	pr_info("%s, wl_init ret = %d\n", __FUNCTION__, ret);
+
+	/* insmod Wi-Fi Module */
+	//system("ifconfig usb0 down");
 
 	return ret;
 }
@@ -415,36 +470,37 @@ int WIFI_Connect(char* ssid_name, char* password, int useip)
 	wl_ssid_t ssid;
 	uint32_t i;
 	uint32_t j;
-	uint32_t ap_security_list[MAX_SAME_AP_NUM];
+	wl_ap_info_t join_list[MAX_SAME_AP_NUM];
 	uint32_t ap_count = 0;
 
-	memset(&gssid, 0, 64);
-	memset(&gpsk, 0, 64);
-	memcpy(gssid, ssid_name, strlen(ssid_name));
-	memcpy(gpsk, password, strlen(password));
+	memset(g_wifi_info.ssid, 0, 64);
+	memset(g_wifi_info.psk, 0, 64);
+	memcpy(g_wifi_info.ssid, ssid_name, strlen(ssid_name));
+	memcpy(g_wifi_info.psk, password, strlen(password));
 
 	memset(&ssid, 0, sizeof(ssid));
 	ssid.len = strlen(ssid_name);
 	memcpy(ssid.value, ssid_name, ssid.len);
 
-	pr_info("%s, enter\n", __FUNCTION__);
+	printf("%s, enter\n", __FUNCTION__);
 
 	if (password == NULL)
 	{
-		pr_info("Open security type\n");
-		ap_security_list[0] = WL_SECURITY_OPEN;
+		printf("Open security type\n");
+		join_list[0].security = WL_SECURITY_OPEN;
+		join_list[0].channel = 0;
 		ap_count = 1;
 	}
 	else
 	{
-		pr_info("Scan for the security type\n");
+		printf("Scan for the security type\n");
 		
 		ret = wl_scan(&ssid, NULL, NULL, 0, WL_SCAN_PER_CH_TIME_DEFAULT);
 
-		pr_info("wl_scan result = %d\n", ret);
+		printf("wl_scan result = %d\n", ret);
 		if (ret < 0)
 		{
-			return 0;
+			return ret;
 		}
 
 		while (1)
@@ -453,78 +509,96 @@ int WIFI_Connect(char* ssid_name, char* password, int useip)
 			uint32_t count = MAX_SCAN_NUM;
 			bool is_completed = false;
 
-			usleep(20000);
-
 			ret = wl_get_scan_results(ap_info, &count, &is_completed);
 
 			if (ret < 0)
 			{
-				pr_info("wl_get_scan_results failed, result = %d\n", ret);
+				printf("wl_get_scan_results failed, result = %d\n", ret);
 				break;
 			}
 			else
 			{
 				for (i = 0; i < count; i++)
 				{
-					if (ap_count < MAX_SCAN_NUM)
+					if (ap_count < MAX_SAME_AP_NUM)
 					{
-						pr_info("get AP %d security = %d\n", ap_count, ap_info[i].security);
-						ap_security_list[ap_count] = ap_info[i].security;
+						printf("Get AP[%d] security = 0x%08x, channel = %d\n", 
+							ap_count, ap_info[i].security, ap_info[i].channel);
+
+						memcpy(&join_list[ap_count], &ap_info[i], sizeof(wl_ap_info_t));
 						ap_count++;
 					}
 				}
 
 				if (is_completed)
 				{
-					pr_info("Scan Done\n");
+					printf("Scan Done\n");
 					break;
 				}
 			}
 		}
 	}
 
-	pr_info("Starting to join AP: %s ..., password: %s\n", ssid_name, password);
-
-	/* Try to join each of the found AP until successfully */
-	for (i = 0; i < ap_count; i++)
+	if (ap_count > 0)
 	{
-		uint32_t security = ap_security_list[i];
-
-		/* Optional: Using higher security */
-		switch (security)
+		/* Try to join each of the found AP until successfully */
+		for (i = 0; i < ap_count; i++)
 		{
-			case WL_SECURITY_WPA_MIXED_PSK:
-				security = WL_SECURITY_WPA_AES_PSK;
-				break;
+			uint32_t security = join_list[i].security;
+		    struct timeval start_time;
+			struct timeval end_time;
+			double join_time;
 
-			case WL_SECURITY_WPA2_MIXED_PSK:
-				security = WL_SECURITY_WPA2_AES_PSK;
-				break;
+			printf("Starting to join AP[%d] : %s, password: %s\n", i, ssid_name, password);
 
-			default:
-				break;
-		}				
-
-		for (j = 0; j < JOIN_AP_RETRIES; i++)
-		{
-			uint8_t key_length = 0;
-
-			if (password != NULL)
+			/* Optional: Using higher security */
+			switch (security)
 			{
-				key_length = strlen(password);
+				case WL_SECURITY_WPA_MIXED_PSK:
+					security = WL_SECURITY_WPA_AES_PSK;
+					break;
+
+				case WL_SECURITY_WPA2_MIXED_PSK:
+					security = WL_SECURITY_WPA2_AES_PSK;
+					break;
+
+				default:
+					break;
+			}				
+
+			for (j = 0; j < JOIN_AP_RETRIES; j++)
+			{
+				uint8_t key_length = 0;
+
+				if (password != NULL)
+				{
+					key_length = strlen(password);
+				}
+
+				gettimeofday(&start_time, NULL);
+
+				ret = wl_join_ap_specific(
+							&ssid,
+							security,
+							(int8_t*)password,
+							key_length,
+							NULL,
+							join_list[i].channel);
+
+				if (ret < 0)
+				{
+					printf("Try to join AP %d %d times  failed, ret = %d\n", i, j, ret);
+				}
+				else
+				{
+					gettimeofday(&end_time, NULL);
+					join_time = (end_time.tv_sec - start_time.tv_sec) * 1000000 + (end_time.tv_usec - start_time.tv_usec);
+				 	printf("Joined AP in time (ms) = %lf\n", join_time / 1000.0);
+					break;
+				}
 			}
 
-			ret = wl_join_ap(
-						&ssid,
-						security,
-						(int8_t*)password,
-						key_length);
-
-			if (ret < 0)
-			{
-				pr_info("Try to join AP %d %d times  failed, ret = %d\n", i, j, ret);
-			}
-			else
+			if (ret == WL_E_OK)
 			{
 				break;
 			}
@@ -532,13 +606,13 @@ int WIFI_Connect(char* ssid_name, char* password, int useip)
 
 		if (ret == WL_E_OK)
 		{
-			break;
+			printf("Joined AP succcessfully\n");
 		}
 	}
-
-	if (ret == WL_E_OK)
+	else
 	{
-		pr_info("Joined AP succcessfully\n");
+		printf("Can't find AP: %s\n", ssid_name);
+		return WL_E_NO_NETWORK;
 	}
 
 	return ret;
@@ -595,12 +669,18 @@ int WIFI_SetNetInfo(char *ipAddr, char *netmask, char *gateway, char *dns)
 	pr_info("nameserver : %s\n", cmd);
 	rk_system(cmd);
 
-	memset(cmd, 0, sizeof(cmd));
-	sprintf(cmd, "vendor_storage -w VENDOR_CUSTOM_ID_1E -t string -i 1,%s,%s,%s,%s,%s,%s",
-			gssid, gpsk, ipAddr, netmask, gateway, dns);
-	pr_info("CMD: %s\n", cmd);
-
-	rk_system(cmd);
+	memset(&g_wifi_info.ip_addr, 0, 64);
+	memset(&g_wifi_info.netmask, 0, 64);
+	memset(&g_wifi_info.gateway, 0, 64);
+	memset(&g_wifi_info.dns, 0, 64);
+	memcpy(g_wifi_info.ip_addr, ipAddr, strlen(ipAddr));
+	memcpy(g_wifi_info.netmask, netmask, strlen(netmask));
+	memcpy(g_wifi_info.gateway, gateway, strlen(gateway));
+	memcpy(g_wifi_info.dns, dns, strlen(dns));
+	pr_info("%s: ssid:%s, psk:%s, ip_addr:%s, netmask:%s, gateway:%s, dns:%s\n",
+			__FUNCTION__, g_wifi_info.ssid, g_wifi_info.psk, g_wifi_info.ip_addr,
+			g_wifi_info.netmask, g_wifi_info.gateway, g_wifi_info.dns);
+	//rkvendor_write(VENDOR_WIFI_INFO_ID, (const char *)&g_wifi_info, sizeof(g_wifi_info));
 
 	return 0;
 }
@@ -624,21 +704,13 @@ int WIFI_SetQuickStartWay(int WakeupFlag)
 {
 	return 0;
 }
-
-int WIFI_ClientScan(char *ssid)
+ 
+int WIFI_ClientScan(void)
 {
-	wl_ssid_t ssid_name, *pssid = NULL;
-
-	if (strncmp(ssid, "all", 3)) {
-		ssid_name.len = strlen(ssid);
-		memcpy(ssid_name.value, ssid, ssid_name.len);
-		pssid = &ssid_name;
-	}
-
-	return wl_scan(pssid, NULL, NULL, 0, SCAN_DWELL_TIME_PER_CHANNEL);
+	return wl_scan(NULL, NULL, NULL, 0, WL_SCAN_PER_CH_TIME_DEFAULT);
 }
 
-int WIFI_GetClientScanResults(wifi_ap_info_t *pstResults, int num)
+int WIFI_GetClientScanResults(wifi_ap_info_t *pstResults, uint32_t num)
 {
 	int ret;
 	bool is_completed;
@@ -660,81 +732,136 @@ int WIFI_GetClientScanResults(wifi_ap_info_t *pstResults, int num)
 	return ret;
 }
 
-int WIFI_Suspend(int sock)
+int builepass(char *sn, char *pass)
 {
-	int ret;
+	char tmpsn[9];
 
-#if (1)
-	wl_tcpka_param_t tcpka_param;
-    uint32_t wowl_caps;
+	memset(tmpsn, 0, 9);
+	strcpy(tmpsn, "va");
+	memcpy(tmpsn + 2, sn + 6, 2);
+	memcpy(tmpsn + 4, sn, 2);
+	memcpy(tmpsn + 6, sn + 4, 2);
+	strcpy(pass, tmpsn);
+	printf("pass:%s\n", pass);
+	
+	return 0;
+}
 
-	pr_info("%s, enter\n", __FUNCTION__);
+int WIFI_set_wakeup_ssid(char *ssid)
+{
+	if (!ssid)	return  -1;
+	
+	int ret = 0;
+	wl_ssid_t wlssid;
 
-	ret = rk_build_tcpka_param(&tcpka_param, DEFAULT_IFNAME, sock);
-    if (ret < 0)
+	wlssid.len = strlen(ssid);
+	
+	pr_info("enter sleep mode by ssid[%s]\tlen:%d.\n", ssid, wlssid.len);
+	
+	if (wlssid.len > WL_MAX_SSID_LEN)
 	{
-        pr_info("%s, build_tcpka_param, err = %d\n", __FUNCTION__, ret);
-		return ret;
-    }
-
-	ret = wl_tcpka_conn_enable(&tcpka_param);
-    if (ret < 0)
-	{
-        pr_info("%s, wl_tcpka_conn_enable, err = %d\n", __FUNCTION__, ret);
-		return ret;
-    }
-
-	wowl_caps = WL_WOWL_NET | WL_WOWL_DIS | WL_WOWL_BCN | WL_WOWL_TCPKEEP_TIME;
-	ret = wl_wowl_enable(
-				wowl_caps,
-				WOWL_PATTERN_MATCH_OFFSET,
-				(const int8_t*)wowl_pattern,
-				strlen(wowl_pattern));
-    if (ret < 0)
-	{
-        pr_info("%s, wl_wowl_enable, err = %d\n", __FUNCTION__, ret);
-		return ret;
-    }
-
-	ret = wl_set_listen_interval(CUSTOM_LISTEN_INTERVAL);
-    if (ret < 0)
-	{
-        pr_info("%s, wl_set_listen_interval, err = %d\n", __FUNCTION__, ret);
-		return ret;
-    }
-#endif
-
-	ret = wl_set_deepsleep(true);
+		goto exit;
+	}
+	
+	strncpy((char *)wlssid.value, ssid, WL_MAX_SSID_LEN - 1);
+	wlssid.value[WL_MAX_SSID_LEN - 1] = '\0';
+	ret = wl_wakeup_by_ssid_start(&wlssid, 60);
+	
 	if (ret < 0)
 	{
-		pr_info("%s, wl_set_deepsleep, err = %d\n", __FUNCTION__, ret);
-		return ret;
+		pr_info("wl_wakeup_by_ssid_start, err = %d\n", ret);
+		goto exit;
 	}
 
-	ret = wl_set_powersave(true);
-	if (ret < 0)
-	{
-		pr_info("%s, wl_set_powersave, err = %d\n", __FUNCTION__, ret);	
-		return ret;
-	}
-
-#if (1)
 	ret = wl_set_hostsleep(true);
 	if (ret < 0)
 	{
 		pr_info("%s, wl_set_hostsleep, err = %d\n", __FUNCTION__, ret);	
 	}
 
-	return ret;	
-#endif
+	printf("*********set ssid wakeup ok.*************\n");
+	return  ret;
+	
+exit:
+	pr_info("set ssid param err.\n");
+	return ret;
 }
 
+int WIFI_Suspend(int sock, bool is_connected)
+{
+	int ret;
+	wl_tcpka_param_t tcpka_param;
+    uint32_t wowl_caps;
+
+	printf("%s, enter\n", __FUNCTION__);
+
+	if (is_connected)
+	{
+		ret = rk_build_tcpka_param(&tcpka_param, DEFAULT_IFNAME, sock);
+	    if (ret < 0)
+		{
+	        printf("%s, build_tcpka_param, err = %d\n", __FUNCTION__, ret);
+			return ret;
+	    }
+
+		ret = wl_tcpka_conn_enable(&tcpka_param);
+	    if (ret < 0)
+		{
+	        printf("%s, wl_tcpka_conn_enable, err = %d\n", __FUNCTION__, ret);
+			return ret;
+	    }
+
+		wowl_caps = WL_WOWL_NET | WL_WOWL_DIS | WL_WOWL_BCN | WL_WOWL_TCPKEEP_TIME;
+
+		ret = wl_wowl_enable(
+					wowl_caps,
+					WOWL_PATTERN_MATCH_OFFSET,
+					(const int8_t*)wowl_pattern,
+					strlen(wowl_pattern));
+	    if (ret < 0)
+		{
+	        printf("%s, wl_wowl_enable, err = %d\n", __FUNCTION__, ret);
+			return ret;
+	    }
+
+		ret = wl_set_listen_interval(CUSTOM_LISTEN_INTERVAL);
+	    if (ret < 0)
+		{
+	        printf("%s, wl_set_listen_interval, err = %d\n", __FUNCTION__, ret);
+			return ret;
+	    }
+
+		ret = wl_set_deepsleep(true);
+		if (ret < 0)
+		{
+			printf("%s, wl_set_deepsleep, err = %d\n", __FUNCTION__, ret);
+		}
+
+		ret = wl_set_powersave(true);
+		if (ret < 0)
+		{
+			printf("%s, wl_set_powersave, err = %d\n", __FUNCTION__, ret);	
+			return ret;
+		}
+	}
+
+	ret = wl_set_hostsleep(true);
+	if (ret < 0)
+	{
+		printf("%s, wl_set_hostsleep, err = %d\n", __FUNCTION__, ret);	
+	}
+
+	return ret;	
+
+}
+    
 int WIFI_Resume(void)
 {
 	int ret;
+	uint32_t wakeind = 0;
 
 	pr_info("%s, enter\n", __FUNCTION__);
-
+	
 	ret = wl_set_hostsleep(false);
 	if (ret < 0)
 	{
@@ -747,7 +874,7 @@ int WIFI_Resume(void)
 	{
 		pr_info("%s, wl_set_deepsleep, err = %d\n", __FUNCTION__, ret);
 	}
-
+	
 	ret = wl_set_powersave(false);
 	if (ret < 0)
 	{
@@ -762,25 +889,46 @@ int WIFI_Resume(void)
 		return ret;
 	}
 
+	ret = wl_wowl_get_wakeind(&wakeind);
+	if (ret < 0)
+	{
+        pr_info("%s, wl_wowl_get_wakeind, err = %d\n", __FUNCTION__, ret);
+		return ret;
+    }
+	pr_info("%s, wakeind = 0x%08x\n", __FUNCTION__, wakeind);
+
 	ret = wl_wowl_clear_wakeind();
 	if (ret < 0)
 	{
-		pr_info("%s, wl_wowl_clear_wakeind, err = %d\n", __FUNCTION__, ret);
-		return ret;
+		pr_info("%s, wl_wowl_clear_wakeind, err = %d\n", __FUNCTION__, ret); 
+		return ret; 	
 	}
 
-	ret = wl_wowl_disable();
-	if (ret < 0)
+	if (wakeind & WL_WOWL_NFYSCAN_WAKE)
 	{
-		pr_info("%s, wl_wowl_disable, err = %d\n", __FUNCTION__, ret);
-		return ret;
+        pr_info("%s, wakeup by SSID\n", __FUNCTION__);
+		wl_wakeup_by_ssid_stop();
 	}
-
-	ret = wl_tcpka_conn_disable();
-	if (ret < 0)
+	else
 	{
-		pr_info("%s, wl_tcpka_conn_disable, err = %d\n", __FUNCTION__, ret);
-	}
+		if (wakeind & WL_WOWL_NET)
+		{        
+			wl_wowl_tcp_rst();
+		}
 
+		ret = wl_wowl_disable();
+		if (ret < 0)
+		{
+			printf("%s, wl_wowl_disable, err = %d\n", __FUNCTION__, ret);	
+			return ret;		
+		}
+	
+		ret = wl_tcpka_conn_disable();
+		if (ret < 0)
+		{
+			printf("%s, wl_tcpka_conn_disable, err = %d\n", __FUNCTION__, ret);	
+		}
+	}
+	
 	return ret;
 }

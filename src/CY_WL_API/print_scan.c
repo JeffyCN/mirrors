@@ -4,12 +4,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <net/if.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <linux/if.h>
 #include <linux/if_arp.h>
 #include "wl.h"
 
@@ -81,34 +81,53 @@ int print_scan(uint32_t time_per_channel)
 	return ret;
 }
 
-/*
+
 int main(int argc, char **argv)
 {
 	int ret;
 	char *ifname = DEFAULT_IFNAME; 
+	uint32_t time_per_channel = WL_SCAN_PER_CH_TIME_DEFAULT;
 
-	if ((argc != 1) && (argc != 3))
-	{
-		usage();
-		return 0;
-	}
+	argv++;
 
-	if (argc == 3)
+	while (*argv)
 	{
-		argv++;
 		if (!strcmp(*argv, "-i"))
 		{
 			argv++;
-			ifname = *argv;
+
+			if (argv != NULL)
+			{
+				ifname = *argv;
+			}
+			else
+			{
+				usage();
+				return 0;
+			}
+		}
+		else if (!strcmp(*argv, "-t"))
+		{
+			argv++;
+
+			if (argv != NULL)
+			{
+				time_per_channel = atoi(*argv);
+			}
+			else
+			{
+				usage();
+				return 0;
+			}
 		}
 		else
 		{
 			usage();
 			return 0;
 		}
-	}
 
-	ret = print_scan();
+		argv++;
+	}
 	
 	ret = wl_init(ifname);
 	if (ret < 0)
@@ -117,9 +136,9 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
+	ret = print_scan(time_per_channel);
 
 	wl_deinit();
 	
 	return 0;
 }
-*/

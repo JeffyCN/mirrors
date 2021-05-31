@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include "wl_internal.h"
 #include "wl_debug.h"
+#include "crypto/sha1.h"
 
 #define RSN_IE_MINIMUM_LENGTH 				(8)
 #define WPA_IE_MINIMUM_LENGTH 				(12)
@@ -239,6 +240,15 @@ static int wl_parse_security(uint32_t* security, wl_bss_info_t *bss_info)
 	return WL_E_OK;
 }
 
+static inline char wl_itoa(uint8_t i)
+{
+    if (i < 10) {
+        return (char)('0' + i);
+    } else {
+        return (char)('A' + i - 10);
+    }
+}
+
 int wl_convert_bss_info(wl_ap_info_t* ap_info, wl_bss_info_t *bss_info)
 {
     /*
@@ -255,7 +265,27 @@ int wl_convert_bss_info(wl_ap_info_t* ap_info, wl_bss_info_t *bss_info)
 	memcpy(&ap_info->bssid, &bss_info->BSSID, sizeof(wl_ether_addr_t));
 
 	ap_info->rssi = bss_info->RSSI;
-	ap_info->channel = bss_info->chanspec & WL_CHANSPEC_CHAN_MASK;
+
+	WL_DBG("chanspec = 0x%04x, ctl_ch = %d\n", bss_info->chanspec, bss_info->ctl_ch);
+
+    if (bss_info->n_cap)
+    {
+        ap_info->channel = bss_info->ctl_ch;
+	}
+	else
+	{
+		ap_info->channel = bss_info->chanspec & WL_CHANSPEC_CHAN_MASK;
+	}
 
 	return wl_parse_security(&ap_info->security, bss_info);
 }
+
+#ifdef WL_CONFIG_HOST_CALC_PSK
+int wl_calc_psk(
+		uint8_t psk[32],
+		const int8_t* passphrase,
+		const wl_ssid_t* ssid)
+{
+	return pbkdf2_sha1((char*)passphrase, (uint8_t*)ssid->value, ssid->len, 4096, psk, 32);
+}
+#endif /* WL_CONFIG_HOST_CALC_PSK */

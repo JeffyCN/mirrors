@@ -26,6 +26,7 @@
 #define WLC_GET_VERSION				1
 #define WLC_UP						2
 #define WLC_DOWN					3
+#define WLC_SET_INFRA       		20
 #define WLC_GET_AUTH				21
 #define WLC_SET_AUTH				22
 #define WLC_GET_BSSID				23
@@ -50,6 +51,7 @@
 #define WLC_SET_WSEC_PMK			268
 
 #define WLC_E_SET_SSID		0	/* indicates status of set SSID */
+#define WLC_E_JOIN		    1	/* differentiates join IBSS from found (WLC_E_START) IBSS */
 #define WLC_E_AUTH			3	/* 802.11 AUTH request */
 #define WLC_E_AUTH_IND		4	/* 802.11 AUTH indication */
 #define WLC_E_DEAUTH		5	/* 802.11 DEAUTH request */
@@ -63,6 +65,7 @@
 #define WLC_E_LINK			16	/* generic link indication */
 #define WLC_E_PSK_SUP		46	/* WPA Handshake fail */
 #define WLC_E_ESCAN_RESULT 	69	/* escan result event */
+#define WLC_E_NFYSCAN_IND   145
 #define WLC_E_LAST			163	/* highest val + 1 for range checking */
 
 #define	OFFSETOF(type, member)		((uint32_t)&(((type *)0)->member))
@@ -201,25 +204,51 @@ typedef uint16_t wl_chanspec_t;
 #define CH_MAX_2G_CHANNEL       	14      /* Max channel in 2G band */
 
 #define WL_CHANSPEC_CHAN_MASK		0x00ff
+#define WL_CHANSPEC_CHAN_SHIFT		0
+#define WL_CHANSPEC_CHAN1_MASK		0x000f
+#define WL_CHANSPEC_CHAN1_SHIFT		0
+#define WL_CHANSPEC_CHAN2_MASK		0x00f0
+#define WL_CHANSPEC_CHAN2_SHIFT		4
 
+#define WL_CHANSPEC_CTL_SB_MASK		0x0700
+#define WL_CHANSPEC_CTL_SB_SHIFT	8
+#define WL_CHANSPEC_CTL_SB_LLL		0x0000
+#define WL_CHANSPEC_CTL_SB_LLU		0x0100
+#define WL_CHANSPEC_CTL_SB_LUL		0x0200
+#define WL_CHANSPEC_CTL_SB_LUU		0x0300
+#define WL_CHANSPEC_CTL_SB_ULL		0x0400
+#define WL_CHANSPEC_CTL_SB_ULU		0x0500
+#define WL_CHANSPEC_CTL_SB_UUL		0x0600
+#define WL_CHANSPEC_CTL_SB_UUU		0x0700
+#define WL_CHANSPEC_CTL_SB_LL		WL_CHANSPEC_CTL_SB_LLL
+#define WL_CHANSPEC_CTL_SB_LU		WL_CHANSPEC_CTL_SB_LLU
+#define WL_CHANSPEC_CTL_SB_UL		WL_CHANSPEC_CTL_SB_LUL
+#define WL_CHANSPEC_CTL_SB_UU		WL_CHANSPEC_CTL_SB_LUU
+#define WL_CHANSPEC_CTL_SB_L		WL_CHANSPEC_CTL_SB_LLL
+#define WL_CHANSPEC_CTL_SB_U		WL_CHANSPEC_CTL_SB_LLU
+#define WL_CHANSPEC_CTL_SB_LOWER	WL_CHANSPEC_CTL_SB_LLL
+#define WL_CHANSPEC_CTL_SB_UPPER	WL_CHANSPEC_CTL_SB_LLU
+#define WL_CHANSPEC_CTL_SB_NONE		WL_CHANSPEC_CTL_SB_LLL
 
-#define WL_CHANSPEC_BAND_MASK       0xf000
-#define WL_CHANSPEC_BAND_SHIFT      12
-#define WL_CHANSPEC_BAND_5G        	0x1000
-#define WL_CHANSPEC_BAND_2G        	0x2000
-#define INVCHANSPEC            		255
+#define WL_CHANSPEC_BW_MASK			0x3800
+#define WL_CHANSPEC_BW_SHIFT		11
+#define WL_CHANSPEC_BW_5			0x0000
+#define WL_CHANSPEC_BW_10			0x0800
+#define WL_CHANSPEC_BW_20			0x1000
+#define WL_CHANSPEC_BW_40			0x1800
+#define WL_CHANSPEC_BW_80			0x2000
+#define WL_CHANSPEC_BW_160			0x2800
+#define WL_CHANSPEC_BW_8080			0x3000
+#define WL_CHANSPEC_BW_2P5			0x3800
 
-#define WL_CHANSPEC_CTL_SB_MASK    	0x0300
-#define WL_CHANSPEC_CTL_SB_SHIFT    8
-#define WL_CHANSPEC_CTL_SB_LOWER    0x0100
-#define WL_CHANSPEC_CTL_SB_UPPER    0x0200
-#define WL_CHANSPEC_CTL_SB_NONE     0x0300
-
-#define WL_CHANSPEC_BW_MASK        	0x0C00
-#define WL_CHANSPEC_BW_SHIFT        10
-#define WL_CHANSPEC_BW_10        	0x0400
-#define WL_CHANSPEC_BW_20        	0x0800
-#define WL_CHANSPEC_BW_40        	0x0C00
+#define WL_CHANSPEC_BAND_MASK		0xc000
+#define WL_CHANSPEC_BAND_SHIFT		14
+#define WL_CHANSPEC_BAND_2G			0x0000
+#define WL_CHANSPEC_BAND_3G			0x4000
+#define WL_CHANSPEC_BAND_4G			0x8000
+#define WL_CHANSPEC_BAND_5G			0xc000
+#define INVCHANSPEC					255
+#define MAX_CHANSPEC				0xFFFF
 
 #define CHSPEC_CHANNEL(chspec) 		((uint8_t)((chspec) & WL_CHANSPEC_CHAN_MASK))
 #define CH20MHZ_CHSPEC(channel)    	(wl_chanspec_t)((wl_chanspec_t)(channel) | WL_CHANSPEC_BW_20 | \
@@ -555,5 +584,28 @@ typedef struct  {
     uint16_t retry_interval;
     uint16_t retry_count;
 } wl_tcpka_conn_enable_t;
+
+typedef struct
+{
+    wl_ether_addr_t bssid;
+#ifdef CHIP_HAS_BSSID_CNT_IN_ASSOC_PARAMS
+    uint16_t bssid_cnt;
+#endif /* ifdef CHIP_HAS_BSSID_CNT_IN_ASSOC_PARAMS */
+    uint32_t chanspec_num;
+    wl_chanspec_t  chanspec_list[1];
+} wl_assoc_params_t;
+
+typedef struct
+{
+    wl_ssid_t ssid;
+    wl_assoc_params_t params;
+} wl_join_params_t;
+
+/* scan to notify host params */
+typedef struct wl_nfyscan_params {
+	wl_ssid_t ssid;
+    uint16_t interval;
+	uint16_t action;
+} wl_nfyscan_params_t;
 
 #endif /* __WL_IOCTL_H_ */

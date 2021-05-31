@@ -7,11 +7,11 @@
 #include <string.h>
 #include <sys/types.h>
 #include <errno.h>
-#include <net/if.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#include <linux/if.h>
 #include <linux/if_packet.h>
 #include <arpa/inet.h>
 #include <pthread.h>
@@ -107,7 +107,8 @@ static wl_event_item_t wl_event_list[WL_EVENT_LIST_SIZE];
 static uint32_t wl_event_num;
 static const uint32_t wl_connect_status_event[] = {
 						WLC_E_SET_SSID,
-						WLC_E_LINK,
+                        WLC_E_JOIN,
+                        WLC_E_LINK,
 						WLC_E_AUTH,
 						WLC_E_DEAUTH_IND,
 						WLC_E_DISASSOC_IND,
@@ -115,6 +116,9 @@ static const uint32_t wl_connect_status_event[] = {
 					};
 static uint32_t wl_connect_status;
 static uint32_t wl_join_status;
+
+static wl_connect_status_cb_t wl_connect_status_callback;
+static void *wl_connect_status_userdata;
 
 static int wl_mkiovar(
 				const char* iovar_name,
@@ -221,6 +225,8 @@ int wl_ioctl(uint32_t cmd, void* buf, uint32_t len, bool set)
 	}
 #endif /* WL_LOG_LEVEL >= WL_LOG_DEBUG */
 
+	WL_DUMP(buf, len);
+
 	if (wl_ioctl_sockfd < 0)
 	{
 		WL_ERR("wl is not init\n");
@@ -237,13 +243,17 @@ int wl_ioctl(uint32_t cmd, void* buf, uint32_t len, bool set)
 
     if (ret < 0) {
 #if WL_LOG_LEVEL >= WL_LOG_DEBUG
-		char buf[128];
+        if ((cmd != WLC_GET_VAR) || (strncmp(buf, "bcmerrorstr", strlen("bcmerrorstr") != 0)))
+        {
+    		char buf[128];
 
-		memset(buf, 0, sizeof(buf));
+    		memset(buf, 0, sizeof(buf));
 
-		wl_iovar_get("bcmerrorstr", buf, sizeof(buf));
 
-        WL_ERR("ioctl err = %d, bcmerror = %s\n", ret, buf);
+    		wl_iovar_get("bcmerrorstr", buf, sizeof(buf));
+
+            WL_ERR("ioctl err = %d, bcmerror = %s\n", ret, buf);
+        }
 #else /* WL_LOG_LEVEL >= WL_LOG_DEBUG */
         WL_ERR("ioctl err = %d\n", ret);
 #endif /* WL_LOG_LEVEL >= WL_LOG_DEBUG */
@@ -356,7 +366,7 @@ int wl_iovar_setint(const char* iovar_name, int32_t val)
 	return wl_iovar_set(iovar_name, &val, sizeof(int32_t));
 }
 
-int wl_iovar_getbuf_bsscfg(
+int wl_iovar_bsscfg_getbuf(
 	    const char* iovar_name,
 	    void* param,
 	    int32_t paramlen,
@@ -373,7 +383,7 @@ int wl_iovar_getbuf_bsscfg(
 	return ret;
 }
 
-int wl_iovar_setbuf_bsscfg(
+int wl_iovar_bsscfg_setbuf(
         const char*iovar_name,
 	    void* param,
 	    int32_t paramlen,
@@ -395,47 +405,74 @@ int wl_iovar_setbuf_bsscfg(
 	return ret;
 }
 
-int wl_iovar_setint_bsscfg(
-		    const char* iovar_name,
-		    int32_t val,
-		    int32_t bssidx)
-{
-	int8_t iovar_buf[WLC_IOCTL_SMLEN];
-
-	memset(iovar_buf, 0, sizeof(iovar_buf));
-
-	return wl_iovar_setbuf_bsscfg(
-                iovar_name,
-                &val,
-                sizeof(val),
-                iovar_buf,
-		        sizeof(iovar_buf),
-		        bssidx);
-}
-
-int wl_iovar_getint_bsscfg(
-		const char*iovar_name,
-		int32_t* pval,
-		int32_t bssidx)
+int wl_iovar_bsscfg_get(
+		const char* iovar_name,
+		void* outbuf,
+		int32_t len,
+		int32_t bsscfg_idx)
 {
 	int ret;
-	int8_t iovar_buf[WLC_IOCTL_SMLEN];
+	int8_t smbuf[WLC_IOCTL_SMLEN];
 
-	memset(iovar_buf, 0, sizeof(iovar_buf));
-	ret = wl_iovar_getbuf_bsscfg(
-                iovar_name,
-                pval,
-                sizeof(*pval),
-                iovar_buf,
-		        sizeof(iovar_buf),
-		        bssidx);
-
-	if (ret == 0)
+	/* use the return buffer if it is bigger than what we have on the stack */
+	if (len > WLC_IOCTL_SMLEN)
 	{
-		memcpy(pval, iovar_buf, sizeof(*pval));
+		ret = wl_iovar_bsscfg_getbuf(iovar_name, NULL, 0, outbuf, len, bsscfg_idx);
+	}
+	else
+	{
+		memset(smbuf, 0, sizeof(smbuf));
+
+		ret = wl_iovar_bsscfg_getbuf(
+					iovar_name,
+					NULL,
+					0,
+					smbuf,
+					sizeof(smbuf),
+					bsscfg_idx);
+
+		if (ret == 0)
+		{
+			memcpy(outbuf, smbuf, len);
+		}
 	}
 
 	return ret;
+}
+
+int wl_iovar_bsscfg_set(
+		const char* iovar_name,
+		void* param,
+		int32_t paramlen,
+		int32_t bsscfg_idx)
+{
+	int8_t smbuf[WLC_IOCTL_SMLEN * 2];
+
+	memset(smbuf, 0, sizeof(smbuf));
+
+	return wl_iovar_bsscfg_setbuf(
+				iovar_name,
+				param,
+				paramlen,
+				smbuf,
+				sizeof(smbuf),
+				bsscfg_idx);
+}
+
+int wl_iovar_bsscfg_getint(
+		const char*iovar_name,
+		int32_t* pval,
+		int32_t bsscfg_idx)
+{
+	return wl_iovar_bsscfg_get(iovar_name, pval, sizeof(int32_t), bsscfg_idx);
+}
+
+int wl_iovar_bsscfg_setint(
+	    const char* iovar_name,
+	    int32_t val,
+	    int32_t bsscfg_idx)
+{
+	return wl_iovar_bsscfg_set(iovar_name, &val, sizeof(int32_t), bsscfg_idx);
 }
 
 int wl_dhd_iovar_setint(const char* iovar_name, int32_t val)
@@ -451,7 +488,7 @@ int wl_dhd_iovar_setint(const char* iovar_name, int32_t val)
 		return WL_E_IOCTL_ERROR;
 	}
 
-    WL_DBG("GET IOVAR %s\n", (char*)iovar_name);
+    WL_DBG("IOVAR %s\n", (char*)iovar_name);
 
 	memset(iovar_buf, 0, WLC_IOCTL_SMLEN);
 
@@ -520,9 +557,11 @@ int wl_init(const char* ifname)
 		else
 		{
 			wl_connect_status = WL_CONNECT_STATUS_CONNECTED;
+            wl_join_status = JOIN_COMPLETED;
 		}
 	#else /* WL_FIX_CONNECT_STATUS_OPTIONS */
 		wl_connect_status = WL_CONNECT_STATUS_CONNECTED;
+        wl_join_status = JOIN_COMPLETED;
 	#endif /* WL_FIX_CONNECT_STATUS_OPTIONS */	
 	}
 	else
@@ -687,7 +726,7 @@ static void *wl_event_thread_func(void *args)
 	int ret;
 	int sockfd;
 //	struct sockaddr_ll sll;
-	char *buf;
+	char *buf = NULL;
 	fd_set rfds;
 	int fdsize;
 
@@ -771,6 +810,8 @@ static void *wl_event_thread_func(void *args)
 
 		if (size >= sizeof(bcm_event_t))
 		{
+			int i;
+
 			msg = (bcm_event_t*)buf;
 
             if (memcmp(BRCM_OUI, &msg->bcm_hdr.oui[0], DOT11_OUI_LEN) != 0)
@@ -794,7 +835,7 @@ static void *wl_event_thread_func(void *args)
 				continue;
 			}
 
-			for (int i = 0; i < wl_event_num; i++)
+			for (i = 0; i < wl_event_num; i++)
 			{
 				wl_event_item_t *item = &wl_event_list[i];
 
@@ -823,11 +864,21 @@ exit:
 	return NULL;
 }
 
-static void wl_connect_event_handler(wl_event_msg_t* msg, void* user_data)
+static int wl_connect_status_update(bool is_connected)
+{
+    WL_DBG("is_connected = %d\n", is_connected);
+
+    if (wl_connect_status_callback != NULL)
+    {
+        wl_connect_status_callback(is_connected, wl_connect_status_userdata);
+    }
+}
+
+static void wl_connecting_ap_handler(wl_event_msg_t* msg, void* user_data)
 {
 	bool is_join_completed = false;
 
-	WL_DBG("before join state = 0x%08x\n", wl_join_status);
+	WL_DBG("Before event handler, join state = 0x%08x\n", wl_join_status);
 
 	switch(msg->event_type)
 	{
@@ -836,7 +887,7 @@ static void wl_connect_event_handler(wl_event_msg_t* msg, void* user_data)
             /* Ignore WLC_E_PSK_SUP event if link is not up */
             if (wl_join_status & JOIN_LINK_READY)
             {
-                if (msg->status == WLC_SUP_KEYED )
+                if (msg->status == WLC_SUP_KEYED)
                 {
                     /* Successful WPA key exchange */
                     wl_join_status |= JOIN_SECURITY_COMPLETE;
@@ -845,19 +896,19 @@ static void wl_connect_event_handler(wl_event_msg_t* msg, void* user_data)
                 {
                     /* join has completed with an error */
                     is_join_completed = true;
-                    if ( ( msg->status == WLC_SUP_KEYXCHANGE_WAIT_M1 ) && ( msg->reason == WLC_E_SUP_WPA_PSK_TMO ) )
+                    if ((msg->status == WLC_SUP_KEYXCHANGE_WAIT_M1) && (msg->reason == WLC_E_SUP_WPA_PSK_TMO))
                     {
                         /* A timeout waiting for M1 may occur at the edge of the cell or if the AP is particularly slow. */
                         WL_DBG("Supplicant M1 timeout event\n");
                         wl_join_status |= JOIN_EAPOL_KEY_M1_TIMEOUT;
                     }
-                    else if ( ( msg->status == WLC_SUP_KEYXCHANGE_WAIT_M3 ) && ( msg->reason == WLC_E_SUP_WPA_PSK_TMO ) )
+                    else if ((msg->status == WLC_SUP_KEYXCHANGE_WAIT_M3) && ( msg->reason == WLC_E_SUP_WPA_PSK_TMO))
                     {
                         /* A timeout waiting for M3 is an indicator that the passphrase may be incorrect. */
                         WL_DBG("Supplicant M3 timeout event\n");
                         wl_join_status |= JOIN_EAPOL_KEY_M3_TIMEOUT;
                     }
-                    else if ( ( msg->status == WLC_SUP_KEYXCHANGE_WAIT_G1 ) && ( msg->reason == WLC_E_SUP_WPA_PSK_TMO ) )
+                    else if ((msg->status == WLC_SUP_KEYXCHANGE_WAIT_G1) && (msg->reason == WLC_E_SUP_WPA_PSK_TMO))
                     {
                         /* A timeout waiting for G1 (group key) may occur at the edge of the cell. */
                         WL_DBG("Supplicant G1 timeout event\n");
@@ -873,6 +924,7 @@ static void wl_connect_event_handler(wl_event_msg_t* msg, void* user_data)
             }
             break;
 
+        case WLC_E_JOIN:
         case WLC_E_SET_SSID:
 			WL_DBG("WLC_E_SET_SSID, status = %d\n", msg->status);
             if (msg->status == WLC_E_STATUS_SUCCESS)
@@ -880,9 +932,10 @@ static void wl_connect_event_handler(wl_event_msg_t* msg, void* user_data)
                 /* SSID has been successfully set. */
                 wl_join_status |= JOIN_SSID_SET;
             }
-            else if (msg->status == WLC_E_STATUS_NO_NETWORKS ) /* We don't bail out on this event or things like WPS won't work if the AP is rebooting after configuration */
+            else if ((msg->status & 0xFF) == WLC_E_STATUS_NO_NETWORKS)
             {
                 wl_join_status |= JOIN_NO_NETWORKS;
+                is_join_completed = true;
             }
             else
             {
@@ -899,15 +952,13 @@ static void wl_connect_event_handler(wl_event_msg_t* msg, void* user_data)
             else
             {
                 wl_join_status &= ~JOIN_LINK_READY;
-				wl_connect_status = WL_CONNECT_STATUS_DISCONNECTED;
             }
             break;
 
         case WLC_E_DEAUTH_IND:
         case WLC_E_DISASSOC_IND:
 			WL_DBG("Disconnect\n");
-            wl_join_status &= ~( JOIN_AUTHENTICATED | JOIN_LINK_READY);
-			wl_connect_status = WL_CONNECT_STATUS_DISCONNECTED;
+            wl_join_status &= ~(JOIN_AUTHENTICATED | JOIN_LINK_READY);
             break;
 
         case WLC_E_AUTH:
@@ -931,29 +982,84 @@ static void wl_connect_event_handler(wl_event_msg_t* msg, void* user_data)
             break;
 	}
 
-	WL_DBG("after join state = 0x%08x\n", wl_join_status);
+	WL_DBG("After event handler, join state = 0x%08x, connect status = %d\n", wl_join_status, wl_connect_status);
 
-	if (wl_join_status == JOIN_COMPLETED)
-	{
-		is_join_completed = true;
-	}
+    if (wl_join_status == JOIN_COMPLETED)
+    {
+        is_join_completed = true;
+    }
 
-	WL_DBG("is_join_completed = %d, wl_connect_status = %d\n", is_join_completed, wl_connect_status);
+    WL_DBG("is_join_completed = %d\n", is_join_completed);
 
-	if (is_join_completed &&
-		(wl_connect_status == WL_CONNECT_STATUS_CONNECTING))
-	{
-		if (wl_join_status == JOIN_COMPLETED)
-		{
-			wl_connect_status = WL_CONNECT_STATUS_CONNECTED;
-		}
-		else
-		{
-			wl_connect_status = WL_CONNECT_STATUS_DISCONNECTED;
-		}
-	
+    if (is_join_completed)
+    {
+        if (wl_join_status == JOIN_COMPLETED)
+        {
+            wl_connect_status = WL_CONNECT_STATUS_CONNECTED;
+        }
+        else
+        {
+            wl_connect_status = WL_CONNECT_STATUS_DISCONNECTED;
+        }
+
 		wl_join_wake();
+
+        if (wl_connect_status == WL_CONNECT_STATUS_CONNECTED)
+        {
+            wl_connect_status_update(true);
+        }
+    }
+}
+
+static void wl_connect_status_change_handler(wl_event_msg_t* msg, void* user_data)
+{
+	bool is_join_completed = false;
+    uint32_t old_status = wl_connect_status;
+
+	WL_DBG("connect status = %d\n", wl_connect_status);
+
+	switch(msg->event_type)
+	{
+        case WLC_E_LINK:
+			WL_DBG("WLC_E_LINK, flags = 0x%08x\n", msg->flags);
+			if (msg->flags & WLC_EVENT_MSG_LINK)
+            {
+                wl_connect_status = WL_CONNECT_STATUS_CONNECTED;                
+            }
+            else
+            {
+                wl_connect_status = WL_CONNECT_STATUS_DISCONNECTED;                
+            }
+            break;
+
+        case WLC_E_DEAUTH_IND:
+        case WLC_E_DISASSOC_IND:
+			WL_DBG("Disconnect\n");
+            wl_connect_status = WL_CONNECT_STATUS_DISCONNECTED;                
+            break;
+
+		default:
+            break;
 	}
+
+    if (old_status != wl_connect_status)
+    {
+        bool is_connected = (wl_connect_status == WL_CONNECT_STATUS_CONNECTED);
+    
+        wl_connect_status_update(is_connected);
+    }
+}
+
+static void wl_connect_event_handler(wl_event_msg_t* msg, void* user_data)
+{
+	if (wl_connect_status == WL_CONNECT_STATUS_CONNECTING)
+    {
+        wl_connecting_ap_handler(msg, user_data);
+    }
+    else
+    {
+        wl_connect_status_change_handler(msg, user_data);
+    }
 }
 
 int wl_join_init(uint32_t security)
@@ -986,10 +1092,7 @@ int wl_join_wake(void)
 {
 	WL_DBG("enter\n");
 
-	if (wl_connect_status == WL_CONNECT_STATUS_CONNECTING)
-	{
-		sem_post(&wl_connect_sem);
-	}
+	sem_post(&wl_connect_sem);
 
 	return 0;
 }
@@ -999,6 +1102,10 @@ int wl_join_error(void)
 	if (wl_join_status == JOIN_COMPLETED)
 	{
 		return WL_E_OK;
+	}
+	else if (wl_join_status & JOIN_NO_NETWORKS)
+	{
+		return WL_E_NO_NETWORK;
 	}
 	else
 	{
@@ -1045,6 +1152,7 @@ int wl_event_register(
 	uint32_t count = 0;
 #endif /* WL_CONFIG_CHECK_EVENT */
 	wl_event_item_t *item;
+	int i;
 
 	WL_DBG("callback = 0x%08x, user_data = 0x%08x, wl_event_num = %d\n",
 		(int)callback, (int)user_data, wl_event_num);
@@ -1068,7 +1176,7 @@ int wl_event_register(
 
 	item = &wl_event_list[wl_event_num];
 
-	for (int i = 0; i < event_num; i++)
+	for (i = 0; i < event_num; i++)
 	{
 		if (event_type[i] > WL_EVENT_TYPE_MAX)
 		{
@@ -1170,4 +1278,16 @@ int wl_event_deregister(wl_event_cb_t callback, void* user_data)
 	pthread_mutex_unlock(&wl_mutex);
 
 	return 0;
+}
+
+int wl_connect_status_register(wl_connect_status_cb_t callback, void* user_data)
+{
+    wl_connect_status_callback = callback;
+    wl_connect_status_userdata = user_data;
+}
+
+int wl_connect_status_deregister(wl_connect_status_cb_t callback)
+{
+    wl_connect_status_callback = NULL;
+    wl_connect_status_userdata = NULL;
 }
