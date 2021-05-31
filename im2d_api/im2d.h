@@ -173,6 +173,14 @@ typedef enum {
     IM_RGB_TO_Y4                  = 1 << 4,
     IM_RGB_TO_Y4_DITHER           = 2 << 4,
     IM_RGB_TO_Y1_DITHER           = 3 << 4,
+    IM_Y4_MASK                    = 3 << 4,
+    IM_RGB_FULL                   = 1 << 8,
+    IM_RGB_CLIP                   = 2 << 8,
+    IM_YUV_BT601_LIMIT_RANGE      = 3 << 8,
+    IM_YUV_BT601_FULL_RANGE       = 4 << 8,
+    IM_YUV_BT709_LIMIT_RANGE      = 5 << 8,
+    IM_YUV_BT709_FULL_RANGE       = 6 << 8,
+    IM_FULL_CSC_MASK              = 0xf << 8,
     IM_COLOR_SPACE_DEFAULT        = 0,
 } IM_COLOR_SPACE_MODE;
 

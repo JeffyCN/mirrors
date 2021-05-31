@@ -1522,7 +1522,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     if ((src.global_alpha > 0) && (usage & IM_ALPHA_BLEND_MASK))
         srcinfo.blend &= src.global_alpha << 16;
 
-    /* special config for yuv to rgb */
+    /* special config for color space convert */
     if (dst.color_space_mode & (IM_YUV_TO_RGB_MASK)) {
         if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
             NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format)))
@@ -1531,17 +1531,51 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
             imErrorMsg("Not yuv to rgb does not need for color_sapce_mode, please fix.");
             return IM_STATUS_ILLEGAL_PARAM;
         }
-
-    }
-
-    /* special config for rgb to yuv */
-    if (dst.color_space_mode & (IM_RGB_TO_YUV_MASK)) {
+    } else if (dst.color_space_mode & (IM_RGB_TO_YUV_MASK)) {
         if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format)) &&
             NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format)))
             dstinfo.color_space_mode = dst.color_space_mode;
         else {
             imErrorMsg("Not rgb to yuv does not need for color_sapce_mode, please fix.");
             return IM_STATUS_ILLEGAL_PARAM;
+        }
+    } else if (src.color_space_mode & IM_FULL_CSC_MASK ||
+               dst.color_space_mode & IM_FULL_CSC_MASK) {
+        /* Get default color space */
+        if (src.color_space_mode == IM_COLOR_SPACE_DEFAULT) {
+            if  (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format))) {
+                src.color_space_mode = IM_RGB_FULL;
+            } else if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format))) {
+                src.color_space_mode = IM_YUV_BT601_LIMIT_RANGE;
+            }
+        }
+
+        if (dst.color_space_mode == IM_COLOR_SPACE_DEFAULT) {
+            if  (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format))) {
+                src.color_space_mode = IM_RGB_FULL;
+            } else if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
+                src.color_space_mode = IM_YUV_BT601_LIMIT_RANGE;
+            }
+        }
+
+        if (src.color_space_mode == IM_RGB_FULL &&
+            dst.color_space_mode == IM_YUV_BT709_FULL_RANGE) {
+            dstinfo.color_space_mode = rgb2yuv_709_full;
+        } else if (src.color_space_mode == IM_YUV_BT601_FULL_RANGE &&
+                   dst.color_space_mode == IM_YUV_BT709_LIMIT_RANGE) {
+            dstinfo.color_space_mode = yuv2yuv_601_full_2_709_limit;
+        } else if (src.color_space_mode == IM_YUV_BT709_LIMIT_RANGE &&
+                   dst.color_space_mode == IM_YUV_BT601_LIMIT_RANGE) {
+            dstinfo.color_space_mode = yuv2yuv_709_limit_2_601_limit;
+        } else if (src.color_space_mode == IM_YUV_BT709_FULL_RANGE &&
+                   dst.color_space_mode == IM_YUV_BT601_LIMIT_RANGE) {
+            dstinfo.color_space_mode = yuv2yuv_709_full_2_601_limit;
+        } else if (src.color_space_mode == IM_YUV_BT709_FULL_RANGE &&
+                   dst.color_space_mode == IM_YUV_BT601_FULL_RANGE) {
+            dstinfo.color_space_mode = yuv2yuv_709_full_2_601_full;
+        } else {
+            imErrorMsg("Unsupported csc mode!");
+            return IM_STATUS_NOT_SUPPORTED;
         }
     }
 
