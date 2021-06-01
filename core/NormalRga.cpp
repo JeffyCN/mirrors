@@ -672,7 +672,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
             NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 2, 0);
             break;
 
-        case 0x0105:/* src over */
+        case 0x0105:/* src over , no need to Premultiplied. */
             if (perpixelAlpha && planeAlpha < 255) {
                 NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha, 1, 9, 0);
             } else if (perpixelAlpha)
@@ -681,17 +681,25 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
                 NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
             break;
 
-        case 0x0501:/* dst over */
+        case 0x0405:/* src over , need to Premultiplied. */
+            if (perpixelAlpha && planeAlpha < 255)
+                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha, 1, 9, 0);
+            else if (perpixelAlpha)
+                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0, 1, 3, 0);
+            else
+                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
+
+            rgaReg.alpha_rop_flag |= (1 << 9);  //real color mode
+
+            break;
+
+        case 0x0501:/* dst over , no need premultiplied. */
             NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 4, 0);
             break;
 
-        case 0x0405:
-            if (perpixelAlpha && planeAlpha < 255)
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha, 0, 0, 0);
-            else if (perpixelAlpha)
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0, 0, 0, 0);
-            else
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
+        case 0x0504:/* dst over, need premultiplied. */
+            NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 4, 0);
+            rgaReg.alpha_rop_flag |= (1 << 9);  //real color mode
             break;
 
 		case 0x0100:

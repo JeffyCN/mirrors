@@ -1462,7 +1462,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                 srcinfo.blend = 0xff0002;
                 break;
             case IM_ALPHA_BLEND_SRC_OVER:
-                srcinfo.blend = 0xff0105;
+                srcinfo.blend = (usage & IM_ALPHA_BLEND_PRE_MUL) ? 0xff0405 : 0xff0105;
                 break;
             case IM_ALPHA_BLEND_SRC_IN:
                 break;
@@ -1471,16 +1471,18 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
             case IM_ALPHA_BLEND_SRC_OUT:
                 break;
             case IM_ALPHA_BLEND_DST_OVER:
-                srcinfo.blend = 0xff0501;
+                srcinfo.blend = (usage & IM_ALPHA_BLEND_PRE_MUL) ? 0xff0504 : 0xff0501;
                 break;
             case IM_ALPHA_BLEND_SRC_ATOP:
                 break;
             case IM_ALPHA_BLEND_DST_OUT:
-                srcinfo.blend = 0xff0405;
                 break;
             case IM_ALPHA_BLEND_XOR:
                 break;
         }
+
+
+
         if(srcinfo.blend == 0 && srcinfo.rotation ==0)
             ALOGE("rga_im2d: Could not find blend/rotate/flip usage : 0x%x \n", usage);
     }

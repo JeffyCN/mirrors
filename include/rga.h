@@ -377,7 +377,7 @@ struct rga_req {
     unsigned char  alpha_rop_mode;        /* ([0~1] alpha mode)       */
                                           /* ([2~3] rop   mode)       */
                                           /* ([4]   zero  mode en)    */
-                                          /* ([5]   dst   alpha mode) */
+                                          /* ([5]   dst   alpha mode) (RGA1) */
 
     unsigned char  src_trans_mode;
 
