@@ -50,6 +50,7 @@ using namespace android;
 using namespace std;
 
 thread_local ostringstream err_msg;
+extern struct rgaContext *rgaCtx;
 
 IM_API void imErrorMsg(const char* msg) {
     err_msg.str("");
@@ -388,7 +389,7 @@ IM_API IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, r
 
 IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
     char buf[16];
-    int  rgafd, rga_version = 0;
+    int  rga_version = 0;
 
     static rga_info_table_entry table[] = {
         { RGA_V_ERR     ,    0,     0,  0, 0,   0, 0, {0} },
@@ -441,16 +442,12 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                                                 IM_RGA_SUPPORT_FORMAT_Y4, {0} }
     };
 
-    /*open /dev/rga node in order to get rga vesion*/
-    rgafd = open("/dev/rga", O_RDWR, 0);
-    if (rgafd < 0) {
-        ALOGE("rga_im2d: failed to open /dev/rga: %s.",strerror(errno));
-        return IM_STATUS_FAILED;
+    /* Get RGA context */
+    if (rgaCtx == NULL) {
+        RockchipRga& rkRga(RockchipRga::get());
     }
-    if (ioctl(rgafd, RGA_GET_VERSION, buf)) {
-        ALOGE("rga_im2d: rga get version fail: %s",strerror(errno));
-        return IM_STATUS_FAILED;
-    }
+    sprintf(buf, "%f", rgaCtx->mVersion);
+
     if (strncmp(buf,"1.3",3) == 0)
         rga_version = RGA_1;
     else if (strncmp(buf,"1.6",3) == 0)
@@ -472,9 +469,6 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
         rga_version = RGA_V_ERR;
 
     memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
-
-    close(rgafd);
-    rgafd = -1;
 
     if (rga_version == RGA_V_ERR)
         return IM_STATUS_FAILED;
