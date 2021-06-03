@@ -49,8 +49,7 @@ using namespace android;
 
 using namespace std;
 
-ostringstream err_msg;
-char *err_str = NULL;
+thread_local ostringstream err_msg;
 
 IM_API void imErrorMsg(const char* msg) {
     err_msg.str("");
@@ -58,6 +57,8 @@ IM_API void imErrorMsg(const char* msg) {
 }
 
 IM_API const char* imStrError_t(IM_STATUS status) {
+    ostringstream error;
+    static __thread char err_str[ERR_MSG_LEN] = "The current error message is empty!";
     const char *error_type[] = {
         "No errors during operation",
         "Run successfully",
@@ -68,10 +69,6 @@ IM_API const char* imStrError_t(IM_STATUS status) {
         "Fatal error: ",
         "unkown status"
     };
-    ostringstream error;
-
-    if (err_str == NULL)
-        err_str = (char *)malloc(ERR_MSG_LEN*sizeof(char));
 
     switch(status) {
         case IM_STATUS_NOERROR :
