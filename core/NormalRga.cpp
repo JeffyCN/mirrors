@@ -109,8 +109,9 @@ int NormalRgaOpen(void **context) {
     }
     ctx->rgaFd = fd;
 
-    ret = ioctl(fd, RGA_GET_VERSION, buf);
+    ret = ioctl(fd, RGA2_GET_VERSION, buf);
     ctx->mVersion = atof(buf);
+    memcpy(ctx->mVersion_str, buf, sizeof(ctx->mVersion_str));
 
     NormalRgaInitTables();
 

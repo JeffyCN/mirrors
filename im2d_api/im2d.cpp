@@ -389,7 +389,7 @@ IM_API IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, r
 
 IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
     char buf[16];
-    int  rga_version = 0;
+    int  rga_version = 0, rga_svn_version = 0;
 
     static rga_info_table_entry table[] = {
         { RGA_V_ERR     ,    0,     0,  0, 0,   0, 0, {0} },
@@ -446,27 +446,63 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
     if (rgaCtx == NULL) {
         RockchipRga& rkRga(RockchipRga::get());
     }
-    sprintf(buf, "%f", rgaCtx->mVersion);
 
-    if (strncmp(buf,"1.3",3) == 0)
-        rga_version = RGA_1;
-    else if (strncmp(buf,"1.6",3) == 0)
-        rga_version = RGA_1_PLUS;
-    /*3288 vesion is 2.00*/
-    else if (strncmp(buf,"2.00",4) == 0)
-        rga_version = RGA_2;
-    /*3288w version is 3.00*/
-    else if (strncmp(buf,"3.00",4) == 0)
-        rga_version = RGA_2;
-    else if (strncmp(buf,"3.02",4) == 0)
-        rga_version = RGA_2_ENHANCE;
-    else if (strncmp(buf,"4.00",4) == 0)
-        rga_version = RGA_2_LITE0;
-    /*The version number of lite1 cannot be obtained temporarily.*/
-    else if (strncmp(buf,"4.00",4) == 0)
-        rga_version = RGA_2_LITE1;
-    else
+    sprintf(buf, "%f", rgaCtx->mVersion);
+    sscanf(rgaCtx->mVersion_str, "%*[^.].%*[^.].%x", &rga_svn_version);
+
+    if (strncmp(buf,"3.0",3) == 0) {
+        switch (rga_svn_version) {
+            case 0x16445 :
+                rga_version = RGA_2;
+                break;
+            case 0x22245 :
+                rga_version = RGA_2_ENHANCE;
+                break;
+        }
+    } else if (strncmp(buf,"3.2",3) == 0) {
+        switch (rga_svn_version) {
+            case 0x28218 :
+            case 0x63318 :
+                rga_version = RGA_2_ENHANCE;
+                break;
+        }
+    } else if (strncmp(buf,"4.0",3) == 0) {
+        switch (rga_svn_version) {
+            case 0x18632 :
+                rga_version = RGA_2_LITE0;
+                break;
+            case 0x23998 :
+                rga_version = RGA_2_LITE1;
+                break;
+        }
+    } else if (strncmp(buf,"42.0",4) == 0) {
+        if (rga_svn_version == 17760)
+            rga_version = RGA_2_LITE1;
+    } else {
         rga_version = RGA_V_ERR;
+    }
+
+    if (rga_version == RGA_V_ERR) {
+        if (strncmp(buf,"1.3",3) == 0)
+            rga_version = RGA_1;
+        else if (strncmp(buf,"1.6",3) == 0)
+            rga_version = RGA_1_PLUS;
+        /*3288 vesion is 2.00*/
+        else if (strncmp(buf,"2.00",4) == 0)
+            rga_version = RGA_2;
+        /*3288w version is 3.00*/
+        else if (strncmp(buf,"3.00",4) == 0)
+            rga_version = RGA_2;
+        else if (strncmp(buf,"3.02",4) == 0)
+            rga_version = RGA_2_ENHANCE;
+        else if (strncmp(buf,"4.00",4) == 0)
+            rga_version = RGA_2_LITE0;
+        /*The version number of lite1 cannot be obtained temporarily.*/
+        else if (strncmp(buf,"4.00",4) == 0)
+            rga_version = RGA_2_LITE1;
+        else
+            rga_version = RGA_V_ERR;
+    }
 
     memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
 

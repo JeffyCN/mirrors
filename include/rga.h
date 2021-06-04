@@ -32,6 +32,12 @@ extern "C"
 #define RGA_GET_RESULT  0x501a
 #define RGA_GET_VERSION 0x501b
 
+#define RGA2_BLIT_SYNC   0x6017
+#define RGA2_BLIT_ASYNC  0x6018
+#define RGA2_FLUSH       0x6019
+#define RGA2_GET_RESULT  0x601a
+#define RGA2_GET_VERSION 0x601b
+#define RGA2_GET_VERSION 0x601b
 
 #define RGA_REG_CTRL_LEN    0x8    /* 8  */
 #define RGA_REG_CMD_LEN     0x1c   /* 28 */

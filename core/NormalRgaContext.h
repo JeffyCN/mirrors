@@ -31,6 +31,7 @@ struct rgaContext {
     int mLogOnce;
     float mVersion;
     int Is_debug;
-
+    char mVersion_str[16];
+    char reserved[128];
 };
 #endif
