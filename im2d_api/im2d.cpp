@@ -392,54 +392,71 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
     int  rga_version = 0, rga_svn_version = 0;
 
     static rga_info_table_entry table[] = {
-        { RGA_V_ERR     ,    0,     0,  0, 0,   0, 0, {0} },
+        { RGA_V_ERR     ,    0,     0,  0, 0,   0, 0, 0, {0} },
         { RGA_1         , 8192, 2048,   8, 1,   IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_BPP |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_8,
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8, {0} },
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE |
+                                                IM_RGA_SUPPORT_FEATURE_ROP,
+                                                {0} },
         { RGA_1_PLUS    , 8192, 2048,   8, 1,   IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_BPP |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_8,
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8, {0} },
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE,
+                                                {0} },
         { RGA_2         , 8192, 4096, 16, 2,    IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_8,
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8, {0} },
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE |
+                                                IM_RGA_SUPPORT_FEATURE_ROP,
+                                                {0} },
         { RGA_2_LITE0   , 8192, 4096,   8, 2,   IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_8,
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8, {0} },
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE |
+                                                IM_RGA_SUPPORT_FEATURE_ROP,
+                                                {0} },
         { RGA_2_LITE1   , 8192, 4096,   8, 2,   IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_8 |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_10,
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8, {0} },
+                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE,
+                                                {0} },
         { RGA_2_ENHANCE , 8192, 4096, 16,  2,   IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_8 |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_10 |
-                                                IM_RGA_SUPPORT_FORMAT_YUYV_422 |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_400,
+                                                IM_RGA_SUPPORT_FORMAT_YUV_10,
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_8 |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_10 |
                                                 IM_RGA_SUPPORT_FORMAT_YUYV_420 |
-                                                IM_RGA_SUPPORT_FORMAT_YUYV_422 |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_400 |
-                                                IM_RGA_SUPPORT_FORMAT_Y4, {0} }
+                                                IM_RGA_SUPPORT_FORMAT_YUYV_422,
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE,
+                                                {0} }
     };
 
     /* Get RGA context */
@@ -454,55 +471,83 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
         switch (rga_svn_version) {
             case 0x16445 :
                 rga_version = RGA_2;
+                memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
                 break;
             case 0x22245 :
                 rga_version = RGA_2_ENHANCE;
+                memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
                 break;
+            default :
+                goto TRY_TO_COMPATIBLE;
         }
     } else if (strncmp(buf,"3.2",3) == 0) {
         switch (rga_svn_version) {
             case 0x28218 :
+                rga_version = RGA_2_ENHANCE;
+                memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
+                break;
             case 0x63318 :
                 rga_version = RGA_2_ENHANCE;
+                memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
+                return_table->input_format |= IM_RGA_SUPPORT_FORMAT_YUYV_422 |
+                                              IM_RGA_SUPPORT_FORMAT_YUV_400;
+                return_table->output_format |= IM_RGA_SUPPORT_FORMAT_YUV_400 |
+                                               IM_RGA_SUPPORT_FORMAT_Y4;
+                return_table->feature |= IM_RGA_SUPPORT_FEATURE_QUANTIZE |
+                                         IM_RGA_SUPPORT_FEATURE_ROP |
+                                         IM_RGA_SUPPORT_FEATURE_SRC1_R2Y_CSC |
+                                         IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC;
                 break;
+            default :
+                goto TRY_TO_COMPATIBLE;
         }
     } else if (strncmp(buf,"4.0",3) == 0) {
         switch (rga_svn_version) {
             case 0x18632 :
                 rga_version = RGA_2_LITE0;
+                memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
                 break;
             case 0x23998 :
                 rga_version = RGA_2_LITE1;
+                memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
+                return_table->feature |= IM_RGA_SUPPORT_FEATURE_SRC1_R2Y_CSC;
                 break;
+            default :
+                goto TRY_TO_COMPATIBLE;
         }
     } else if (strncmp(buf,"42.0",4) == 0) {
-        if (rga_svn_version == 17760)
+        if (rga_svn_version == 17760) {
             rga_version = RGA_2_LITE1;
+            memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
+        } else {
+            goto TRY_TO_COMPATIBLE;
+        }
     } else {
-        rga_version = RGA_V_ERR;
+        goto TRY_TO_COMPATIBLE;
     }
 
-    if (rga_version == RGA_V_ERR) {
-        if (strncmp(buf,"1.3",3) == 0)
-            rga_version = RGA_1;
-        else if (strncmp(buf,"1.6",3) == 0)
-            rga_version = RGA_1_PLUS;
-        /*3288 vesion is 2.00*/
-        else if (strncmp(buf,"2.00",4) == 0)
-            rga_version = RGA_2;
-        /*3288w version is 3.00*/
-        else if (strncmp(buf,"3.00",4) == 0)
-            rga_version = RGA_2;
-        else if (strncmp(buf,"3.02",4) == 0)
-            rga_version = RGA_2_ENHANCE;
-        else if (strncmp(buf,"4.00",4) == 0)
-            rga_version = RGA_2_LITE0;
-        /*The version number of lite1 cannot be obtained temporarily.*/
-        else if (strncmp(buf,"4.00",4) == 0)
-            rga_version = RGA_2_LITE1;
-        else
-            rga_version = RGA_V_ERR;
-    }
+    return IM_STATUS_SUCCESS;
+
+TRY_TO_COMPATIBLE:
+    if (strncmp(buf,"1.3",3) == 0)
+        rga_version = RGA_1;
+    else if (strncmp(buf,"1.6",3) == 0)
+        rga_version = RGA_1_PLUS;
+    /*3288 vesion is 2.00*/
+    else if (strncmp(buf,"2.00",4) == 0)
+        rga_version = RGA_2;
+    /*3288w version is 3.00*/
+    else if (strncmp(buf,"3.00",4) == 0)
+        rga_version = RGA_2;
+    else if (strncmp(buf,"3.02",4) == 0)
+        rga_version = RGA_2_ENHANCE;
+    else if (strncmp(buf,"4.00",4) == 0)
+        rga_version = RGA_2_LITE0;
+    /*The version number of lite1 cannot be obtained temporarily.*/
+    else if (strncmp(buf,"4.00",4) == 0)
+        rga_version = RGA_2_LITE1;
+    else
+        rga_version = RGA_V_ERR;
 
     memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
 
@@ -530,6 +575,7 @@ IM_API const char* querystring(int name) {
         "Scale limit           : ",
         "Input support format  : ",
         "output support format : ",
+        "RGA feature           : ",
         "expected performance  : ",
     };
     const char *version_name[] = {
@@ -566,6 +612,15 @@ IM_API const char* querystring(int name) {
         "YUYV420 ",
         "YUYV422 ",
         "YUV400/Y4 "
+    };
+    const char *feature[] = {
+        "unknown ",
+        "color_fill ",
+        "color_palette ",
+        "ROP ",
+        "quantize ",
+        "src1_r2y_csc ",
+        "dst_full_csc ",
     };
     const char *performance[] = {
         "unknown",
@@ -687,6 +742,23 @@ IM_API const char* querystring(int name) {
                     out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_400_INDEX];
                 if(!(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_MASK))
                     out << output_format[IM_RGA_SUPPORT_FORMAT_ERROR_INDEX];
+                out << endl;
+                break;
+
+            case RGA_FEATURE :
+                out << output_name[name];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_COLOR_FILL)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_COLOR_FILL_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_ROP)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_ROP_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_QUANTIZE)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_QUANTIZE_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_SRC1_R2Y_CSC)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_SRC1_R2Y_CSC_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC_INDEX];
                 out << endl;
                 break;
 
