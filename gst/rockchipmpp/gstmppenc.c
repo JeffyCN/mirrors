@@ -743,6 +743,9 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
 
   frame->output_buffer = buffer;
 
+  /* Allocated from the same DRM allocator in MPP */
+  mpp_buffer_set_index (mbuf, gst_mpp_allocator_get_index (self->allocator));
+
   mem = gst_mpp_allocator_import_mppbuf (self->allocator, mbuf);
   if (!mem)
     goto drop;
