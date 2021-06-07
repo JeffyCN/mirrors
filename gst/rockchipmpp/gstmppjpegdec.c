@@ -176,7 +176,9 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
     return FALSE;
 
   info = &mppdec->info;
-  self->buf_size = GST_VIDEO_INFO_SIZE (info);
+
+  /* The MPP's JPEG parser requires 2 * w * h for now */
+  self->buf_size = GST_VIDEO_INFO_PLANE_OFFSET (info, 1) * 2;
 
   /* The MPP's maximum output size would be 3*w*h (Y444) */
   if (mpp_format != MPP_FMT_BUTT)
