@@ -63,7 +63,17 @@ gst_mpp_buffer_quark (void)
 {
   static GQuark quark = 0;
   if (quark == 0)
-    quark = g_quark_from_string ("MppBuffer");
+    quark = g_quark_from_string ("mpp-buf");
+
+  return quark;
+}
+
+static GQuark
+gst_mpp_ext_buffer_quark (void)
+{
+  static GQuark quark = 0;
+  if (quark == 0)
+    quark = g_quark_from_string ("mpp-ext-buf");
 
   return quark;
 }
@@ -134,6 +144,7 @@ gst_mpp_allocator_import_mppbuf (GstAllocator * allocator, MppBuffer mbuf)
 {
   GstMppAllocator *self = GST_MPP_ALLOCATOR (allocator);
   GstMemory *mem;
+  GQuark quark;
   guint size;
   gint fd;
 
@@ -149,14 +160,16 @@ gst_mpp_allocator_import_mppbuf (GstAllocator * allocator, MppBuffer mbuf)
 
   if (mpp_buffer_get_index (mbuf) != self->index) {
     GST_DEBUG_OBJECT (self, "import from other group");
-    return gst_mpp_allocator_import_dmafd (allocator, fd, size);
+    mem = gst_mpp_allocator_import_dmafd (allocator, fd, size);
+    quark = gst_mpp_ext_buffer_quark ();
+  } else {
+    mem = gst_dmabuf_allocator_alloc (allocator, dup (fd), size);
+    quark = gst_mpp_buffer_quark ();
   }
 
-  mem = gst_dmabuf_allocator_alloc (allocator, dup (fd), size);
-
   mpp_buffer_inc_ref (mbuf);
-  gst_mini_object_set_qdata (GST_MINI_OBJECT (mem),
-      gst_mpp_buffer_quark (), mbuf, gst_mpp_mem_destroy);
+  gst_mini_object_set_qdata (GST_MINI_OBJECT (mem), quark, mbuf,
+      gst_mpp_mem_destroy);
 
   return mem;
 }
