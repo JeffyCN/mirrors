@@ -1059,6 +1059,44 @@ IM_API IM_STATUS rga_check_rotate(int mode_usage, rga_info_table_entry &table) {
     return IM_STATUS_NOERROR;
 }
 
+IM_API IM_STATUS rga_check_feature(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst,
+                                   int pat_enable, int mode_usage, int feature_usage) {
+    if (mode_usage == IM_COLOR_FILL && (~feature_usage & IM_RGA_SUPPORT_FEATURE_COLOR_FILL)) {
+        imErrorMsg("The platform does not support color fill featrue.");
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    if (mode_usage == IM_COLOR_PALETTE && (~feature_usage & IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE)) {
+        imErrorMsg("The platform does not support color palette featrue.");
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    if (mode_usage == IM_ROP && (~feature_usage & IM_RGA_SUPPORT_FEATURE_ROP)) {
+        imErrorMsg("The platform does not support ROP featrue.");
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    if (mode_usage == IM_NN_QUANTIZE && (~feature_usage & IM_RGA_SUPPORT_FEATURE_QUANTIZE)) {
+        imErrorMsg("The platform does not support quantize featrue.");
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    if ((pat_enable ? (pat.color_space_mode & IM_RGB_TO_YUV_MASK) : 0) && (~feature_usage & IM_RGA_SUPPORT_FEATURE_SRC1_R2Y_CSC)) {
+        imErrorMsg("The platform does not support src1 channel RGB2YUV color space convert featrue.");
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    if ((src.color_space_mode & IM_FULL_CSC_MASK ||
+        dst.color_space_mode & IM_FULL_CSC_MASK ||
+        (pat_enable ? (pat.color_space_mode & IM_FULL_CSC_MASK) : 0)) &&
+        (~feature_usage & IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC)) {
+        imErrorMsg("The platform does not support dst channel full color space convert(Y2Y/Y2R) featrue.");
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    return IM_STATUS_NOERROR;
+}
+
 IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
                            im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect, int mode_usage) {
     bool pat_enable = 0;
@@ -1076,6 +1114,11 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         if (rga_is_buffer_valid(pat))
             pat_enable = 1;
     }
+
+    /**************** feature judgment ****************/
+    ret = rga_check_feature(src, pat, dst, pat_enable, mode_usage, rga_info.feature);
+    if (ret != IM_STATUS_NOERROR)
+        return ret;
 
     /**************** info judgment ****************/
     if (~mode_usage & IM_COLOR_FILL) {
