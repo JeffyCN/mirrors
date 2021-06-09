@@ -156,7 +156,8 @@ gst_mpp_allocator_import_mppbuf (GstAllocator * allocator, MppBuffer mbuf)
     return NULL;
   }
 
-  size = mpp_buffer_get_size (mbuf);
+  /* HACK: DRM buffers are actually aligned to 4096 (page) */
+  size = GST_ROUND_UP_N (mpp_buffer_get_size (mbuf), 4096);
 
   if (mpp_buffer_get_index (mbuf) != self->index) {
     GST_DEBUG_OBJECT (self, "import from other group");
