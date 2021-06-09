@@ -17,15 +17,14 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <time.h>
-#include <stdint.h>
 #include <sys/types.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <errno.h>
 #include <time.h>
 #include <unistd.h>
@@ -36,6 +35,53 @@
 #include "RgaUtils.h"
 #include "RockchipRga.h"
 #include "core/NormalRga.h"
+
+struct format_table_entry {
+    int format;
+    const char *name;
+};
+
+struct format_table_entry format_table[] = {
+    { RK_FORMAT_RGBA_8888,          "rgba8888" },
+    { RK_FORMAT_RGBX_8888,          "rgbx8888" },
+    { RK_FORMAT_RGB_888,            "rgb888" },
+    { RK_FORMAT_BGRA_8888,          "bgra8888" },
+    { RK_FORMAT_RGB_565,            "rgb565" },
+    { RK_FORMAT_RGBA_5551,          "rgba5551" },
+    { RK_FORMAT_RGBA_4444,          "rgba4444" },
+    { RK_FORMAT_BGR_888,            "bgr888" },
+    { RK_FORMAT_YCbCr_422_SP,       "cbcr422sp" },
+    { RK_FORMAT_YCbCr_422_P,        "cbcr422p" },
+    { RK_FORMAT_YCbCr_420_SP,       "nv12" },
+    { RK_FORMAT_YCbCr_420_P,        "crcb420p" },
+    { RK_FORMAT_YCrCb_422_SP,       "crcb422sp" },
+    { RK_FORMAT_YCrCb_422_P,        "crcb422p" },
+    { RK_FORMAT_YCrCb_420_SP,       "crcb420sp" },
+
+    { RK_FORMAT_YCrCb_420_P,        "crcb422p" },
+    { RK_FORMAT_BPP1,               "bpp1" },
+    { RK_FORMAT_BPP2,               "bpp2" },
+    { RK_FORMAT_BPP4,               "bpp4" },
+    { RK_FORMAT_BPP8,               "bpp8" },
+    { RK_FORMAT_Y4,                 "y4" },
+
+    { RK_FORMAT_YCbCr_400,          "cbcr400" },
+    { RK_FORMAT_BGRX_8888,          "bgrx8888" },
+    { RK_FORMAT_YVYU_422,           "yvyu422" },
+    { RK_FORMAT_YVYU_420,           "yvyuv420" },
+    { RK_FORMAT_VYUY_422,           "vyuy422" },
+    { RK_FORMAT_VYUY_420,           "vyuy420" },
+
+    { RK_FORMAT_YUYV_422,           "yuyv422" },
+    { RK_FORMAT_YUYV_420,           "yuyv420" },
+    { RK_FORMAT_UYVY_422,           "uyvy422" },
+    { RK_FORMAT_UYVY_420,           "uyvy420" },
+    { RK_FORMAT_YCbCr_420_SP_10B,   "nv12_10" },
+    { RK_FORMAT_YCrCb_420_SP_10B,   "crcb420sp_10" },
+    { RK_FORMAT_YCbCr_422_10b_SP,   "cbcr422_10b" },
+    { RK_FORMAT_YCrCb_422_10b_SP,   "crcb422_10b" },
+    { RK_FORMAT_UNKNOWN,            "unknown" }
+};
 
 float get_bpp_from_format(int format) {
     float bpp = 0;
@@ -241,48 +287,48 @@ int get_string_by_format(char *value, int format) {
         case RK_FORMAT_YCrCb_422_P:
             memcpy(value, "crcb422p", sizeof("crcb422p"));
             break;
-		case RK_FORMAT_Y4:
-			memcpy(value, "y4", sizeof("y4"));
-			break;
-		case RK_FORMAT_YCbCr_400:
-			memcpy(value, "cbcr400", sizeof("cbcr400"));
-			break;
-		case RK_FORMAT_YVYU_422:
-			memcpy(value, "yvyu422", sizeof("yvyu422"));
-			break;
-		case RK_FORMAT_YVYU_420:
-			memcpy(value, "yvyu420", sizeof("yvyu420"));
-			break;
-		case RK_FORMAT_VYUY_422:
-			memcpy(value, "vyuy422", sizeof("vyuy422"));
-			break;
-		case RK_FORMAT_VYUY_420:
-			memcpy(value, "vyuy420", sizeof("vyuy420"));
-			break;
-		case RK_FORMAT_YUYV_422:
-			memcpy(value, "yuyv422", sizeof("yuyv422"));
-			break;
-		case RK_FORMAT_YUYV_420:
-			memcpy(value, "yuyv420", sizeof("yuyv420"));
-			break;
-		case RK_FORMAT_UYVY_422:
-			memcpy(value, "uyvy422", sizeof("uyvy422"));
-			break;
-		case RK_FORMAT_UYVY_420:
-			memcpy(value, "uyvy420", sizeof("uyvy420"));
-			break;
+        case RK_FORMAT_Y4:
+            memcpy(value, "y4", sizeof("y4"));
+            break;
+        case RK_FORMAT_YCbCr_400:
+            memcpy(value, "cbcr400", sizeof("cbcr400"));
+            break;
+        case RK_FORMAT_YVYU_422:
+            memcpy(value, "yvyu422", sizeof("yvyu422"));
+            break;
+        case RK_FORMAT_YVYU_420:
+            memcpy(value, "yvyu420", sizeof("yvyu420"));
+            break;
+        case RK_FORMAT_VYUY_422:
+            memcpy(value, "vyuy422", sizeof("vyuy422"));
+            break;
+        case RK_FORMAT_VYUY_420:
+            memcpy(value, "vyuy420", sizeof("vyuy420"));
+            break;
+        case RK_FORMAT_YUYV_422:
+            memcpy(value, "yuyv422", sizeof("yuyv422"));
+            break;
+        case RK_FORMAT_YUYV_420:
+            memcpy(value, "yuyv420", sizeof("yuyv420"));
+            break;
+        case RK_FORMAT_UYVY_422:
+            memcpy(value, "uyvy422", sizeof("uyvy422"));
+            break;
+        case RK_FORMAT_UYVY_420:
+            memcpy(value, "uyvy420", sizeof("uyvy420"));
+            break;
         case RK_FORMAT_YCbCr_420_SP_10B:
             memcpy(value, "nv12_10", sizeof("nv12_10"));
             break;
         case RK_FORMAT_YCrCb_420_SP_10B:
             memcpy(value, "crcb420sp_10", sizeof("crcb420sp_10"));
             break;
-		case RK_FORMAT_YCbCr_422_10b_SP:
-			memcpy(value, "cbcr422_10b", sizeof("cbcr422_10b"));
-			break;
-		case RK_FORMAT_YCrCb_422_10b_SP:
-			memcpy(value, "crcb422_10b", sizeof("crcb422_10b"));
-			break;
+        case RK_FORMAT_YCbCr_422_10b_SP:
+            memcpy(value, "cbcr422_10b", sizeof("cbcr422_10b"));
+            break;
+        case RK_FORMAT_YCrCb_422_10b_SP:
+            memcpy(value, "crcb422_10b", sizeof("crcb422_10b"));
+            break;
         default:
             printf("Is unsupport format now, please fix");
             return 0;
@@ -344,5 +390,15 @@ int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index) {
     fclose(file);
 
     return 0;
+}
+
+const char *translate_format_str(int format) {
+    format = RkRgaGetRgaFormat(format);
+
+    for (int i = 0; i < sizeof(format_table) / sizeof(format_table[0]); i++)
+        if (format_table[i].format == format)
+            return format_table[i].name;
+
+    return "unknow";
 }
 
