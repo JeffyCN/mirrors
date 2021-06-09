@@ -83,13 +83,23 @@ GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-h264, "
-        "width  = (int) [ 32, 1920 ], "
-        "height = (int) [ 32, 1088 ], "
-        "framerate = (fraction) [0/1, 60/1], "
+        "width  = (int) [ 96, 1920 ], "
+        "height = (int) [ 64, 2176 ], "
+        "framerate = " GST_VIDEO_FPS_RANGE ", "
         "stream-format = (string) { byte-stream }, "
         "alignment = (string) { au }, "
         "profile = (string) { baseline, main, high }")
     );
+
+static GstStaticPadTemplate gst_mpp_h264_enc_sink_template =
+    GST_STATIC_PAD_TEMPLATE ("sink",
+    GST_PAD_SINK,
+    GST_PAD_ALWAYS,
+    GST_STATIC_CAPS ("video/x-raw,"
+        "format = (string) { " MPP_ENC_FORMATS " }, "
+        "width  = (int) [ 96, 1920 ], "
+        "height = (int) [ 64, 2176 ], "
+        "framerate = " GST_VIDEO_FPS_RANGE ";"));
 
 #define GST_TYPE_MPP_H264_ENC_PROFILE (gst_mpp_h264_enc_profile_get_type ())
 static GType
@@ -404,6 +414,9 @@ gst_mpp_h264_enc_class_init (GstMppH264EncClass * klass)
 
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_mpp_h264_enc_src_template));
+
+  gst_element_class_add_pad_template (element_class,
+      gst_static_pad_template_get (&gst_mpp_h264_enc_sink_template));
 
   gst_element_class_set_static_metadata (element_class,
       "Rockchip Mpp H264 Encoder", "Codec/Encoder/Video",

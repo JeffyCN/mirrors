@@ -60,10 +60,20 @@ GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("image/jpeg, "
-        "width  = (int) [ 96, 8192 ], " "height = (int) [ 32, 8192 ], "
-        /* Up to 90 million pixels per second at the rk3399 */
-        "framerate = (fraction) [0/1, 60/1], " "sof-marker = { 0 }")
+        "width  = (int) [ 16, 8192 ], "
+        "height = (int) [ 16, 8192 ], "
+        "framerate = " GST_VIDEO_FPS_RANGE ", " "sof-marker = { 0 }")
     );
+
+static GstStaticPadTemplate gst_mpp_jpeg_enc_sink_template =
+    GST_STATIC_PAD_TEMPLATE ("sink",
+    GST_PAD_SINK,
+    GST_PAD_ALWAYS,
+    GST_STATIC_CAPS ("video/x-raw,"
+        "format = (string) { " MPP_ENC_FORMATS " }, "
+        "width  = (int) [ 16, 8192 ], "
+        "height = (int) [ 16, 8192 ], "
+        "framerate = " GST_VIDEO_FPS_RANGE ";"));
 
 static void
 gst_mpp_h264_enc_set_property (GObject * object,
@@ -186,6 +196,9 @@ gst_mpp_jpeg_enc_class_init (GstMppJpegEncClass * klass)
 
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_mpp_jpeg_enc_src_template));
+
+  gst_element_class_add_pad_template (element_class,
+      gst_static_pad_template_get (&gst_mpp_jpeg_enc_sink_template));
 
   gst_element_class_set_static_metadata (element_class,
       "Rockchip Mpp JPEG Encoder", "Codec/Encoder/Video",

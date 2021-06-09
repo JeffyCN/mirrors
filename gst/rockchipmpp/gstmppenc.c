@@ -92,19 +92,6 @@ enum
   PROP_LAST,
 };
 
-#define MPP_ENC_FORMATS \
-    "NV12, I420, YUY2, UYVY, BGR16, RGB16, BGR15, RGB15, ABGR, ARGB, BGRA, RGBA"
-
-static GstStaticPadTemplate gst_mpp_enc_sink_template =
-    GST_STATIC_PAD_TEMPLATE ("sink",
-    GST_PAD_SINK,
-    GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("video/x-raw,"
-        "format = (string) { " MPP_ENC_FORMATS " }, "
-        "width  = (int) [ 32, 1920 ], "
-        "height = (int) [ 32, 1088 ], "
-        "framerate = (fraction) [0/1, 60/1]" ";"));
-
 static void
 gst_mpp_enc_set_property (GObject * object,
     guint prop_id, const GValue * value, GParamSpec * pspec)
@@ -1025,7 +1012,4 @@ gst_mpp_enc_class_init (GstMppEncClass * klass)
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   element_class->change_state = GST_DEBUG_FUNCPTR (gst_mpp_enc_change_state);
-
-  gst_element_class_add_pad_template (element_class,
-      gst_static_pad_template_get (&gst_mpp_enc_sink_template));
 }
