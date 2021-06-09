@@ -126,7 +126,7 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         arg.bpp = bpp;
         arg.width = width;
         arg.height = height;
-		arg.flags = flags;
+        arg.flags = flags;
 
         ret = drmIoctl(drm_fd, DRM_IOCTL_MODE_CREATE_DUMB, &arg);
         if (ret) {
@@ -166,7 +166,7 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
 #endif
     }
 
-	int RockchipRga::RkRgaGetAllocBufferExt(bo_t *bo_info, int width, int height, int bpp, int flags) {
+    int RockchipRga::RkRgaGetAllocBufferExt(bo_t *bo_info, int width, int height, int bpp, int flags) {
         static const char* card = "/dev/dri/card0";
         int ret;
         int drm_fd;
@@ -190,13 +190,13 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         return 0;
     }
 
-	int RockchipRga::RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp) {
-		return RkRgaGetAllocBufferExt(bo_info, width, height, bpp, 0);
-	}
+    int RockchipRga::RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp) {
+        return RkRgaGetAllocBufferExt(bo_info, width, height, bpp, 0);
+    }
 
-	int RockchipRga::RkRgaGetAllocBufferCache(bo_t *bo_info, int width, int height, int bpp) {
-		return RkRgaGetAllocBufferExt(bo_info, width, height, bpp, ROCKCHIP_BO_CACHABLE);
-	}
+    int RockchipRga::RkRgaGetAllocBufferCache(bo_t *bo_info, int width, int height, int bpp) {
+        return RkRgaGetAllocBufferExt(bo_info, width, height, bpp, ROCKCHIP_BO_CACHABLE);
+    }
 
     int RockchipRga::RkRgaGetMmap(bo_t *bo_info) {
 #if LIBDRM
@@ -253,11 +253,11 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         return ret;
     }
 
-	int RockchipRga::RkRgaGetHandleMapCpuAddress(buffer_handle_t handle, void **buf) {
-		int ret = 0;
-		ret = RkRgaGetHandleMapAddress(handle, buf);
-		return ret;
-	}
+    int RockchipRga::RkRgaGetHandleMapCpuAddress(buffer_handle_t handle, void **buf) {
+        int ret = 0;
+        ret = RkRgaGetHandleMapAddress(handle, buf);
+        return ret;
+    }
 #endif
 
     int RockchipRga::RkRgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {

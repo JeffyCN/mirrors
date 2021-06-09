@@ -122,12 +122,12 @@ typedef struct rga_nn {
 } rga_nn_t;
 
 typedef struct rga_dither {
-	int enable;
-	int mode;
-	int lut0_l;
-	int lut0_h;
-	int lut1_l;
-	int lut1_h;
+    int enable;
+    int mode;
+    int lut0_l;
+    int lut0_h;
+    int lut1_l;
+    int lut1_h;
 } rga_dither_t;
 
 /*
@@ -161,8 +161,8 @@ typedef struct rga_info {
     int color_space_mode;
     int sync_mode;
     rga_nn_t nn;
-	rga_dither_t dither;
-	int rop_code;
+    rga_dither_t dither;
+    int rop_code;
     int reserve[127];
 } rga_info_t;
 

@@ -63,8 +63,8 @@ namespace android {
                                      int width, int height, int bpp, int flags);
         int         RkRgaFreeBuffer(int drm_fd /* input */, bo_t *bo_info);
         int         RkRgaGetAllocBuffer(bo_t *bo_info, int width, int height, int bpp);
-		int         RkRgaGetAllocBufferExt(bo_t *bo_info, int width, int height, int bpp, int flags);
-		int         RkRgaGetAllocBufferCache(bo_t *bo_info, int width, int height, int bpp);
+        int         RkRgaGetAllocBufferExt(bo_t *bo_info, int width, int height, int bpp, int flags);
+        int         RkRgaGetAllocBufferCache(bo_t *bo_info, int width, int height, int bpp);
         int         RkRgaGetMmap(bo_t *bo_info);
         int         RkRgaUnmap(bo_t *bo_info);
         int         RkRgaFree(bo_t *bo_info);

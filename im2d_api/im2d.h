@@ -252,7 +252,7 @@ typedef struct {
     int global_alpha;                   /* global_alpha */
     im_colorkey_range colorkey_range;   /* range value of color key */
     im_nn_t nn;
-	int rop_code;
+    int rop_code;
 } rga_buffer_t;
 
 /*

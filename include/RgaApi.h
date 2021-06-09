@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2016 Rockchip Electronics Co., Ltd.
  * Authors:
- *	Zhiqin Wei <wzq@rock-chips.com>
+ *    Zhiqin Wei <wzq@rock-chips.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ extern "C"{
     ret;\
 })
 #define RgaDeInit(ctx) { \
-    (void)ctx;		/* unused */ \
+    (void)ctx;        /* unused */ \
     c_RkRgaDeInit(); \
 }
 #define RgaBlit(...) c_RkRgaBlit(__VA_ARGS__)

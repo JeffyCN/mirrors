@@ -41,7 +41,7 @@
  *
  *  Log:
  *          init
-	----Fri Aug 28 10:17:46 2020
+    ----Fri Aug 28 10:17:46 2020
  */
 
 
@@ -105,8 +105,8 @@ using android::hardware::graphics::common::V1_2::PixelFormat;
 #define GRALLOC_ARM_METADATA_TYPE_NAME "arm.graphics.ArmMetadataType"
 const static IMapper::MetadataType ArmMetadataType_PLANE_FDS
 {
-	GRALLOC_ARM_METADATA_TYPE_NAME,
-	// static_cast<int64_t>(aidl::arm::graphics::ArmMetadataType::PLANE_FDS)
+    GRALLOC_ARM_METADATA_TYPE_NAME,
+    // static_cast<int64_t>(aidl::arm::graphics::ArmMetadataType::PLANE_FDS)
     1   // 就是上面的 'PLANE_FDS'
 };
 
@@ -160,22 +160,22 @@ template <typename T>
 static int get_metadata(IMapper &mapper, buffer_handle_t handle, IMapper::MetadataType type,
                         android::status_t (*decode)(const hidl_vec<uint8_t> &, T *), T *value)
 {
-	void *handle_arg = const_cast<native_handle_t *>(handle);
-	assert(handle_arg);
-	assert(value);
-	assert(decode);
+    void *handle_arg = const_cast<native_handle_t *>(handle);
+    assert(handle_arg);
+    assert(value);
+    assert(decode);
 
-	int err = 0;
-	mapper.get(handle_arg, type, [&err, value, decode](Error error, const hidl_vec<uint8_t> &metadata)
-	            {
-		            if (error != Error::NONE)
-		            {
-			            err = android::BAD_VALUE;
-			            return;
-		            }
-		            err = decode(metadata, value);
-		        });
-	return err;
+    int err = 0;
+    mapper.get(handle_arg, type, [&err, value, decode](Error error, const hidl_vec<uint8_t> &metadata)
+                {
+                    if (error != Error::NONE)
+                    {
+                        err = android::BAD_VALUE;
+                        return;
+                    }
+                    err = decode(metadata, value);
+                });
+    return err;
 }
 
 /*
