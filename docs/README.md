@@ -464,7 +464,6 @@ const char* querystring(int name);
 #### wrapbuffer_T
 
 > IM2D图形库接口参数中，输入源图像及输出目标图像应支持多种类型（以下内容输入参数用符号‘T’代表支持的类型）。在执行相应的图像操作之前，需要先调用wrapbuffer_T(T)将输入输出图像缓冲类型转化为统一的rga_buffer_t结构体，作为user API的输入参数。支持的输入输出图像缓冲类型具体包括：
->
 
 | **Parameters(T)** | Data Type                                                    | Description                                                  |
 | ----------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -587,7 +586,6 @@ IM_STATUS imcrop(const rga_buffer_t src,
 ```
 
 > 通过指定Rect 的大小区域执行图像裁剪。
->
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
@@ -615,7 +613,6 @@ IM_STATUS imrotate(const rga_buffer_t src,
 
 >
 >  支持图像旋转90，180，270度。
->
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
@@ -642,7 +639,6 @@ IM_STATUS imflip (const rga_buffer_t src,
 ```
 
 > 支持图像做水平、垂直镜像翻转。
->
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
@@ -717,7 +713,6 @@ IM_STATUS imtranslate(const rga_buffer_t src,
 ```
 
 > 对图像做平移操作，移动到（x, y）坐标位置，src和dst 宽高须一致，超出部分会被裁剪。
->
 
 | Parameter | Description                                  |
 | --------- | -------------------------------------------- |
@@ -744,7 +739,6 @@ IM_STATUS imcopy(const rga_buffer_t src,
 ```
 
 > 对图像做拷贝操作，RGA基础操作。作用与memcpy 类似。
->
 
 | Parameter | **Description**                              |
 | --------- | -------------------------------------------- |
@@ -769,8 +763,7 @@ IM_STATUS imblend(const rga_buffer_t srcA,
                   int sync = 1);
 ```
 
-> RGA使用A+B -> B 的图像合成模式。
->
+> RGA使用A+B -> B 的图像双通道合成模式， 将前景图像（srcA通道）与背景图像（dst通道）根据配置的混合模型执行对应的Alpha叠加计算，并将合成结果输出至dst通道上。
 
 ```c++
 IM_STATUS imcomposite(const rga_buffer_t srcA,
@@ -780,29 +773,54 @@ IM_STATUS imcomposite(const rga_buffer_t srcA,
                       int sync = 1);
 ```
 
-> RGA使用A+B -> C 的图像合成模式。
+> RGA使用A+B -> C 的图像三通道合成模式，将前景图像（srcA通道）与背景图像（srcB通道）根据配置的混合模型执行对应的Alpha叠加计算，并将合成结果输出至dst通道上。
+
+两种图像合成模式中mode 可以配置不同的**Porter-Duff混合模型**：
+
+> 说明Porter-Duff混合模型前，先做出如下定义：
 >
-> 两种图像合成模式中mode 可以配置图像合成公式**[Alpha, Color]**：
+> - S -**标识两个混合图像中的源图像**，即前景图像，为souce的缩写。
+> - D -**标识两个混合图像中的目标图像**，即背景图像，为destination的缩写。
+> - R -**标识两个图像混合的结果**，为result的缩写。
+> - c -**标识像素的颜色**，即（RGBA）的RGB部分，描述图像本身色彩，为color的缩写。（**注意**，Porter-Duff混合模型中的色彩值（RGB）均为左乘后的结果，即原始色彩与透明度的乘积，如色彩值未左乘则需要进行预乘（Xc = Xc * Xa）操作。）
+> - a -**标识像素的透明度**，即（RGBA）的A部分，描述图像本身的透明度，为Alpha的缩写。
+> - f -**标识作用于C或者A上的因子**，为factor的缩写。
 >
-> IM_ALPHA_BLEND_SRC:
+> Porter-Duff混合模型的核心公式如下：
 >
-> ​		[Sa, Sc]
+> Rc = Sc * Sf + Dc * Df;
 >
-> IM_ALPHA_BLEND_DST:
+> 即： 结果色 = 源色彩 * 源因子 + 目标色彩 * 目标因子。
 >
-> ​		[Da, Dc]
+> Ra = Sa * Sf + Da * Df;
 >
-> IM_ALPHA_BLEND_SRC_OVER：
+> 即： 结果透明度 = 源透明度 * 源因子 + 目标透明度 * 目标因子。
+
+RGA支持以下几种混合模型：
+
+> SRC:
 >
-> ​		[Sa + (1 - Sa)*Da]
+> ​		Sf = 1， Df = 0；
 >
-> IM_ALPHA_BLEND_DST_OVER:
+> ​		[Rc，Ra] = [Sc，Sa]；
 >
-> ​		[Sa * Da, Sc * Da]
+> DST:
 >
-> IM_ALPHA_BLEND_DST_OUT:
+> ​		Sf = 0， Df = 1；
 >
-> ​		[Da, Sc * Da + (1 - Sa) * Dc]
+> ​		[Rc，Ra] = [Dc，Da]；
+>
+> SRC_OVER：
+>
+> ​		Sf = 1， Df = （1 - Sa）；
+>
+> ​		[Rc，Ra] = [ Sc + (1 - Sa) * Dc， Sa + (1 - Sa) * Da ]；
+>
+> DST_OVER:
+>
+> ​		Sf = (1 - Da) ， Df = 1；
+>
+> ​		[Rc，Ra] = [ Sc * (1 - Da)  + Dc， Sa * (1 - Da) + Da ] ；
 
 【注意】图像合成模式不支持YUV格式之间合成，imblend函数dst图像不支持YUV格式，imcomposite函数srcB图像不支持YUV格式。
 
@@ -811,7 +829,7 @@ IM_STATUS imcomposite(const rga_buffer_t srcA,
 | srcA      | **[required]** input image A                                 |
 | srcB      | **[required]** input image B                                 |
 | dst       | **[required]** output image                                  |
-| mode      | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC<br/>IM_ALPHA_BLEND_DST  <br/>IM_ALPHA_BLEND_SRC_OVER<br/>IM_ALPHA_BLEND_DST_OVER<br/>IM_ALPHA_BLEND_DST_OUT |
+| mode      | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC —— SRC模式<br/>IM_ALPHA_BLEND_DST —— DST模式  <br/>IM_ALPHA_BLEND_SRC_OVER —— SRC OVER模式<br/>IM_ALPHA_BLEND_DST_OVER —— DST OVER模式<br />IM_ALPHA_BLEND_PRE_MUL —— 预乘使能，当需要预乘时须将该标识与其他模式标识进行或处理，再赋值给mode |
 | sync      | **[optional]** wait until operation complete                 |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
@@ -873,7 +891,6 @@ IM_STATUS imcvtcolor(rga_buffer_t src,
 > 格式转换功能，具体格式支持根据soc有不同请查阅**图像格式支持**章节。
 >
 > 格式可以通过rga_buffer_t 设置，也可以通过sfmt/dfmt分别配置源图像及输出图像格式。
->
 
 | parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
@@ -902,7 +919,6 @@ IM_STATUS imquantize(const rga_buffer_t src,
 ```
 
 > 目前仅RV1126 / RV1109上支持。NN运算点前处理，图像RGB 三个通道可以分开单独配置offset以及scale。
->
 
 公式：
 
@@ -973,7 +989,6 @@ IM_STATUS improcess(rga_buffer_t src,
 > RGA 图像复合操作函数，其他API都是基于此API开发，improcess 可以实现更复杂的复合操作。
 >
 > 图像操作通过usage 的方式进行配置。
->
 
 | Parameter | Description                          |
 | --------- | ------------------------------------ |
@@ -1038,14 +1053,12 @@ IM_STATUS imsync(void);
 > RGA异步模式需要调用该接口等待操作完成。
 >
 > 其他API 将 sync 设置为0，效果相当于opengl中的 glFlush，如果进一步调用imsync 可以达到glFinish的效果。
->
 
 
 
 ## 测试用例及调试方法
 
 > 为了让开发者更加快捷的上手上述的新接口，这里通过运行demo和对demo源码的解析以加速开发者对API的理解和运用。
->
 
 
 
@@ -1083,7 +1096,6 @@ out%dw%d-h%d-%s.bin
 | HAL_PIXEL_FORMAT_YCrCb_NV12_10    | RK_FORMAT_YCbCr_420_SP_10B | "nv12_10"   |
 
 > demo中默认的输入图像文件分辨率为1280x720，格式为RGBA8888， 则须在/data或/usr/data目录下提前准备好名为in0w1280-h720-rgba8888.bin的源图像文件，图像合成模式还须额外在/data或/usr/data目录下提前准备好名为in1w1280-h720-rgba8888.bin的源图像文件。
->
 
 
 
@@ -1193,7 +1205,6 @@ gr_color_x [0, 0, 0]
 ------
 
 > 运行demo前需要进行如下步骤：
->
 
 - 开发者根据需求修改 demo，建议第一次运行使用默认配置。
 
@@ -1215,7 +1226,6 @@ gr_color_x [0, 0, 0]
 ------
 
 > demo中提供了两种buffer用于RGA合成——Graphicbuffer、AHardwareBuffer。这两种buffer通过宏USE_AHARDWAREBUFFER区分。
->
 
 ```c++
 目录：librga/samples/im2d_api_demo/Android.mk 
@@ -1232,7 +1242,6 @@ endif
 ##### Graphicbuffer
 
 > 主要通过三个函数完成Graphicbuffer的初始化、填充/清空、填充rga_buffer_t结构体。
->
 
 ```c++
 	/*传入src/dst的宽、高、图像格式，初始化Graphicbuffer*/
@@ -1256,7 +1265,6 @@ endif
 ##### AHardwareBuffer
 
 > 主要通过三个函数完成AHardwareBuffer的初始化、填充/清空、填充rga_buffer_t结构体。
->
 
 ```c++
 	/*传入src/dst的宽、高、图像格式，初始化AHardwareBuffer*/
@@ -1282,7 +1290,6 @@ endif
 ------
 
 > 使用如下命令获取测试用例帮助信息
->
 
 ```
 rgaImDemo -h
@@ -1291,7 +1298,6 @@ rgaImDemo
 ```
 
 > 运行成功后，便可以根据帮助信息使用demo，打印信息如下：
->
 
 ```
 rk3399_Android10:/ # rgaImDemo
@@ -1331,7 +1337,6 @@ ctx=0x7864d7c520,ctx->rgaFd=3
 ```
 
 > 所有的参数解析在目录/librga/demo/im2d_api_demo/args.cpp中。
->
 
 
 
@@ -1353,7 +1358,6 @@ rgaImDemo --while=6 --copy
 ------
 
 > 使用如下命令获取版本及支持信息：
->
 
 ```
 rgaImDemo --querystring
@@ -1361,7 +1365,6 @@ rgaImDemo --querystring=<options>
 ```
 
 > 该命令有可选options，没有options则默认视为选择=all，可选options如下：
->
 
 ```
 options：
@@ -1379,7 +1382,6 @@ options：
 ##### 代码解析
 
 > 根据main()传参决定打印出的不同信息。
->
 
 ```c++
 	/*将main()传参转化为QUERYSTRING_INFO枚举值*/
@@ -1395,7 +1397,6 @@ options：
 ------
 
 > 使用如下命令进行图像缩放测试
->
 
 ```
 rgaImDemo --resize=up
@@ -1403,7 +1404,6 @@ rgaImDemo --resize=down
 ```
 
 > 该功能必须填入可选options，可选options如下：
->
 
 ```
 options：
@@ -1414,7 +1414,6 @@ options：
 ##### 代码解析
 
 > 根据main()传参（up/down）决定放大或是缩小，即针对不同场景，重新初始化、清空buffer，填充rga_buffer_t结构体，并将最终的存储src、dst图像数据的rga_buffer_t结构体传入imresize()。
->
 
 ```c++
 	switch(parm_data[MODE_RESIZE])
@@ -1451,19 +1450,16 @@ options：
 ------
 
 > 使用如下命令测试图像裁剪
->
 
 ```
 rgaImDemo --crop
 ```
 
 > 该功能无可选options，默认裁剪坐标LT(100,100)，RT(400,100)，LB(100,400)，RB(400,400)内的图像。
->
 
 ##### 代码解析
 
 > 将需要裁剪的大小在存储src矩形数据的im_rect结构体中赋值，并将存储src、dst图像数据的rga_buffer_t结构体传入imcrop()。
->
 
 ```c++
 	/*这里通过x、y确定裁剪顶点的坐标，width、height确定裁剪区域大小*/
@@ -1485,7 +1481,6 @@ rgaImDemo --crop
 ------
 
 > 使用如下命令测试图像旋转
->
 
 ```
 rgaImDemo --rotate=90
@@ -1494,7 +1489,6 @@ rgaImDemo --rotate=270
 ```
 
 > 该功能必须填入可选options，可选options如下：
->
 
 ```
 options：
@@ -1506,7 +1500,6 @@ options：
 ##### 代码解析
 
 > 根据main()传参（90/180/270）决定旋转角度，并将传参转化为IM_USAGE枚举值，与存储src、dst图像数据的rga_buffer_t结构体一同传入imrotate()。
->
 
 ```c++
 	/*将main()传参转化为IM_USAGE枚举值*/
@@ -1525,7 +1518,6 @@ options：
 ------
 
 > 使用如下命令测试镜像翻转
->
 
 ```
 rgaImDemo --flip=H
@@ -1533,7 +1525,6 @@ rgaImDemo --flip=V
 ```
 
 > 该功能必须填入可选options，可选options如下：
->
 
 ```
 options：
@@ -1544,7 +1535,6 @@ options：
 ##### 代码解析
 
 > 根据main函数传参（H/V）决定镜像翻转方向，并将传参转化为IM_USAGE枚举值，与存储src、dst图像数据的rga_buffer_t结构体一同传入imflip()。
->
 
 ```c++
 	/*将main()传参转化为IM_USAGE枚举值*/
@@ -1563,7 +1553,6 @@ options：
 ------
 
 > 使用如下命令测试颜色填充
->
 
 ```
 rgaImDemo --fill=blue
@@ -1583,7 +1572,6 @@ options：
 ##### 代码解析
 
 > 根据main函数传参（bule/green/red）决定填充颜色，将需要填充的大小在存储dst矩形数据的im_rect结构体中赋值，并将传参转化为对应颜色的16进制数，与存储dst图像数据的rga_buffer_t结构体一同传入imfill()。
->
 
 ```c++
 	/*将main()传参转化为对应颜色的16进制数*/
@@ -1608,19 +1596,16 @@ options：
 ------
 
 > 使用如下命令测试图像平移操作
->
 
 ```
 rgaImDemo --translate
 ```
 
 > 该功能无可选options，默认顶点（左上角坐标）平移至(300,300)，即向右平移300个像素，再向下平移300个像素。
->
 
 ##### 代码解析
 
 > 将需要平移的偏移量在存储src矩形数据的im_rect结构体中赋值，并将存储src、dst图像数据的rga_buffer_t结构体传入imtranslate()。
->
 
 ```c++
 	/*这里通过x、y确定平移后图像的顶点的坐标*/
@@ -1640,19 +1625,16 @@ rgaImDemo --translate
 ------
 
 > 使用如下命令测试图像拷贝
->
 
 ```
 rgaImDemo --copy
 ```
 
 > 该功能无可选options，默认拷贝分辨率为1280x720，格式为RGBA8888的图像。
->
 
 ##### 代码解析
 
 > 将存储src、dst图像数据的rga_buffer_t结构体传入imcopy()。
->
 
 ```c++
 	/*rga_buffer_t格式的结构体src、dst传入imcopy()*/	
@@ -1668,19 +1650,16 @@ rgaImDemo --copy
 ------
 
 > 使用如下命令测试图像合成
->
 
 ```
 rgaImDemo --blend
 ```
 
 > 该功能无可选options，默认合成模式为 IM_ALPHA_BLEND_DST 模式。
->
 
 ##### 代码解析
 
 > 将存储src、dst图像数据的rga_buffer_t结构体传入imblend()。
->
 
 ```c++
 	/*rga_buffer_t格式的结构体src、dst传入imblend()*/	
@@ -1696,14 +1675,12 @@ rgaImDemo --blend
 ------
 
 > 使用如下命令测试图像格式转换
->
 
 ```
 rgaImDemo --cvtcolor
 ```
 
 > 该功能无可选options，默认将分辨率为1280x720的图像从RGBA8888格式转换为NV12格式。
->
 
 ##### 代码解析
 
