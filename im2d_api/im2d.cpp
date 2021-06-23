@@ -472,7 +472,14 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
     sprintf(buf, "%f", rgaCtx->mVersion);
     sscanf(rgaCtx->mVersion_str, "%*[^.].%*[^.].%x", &rga_svn_version);
 
-    if (strncmp(buf,"3.0",3) == 0) {
+    if (strncmp(buf, "2.0", 4) == 0) {
+        if (rga_svn_version == 0) {
+            rga_version = RGA_2;
+            memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
+        } else {
+            goto TRY_TO_COMPATIBLE;
+        }
+    } else if (strncmp(buf, "3.0", 3) == 0) {
         switch (rga_svn_version) {
             case 0x16445 :
                 rga_version = RGA_2;
@@ -485,12 +492,14 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
             default :
                 goto TRY_TO_COMPATIBLE;
         }
-    } else if (strncmp(buf,"3.2",3) == 0) {
+    } else if (strncmp(buf, "3.2", 3) == 0) {
         switch (rga_svn_version) {
-            case 0x28218 :
+            case 0x18218 :
                 rga_version = RGA_2_ENHANCE;
                 memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
+                return_table->feature |= IM_RGA_SUPPORT_FEATURE_ROP;
                 break;
+            case 0x56726 :
             case 0x63318 :
                 rga_version = RGA_2_ENHANCE;
                 memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
@@ -499,14 +508,13 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                 return_table->output_format |= IM_RGA_SUPPORT_FORMAT_YUV_400 |
                                                IM_RGA_SUPPORT_FORMAT_Y4;
                 return_table->feature |= IM_RGA_SUPPORT_FEATURE_QUANTIZE |
-                                         IM_RGA_SUPPORT_FEATURE_ROP |
                                          IM_RGA_SUPPORT_FEATURE_SRC1_R2Y_CSC |
                                          IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC;
                 break;
             default :
                 goto TRY_TO_COMPATIBLE;
         }
-    } else if (strncmp(buf,"4.0",3) == 0) {
+    } else if (strncmp(buf, "4.0", 3) == 0) {
         switch (rga_svn_version) {
             case 0x18632 :
                 rga_version = RGA_2_LITE0;
@@ -520,7 +528,7 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
             default :
                 goto TRY_TO_COMPATIBLE;
         }
-    } else if (strncmp(buf,"42.0",4) == 0) {
+    } else if (strncmp(buf, "42.0", 4) == 0) {
         if (rga_svn_version == 17760) {
             rga_version = RGA_2_LITE1;
             memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
@@ -556,8 +564,11 @@ TRY_TO_COMPATIBLE:
 
     memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
 
-    if (rga_version == RGA_V_ERR)
+    if (rga_version == RGA_V_ERR) {
+        ALOGE("rga_im2d: Can not get the correct RGA version, please check the driver, version=%s\n", rgaCtx->mVersion_str);
+        imSetErrorMsg("Can not get the correct RGA version, please check the driver, version=%s", rgaCtx->mVersion_str);
         return IM_STATUS_FAILED;
+    }
 
     return IM_STATUS_SUCCESS;
 }
@@ -1152,7 +1163,6 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     ret = rga_get_info(&rga_info);
     if (IM_STATUS_FAILED == ret) {
         ALOGE("rga im2d: rga2 get info failed!\n");
-        imSetErrorMsg("RGA im2d api get info failed!");
         return IM_STATUS_FAILED;
     }
 
