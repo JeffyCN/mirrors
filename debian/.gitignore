@@ -1,0 +1,11 @@
+debhelper-build-stamp
+files
+rkwifibt-dev-tools/
+rkwifibt-broadcom/
+rkwifibt-broadcom.substvars
+rkwifibt-rockchip/
+rkwifibt-rockchip.substvars
+rkwifibt-realtek/
+rkwifibt-realtek.substvars
+tmp/
+.debhelper/

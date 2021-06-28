@@ -1,0 +1,26 @@
+Source: rkwifibt
+Priority: optional
+Maintainer: Caesar Wang <wxt@rock-chips.com>
+Build-Depends: debhelper (>= 9),
+               meson,
+               pkg-config,
+Standards-Version: 3.9.8
+Section: libs
+Homepage: https://github.com/rockchip-linux/rkwifibt
+Vcs-Git: https://github.com/rockchip-linux/rkwifibt
+Vcs-Browser: https://github.com/rockchip-linux/rkwifibt
+
+Package: rkwifibt-dev-tools
+Section: libdevel
+Architecture: any
+Description: include the rkwifibt broadcom tools for rockchip linux
+
+Package: rkwifibt-broadcom-firmware
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: include the rkwifibt broadcom firmware for rockchip linux
+
+Package: rkwifibt-rockchip-firmware
+Section: libdevel
+Architecture: any
+Description: include the rkwifibt rockchip firmware for rockchip linux

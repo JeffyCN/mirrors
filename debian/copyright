@@ -1,0 +1,27 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: rkwifbt
+Source: https://github.com/rockchip-linux/rkwifibt
+
+Files: debian/*
+Copyright: 2021 Caesar Wang <wxt@rock-chips.com>
+Copyright (C) 2021 Fuzhou Rockchip Electronics Co., Ltd. All rights reserved.
+
+BY DOWNLOADING, INSTALLING, COPYING, SAVING OR OTHERWISE USING THIS SOFTWARE,
+YOU ACKNOWLEDGE THAT YOU AGREE THE SOFTWARE RECEIVED FROM ROCKCHIP IS PROVIDED
+TO YOU ON AN "AS IS" BASIS and ROCKCHIP DISCLAIMS ANY AND ALL WARRANTIES AND
+REPRESENTATIONS WITH RESPECT TO SUCH FILE, WHETHER EXPRESS, IMPLIED, STATUTORY
+OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY IMPLIED WARRANTIES OF TITLE,
+NON-INFRINGEMENT, MERCHANTABILITY, SATISFACTORY QUALITY, ACCURACY OR FITNESS
+FOR A PARTICULAR PURPOSE.
+
+Rockchip hereby grants to you a limited, non-exclusive, non-sublicensable and
+non-transferable license (a) to install, save and copy the Software; (b) to
+modify the Software; (c) to distribute the Software and/or its moderivations
+and/ or its derivative works in binary code format only, that are executed
+solely as invoked by the Rockchip SoCs.
+
+Except as expressively authorized by Rockchip in writing, you may NOT:
+(a)  distribute the Software and/or its moderivations and/or its derivatives
+works in source code;
+(b)  remove or obscure any copyright, patent, or trademark statement or
+notices contained in the Software and/or its derivatives works.
