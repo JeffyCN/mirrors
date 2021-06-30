@@ -157,18 +157,19 @@ E rockchiprga: rga_api version 1.2.4_[11] (721a2f6 build: 2021-06-28 16:14:30 ba
 D librga  : <<<<-------- print rgaLog -------->>>>								//以下部分为传入librga的参数打印。
 D librga  : src->hnd = 0x0 , dst->hnd = 0x0 , src1->hnd = 0x0					//三个通道（src、src1、dst）传入的内存句柄的值
 D librga  : src: Fd = 00 , phyAddr = 0x0 , virAddr = 0xb400007431ed6040			//src通道传入的内存类型对应的值，对应为DMA_FD、物理地址、虚拟地址。
-D librga  : dst: Fd = 00 , phyAddr = 0x0 , virAddr = 0xb400007431b4f040			//src通道传入的内存类型对应的值。
+D librga  : dst: Fd = 00 , phyAddr = 0x0 , virAddr = 0xb400007431b4f040			//dst通道传入的内存类型对应的值，对应为DMA_FD、物理地址、虚拟地址。
 D librga  : src: Fd = -01 , buf = 0xb400007431ed6040, mmuFlag = 1, mmuType = 0	//src通道将配置传递的内存类型对应的值以及是否使能MMU，这里HAL层选择虚拟地址传入驱动。
 D librga  : dst: Fd = -01 , buf = 0xb400007431b4f040, mmuFlag = 1, mmuType = 0	//dst通道将配置传递的内存类型对应的值以及是否使能MMU，这里HAL层选择虚拟地址传入驱动。
 E librga  : blend = 0 , perpixelAlpha = 1										//混合模式以及图像格式是否本身存在Alpha值
 D librga  : scaleMode = 0 , stretch = 0;										//缩放模式（RGA1）。
-E librga  : rgaVersion = 3.200000  , ditherEn =0								//硬件版本号，灰阶dither使能。
+E librga  : rgaVersion = 3.200000  , ditherEn =0								//硬件版本号，16阶灰度图（Y4）dither使能。
 D librga  : srcMmuFlag = 1 , dstMmuFlag = 1 , rotateMode = 0					//MMU使能标志位，旋转模式。
-D librga  : <<<<-------- rgaReg -------->>>>									//以下部分为配置入驱动的参数打印。
+D librga  : <<<<-------- rgaReg -------->>>>									//以下为配置入驱动的参数打印。
 E librga  : render_mode=0 rotate_mode=0											//RGA运行模式，旋转模式。
 E librga  : src:[0,b400007431ed6040,b400007431fb7040],x-y[0,0],w-h[1280,720],vw-vh[1280,720],f=0	//src通道的内存、图像参数、格式信息。
 E librga  : dst:[0,b400007431b4f040,b400007431c30040],x-y[0,0],w-h[1280,720],vw-vh[1280,720],f=0	//dst通道的内存、图像参数、格式信息。
 E librga  : pat:[0,0,0],x-y[0,0],w-h[0,0],vw-vh[0,0],f=0						//pat/src1通道的内存、图像参数、格式信息，由于当前模式没有使用到该通道，所以参数均为0。
+//以下部分开发者通常不用关心，为librga配置入驱动的不同模式的相关参数。
 E librga  : ROP:[0,0,0],LUT[0]													//ROP模式配置，LUT表配置
 E librga  : color:[0,0,0,0,0]													//colorkey配置（max color, min color）, 填充颜色配置(前景色配置，背景色配置，颜色填充配置)
 E librga  : MMU:[1,0,80000521]													//MMU配置
@@ -239,7 +240,7 @@ echo slt > rga2 to open slt test 			// 进行内部 slt 测试
 
 #### 日志说明
 
-对于RGA的问题调试需要借助日志来确认RGA硬件最终执行的工作，当HAL层的参数传入驱动后，以下日志将描述着对应的参数。通常我们调试常用到msg和reg两个模式。
+对于RGA的问题调试需要借助日志来确认RGA硬件最终执行的工作，当HAL层的参数传入驱动后，以下日志将描述着对应的参数。通常我们调试常用到msg、reg和time三种模式。
 
 - msg模式
 
@@ -289,11 +290,18 @@ rga2: 00000000 00000000 00000000 00000000
 rga2: 00000000 00000000 00000000 00000000
 ```
 
+- time模式
+
+```c++
+rga2: open rga2 test time!								//time日志开启打印。
+rga2: sync one cmd end time 2414						//打印本次工作RGA硬件的耗时，单位为us
+```
+
 
 
 ## Q & A
 
-本节将较为常见的RGA相关问题以Q&A的形式进行分类介绍，如不在本节内的问题请整理相关日志和初步分析的信息交由RGA模块维护工程师处理。
+本节将较为常见的RGA相关问题以Q&A的形式进行分类介绍，如不在本节内的问题请整理相关日志和初步分析的信息交由维护RGA模块的工程师处理。
 
 ### 性能咨询
 
@@ -481,7 +489,7 @@ index 02938b0..10a1dc4 100644
 
 
 
-**Q2.5：**RGA是否对齐限制？
+**Q2.5：**RGA是否有对齐限制？
 
 **A2.5：**不同的格式对齐要求不同，RGA硬件本身是对图像每行的数据是按照字（world）对齐的方式进行取数的，即4个字节32个bit。例如RGBA格式本身单个像素存储大小为32（4 × 8）bit，所以没有对齐要求；RGB565格式存储大小为16（5 + 6 +5）bit，所以需要2对齐；RGB888格式存储大小为24（8 × 3）bit，所以该格式需要4对齐才能满足RGA硬件的32bit取数要求；YUV格式存储相对较为特殊，本身排列要求需要2对齐，Y通道单像素存储大小为8bit，UV通道根据420/422决定每四个像素的存储大小，所以YUV格式Y通道需要4对齐才能满足RGA的硬件取数要求，则YUV格式需要4对齐；其他的未提及的格式对齐要求原理相通。注意，该题中对齐均指width stride的对齐要求，YUV格式本身实际宽高、偏移量由于格式本身特性也是要求2对齐的。具体对齐限制可以查看《IM2D API说明文档》中 “概述” —— “图像格式对齐说明”小节。
 
@@ -608,13 +616,35 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 **Q2.18：**调用RGA执行图像旋转时，结果图像被拉伸？
 
+​			预期：
+
+​			![image-20210630101537999](RGA_FAQ.assets/image-roate_90_normal.png)
+
+​			结果：
+
+​			![image-20210630101603990](RGA_FAQ.assets/image-rotate_90_abnormal.png)
+
 **A2.18：**在旋转90°、270°时，如果不希望RGA执行缩放，应将图像的宽、高交换，否则RGA驱动默认该行为为旋转 + 缩放的行为去执行工作，结果表现便是拉伸的效果了。
 
 
 
 **Q2.19：**RGB888输出缩放后结果显示图像是斜的，并且有黑线？
 
-**A2.19：**该问题是对齐限制导致的，请检查配置的图像参数，对齐限制可以参考 **Q2.5** 的回答。
+​			原图（1920 × 1080）：
+
+​			![image-20210630101654706](RGA_FAQ.assets/image-1920_1080_normal.png)
+
+​			结果（1282 × 720）：
+
+​			![image-20210630101722962](RGA_FAQ.assets/image-1282_720_abnormal_align.png)
+
+**A2.19：**该问题是对齐限制导致的，RGB888格式的虚宽需要4对齐，请检查配置的图像参数，对齐限制可以参考 **Q2.5** 的回答。
+
+
+
+**Q2.20：**在一些系统流程中调用RGA输出的结果是花的，这是什么原因导致的？
+
+**A2.20：**通常RGA的异常不会出现图像花掉的现象，一般遇到这种问题需要先定位问题是否是RGA出现的问题，在一些系统流程中需要先确认输入RGA的源数据是否已经是异常的，可以通过在调用RGA前将内存里的数据调用 **fwrite()** 写文件出来，查看源数据是否正常。写文件的方法如果不太熟悉，可以参考源码目录下 **core/RgaUtils.cpp** 中的 **output_buf_data_to_file()** 函数的实现部分。
 
 
 
