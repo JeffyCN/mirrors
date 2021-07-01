@@ -232,6 +232,7 @@ gst_mpp_allocator_alloc (GstAllocator * allocator, gsize size,
   mem = gst_mpp_allocator_import_mppbuf (allocator, mbuf);
   mpp_buffer_put (mbuf);
 
+  gst_memory_resize (mem, 0, size);
   return mem;
 }
 
