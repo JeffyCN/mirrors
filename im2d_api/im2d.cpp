@@ -1724,25 +1724,51 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         srcinfo.blend &= src.global_alpha << 16;
 
     /* special config for color space convert */
-    if (dst.color_space_mode & (IM_YUV_TO_RGB_MASK)) {
-        if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
-            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format)))
+    if ((dst.color_space_mode & IM_YUV_TO_RGB_MASK) && (dst.color_space_mode & IM_RGB_TO_YUV_MASK)) {
+        if (rga_is_buffer_valid(pat) &&
+            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
+            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(pat.format)) &&
+            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
             dstinfo.color_space_mode = dst.color_space_mode;
-        else {
-            imSetErrorMsg("Not yuv to rgb does not need for color_sapce_mode, please fix, "
-                          "src_fromat = 0x%x(%s), dst_format = 0x%x(%s)",
+        } else {
+            imSetErrorMsg("Not yuv + rgb -> yuv does not need for color_sapce_mode R2Y & Y2R, please fix, "
+                          "src_fromat = 0x%x(%s), src1_format = 0x%x(%s), dst_format = 0x%x(%s)",
                           src.format, translate_format_str(src.format),
+                          pat.format, translate_format_str(pat.format),
+                          dst.format, translate_format_str(dst.format));
+            return IM_STATUS_ILLEGAL_PARAM;
+        }
+    } else if (dst.color_space_mode & (IM_YUV_TO_RGB_MASK)) {
+        if (rga_is_buffer_valid(pat) &&
+            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
+            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(pat.format)) &&
+            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format))) {
+            dstinfo.color_space_mode = dst.color_space_mode;
+        } else if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
+                   NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format))) {
+            dstinfo.color_space_mode = dst.color_space_mode;
+        } else {
+            imSetErrorMsg("Not yuv to rgb does not need for color_sapce_mode, please fix, "
+                          "src_fromat = 0x%x(%s), src1_format = 0x%x(%s), dst_format = 0x%x(%s)",
+                          src.format, translate_format_str(src.format),
+                          pat.format, rga_is_buffer_valid(pat) ? translate_format_str(pat.format) : "none",
                           dst.format, translate_format_str(dst.format));
             return IM_STATUS_ILLEGAL_PARAM;
         }
     } else if (dst.color_space_mode & (IM_RGB_TO_YUV_MASK)) {
-        if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format)) &&
-            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format)))
+        if (rga_is_buffer_valid(pat) &&
+            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format)) &&
+            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(pat.format)) &&
+            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
             dstinfo.color_space_mode = dst.color_space_mode;
-        else {
+        } else if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format)) &&
+                   NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
+            dstinfo.color_space_mode = dst.color_space_mode;
+        } else {
             imSetErrorMsg("Not rgb to yuv does not need for color_sapce_mode, please fix, "
-                          "src_fromat = 0x%x(%s), dst_format = 0x%x(%s)",
+                          "src_fromat = 0x%x(%s), src1_format = 0x%x(%s), dst_format = 0x%x(%s)",
                           src.format, translate_format_str(src.format),
+                          pat.format, rga_is_buffer_valid(pat) ? translate_format_str(pat.format) : "none",
                           dst.format, translate_format_str(dst.format));
             return IM_STATUS_ILLEGAL_PARAM;
         }
@@ -1823,7 +1849,6 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     } else if (usage & IM_COLOR_PALETTE) {
         ret = rkRga.RkRgaCollorPalette(&srcinfo, &dstinfo, &patinfo);
     } else if ((usage & IM_ALPHA_BLEND_MASK) && rga_is_buffer_valid(pat)) {
-        dstinfo.color_space_mode = IM_COLOR_SPACE_DEFAULT;
         ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, &patinfo);
     }else {
         ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
