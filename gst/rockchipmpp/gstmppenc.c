@@ -76,6 +76,7 @@ G_DEFINE_ABSTRACT_TYPE (GstMppEnc, gst_mpp_enc, GST_TYPE_VIDEO_ENCODER);
 #define DEFAULT_PROP_BPS 0      /* Auto */
 #define DEFAULT_PROP_BPS_MIN 0  /* Auto */
 #define DEFAULT_PROP_BPS_MAX 0  /* Auto */
+#define DEFAULT_PROP_ZERO_COPY_PKT TRUE
 
 enum
 {
@@ -89,6 +90,7 @@ enum
   PROP_BPS,
   PROP_BPS_MIN,
   PROP_BPS_MAX,
+  PROP_ZERO_COPY_PKT,
   PROP_LAST,
 };
 
@@ -172,6 +174,10 @@ gst_mpp_enc_set_property (GObject * object,
       self->bps_max = bps_max;
       break;
     }
+    case PROP_ZERO_COPY_PKT:{
+      self->zero_copy_pkt = g_value_get_boolean (value);
+      return;
+    }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       return;
@@ -214,6 +220,9 @@ gst_mpp_enc_get_property (GObject * object,
       break;
     case PROP_BPS_MAX:
       g_value_set_uint (value, self->bps_max);
+      break;
+    case PROP_ZERO_COPY_PKT:
+      g_value_set_boolean (value, self->zero_copy_pkt);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -694,6 +703,7 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
   MppFrame mframe;
   MppPacket mpkt = NULL;
   MppBuffer mbuf;
+  int pkt_size;
 
   GST_MPP_ENC_WAIT (encoder, self->pending_frames || self->flushing);
 
@@ -722,23 +732,35 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
   if (!mpkt)
     goto drop;
 
+  pkt_size = mpp_packet_get_length (mpkt);
+
   mbuf = mpp_packet_get_buffer (mpkt);
 
-  buffer = gst_buffer_new ();
-  if (!buffer)
-    goto drop;
+  if (self->zero_copy_pkt) {
+    buffer = gst_buffer_new ();
+    if (!buffer)
+      goto drop;
 
-  frame->output_buffer = buffer;
+    frame->output_buffer = buffer;
 
-  /* Allocated from the same DRM allocator in MPP */
-  mpp_buffer_set_index (mbuf, gst_mpp_allocator_get_index (self->allocator));
+    /* Allocated from the same DRM allocator in MPP */
+    mpp_buffer_set_index (mbuf, gst_mpp_allocator_get_index (self->allocator));
 
-  mem = gst_mpp_allocator_import_mppbuf (self->allocator, mbuf);
-  if (!mem)
-    goto drop;
+    mem = gst_mpp_allocator_import_mppbuf (self->allocator, mbuf);
+    if (!mem)
+      goto drop;
 
-  gst_memory_resize (mem, 0, mpp_packet_get_length (mpkt));
-  gst_buffer_append_memory (buffer, mem);
+    gst_memory_resize (mem, 0, pkt_size);
+    gst_buffer_append_memory (buffer, mem);
+  } else {
+    buffer = gst_video_encoder_allocate_output_buffer (encoder, pkt_size);
+    if (!buffer)
+      goto drop;
+
+    frame->output_buffer = buffer;
+
+    gst_buffer_fill (buffer, 0, mpp_buffer_get_ptr (mbuf), pkt_size);
+  }
 
   if (self->flushing && !self->draining)
     goto drop;
@@ -860,6 +882,7 @@ gst_mpp_enc_init (GstMppEnc * self)
   self->bps = DEFAULT_PROP_BPS;
   self->bps_min = DEFAULT_PROP_BPS_MIN;
   self->bps_max = DEFAULT_PROP_BPS_MAX;
+  self->zero_copy_pkt = DEFAULT_PROP_ZERO_COPY_PKT;
   self->prop_dirty = TRUE;
 }
 
@@ -1009,6 +1032,11 @@ gst_mpp_enc_class_init (GstMppEncClass * klass)
       g_param_spec_uint ("bps-max", "Max BPS",
           "Max BPS (0 = auto calculate)",
           0, G_MAXINT, DEFAULT_PROP_BPS_MAX,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_ZERO_COPY_PKT,
+      g_param_spec_boolean ("zero-copy-pkt", "Zero-copy encoded packet",
+          "Zero-copy encoded packet", DEFAULT_PROP_ZERO_COPY_PKT,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   element_class->change_state = GST_DEBUG_FUNCPTR (gst_mpp_enc_change_state);

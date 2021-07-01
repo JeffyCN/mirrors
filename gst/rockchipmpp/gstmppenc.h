@@ -74,6 +74,8 @@ struct _GstMppEnc
   guint bps_min;
   guint bps_max;
 
+  gboolean zero_copy_pkt;
+
   gboolean prop_dirty;
 
   MppEncCfg mpp_cfg;
