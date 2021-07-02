@@ -87,7 +87,9 @@ struct _GstMppEnc
 };
 
 #define MPP_ENC_FORMATS \
-    "NV12, I420, YUY2, UYVY, BGR16, RGB16, BGR15, RGB15, ABGR, ARGB, BGRA, RGBA"
+    "NV12, I420, YUY2, UYVY, " \
+    "BGR16, RGB16, BGR15, RGB15, " \
+    "ABGR, ARGB, BGRA, RGBA, xBGR, xRGB, BGRx, RGBx"
 
 gboolean gst_mpp_enc_apply_properties (GstVideoEncoder * encoder);
 gboolean gst_mpp_enc_set_src_caps (GstVideoEncoder * encoder, GstCaps * caps);
