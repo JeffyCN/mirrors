@@ -483,7 +483,7 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
   GST_DEBUG_OBJECT (self, "frame format not matched");
 
 #ifdef HAVE_RGA
-  if (!gst_mpp_dec_rga_convert (decoder, mframe, buffer))
+  if (gst_mpp_dec_rga_convert (decoder, mframe, buffer))
     return buffer;
 #endif
 
