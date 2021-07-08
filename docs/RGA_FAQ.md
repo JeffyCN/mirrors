@@ -549,7 +549,15 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 
 
-**Q2.11：**使用RGA其他功能正常，仅在RGB与YUV格式转换时出现严重色差是什么原因？
+**Q2.11：**使用RGA其他功能正常，仅在RGB与YUV格式转换时出现严重色差（偏粉偏绿）是什么原因？
+
+​			预期：
+
+​			![image-20210708171527861](RGA_FAQ.assets/image-normal.png)
+
+​			结果：
+
+​			![image-20210708171608076](RGA_FAQ.assets/image-color-abnormal.png)
 
 **A2.11：**该现象通常是由于librga与内核不匹配导致，详细版本说明可以查看 **A2.4** 。该问题通常是在一些2020年11月前发布的SDK中使用了github上获取的librga之后出现该现象。github上更新librga为新版本librga，与较旧版本的RGA驱动是不匹配的，这里一些关于色域空间的配置有发生改变，所以会出现较明显的色偏现象。
 
@@ -559,6 +567,10 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 **Q2.12：**RGA如何实现OSD叠加字幕？
 
+​			预期：
+
+​			![image-20210708171450243](RGA_FAQ.assets/image-blend.png)
+
 **A2.12：**如果输出结果为RGB格式，可以通过 **imblend()** 接口实现，通常选择src over模式，将src通道的图像叠加在dst通道的图像上；如果输出结果为YUV格式，可以通过 **imcomposite()** 接口实现，通常选择dst over‘模式，将src1通道的图像叠加在src通道的图像上，再输出到dst通道。
 
 ​			该功能的叠加原理为 **Porter-Duff混合模型** ，详细可以查看《IM2D API说明文档》中 “应用接口说明” —— “图像合成” 小节。
@@ -567,7 +579,7 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 
 
-**Q2.13：**为什么调用RGA实现YUV格式与RGB格式相互转换输出有色差？
+**Q2.13：**为什么调用RGA实现YUV格式与RGB格式相互转换输出有亮度或者数值差异？
 
 **A2.13：**该现象原因大致可分为两种：
 
@@ -604,6 +616,20 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 **Q2.16：**调用RGA执行alpha叠加，前景图像的alpha值为0x0，为什么结果不是全透？
 
+​			前景图：（黑白和rockchip alpha为0x00）
+
+​			![image-20210708173625438](RGA_FAQ.assets/image-alpha-0x0.png)
+
+​			预期：
+
+​			![image-20210708173737882](RGA_FAQ.assets/image-alpha-normal.png)
+
+​			结果：
+
+​			![image-20210708173808977](RGA_FAQ.assets/image-alpha-abnormal.png)
+
+
+
 **A2.16：**我们正常配置的模式是默认颜色值已经预乘过对应的alpha值的结果，而直接读取的原始图片的颜色值并没有预乘过alpha值，所以需要在调用imblend时额外的增加标志位来标识本次处理中的图像颜色值没有需要预乘alpha值。具体调用方式可以查看《IM2D API说明文档》中 “应用接口说明” —— “图像合成“ 小节。
 
 
@@ -618,11 +644,11 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 ​			预期：
 
-​			![image-20210630101537999](RGA_FAQ.assets/image-roate_90_normal.png)
+​			![image-20210708174014165](RGA_FAQ.assets/image-rotate-90-normal.png)
 
 ​			结果：
 
-​			![image-20210630101603990](RGA_FAQ.assets/image-rotate_90_abnormal.png)
+​			![image-20210708174113366](RGA_FAQ.assets/image-rotate-90-abnormal.png)
 
 **A2.18：**在旋转90°、270°时，如果不希望RGA执行缩放，应将图像的宽、高交换，否则RGA驱动默认该行为为旋转 + 缩放的行为去执行工作，结果表现便是拉伸的效果了。
 
@@ -632,11 +658,11 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 ​			原图（1920 × 1080）：
 
-​			![image-20210630101654706](RGA_FAQ.assets/image-1920_1080_normal.png)
+​			![image-20210708171527861](RGA_FAQ.assets/image-normal.png)
 
 ​			结果（1282 × 720）：
 
-​			![image-20210630101722962](RGA_FAQ.assets/image-1282_720_abnormal_align.png)
+​			![image-20210708174334975](RGA_FAQ.assets/image-resize-abnormal.png)
 
 **A2.19：**该问题是对齐限制导致的，RGB888格式的虚宽需要4对齐，请检查配置的图像参数，对齐限制可以参考 **Q2.5** 的回答。
 
@@ -654,7 +680,14 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 **Q3.1.1：**imcheck()返回报错，该如何处理？
 
+```
+check error! Invalid parameters: dst, Error yuv not align to 2, rect[x,y,w,h] = [0, 0, 1281, 720], wstride = 1281, hstride = 720, format = 0xa00(nv12)
+output support format : RGBA_8888 RGB_888 RGB_565 RGBA_4444 RGBA_5551 YUV420/YUV422 YUV420_10bit/YUV422_10bit YUYV420 YUYV422 YUV400/Y4
+```
+
 **A3.1.1：**imcheck()接口作为调用librga的校验接口，它将判断即将传递到librga内部的数据结构的参数是否正确、功能是否支持、是否触发硬件限制等，可以将imcheck()的返回报错值作为传参传入 **IMStrError()** 返回的字符串则为详细的报错信息，可以根据错误提示确认哪些条件限制被触发，或是参数错误。
+
+​			如问题中报错，则为YUV格式对齐的限制问题，这里图像的宽1281不是2对齐的，所以校验失败。
 
 
 
