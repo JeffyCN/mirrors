@@ -1,8 +1,4 @@
-
-
-
-
-# RGA IM2D API
+# RGA IM2D API 开发指南
 
 文件标识：RK-PC-YF-0002
 
