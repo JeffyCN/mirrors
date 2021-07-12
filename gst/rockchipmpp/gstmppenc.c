@@ -301,7 +301,7 @@ gst_mpp_enc_set_src_caps (GstVideoEncoder * encoder, GstCaps * caps)
       "width", G_TYPE_INT, GST_VIDEO_INFO_WIDTH (info),
       "height", G_TYPE_INT, GST_VIDEO_INFO_HEIGHT (info), NULL);
 
-  GST_DEBUG_OBJECT (encoder, "output caps: %" GST_PTR_FORMAT, caps);
+  GST_DEBUG_OBJECT (self, "output caps: %" GST_PTR_FORMAT, caps);
 
   output_state = gst_video_encoder_set_output_state (encoder,
       caps, self->input_state);
@@ -319,7 +319,7 @@ gst_mpp_enc_stop_task (GstVideoEncoder * encoder, gboolean drain)
   if (!GST_MPP_ENC_TASK_STARTED (encoder))
     return;
 
-  GST_DEBUG_OBJECT (encoder, "stopping encoding thread");
+  GST_DEBUG_OBJECT (self, "stopping encoding thread");
 
   /* Discard pending frames */
   if (!drain)
@@ -730,7 +730,7 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
   GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
 
   if (!mpkt)
-    goto drop;
+    goto error;
 
   pkt_size = mpp_packet_get_length (mpkt);
 
@@ -739,7 +739,7 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
   if (self->zero_copy_pkt) {
     buffer = gst_buffer_new ();
     if (!buffer)
-      goto drop;
+      goto error;
 
     frame->output_buffer = buffer;
 
@@ -748,14 +748,14 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
 
     mem = gst_mpp_allocator_import_mppbuf (self->allocator, mbuf);
     if (!mem)
-      goto drop;
+      goto error;
 
     gst_memory_resize (mem, 0, pkt_size);
     gst_buffer_append_memory (buffer, mem);
   } else {
     buffer = gst_video_encoder_allocate_output_buffer (encoder, pkt_size);
     if (!buffer)
-      goto drop;
+      goto error;
 
     frame->output_buffer = buffer;
 
@@ -765,7 +765,7 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
   if (self->flushing && !self->draining)
     goto drop;
 
-  GST_TRACE_OBJECT (self, "finish frame ts=%" GST_TIME_FORMAT,
+  GST_DEBUG_OBJECT (self, "finish frame ts=%" GST_TIME_FORMAT,
       GST_TIME_ARGS (frame->pts));
 
   gst_video_encoder_finish_frame (encoder, frame);
@@ -787,8 +787,11 @@ flushing:
   GST_INFO_OBJECT (self, "flushing");
   self->task_ret = GST_FLOW_FLUSHING;
   goto out;
+error:
+  GST_WARNING_OBJECT (self, "can't process this frame");
+  goto drop;
 drop:
-  GST_WARNING_OBJECT (self, "drop frame");
+  GST_DEBUG_OBJECT (self, "drop frame");
   gst_buffer_replace (&frame->output_buffer, NULL);
   gst_video_encoder_finish_frame (encoder, frame);
   goto out;
@@ -809,7 +812,7 @@ gst_mpp_enc_handle_frame (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
     goto flushing;
 
   if (G_UNLIKELY (!GST_MPP_ENC_TASK_STARTED (encoder))) {
-    GST_DEBUG_OBJECT (encoder, "starting encoding thread");
+    GST_DEBUG_OBJECT (self, "starting encoding thread");
 
     gst_pad_start_task (encoder->srcpad,
         (GstTaskFunction) gst_mpp_enc_loop, encoder, NULL);
@@ -846,7 +849,7 @@ not_negotiated:
   ret = GST_FLOW_NOT_NEGOTIATED;
   goto drop;
 drop:
-  GST_WARNING_OBJECT (self, "can't process this frame");
+  GST_WARNING_OBJECT (self, "can't handle this frame");
   gst_video_encoder_finish_frame (encoder, frame);
 
   GST_MPP_ENC_UNLOCK (encoder);

@@ -487,6 +487,8 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
     return buffer;
 #endif
 
+  GST_WARNING_OBJECT (self, "unable to convert frame");
+
   gst_buffer_unref (buffer);
   return NULL;
 }
@@ -563,14 +565,14 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
 
   frame = gst_mpp_dec_get_frame (decoder, mpp_frame_get_pts (mframe));
   if (!frame)
-    goto out;
+    goto no_frame;
 
   if (mpp_frame_get_discard (mframe) || mpp_frame_get_errinfo (mframe))
-    goto drop;
+    goto error;
 
   buffer = gst_mpp_dec_get_gst_buffer (decoder, mframe);
   if (!buffer)
-    goto drop;
+    goto error;
 
   gst_mpp_dec_update_interlace_mode (decoder, buffer,
       mpp_frame_get_mode (mframe));
@@ -580,7 +582,7 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
   if (self->flushing && !self->draining)
     goto drop;
 
-  GST_TRACE_OBJECT (self, "finish frame ts=%" GST_TIME_FORMAT,
+  GST_DEBUG_OBJECT (self, "finish frame ts=%" GST_TIME_FORMAT,
       GST_TIME_ARGS (frame->pts));
 
   gst_video_decoder_finish_frame (decoder, frame);
@@ -604,8 +606,14 @@ eos:
 info_change:
   GST_INFO_OBJECT (self, "video info changed");
   goto out;
+no_frame:
+  GST_WARNING_OBJECT (self, "no matched frame");
+  goto out;
+error:
+  GST_WARNING_OBJECT (self, "can't process this frame");
+  goto drop;
 drop:
-  GST_WARNING_OBJECT (self, "drop frame");
+  GST_DEBUG_OBJECT (self, "drop frame");
   gst_video_decoder_release_frame (decoder, frame);
   goto out;
 }
@@ -633,7 +641,7 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
     if (klass->startup && !klass->startup (decoder))
       goto not_negotiated;
 
-    GST_DEBUG_OBJECT (decoder, "starting decoding thread");
+    GST_DEBUG_OBJECT (self, "starting decoding thread");
 
     gst_pad_start_task (decoder->srcpad,
         (GstTaskFunction) gst_mpp_dec_loop, decoder, NULL);
@@ -687,19 +695,19 @@ flushing:
   ret = GST_FLOW_FLUSHING;
   goto drop;
 not_negotiated:
-  GST_ERROR_OBJECT (decoder, "not negotiated");
+  GST_ERROR_OBJECT (self, "not negotiated");
   ret = GST_FLOW_NOT_NEGOTIATED;
   goto drop;
 no_packet:
-  GST_ERROR_OBJECT (decoder, "failed to get packet");
+  GST_ERROR_OBJECT (self, "failed to get packet");
   ret = GST_FLOW_ERROR;
   goto drop;
 send_error:
-  GST_ERROR_OBJECT (decoder, "failed to send packet");
+  GST_ERROR_OBJECT (self, "failed to send packet");
   ret = GST_FLOW_ERROR;
   goto drop;
 drop:
-  GST_WARNING_OBJECT (self, "can't process this frame");
+  GST_WARNING_OBJECT (self, "can't handle this frame");
 
   if (mpkt)
     mpp_packet_deinit (&mpkt);
