@@ -954,7 +954,6 @@ int NormalRgaDitherMode(struct rga_req *msg, rga_info *dst, int format)
 {
     if (dst->dither.enable == 1)
     {
-        printf("rk-debug enable dither \n");
         msg->alpha_rop_flag = 1;
         msg->alpha_rop_flag |= (dst->dither.enable << 5);
     }

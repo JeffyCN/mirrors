@@ -1285,6 +1285,9 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
     if (sync == 0)
         usage |= IM_SYNC;
 
+    dst.width = rect.width < dst.width ? rect.width : dst.width;
+    dst.height = rect.height < dst.height ? rect.height : dst.height;
+
     ret = improcess(src, dst, pat, rect, drect, prect, usage);
 
     return ret;
@@ -1587,11 +1590,6 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     if (srect.width > 0 && srect.height > 0) {
         src.width = srect.width;
         src.height = srect.height;
-        /* for imcrop_t api */
-        if (usage & IM_CROP) {
-            dst.width = srect.width < dst.width ? srect.width : dst.width;
-            dst.height = srect.height < dst.height ? srect.height : dst.height;
-        }
     }
 
     if (drect.width > 0 && drect.height > 0) {
@@ -1617,42 +1615,45 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         rga_set_rect(&patinfo.rect, prect.x, prect.y, pat.width, pat.height, pat.wstride, pat.hstride, pat.format);
     }
 
-    if((usage & (IM_ALPHA_BLEND_MASK+IM_HAL_TRANSFORM_MASK)) != 0) {
-        /* Transform */
-        if (usage & IM_HAL_TRANSFORM_MASK) {
-            switch (usage & (IM_HAL_TRANSFORM_ROT_90 + IM_HAL_TRANSFORM_ROT_180 + IM_HAL_TRANSFORM_ROT_270)) {
-                case IM_HAL_TRANSFORM_ROT_90:
-                    srcinfo.rotation = HAL_TRANSFORM_ROT_90;
-                    break;
-                case IM_HAL_TRANSFORM_ROT_180:
-                    srcinfo.rotation = HAL_TRANSFORM_ROT_180;
-                    break;
-                case IM_HAL_TRANSFORM_ROT_270:
-                    srcinfo.rotation = HAL_TRANSFORM_ROT_270;
-                    break;
-            }
-
-            switch (usage & (IM_HAL_TRANSFORM_FLIP_V + IM_HAL_TRANSFORM_FLIP_H + IM_HAL_TRANSFORM_FLIP_H_V)) {
-                case IM_HAL_TRANSFORM_FLIP_V:
-
-                    srcinfo.rotation |= srcinfo.rotation ?
-                                        HAL_TRANSFORM_FLIP_V << 4 :
-                                        HAL_TRANSFORM_FLIP_V;
-                    break;
-                case IM_HAL_TRANSFORM_FLIP_H:
-                    srcinfo.rotation |= srcinfo.rotation ?
-                                        HAL_TRANSFORM_FLIP_H << 4 :
-                                        HAL_TRANSFORM_FLIP_H;
-                    break;
-                case IM_HAL_TRANSFORM_FLIP_H_V:
-                    srcinfo.rotation |= srcinfo.rotation ?
-                                        HAL_TRANSFORM_FLIP_H_V << 4 :
-                                        HAL_TRANSFORM_FLIP_H_V;
-                    break;
-            }
+    /* Transform */
+    if (usage & IM_HAL_TRANSFORM_MASK) {
+        switch (usage & (IM_HAL_TRANSFORM_ROT_90 + IM_HAL_TRANSFORM_ROT_180 + IM_HAL_TRANSFORM_ROT_270)) {
+            case IM_HAL_TRANSFORM_ROT_90:
+                srcinfo.rotation = HAL_TRANSFORM_ROT_90;
+                break;
+            case IM_HAL_TRANSFORM_ROT_180:
+                srcinfo.rotation = HAL_TRANSFORM_ROT_180;
+                break;
+            case IM_HAL_TRANSFORM_ROT_270:
+                srcinfo.rotation = HAL_TRANSFORM_ROT_270;
+                break;
         }
 
-        /* Blend */
+        switch (usage & (IM_HAL_TRANSFORM_FLIP_V + IM_HAL_TRANSFORM_FLIP_H + IM_HAL_TRANSFORM_FLIP_H_V)) {
+            case IM_HAL_TRANSFORM_FLIP_V:
+                srcinfo.rotation |= srcinfo.rotation ?
+                                    HAL_TRANSFORM_FLIP_V << 4 :
+                                    HAL_TRANSFORM_FLIP_V;
+                break;
+            case IM_HAL_TRANSFORM_FLIP_H:
+                srcinfo.rotation |= srcinfo.rotation ?
+                                    HAL_TRANSFORM_FLIP_H << 4 :
+                                    HAL_TRANSFORM_FLIP_H;
+                break;
+            case IM_HAL_TRANSFORM_FLIP_H_V:
+                srcinfo.rotation |= srcinfo.rotation ?
+                                    HAL_TRANSFORM_FLIP_H_V << 4 :
+                                    HAL_TRANSFORM_FLIP_H_V;
+                break;
+        }
+
+
+        if(srcinfo.rotation ==0)
+            ALOGE("rga_im2d: Could not find rotate/flip usage : 0x%x \n", usage);
+    }
+
+    /* Blend */
+    if (usage & IM_ALPHA_BLEND_MASK) {
         switch(usage & IM_ALPHA_BLEND_MASK) {
             case IM_ALPHA_BLEND_SRC:
                 srcinfo.blend = 0xff0001;
@@ -1680,10 +1681,8 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                 break;
         }
 
-
-
-        if(srcinfo.blend == 0 && srcinfo.rotation ==0)
-            ALOGE("rga_im2d: Could not find blend/rotate/flip usage : 0x%x \n", usage);
+        if(srcinfo.blend == 0)
+            ALOGE("rga_im2d: Could not find blend usage : 0x%x \n", usage);
     }
 
     /* color key */
