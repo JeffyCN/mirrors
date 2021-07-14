@@ -45,11 +45,15 @@ struct format_table_entry format_table[] = {
     { RK_FORMAT_RGBA_8888,          "rgba8888" },
     { RK_FORMAT_RGBX_8888,          "rgbx8888" },
     { RK_FORMAT_RGB_888,            "rgb888" },
-    { RK_FORMAT_BGRA_8888,          "bgra8888" },
     { RK_FORMAT_RGB_565,            "rgb565" },
     { RK_FORMAT_RGBA_5551,          "rgba5551" },
     { RK_FORMAT_RGBA_4444,          "rgba4444" },
+    { RK_FORMAT_BGRA_8888,          "bgra8888" },
+    { RK_FORMAT_BGRX_8888,          "bgrx8888" },
     { RK_FORMAT_BGR_888,            "bgr888" },
+    { RK_FORMAT_BGR_565,            "bgr565" },
+    { RK_FORMAT_BGRA_5551,          "bgra5551" },
+    { RK_FORMAT_BGRA_4444,          "bgra4444" },
     { RK_FORMAT_YCbCr_422_SP,       "cbcr422sp" },
     { RK_FORMAT_YCbCr_422_P,        "cbcr422p" },
     { RK_FORMAT_YCbCr_420_SP,       "nv12" },
@@ -140,6 +144,9 @@ float get_bpp_from_format(int format) {
         case RK_FORMAT_RGB_565:
         case RK_FORMAT_RGBA_5551:
         case RK_FORMAT_RGBA_4444:
+        case RK_FORMAT_BGR_565:
+        case RK_FORMAT_BGRA_5551:
+        case RK_FORMAT_BGRA_4444:
         case RK_FORMAT_YCbCr_422_SP:
         case RK_FORMAT_YCbCr_422_P:
         case RK_FORMAT_YCrCb_422_SP:
@@ -239,20 +246,17 @@ int get_string_by_format(char *value, int format) {
         case RK_FORMAT_BPP8:
             memcpy(value, "bpp8", sizeof("bpp8"));
             break;
-        case RK_FORMAT_RGB_565:
-            memcpy(value, "rgb565", sizeof("rgb565"));
-            break;
-        case RK_FORMAT_RGB_888:
-            memcpy(value, "rgb888", sizeof("rgb888"));
-            break;
         case RK_FORMAT_RGBA_8888:
             memcpy(value, "rgba8888", sizeof("rgba8888"));
             break;
         case RK_FORMAT_RGBX_8888:
             memcpy(value, "rgbx8888", sizeof("rgbx8888"));
             break;
-        case RK_FORMAT_BGRA_8888:
-            memcpy(value, "bgra8888", sizeof("bgra8888"));
+        case RK_FORMAT_RGB_888:
+            memcpy(value, "rgb888", sizeof("rgb888"));
+            break;
+        case RK_FORMAT_RGB_565:
+            memcpy(value, "rgb565", sizeof("rgb565"));
             break;
         case RK_FORMAT_RGBA_5551:
             memcpy(value, "rgba5551", sizeof("rgba5551"));
@@ -260,11 +264,26 @@ int get_string_by_format(char *value, int format) {
         case RK_FORMAT_RGBA_4444:
             memcpy(value, "rgba4444", sizeof("rgba4444"));
             break;
-        case RK_FORMAT_YCrCb_420_SP:
-            memcpy(value, "crcb420sp", sizeof("crcb420sp"));
+        case RK_FORMAT_BGRA_8888:
+            memcpy(value, "bgra8888", sizeof("bgra8888"));
+            break;
+        case RK_FORMAT_BGRX_8888:
+            memcpy(value, "bgrx8888", sizeof("bgrx8888"));
             break;
         case RK_FORMAT_BGR_888:
             memcpy(value, "bgr888", sizeof("bgr888"));
+            break;
+        case RK_FORMAT_BGR_565:
+            memcpy(value, "bgr565", sizeof("bgr565"));
+            break;
+        case RK_FORMAT_BGRA_5551:
+            memcpy(value, "bgra5551", sizeof("bgra5551"));
+            break;
+        case RK_FORMAT_BGRA_4444:
+            memcpy(value, "bgra4444", sizeof("bgra4444"));
+            break;
+        case RK_FORMAT_YCrCb_420_SP:
+            memcpy(value, "crcb420sp", sizeof("crcb420sp"));
             break;
         case RK_FORMAT_YCrCb_420_P:
             memcpy(value, "crcb420p", sizeof("crcb420p"));

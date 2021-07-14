@@ -925,14 +925,15 @@ IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect r
     if (format == RK_FORMAT_RGBA_8888 || format == RK_FORMAT_BGRA_8888 ||
         format == RK_FORMAT_RGBX_8888 || format == RK_FORMAT_BGRX_8888 ||
         format == RK_FORMAT_RGB_888   || format == RK_FORMAT_BGR_888   ||
-        format == RK_FORMAT_RGB_565) {
+        format == RK_FORMAT_RGB_565   || format == RK_FORMAT_BGR_565) {
         if (~format_usage & IM_RGA_SUPPORT_FORMAT_RGB) {
             imSetErrorMsg("%s unsupported RGB format, format = 0x%x(%s)\n%s",
                           name, info.format, translate_format_str(info.format),
                           querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
             return IM_STATUS_NOT_SUPPORTED;
         }
-    } else if (format == RK_FORMAT_RGBA_4444 || format == RK_FORMAT_RGBA_5551) {
+    } else if (format == RK_FORMAT_RGBA_4444 || format == RK_FORMAT_BGRA_4444 ||
+               format == RK_FORMAT_RGBA_5551 || format == RK_FORMAT_BGRA_5551) {
         if (~format_usage & IM_RGA_SUPPORT_FORMAT_RGB_OTHER) {
             imSetErrorMsg("%s unsupported RGBA 4444/5551 format, format = 0x%x(%s)\n%s",
                           name, info.format, translate_format_str(info.format),
