@@ -18,9 +18,11 @@ Rockchip RK3066 | RK3188 | RK2926 | RK2928 | RK3026 | RK3028 | RK3128 | Sofia3gr
 
 **im2d_api:** RGA API相关实现及头文件
 
+**docs:** RGA API说明文档、RGA FAQ
+
 **samples:** librga使用例程
 
-**samples/sample_file：**示例图片。
+**samples/sample_file：**示例图片
 
 ### 编译说明
 
@@ -99,5 +101,9 @@ $ ninja -C build-rga install
 
 * librga应用开发接口说明参考以下文件：
 
-  [API document](docs/README.md)
+  [RGA_API_Instruction.md](docs/RGA_API_Instruction.md)
+
+* RGA模块FAQ文档：
+
+  [RGA_FAQ.md](docs/RGA_FAQ.md)
 

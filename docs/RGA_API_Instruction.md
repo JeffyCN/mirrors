@@ -133,17 +133,25 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RK3190</td>
    </tr>
    <tr>
-      <td rowspan="2">RGA2-Enhance</td>
+      <td rowspan="4">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
-      <td rowspan="2">8192x8192</td>
-      <td rowspan="2">4096x4096</td>
-      <td rowspan="2">2</td>
-      <td rowspan="2">≈600Mpix/s</td>
+      <td rowspan="4">8192x8192</td>
+      <td rowspan="4">4096x4096</td>
+      <td rowspan="4">2</td>
+      <td rowspan="4">≈600Mpix/s</td>
    </tr>
    <tr>
       <td>Mercury</td>
       <td>RK1108</td>
+   </tr>
+   <tr>
+      <td>Puma</td>
+      <td>RV1126/RV1109</td>
+   </tr>
+   <tr>
+      <td>skylarkV2</td>
+      <td>RK3566/RK3568</td>
    </tr>
    <tr>
       <td rowspan="2">RGA2-Lite0</td>
@@ -179,16 +187,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>Lion</td>
       <td>RK1808</td>
    </tr>
-   <tr>
-      <td>RGA2-Enhance-Plus</td>
-      <td>Puma</td>
-      <td>RV1126/RV1109</td>
-      <td>8192X8192</td>
-      <td>4096X4096</td>
-      <td>2</td>
-      <td>≈600Mpix/s</td>
-   </tr>
 </table>
+
 * 预期性能为默认RGA频率下计算得出，实际运行性能表现与内存频率等相关，列表数据仅供参考。
 
 
@@ -250,15 +250,25 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RK3190</td>
    </tr>
    <tr>
-      <td rowspan="2">RGA2-Enhance</td>
+      <td rowspan="4">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
       <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)</td>
-      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422<br/>YVYU422/YUYV420</td>
+      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)<br/>YVYU422/YUYV420</td>
    </tr>
    <tr>
       <td>Mercury</td>
       <td>RK1108</td>
+   </tr>
+   <tr>
+      <td>Puma</td>
+      <td>RV1126/ RV1109</td>
+      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)<br/>YVYU422</td>
+      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)<br/>YUV400/Y4/Y1<br/>YVYU422/YUYV420</td>
+   </tr>
+   <tr>
+      <td>skylarkV2</td>
+      <td>RK3566/RK3568</td>
    </tr>
    <tr>
       <td rowspan="2">RGA2-Lite0</td>
@@ -276,7 +286,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>Benz</td>
       <td>RK3228</td>
       <td rowspan="4">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)</td>
-      <td rowspan="4">ARGB888/888/565/4444/5551<br/>YUV420/YUV422</td>
+      <td rowspan="4">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)</td>
    </tr>
    <tr>
       <td>Infiniti</td>
@@ -290,14 +300,9 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>Lion</td>
       <td>RK1808</td>
    </tr>
-   <tr>
-      <td>RGA2-Enhance-Plus</td>
-      <td>Puma</td>
-      <td>RV1126/ RV1109</td>
-      <td>ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)<br/>YVYU422/YUYV420</td>
-      <td>ARGB888/888/565/4444/5551<br/>YUV420/YUV422<br/>YUV400/Y4<br/>YVYU422/YUYV420</td>
-   </tr>
 </table>
+
+
 > 注：Y4格式即2的4次方色阶灰度图，Y400格式即2的8次方色阶灰度图。
 
 
@@ -317,7 +322,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 ## API版本说明
 
-RGA的支持库librga.so随着开发进展，会按照一定规则更新版本号，标识着功能新增、兼容性、问题修正的更新提交，并提供几种方式查询版本号，方便开发者在使用librga.so时可以清楚的辨别当前的库文件版本是否适合于当前的开发环境。详细版本更新日志可以查阅源码根目录下CHANGLOG.md。
+RGA的支持库librga.so按照一定规则更新版本号，标识着功能新增、兼容性、问题修正的更新提交，并提供几种方式查询版本号，方便开发者在使用librga.so时可以清楚的辨别当前的库文件版本是否适合于当前的开发环境。详细版本更新日志可以查阅源码根目录下CHANGLOG.md。
 
 
 
@@ -1069,6 +1074,10 @@ IM_STATUS imsync(void);
 ```
 in%dw%d-h%d-%s.bin
 out%dw%d-h%d-%s.bin
+
+示例：
+1280×720 RGBA8888的输入图像： in0w1280-h720-rgba8888.bin
+1280×720 RGBA8888的输出图像： out0w1280-h720-rgba8888.bin
 ```
 
 参数解释如下：
@@ -1077,7 +1086,9 @@ out%dw%d-h%d-%s.bin
 > --->第一个%d 是文件的索引， 一般为 0， 用于区别格式及宽高完全相同的文件
 > --->第二个%d 是宽的意思， 这里的宽一般指虚宽
 > --->第三个%d 是高的意思， 这里的高一般指虚高
-> --->第四个%s 是格式的名字， 预置测试的部分常用图像格式如下：
+> --->第四个%s 是格式的名字。
+>
+>  预置测试的部分常用图像格式如下，其他格式对应字符串名可以查看rgaUtils.cpp中查看：
 
 | format（Android）                 | format（Linux）            | name        |
 | :-------------------------------- | -------------------------- | ----------- |
@@ -1195,24 +1206,14 @@ gr_color_x [0, 0, 0]
 
 
 
-
 ### 测试用例说明
 
 ------
 
-> 运行demo前需要进行如下步骤：
+- 测试路径位于librga源码目录下 sample/im2d_api_demo ，开发者可以根据需求修改demo的配置，建议第一次运行demo使用默认配置。
+- 测试用例的编译不同的平台编译是不同的，Android平台可以使用 ‘mm’ 命令进行编译，linux平台上在使用cmake编译librga.so时会在同目录下生成对应的测试用例。
 
-- 开发者根据需求修改 demo，建议第一次运行使用默认配置。
-
-- 进入demo目录编译demo，生成可执行文件rgaImDemo。
-
-  ```
-  cd /librga/demo/im2d_api_demo
-  mm -j8
-  ```
-
-- 将rgaImDemo可执行文件通过adb传入设备，添加执行权限，执行demo，查看打印log。
-
+- 将对应的测试用例编译后生成的可执行文件通过adb传入设备，添加执行权限，执行demo，查看打印log。
 - 查看输出文件，检查是否与预期相符。
 
 
