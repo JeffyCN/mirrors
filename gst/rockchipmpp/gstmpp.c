@@ -161,7 +161,7 @@ gst_mpp_gst_format_to_rga_format (GstVideoFormat format)
 
 static gboolean
 gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT format,
-    guint width, guint height, guint hstride, guint vstride)
+    guint width, guint height, guint hstride)
 {
   switch (format) {
     case RK_FORMAT_RGBX_8888:
@@ -189,9 +189,6 @@ gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT format,
       /* RGA requires yuv image rect align to 2 */
       width &= ~1;
       height &= ~1;
-
-      if (vstride % 2)
-        return FALSE;
       break;
     default:
       return FALSE;
@@ -201,7 +198,7 @@ gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT format,
     return FALSE;
 
   info->mmuFlag = 1;
-  rga_set_rect (&info->rect, 0, 0, width, height, hstride, vstride, format);
+  rga_set_rect (&info->rect, 0, 0, width, height, hstride, height, format);
   return TRUE;
 }
 
@@ -213,15 +210,13 @@ gst_mpp_rga_info_from_mpp_frame (rga_info_t * info, MppFrame mframe)
   guint width = mpp_frame_get_width (mframe);
   guint height = mpp_frame_get_height (mframe);
   guint hstride = mpp_frame_get_hor_stride (mframe);
-  guint vstride = mpp_frame_get_ver_stride (mframe);
   RgaSURF_FORMAT rga_format = gst_mpp_mpp_format_to_rga_format (mpp_format);
 
   g_return_val_if_fail (mbuf, FALSE);
 
   info->fd = mpp_buffer_get_fd (mbuf);
 
-  return gst_mpp_set_rga_info (info, rga_format, width, height,
-      hstride, vstride);
+  return gst_mpp_set_rga_info (info, rga_format, width, height, hstride);
 }
 
 static gboolean
@@ -231,11 +226,9 @@ gst_mpp_rga_info_from_video_info (rga_info_t * info, GstVideoInfo * vinfo)
   guint width = GST_VIDEO_INFO_WIDTH (vinfo);
   guint height = GST_VIDEO_INFO_HEIGHT (vinfo);
   guint hstride = GST_MPP_VIDEO_INFO_HSTRIDE (vinfo);
-  guint vstride = GST_MPP_VIDEO_INFO_VSTRIDE (vinfo);
   RgaSURF_FORMAT rga_format = gst_mpp_gst_format_to_rga_format (format);
 
-  return gst_mpp_set_rga_info (info, rga_format, width, height,
-      hstride, vstride);
+  return gst_mpp_set_rga_info (info, rga_format, width, height, hstride);
 }
 
 static gboolean
