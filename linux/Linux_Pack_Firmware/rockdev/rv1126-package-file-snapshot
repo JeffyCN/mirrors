@@ -1,0 +1,17 @@
+# NAME		Relative path
+#
+#HWDEF		HWDEF
+package-file	package-file
+bootloader	Image/MiniLoaderAll.bin
+parameter	Image/parameter.txt
+#
+# if uboot.img is fit, uboot.img had include uboot and trust,
+# so ignore trust.img
+# file Image/uboot.img
+# Image/uboot.img: Device Tree Blob version 17
+#
+uboot		Image/uboot.img
+boot		Image/boot.img
+backup		RESERVED
+#update-script	update-script
+#recover-script	recover-script
