@@ -158,8 +158,10 @@ gst_mpp_dec_stop (GstVideoDecoder * decoder)
 
   gst_object_unref (self->allocator);
 
-  if (self->input_state)
+  if (self->input_state) {
     gst_video_codec_state_unref (self->input_state);
+    self->input_state = NULL;
+  }
 
   GST_DEBUG_OBJECT (self, "stopped");
 
@@ -389,7 +391,7 @@ gst_mpp_dec_info_matched (GstVideoDecoder * decoder, MppFrame mframe)
 {
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoInfo *info = &self->info;
-  GstVideoFormat format;
+  GstVideoFormat format = GST_VIDEO_INFO_FORMAT (info);
   MppFrameFormat mpp_format = mpp_frame_get_fmt (mframe);
   guint width = mpp_frame_get_width (mframe);
   guint height = mpp_frame_get_height (mframe);
@@ -402,7 +404,7 @@ gst_mpp_dec_info_matched (GstVideoDecoder * decoder, MppFrame mframe)
   width = GST_ROUND_UP_2 (width);
   height = GST_ROUND_UP_2 (height);
 
-  if (format != GST_VIDEO_INFO_FORMAT (info))
+  if (mpp_format != gst_mpp_gst_format_to_mpp_format (format))
     return FALSE;
 
   if (width != GST_VIDEO_INFO_WIDTH (info))

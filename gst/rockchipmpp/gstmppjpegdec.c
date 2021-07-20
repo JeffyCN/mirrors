@@ -39,6 +39,8 @@ struct _GstMppJpegDec
 {
   GstMppDec parent;
 
+  GstVideoFormat format;
+
   /* size of output buffer */
   guint buf_size;
 
@@ -51,6 +53,16 @@ struct _GstMppJpegDec
 #define parent_class gst_mpp_jpeg_dec_parent_class
 G_DEFINE_TYPE (GstMppJpegDec, gst_mpp_jpeg_dec, GST_TYPE_MPP_DEC);
 
+/* Default output format is auto */
+static GstVideoFormat DEFAULT_PROP_FORMAT = GST_VIDEO_FORMAT_UNKNOWN;
+
+enum
+{
+  PROP_0,
+  PROP_FORMAT,
+  PROP_LAST,
+};
+
 /* GstVideoDecoder base class method */
 static GstStaticPadTemplate gst_mpp_jpeg_dec_sink_template =
     GST_STATIC_PAD_TEMPLATE ("sink",
@@ -59,12 +71,17 @@ static GstStaticPadTemplate gst_mpp_jpeg_dec_sink_template =
     GST_STATIC_CAPS ("image/jpeg," "parsed = (boolean) true" ";")
     );
 
+#define MPP_JPEGD_FORMATS \
+    "NV12, NV16" \
+    "BGR16, RGB16, BGR15, RGB15, " \
+    "ABGR, ARGB, BGRA, RGBA, xBGR, xRGB, BGRx, RGBx"
+
 static GstStaticPadTemplate gst_mpp_jpeg_dec_src_template =
     GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw, "
-        "format = (string) { NV12, NV16 }, "
+        "format = (string) { " MPP_JPEGD_FORMATS " }, "
         "width  = (int) [ 48, 8176 ], " "height =  (int) [ 48, 8176 ]" ";")
     );
 
@@ -78,6 +95,53 @@ gst_mpp_jpeg_dec_get_format (GstStructure * structure)
 
   return GST_VIDEO_FORMAT_UNKNOWN;
 }
+
+static void
+gst_mpp_jpeg_dec_set_property (GObject * object,
+    guint prop_id, const GValue * value, GParamSpec * pspec)
+{
+  GstVideoDecoder *decoder = GST_VIDEO_DECODER (object);
+  GstMppJpegDec *self = GST_MPP_JPEG_DEC (decoder);
+  GstMppDec *mppdec = GST_MPP_DEC (decoder);
+
+  switch (prop_id) {
+    case PROP_FORMAT:{
+      GstVideoFormat format = g_value_get_enum (value);
+      if (self->format == format)
+        return;
+
+      if (mppdec->input_state) {
+        GST_WARNING_OBJECT (self, "unable to change output format");
+        return;
+      }
+
+      self->format = format;
+      break;
+    }
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      return;
+  }
+}
+
+static void
+gst_mpp_jpeg_dec_get_property (GObject * object,
+    guint prop_id, GValue * value, GParamSpec * pspec)
+{
+  GstVideoDecoder *decoder = GST_VIDEO_DECODER (object);
+  GstMppJpegDec *self = GST_MPP_JPEG_DEC (decoder);
+
+  switch (prop_id) {
+    case PROP_FORMAT:
+      g_value_set_enum (value, self->format);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
+
 
 static gboolean
 gst_mpp_jpeg_dec_start (GstVideoDecoder * decoder)
@@ -141,7 +205,6 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   GstVideoInfo *info = &state->info;
   GstStructure *structure;
   GstVideoFormat format;
-  MppFrameFormat mpp_format = MPP_FMT_BUTT;
 
   if (!pclass->set_format (decoder, state))
     return FALSE;
@@ -160,29 +223,37 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
       break;
     default:
       /* FIXME: Gst doesn't support semi-planar version of Y444/Y41B...etc */
-
-      /* Try to convert unsupported formats to NV12 */
-      format = GST_VIDEO_FORMAT_NV12;
-      mpp_format = MPP_FMT_YUV420SP;
-      if (mppdec->mpi->control (mppdec->mpp_ctx, MPP_DEC_SET_OUTPUT_FORMAT,
-              &mpp_format) < 0)
-        return FALSE;
-
+      format = GST_VIDEO_FORMAT_UNKNOWN;
       break;
   }
 
-  if (!gst_mpp_dec_update_video_info (decoder, format,
+  if (self->format == GST_VIDEO_FORMAT_UNKNOWN) {
+    /* Try to convert unsupported formats to NV12 */
+    if (format == GST_VIDEO_FORMAT_UNKNOWN)
+      self->format = GST_VIDEO_FORMAT_NV12;
+    else
+      self->format = format;
+  }
+
+  if (self->format != format) {
+    /* Using MPP internal format conversion (PP) */
+    MppFrameFormat mpp_format = gst_mpp_gst_format_to_mpp_format (self->format);
+    if (mppdec->mpi->control (mppdec->mpp_ctx, MPP_DEC_SET_OUTPUT_FORMAT,
+            &mpp_format) < 0)
+      return FALSE;
+  }
+
+  if (!gst_mpp_dec_update_video_info (decoder, self->format,
           GST_VIDEO_INFO_WIDTH (info), GST_VIDEO_INFO_HEIGHT (info), 0, 0, 0))
     return FALSE;
 
   info = &mppdec->info;
 
-  /* The MPP's JPEG parser requires 2 * w * h for now */
-  self->buf_size = GST_VIDEO_INFO_PLANE_OFFSET (info, 1) * 2;
+  self->buf_size = GST_VIDEO_INFO_SIZE (info);
 
-  /* The MPP's maximum output size would be 3*w*h (Y444) */
-  if (mpp_format != MPP_FMT_BUTT)
-    self->buf_size = GST_VIDEO_INFO_PLANE_OFFSET (info, 1) * 3;
+  /* FIXME: Workaround MPP's JPEG parser size requirement issue (w * h * 2) */
+  self->buf_size =
+      MAX (self->buf_size, GST_VIDEO_INFO_PLANE_OFFSET (info, 1) * 2);
 
   return TRUE;
 }
@@ -337,9 +408,60 @@ error:
   return FALSE;
 }
 
+#define GST_TYPE_MPP_JPEG_DEC_FORMAT (gst_mpp_jpeg_dec_format_get_type ())
+static GType
+gst_mpp_jpeg_dec_format_get_type (void)
+{
+  static GType format = 0;
+
+  if (!format) {
+    static const GEnumValue formats[] = {
+      {GST_VIDEO_FORMAT_UNKNOWN, "Auto", "auto"},
+      {GST_VIDEO_FORMAT_NV12, "NV12", "NV12"},
+      {GST_VIDEO_FORMAT_NV16, "NV16", "NV16"},
+      {GST_VIDEO_FORMAT_RGB16, "RGB565", "RGB16"},
+      {GST_VIDEO_FORMAT_BGR16, "BGR565", "BGR16"},
+      {GST_VIDEO_FORMAT_RGB15, "RGB555", "RGB15"},
+      {GST_VIDEO_FORMAT_BGR15, "BGR555", "BGR15"},
+      {GST_VIDEO_FORMAT_ARGB, "ARGB8888", "ARGB"},
+      {GST_VIDEO_FORMAT_ABGR, "ABGR8888", "ABGR"},
+      {GST_VIDEO_FORMAT_RGBA, "RGBA8888", "RGBA"},
+      {GST_VIDEO_FORMAT_BGRA, "BGRA8888", "BGRA"},
+      {GST_VIDEO_FORMAT_xRGB, "XRGB8888", "xRGB"},
+      {GST_VIDEO_FORMAT_xBGR, "XBGR8888", "xBGR"},
+      {GST_VIDEO_FORMAT_RGBx, "RGBX8888", "RGBx"},
+      {GST_VIDEO_FORMAT_BGRx, "BGRX8888", "BGRx"},
+      {0, NULL, NULL}
+    };
+    format = g_enum_register_static ("GstMppJpegDecFormat", formats);
+  }
+  return format;
+}
+
 static void
 gst_mpp_jpeg_dec_init (GstMppJpegDec * self)
 {
+  self->format = DEFAULT_PROP_FORMAT;
+}
+
+static void
+gst_mpp_jpeg_dec_setup_default_format (void)
+{
+  GEnumClass *class;
+  GEnumValue *value;
+  const char *env;
+
+  env = g_getenv ("GST_MPP_JPEGDEC_DEFAULT_FORMAT");
+  if (!env)
+    return;
+
+  class = g_type_class_ref (GST_TYPE_MPP_JPEG_DEC_FORMAT);
+
+  value = g_enum_get_value_by_nick (class, env);
+  if (value)
+    DEFAULT_PROP_FORMAT = value->value;
+
+  g_type_class_unref (class);
 }
 
 static void
@@ -347,6 +469,7 @@ gst_mpp_jpeg_dec_class_init (GstMppJpegDecClass * klass)
 {
   GstVideoDecoderClass *decoder_class = GST_VIDEO_DECODER_CLASS (klass);
   GstMppDecClass *pclass = GST_MPP_DEC_CLASS (klass);
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
 
   GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "mppjpegdec", 0,
@@ -362,6 +485,19 @@ gst_mpp_jpeg_dec_class_init (GstMppJpegDecClass * klass)
       GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_send_mpp_packet);
   pclass->poll_mpp_frame = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_poll_mpp_frame);
   pclass->shutdown = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_shutdown);
+
+  gobject_class->set_property =
+      GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_set_property);
+  gobject_class->get_property =
+      GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_get_property);
+
+  gst_mpp_jpeg_dec_setup_default_format ();
+
+  g_object_class_install_property (gobject_class, PROP_FORMAT,
+      g_param_spec_enum ("format", "Output format",
+          "Output format",
+          GST_TYPE_MPP_JPEG_DEC_FORMAT, DEFAULT_PROP_FORMAT,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_mpp_jpeg_dec_src_template));
