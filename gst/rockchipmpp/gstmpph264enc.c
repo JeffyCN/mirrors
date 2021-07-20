@@ -257,6 +257,7 @@ gst_mpp_h264_enc_set_src_caps (GstVideoEncoder * encoder)
   GstMppH264Enc *self = GST_MPP_H264_ENC (encoder);
   GstStructure *structure;
   GstCaps *caps;
+  char *string;
 
   caps = gst_caps_new_empty_simple ("video/x-h264");
 
@@ -265,10 +266,13 @@ gst_mpp_h264_enc_set_src_caps (GstVideoEncoder * encoder)
       G_TYPE_STRING, "byte-stream", NULL);
   gst_structure_set (structure, "alignment", G_TYPE_STRING, "au", NULL);
 
-  gst_structure_set (structure, "profile", G_TYPE_STRING,
-      g_enum_to_string (GST_TYPE_MPP_H264_ENC_PROFILE, self->profile), NULL);
-  gst_structure_set (structure, "level", G_TYPE_STRING,
-      g_enum_to_string (GST_TYPE_MPP_H264_ENC_LEVEL, self->level), NULL);
+  string = g_enum_to_string (GST_TYPE_MPP_H264_ENC_PROFILE, self->profile);
+  gst_structure_set (structure, "profile", G_TYPE_STRING, string, NULL);
+  g_free (string);
+
+  string = g_enum_to_string (GST_TYPE_MPP_H264_ENC_LEVEL, self->level);
+  gst_structure_set (structure, "level", G_TYPE_STRING, string, NULL);
+  g_free (string);
 
   return gst_mpp_enc_set_src_caps (encoder, caps);
 }
