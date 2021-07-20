@@ -151,9 +151,9 @@ gst_mpp_gst_format_to_rga_format (GstVideoFormat format)
       MPP_CASE_RETURN (GST_VIDEO_FORMAT_RGB15, RK_FORMAT_RGBA_5551);
       MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGR, RK_FORMAT_BGR_888);
       MPP_CASE_RETURN (GST_VIDEO_FORMAT_RGB, RK_FORMAT_RGB_888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGRx, RK_FORMAT_BGRA_8888);
       MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGRA, RK_FORMAT_BGRA_8888);
       MPP_CASE_RETURN (GST_VIDEO_FORMAT_RGBA, RK_FORMAT_RGBA_8888);
+      MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGRx, RK_FORMAT_BGRX_8888);
       MPP_CASE_RETURN (GST_VIDEO_FORMAT_RGBx, RK_FORMAT_RGBX_8888);
     default:
       return RK_FORMAT_UNKNOWN;
@@ -164,19 +164,22 @@ static gboolean
 gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT format,
     guint width, guint height, guint hstride)
 {
+  int pixel_stride;
+
   switch (format) {
     case RK_FORMAT_RGBX_8888:
+    case RK_FORMAT_BGRX_8888:
     case RK_FORMAT_RGBA_8888:
     case RK_FORMAT_BGRA_8888:
-      hstride /= 4;
+      pixel_stride = 4;
       break;
     case RK_FORMAT_RGB_888:
     case RK_FORMAT_BGR_888:
-      hstride /= 3;
+      pixel_stride = 3;
       break;
     case RK_FORMAT_RGBA_5551:
     case RK_FORMAT_RGB_565:
-      hstride /= 2;
+      pixel_stride = 2;
       break;
     case RK_FORMAT_YCbCr_420_SP_10B:
     case RK_FORMAT_YCbCr_422_SP:
@@ -187,6 +190,8 @@ gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT format,
     case RK_FORMAT_YCrCb_420_SP:
     case RK_FORMAT_YCbCr_420_P:
     case RK_FORMAT_YCrCb_420_P:
+      pixel_stride = 1;
+
       /* RGA requires yuv image rect align to 2 */
       width &= ~1;
       height &= ~1;
@@ -197,6 +202,10 @@ gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT format,
 
   if (info->fd < 0 && !info->virAddr)
     return FALSE;
+
+  /* HACK: The MPP might provide pixel stride in some cases */
+  if (hstride / pixel_stride >= width)
+    hstride /= pixel_stride;
 
   info->mmuFlag = 1;
   rga_set_rect (&info->rect, 0, 0, width, height, hstride, height, format);
