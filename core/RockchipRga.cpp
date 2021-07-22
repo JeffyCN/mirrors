@@ -86,7 +86,7 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
     }
 
     RockchipRga::~RockchipRga() {
-        RgaDeInit(mContext);
+        RgaDeInit(&mContext);
     }
 
     int RockchipRga::RkRgaInit() {
@@ -106,13 +106,13 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
 
     void RockchipRga::RkRgaDeInit() {
         if (mSupportRga)
-            RgaDeInit(mContext);
+            RgaDeInit(&mContext);
 
         mSupportRga = false;
     }
 
     void RockchipRga::RkRgaGetContext(void **ctx) {
-        memcpy(ctx, &mContext, sizeof(*ctx));
+        *ctx = mContext;
     }
 
 #ifdef LINUX

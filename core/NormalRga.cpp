@@ -134,7 +134,7 @@ mallocErr:
     return ret;
 }
 
-int NormalRgaClose(void *context) {
+int NormalRgaClose(void **context) {
     struct rgaContext *ctx = rgaCtx;
 
     if (!ctx) {
@@ -142,12 +142,12 @@ int NormalRgaClose(void *context) {
         return -ENODEV;
     }
 
-    if (!context) {
-        ALOGE("Try to uninit rgaCtx=%p", context);
+    if (!*context) {
+        ALOGE("Try to uninit rgaCtx=%p", *context);
         return -ENODEV;
     }
 
-    if (context != ctx) {
+    if (*context != ctx) {
         ALOGE("Try to exit wrong ctx=%p",ctx);
         return -ENODEV;
     }
@@ -180,6 +180,7 @@ int NormalRgaClose(void *context) {
 #endif
 
     rgaCtx = NULL;
+    *context = NULL;
 
     close(ctx->rgaFd);
 
@@ -198,7 +199,7 @@ int RgaInit(void **ctx) {
     return ret;
 }
 
-int RgaDeInit(void *ctx) {
+int RgaDeInit(void **ctx) {
     int ret = 0;
     ret = NormalRgaClose(ctx);
     return ret;

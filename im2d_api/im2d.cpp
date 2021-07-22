@@ -467,6 +467,15 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
     /* Get RGA context */
     if (rgaCtx == NULL) {
         RockchipRga& rkRga(RockchipRga::get());
+        if (rgaCtx == NULL) {
+            memcpy(return_table, &table[RGA_V_ERR], sizeof(rga_info_table_entry));
+
+            ALOGE("rga_im2d: The current RockchipRga singleton is destroyed. "
+                  "Please check if RkRgaInit/RkRgaDeInit are called, if so, please disable them.");
+            imSetErrorMsg("The current RockchipRga singleton is destroyed."
+                          "Please check if RkRgaInit/RkRgaDeInit are called, if so, please disable them.");
+            return IM_STATUS_FAILED;
+        }
     }
 
     sprintf(buf, "%f", rgaCtx->mVersion);
