@@ -612,6 +612,7 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
   GstBuffer *outbuf, *inbuf;
   GstMemory *in_mem, *out_mem;
   GstVideoMeta *meta;
+  gsize size, maxsize, offset;
   gint i;
 
   inbuf = frame->input_buffer;
@@ -622,6 +623,13 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
       GST_VIDEO_INFO_PLANE_STRIDE (&src_info, i) = meta->stride[i];
       GST_VIDEO_INFO_PLANE_OFFSET (&src_info, i) = meta->offset[i];
     }
+  }
+
+  size = gst_buffer_get_sizes (inbuf, &offset, &maxsize);
+  if (size < GST_VIDEO_INFO_SIZE (&src_info)) {
+    GST_ERROR_OBJECT (self, "input buffer too small (%" G_GSIZE_FORMAT
+        " < %" G_GSIZE_FORMAT ")", size, GST_VIDEO_INFO_SIZE (&src_info));
+    return NULL;
   }
 
   outbuf = gst_buffer_new ();
