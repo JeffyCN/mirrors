@@ -296,7 +296,7 @@ gst_mpp_rga_convert (GstBuffer * inbuf, GstVideoInfo * src_vinfo,
     }
   }
 
-  if (src_info.fd < 0) {
+  if (src_info.fd <= 0) {
     gst_buffer_map (inbuf, &mapinfo, GST_MAP_READ);
     src_info.virAddr = mapinfo.data;
   }
