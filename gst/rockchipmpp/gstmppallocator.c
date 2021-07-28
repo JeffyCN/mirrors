@@ -286,35 +286,12 @@ gst_mpp_allocator_class_init (GstMppAllocatorClass * klass)
   gobject_class->finalize = GST_DEBUG_FUNCPTR (gst_mpp_allocator_finalize);
 }
 
-static gpointer
-gst_mpp_mem_map_full (GstMemory * mem, GstMapInfo * info, gsize size)
-{
-  MppBuffer mbuf;
-  gpointer ptr;
-
-  if (mem->parent)
-    return gst_mpp_mem_map_full (mem->parent, info, size);
-
-  mbuf = gst_mpp_mpp_buffer_from_gst_memory (mem);
-  if (!mbuf)
-    return NULL;
-
-  ptr = mpp_buffer_get_ptr (mbuf);
-  if (ptr)
-    return ptr;
-
-  /* Fallback to default mmap for imported dma buffer */
-  return mem->allocator->mem_map (mem, size, info->flags);
-}
-
 static void
 gst_mpp_allocator_init (GstMppAllocator * allocator)
 {
   GstAllocator *alloc = GST_ALLOCATOR_CAST (allocator);
 
   alloc->mem_type = GST_ALLOCATOR_MPP;
-
-  alloc->mem_map_full = GST_DEBUG_FUNCPTR (gst_mpp_mem_map_full);
 
   GST_OBJECT_FLAG_SET (allocator, GST_ALLOCATOR_FLAG_CUSTOM_ALLOC);
 }
