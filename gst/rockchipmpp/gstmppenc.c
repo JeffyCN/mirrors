@@ -701,6 +701,29 @@ convert:
   return outbuf;
 }
 
+static gboolean
+gst_mpp_enc_force_keyframe (GstVideoEncoder * encoder, gboolean keyframe)
+{
+  GstMppEnc *self = GST_MPP_ENC (encoder);
+
+  /* HACK: Use gop(1) to force keyframe */
+
+  if (!keyframe) {
+    self->prop_dirty = TRUE;
+    return gst_mpp_enc_apply_properties (encoder);
+  }
+
+  GST_INFO_OBJECT (self, "forcing keyframe");
+  mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:gop", 1);
+
+  if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_CFG, self->mpp_cfg)) {
+    GST_WARNING_OBJECT (self, "failed to set enc cfg");
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 static void
 gst_mpp_enc_loop (GstVideoEncoder * encoder)
 {
@@ -711,6 +734,7 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
   MppFrame mframe;
   MppPacket mpkt = NULL;
   MppBuffer mbuf;
+  gboolean keyframe;
   int pkt_size;
 
   GST_MPP_ENC_WAIT (encoder, self->pending_frames || self->flushing);
@@ -731,11 +755,18 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
   mframe = self->mpp_frame;
   mpp_frame_set_buffer (mframe, mbuf);
 
+  keyframe = GST_VIDEO_CODEC_FRAME_IS_FORCE_KEYFRAME (frame);
+  if (keyframe)
+    gst_mpp_enc_force_keyframe (encoder, TRUE);
+
   /* Encode one frame */
   GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
   if (!self->mpi->encode_put_frame (self->mpp_ctx, mframe))
     self->mpi->encode_get_packet (self->mpp_ctx, &mpkt);
   GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
+
+  if (keyframe)
+    gst_mpp_enc_force_keyframe (encoder, FALSE);
 
   if (!mpkt)
     goto error;
