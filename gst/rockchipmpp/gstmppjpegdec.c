@@ -449,7 +449,7 @@ gst_mpp_jpeg_dec_setup_default_format (void)
 {
   GEnumClass *class;
   GEnumValue *value;
-  const char *env;
+  const gchar *env;
 
   env = g_getenv ("GST_MPP_JPEGDEC_DEFAULT_FORMAT");
   if (!env)

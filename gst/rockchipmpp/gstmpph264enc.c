@@ -257,7 +257,7 @@ gst_mpp_h264_enc_set_src_caps (GstVideoEncoder * encoder)
   GstMppH264Enc *self = GST_MPP_H264_ENC (encoder);
   GstStructure *structure;
   GstCaps *caps;
-  char *string;
+  gchar *string;
 
   caps = gst_caps_new_empty_simple ("video/x-h264");
 

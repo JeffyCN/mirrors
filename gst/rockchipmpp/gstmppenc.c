@@ -735,7 +735,7 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
   MppPacket mpkt = NULL;
   MppBuffer mbuf;
   gboolean keyframe;
-  int pkt_size;
+  gint pkt_size;
 
   GST_MPP_ENC_WAIT (encoder, self->pending_frames || self->flushing);
 

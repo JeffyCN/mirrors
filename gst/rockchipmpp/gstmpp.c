@@ -44,7 +44,7 @@ GST_DEBUG_CATEGORY_STATIC (mpp_debug);
 GstVideoFormat
 gst_mpp_mpp_format_to_gst_format (MppFrameFormat mpp_format)
 {
-  switch ((int) mpp_format) {
+  switch ((gint) mpp_format) {
       MPP_CASE_RETURN (MPP_FMT_YUV420P, GST_VIDEO_FORMAT_I420);
       MPP_CASE_RETURN (MPP_FMT_YUV420SP, GST_VIDEO_FORMAT_NV12);
       MPP_CASE_RETURN (MPP_FMT_YUV420SP_VU, GST_VIDEO_FORMAT_NV21);
@@ -113,7 +113,7 @@ gst_mpp_gst_format_to_mpp_format (GstVideoFormat format)
 static RgaSURF_FORMAT
 gst_mpp_mpp_format_to_rga_format (MppFrameFormat mpp_format)
 {
-  switch ((int) mpp_format) {
+  switch ((gint) mpp_format) {
       MPP_CASE_RETURN (MPP_FMT_YUV420P, RK_FORMAT_YCbCr_420_P);
       MPP_CASE_RETURN (MPP_FMT_YUV420SP, RK_FORMAT_YCbCr_420_SP);
       MPP_CASE_RETURN (MPP_FMT_YUV420SP_VU, RK_FORMAT_YCrCb_420_SP);
@@ -164,7 +164,7 @@ static gboolean
 gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT format,
     guint width, guint height, guint hstride)
 {
-  int pixel_stride;
+  gint pixel_stride;
 
   switch (format) {
     case RK_FORMAT_RGBX_8888:
