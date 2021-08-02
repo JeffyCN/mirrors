@@ -868,7 +868,7 @@ IM_API IM_STATUS rga_check_info(const char *name, const rga_buffer_t info, const
     }
 
     if ((rect.width + rect.x > info.wstride) || (rect.height + rect.y > info.hstride)) {
-        imSetErrorMsg("Invaild %s rect, the sum of widtn and height of rect needs to be less than wstride or hstride, "
+        imSetErrorMsg("Invaild %s rect, the sum of width and height of rect needs to be less than wstride or hstride, "
                       "rect[x,y,w,h] = [%d, %d, %d, %d], wstride = %d, hstride = %d",
                       name, rect.x, rect.y, rect.width, rect.height, info.wstride, info.hstride);
         return IM_STATUS_INVALID_PARAM;
@@ -1295,9 +1295,6 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
     if (sync == 0)
         usage |= IM_SYNC;
 
-    dst.width = rect.width < dst.width ? rect.width : dst.width;
-    dst.height = rect.height < dst.height ? rect.height : dst.height;
-
     ret = improcess(src, dst, pat, rect, drect, prect, usage);
 
     return ret;
@@ -1600,6 +1597,11 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     if (srect.width > 0 && srect.height > 0) {
         src.width = srect.width;
         src.height = srect.height;
+        /* for imcrop_t api */
+        if (usage & IM_CROP) {
+            dst.width = srect.width < dst.width ? srect.width : dst.width;
+            dst.height = srect.height < dst.height ? srect.height : dst.height;
+        }
     }
 
     if (drect.width > 0 && drect.height > 0) {
@@ -1656,7 +1658,6 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                                     HAL_TRANSFORM_FLIP_H_V;
                 break;
         }
-
 
         if(srcinfo.rotation ==0)
             ALOGE("rga_im2d: Could not find rotate/flip usage : 0x%x \n", usage);
