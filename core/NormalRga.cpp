@@ -903,7 +903,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
             src1VirW = relSrc1Rect.wstride;
             src1VirH = relSrc1Rect.hstride;
-            src1XPos = relSrc1Rect.xoffset + relDstRect.width - 1;
+            src1XPos = relSrc1Rect.xoffset;
             src1YPos = relSrc1Rect.yoffset;
             src1ActW = relSrc1Rect.height;
             src1ActH = relSrc1Rect.width;
@@ -927,8 +927,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
             src1VirW = relSrc1Rect.wstride;
             src1VirH = relSrc1Rect.hstride;
-            src1XPos = relSrc1Rect.xoffset + relDstRect.width - 1;
-            src1YPos = relSrc1Rect.yoffset + relDstRect.height - 1;
+            src1XPos = relSrc1Rect.xoffset;
+            src1YPos = relSrc1Rect.yoffset;
             src1ActW = relSrc1Rect.width;
             src1ActH = relSrc1Rect.height;
 
@@ -952,7 +952,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
             src1VirW = relSrc1Rect.wstride;
             src1VirH = relSrc1Rect.hstride;
             src1XPos = relSrc1Rect.xoffset;
-            src1YPos = relSrc1Rect.yoffset + relDstRect.height - 1;
+            src1YPos = relSrc1Rect.yoffset;
             src1ActW = relSrc1Rect.height;
             src1ActH = relSrc1Rect.width;
 
