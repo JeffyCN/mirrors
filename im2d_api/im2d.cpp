@@ -1100,6 +1100,14 @@ IM_API IM_STATUS rga_check_blend(rga_buffer_t src, rga_buffer_t pat, rga_buffer_
             break;
     }
 
+    /* src1 don't support scale, and src1's size must aqual to dst.' */
+    if (pat_enable && (pat.width != dst.width || pat.height != dst.height)) {
+        imSetErrorMsg("In the three-channel mode Alapha blend, the width and height of the src1 channel "
+                      "must be equal to the dst channel, src1[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                      pat.width, pat.height, dst.width, dst.height);
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
     return IM_STATUS_NOERROR;
 }
 
@@ -1587,13 +1595,6 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     if (ret <= 0)
         return (IM_STATUS)ret;
 
-    if ((usage & IM_ALPHA_BLEND_MASK) && rga_is_buffer_valid(pat)) /* A+B->C */
-        ret = imcheck_composite(src, dst, pat, srect, drect, prect, usage);
-    else
-        ret = imcheck(src, dst, srect, drect, usage);
-    if(ret != IM_STATUS_NOERROR)
-        return (IM_STATUS)ret;
-
     if (srect.width > 0 && srect.height > 0) {
         src.width = srect.width;
         src.height = srect.height;
@@ -1626,6 +1627,13 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
         rga_set_rect(&patinfo.rect, prect.x, prect.y, pat.width, pat.height, pat.wstride, pat.hstride, pat.format);
     }
+
+    if ((usage & IM_ALPHA_BLEND_MASK) && rga_is_buffer_valid(pat)) /* A+B->C */
+        ret = imcheck_composite(src, dst, pat, srect, drect, prect, usage);
+    else
+        ret = imcheck(src, dst, srect, drect, usage);
+    if(ret != IM_STATUS_NOERROR)
+        return (IM_STATUS)ret;
 
     /* Transform */
     if (usage & IM_HAL_TRANSFORM_MASK) {
