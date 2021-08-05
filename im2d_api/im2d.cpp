@@ -1280,7 +1280,9 @@ IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx,
     UNUSED(interpolation);
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(src, dst, pat, srect, drect, prect, usage);
 
@@ -1301,7 +1303,9 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
     usage |= IM_CROP;
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(src, dst, pat, rect, drect, prect, usage);
 
@@ -1323,7 +1327,9 @@ IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotati
     usage |= rotation;
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(src, dst, pat, srect, drect, prect, usage);
 
@@ -1345,7 +1351,9 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
     usage |= mode;
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(src, dst, pat, srect, drect, prect, usage);
 
@@ -1371,7 +1379,9 @@ IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync) {
     dst.color = color;
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(src, dst, pat, srect, rect, prect, usage);
 
@@ -1394,7 +1404,9 @@ IM_API IM_STATUS impalette_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lu
     usage |= IM_COLOR_PALETTE;
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(src, dst, lut, srect, drect, prect, usage);
 
@@ -1417,7 +1429,9 @@ IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, 
         return IM_STATUS_INVALID_PARAM;
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     srect.width = src.width - x;
     srect.height = src.height - y;
@@ -1450,7 +1464,9 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync) {
     }
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(src, dst, pat, srect, drect, prect, usage);
 
@@ -1474,7 +1490,9 @@ IM_API IM_STATUS imcolorkey_t(const rga_buffer_t src, rga_buffer_t dst, im_color
     dst.colorkey_range = range;
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(src, dst, pat, srect, drect, prect, usage);
 
@@ -1493,7 +1511,9 @@ IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga
     usage |= mode;
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(srcA, dst, srcB, srect, drect, prect, usage);
 
@@ -1518,7 +1538,9 @@ IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int 
     dst.color_space_mode = mode;
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(src, dst, pat, srect, drect, prect, usage);
 
@@ -1542,7 +1564,9 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
     dst.nn = nn_info;
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(src, dst, pat, srect, drect, prect, usage);
 
@@ -1566,7 +1590,9 @@ IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code,
     dst.rop_code = rop_code;
 
     if (sync == 0)
-        usage |= IM_SYNC;
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage != IM_SYNC;
 
     ret = improcess(src, dst, pat, srect, drect, prect, usage);
 
@@ -1858,8 +1884,10 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
     RockchipRga& rkRga(RockchipRga::get());
 
-    if (usage & IM_SYNC)
+    if (usage & IM_ASYNC)
         dstinfo.sync_mode = RGA_BLIT_ASYNC;
+    else if (usage & IM_SYNC)
+        dstinfo.sync_mode = RGA_BLIT_SYNC;
 
     if (usage & IM_COLOR_FILL) {
         dstinfo.color = dst.color;

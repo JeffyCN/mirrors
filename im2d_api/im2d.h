@@ -61,6 +61,7 @@ typedef enum {
     IM_ALPHA_COLORKEY_MASK      = 0x60000,
 
     IM_SYNC                     = 1 << 19,
+    IM_ASYNC                    = 1 << 26,
     IM_CROP                     = 1 << 20,
     IM_COLOR_FILL               = 1 << 21,
     IM_COLOR_PALETTE            = 1 << 22,
