@@ -62,7 +62,7 @@ typedef enum {
 
     IM_SYNC                     = 1 << 19,
     IM_ASYNC                    = 1 << 26,
-    IM_CROP                     = 1 << 20,
+    IM_CROP                     = 1 << 20,    /* Unused */
     IM_COLOR_FILL               = 1 << 21,
     IM_COLOR_PALETTE            = 1 << 22,
     IM_NN_QUANTIZE              = 1 << 23,

@@ -1005,37 +1005,45 @@ usage 参照定义：
 
 ```c++
 typedef enum {
-/* Rotation */
+    /* Rotation */
     IM_HAL_TRANSFORM_ROT_90     = 1 << 0,
     IM_HAL_TRANSFORM_ROT_180    = 1 << 1,
     IM_HAL_TRANSFORM_ROT_270    = 1 << 2,
     IM_HAL_TRANSFORM_FLIP_H     = 1 << 3,
     IM_HAL_TRANSFORM_FLIP_V     = 1 << 4,
-    IM_HAL_TRANSFORM_MASK       = 0x1f,
+    IM_HAL_TRANSFORM_FLIP_H_V   = 1 << 5,
+    IM_HAL_TRANSFORM_MASK       = 0x3f,
 
-/*
- * Blend
- * Additional blend usage, can be used with both source and target configs.
- * If none of the below is set, the default "SRC over DST" is applied.
- */
-    IM_ALPHA_BLEND_SRC_OVER     = 1 << 5,     /* Default, Porter-Duff "SRC over DST" */
-    IM_ALPHA_BLEND_DST          = 1 << 6,     /* Porter-Duff "DST" */
-    IM_ALPHA_BLEND_SRC_IN       = 1 << 7,     /* Porter-Duff "SRC in DST" */
-    IM_ALPHA_BLEND_DST_IN       = 1 << 8,     /* Porter-Duff "DST in SRC" */
-    IM_ALPHA_BLEND_SRC_OUT      = 1 << 9,     /* Porter-Duff "SRC out DST" */
-    IM_ALPHA_BLEND_DST_OUT      = 1 << 10,    /* Porter-Duff "DST out SRC" */
-    IM_ALPHA_BLEND_DST_OVER     = 1 << 11,    /* Porter-Duff "DST over SRC" */
-    IM_ALPHA_BLEND_SRC_ATOP     = 1 << 12,    /* Porter-Duff "SRC ATOP" */
-    IM_ALPHA_BLEND_DST_ATOP     = 1 << 13,    /* Porter-Duff "DST ATOP" */
-    IM_ALPHA_BLEND_XOR          = 1 << 14,    /* Xor */
-    IM_ALPHA_BLEND_MASK         = 0x7fe0,
+    /*
+     * Blend
+     * Additional blend usage, can be used with both source and target configs.
+     * If none of the below is set, the default "SRC over DST" is applied.
+     */
+    IM_ALPHA_BLEND_SRC_OVER     = 1 << 6,     /* Default, Porter-Duff "SRC over DST" */
+    IM_ALPHA_BLEND_SRC          = 1 << 7,     /* Porter-Duff "SRC" */
+    IM_ALPHA_BLEND_DST          = 1 << 8,     /* Porter-Duff "DST" */
+    IM_ALPHA_BLEND_SRC_IN       = 1 << 9,     /* Porter-Duff "SRC in DST" */
+    IM_ALPHA_BLEND_DST_IN       = 1 << 10,    /* Porter-Duff "DST in SRC" */
+    IM_ALPHA_BLEND_SRC_OUT      = 1 << 11,    /* Porter-Duff "SRC out DST" */
+    IM_ALPHA_BLEND_DST_OUT      = 1 << 12,    /* Porter-Duff "DST out SRC" */
+    IM_ALPHA_BLEND_DST_OVER     = 1 << 13,    /* Porter-Duff "DST over SRC" */
+    IM_ALPHA_BLEND_SRC_ATOP     = 1 << 14,    /* Porter-Duff "SRC ATOP" */
+    IM_ALPHA_BLEND_DST_ATOP     = 1 << 15,    /* Porter-Duff "DST ATOP" */
+    IM_ALPHA_BLEND_XOR          = 1 << 16,    /* Xor */
+    IM_ALPHA_BLEND_MASK         = 0x1ffc0,
 
-    IM_SYNC                     = 1 << 16,
-    IM_CROP                     = 1 << 17,
-    IM_COLOR_FILL               = 1 << 18,
-    IM_COLOR_PALETTE            = 1 << 19,
-    IM_NN_QUANTIZE              = 1 << 20,
-    IM_ROP                      = 1 << 21,
+    IM_ALPHA_COLORKEY_NORMAL    = 1 << 17,
+    IM_ALPHA_COLORKEY_INVERTED  = 1 << 18,
+    IM_ALPHA_COLORKEY_MASK      = 0x60000,
+
+    IM_SYNC                     = 1 << 19,
+    IM_ASYNC                    = 1 << 26,
+    IM_CROP                     = 1 << 20,    /* Unused */
+    IM_COLOR_FILL               = 1 << 21,
+    IM_COLOR_PALETTE            = 1 << 22,
+    IM_NN_QUANTIZE              = 1 << 23,
+    IM_ROP                      = 1 << 24,
+    IM_ALPHA_BLEND_PRE_MUL      = 1 << 25,
 } IM_USAGE;
 ```
 

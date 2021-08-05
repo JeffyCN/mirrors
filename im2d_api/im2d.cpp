@@ -1300,7 +1300,8 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
 
     empty_structure(NULL, NULL, &pat, NULL, &drect, &prect);
 
-    usage |= IM_CROP;
+    drect.width = rect.width;
+    drect.height = rect.height;
 
     if (sync == 0)
         usage |= IM_ASYNC;
@@ -1624,11 +1625,6 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     if (srect.width > 0 && srect.height > 0) {
         src.width = srect.width;
         src.height = srect.height;
-        /* for imcrop_t api */
-        if (usage & IM_CROP) {
-            dst.width = srect.width < dst.width ? srect.width : dst.width;
-            dst.height = srect.height < dst.height ? srect.height : dst.height;
-        }
     }
 
     if (drect.width > 0 && drect.height > 0) {
