@@ -1,0 +1,16 @@
+# Feature options for plugins
+option('rkximage', type : 'feature', value : 'auto', description : 'Rockchip X11 ximage + KMS sink plugin')
+option('rockchipmpp', type : 'feature', value : 'auto', description : 'Rockchip MPP encoder/decoder plugin')
+option('rga', type : 'feature', value : 'auto', description : 'Use Rockchip librga for conversions')
+
+# Common feature options
+option('gobject-cast-checks', type : 'feature', value : 'auto', yield : true,
+       description: 'Enable run-time GObject cast checks (auto = enabled for development, disabled for stable releases)')
+option('glib-asserts', type : 'feature', value : 'enabled', yield : true,
+       description: 'Enable GLib assertion (auto = enabled for development, disabled for stable releases)')
+
+# Common options
+option('package-name', type : 'string', yield : true,
+       description : 'package name to use in plugins')
+option('package-origin', type : 'string', value : 'Unknown package origin', yield : true,
+       description : 'package origin URL to use in plugins')

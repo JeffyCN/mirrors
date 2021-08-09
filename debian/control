@@ -1,16 +1,14 @@
 Source: gstreamer1.0-rockchip
 Priority: optional
-Maintainer: Randy Li <randy.li@rock-chips.com>
+Maintainer: Jeffy Chen <jeffy.chen@rock-chips.com>
 Build-Depends: debhelper (>= 9), autotools-dev,
- librockchip-mpp-dev (>= 1.4.0), libx11-dev, libdrm-dev,
+ librockchip-mpp-dev, librga-dev, libx11-dev, libdrm-dev,
  libgstreamer1.0-dev, libgstreamer-plugins-base1.0-dev
 Standards-Version: 3.9.8
 Section: libs
 Homepage: http://www.rock-chips.com/
-#Vcs-Git: https://anonscm.debian.org/collab-maint/gst-plugins-rk-intel.git
-#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/gst-plugins-rk-intel.git
 
 Package: gstreamer1.0-rockchip1
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: The Gstreamer plugins for Rockchip RK3xxx platform.
+Description: The Gstreamer plugins for Rockchip platforms.
