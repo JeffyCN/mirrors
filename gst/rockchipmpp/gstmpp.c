@@ -329,11 +329,11 @@ gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
 #endif
 
 gboolean
-gst_mpp_video_info_align (GstVideoInfo * info, guint hstride, guint vstride)
+gst_mpp_video_info_align (GstVideoInfo * info, gint hstride, gint vstride)
 {
   GstVideoAlignment align;
   guint stride;
-  gint i;
+  guint i;
 
   /* The MPP requires alignment 16 by default */
   if (!hstride)

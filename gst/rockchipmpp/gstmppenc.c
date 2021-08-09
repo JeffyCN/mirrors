@@ -151,7 +151,7 @@ gst_mpp_enc_set_property (GObject * object,
       break;
     }
     case PROP_BPS:{
-      gint bps = g_value_get_uint (value);
+      guint bps = g_value_get_uint (value);
       if (self->bps == bps)
         return;
 
@@ -159,7 +159,7 @@ gst_mpp_enc_set_property (GObject * object,
       break;
     }
     case PROP_BPS_MIN:{
-      gint bps_min = g_value_get_uint (value);
+      guint bps_min = g_value_get_uint (value);
       if (self->bps_min == bps_min)
         return;
 
@@ -167,7 +167,7 @@ gst_mpp_enc_set_property (GObject * object,
       break;
     }
     case PROP_BPS_MAX:{
-      gint bps_max = g_value_get_uint (value);
+      guint bps_max = g_value_get_uint (value);
       if (self->bps_max == bps_max)
         return;
 
@@ -579,7 +579,7 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
 static gboolean
 gst_mpp_enc_video_info_matched (GstVideoInfo * info, GstVideoInfo * other)
 {
-  gint i;
+  guint i;
 
   if (GST_VIDEO_INFO_FORMAT (info) != GST_VIDEO_INFO_FORMAT (other))
     return FALSE;
@@ -613,7 +613,7 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
   GstMemory *in_mem, *out_mem;
   GstVideoMeta *meta;
   gsize size, maxsize, offset;
-  gint i;
+  guint i;
 
   inbuf = frame->input_buffer;
 

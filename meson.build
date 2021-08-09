@@ -49,6 +49,8 @@ endif
 message('Disabling deprecated GLib API')
 add_project_arguments('-DG_DISABLE_DEPRECATED', language: 'c')
 
+add_project_arguments('-DUNUSED=__attribute__((unused))', language: 'c')
+
 add_project_arguments(['-Wall', '-Werror'], language: 'c')
 
 cdata = configuration_data()

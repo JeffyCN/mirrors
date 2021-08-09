@@ -165,7 +165,7 @@ gst_mpp_video_dec_startup (GstVideoDecoder * decoder)
 }
 
 static MppPacket
-gst_mpp_video_dec_get_mpp_packet (GstVideoDecoder * decoder,
+gst_mpp_video_dec_get_mpp_packet (GstVideoDecoder * decoder UNUSED,
     GstMapInfo * mapinfo)
 {
   MppPacket mpkt = NULL;
@@ -239,7 +239,7 @@ gst_mpp_video_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
 }
 
 static void
-gst_mpp_video_dec_init (GstMppVideoDec * self)
+gst_mpp_video_dec_init (GstMppVideoDec * self UNUSED)
 {
 }
 

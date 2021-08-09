@@ -43,7 +43,7 @@ G_BEGIN_DECLS;
 #define GST_MPP_VIDEO_INFO_HSTRIDE(i) GST_VIDEO_INFO_PLANE_STRIDE(i, 0)
 #define GST_MPP_VIDEO_INFO_VSTRIDE(i) \
     (GST_VIDEO_INFO_N_PLANES(i) == 1 ? GST_VIDEO_INFO_HEIGHT(i) : \
-     GST_VIDEO_INFO_PLANE_OFFSET(i, 1) / GST_MPP_VIDEO_INFO_HSTRIDE(i))
+    (gint) (GST_VIDEO_INFO_PLANE_OFFSET(i, 1) / GST_MPP_VIDEO_INFO_HSTRIDE(i)))
 
 GstVideoFormat gst_mpp_mpp_format_to_gst_format (MppFrameFormat mpp_format);
 
@@ -58,7 +58,7 @@ gboolean gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
 #endif
 
 gboolean gst_mpp_video_info_align (GstVideoInfo * info,
-    guint hstride, guint vstride);
+    gint hstride, gint vstride);
 
 G_END_DECLS;
 

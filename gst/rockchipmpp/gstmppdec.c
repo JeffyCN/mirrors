@@ -226,7 +226,7 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
 
 gboolean
 gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
-    guint width, guint height, guint hstride, guint vstride, gsize size)
+    guint width, guint height, guint hstride, guint vstride)
 {
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoInfo *info = &self->info;
@@ -253,7 +253,6 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
   guint height = mpp_frame_get_height (mframe);
   guint hstride = mpp_frame_get_hor_stride (mframe);
   guint vstride = mpp_frame_get_ver_stride (mframe);
-  guint size = mpp_frame_get_buf_size (mframe);
 
   mpp_format = mpp_frame_get_fmt (mframe);
   format = gst_mpp_mpp_format_to_gst_format (mpp_format);
@@ -271,7 +270,7 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
   }
 
   if (!gst_mpp_dec_update_video_info (decoder, format, width, height,
-          hstride, vstride, size))
+          hstride, vstride))
     return GST_FLOW_NOT_NEGOTIATED;
 
   return GST_FLOW_OK;
@@ -344,7 +343,7 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
 
     if (GST_CLOCK_TIME_IS_VALID (f->pts)) {
       /* Prefer frame with close PTS */
-      if (abs (f->pts - pts) < 3000000) {
+      if (abs ((gint) f->pts - (gint) pts) < 3000000) {
         frame = f;
 
         GST_DEBUG_OBJECT (self, "using matched frame (#%d)",
@@ -393,10 +392,10 @@ gst_mpp_dec_info_matched (GstVideoDecoder * decoder, MppFrame mframe)
   GstVideoInfo *info = &self->info;
   GstVideoFormat format = GST_VIDEO_INFO_FORMAT (info);
   MppFrameFormat mpp_format = mpp_frame_get_fmt (mframe);
-  guint width = mpp_frame_get_width (mframe);
-  guint height = mpp_frame_get_height (mframe);
-  guint hstride = mpp_frame_get_hor_stride (mframe);
-  guint vstride = mpp_frame_get_ver_stride (mframe);
+  gint width = mpp_frame_get_width (mframe);
+  gint height = mpp_frame_get_height (mframe);
+  gint hstride = mpp_frame_get_hor_stride (mframe);
+  gint vstride = mpp_frame_get_ver_stride (mframe);
 
   format = gst_mpp_mpp_format_to_gst_format (mpp_format);
 
@@ -524,6 +523,7 @@ gst_mpp_dec_update_interlace_mode (GstVideoDecoder * decoder,
       break;
     case MPP_FRAME_FLAG_DEINTERLACED:
       interlace_mode = GST_VIDEO_INTERLACE_MODE_MIXED;
+      /* fall-through */
     default:
       GST_BUFFER_FLAG_UNSET (buffer, GST_VIDEO_BUFFER_FLAG_INTERLACED);
       GST_BUFFER_FLAG_UNSET (buffer, GST_VIDEO_BUFFER_FLAG_TFF);
@@ -656,7 +656,7 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   if (!mpkt)
     goto no_packet;
 
-  mpp_packet_set_pts (mpkt, self->use_mpp_pts ? -1 : frame->pts);
+  mpp_packet_set_pts (mpkt, self->use_mpp_pts ? -1 : (gint64) frame->pts);
 
   if (GST_CLOCK_TIME_IS_VALID (frame->pts))
     self->seen_valid_pts = TRUE;

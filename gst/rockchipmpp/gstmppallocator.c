@@ -220,7 +220,7 @@ gst_mpp_allocator_alloc_mppbuf (GstAllocator * allocator, gsize size)
 
 static GstMemory *
 gst_mpp_allocator_alloc (GstAllocator * allocator, gsize size,
-    GstAllocationParams * params)
+    GstAllocationParams * params UNUSED)
 {
   GstMemory *mem;
   MppBuffer mbuf;
