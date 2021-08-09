@@ -418,11 +418,6 @@ gst/rkximage/Makefile
 gst/rockchipmpp/Makefile
 gst-libs/Makefile
 gst-libs/gst/Makefile
-tests/Makefile
-tests/examples/Makefile
-tests/examples/app-interface/Makefile
-tests/examples/camera/Makefile
-tests/examples/player/Makefile
 )
 
 AC_OUTPUT
