@@ -95,29 +95,32 @@ int NormalRgaOpen(void **context) {
             ALOGE("malloc fail:%s.",strerror(errno));
             goto mallocErr;
         }
+
+        fd = open("/dev/rga", O_RDWR, 0);
+        if (fd < 0) {
+            ret = -ENODEV;
+            ALOGE("failed to open RGA:%s.",strerror(errno));
+            goto rgaOpenErr;
+        }
+        ctx->rgaFd = fd;
+
+        /* Get RGA hardware version. */
+        ret = ioctl(fd, RGA2_GET_VERSION, buf);
+        if (ret < 0) {
+            ret = ioctl(fd, RGA_GET_VERSION, buf);
+        }
+
+        ctx->mVersion = atof(buf);
+        memcpy(ctx->mVersion_str, buf, sizeof(ctx->mVersion_str));
+
+        NormalRgaInitTables();
+
+        rgaCtx = ctx;
     } else {
         ctx = rgaCtx;
         ALOGE("Had init the rga dev ctx = %p",ctx);
-        goto init;
     }
 
-    fd = open("/dev/rga", O_RDWR, 0);
-    if (fd < 0) {
-        ret = -ENODEV;
-        ALOGE("failed to open DRM:%s.",strerror(errno));
-        goto drmOpenErr;
-    }
-    ctx->rgaFd = fd;
-
-    ret = ioctl(fd, RGA2_GET_VERSION, buf);
-    ctx->mVersion = atof(buf);
-    memcpy(ctx->mVersion_str, buf, sizeof(ctx->mVersion_str));
-
-    NormalRgaInitTables();
-
-    rgaCtx = ctx;
-
-init:
 #ifdef ANDROID
     android_atomic_inc(&refCount);
 #elif LINUX
@@ -128,7 +131,7 @@ init:
     *context = (void *)ctx;
     return ret;
 
-drmOpenErr:
+rgaOpenErr:
     free(ctx);
 mallocErr:
     return ret;
