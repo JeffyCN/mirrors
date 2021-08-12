@@ -1011,8 +1011,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     clip.ymax = dstVirH - 1;
 
     if  (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(relSrcRect.format)) &&
-         RkRgaGetRgaFormat(relSrcRect.format) != RK_FORMAT_RGB_565 &&
-         RkRgaGetRgaFormat(relDstRect.format) == RK_FORMAT_RGB_565)
+         (RkRgaGetRgaFormat(relSrcRect.format) != RK_FORMAT_RGB_565 ||
+         RkRgaGetRgaFormat(relSrcRect.format) != RK_FORMAT_BGR_565) &&
+         (RkRgaGetRgaFormat(relDstRect.format) == RK_FORMAT_RGB_565 ||
+         RkRgaGetRgaFormat(relDstRect.format) == RK_FORMAT_BGR_565))
         ditherEn = 1;
     else
         ditherEn = 0;

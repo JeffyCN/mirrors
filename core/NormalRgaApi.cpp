@@ -144,6 +144,9 @@ uint32_t bytesPerPixel(int format) {
         case RK_FORMAT_RGB_565:
         case RK_FORMAT_RGBA_5551:
         case RK_FORMAT_RGBA_4444:
+        case RK_FORMAT_BGR_565:
+        case RK_FORMAT_BGRA_5551:
+        case RK_FORMAT_BGRA_4444:
             return 2;
         case RK_FORMAT_BPP1:
         case RK_FORMAT_BPP2:
@@ -575,13 +578,16 @@ bool NormalRgaIsRgbFormat(int format) {
     switch (format) {
         case RK_FORMAT_RGBA_8888:
         case RK_FORMAT_RGBX_8888:
-        case RK_FORMAT_RGB_888:
-        case RK_FORMAT_BGRA_8888:
-        case RK_FORMAT_BGRX_8888:
-        case RK_FORMAT_RGB_565:
         case RK_FORMAT_RGBA_5551:
         case RK_FORMAT_RGBA_4444:
+        case RK_FORMAT_RGB_888:
+        case RK_FORMAT_RGB_565:
+        case RK_FORMAT_BGRA_8888:
+        case RK_FORMAT_BGRX_8888:
+        case RK_FORMAT_BGRA_5551:
+        case RK_FORMAT_BGRA_4444:
         case RK_FORMAT_BGR_888:
+        case RK_FORMAT_BGR_565:
             ret = true;
             break;
         default:
@@ -596,9 +602,11 @@ bool NormalRgaFormatHasAlpha(int format) {
 
     switch (format) {
         case RK_FORMAT_RGBA_8888:
-        case RK_FORMAT_BGRA_8888:
         case RK_FORMAT_RGBA_5551:
         case RK_FORMAT_RGBA_4444:
+        case RK_FORMAT_BGRA_8888:
+        case RK_FORMAT_BGRA_5551:
+        case RK_FORMAT_BGRA_4444:
             ret = true;
             break;
         default:
