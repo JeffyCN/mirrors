@@ -206,6 +206,11 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   GstStructure *structure;
   GstVideoFormat format;
 
+  if (!info->width || !info->height) {
+    GST_ERROR_OBJECT (self, "no video info");
+    return FALSE;
+  }
+
   if (!pclass->set_format (decoder, state))
     return FALSE;
 
