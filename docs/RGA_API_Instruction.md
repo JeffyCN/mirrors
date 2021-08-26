@@ -212,8 +212,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">RGA1</td>
       <td>Pagani</td>
       <td>RK3066</td>
-      <td rowspan="4">ARGB888/888/565/4444/5551<br/> YUV420/YUV422<br/>BPP8/BPP4/BPP2/BPP1</td>
-      <td rowspan="4">ARGB888/888/565/4444/5551<br/> YUV420/YUV422(only for Blur/sharpness) 8bit</td>
+      <td rowspan="4">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422<br/>BPP8/BPP4/BPP2/BPP1</td>
+      <td rowspan="4">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422(only for Blur/sharpness) 8bit</td>
    </tr>
    <tr>
       <td>Jaguar Plus</td>
@@ -231,8 +231,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA1_plus</td>
       <td>Audi</td>
       <td>RK3128</td>
-      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422<br/>BPP8/BPP4/BPP2/BPP1</td>
-      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422<br/>(only for Blur/sharpness) 8it<br/>YUV420/YUV422 output<br/>(only for normal Bitblt without alpha)</td>
+      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422<br/>BPP8/BPP4/BPP2/BPP1</td>
+      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422<br/>(only for Blur/sharpness) 8it<br/>YUV420/YUV422 output<br/>(only for normal Bitblt without alpha)</td>
    </tr>
    <tr>
       <td>Granite</td>
@@ -242,8 +242,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA2</td>
       <td>Lincoln</td>
       <td>RK3288/3288w</td>
-      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422</td>
-      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422</td>
+      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422</td>
+      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422</td>
    </tr>
    <tr>
       <td>Capricorn</td>
@@ -253,8 +253,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
-      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)</td>
-      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)<br/>YVYU422/YUYV420</td>
+      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)</td>
+      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)<br/>YVYU422/YUYV420</td>
    </tr>
    <tr>
       <td>Mercury</td>
@@ -263,8 +263,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
    <tr>
       <td>Puma</td>
       <td>RV1126/ RV1109</td>
-      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)<br/>YVYU422</td>
-      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)<br/>YUV400/Y4/Y1<br/>YVYU422/YUYV420</td>
+      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)<br/>YVYU422</td>
+      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)<br/>YUV400/Y4/Y1<br/>YVYU422/YUYV420</td>
    </tr>
    <tr>
       <td>skylarkV2</td>
@@ -274,8 +274,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA2-Lite0</td>
       <td>Maybach</td>
       <td>RK3368</td>
-      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422</td>
-      <td rowspan="2">ARGB888/888/565/4444/5551<br/>YUV420/YUV422</td>
+      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422</td>
+      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422</td>
    </tr>
    <tr>
       <td>BMW</td>
@@ -285,8 +285,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">RGA2-Lite1</td>
       <td>Benz</td>
       <td>RK3228</td>
-      <td rowspan="4">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)</td>
-      <td rowspan="4">ARGB888/888/565/4444/5551<br/>YUV420/YUV422 (8/10bit)</td>
+      <td rowspan="4">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)</td>
+      <td rowspan="4">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)</td>
    </tr>
    <tr>
       <td>Infiniti</td>
@@ -301,6 +301,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RK1808</td>
    </tr>
 </table>
+
 
 
 > 注：Y4格式即2的4次方色阶灰度图，Y400格式即2的8次方色阶灰度图。
