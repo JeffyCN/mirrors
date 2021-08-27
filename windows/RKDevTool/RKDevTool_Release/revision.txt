@@ -37,3 +37,9 @@ v2.83 revision(2021/04/19)
 
 v2.84 revision(2021/04/30)
 1.fix lastusedlba in gpt bug
+
+v2.85 revision(2021/05/20)
+1.handle erase emmc without eraselba
+
+v2.86 revision(2021/05/26)
+1.support to write image by address
