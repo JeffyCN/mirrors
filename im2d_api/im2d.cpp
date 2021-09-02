@@ -1697,13 +1697,13 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     if (usage & IM_ALPHA_BLEND_MASK) {
         switch(usage & IM_ALPHA_BLEND_MASK) {
             case IM_ALPHA_BLEND_SRC:
-                srcinfo.blend = 0xff0001;
+                srcinfo.blend = 0x1;
                 break;
             case IM_ALPHA_BLEND_DST:
-                srcinfo.blend = 0xff0002;
+                srcinfo.blend = 0x2;
                 break;
             case IM_ALPHA_BLEND_SRC_OVER:
-                srcinfo.blend = (usage & IM_ALPHA_BLEND_PRE_MUL) ? 0xff0405 : 0xff0105;
+                srcinfo.blend = (usage & IM_ALPHA_BLEND_PRE_MUL) ? 0x405 : 0x105;
                 break;
             case IM_ALPHA_BLEND_SRC_IN:
                 break;
@@ -1712,7 +1712,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
             case IM_ALPHA_BLEND_SRC_OUT:
                 break;
             case IM_ALPHA_BLEND_DST_OVER:
-                srcinfo.blend = (usage & IM_ALPHA_BLEND_PRE_MUL) ? 0xff0504 : 0xff0501;
+                srcinfo.blend = (usage & IM_ALPHA_BLEND_PRE_MUL) ? 0x504 : 0x501;
                 break;
             case IM_ALPHA_BLEND_SRC_ATOP:
                 break;
@@ -1724,6 +1724,13 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
         if(srcinfo.blend == 0)
             ALOGE("rga_im2d: Could not find blend usage : 0x%x \n", usage);
+
+        /* set global alpha */
+        if (src.global_alpha > 0)
+            srcinfo.blend ^= src.global_alpha << 16;
+        else {
+            srcinfo.blend ^= 0xFF << 16;
+        }
     }
 
     /* color key */
@@ -1758,10 +1765,6 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     if (usage & IM_ROP) {
         srcinfo.rop_code = dst.rop_code;
     }
-
-    /* set global alpha */
-    if ((src.global_alpha > 0) && (usage & IM_ALPHA_BLEND_MASK))
-        srcinfo.blend &= src.global_alpha << 16;
 
     /* special config for color space convert */
     if ((dst.color_space_mode & IM_YUV_TO_RGB_MASK) && (dst.color_space_mode & IM_RGB_TO_YUV_MASK)) {
