@@ -392,6 +392,27 @@ IM_API IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, r
     return IM_STATUS_SUCCESS;
 }
 
+IM_API static inline void rga_apply_rect(rga_buffer_t *image, im_rect *rect) {
+    if (rect->width > 0 && rect->height > 0) {
+        image->width = rect->width;
+        image->height = rect->height;
+    }
+}
+
+IM_API void rga_check_perpare(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
+                              im_rect *src_rect, im_rect *dst_rect, im_rect *pat_rect, int mode_usage) {
+
+      if (mode_usage & IM_CROP) {
+          dst_rect->width = src_rect->width;
+          dst_rect->height = src_rect->height;
+      }
+
+      rga_apply_rect(src, src_rect);
+      rga_apply_rect(dst, dst_rect);
+      if (rga_is_buffer_valid(*pat))
+          rga_apply_rect(pat, pat_rect);
+}
+
 IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
     char buf[16];
     int  rga_version = 0, rga_svn_version = 0;
@@ -1173,7 +1194,7 @@ IM_API IM_STATUS rga_check_feature(rga_buffer_t src, rga_buffer_t pat, rga_buffe
 }
 
 IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
-                           im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect, int mode_usage) {
+                           const im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect, int mode_usage) {
     bool pat_enable = 0;
     IM_STATUS ret = IM_STATUS_NOERROR;
     rga_info_table_entry rga_info;
@@ -1622,15 +1643,8 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     if (ret <= 0)
         return (IM_STATUS)ret;
 
-    if (srect.width > 0 && srect.height > 0) {
-        src.width = srect.width;
-        src.height = srect.height;
-    }
-
-    if (drect.width > 0 && drect.height > 0) {
-        dst.width = drect.width;
-        dst.height = drect.height;
-    }
+    rga_apply_rect(&src, &srect);
+    rga_apply_rect(&dst, &drect);
 
     rga_set_rect(&srcinfo.rect, srect.x, srect.y, src.width, src.height, src.wstride, src.hstride, src.format);
     rga_set_rect(&dstinfo.rect, drect.x, drect.y, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
@@ -1642,10 +1656,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         if (ret <= 0)
             return (IM_STATUS)ret;
 
-        if (prect.width > 0 && prect.height > 0) {
-            pat.width = prect.width;
-            pat.height = prect.height;
-        }
+        rga_apply_rect(&pat, &prect);
 
         rga_set_rect(&patinfo.rect, prect.x, prect.y, pat.width, pat.height, pat.wstride, pat.hstride, pat.format);
     }

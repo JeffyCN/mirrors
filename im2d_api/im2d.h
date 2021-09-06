@@ -384,8 +384,12 @@ IM_API const char* querystring(int name);
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
+            rga_check_perpare((rga_buffer_t *)(&src), (rga_buffer_t *)(&dst), (rga_buffer_t *)(&pat), \
+                              (im_rect *)(&src_rect), (im_rect *)(&dst_rect), (im_rect *)(&pat_rect), 0); \
             ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, 0); \
         } else if (argc == 1){ \
+            rga_check_perpare((rga_buffer_t *)(&src), (rga_buffer_t *)(&dst), (rga_buffer_t *)(&pat), \
+                              (im_rect *)(&src_rect), (im_rect *)(&dst_rect), (im_rect *)(&pat_rect), args[0]); \
             ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, args[0]); \
         } else { \
             ret = IM_STATUS_FAILED; \
@@ -399,8 +403,12 @@ IM_API const char* querystring(int name);
         int args[] = {__VA_ARGS__}; \
         int argc = sizeof(args)/sizeof(int); \
         if (argc == 0) { \
+            rga_check_perpare((rga_buffer_t *)(&src), (rga_buffer_t *)(&dst), (rga_buffer_t *)(&pat), \
+                              (im_rect *)(&src_rect), (im_rect *)(&dst_rect), (im_rect *)(&pat_rect), 0); \
             ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, 0); \
         } else if (argc == 1){ \
+            rga_check_perpare((rga_buffer_t *)(&src), (rga_buffer_t *)(&dst), (rga_buffer_t *)(&pat), \
+                              (im_rect *)(&src_rect), (im_rect *)(&dst_rect), (im_rect *)(&pat_rect), args[0]); \
             ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, args[0]); \
         } else { \
             ret = IM_STATUS_FAILED; \
@@ -408,8 +416,10 @@ IM_API const char* querystring(int name);
         } \
         ret; \
     })
+IM_API void rga_check_perpare(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
+                              im_rect *src_rect, im_rect *dst_rect, im_rect *pat_rect, int mode_usage);
 IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
-                           const im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect, const int mdoe_usage);
+                           const im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect, const int mode_usage);
 
 /*
  * Resize
