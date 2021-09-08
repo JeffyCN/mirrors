@@ -2037,8 +2037,7 @@ static void disconn_acl(u16 handle, struct rtl_hci_conn *conn)
 
 	list_for_each_safe(iter, temp, &coex->profile_list) {
 		prof_info = list_entry(iter, rtk_prof_info, list);
-		if (handle == prof_info->handle && prof_info->scid
-		    && prof_info->dcid) {
+		if (handle == prof_info->handle) {
 			RTKBT_DBG("hci disconn, hndl %x, psm %x, dcid %x, "
 				  "scid %x, profile %u", prof_info->handle,
 				  prof_info->psm, prof_info->dcid,

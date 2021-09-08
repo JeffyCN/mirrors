@@ -172,6 +172,7 @@ static const fw_auto_detection_entry_t fw_auto_detection_table[] = {
 	{"BCM4330B1","BCM40183B2"}, //AP6330
 	{"BCM4324B3","BCM43241B4"}, //AP62X2
 	{"BCM4350C0","bcm4354a1"}, //AP6354
+	{"BCM4345C5","BCM4345C5"}, //AP6256
 	{"BCM4354A2","BCM4356A2"}, //AP6356
 	{"BCM4345C0","BCM4345C0"}, //AP6255
 	//{"BCM43341B0","BCM43341B0"}, //AP6234

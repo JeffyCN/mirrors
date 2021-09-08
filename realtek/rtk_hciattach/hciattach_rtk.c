@@ -44,7 +44,7 @@
 #include "hciattach.h"
 #include "hciattach_h4.h"
 
-#define RTK_VERSION "3.1.8905594.20200602-140152"
+#define RTK_VERSION "3.1.dced3af.20210423-153942"
 
 #define TIMESTAMP_PR
 
@@ -1879,6 +1879,11 @@ static int rtb_config(int fd, int proto, int speed, struct termios *ti)
 	case CHIP_8761B:
 	case CHIP_8725AS:
 		max_patch_size = 40 * 1024;
+		break;
+	case CHIP_8852AS:
+	case CHIP_8723FS:
+	case CHIP_8852BS:
+		max_patch_size = 40 * 1024 + 529;
 		break;
 	default:
 		max_patch_size = 24 * 1024;

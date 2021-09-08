@@ -45,6 +45,10 @@
 /* Send LE whitelist only for Background scan parameters */
 #define WOBT_NOTIFY_BG_SCAN_LE_WHITELIST_ONLY	(0 * WOBT_NOTIFY)	/* 1  enable; 0  disable */
 
+/* RTKBT Power-on Whitelist for sideband wake-up by LE Advertising from Remote.
+* Note that it's necessary to apply TV FW Patch. */
+#define RTKBT_TV_POWERON_WHITELIST	(0 * WOBT_NOTIFY)	/* 1  enable; 0  disable */
+
 /* Ioctls */
 #define HCIUARTSETPROTO		_IOW('U', 200, int)
 #define HCIUARTGETPROTO		_IOR('U', 201, int)

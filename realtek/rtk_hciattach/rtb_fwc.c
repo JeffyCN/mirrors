@@ -39,7 +39,7 @@
 #define FIRMWARE_DIRECTORY	"/lib/firmware/rtlbt/"
 #define BT_CONFIG_DIRECTORY	"/lib/firmware/rtlbt/"
 #define EXTRA_CONFIG_FILE	"/opt/rtk_btconfig.txt"
-#define BT_ADDR_FILE        "/opt/bdaddr"
+#define BT_ADDR_FILE		"/opt/bdaddr"
 #define BDADDR_STRING_LEN	17
 
 struct list_head {
@@ -98,6 +98,12 @@ uint16_t project_id[]=
 	ROM_LMP_NONE,
 	ROM_LMP_8822c, /* id 13 for RTL8822CS, lmp subver 0x8822 */
 	ROM_LMP_8761a, /* id 14 for 8761B */
+	ROM_LMP_NONE,
+	ROM_LMP_NONE,
+	ROM_LMP_NONE,
+	ROM_LMP_8852a, /* id 18 for 8852AS */
+	ROM_LMP_8723b, /* id 19 for 8723FS */
+	ROM_LMP_8852a, /* id 20 for 8852BS */
 };
 
 static struct patch_info h4_patch_table[] = {
@@ -176,6 +182,16 @@ static struct patch_info patch_table[] = {
 		ROM_LMP_8822c, ROM_LMP_8822c, 0, 0x000c,
 		"rtl8822cs_fw", "rtl8822cs_config", "RTL8822CS"},
 
+	/* RTL8852AS */
+	{ RTL_FW_MATCH_HCI_REV, CHIP_8852AS,
+		ROM_LMP_8852a, ROM_LMP_8852a, 11, 0x000a,
+		"rtl8852as_fw", "rtl8852as_config", "RTL8852AS" },
+
+	/* RTL8852BS */
+	{ RTL_FW_MATCH_HCI_REV, CHIP_8852BS,
+		ROM_LMP_8852a, ROM_LMP_8852a, 11, 0x000b,
+		"rtl8852bs_fw", "rtl8852bs_config", "RTL8852BS" },
+
 	/* RTL8703BS
 	 * RTL8723CS_XX
 	 * RTL8723CS_CG
@@ -203,6 +219,10 @@ static struct patch_info patch_table[] = {
 	{ RTL_FW_MATCH_HCI_VER | RTL_FW_MATCH_HCI_REV, CHIP_8723DS,
 		ROM_LMP_8723b, ROM_LMP_8723b, 8, 0x000d,
 		"rtl8723d_fw", "rtl8723d_config", "RTL8723DS"},
+	/* RTL8723FS */
+	{ RTL_FW_MATCH_HCI_VER | RTL_FW_MATCH_HCI_REV, CHIP_8723FS,
+		ROM_LMP_8723b, ROM_LMP_8723b, 11, 0x000f,
+		"rtl8723fs_fw", "rtl8723fs_config", "RTL8723FS"},
 	/* add entries here*/
 
 	{ 0, 0, 0, ROM_LMP_NONE, 0, 0, "rtl_none_fw", "rtl_none_config", "NONE"}
@@ -482,6 +502,9 @@ static int is_mac(uint8_t chip_type, uint16_t offset)
 		break;
 	case CHIP_8822CS:
 	case CHIP_8761B:
+	case CHIP_8852AS:
+	case CHIP_8723FS:
+	case CHIP_8852BS:
 		if (offset == 0x0030)
 			return 1;
 		break;
@@ -509,6 +532,9 @@ static uint16_t get_mac_offset(uint8_t chip_type)
 		return 0x0044;
 	case CHIP_8822CS:
 	case CHIP_8761B:
+	case CHIP_8852AS:
+	case CHIP_8723FS:
+	case CHIP_8852BS:
 		return 0x0030;
 	case 0: /* special for not setting chip_type */
 	case CHIP_8761AT:
@@ -850,7 +876,6 @@ static int vendor_storage_write_bt_addr(uint8_t *tbuf)
  * 	}
  * }
  */
-
 
 /*
  * Read and parse Realtek Bluetooth Config file.

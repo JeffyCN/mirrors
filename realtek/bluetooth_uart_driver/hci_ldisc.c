@@ -52,7 +52,7 @@
 #include "rtk_coex.h"
 #endif
 
-#define VERSION "2.2.407c1dd.20200602-140151"
+#define VERSION "2.2.74e8f89.20210423-153941"
 
 #if HCI_VERSION_CODE > KERNEL_VERSION(3, 4, 0)
 #define GET_DRV_DATA(x)		hci_get_drvdata(x)
@@ -585,6 +585,61 @@ static int rtl_read_local_version(struct hci_dev *hdev, u8 *hci_ver,
 	return 0;
 }
 
+#if RTKBT_TV_POWERON_WHITELIST
+static int rtkbt_lookup_le_device_poweron_whitelist(struct hci_dev *hdev)
+{
+	struct hci_conn_params *p;
+	u8 *params;
+	int result = 0;
+	struct sk_buff *skb;
+
+	hci_dev_lock(hdev);
+	list_for_each_entry(p, &hdev->le_conn_params, list) {
+#if 0 // for debug message
+		BT_INFO("%s(): auto_connect = %d", __FUNCTION__, p->auto_connect);
+		BT_INFO("%s(): addr_type = 0x%02x", __FUNCTION__, p->addr_type);
+		BT_INFO("%s(): addr=%02x:%02x:%02x:%02x:%02x:%02x", __FUNCTION__,
+                                p->addr.b[5], p->addr.b[4], p->addr.b[3],
+                                p->addr.b[2], p->addr.b[1], p->addr.b[0]);
+#endif
+		if ( p->auto_connect == HCI_AUTO_CONN_ALWAYS &&
+			p->addr_type == ADDR_LE_DEV_PUBLIC ) {
+
+			BT_INFO("%s(): Set RTKBT LE Power-on Whitelist for "
+				"%02x:%02x:%02x:%02x:%02x:%02x", __FUNCTION__,
+                                p->addr.b[5], p->addr.b[4], p->addr.b[3],
+                                p->addr.b[2], p->addr.b[1], p->addr.b[0]);
+
+			params = kzalloc(8, GFP_ATOMIC);
+			if (!params) {
+				BT_ERR("Can't allocate memory for params");
+				return -ENOMEM;
+			}
+
+			params[0] = 0x00;
+			params[1] = p->addr.b[0];
+			params[2] = p->addr.b[1];
+			params[3] = p->addr.b[2];
+			params[4] = p->addr.b[3];
+			params[5] = p->addr.b[4];
+			params[6] = p->addr.b[5];
+
+			skb = __hci_cmd_sync(hdev, 0xfc7b, 7, params, HCI_INIT_TIMEOUT);
+			if (IS_ERR(skb)) {
+				BT_ERR("rtl: Command failed for power-on whitelist");
+				return PTR_ERR(skb);
+			}
+
+			kfree(params);
+			kfree_skb(skb);
+		}
+	}
+	hci_dev_unlock(hdev);
+
+	return result;
+}
+#endif
+
 static int hci_uart_pm_notifier(struct notifier_block *b, unsigned long v, void *d)
 {
 	int result;
@@ -612,6 +667,14 @@ static int hci_uart_pm_notifier(struct notifier_block *b, unsigned long v, void 
 		 msleep(500);
 
 #endif
+
+#if RTKBT_TV_POWERON_WHITELIST
+		result = rtkbt_lookup_le_device_poweron_whitelist(hu->hdev);
+		if (result < 0) {
+			BT_ERR("rtkbt_lookup_le_device_poweron_whitelist error: %d", result);
+		}
+#endif
+
 		/* Send host sleep notification to Controller */
 		/* skb = __hci_cmd_sync(hu->hdev, 0xfc28, 1, &param,
 		 * 		     HCI_INIT_TIMEOUT);

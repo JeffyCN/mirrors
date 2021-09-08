@@ -29,6 +29,7 @@ struct rtb_struct;
 #define ROM_LMP_8723c           0x87c3 /* ??????? */
 #define ROM_LMP_8822b           0x8822
 #define ROM_LMP_8822c           0x8822
+#define ROM_LMP_8852a           0x8852
 #define ROM_LMP_8723cs_xx       0x8704
 #define ROM_LMP_8723cs_cg       0x8705
 #define ROM_LMP_8723cs_vf       0x8706
@@ -54,6 +55,9 @@ struct rtb_struct;
 #define CHIP_8821CS	0x72
 #define CHIP_8822CS	0x73
 #define CHIP_8761B	0x74
+#define CHIP_8852AS	0x75
+#define CHIP_8723FS	0x76
+#define CHIP_8852BS	0x77
 
 #define RTL_FW_MATCH_CHIP_TYPE  (1 << 0)
 #define RTL_FW_MATCH_HCI_VER    (1 << 1)
