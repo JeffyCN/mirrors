@@ -256,13 +256,22 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
 
   mpp_format = mpp_frame_get_fmt (mframe);
   format = gst_mpp_mpp_format_to_gst_format (mpp_format);
-  if (format == GST_VIDEO_FORMAT_UNKNOWN) {
-#ifdef HAVE_RGA
-    GST_INFO_OBJECT (self, "converting to NV12 for unsupported format");
+  if (self->format == GST_VIDEO_FORMAT_UNKNOWN) {
+    /* Try to convert unsupported formats to NV12 */
+    if (format == GST_VIDEO_FORMAT_UNKNOWN)
+      self->format = GST_VIDEO_FORMAT_NV12;
+    else
+      self->format = format;
+  }
 
-    format = GST_VIDEO_FORMAT_NV12;
-    hstride = GST_ROUND_UP_2 (width);
-    vstride = GST_ROUND_UP_2 (height);
+  if (self->format != format) {
+#ifdef HAVE_RGA
+    GST_INFO_OBJECT (self, "converting to %s",
+        gst_video_format_to_string (self->format));
+
+    format = self->format;
+    hstride = 0;
+    vstride = 0;
 #else
     GST_ERROR_OBJECT (self, "format not supported");
     return GST_FLOW_NOT_NEGOTIATED;
@@ -397,8 +406,6 @@ gst_mpp_dec_info_matched (GstVideoDecoder * decoder, MppFrame mframe)
   gint hstride = mpp_frame_get_hor_stride (mframe);
   gint vstride = mpp_frame_get_ver_stride (mframe);
 
-  format = gst_mpp_mpp_format_to_gst_format (mpp_format);
-
   /* NOTE: The output video info is aligned to 2 */
   width = GST_ROUND_UP_2 (width);
   height = GST_ROUND_UP_2 (height);
@@ -454,7 +461,7 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
   MppBuffer mbuf;
 
   mbuf = mpp_frame_get_buffer (mframe);
-  if (!mbuf || mpp_buffer_get_size (mbuf) < GST_VIDEO_INFO_SIZE (info))
+  if (!mbuf)
     return NULL;
 
   /* Allocated from this MPP group in MPP */
@@ -470,7 +477,6 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
     return NULL;
   }
 
-  gst_memory_resize (mem, 0, GST_VIDEO_INFO_SIZE (info));
   gst_buffer_append_memory (buffer, mem);
 
   gst_buffer_add_video_meta_full (buffer, GST_VIDEO_FRAME_FLAG_NONE,
@@ -575,6 +581,8 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
   buffer = gst_mpp_dec_get_gst_buffer (decoder, mframe);
   if (!buffer)
     goto error;
+
+  gst_buffer_resize (buffer, 0, GST_VIDEO_INFO_SIZE (&self->info));
 
   gst_mpp_dec_update_interlace_mode (decoder, buffer,
       mpp_frame_get_mode (mframe));

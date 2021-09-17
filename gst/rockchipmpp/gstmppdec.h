@@ -51,6 +51,9 @@ struct _GstMppDec
   /* final output video info */
   GstVideoInfo info;
 
+  /* specified output format */
+  GstVideoFormat format;
+
   /* stop handling new frame when flushing */
   gboolean flushing;
 
@@ -91,6 +94,10 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (GstMppDec, gst_object_unref);
 GType gst_mpp_dec_get_type (void);
 
 #define GST_FLOW_TIMEOUT GST_FLOW_CUSTOM_ERROR_1
+
+#define MPP_DEC_FORMATS \
+    "NV12, NV21, I420, YV12, NV16, NV61, " \
+    "BGR16, BGRA, RGBA, BGRx, RGBx"
 
 gboolean gst_mpp_dec_update_video_info (GstVideoDecoder * decoder,
     GstVideoFormat format, guint width, guint height,

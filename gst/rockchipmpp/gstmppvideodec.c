@@ -44,6 +44,16 @@ struct _GstMppVideoDec
 #define parent_class gst_mpp_video_dec_parent_class
 G_DEFINE_TYPE (GstMppVideoDec, gst_mpp_video_dec, GST_TYPE_MPP_DEC);
 
+/* Default output format is auto */
+static GstVideoFormat DEFAULT_PROP_FORMAT = GST_VIDEO_FORMAT_UNKNOWN;
+
+enum
+{
+  PROP_0,
+  PROP_FORMAT,
+  PROP_LAST,
+};
+
 /* GstVideoDecoder base class method */
 static GstStaticPadTemplate gst_mpp_video_dec_sink_template =
     GST_STATIC_PAD_TEMPLATE ("sink",
@@ -70,7 +80,7 @@ static GstStaticPadTemplate gst_mpp_video_dec_src_template =
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw, "
-        "format = (string) { NV12, NV16, NV12_10LE40 }, "
+        "format = (string) { " MPP_DEC_FORMATS ", NV12_10LE40 }, "
         "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]" ";"));
 
 static MppCodingType
@@ -108,6 +118,51 @@ gst_mpp_video_dec_get_mpp_type (GstStructure * s)
     return MPP_VIDEO_CodingVP9;
 
   return MPP_VIDEO_CodingUnused;
+}
+
+static void
+gst_mpp_video_dec_set_property (GObject * object,
+    guint prop_id, const GValue * value, GParamSpec * pspec)
+{
+  GstVideoDecoder *decoder = GST_VIDEO_DECODER (object);
+  GstMppDec *mppdec = GST_MPP_DEC (decoder);
+
+  switch (prop_id) {
+    case PROP_FORMAT:{
+      GstVideoFormat format = g_value_get_enum (value);
+      if (mppdec->format == format)
+        return;
+
+      if (mppdec->input_state) {
+        GST_WARNING_OBJECT (decoder, "unable to change output format");
+        return;
+      }
+
+      mppdec->format = format;
+      break;
+    }
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      return;
+  }
+}
+
+static void
+gst_mpp_video_dec_get_property (GObject * object,
+    guint prop_id, GValue * value, GParamSpec * pspec)
+{
+  GstVideoDecoder *decoder = GST_VIDEO_DECODER (object);
+  GstMppDec *mppdec = GST_MPP_DEC (decoder);
+
+  switch (prop_id) {
+    case PROP_FORMAT:
+      g_value_set_enum (value, mppdec->format);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
 }
 
 static gboolean
@@ -238,9 +293,58 @@ gst_mpp_video_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
   return TRUE;
 }
 
-static void
-gst_mpp_video_dec_init (GstMppVideoDec * self UNUSED)
+#define GST_TYPE_MPP_VIDEO_DEC_FORMAT (gst_mpp_video_dec_format_get_type ())
+static GType
+gst_mpp_video_dec_format_get_type (void)
 {
+  static GType format = 0;
+
+  if (!format) {
+    static const GEnumValue formats[] = {
+      {GST_VIDEO_FORMAT_UNKNOWN, "Auto", "auto"},
+      {GST_VIDEO_FORMAT_NV12, "NV12", "NV12"},
+      {GST_VIDEO_FORMAT_NV21, "NV21", "NV21"},
+      {GST_VIDEO_FORMAT_I420, "I420", "I420"},
+      {GST_VIDEO_FORMAT_YV12, "YV12", "YV12"},
+      {GST_VIDEO_FORMAT_NV16, "NV16", "NV16"},
+      {GST_VIDEO_FORMAT_NV61, "NV61", "NV61"},
+      {GST_VIDEO_FORMAT_BGR16, "BGR565", "BGR16"},
+      {GST_VIDEO_FORMAT_RGBA, "RGBA8888", "RGBA"},
+      {GST_VIDEO_FORMAT_BGRA, "BGRA8888", "BGRA"},
+      {GST_VIDEO_FORMAT_RGBx, "RGBX8888", "RGBx"},
+      {GST_VIDEO_FORMAT_BGRx, "BGRX8888", "BGRx"},
+      {0, NULL, NULL}
+    };
+    format = g_enum_register_static ("GstMppVideoDecFormat", formats);
+  }
+  return format;
+}
+
+static void
+gst_mpp_video_dec_init (GstMppVideoDec * self)
+{
+  GstMppDec *mppdec = GST_MPP_DEC (self);
+  mppdec->format = DEFAULT_PROP_FORMAT;
+}
+
+static void
+gst_mpp_video_dec_setup_default_format (void)
+{
+  GEnumClass *class;
+  GEnumValue *value;
+  const gchar *env;
+
+  env = g_getenv ("GST_MPP_VIDEODEC_DEFAULT_FORMAT");
+  if (!env)
+    return;
+
+  class = g_type_class_ref (GST_TYPE_MPP_VIDEO_DEC_FORMAT);
+
+  value = g_enum_get_value_by_nick (class, env);
+  if (value)
+    DEFAULT_PROP_FORMAT = value->value;
+
+  g_type_class_unref (class);
 }
 
 static void
@@ -248,6 +352,7 @@ gst_mpp_video_dec_class_init (GstMppVideoDecClass * klass)
 {
   GstVideoDecoderClass *decoder_class = GST_VIDEO_DECODER_CLASS (klass);
   GstMppDecClass *pclass = GST_MPP_DEC_CLASS (klass);
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
 
   GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "mppvideodec", 0,
@@ -261,6 +366,19 @@ gst_mpp_video_dec_class_init (GstMppVideoDecClass * klass)
       GST_DEBUG_FUNCPTR (gst_mpp_video_dec_send_mpp_packet);
   pclass->poll_mpp_frame = GST_DEBUG_FUNCPTR (gst_mpp_video_dec_poll_mpp_frame);
   pclass->shutdown = GST_DEBUG_FUNCPTR (gst_mpp_video_dec_shutdown);
+
+  gobject_class->set_property =
+      GST_DEBUG_FUNCPTR (gst_mpp_video_dec_set_property);
+  gobject_class->get_property =
+      GST_DEBUG_FUNCPTR (gst_mpp_video_dec_get_property);
+
+  gst_mpp_video_dec_setup_default_format ();
+
+  g_object_class_install_property (gobject_class, PROP_FORMAT,
+      g_param_spec_enum ("format", "Prefered output format",
+          "Prefered output format",
+          GST_TYPE_MPP_VIDEO_DEC_FORMAT, DEFAULT_PROP_FORMAT,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_mpp_video_dec_src_template));

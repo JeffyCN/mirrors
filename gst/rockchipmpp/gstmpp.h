@@ -34,6 +34,10 @@
 
 G_BEGIN_DECLS;
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+#endif
+
 #define MPP_FMT_LE(f) (f | MPP_FRAME_FMT_LE_MASK)
 #define MPP_FMT_RGB565LE MPP_FMT_LE(MPP_FMT_RGB565)
 #define MPP_FMT_BGR565LE MPP_FMT_LE(MPP_FMT_BGR565)
