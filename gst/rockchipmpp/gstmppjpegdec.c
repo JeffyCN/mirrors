@@ -73,7 +73,7 @@ static GstStaticPadTemplate gst_mpp_jpeg_dec_sink_template =
 
 #define MPP_JPEGD_FORMATS \
     "NV12, NV16" \
-    "BGR16, RGB16, BGR15, RGB15, " \
+    "BGR16, RGB16, " \
     "ABGR, ARGB, BGRA, RGBA, xBGR, xRGB, BGRx, RGBx"
 
 static GstStaticPadTemplate gst_mpp_jpeg_dec_src_template =
@@ -426,8 +426,6 @@ gst_mpp_jpeg_dec_format_get_type (void)
       {GST_VIDEO_FORMAT_NV16, "NV16", "NV16"},
       {GST_VIDEO_FORMAT_RGB16, "RGB565", "RGB16"},
       {GST_VIDEO_FORMAT_BGR16, "BGR565", "BGR16"},
-      {GST_VIDEO_FORMAT_RGB15, "RGB555", "RGB15"},
-      {GST_VIDEO_FORMAT_BGR15, "BGR555", "BGR15"},
       {GST_VIDEO_FORMAT_ARGB, "ARGB8888", "ARGB"},
       {GST_VIDEO_FORMAT_ABGR, "ABGR8888", "ABGR"},
       {GST_VIDEO_FORMAT_RGBA, "RGBA8888", "RGBA"},
