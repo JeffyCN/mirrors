@@ -187,6 +187,16 @@ typedef enum _Rga_SURF_FORMAT {
     RK_FORMAT_BGR_565      = 0x24 << 8,
     RK_FORMAT_BGRA_5551    = 0x25 << 8,
     RK_FORMAT_BGRA_4444    = 0x26 << 8,
+
+    RK_FORMAT_ARGB_8888    = 0x28 << 8,
+    RK_FORMAT_XRGB_8888    = 0x29 << 8,
+    RK_FORMAT_ARGB_5551    = 0x2a << 8,
+    RK_FORMAT_ARGB_4444    = 0x2b << 8,
+    RK_FORMAT_ABGR_8888    = 0x2c << 8,
+    RK_FORMAT_XBGR_8888    = 0x2d << 8,
+    RK_FORMAT_ABGR_5551    = 0x2e << 8,
+    RK_FORMAT_ABGR_4444    = 0x2f << 8,
+
     RK_FORMAT_UNKNOWN      = 0x100 << 8,
 } RgaSURF_FORMAT;
 

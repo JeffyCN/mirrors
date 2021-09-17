@@ -41,7 +41,7 @@ struct format_table_entry {
     const char *name;
 };
 
-struct format_table_entry format_table[] = {
+const struct format_table_entry format_table[] = {
     { RK_FORMAT_RGBA_8888,          "rgba8888" },
     { RK_FORMAT_RGBX_8888,          "rgbx8888" },
     { RK_FORMAT_RGB_888,            "rgb888" },
@@ -54,23 +54,27 @@ struct format_table_entry format_table[] = {
     { RK_FORMAT_BGR_565,            "bgr565" },
     { RK_FORMAT_BGRA_5551,          "bgra5551" },
     { RK_FORMAT_BGRA_4444,          "bgra4444" },
+
     { RK_FORMAT_YCbCr_422_SP,       "cbcr422sp" },
     { RK_FORMAT_YCbCr_422_P,        "cbcr422p" },
     { RK_FORMAT_YCbCr_420_SP,       "nv12" },
     { RK_FORMAT_YCbCr_420_P,        "crcb420p" },
+
     { RK_FORMAT_YCrCb_422_SP,       "crcb422sp" },
     { RK_FORMAT_YCrCb_422_P,        "crcb422p" },
     { RK_FORMAT_YCrCb_420_SP,       "crcb420sp" },
-
     { RK_FORMAT_YCrCb_420_P,        "crcb422p" },
+
     { RK_FORMAT_BPP1,               "bpp1" },
     { RK_FORMAT_BPP2,               "bpp2" },
     { RK_FORMAT_BPP4,               "bpp4" },
     { RK_FORMAT_BPP8,               "bpp8" },
-    { RK_FORMAT_Y4,                 "y4" },
 
+    { RK_FORMAT_Y4,                 "y4" },
     { RK_FORMAT_YCbCr_400,          "cbcr400" },
+
     { RK_FORMAT_BGRX_8888,          "bgrx8888" },
+
     { RK_FORMAT_YVYU_422,           "yvyu422" },
     { RK_FORMAT_YVYU_420,           "yvyuv420" },
     { RK_FORMAT_VYUY_422,           "vyuy422" },
@@ -80,12 +84,55 @@ struct format_table_entry format_table[] = {
     { RK_FORMAT_YUYV_420,           "yuyv420" },
     { RK_FORMAT_UYVY_422,           "uyvy422" },
     { RK_FORMAT_UYVY_420,           "uyvy420" },
+
     { RK_FORMAT_YCbCr_420_SP_10B,   "nv12_10" },
     { RK_FORMAT_YCrCb_420_SP_10B,   "crcb420sp_10" },
     { RK_FORMAT_YCbCr_422_10b_SP,   "cbcr422_10b" },
     { RK_FORMAT_YCrCb_422_10b_SP,   "crcb422_10b" },
+
+    { RK_FORMAT_BGR_565,            "bgr565" },
+    { RK_FORMAT_BGRA_5551,          "bgra5551" },
+    { RK_FORMAT_BGRA_4444,          "bgra4444" },
+
+    { RK_FORMAT_ARGB_8888,          "argb8888" },
+    { RK_FORMAT_XRGB_8888,          "xrgb8888" },
+    { RK_FORMAT_ARGB_5551,          "argb5551" },
+    { RK_FORMAT_ARGB_4444,          "argb4444" },
+    { RK_FORMAT_ABGR_8888,          "abgr8888" },
+    { RK_FORMAT_XBGR_8888,          "xbgr8888" },
+    { RK_FORMAT_ABGR_5551,          "abgr5551" },
+    { RK_FORMAT_ABGR_4444,          "abgr4444" },
+
     { RK_FORMAT_UNKNOWN,            "unknown" }
 };
+
+const char *translate_format_str(int format) {
+    format = RkRgaGetRgaFormat(format);
+
+    for (int i = 0; i < sizeof(format_table) / sizeof(format_table[0]); i++)
+        if (format_table[i].format == format)
+            return format_table[i].name;
+
+    return "unknown";
+}
+
+int get_string_by_format(char *value, int format) {
+    const char *name = NULL;
+
+    if (!value)
+        return -EINVAL;
+
+    name = translate_format_str(format);
+
+    if (strcmp(name, "unknown") != 0) {
+        memcpy(value, name, strlen(name) + 1);
+    } else {
+        printf("Is unsupport format now, please fix");
+        return -EINVAL;
+    }
+
+    return 0;
+}
 
 float get_bpp_from_format(int format) {
     float bpp = 0;
@@ -147,6 +194,10 @@ float get_bpp_from_format(int format) {
         case RK_FORMAT_BGR_565:
         case RK_FORMAT_BGRA_5551:
         case RK_FORMAT_BGRA_4444:
+        case RK_FORMAT_ARGB_5551:
+        case RK_FORMAT_ARGB_4444:
+        case RK_FORMAT_ABGR_5551:
+        case RK_FORMAT_ABGR_4444:
         case RK_FORMAT_YCbCr_422_SP:
         case RK_FORMAT_YCbCr_422_P:
         case RK_FORMAT_YCrCb_422_SP:
@@ -176,6 +227,10 @@ float get_bpp_from_format(int format) {
         case RK_FORMAT_RGBX_8888:
         case RK_FORMAT_BGRA_8888:
         case RK_FORMAT_BGRX_8888:
+        case RK_FORMAT_ARGB_8888:
+        case RK_FORMAT_XRGB_8888:
+        case RK_FORMAT_ABGR_8888:
+        case RK_FORMAT_XBGR_8888:
             bpp = 4;
             break;
         default:
@@ -194,168 +249,6 @@ int get_buf_size_by_w_h_f(int w, int h, int f) {
     return size;
 }
 
-int get_string_by_format(char *value, int format) {
-    if (!value)
-        return -EINVAL;
-
-#ifdef LINUX
-        if (!(format & 0xFF00 || format == 0)) {
-            format = RkRgaCompatibleFormat(format);
-        }
-#endif
-
-    switch (format) {
-#ifdef ANDROID
-        case HAL_PIXEL_FORMAT_RGB_565:
-            memcpy(value, "rgb565", sizeof("rgb565"));
-            break;
-        case HAL_PIXEL_FORMAT_RGB_888:
-            memcpy(value, "rgb888", sizeof("rgb888"));
-            break;
-        case HAL_PIXEL_FORMAT_RGBA_8888:
-            memcpy(value, "rgba8888", sizeof("rgba8888"));
-            break;
-        case HAL_PIXEL_FORMAT_RGBX_8888:
-            memcpy(value, "rgbx8888", sizeof("rgbx8888"));
-            break;
-        case HAL_PIXEL_FORMAT_BGRA_8888:
-            memcpy(value, "bgra8888", sizeof("bgra8888"));
-            break;
-        case HAL_PIXEL_FORMAT_YCrCb_420_SP:
-            memcpy(value, "crcb420sp", sizeof("crcb420sp"));
-            break;
-        case HAL_PIXEL_FORMAT_YCrCb_NV12:
-            memcpy(value, "nv12", sizeof("nv12"));
-            break;
-        case HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO:
-            memcpy(value, "nv12", sizeof("nv12"));
-            break;
-        case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
-            memcpy(value, "nv12_10", sizeof("nv12_10"));
-            break;
-#endif
-        case RK_FORMAT_BPP1:
-            memcpy(value, "bpp1", sizeof("bpp1"));
-            break;
-        case RK_FORMAT_BPP2:
-            memcpy(value, "bpp2", sizeof("bpp2"));
-            break;
-        case RK_FORMAT_BPP4:
-            memcpy(value, "bpp4", sizeof("bpp4"));
-            break;
-        case RK_FORMAT_BPP8:
-            memcpy(value, "bpp8", sizeof("bpp8"));
-            break;
-        case RK_FORMAT_RGBA_8888:
-            memcpy(value, "rgba8888", sizeof("rgba8888"));
-            break;
-        case RK_FORMAT_RGBX_8888:
-            memcpy(value, "rgbx8888", sizeof("rgbx8888"));
-            break;
-        case RK_FORMAT_RGB_888:
-            memcpy(value, "rgb888", sizeof("rgb888"));
-            break;
-        case RK_FORMAT_RGB_565:
-            memcpy(value, "rgb565", sizeof("rgb565"));
-            break;
-        case RK_FORMAT_RGBA_5551:
-            memcpy(value, "rgba5551", sizeof("rgba5551"));
-            break;
-        case RK_FORMAT_RGBA_4444:
-            memcpy(value, "rgba4444", sizeof("rgba4444"));
-            break;
-        case RK_FORMAT_BGRA_8888:
-            memcpy(value, "bgra8888", sizeof("bgra8888"));
-            break;
-        case RK_FORMAT_BGRX_8888:
-            memcpy(value, "bgrx8888", sizeof("bgrx8888"));
-            break;
-        case RK_FORMAT_BGR_888:
-            memcpy(value, "bgr888", sizeof("bgr888"));
-            break;
-        case RK_FORMAT_BGR_565:
-            memcpy(value, "bgr565", sizeof("bgr565"));
-            break;
-        case RK_FORMAT_BGRA_5551:
-            memcpy(value, "bgra5551", sizeof("bgra5551"));
-            break;
-        case RK_FORMAT_BGRA_4444:
-            memcpy(value, "bgra4444", sizeof("bgra4444"));
-            break;
-        case RK_FORMAT_YCrCb_420_SP:
-            memcpy(value, "crcb420sp", sizeof("crcb420sp"));
-            break;
-        case RK_FORMAT_YCrCb_420_P:
-            memcpy(value, "crcb420p", sizeof("crcb420p"));
-            break;
-        case RK_FORMAT_YCbCr_422_SP:
-            memcpy(value, "cbcr422sp", sizeof("cbcr422sp"));
-            break;
-        case RK_FORMAT_YCbCr_422_P:
-            memcpy(value, "cbcr422p", sizeof("cbcr422p"));
-            break;
-        case RK_FORMAT_YCbCr_420_SP:
-            memcpy(value, "nv12", sizeof("nv12"));
-            break;
-        case RK_FORMAT_YCbCr_420_P:
-            memcpy(value, "cbcr420p", sizeof("cbcr420p"));
-            break;
-        case RK_FORMAT_YCrCb_422_SP:
-            memcpy(value, "crcb422sp", sizeof("crcb422sp"));
-            break;
-        case RK_FORMAT_YCrCb_422_P:
-            memcpy(value, "crcb422p", sizeof("crcb422p"));
-            break;
-        case RK_FORMAT_Y4:
-            memcpy(value, "y4", sizeof("y4"));
-            break;
-        case RK_FORMAT_YCbCr_400:
-            memcpy(value, "cbcr400", sizeof("cbcr400"));
-            break;
-        case RK_FORMAT_YVYU_422:
-            memcpy(value, "yvyu422", sizeof("yvyu422"));
-            break;
-        case RK_FORMAT_YVYU_420:
-            memcpy(value, "yvyu420", sizeof("yvyu420"));
-            break;
-        case RK_FORMAT_VYUY_422:
-            memcpy(value, "vyuy422", sizeof("vyuy422"));
-            break;
-        case RK_FORMAT_VYUY_420:
-            memcpy(value, "vyuy420", sizeof("vyuy420"));
-            break;
-        case RK_FORMAT_YUYV_422:
-            memcpy(value, "yuyv422", sizeof("yuyv422"));
-            break;
-        case RK_FORMAT_YUYV_420:
-            memcpy(value, "yuyv420", sizeof("yuyv420"));
-            break;
-        case RK_FORMAT_UYVY_422:
-            memcpy(value, "uyvy422", sizeof("uyvy422"));
-            break;
-        case RK_FORMAT_UYVY_420:
-            memcpy(value, "uyvy420", sizeof("uyvy420"));
-            break;
-        case RK_FORMAT_YCbCr_420_SP_10B:
-            memcpy(value, "nv12_10", sizeof("nv12_10"));
-            break;
-        case RK_FORMAT_YCrCb_420_SP_10B:
-            memcpy(value, "crcb420sp_10", sizeof("crcb420sp_10"));
-            break;
-        case RK_FORMAT_YCbCr_422_10b_SP:
-            memcpy(value, "cbcr422_10b", sizeof("cbcr422_10b"));
-            break;
-        case RK_FORMAT_YCrCb_422_10b_SP:
-            memcpy(value, "crcb422_10b", sizeof("crcb422_10b"));
-            break;
-        default:
-            printf("Is unsupport format now, please fix");
-            return 0;
-    }
-
-    return 0;
-}
-
 int get_buf_from_file(void *buf, int f, int sw, int sh, int index) {
 #ifdef ANDROID
     const char *inputFilePath = "/data/in%dw%d-h%d-%s.bin";
@@ -366,11 +259,9 @@ int get_buf_from_file(void *buf, int f, int sw, int sh, int index) {
 #endif
 
     char filePath[100];
-    char fstring[30];
     int ret = 0;
 
-    ret = get_string_by_format(fstring, f);
-    snprintf(filePath, 100, inputFilePath, index, sw, sh, fstring);
+    snprintf(filePath, 100, inputFilePath, index, sw, sh, translate_format_str(f));
 
     FILE *file = fopen(filePath, "rb");
     if (!file) {
@@ -393,11 +284,9 @@ int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index) {
 #endif
 
     char filePath[100];
-    char fstring[30];
     int ret = 0;
 
-    ret = get_string_by_format(fstring, f);
-    snprintf(filePath, 100, outputFilePath, index, sw, sh, fstring);
+    snprintf(filePath, 100, outputFilePath, index, sw, sh, translate_format_str(f));
 
     FILE *file = fopen(filePath, "wb+");
     if (!file) {
@@ -409,15 +298,5 @@ int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index) {
     fclose(file);
 
     return 0;
-}
-
-const char *translate_format_str(int format) {
-    format = RkRgaGetRgaFormat(format);
-
-    for (int i = 0; i < sizeof(format_table) / sizeof(format_table[0]); i++)
-        if (format_table[i].format == format)
-            return format_table[i].name;
-
-    return "unknow";
 }
 
