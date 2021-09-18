@@ -1131,6 +1131,9 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
     goto out;
   }
 
+
+  /* HACK: Disable vsync might cause tearing */
+  if (!g_getenv ("KMSSINK_DISABLE_VSYNC"))
   /* Wait for the previous frame to complete redraw */
   if (!gst_kms_sink_sync (ximagesink))
     goto out;
