@@ -33,6 +33,7 @@
 
 /* A random dark color */
 #define RKXIMAGE_COLOR_KEY 0x010203
+#define RK_COLOR_KEY_EN (1 << 31)
 
 GST_DEBUG_CATEGORY (gst_debug_x_image_sink);
 #define GST_CAT_DEFAULT gst_debug_x_image_sink
@@ -431,7 +432,8 @@ drm_prepare_planes (GstRkXImageSink * self, drmModeRes * res,
   if (!plane)
     return FALSE;
 
-  if (!drm_plane_set_property (self, plane, "colorkey", RKXIMAGE_COLOR_KEY))
+  if (!drm_plane_set_property (self, plane, "colorkey",
+          RKXIMAGE_COLOR_KEY | RK_COLOR_KEY_EN))
     goto out;
 
   GST_DEBUG_OBJECT (self, "applied colorkey = 0x%x to plane %d",
