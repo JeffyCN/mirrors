@@ -650,17 +650,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     planeAlpha = (blend & 0xFF0000) >> 16;
 
     /* determined by format, need pixel alpha or not. */
-
-    perpixelAlpha =
-#ifdef ANDROID
-    perpixelAlpha = relSrcRect.format == HAL_PIXEL_FORMAT_RGBA_8888 ||
-                    relSrcRect.format == HAL_PIXEL_FORMAT_BGRA_8888 ||
-                    relSrcRect.format == RK_FORMAT_RGBA_8888 ||
-                    relSrcRect.format == RK_FORMAT_BGRA_8888;
-#else
-    perpixelAlpha = relSrcRect.format == RK_FORMAT_RGBA_8888 ||
-                    relSrcRect.format == RK_FORMAT_BGRA_8888;
-#endif
+    perpixelAlpha = NormalRgaFormatHasAlpha(RkRgaGetRgaFormat(relSrcRect.format));
 
 #ifdef ANDROID
     if(is_out_log())
