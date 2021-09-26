@@ -101,7 +101,7 @@ GType gst_mpp_dec_get_type (void);
 
 gboolean gst_mpp_dec_update_video_info (GstVideoDecoder * decoder,
     GstVideoFormat format, guint width, guint height,
-    guint hstride, guint vstride);
+    guint hstride, guint vstride, gboolean from_mpp);
 
 G_END_DECLS;
 

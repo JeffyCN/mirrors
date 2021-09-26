@@ -226,11 +226,12 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
 
 gboolean
 gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
-    guint width, guint height, guint hstride, guint vstride)
+    guint width, guint height, guint hstride, guint vstride, gboolean from_mpp)
 {
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoInfo *info = &self->info;
   GstVideoCodecState *output_state;
+  gint align = from_mpp ? GST_MPP_ALIGNMENT : 2;
 
   g_return_val_if_fail (format != GST_VIDEO_FORMAT_UNKNOWN, FALSE);
 
@@ -239,6 +240,12 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
       GST_ROUND_UP_2 (width), GST_ROUND_UP_2 (height), self->input_state);
   *info = output_state->info;
   gst_video_codec_state_unref (output_state);
+
+  if (!hstride)
+    hstride = GST_ROUND_UP_N (GST_VIDEO_INFO_PLANE_STRIDE (info, 0), align);
+
+  if (!vstride)
+    vstride = GST_ROUND_UP_N (GST_VIDEO_INFO_HEIGHT (info), align);
 
   return gst_mpp_video_info_align (info, hstride, vstride);
 }
@@ -253,6 +260,7 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
   guint height = mpp_frame_get_height (mframe);
   guint hstride = mpp_frame_get_hor_stride (mframe);
   guint vstride = mpp_frame_get_ver_stride (mframe);
+  gboolean from_mpp = TRUE;
 
   mpp_format = mpp_frame_get_fmt (mframe);
   format = gst_mpp_mpp_format_to_gst_format (mpp_format);
@@ -269,6 +277,7 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
     GST_INFO_OBJECT (self, "converting to %s",
         gst_video_format_to_string (self->format));
 
+    from_mpp = FALSE;
     format = self->format;
     hstride = 0;
     vstride = 0;
@@ -279,7 +288,7 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
   }
 
   if (!gst_mpp_dec_update_video_info (decoder, format, width, height,
-          hstride, vstride))
+          hstride, vstride, from_mpp))
     return GST_FLOW_NOT_NEGOTIATED;
 
   return GST_FLOW_OK;

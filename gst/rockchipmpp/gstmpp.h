@@ -47,6 +47,10 @@ G_BEGIN_DECLS;
     (GST_VIDEO_INFO_N_PLANES(i) == 1 ? GST_VIDEO_INFO_HEIGHT(i) : \
     (gint) (GST_VIDEO_INFO_PLANE_OFFSET(i, 1) / GST_MPP_VIDEO_INFO_HSTRIDE(i)))
 
+/* The MPP requires alignment 16 by default */
+#define GST_MPP_ALIGNMENT 16
+#define GST_MPP_ALIGN(v) GST_ROUND_UP_N (v, GST_MPP_ALIGNMENT)
+
 GstVideoFormat gst_mpp_mpp_format_to_gst_format (MppFrameFormat mpp_format);
 
 MppFrameFormat gst_mpp_gst_format_to_mpp_format (GstVideoFormat format);

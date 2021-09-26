@@ -335,12 +335,11 @@ gst_mpp_video_info_align (GstVideoInfo * info, gint hstride, gint vstride)
   guint stride;
   guint i;
 
-  /* The MPP requires alignment 16 by default */
   if (!hstride)
-    hstride = GST_ROUND_UP_16 (GST_VIDEO_INFO_PLANE_STRIDE (info, 0));
+    hstride = GST_MPP_ALIGN (GST_VIDEO_INFO_PLANE_STRIDE (info, 0));
 
   if (!vstride)
-    vstride = GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info));
+    vstride = GST_MPP_ALIGN (GST_VIDEO_INFO_HEIGHT (info));
 
   GST_DEBUG ("aligning %dx%d to %dx%d", GST_VIDEO_INFO_WIDTH (info),
       GST_VIDEO_INFO_HEIGHT (info), hstride, vstride);

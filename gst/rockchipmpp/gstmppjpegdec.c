@@ -240,9 +240,11 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   GstVideoInfo *info = &state->info;
   GstStructure *structure;
   GstVideoFormat format;
+  gint width = GST_VIDEO_INFO_WIDTH (info);
+  gint height = GST_VIDEO_INFO_HEIGHT (info);
 
-  if (!info->width || !info->height) {
-    GST_ERROR_OBJECT (self, "no video info");
+  if (!width || !height) {
+    GST_ERROR_OBJECT (self, "invalid input video info");
     return FALSE;
   }
 
@@ -285,12 +287,11 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
       format = pp_format;
   }
 
-  /* Update MPP output info for output buffer size calculation */
-  if (!gst_mpp_dec_update_video_info (decoder, format,
-          GST_VIDEO_INFO_WIDTH (info), GST_VIDEO_INFO_HEIGHT (info), 0, 0))
-    return FALSE;
-
+  /* Output buffer size calculation */
   info = &mppdec->info;
+  gst_video_info_set_format (info, format, width, height);
+  if (!gst_mpp_video_info_align (info, 0, 0))
+    return FALSE;
 
   self->buf_size = GST_VIDEO_INFO_SIZE (info);
 
@@ -298,12 +299,9 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   self->buf_size =
       MAX (self->buf_size, GST_VIDEO_INFO_PLANE_OFFSET (info, 1) * 2);
 
-  if (format == mppdec->format)
-    return TRUE;
-
   /* Update final output info */
   if (!gst_mpp_dec_update_video_info (decoder, mppdec->format,
-          GST_VIDEO_INFO_WIDTH (info), GST_VIDEO_INFO_HEIGHT (info), 0, 0))
+          width, height, 0, 0, format == mppdec->format))
     return FALSE;
 
   return TRUE;

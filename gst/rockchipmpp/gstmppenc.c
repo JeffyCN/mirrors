@@ -552,13 +552,10 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
   gst_buffer_pool_config_set_params (config, caps, size, 0, 0);
   gst_buffer_pool_config_set_allocator (config, self->allocator, NULL);
 
-  /* The MPP requires alignment 16 by default */
   gst_video_alignment_reset (&align);
-  align.padding_right =
-      GST_ROUND_UP_16 (GST_VIDEO_INFO_WIDTH (&info)) -
+  align.padding_right = GST_MPP_ALIGN (GST_VIDEO_INFO_WIDTH (&info)) -
       GST_VIDEO_INFO_WIDTH (&info);
-  align.padding_bottom =
-      GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (&info)) -
+  align.padding_bottom = GST_MPP_ALIGN (GST_VIDEO_INFO_HEIGHT (&info)) -
       GST_VIDEO_INFO_HEIGHT (&info);
 
   gst_buffer_pool_config_add_option (config,
