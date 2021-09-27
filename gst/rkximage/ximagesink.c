@@ -33,7 +33,7 @@
 
 /* A random dark color */
 #define RKXIMAGE_COLOR_KEY 0x010203
-#define RK_COLOR_KEY_EN (1 << 31)
+#define RK_COLOR_KEY_EN (1UL << 31)
 
 GST_DEBUG_CATEGORY (gst_debug_x_image_sink);
 #define GST_CAT_DEFAULT gst_debug_x_image_sink
