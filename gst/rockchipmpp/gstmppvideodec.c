@@ -172,10 +172,18 @@ gst_mpp_video_dec_set_format (GstVideoDecoder * decoder,
   GstVideoDecoderClass *pclass = GST_VIDEO_DECODER_CLASS (parent_class);
   GstMppDec *mppdec = GST_MPP_DEC (decoder);
   GstStructure *structure;
+  const gchar *chroma_format;
 
   structure = gst_caps_get_structure (state->caps, 0);
   mppdec->mpp_type = gst_mpp_video_dec_get_mpp_type (structure);
   g_return_val_if_fail (mppdec->mpp_type != MPP_VIDEO_CodingUnused, FALSE);
+
+  /* MPP doesn't support YUV444 for h264 */
+  if (mppdec->mpp_type == MPP_VIDEO_CodingAVC) {
+    chroma_format = gst_structure_get_string (structure, "chroma-format");
+    if (g_strcmp0 (chroma_format, "4:4:4") == 0)
+      return FALSE;
+  }
 
   return pclass->set_format (decoder, state);
 }
