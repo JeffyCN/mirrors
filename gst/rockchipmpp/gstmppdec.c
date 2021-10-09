@@ -300,6 +300,7 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoCodecFrame *frame;
   GList *frames, *l;
+  gint i;
 
   frames = gst_video_decoder_get_frames (decoder);
   if (!frames) {
@@ -356,7 +357,7 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
   }
 
   /* MPP outputs frames in display order, so let's find the earliest one */
-  for (frame = NULL, l = frames; l != NULL; l = l->next) {
+  for (frame = NULL, l = frames, i = 0; l != NULL; l = l->next, i++) {
     GstVideoCodecFrame *f = l->data;
 
     if (GST_CLOCK_TIME_IS_VALID (f->pts)) {
@@ -374,12 +375,16 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
         continue;
     } else if (self->interlace_mode == GST_VIDEO_INTERLACE_MODE_MIXED) {
       /* Consider frames with invalid PTS are decode-only when deinterlaced */
-      GST_WARNING_OBJECT (self, "discarding decode-only frame (#%d)",
-          f->system_frame_number);
 
-      gst_video_codec_frame_ref (f);
-      gst_video_decoder_release_frame (decoder, f);
-      continue;
+      /* Delay discarding frames for some broken videos */
+      if (i >= 16) {
+        GST_WARNING_OBJECT (self, "discarding decode-only frame (#%d)",
+            f->system_frame_number);
+
+        gst_video_codec_frame_ref (f);
+        gst_video_decoder_release_frame (decoder, f);
+        continue;
+      }
     }
 
     /* Find the frame with earliest PTS (including invalid PTS) */
