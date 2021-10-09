@@ -519,12 +519,6 @@ gst_mpp_dec_update_interlace_mode (GstVideoDecoder * decoder,
 
   interlace_mode = GST_VIDEO_INTERLACE_MODE_PROGRESSIVE;
 
-#ifdef MPP_FRAME_FLAG_IEP_DEI_MASK
-  /* IEP deinterlaced */
-  if (mode & MPP_FRAME_FLAG_IEP_DEI_MASK)
-    mode = MPP_FRAME_FLAG_DEINTERLACED;
-#endif
-
   switch (mode & MPP_FRAME_FLAG_FIELD_ORDER_MASK) {
     case MPP_FRAME_FLAG_BOT_FIRST:
       GST_BUFFER_FLAG_SET (buffer, GST_VIDEO_BUFFER_FLAG_INTERLACED);
@@ -563,6 +557,7 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
   GstVideoCodecFrame *frame;
   GstBuffer *buffer;
   MppFrame mframe;
+  int mode;
 
   mframe = klass->poll_mpp_frame (decoder, MPP_OUTPUT_TIMEOUT_MS);
   /* Likely due to timeout */
@@ -580,6 +575,24 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
     goto info_change;
   }
 
+  mode = mpp_frame_get_mode (mframe);
+#ifdef MPP_FRAME_FLAG_IEP_DEI_MASK
+  /* IEP deinterlaced */
+  if (mode & MPP_FRAME_FLAG_IEP_DEI_MASK) {
+#ifdef MPP_FRAME_FLAG_IEP_DEI_I4O2
+    if (mode & MPP_FRAME_FLAG_IEP_DEI_I4O2) {
+      /* 1 input frame generates 2 deinterlaced MPP frames */
+      static int mpp_i4o2_frames = 0;
+      if (mpp_i4o2_frames++ % 2) {
+        GST_DEBUG_OBJECT (self, "ignore extra MPP frame");
+        goto out;
+      }
+    }
+#endif
+    mode = MPP_FRAME_FLAG_DEINTERLACED;
+  }
+#endif
+
   frame = gst_mpp_dec_get_frame (decoder, mpp_frame_get_pts (mframe));
   if (!frame)
     goto no_frame;
@@ -593,8 +606,7 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
 
   gst_buffer_resize (buffer, 0, GST_VIDEO_INFO_SIZE (&self->info));
 
-  gst_mpp_dec_update_interlace_mode (decoder, buffer,
-      mpp_frame_get_mode (mframe));
+  gst_mpp_dec_update_interlace_mode (decoder, buffer, mode);
 
   frame->output_buffer = buffer;
 
