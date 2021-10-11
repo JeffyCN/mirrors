@@ -238,7 +238,7 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
     int RockchipRga::RkRgaGetBufferFd(bo_t *bo_info, int *fd) {
 #if LIBDRM
         int ret = 0;
-        ret = drmPrimeHandleToFD(bo_info->fd, bo_info->handle, 0, fd);
+        ret = drmPrimeHandleToFD(bo_info->fd, bo_info->handle, DRM_CLOEXEC | DRM_RDWR, fd);
         return ret;
 #else
         return -1;
