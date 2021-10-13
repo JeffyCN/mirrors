@@ -1314,6 +1314,12 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
         rgaReg.alpha_rop_mode = 0x1;
     }
 
+	/* rga3 rd_mode */
+	rgaReg.src.rd_mode = src->rd_mode;
+	rgaReg.dst.rd_mode = dst->rd_mode;
+	if (src1)
+		rgaReg.pat.rd_mode = src1->rd_mode;
+
     /*color key*/
     /* if need this funtion, maybe should patch the rga driver. */
     if(src->colorkey_en == 1) {

@@ -1065,21 +1065,21 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
 #if defined(__arm64__) || defined(__aarch64__)
     ALOGE("render_mode=%d rotate_mode=%d",
           rgaReg.render_mode, rgaReg.rotate_mode);
-    ALOGE("src:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+    ALOGE("src:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
           rgaReg.src.yrgb_addr, rgaReg.src.uv_addr, rgaReg.src.v_addr,
           rgaReg.src.x_offset, rgaReg.src.y_offset,
           rgaReg.src.act_w, rgaReg.src.act_h,
-          rgaReg.src.vir_w, rgaReg.src.vir_h, rgaReg.src.format);
-    ALOGE("dst:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+          rgaReg.src.vir_w, rgaReg.src.vir_h, rgaReg.src.format, rgaReg.src.rd_mode);
+    ALOGE("dst:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
           rgaReg.dst.yrgb_addr, rgaReg.dst.uv_addr, rgaReg.dst.v_addr,
           rgaReg.dst.x_offset, rgaReg.dst.y_offset,
           rgaReg.dst.act_w, rgaReg.dst.act_h,
-          rgaReg.dst.vir_w, rgaReg.dst.vir_h, rgaReg.dst.format);
-    ALOGE("pat:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+          rgaReg.dst.vir_w, rgaReg.dst.vir_h, rgaReg.dst.format, rgaReg.dst.rd_mode);
+    ALOGE("pat:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
           rgaReg.pat.yrgb_addr, rgaReg.pat.uv_addr, rgaReg.pat.v_addr,
           rgaReg.pat.x_offset, rgaReg.pat.y_offset,
           rgaReg.pat.act_w, rgaReg.pat.act_h,
-          rgaReg.pat.vir_w, rgaReg.pat.vir_h, rgaReg.pat.format);
+          rgaReg.pat.vir_w, rgaReg.pat.vir_h, rgaReg.pat.format, rgaReg.pat.rd_mode);
     ALOGE("ROP:[%lx,%x,%x],LUT[%lx]", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
           rgaReg.rop_code, rgaReg.LUT_addr);
 
@@ -1108,21 +1108,21 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
 #else
     ALOGE("render_mode=%d rotate_mode=%d",
           rgaReg.render_mode, rgaReg.rotate_mode);
-    ALOGE("src:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+    ALOGE("src:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
           rgaReg.src.yrgb_addr, rgaReg.src.uv_addr, rgaReg.src.v_addr,
           rgaReg.src.x_offset, rgaReg.src.y_offset,
           rgaReg.src.act_w, rgaReg.src.act_h,
-          rgaReg.src.vir_w, rgaReg.src.vir_h, rgaReg.src.format);
-    ALOGE("dst:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+          rgaReg.src.vir_w, rgaReg.src.vir_h, rgaReg.src.format, rgaReg.src.rd_mode);
+    ALOGE("dst:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
           rgaReg.dst.yrgb_addr, rgaReg.dst.uv_addr, rgaReg.dst.v_addr,
           rgaReg.dst.x_offset, rgaReg.dst.y_offset,
           rgaReg.dst.act_w, rgaReg.dst.act_h,
-          rgaReg.dst.vir_w, rgaReg.dst.vir_h, rgaReg.dst.format);
-    ALOGE("pat:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d",
+          rgaReg.dst.vir_w, rgaReg.dst.vir_h, rgaReg.dst.format, rgaReg.dst.rd_mode);
+    ALOGE("pat:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
           rgaReg.pat.yrgb_addr, rgaReg.pat.uv_addr, rgaReg.pat.v_addr,
           rgaReg.pat.x_offset, rgaReg.pat.y_offset,
           rgaReg.pat.act_w, rgaReg.pat.act_h,
-          rgaReg.pat.vir_w, rgaReg.pat.vir_h, rgaReg.pat.format);
+          rgaReg.pat.vir_w, rgaReg.pat.vir_h, rgaReg.pat.format, rgaReg.pat.rd_mode);
     ALOGE("ROP:[%x,%x,%x],LUT[%x]", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
           rgaReg.rop_code, rgaReg.LUT_addr);
 

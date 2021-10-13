@@ -200,6 +200,13 @@ typedef enum _Rga_SURF_FORMAT {
     RK_FORMAT_UNKNOWN      = 0x100 << 8,
 } RgaSURF_FORMAT;
 
+/* RGA3 rd_mode */
+enum
+{
+    raster_mode             = 0x1 << 0,
+    FBCD_mode               = 0x1 << 1,
+    tile_mode               = 0x1 << 2,
+};
 
 typedef struct rga_img_info_t {
 #if defined(__arm64__) || defined(__aarch64__)

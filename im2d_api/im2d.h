@@ -72,6 +72,12 @@ typedef enum {
 } IM_USAGE;
 
 typedef enum {
+    IM_RASTER_MODE = 1 << 0,
+    IM_FBCD_MODE = 1 << 1,
+    IM_TILE_MODE = 1 << 2,
+} IM_RD_MODE;
+
+typedef enum {
     IM_ROP_AND                  = 0x88,
     IM_ROP_OR                   = 0xee,
     IM_ROP_NOT_DST              = 0x55,
@@ -254,6 +260,7 @@ typedef struct {
     im_colorkey_range colorkey_range;   /* range value of color key */
     im_nn_t nn;
     int rop_code;
+	int rd_mode;
 } rga_buffer_t;
 
 /*

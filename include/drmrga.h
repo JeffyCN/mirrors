@@ -168,7 +168,12 @@ typedef struct rga_info {
     rga_nn_t nn;
     rga_dither_t dither;
     int rop_code;
-    int reserve[127];
+	int rd_mode;
+	unsigned short is_10b_compact;
+	unsigned short is_10b_endian;
+
+	unsigned short enable;
+	int reserve[126];
 } rga_info_t;
 
 
