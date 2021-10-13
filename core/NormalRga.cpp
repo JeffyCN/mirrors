@@ -903,7 +903,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
             dstVirW = relDstRect.wstride;
             dstVirH = relDstRect.hstride;
-            dstXPos = relDstRect.xoffset + relDstRect.width - 1;
+            dstXPos = relDstRect.xoffset;
             dstYPos = relDstRect.yoffset;
             dstActW = relDstRect.height;
             dstActH = relDstRect.width;
@@ -927,8 +927,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
             dstVirW = relDstRect.wstride;
             dstVirH = relDstRect.hstride;
-            dstXPos = relDstRect.xoffset + relDstRect.width - 1;
-            dstYPos = relDstRect.yoffset + relDstRect.height - 1;
+            dstXPos = relDstRect.xoffset;
+            dstYPos = relDstRect.yoffset;
             dstActW = relDstRect.width;
             dstActH = relDstRect.height;
             break;
@@ -952,7 +952,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
             dstVirW = relDstRect.wstride;
             dstVirH = relDstRect.hstride;
             dstXPos = relDstRect.xoffset;
-            dstYPos = relDstRect.yoffset + relDstRect.height - 1;
+            dstYPos = relDstRect.yoffset;
             dstActW = relDstRect.height;
             dstActH = relDstRect.width;
             break;

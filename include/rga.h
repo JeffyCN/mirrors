@@ -222,6 +222,15 @@ typedef struct rga_img_info_t {
 
     unsigned short endian_mode; //for BPP
     unsigned short alpha_swap;
+
+	//used by RGA3
+	unsigned short rotate_mode;
+    unsigned short rd_mode;
+
+	unsigned short is_10b_compact;
+	unsigned short is_10b_endian;
+
+	unsigned short enable;
 }
 rga_img_info_t;
 
@@ -404,6 +413,11 @@ struct rga_req {
     unsigned char  dither_mode;
 
     full_csc_t full_csc;            /* full color space convert */
+
+	unsigned char in_fence_fd;
+    unsigned char core;
+    unsigned char priority;
+    unsigned char out_fence_fd;
 
     unsigned char CMD_fin_int_enable;
 
