@@ -56,7 +56,6 @@
 
 #include <sync/sync.h>
 
-#include "mali_gralloc_formats.h"
 #include <drm_fourcc.h>
 
 #include "platform_gralloc4.h"
@@ -178,61 +177,6 @@ static int get_metadata(IMapper &mapper, buffer_handle_t handle, IMapper::Metada
     return err;
 }
 
-/*
- * 参考 b_r25p1 gralloc 中的 drm_fourcc_from_handle() 实现.
- * 目前未考虑 'modifier'
- */
-uint64_t get_internal_format_from_fourcc(uint32_t fourcc, uint64_t modifier)
-{
-    /* Clean the modifier bits in the internal format. */
-    struct table_entry
-    {
-        uint64_t internal; // 不带 modifier_bits
-        uint32_t fourcc;
-    };
-
-    static table_entry table[] = {
-        { MALI_GRALLOC_FORMAT_INTERNAL_RAW16, DRM_FORMAT_R16 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_RGBA_8888, DRM_FORMAT_ABGR8888 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_BGRA_8888, DRM_FORMAT_ARGB8888 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_RGB_565, DRM_FORMAT_RGB565 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_RGBX_8888, DRM_FORMAT_XBGR8888 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_RGB_888, DRM_FORMAT_BGR888 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_RGBA_1010102, DRM_FORMAT_ABGR2101010 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_RGBA_16161616, DRM_FORMAT_ABGR16161616F },
-        { MALI_GRALLOC_FORMAT_INTERNAL_YV12, DRM_FORMAT_YVU420 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_NV12, DRM_FORMAT_NV12 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_NV16, DRM_FORMAT_NV16 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_NV21, DRM_FORMAT_NV21 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_Y0L2, DRM_FORMAT_Y0L2 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_Y210, DRM_FORMAT_Y210 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_P010, DRM_FORMAT_P010 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_P210, DRM_FORMAT_P210 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_Y410, DRM_FORMAT_Y410 },
-        { MALI_GRALLOC_FORMAT_INTERNAL_YUV422_8BIT, DRM_FORMAT_YUYV },
-        { MALI_GRALLOC_FORMAT_INTERNAL_YUV420_8BIT_I, DRM_FORMAT_YUV420_8BIT },
-        { MALI_GRALLOC_FORMAT_INTERNAL_YUV420_10BIT_I, DRM_FORMAT_YUV420_10BIT },
-
-        /* Deprecated legacy formats, mapped to MALI_GRALLOC_FORMAT_INTERNAL_YUV422_8BIT. */
-        { HAL_PIXEL_FORMAT_YCbCr_422_I, DRM_FORMAT_YUYV },
-        /* Deprecated legacy formats, mapped to MALI_GRALLOC_FORMAT_INTERNAL_NV21. */
-        { HAL_PIXEL_FORMAT_YCrCb_420_SP, DRM_FORMAT_NV21 },
-        /* Format introduced in Android P, mapped to MALI_GRALLOC_FORMAT_INTERNAL_P010. */
-        { HAL_PIXEL_FORMAT_YCBCR_P010, DRM_FORMAT_P010 },
-    };
-
-    for (size_t i = 0; i < sizeof(table) / sizeof(table[0]); i++)
-    {
-        if (table[i].fourcc == fourcc)
-        {
-            return table[i].internal;
-        }
-    }
-
-    LOG_ALWAYS_FATAL("unexpected fourcc : 0x%x", fourcc);
-    return 0;
-}
-
 android::status_t static decodeArmPlaneFds(const hidl_vec<uint8_t>& input, std::vector<int64_t>* fds)
 {
     assert (fds != nullptr);
@@ -256,24 +200,6 @@ android::status_t static decodeArmPlaneFds(const hidl_vec<uint8_t>& input, std::
  * Global Functions Implementation
  * ---------------------------------------------------------------------------------------------------------
  */
-
-uint64_t get_internal_format(buffer_handle_t handle)
-{
-    auto &mapper = get_service();
-    uint32_t fourcc;
-    uint64_t modifier;
-
-    /* 获取 format_fourcc. */
-    int err = get_metadata(mapper, handle, MetadataType_PixelFormatFourCC, decodePixelFormatFourCC, &fourcc);
-    assert(err == android::NO_ERROR);
-
-    /* 获取 format_modifier. */
-    err = get_metadata(mapper, handle, MetadataType_PixelFormatModifier, decodePixelFormatModifier, &modifier);
-    assert(err == android::NO_ERROR);
-
-    /* 从 fourcc 得到 internal_format. */
-    return (get_internal_format_from_fourcc(fourcc, modifier) );
-}
 
 int get_width(buffer_handle_t handle, uint64_t* width)
 {

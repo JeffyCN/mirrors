@@ -73,11 +73,6 @@ namespace gralloc4 {
  * ---------------------------------------------------------------------------------------------------------
  */
 
-/*
- * 获取 'handle' 引用的 graphic_buffer 的 internal_format.
- */
-uint64_t get_internal_format(buffer_handle_t handle);
-
 int get_width(buffer_handle_t handle, uint64_t* width);
 
 int get_height(buffer_handle_t handle, uint64_t* height);
