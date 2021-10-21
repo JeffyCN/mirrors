@@ -53,6 +53,15 @@ include_directories(
     system/core/libion/kernel-headers
     )
 
+if (BUILD_WITH_LIBDRM STREQUAL true)
+    message("RGA build with libdrm")
+    add_compile_options(-DLIBDRM=1)
+    include_directories(
+        ${LIBDRM_FILE_INCLUDE}/
+        ${LIBDRM_FILE_INCLUDE}/libdrm
+    )
+endif()
+
 set(IM2D_SRCS
     core/RockchipRga.cpp
     core/GrallocOps.cpp
@@ -77,8 +86,15 @@ set(IM2D_DEMO_SRCS
 
 add_executable(rgaImDemo ${IM2D_DEMO_SRCS})
 
-target_link_libraries(rgaImDemo
-    rga)
+if ((BUILD_WITH_LIBDRM STREQUAL true) AND (EXISTS ${LIBDRM_FILE_LIB}/libdrm.so))
+    target_link_libraries(rga ${LIBDRM_FILE_LIB}/libdrm.so)
+    target_link_libraries(rgaImDemo ${LIBDRM_FILE_LIB}/libdrm.so)
+elseif (BUILD_WITH_LIBDRM STREQUAL true)
+    target_link_libraries(rga drm)
+    target_link_libraries(rgaImDemo drm)
+endif()
+
+target_link_libraries(rgaImDemo rga)
 
 install(TARGETS rga rgaImDemo
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
