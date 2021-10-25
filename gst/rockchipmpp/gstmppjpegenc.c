@@ -55,25 +55,23 @@ enum
   PROP_LAST,
 };
 
+#define GST_MPP_JPEG_ENC_SIZE_CAPS \
+    "width  = (int) [ 16, 8192 ], height = (int) [ 16, 8192 ]"
+
 static GstStaticPadTemplate gst_mpp_jpeg_enc_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("image/jpeg, "
-        "width  = (int) [ 16, 8192 ], "
-        "height = (int) [ 16, 8192 ], "
-        "framerate = " GST_VIDEO_FPS_RANGE ", " "sof-marker = { 0 }")
-    );
+        GST_MPP_JPEG_ENC_SIZE_CAPS "," "sof-marker = { 0 }"));
 
 static GstStaticPadTemplate gst_mpp_jpeg_enc_sink_template =
-    GST_STATIC_PAD_TEMPLATE ("sink",
+GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw,"
         "format = (string) { " MPP_ENC_FORMATS " }, "
-        "width  = (int) [ 16, 8192 ], "
-        "height = (int) [ 16, 8192 ], "
-        "framerate = " GST_VIDEO_FPS_RANGE ";"));
+        GST_MPP_JPEG_ENC_SIZE_CAPS));
 
 static void
 gst_mpp_h264_enc_set_property (GObject * object,

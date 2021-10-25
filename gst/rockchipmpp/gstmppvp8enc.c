@@ -61,24 +61,22 @@ enum
   PROP_LAST,
 };
 
+#define GST_MPP_VP8_ENC_SIZE_CAPS \
+    "width  = (int) [ 128, 1920 ], height = (int) [ 64, 1088 ]"
+
 static GstStaticPadTemplate gst_mpp_vp8_enc_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("video/x-vp8, "
-        "width  = (int) [ 128, 1920 ], "
-        "height = (int) [ 64, 1088 ], " "framerate = " GST_VIDEO_FPS_RANGE)
-    );
+    GST_STATIC_CAPS ("video/x-vp8, " GST_MPP_VP8_ENC_SIZE_CAPS));
 
 static GstStaticPadTemplate gst_mpp_vp8_enc_sink_template =
-    GST_STATIC_PAD_TEMPLATE ("sink",
+GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw,"
         "format = (string) { " MPP_ENC_FORMATS " }, "
-        "width  = (int) [ 128, 1920 ], "
-        "height = (int) [ 64, 1088 ], "
-        "framerate = " GST_VIDEO_FPS_RANGE ";"));
+        GST_MPP_VP8_ENC_SIZE_CAPS));
 
 static void
 gst_mpp_vp8_enc_set_property (GObject * object,

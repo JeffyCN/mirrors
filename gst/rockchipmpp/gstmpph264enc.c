@@ -78,28 +78,26 @@ enum
   PROP_LAST,
 };
 
+#define GST_MPP_H264_ENC_SIZE_CAPS \
+    "width  = (int) [ 96, 1920 ], height = (int) [ 64, 2176 ]"
+
 static GstStaticPadTemplate gst_mpp_h264_enc_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-h264, "
-        "width  = (int) [ 96, 1920 ], "
-        "height = (int) [ 64, 2176 ], "
-        "framerate = " GST_VIDEO_FPS_RANGE ", "
+        GST_MPP_H264_ENC_SIZE_CAPS ","
         "stream-format = (string) { byte-stream }, "
         "alignment = (string) { au }, "
-        "profile = (string) { baseline, main, high }")
-    );
+        "profile = (string) { baseline, main, high }"));
 
 static GstStaticPadTemplate gst_mpp_h264_enc_sink_template =
-    GST_STATIC_PAD_TEMPLATE ("sink",
+GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw,"
         "format = (string) { " MPP_ENC_FORMATS " }, "
-        "width  = (int) [ 96, 1920 ], "
-        "height = (int) [ 64, 2176 ], "
-        "framerate = " GST_VIDEO_FPS_RANGE ";"));
+        GST_MPP_H264_ENC_SIZE_CAPS));
 
 #define GST_TYPE_MPP_H264_ENC_PROFILE (gst_mpp_h264_enc_profile_get_type ())
 static GType
