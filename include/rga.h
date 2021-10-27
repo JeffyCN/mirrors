@@ -426,10 +426,7 @@ struct rga_req {
     unsigned char priority;
     unsigned char out_fence_fd;
 
-    unsigned char CMD_fin_int_enable;
-
-    /* completion is reported through a callback */
-    void (*complete)(int retval);
+	unsigned char reservr[128];
 };
 
 #if 0
