@@ -172,6 +172,12 @@ typedef struct rga_info {
 	unsigned short is_10b_compact;
 	unsigned short is_10b_endian;
 
+	int in_fence_fd;
+	int out_fence_fd;
+
+	int core;
+	int priority;
+
 	unsigned short enable;
 	int reserve[126];
 } rga_info_t;

@@ -1363,12 +1363,21 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     if(src->sync_mode == RGA_BLIT_ASYNC || dst->sync_mode == RGA_BLIT_ASYNC) {
         sync_mode = RGA_BLIT_ASYNC;
     }
+
+	rgaReg.in_fence_fd = src->in_fence_fd;
+	rgaReg.core = src->core;
+	rgaReg.priority = src->priority;
+
     /* using sync to pass config to rga driver. */
     if(ioctl(ctx->rgaFd, sync_mode, &rgaReg)) {
         printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
         ALOGE(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
         return -errno;
     }
+
+	dst->out_fence_fd = rgaReg.out_fence_fd;
+	printf("rk-debug out_fence_fd = %d\n", rgaReg.out_fence_fd);
+
     return 0;
 }
 
