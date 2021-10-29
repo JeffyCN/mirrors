@@ -26,6 +26,7 @@
 
 #ifdef ANDROID
 #include <cutils/properties.h>
+#include <android/sync.h>
 
 #include "core/NormalRga.h"
 #include "RockchipRga.h"
@@ -1936,14 +1937,14 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imsync(void) {
+IM_API IM_STATUS imsync(int out_fence_fd) {
     int ret = 0;
 
-    RockchipRga& rkRga(RockchipRga::get());
-
-    ret = rkRga.RkRgaFlush();
-    if (ret)
+    ret = sync_wait(out_fence_fd, -1);
+    if (ret) {
+        ALOGE("Failed to wait for out fence = %d, ret = %d", out_fence_fd, ret);
         return IM_STATUS_FAILED;
+    }
 
     return IM_STATUS_SUCCESS;
 }

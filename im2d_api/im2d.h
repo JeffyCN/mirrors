@@ -900,7 +900,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS imsync(void);
+IM_API IM_STATUS imsync(int out_fence_fd);
 
 #ifdef __cplusplus
 }
