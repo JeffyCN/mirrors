@@ -101,6 +101,11 @@ struct rockchip_pmu {
 };
 
 static struct rockchip_pmu *g_pmu;
+static bool pm_domain_always_on;
+
+module_param_named(always_on, pm_domain_always_on, bool, 0644);
+MODULE_PARM_DESC(always_on,
+		 "Always keep pm domains power on except for system suspend.");
 
 static void rockchip_pmu_lock(struct rockchip_pm_domain *pd)
 {
@@ -457,6 +462,9 @@ static int rockchip_pd_power(struct rockchip_pm_domain *pd, bool power_on)
 	struct rockchip_pmu *pmu = pd->pmu;
 	int ret = 0;
 	struct generic_pm_domain *genpd = &pd->genpd;
+
+	if (pm_domain_always_on && !power_on)
+		return 0;
 
 	if (!power_on && (soc_is_px30s())) {
 		if (genpd->name && !strcmp(genpd->name, "pd_gpu"))
