@@ -384,11 +384,13 @@ gst_mpp_video_dec_class_init (GstMppVideoDecClass * klass)
 
   gst_mpp_video_dec_setup_default_format ();
 
+#ifdef HAVE_RGA
   g_object_class_install_property (gobject_class, PROP_FORMAT,
       g_param_spec_enum ("format", "Prefered output format",
           "Prefered output format",
           GST_TYPE_MPP_VIDEO_DEC_FORMAT, DEFAULT_PROP_FORMAT,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+#endif
 
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_mpp_video_dec_src_template));

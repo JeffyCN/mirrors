@@ -467,15 +467,17 @@ gst_mpp_jpeg_dec_format_get_type (void)
     static const GEnumValue formats[] = {
       {GST_VIDEO_FORMAT_UNKNOWN, "Auto", "auto"},
       {GST_VIDEO_FORMAT_NV12, "NV12", "NV12"},
+#ifdef HAVE_RGA
       {GST_VIDEO_FORMAT_NV21, "NV21", "NV21"},
       {GST_VIDEO_FORMAT_I420, "I420", "I420"},
       {GST_VIDEO_FORMAT_YV12, "YV12", "YV12"},
       {GST_VIDEO_FORMAT_NV16, "NV16", "NV16"},
       {GST_VIDEO_FORMAT_NV61, "NV61", "NV61"},
-      {GST_VIDEO_FORMAT_RGB16, "RGB565", "RGB16"},
-      {GST_VIDEO_FORMAT_BGR16, "BGR565", "BGR16"},
       {GST_VIDEO_FORMAT_RGB, "RGB", "RGB"},
       {GST_VIDEO_FORMAT_BGR, "BGR", "BGR"},
+#endif
+      {GST_VIDEO_FORMAT_RGB16, "RGB565", "RGB16"},
+      {GST_VIDEO_FORMAT_BGR16, "BGR565", "BGR16"},
       {GST_VIDEO_FORMAT_ARGB, "ARGB8888", "ARGB"},
       {GST_VIDEO_FORMAT_ABGR, "ABGR8888", "ABGR"},
       {GST_VIDEO_FORMAT_RGBA, "RGBA8888", "RGBA"},
