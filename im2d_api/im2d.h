@@ -263,6 +263,11 @@ typedef struct {
 	int rd_mode;
 } rga_buffer_t;
 
+typedef struct im_opt {
+    int priority;
+    int core;
+} im_opt_t;
+
 /*
  * @return error message string
  */
@@ -893,7 +898,12 @@ IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat, im_rect srect, im_rect drect, im_rect prect, int usage);
+IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                        im_rect srect, im_rect drect, im_rect prect, int usage);
+
+IM_API IM_STATUS improcess_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                        im_rect srect, im_rect drect, im_rect prect,
+                        int in_fence_fd, int *out_fence_fd, im_opt_t *opt, int usage);
 
 /*
  * block until all execution is complete
