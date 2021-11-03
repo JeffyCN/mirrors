@@ -95,9 +95,13 @@ GType gst_mpp_dec_get_type (void);
 
 #define GST_FLOW_TIMEOUT GST_FLOW_CUSTOM_ERROR_1
 
-#define MPP_DEC_FORMATS \
-    "NV12, NV21, I420, YV12, NV16, NV61, " \
-    "BGR16, RGB, BGR, RGBA, BGRA, RGBx, BGRx"
+#define MPP_DEC_OUT_FORMATS "NV12, NV16"
+
+#ifdef HAVE_RGA
+#define MPP_DEC_FORMATS MPP_DEC_OUT_FORMATS "," GST_RGA_FORMATS
+#else
+#define MPP_DEC_FORMATS MPP_DEC_OUT_FORMATS
+#endif
 
 gboolean gst_mpp_dec_update_video_info (GstVideoDecoder * decoder,
     GstVideoFormat format, guint width, guint height,

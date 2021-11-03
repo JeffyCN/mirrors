@@ -86,10 +86,16 @@ struct _GstMppEnc
   MppApi *mpi;
 };
 
-#define MPP_ENC_FORMATS \
+#define MPP_ENC_IN_FORMATS \
     "NV12, I420, YUY2, UYVY, " \
-    "BGR16, RGB16, BGR15, RGB15, " \
+    "BGR16, RGB16, " \
     "ABGR, ARGB, BGRA, RGBA, xBGR, xRGB, BGRx, RGBx"
+
+#ifdef HAVE_RGA
+#define MPP_ENC_FORMATS MPP_ENC_IN_FORMATS "," GST_RGA_FORMATS
+#else
+#define MPP_ENC_FORMATS MPP_ENC_IN_FORMATS
+#endif
 
 gboolean gst_mpp_enc_apply_properties (GstVideoEncoder * encoder);
 gboolean gst_mpp_enc_set_src_caps (GstVideoEncoder * encoder, GstCaps * caps);

@@ -94,6 +94,58 @@ enum
   PROP_LAST,
 };
 
+static const MppFrameFormat gst_mpp_enc_formats[] = {
+  MPP_FMT_YUV420SP,
+  MPP_FMT_YUV420P,
+  MPP_FMT_YUV422_YUYV,
+  MPP_FMT_YUV422_UYVY,
+  MPP_FMT_RGB565LE,
+  MPP_FMT_BGR565LE,
+  MPP_FMT_ARGB8888,
+  MPP_FMT_ABGR8888,
+  MPP_FMT_RGBA8888,
+  MPP_FMT_BGRA8888,
+};
+
+static gboolean
+gst_mpp_enc_format_supported (MppFrameFormat format)
+{
+  guint i;
+
+  for (i = 0; i < ARRAY_SIZE (gst_mpp_enc_formats); i++) {
+    if (format == gst_mpp_enc_formats[i])
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+static gboolean
+gst_mpp_enc_video_info_matched (GstVideoInfo * info, GstVideoInfo * other)
+{
+  guint i;
+
+  if (GST_VIDEO_INFO_FORMAT (info) != GST_VIDEO_INFO_FORMAT (other))
+    return FALSE;
+
+  if (GST_VIDEO_INFO_WIDTH (info) != GST_VIDEO_INFO_WIDTH (other))
+    return FALSE;
+
+  if (GST_VIDEO_INFO_HEIGHT (info) != GST_VIDEO_INFO_HEIGHT (other))
+    return FALSE;
+
+  for (i = 0; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
+    if (GST_VIDEO_INFO_PLANE_STRIDE (info,
+            i) != GST_VIDEO_INFO_PLANE_STRIDE (other, i))
+      return FALSE;
+    if (GST_VIDEO_INFO_PLANE_OFFSET (info,
+            i) != GST_VIDEO_INFO_PLANE_OFFSET (other, i))
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
 static void
 gst_mpp_enc_set_property (GObject * object,
     guint prop_id, const GValue * value, GParamSpec * pspec)
@@ -487,11 +539,24 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   self->input_state = gst_video_codec_state_ref (state);
 
   *info = state->info;
+
   if (!gst_mpp_video_info_align (info, 0, 0))
     return FALSE;
 
   format = gst_mpp_gst_format_to_mpp_format (GST_VIDEO_INFO_FORMAT (info));
-  g_return_val_if_fail (format != MPP_FMT_BUTT, FALSE);
+
+  if (!gst_mpp_enc_format_supported (format) ||
+      !gst_mpp_enc_video_info_matched (info, &state->info)) {
+    format = MPP_FMT_YUV420SP;
+    gst_video_info_set_format (info, gst_mpp_mpp_format_to_gst_format (format),
+        GST_VIDEO_INFO_WIDTH (info), GST_VIDEO_INFO_HEIGHT (info));
+
+    if (!gst_mpp_video_info_align (info, 0, 0))
+      return FALSE;
+
+    GST_INFO_OBJECT (self, "converting to aligned %s",
+        gst_video_format_to_string (format));
+  }
 
   mpp_frame_set_width (self->mpp_frame, GST_VIDEO_INFO_WIDTH (info));
   mpp_frame_set_height (self->mpp_frame, GST_VIDEO_INFO_HEIGHT (info));
@@ -571,32 +636,6 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
 
   return GST_VIDEO_ENCODER_CLASS (parent_class)->propose_allocation (encoder,
       query);
-}
-
-static gboolean
-gst_mpp_enc_video_info_matched (GstVideoInfo * info, GstVideoInfo * other)
-{
-  guint i;
-
-  if (GST_VIDEO_INFO_FORMAT (info) != GST_VIDEO_INFO_FORMAT (other))
-    return FALSE;
-
-  if (GST_VIDEO_INFO_WIDTH (info) != GST_VIDEO_INFO_WIDTH (other))
-    return FALSE;
-
-  if (GST_VIDEO_INFO_HEIGHT (info) != GST_VIDEO_INFO_HEIGHT (other))
-    return FALSE;
-
-  for (i = 0; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
-    if (GST_VIDEO_INFO_PLANE_STRIDE (info,
-            i) != GST_VIDEO_INFO_PLANE_STRIDE (other, i))
-      return FALSE;
-    if (GST_VIDEO_INFO_PLANE_OFFSET (info,
-            i) != GST_VIDEO_INFO_PLANE_OFFSET (other, i))
-      return FALSE;
-  }
-
-  return TRUE;
 }
 
 static GstBuffer *

@@ -51,6 +51,12 @@ G_BEGIN_DECLS;
 #define GST_MPP_ALIGNMENT 16
 #define GST_MPP_ALIGN(v) GST_ROUND_UP_N (v, GST_MPP_ALIGNMENT)
 
+#ifdef HAVE_RGA
+#define GST_RGA_FORMATS \
+    "NV12, NV21, I420, YV12, NV16, NV61, " \
+    "BGR16, RGB, BGR, RGBA, BGRA, RGBx, BGRx"
+#endif
+
 GstVideoFormat gst_mpp_mpp_format_to_gst_format (MppFrameFormat mpp_format);
 
 MppFrameFormat gst_mpp_gst_format_to_mpp_format (GstVideoFormat format);
