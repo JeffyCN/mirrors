@@ -97,7 +97,7 @@ GType gst_mpp_dec_get_type (void);
 
 #define MPP_DEC_FORMATS \
     "NV12, NV21, I420, YV12, NV16, NV61, " \
-    "BGR16, BGRA, RGBA, BGRx, RGBx"
+    "BGR16, RGB, BGR, RGBA, BGRA, RGBx, BGRx"
 
 gboolean gst_mpp_dec_update_video_info (GstVideoDecoder * decoder,
     GstVideoFormat format, guint width, guint height,

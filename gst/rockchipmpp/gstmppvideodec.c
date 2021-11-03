@@ -317,6 +317,8 @@ gst_mpp_video_dec_format_get_type (void)
       {GST_VIDEO_FORMAT_NV16, "NV16", "NV16"},
       {GST_VIDEO_FORMAT_NV61, "NV61", "NV61"},
       {GST_VIDEO_FORMAT_BGR16, "BGR565", "BGR16"},
+      {GST_VIDEO_FORMAT_RGB, "RGB", "RGB"},
+      {GST_VIDEO_FORMAT_BGR, "BGR", "BGR"},
       {GST_VIDEO_FORMAT_RGBA, "RGBA8888", "RGBA"},
       {GST_VIDEO_FORMAT_BGRA, "BGRA8888", "BGRA"},
       {GST_VIDEO_FORMAT_RGBx, "RGBX8888", "RGBx"},
