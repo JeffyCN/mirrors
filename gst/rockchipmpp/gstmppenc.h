@@ -64,8 +64,9 @@ struct _GstMppEnc
 
   MppEncHeaderMode header_mode;
   MppEncRcMode rc_mode;
-  MppEncRotationCfg rotation;
   MppEncSeiMode sei_mode;
+
+  gint rotation;
 
   gint gop;
   guint max_reenc;

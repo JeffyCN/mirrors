@@ -270,7 +270,7 @@ gst_mpp_rga_do_convert (rga_info_t * src_info, rga_info_t * dst_info)
 
 gboolean
 gst_mpp_rga_convert (GstBuffer * inbuf, GstVideoInfo * src_vinfo,
-    GstMemory * out_mem, GstVideoInfo * dst_vinfo)
+    GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation)
 {
   GstMapInfo mapinfo = { 0, };
   gboolean ret;
@@ -302,6 +302,13 @@ gst_mpp_rga_convert (GstBuffer * inbuf, GstVideoInfo * src_vinfo,
   }
 
   dst_info.fd = gst_dmabuf_memory_get_fd (out_mem);
+
+  if (rotation == 90)
+    src_info.rotation = HAL_TRANSFORM_ROT_90;
+  else if (rotation == 180)
+    src_info.rotation = HAL_TRANSFORM_ROT_180;
+  else if (rotation == 270)
+    src_info.rotation = HAL_TRANSFORM_ROT_270;
 
   ret = gst_mpp_rga_do_convert (&src_info, &dst_info);
 

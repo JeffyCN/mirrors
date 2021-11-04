@@ -38,6 +38,10 @@ G_BEGIN_DECLS;
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 #endif
 
+#ifndef SWAP
+#define SWAP(x, y) ({ x ^= y; y ^= x; x ^= y; })
+#endif
+
 #define MPP_FMT_LE(f) (f | MPP_FRAME_FMT_LE_MASK)
 #define MPP_FMT_RGB565LE MPP_FMT_LE(MPP_FMT_RGB565)
 #define MPP_FMT_BGR565LE MPP_FMT_LE(MPP_FMT_BGR565)
@@ -63,7 +67,7 @@ MppFrameFormat gst_mpp_gst_format_to_mpp_format (GstVideoFormat format);
 
 #ifdef HAVE_RGA
 gboolean gst_mpp_rga_convert (GstBuffer * inbuf, GstVideoInfo * src_vinfo,
-    GstMemory * out_mem, GstVideoInfo * dst_vinfo);
+    GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation);
 
 gboolean gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
     GstMemory * out_mem, GstVideoInfo * dst_vinfo);
