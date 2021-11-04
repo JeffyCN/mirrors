@@ -78,6 +78,8 @@ G_DEFINE_ABSTRACT_TYPE (GstMppEnc, gst_mpp_enc, GST_TYPE_VIDEO_ENCODER);
 #define DEFAULT_PROP_BPS_MAX 0  /* Auto */
 #define DEFAULT_PROP_ZERO_COPY_PKT TRUE
 
+#define DEFAULT_FPS 30
+
 enum
 {
   PROP_0,
@@ -313,25 +315,22 @@ gst_mpp_enc_apply_properties (GstVideoEncoder * encoder)
     self->bps =
         GST_VIDEO_INFO_WIDTH (info) * GST_VIDEO_INFO_HEIGHT (info) / 8 * fps;
 
-  if (self->rc_mode == MPP_ENC_RC_MODE_CBR) {
+  if (!self->bps || self->rc_mode == MPP_ENC_RC_MODE_FIXQP) {
+    /* BPS settings are ignored */
+  } else if (self->rc_mode == MPP_ENC_RC_MODE_CBR) {
     /* CBR mode has narrow bound */
     mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_target", self->bps);
     mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_max",
-        self->bps_max ? self->bps_max : self->bps * 17 / 16);
+        self->bps_max ? : self->bps * 17 / 16);
     mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_min",
-        self->bps_min ? self->bps_min : self->bps * 15 / 16);
+        self->bps_min ? : self->bps * 15 / 16);
   } else if (self->rc_mode == MPP_ENC_RC_MODE_VBR) {
     /* VBR mode has wide bound */
     mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_target", self->bps);
     mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_max",
-        self->bps_max ? self->bps_max : self->bps * 17 / 16);
+        self->bps_max ? : self->bps * 17 / 16);
     mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_min",
-        self->bps_min ? self->bps_min : self->bps * 1 / 16);
-  } else {
-    /* BPS settings are ignored in FIXQP mode */
-    mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_target", -1);
-    mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_max", -1);
-    mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_min", -1);
+        self->bps_min ? : self->bps * 1 / 16);
   }
 
   if (self->mpi->control (self->mpp_ctx, MPP_ENC_SET_CFG, self->mpp_cfg)) {
@@ -554,14 +553,16 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
     if (!gst_mpp_video_info_align (info, 0, 0))
       return FALSE;
 
-    GST_INFO_OBJECT (self, "converting to aligned %s",
-        gst_video_format_to_string (format));
+    GST_INFO_OBJECT (self, "converting to aligned NV12");
   }
 
   mpp_frame_set_width (self->mpp_frame, GST_VIDEO_INFO_WIDTH (info));
   mpp_frame_set_height (self->mpp_frame, GST_VIDEO_INFO_HEIGHT (info));
   mpp_frame_set_hor_stride (self->mpp_frame, GST_MPP_VIDEO_INFO_HSTRIDE (info));
   mpp_frame_set_ver_stride (self->mpp_frame, GST_MPP_VIDEO_INFO_VSTRIDE (info));
+
+  if (!GST_VIDEO_INFO_FPS_N (info))
+    GST_VIDEO_INFO_FPS_N (info) = DEFAULT_FPS;
 
   mpp_enc_cfg_set_s32 (self->mpp_cfg, "prep:format", format);
   mpp_enc_cfg_set_s32 (self->mpp_cfg, "prep:width",
