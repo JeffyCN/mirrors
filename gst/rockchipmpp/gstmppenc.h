@@ -67,6 +67,8 @@ struct _GstMppEnc
   MppEncSeiMode sei_mode;
 
   gint rotation;
+  gint width;
+  gint height;
 
   gint gop;
   guint max_reenc;

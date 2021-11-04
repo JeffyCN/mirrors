@@ -76,6 +76,8 @@ G_DEFINE_ABSTRACT_TYPE (GstMppEnc, gst_mpp_enc, GST_TYPE_VIDEO_ENCODER);
 #define DEFAULT_PROP_BPS 0      /* Auto */
 #define DEFAULT_PROP_BPS_MIN 0  /* Auto */
 #define DEFAULT_PROP_BPS_MAX 0  /* Auto */
+#define DEFAULT_PROP_WIDTH 0    /* Original */
+#define DEFAULT_PROP_HEIGHT 0   /* Original */
 #define DEFAULT_PROP_ZERO_COPY_PKT TRUE
 
 #define DEFAULT_FPS 30
@@ -92,6 +94,8 @@ enum
   PROP_BPS,
   PROP_BPS_MIN,
   PROP_BPS_MAX,
+  PROP_WIDTH,
+  PROP_HEIGHT,
   PROP_ZERO_COPY_PKT,
   PROP_LAST,
 };
@@ -227,6 +231,20 @@ gst_mpp_enc_set_property (GObject * object,
         self->rotation = g_value_get_enum (value);
       return;
     }
+    case PROP_WIDTH:{
+      if (self->input_state)
+        GST_WARNING_OBJECT (encoder, "unable to change width");
+      else
+        self->width = g_value_get_uint (value);
+      return;
+    }
+    case PROP_HEIGHT:{
+      if (self->input_state)
+        GST_WARNING_OBJECT (encoder, "unable to change height");
+      else
+        self->height = g_value_get_uint (value);
+      return;
+    }
     case PROP_ZERO_COPY_PKT:{
       self->zero_copy_pkt = g_value_get_boolean (value);
       return;
@@ -273,6 +291,12 @@ gst_mpp_enc_get_property (GObject * object,
       break;
     case PROP_BPS_MAX:
       g_value_set_uint (value, self->bps_max);
+      break;
+    case PROP_WIDTH:
+      g_value_set_uint (value, self->width);
+      break;
+    case PROP_HEIGHT:
+      g_value_set_uint (value, self->height);
       break;
     case PROP_ZERO_COPY_PKT:
       g_value_set_boolean (value, self->zero_copy_pkt);
@@ -354,9 +378,12 @@ gst_mpp_enc_set_src_caps (GstVideoEncoder * encoder, GstCaps * caps)
 
   output_state = gst_video_encoder_set_output_state (encoder,
       caps, self->input_state);
+
+  GST_VIDEO_INFO_WIDTH (&output_state->info) = GST_VIDEO_INFO_WIDTH (info);
+  GST_VIDEO_INFO_HEIGHT (&output_state->info) = GST_VIDEO_INFO_HEIGHT (info);
   gst_video_codec_state_unref (output_state);
 
-  return TRUE;
+  return gst_video_encoder_negotiate (encoder);
 }
 
 static void
@@ -548,7 +575,12 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   if (self->rotation % 180)
     SWAP (width, height);
 
-  if (self->rotation || !gst_mpp_enc_format_supported (format) ||
+  width = self->width ? : width;
+  height = self->height ? : height;
+
+  if (self->rotation || width != GST_VIDEO_INFO_WIDTH (info) ||
+      height != GST_VIDEO_INFO_HEIGHT (info) ||
+      !gst_mpp_enc_format_supported (format) ||
       !gst_mpp_enc_video_info_matched (info, &state->info)) {
     format = MPP_FMT_YUV420SP;
     gst_video_info_set_format (info, gst_mpp_mpp_format_to_gst_format (format),
@@ -1089,6 +1121,18 @@ gst_mpp_enc_class_init (GstMppEncClass * klass)
       g_param_spec_enum ("rotation", "Rotation",
           "Rotation",
           GST_TYPE_MPP_ENC_ROTATION, DEFAULT_PROP_ROTATION,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_WIDTH,
+      g_param_spec_uint ("width", "Width",
+          "Width (0 = original)",
+          0, G_MAXINT, DEFAULT_PROP_WIDTH,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_HEIGHT,
+      g_param_spec_uint ("height", "Height",
+          "Height (0 = original)",
+          0, G_MAXINT, DEFAULT_PROP_HEIGHT,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 #endif
 
