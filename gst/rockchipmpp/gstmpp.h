@@ -70,7 +70,7 @@ gboolean gst_mpp_rga_convert (GstBuffer * inbuf, GstVideoInfo * src_vinfo,
     GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation);
 
 gboolean gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
-    GstMemory * out_mem, GstVideoInfo * dst_vinfo);
+    GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation);
 #endif
 
 gboolean gst_mpp_video_info_align (GstVideoInfo * info,

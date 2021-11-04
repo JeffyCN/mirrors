@@ -56,6 +56,78 @@ G_DEFINE_ABSTRACT_TYPE (GstMppDec, gst_mpp_dec, GST_TYPE_VIDEO_DECODER);
 #define GST_MPP_DEC_UNLOCK(decoder) \
   g_mutex_unlock (GST_MPP_DEC_MUTEX (decoder));
 
+#define DEFAULT_PROP_ROTATION 0
+#define DEFAULT_PROP_WIDTH 0    /* Original */
+#define DEFAULT_PROP_HEIGHT 0   /* Original */
+
+enum
+{
+  PROP_0,
+  PROP_ROTATION,
+  PROP_WIDTH,
+  PROP_HEIGHT,
+  PROP_LAST,
+};
+
+static void
+gst_mpp_dec_set_property (GObject * object,
+    guint prop_id, const GValue * value, GParamSpec * pspec)
+{
+  GstVideoDecoder *decoder = GST_VIDEO_DECODER (object);
+  GstMppDec *self = GST_MPP_DEC (decoder);
+
+  switch (prop_id) {
+    case PROP_ROTATION:{
+      if (self->input_state)
+        GST_WARNING_OBJECT (decoder, "unable to change rotation");
+      else
+        self->rotation = g_value_get_enum (value);
+      break;
+    }
+
+    case PROP_WIDTH:{
+      if (self->input_state)
+        GST_WARNING_OBJECT (decoder, "unable to change width");
+      else
+        self->width = g_value_get_uint (value);
+      break;
+    }
+    case PROP_HEIGHT:{
+      if (self->input_state)
+        GST_WARNING_OBJECT (decoder, "unable to change height");
+      else
+        self->height = g_value_get_uint (value);
+      break;
+    }
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
+
+static void
+gst_mpp_dec_get_property (GObject * object,
+    guint prop_id, GValue * value, GParamSpec * pspec)
+{
+  GstVideoDecoder *decoder = GST_VIDEO_DECODER (object);
+  GstMppDec *self = GST_MPP_DEC (decoder);
+
+  switch (prop_id) {
+    case PROP_ROTATION:
+      g_value_set_enum (value, self->rotation);
+      break;
+    case PROP_WIDTH:
+      g_value_set_uint (value, self->width);
+      break;
+    case PROP_HEIGHT:
+      g_value_set_uint (value, self->height);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      return;
+  }
+}
+
 static void
 gst_mpp_dec_stop_task (GstVideoDecoder * decoder, gboolean drain)
 {
@@ -226,12 +298,11 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
 
 gboolean
 gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
-    guint width, guint height, guint hstride, guint vstride, gboolean from_mpp)
+    guint width, guint height, gint hstride, gint vstride, guint align)
 {
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoInfo *info = &self->info;
   GstVideoCodecState *output_state;
-  gint align = from_mpp ? GST_MPP_ALIGNMENT : 2;
 
   g_return_val_if_fail (format != GST_VIDEO_FORMAT_UNKNOWN, FALSE);
 
@@ -241,54 +312,76 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
   *info = output_state->info;
   gst_video_codec_state_unref (output_state);
 
-  if (!hstride)
-    hstride = GST_ROUND_UP_N (GST_VIDEO_INFO_PLANE_STRIDE (info, 0), align);
+  align = align ? : 2;
 
-  if (!vstride)
-    vstride = GST_ROUND_UP_N (GST_VIDEO_INFO_HEIGHT (info), align);
+  hstride = hstride ? : GST_MPP_VIDEO_INFO_HSTRIDE (info);
+  hstride = GST_ROUND_UP_N (hstride, align);
+
+  vstride = vstride ? : GST_MPP_VIDEO_INFO_VSTRIDE (info);
+  vstride = GST_ROUND_UP_N (vstride, align);
 
   return gst_mpp_video_info_align (info, hstride, vstride);
+}
+
+void
+gst_mpp_dec_fixup_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
+    gint width, gint height)
+{
+  GstMppDec *self = GST_MPP_DEC (decoder);
+  GstVideoInfo *info = &self->info;
+
+  if (self->rotation % 180)
+    SWAP (width, height);
+
+  /* Figure out output format */
+  if (self->format != GST_VIDEO_FORMAT_UNKNOWN)
+    /* Use specified format */
+    format = self->format;
+  if (format == GST_VIDEO_FORMAT_UNKNOWN)
+    /* Fallback to NV12 */
+    format = GST_VIDEO_FORMAT_NV12;
+
+  gst_video_info_set_format (info, format,
+      self->width ? : width, self->height ? : height);
 }
 
 static GstFlowReturn
 gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
 {
   GstMppDec *self = GST_MPP_DEC (decoder);
-  GstVideoFormat format;
+  GstVideoFormat dst_format, src_format;
+  GstVideoInfo *info = &self->info;
   MppFrameFormat mpp_format;
-  guint width = mpp_frame_get_width (mframe);
-  guint height = mpp_frame_get_height (mframe);
-  guint hstride = mpp_frame_get_hor_stride (mframe);
-  guint vstride = mpp_frame_get_ver_stride (mframe);
-  gboolean from_mpp = TRUE;
+  gint width = mpp_frame_get_width (mframe);
+  gint height = mpp_frame_get_height (mframe);
+  gint hstride = mpp_frame_get_hor_stride (mframe);
+  gint vstride = mpp_frame_get_ver_stride (mframe);
+  gint dst_width, dst_height;
+
+  if (hstride % 2 || vstride % 2)
+    return GST_FLOW_NOT_NEGOTIATED;
 
   mpp_format = mpp_frame_get_fmt (mframe);
-  format = gst_mpp_mpp_format_to_gst_format (mpp_format);
-  if (self->format == GST_VIDEO_FORMAT_UNKNOWN) {
-    /* Try to convert unsupported formats to NV12 */
-    if (format == GST_VIDEO_FORMAT_UNKNOWN)
-      self->format = GST_VIDEO_FORMAT_NV12;
-    else
-      self->format = format;
-  }
+  src_format = gst_mpp_mpp_format_to_gst_format (mpp_format);
 
-  if (self->format != format) {
-#ifdef HAVE_RGA
-    GST_INFO_OBJECT (self, "converting to %s",
-        gst_video_format_to_string (self->format));
+  /* Figure out final output info */
+  gst_mpp_dec_fixup_video_info (decoder, src_format, width, height);
+  dst_format = GST_VIDEO_INFO_FORMAT (info);
+  dst_width = GST_VIDEO_INFO_WIDTH (info);
+  dst_height = GST_VIDEO_INFO_HEIGHT (info);
 
-    from_mpp = FALSE;
-    format = self->format;
+  if (dst_format != src_format || dst_width != width || dst_height != height) {
+    /* Conversion required */
+    GST_INFO_OBJECT (self, "convert from %s (%dx%d) to %s (%dx%d)",
+        gst_video_format_to_string (src_format), width, height,
+        gst_video_format_to_string (dst_format), dst_width, dst_height);
+
     hstride = 0;
     vstride = 0;
-#else
-    GST_ERROR_OBJECT (self, "format not supported");
-    return GST_FLOW_NOT_NEGOTIATED;
-#endif
   }
 
-  if (!gst_mpp_dec_update_video_info (decoder, format, width, height,
-          hstride, vstride, from_mpp))
+  if (!gst_mpp_dec_update_video_info (decoder, dst_format,
+          dst_width, dst_height, hstride, vstride, 0))
     return GST_FLOW_NOT_NEGOTIATED;
 
   return GST_FLOW_OK;
@@ -420,6 +513,9 @@ gst_mpp_dec_info_matched (GstVideoDecoder * decoder, MppFrame mframe)
   gint hstride = mpp_frame_get_hor_stride (mframe);
   gint vstride = mpp_frame_get_ver_stride (mframe);
 
+  if (self->rotation)
+    return FALSE;
+
   /* NOTE: The output video info is aligned to 2 */
   width = GST_ROUND_UP_2 (width);
   height = GST_ROUND_UP_2 (height);
@@ -454,7 +550,7 @@ gst_mpp_dec_rga_convert (GstVideoDecoder * decoder, MppFrame mframe,
   mem = gst_allocator_alloc (self->allocator, GST_VIDEO_INFO_SIZE (info), NULL);
   g_return_val_if_fail (mem, FALSE);
 
-  if (!gst_mpp_rga_convert_from_mpp_frame (mframe, mem, info)) {
+  if (!gst_mpp_rga_convert_from_mpp_frame (mframe, mem, info, self->rotation)) {
     GST_WARNING_OBJECT (self, "failed to convert");
     gst_memory_unref (mem);
     return FALSE;
@@ -778,10 +874,32 @@ gst_mpp_dec_init (GstMppDec * self)
   gst_video_decoder_set_packetized (decoder, TRUE);
 }
 
+#ifdef HAVE_RGA
+#define GST_TYPE_MPP_DEC_ROTATION (gst_mpp_dec_rotation_get_type ())
+static GType
+gst_mpp_dec_rotation_get_type (void)
+{
+  static GType rotation = 0;
+
+  if (!rotation) {
+    static const GEnumValue rotations[] = {
+      {0, "Rotate 0", "0"},
+      {90, "Rotate 90", "90"},
+      {180, "Rotate 180", "180"},
+      {270, "Rotate 270", "270"},
+      {0, NULL, NULL}
+    };
+    rotation = g_enum_register_static ("GstMppDecRotation", rotations);
+  }
+  return rotation;
+}
+#endif
+
 static void
 gst_mpp_dec_class_init (GstMppDecClass * klass)
 {
   GstVideoDecoderClass *decoder_class = GST_VIDEO_DECODER_CLASS (klass);
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
 
   GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "mppdec", 0, "MPP decoder");
@@ -793,6 +911,29 @@ gst_mpp_dec_class_init (GstMppDecClass * klass)
   decoder_class->finish = GST_DEBUG_FUNCPTR (gst_mpp_dec_finish);
   decoder_class->set_format = GST_DEBUG_FUNCPTR (gst_mpp_dec_set_format);
   decoder_class->handle_frame = GST_DEBUG_FUNCPTR (gst_mpp_dec_handle_frame);
+
+  gobject_class->set_property = GST_DEBUG_FUNCPTR (gst_mpp_dec_set_property);
+  gobject_class->get_property = GST_DEBUG_FUNCPTR (gst_mpp_dec_get_property);
+
+#ifdef HAVE_RGA
+  g_object_class_install_property (gobject_class, PROP_ROTATION,
+      g_param_spec_enum ("rotation", "Rotation",
+          "Rotation",
+          GST_TYPE_MPP_DEC_ROTATION, DEFAULT_PROP_ROTATION,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_WIDTH,
+      g_param_spec_uint ("width", "Width",
+          "Width (0 = original)",
+          0, G_MAXINT, DEFAULT_PROP_WIDTH,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_HEIGHT,
+      g_param_spec_uint ("height", "Height",
+          "Height (0 = original)",
+          0, G_MAXINT, DEFAULT_PROP_HEIGHT,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+#endif
 
   element_class->change_state = GST_DEBUG_FUNCPTR (gst_mpp_dec_change_state);
 }

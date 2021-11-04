@@ -268,6 +268,23 @@ gst_mpp_rga_do_convert (rga_info_t * src_info, rga_info_t * dst_info)
   return TRUE;
 }
 
+static gint
+gst_mpp_rga_get_rotation (gint rotation)
+{
+  switch (rotation) {
+    case 0:
+      return 0;
+    case 90:
+      return HAL_TRANSFORM_ROT_90;
+    case 180:
+      return HAL_TRANSFORM_ROT_180;
+    case 270:
+      return HAL_TRANSFORM_ROT_270;
+    default:
+      return -1;
+  }
+}
+
 gboolean
 gst_mpp_rga_convert (GstBuffer * inbuf, GstVideoInfo * src_vinfo,
     GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation)
@@ -303,12 +320,9 @@ gst_mpp_rga_convert (GstBuffer * inbuf, GstVideoInfo * src_vinfo,
 
   dst_info.fd = gst_dmabuf_memory_get_fd (out_mem);
 
-  if (rotation == 90)
-    src_info.rotation = HAL_TRANSFORM_ROT_90;
-  else if (rotation == 180)
-    src_info.rotation = HAL_TRANSFORM_ROT_180;
-  else if (rotation == 270)
-    src_info.rotation = HAL_TRANSFORM_ROT_270;
+  src_info.rotation = gst_mpp_rga_get_rotation (rotation);
+  if (src_info.rotation < 0)
+    return FALSE;
 
   ret = gst_mpp_rga_do_convert (&src_info, &dst_info);
 
@@ -318,7 +332,7 @@ gst_mpp_rga_convert (GstBuffer * inbuf, GstVideoInfo * src_vinfo,
 
 gboolean
 gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
-    GstMemory * out_mem, GstVideoInfo * dst_vinfo)
+    GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation)
 {
   rga_info_t src_info = { 0, };
   rga_info_t dst_info = { 0, };
@@ -330,6 +344,10 @@ gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
     return FALSE;
 
   dst_info.fd = gst_dmabuf_memory_get_fd (out_mem);
+
+  src_info.rotation = gst_mpp_rga_get_rotation (rotation);
+  if (src_info.rotation < 0)
+    return FALSE;
 
   return gst_mpp_rga_do_convert (&src_info, &dst_info);
 }

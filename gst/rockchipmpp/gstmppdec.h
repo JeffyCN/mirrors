@@ -54,6 +54,10 @@ struct _GstMppDec
   /* specified output format */
   GstVideoFormat format;
 
+  gint rotation;
+  gint width;
+  gint height;
+
   /* stop handling new frame when flushing */
   gboolean flushing;
 
@@ -103,9 +107,12 @@ GType gst_mpp_dec_get_type (void);
 #define MPP_DEC_FORMATS MPP_DEC_OUT_FORMATS
 #endif
 
+void gst_mpp_dec_fixup_video_info (GstVideoDecoder * decoder,
+    GstVideoFormat format, gint width, gint height);
+
 gboolean gst_mpp_dec_update_video_info (GstVideoDecoder * decoder,
     GstVideoFormat format, guint width, guint height,
-    guint hstride, guint vstride, gboolean from_mpp);
+    gint hstride, gint vstride, guint align);
 
 G_END_DECLS;
 
