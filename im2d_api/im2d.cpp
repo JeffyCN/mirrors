@@ -2002,7 +2002,7 @@ IM_API IM_STATUS improcess_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pa
         return IM_STATUS_FAILED;
     }
 
-    out_fence_fd = &dstinfo.out_fence_fd;
+    *out_fence_fd = dstinfo.out_fence_fd;
 
     return IM_STATUS_SUCCESS;
 }

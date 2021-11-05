@@ -421,10 +421,10 @@ struct rga_req {
 
     full_csc_t full_csc;            /* full color space convert */
 
-	unsigned char in_fence_fd;
+	int in_fence_fd;
     unsigned char core;
     unsigned char priority;
-    unsigned char out_fence_fd;
+    int out_fence_fd;
 
 	unsigned char reservr[128];
 };

@@ -1106,8 +1106,8 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
     ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_x_r, rgaReg.gr_color.gr_x_g, rgaReg.gr_color.gr_x_b);
     ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_y_r, rgaReg.gr_color.gr_y_g, rgaReg.gr_color.gr_y_b);
 #else
-    ALOGE("render_mode=%d rotate_mode=%d",
-          rgaReg.render_mode, rgaReg.rotate_mode);
+    ALOGE("render_mode = %d rotate_mode = %d in_fence_fd = %d",
+          rgaReg.render_mode, rgaReg.rotate_mode, rgaReg.in_fence_fd);
     ALOGE("src:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
           rgaReg.src.yrgb_addr, rgaReg.src.uv_addr, rgaReg.src.v_addr,
           rgaReg.src.x_offset, rgaReg.src.y_offset,
