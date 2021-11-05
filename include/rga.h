@@ -43,18 +43,13 @@ extern "C"
 #define RGA_REG_CMD_LEN     0x1c   /* 28 */
 #define RGA_CMD_BUF_SIZE    0x700  /* 16*28*4 */
 
-
-
 #ifndef ENABLE
 #define ENABLE 1
 #endif
 
-
 #ifndef DISABLE
 #define DISABLE 0
 #endif
-
-
 
 /* RGA process mode enum */
 enum {
@@ -289,9 +284,6 @@ typedef struct MMU {
     unsigned int mmu_flag;     /* [0] mmu enable [1] src_flush [2] dst_flush [3] CMD_flush [4~5] page size*/
 } MMU;
 
-
-
-
 typedef struct COLOR_FILL {
     short gr_x_a;
     short gr_y_a;
@@ -428,117 +420,6 @@ struct rga_req {
 
 	unsigned char reservr[128];
 };
-
-#if 0
-typedef struct TILE_INFO {
-    int64_t matrix[4];
-
-    uint16_t tile_x_num;     /* x axis tile num / tile size is 8x8 pixel */
-    uint16_t tile_y_num;     /* y axis tile num */
-
-    int16_t dst_x_tmp;      /* dst pos x = (xstart - xoff) default value 0 */
-    int16_t dst_y_tmp;      /* dst pos y = (ystart - yoff) default value 0 */
-
-    uint16_t tile_w;
-    uint16_t tile_h;
-    int16_t tile_start_x_coor;
-    int16_t tile_start_y_coor;
-    int32_t tile_xoff;
-    int32_t tile_yoff;
-
-    int32_t tile_temp_xstart;
-    int32_t tile_temp_ystart;
-
-    /* src tile incr */
-    int32_t x_dx;
-    int32_t x_dy;
-    int32_t y_dx;
-    int32_t y_dy;
-
-    mdp_img_act dst_ctrl;
-
-}
-TILE_INFO;
-#endif
-
-#if 0
-
-#define RGA_BASE                 0x10114000
-
-//General Registers
-#define RGA_SYS_CTRL             0x000
-#define RGA_CMD_CTRL             0x004
-#define RGA_CMD_ADDR             0x008
-#define RGA_STATUS               0x00c
-#define RGA_INT                  0x010
-#define RGA_AXI_ID               0x014
-#define RGA_MMU_STA_CTRL         0x018
-#define RGA_MMU_STA              0x01c
-
-//Command code start
-#define RGA_MODE_CTRL            0x100
-
-//Source Image Registers
-#define RGA_SRC_Y_MST            0x104
-#define RGA_SRC_CB_MST           0x108
-#define RGA_MASK_READ_MST        0x108  //repeat
-#define RGA_SRC_CR_MST           0x10c
-#define RGA_SRC_VIR_INFO         0x110
-#define RGA_SRC_ACT_INFO         0x114
-#define RGA_SRC_X_PARA           0x118
-#define RGA_SRC_Y_PARA           0x11c
-#define RGA_SRC_TILE_XINFO       0x120
-#define RGA_SRC_TILE_YINFO       0x124
-#define RGA_SRC_TILE_H_INCR      0x128
-#define RGA_SRC_TILE_V_INCR      0x12c
-#define RGA_SRC_TILE_OFFSETX     0x130
-#define RGA_SRC_TILE_OFFSETY     0x134
-#define RGA_SRC_BG_COLOR         0x138
-#define RGA_SRC_FG_COLOR         0x13c
-#define RGA_LINE_DRAWING_COLOR   0x13c  //repeat
-#define RGA_SRC_TR_COLOR0        0x140
-#define RGA_CP_GR_A              0x140  //repeat
-#define RGA_SRC_TR_COLOR1        0x144
-#define RGA_CP_GR_B              0x144  //repeat
-
-#define RGA_LINE_DRAW            0x148
-#define RGA_PAT_START_POINT      0x148  //repeat
-
-//Destination Image Registers
-#define RGA_DST_MST              0x14c
-#define RGA_LUT_MST              0x14c  //repeat
-#define RGA_PAT_MST              0x14c  //repeat
-#define RGA_LINE_DRAWING_MST     0x14c  //repeat
-
-#define RGA_DST_VIR_INFO         0x150
-
-#define RGA_DST_CTR_INFO         0x154
-#define RGA_LINE_DRAW_XY_INFO    0x154  //repeat
-
-//Alpha/ROP Registers
-#define RGA_ALPHA_CON            0x158
-
-#define RGA_PAT_CON              0x15c
-#define RGA_DST_VIR_WIDTH_PIX    0x15c  //repeat
-
-#define RGA_ROP_CON0             0x160
-#define RGA_CP_GR_G              0x160  //repeat
-#define RGA_PRESCL_CB_MST        0x160  //repeat
-
-#define RGA_ROP_CON1             0x164
-#define RGA_CP_GR_R              0x164  //repeat
-#define RGA_PRESCL_CR_MST        0x164  //repeat
-
-//MMU Register
-#define RGA_FADING_CON           0x168
-#define RGA_MMU_CTRL             0x168  //repeat
-
-#define RGA_MMU_TBL              0x16c  //repeat
-
-
-#define RGA_BLIT_COMPLETE_EVENT 1
-
-#endif
 
 int
 RGA_set_src_act_info(
