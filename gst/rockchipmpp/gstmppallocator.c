@@ -164,7 +164,8 @@ gst_mpp_allocator_import_mppbuf (GstAllocator * allocator, MppBuffer mbuf)
     mem = gst_mpp_allocator_import_dmafd (allocator, fd, size);
     quark = gst_mpp_ext_buffer_quark ();
   } else {
-    mem = gst_dmabuf_allocator_alloc (allocator, dup (fd), size);
+    mem = gst_fd_allocator_alloc (allocator, dup (fd), size,
+        GST_FD_MEMORY_FLAG_KEEP_MAPPED);
     quark = gst_mpp_buffer_quark ();
   }
 
