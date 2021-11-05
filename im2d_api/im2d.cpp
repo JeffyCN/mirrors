@@ -997,7 +997,8 @@ IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect r
             (info.width % 2)  || (info.height % 2) ||
             (rect.x % 2) || (rect.y % 2) ||
             (rect.width % 2) || (rect.height % 2)) {
-            imSetErrorMsg("%s, Error yuv not align to 2, rect[x,y,w,h] = [%d, %d, %d, %d], "
+            imSetErrorMsg("%s, Error yuv not align to 2 or width stride not align to 4, "
+                          "rect[x,y,w,h] = [%d, %d, %d, %d], "
                           "wstride = %d, hstride = %d, format = 0x%x(%s)\n%s",
                           name, rect.x, rect.y, info.width, info.height, info.wstride, info.hstride,
                           info.format, translate_format_str(info.format),
