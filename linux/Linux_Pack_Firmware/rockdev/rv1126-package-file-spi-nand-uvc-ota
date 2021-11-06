@@ -6,8 +6,8 @@ bootloader	Image/MiniLoaderAll.bin
 parameter	Image/parameter.txt
 #trust       Image/trust.img
 #uboot       Image/uboot.img
-boot        Image/boot.img
-rootfs      Image/rootfs.img
+boot_a        Image/boot.img
+system_a      Image/rootfs.img
 #recovery	Image/recovery.img
 #oem			Image/oem.img
 #userdata    Image/userdata.img
