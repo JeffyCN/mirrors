@@ -27,7 +27,10 @@
 #include <errno.h>
 #include <time.h>
 
-#include <gui/ISurfaceComposer.h>
+#include <ui/PixelFormat.h>
+#include <ui/GraphicBuffer.h>
+#include <ui/GraphicBufferMapper.h>
+#include <hardware/hardware.h>
 #include <RockchipRga.h>
 #include "RgaUtils.h"
 #include "core/NormalRga.h"
@@ -42,10 +45,10 @@ sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format)
 {
 #ifdef ANDROID_7_DRM
     sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format,
-        GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_HW_FB | GRALLOC_USAGE_TO_USE_PHY_CONT));
+        GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_HW_FB));
 #else
     sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format,
-        GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_TO_USE_PHY_CONT));
+        GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN));
 #endif
 
     if (gb->initCheck())

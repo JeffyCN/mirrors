@@ -17,8 +17,6 @@
  * limitations under the License.
  */
 
-#include "im2d_api/im2d.hpp"
-#include "args.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,12 +27,15 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#include "RgaUtils.h"
-#include "rga.h"
-
 #ifdef ANDROID
 #include <ui/GraphicBuffer.h>
 #endif
+
+#include "im2d_api/im2d.hpp"
+#include "RockchipRga.h"
+#include "RgaUtils.h"
+#include "rga.h"
+#include "args.h"
 
 #define ERROR               -1
 

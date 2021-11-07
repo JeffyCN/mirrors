@@ -43,12 +43,8 @@
 #include <utils/Log.h>
 #include <cutils/properties.h>
 #include <ui/PixelFormat.h>
-#include <ui/Rect.h>
-#include <ui/Region.h>
-#include <ui/DisplayInfo.h>
 #include <ui/GraphicBuffer.h>
 #include <ui/GraphicBufferMapper.h>
-#include <gui/ISurfaceComposer.h>
 #include <hardware/hardware.h>
 
 #include <EGL/egl.h>
