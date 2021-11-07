@@ -48,11 +48,7 @@
 #include <utils/Mutex.h>
 #include <utils/Singleton.h>
 #include <ui/PixelFormat.h>
-#include <ui/Rect.h>
-#include <ui/Region.h>
-#include <ui/DisplayInfo.h>
 #include <ui/GraphicBufferMapper.h>
-#include <gui/ISurfaceComposer.h>
 #endif
 
 #include "RockchipRga.h"
