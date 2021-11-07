@@ -27,6 +27,7 @@ func Defaults(ctx android.LoadHookContext) {
             Cflags []string
             Shared_libs []string
             Include_dirs []string
+            Header_libs []string
             Double_loadable *bool
         }
 
@@ -35,6 +36,7 @@ func Defaults(ctx android.LoadHookContext) {
         p.Cflags = getCflags(ctx, sdkVersion)
         p.Shared_libs = getSharedLibs(ctx, sdkVersion)
         p.Include_dirs = getIncludeDirs(ctx, sdkVersion)
+        p.Header_libs = getHeaders(ctx, sdkVersion)
 
         double_loadable := true
         p.Double_loadable = &double_loadable
@@ -128,3 +130,14 @@ func getIncludeDirs(ctx android.BaseContext, sdkVersion int) ([]string) {
 
     return dirs
 }
+
+func getHeaders(ctx android.BaseContext, sdkVersion int) ([]string) {
+    var headers []string
+
+    if (sdkVersion >= 31 ) {
+        headers = append(headers, "libhardware_rockchip_headers")
+    }
+
+    return headers
+}
+

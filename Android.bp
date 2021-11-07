@@ -47,6 +47,7 @@ cc_library_shared {
     header_libs: [
         "gl_headers",
         "libgui_headers",
+        "libhardware_headers",
         "libbinder_headers",
         "liblog_headers",
     ],
@@ -66,10 +67,7 @@ cc_library_shared {
     include_dirs: [
         "external/libdrm",
         "external/libdrm/include/drm",
-        "hardware/libhardware/include/hardware",
-        "hardware/libhardware/modules/gralloc",
         "frameworks/native/libs/nativewindow/include",
-        "system/core/liblog/include",
         "system/core/libsync",
         "system/core/libsync/include",
     ],

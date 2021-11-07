@@ -58,6 +58,10 @@
 
 #include <drm_fourcc.h>
 
+#ifdef ANDROID_12
+#include <hardware/hardware_rockchip.h>
+#endif
+
 #include "platform_gralloc4.h"
 
 #include <android/hardware/graphics/mapper/4.0/IMapper.h>

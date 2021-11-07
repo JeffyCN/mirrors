@@ -29,6 +29,11 @@
 #include <hardware/hardware.h>
 #include <system/graphics.h>
 #include <cutils/native_handle.h>
+
+#ifdef ANDROID_12
+#include <hardware/hardware_rockchip.h>
+#endif
+
 #endif
 
 #ifndef ANDROID /* LINUX */
