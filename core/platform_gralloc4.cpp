@@ -50,7 +50,10 @@
  * ---------------------------------------------------------------------------------------------------------
  */
 
+#ifdef LOG_TAG
+#undef LOG_TAG
 #define LOG_TAG "platform_gralloc4"
+#endif
 #define ENABLE_DEBUG_LOG
 #include <custom_log.h>
 
