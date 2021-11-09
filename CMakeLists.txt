@@ -26,7 +26,8 @@ endif()
 if(CMAKE_BUILD_TARGET STREQUAL cmake_linux)
     message("RGA build with cmake")
     add_compile_options(-DLINUX)
-    set(CMAKE_CXX_FLAGS "-std=c++11 -O2 -pthread")
+	# TO support pass external CMAKE_CXX_FLAGS
+	set(CMAKE_CXX_FLAGS_EXT "-std=c++11 -O2 -pthread")
 endif()
 
 if (NOT DEFINED CMAKE_C_COMPILER)
@@ -70,7 +71,7 @@ set(IM2D_SRCS
     core/RgaUtils.cpp
     im2d_api/im2d.cpp)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUN_NEED_GL")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_EXT} -DUN_NEED_GL")
 
 if(CMAKE_BUILD_TARGET STREQUAL ndk)
     string(REPLACE "-DANDROID" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -95,6 +96,15 @@ elseif (BUILD_WITH_LIBDRM STREQUAL true)
 endif()
 
 target_link_libraries(rgaImDemo rga)
+
+# If cmake version is 3.5.1, FIXIT
+if (NOT DEFINED CMAKE_INSTALL_LIBDIR)
+	set(CMAKE_INSTALL_LIBDIR lib)
+endif()
+
+if (NOT DEFINED CMAKE_INSTALL_BINDIR)
+	set(CMAKE_INSTALL_BINDIR bin)
+endif()
 
 install(TARGETS rga rgaImDemo
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
