@@ -1,5 +1,17 @@
 # 更新日志
 
+## 1.4.0 （2021-11-10）
+
+### 新增
+
+- 支持Android 12编译。
+
+### 变更
+
+- RockchipRga接口demo目录变更：
+
+  librga/sample/ -> librga/sample/legacy/。
+
 ## 1.3.1 （2021-11-05）
 
 ### 新增
