@@ -154,7 +154,7 @@ float get_bpp_from_format(int format) {
         case HAL_PIXEL_FORMAT_RGBA_8888:
         case HAL_PIXEL_FORMAT_RGBX_8888:
         case HAL_PIXEL_FORMAT_BGRA_8888:
-            bpp = 5;
+            bpp = 4;
             break;
         case HAL_PIXEL_FORMAT_YCrCb_420_SP:
         case HAL_PIXEL_FORMAT_YCrCb_NV12:
@@ -231,7 +231,7 @@ float get_bpp_from_format(int format) {
         case RK_FORMAT_XRGB_8888:
         case RK_FORMAT_ABGR_8888:
         case RK_FORMAT_XBGR_8888:
-            bpp = 5;
+            bpp = 4;
             break;
         default:
             printf("Is unsupport format now, please fix \n");
@@ -295,7 +295,7 @@ int get_buf_from_file_FBCD(void *buf, int f, int sw, int sh, int index) {
         fprintf(stderr, "Could not open %s\n", filePath);
         return -EINVAL;
     }
-    fread(buf, get_buf_size_by_w_h_f(sw, sh, f) + sw * sh / 16, 1, file);
+    fread(buf, get_buf_size_by_w_h_f(sw, sh, f) * 1.5, 1, file);
     fclose(file);
 
     return 0;
@@ -349,7 +349,7 @@ int output_buf_data_to_file_FBCD(void *buf, int f, int sw, int sh, int index) {
         return false;
     } else
         fprintf(stderr, "open %s and write ok\n", filePath);
-    fwrite(buf, get_buf_size_by_w_h_f(sw, sh, f) + sw * sh / 16, 1, file);
+    fwrite(buf, get_buf_size_by_w_h_f(sw, sh, f) * 1.5, 1, file);
     fclose(file);
 
     return 0;
