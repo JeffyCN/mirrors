@@ -19,7 +19,7 @@ func DefaultsFactory() (android.Module) {
 }
 
 func Defaults(ctx android.LoadHookContext) {
-    sdkVersion := ctx.AConfig().PlatformSdkVersionInt()
+    sdkVersion := ctx.AConfig().PlatformSdkVersion().FinalOrFutureInt()
 
     if (sdkVersion >= 29 ) {
         type props struct {
