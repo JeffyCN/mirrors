@@ -2007,14 +2007,16 @@ IM_API IM_STATUS improcess_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pa
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS imsync(int out_fence_fd) {
+IM_API IM_STATUS imsync(int fence_fd) {
     int ret = 0;
 
-    ret = sync_wait(out_fence_fd, -1);
+    ret = sync_wait(fence_fd, -1);
     if (ret) {
-        ALOGE("Failed to wait for out fence = %d, ret = %d", out_fence_fd, ret);
+        ALOGE("Failed to wait for out fence = %d, ret = %d", fence_fd, ret);
         return IM_STATUS_FAILED;
     }
+
+    close(fence_fd);
 
     return IM_STATUS_SUCCESS;
 }
