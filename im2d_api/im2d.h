@@ -72,10 +72,19 @@ typedef enum {
 } IM_USAGE;
 
 typedef enum {
-    IM_RASTER_MODE = 1 << 0,
-    IM_FBCD_MODE = 1 << 1,
-    IM_TILE_MODE = 1 << 2,
+    IM_RASTER_MODE  = 1 << 0,
+    IM_AFBC_MODE    = 1 << 1,
+    IM_TILE_MODE    = 1 << 2,
 } IM_RD_MODE;
+
+typedef enum {
+    IM_SCHEDULER_RGA3_CORE0 = 1 << 0,
+    IM_SCHEDULER_RGA3_CORE1 = 1 << 1,
+    IM_SCHEDULER_RGA2_CORE0 = 1 << 2,
+    IM_SCHEDULER_RGA3_DEFAULT = IM_SCHEDULER_RGA3_CORE0,
+    IM_SCHEDULER_RGA2_DEFAULT = IM_SCHEDULER_RGA2_CORE0,
+    IM_SCHEDULER_DEFAULT = 0,
+} IM_SCHEDULER_CORE;
 
 typedef enum {
     IM_ROP_AND                  = 0x88,
