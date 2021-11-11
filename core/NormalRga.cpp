@@ -1315,16 +1315,11 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     }
 
 	/* rga3 rd_mode */
-	rgaReg.src.rd_mode = src->rd_mode;
-	rgaReg.dst.rd_mode = dst->rd_mode;
+    /* If rd_mode is not configured, raster mode is executed by default. */
+	rgaReg.src.rd_mode = src->rd_mode ? src->rd_mode : raster_mode;
+	rgaReg.dst.rd_mode = dst->rd_mode ? dst->rd_mode : raster_mode;
 	if (src1)
-		rgaReg.pat.rd_mode = src1->rd_mode;
-
-	if (rgaReg.src.rd_mode == 0 || rgaReg.dst.rd_mode == 0 || rgaReg.pat.rd_mode ==0) {
-		rgaReg.src.rd_mode = 1;
-		rgaReg.dst.rd_mode = 1;
-		rgaReg.pat.rd_mode = 1;
-	}
+		rgaReg.pat.rd_mode = src1->rd_mode ? src1->rd_mode : raster_mode;
 
     /*color key*/
     /* if need this funtion, maybe should patch the rga driver. */
