@@ -117,9 +117,14 @@ enum {
     bicubic  = 0x2,     /* x_mirror  */
 };
 
+#define RGA_SCHED_PRIORITY_DEFAULT 0
+#define RGA_SCHED_PRIORITY_MAX 6
 
-
-
+enum {
+	RGA3_SCHEDULER_CORE0		= 1 << 0,
+	RGA3_SCHEDULER_CORE1		= 1 << 1,
+	RGA2_SCHEDULER_CORE0		= 1 << 2,
+};
 
 /*
 //          Alpha    Red     Green   Blue
