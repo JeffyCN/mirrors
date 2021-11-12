@@ -33,7 +33,6 @@ G_BEGIN_DECLS;
 
 #define GST_TYPE_MPP_ENC (gst_mpp_enc_get_type())
 G_DECLARE_FINAL_TYPE (GstMppEnc, gst_mpp_enc, GST, MPP_ENC, GstVideoEncoder);
-typedef struct _GstMppDec GstMppDec;
 
 #define GST_MPP_ENC(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
     GST_TYPE_MPP_ENC, GstMppEnc))

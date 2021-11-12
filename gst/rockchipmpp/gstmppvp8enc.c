@@ -30,8 +30,8 @@
 
 #include "gstmppvp8enc.h"
 
-#define GST_MPP_Vp8_ENC(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
-    GST_TYPE_MPP_Vp8_ENC, GstMppVp8Enc))
+#define GST_MPP_VP8_ENC(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
+    GST_TYPE_MPP_VP8_ENC, GstMppVp8Enc))
 
 #define GST_CAT_DEFAULT mpp_vp8_enc_debug
 GST_DEBUG_CATEGORY (GST_CAT_DEFAULT);
@@ -83,7 +83,7 @@ gst_mpp_vp8_enc_set_property (GObject * object,
     guint prop_id, const GValue * value, GParamSpec * pspec)
 {
   GstVideoEncoder *encoder = GST_VIDEO_ENCODER (object);
-  GstMppVp8Enc *self = GST_MPP_Vp8_ENC (encoder);
+  GstMppVp8Enc *self = GST_MPP_VP8_ENC (encoder);
   GstMppEnc *mppenc = GST_MPP_ENC (encoder);
 
   switch (prop_id) {
@@ -124,7 +124,7 @@ gst_mpp_vp8_enc_get_property (GObject * object,
     guint prop_id, GValue * value, GParamSpec * pspec)
 {
   GstVideoEncoder *encoder = GST_VIDEO_ENCODER (object);
-  GstMppVp8Enc *self = GST_MPP_Vp8_ENC (encoder);
+  GstMppVp8Enc *self = GST_MPP_VP8_ENC (encoder);
 
   switch (prop_id) {
     case PROP_QP_INIT:
@@ -145,7 +145,7 @@ gst_mpp_vp8_enc_get_property (GObject * object,
 static gboolean
 gst_mpp_vp8_enc_apply_properties (GstVideoEncoder * encoder)
 {
-  GstMppVp8Enc *self = GST_MPP_Vp8_ENC (encoder);
+  GstMppVp8Enc *self = GST_MPP_VP8_ENC (encoder);
   GstMppEnc *mppenc = GST_MPP_ENC (encoder);
 
   if (!mppenc->prop_dirty)
