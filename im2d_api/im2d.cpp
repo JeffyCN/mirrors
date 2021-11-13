@@ -2011,6 +2011,7 @@ IM_API IM_STATUS improcess_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pa
 }
 
 IM_API IM_STATUS imsync(int fence_fd) {
+#ifdef ANDROID
     int ret = 0;
 
     ret = sync_wait(fence_fd, -1);
@@ -2022,5 +2023,8 @@ IM_API IM_STATUS imsync(int fence_fd) {
     close(fence_fd);
 
     return IM_STATUS_SUCCESS;
+#else
+    return IM_STATUS_NOT_SUPPORTED;
+#endif
 }
 
