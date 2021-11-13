@@ -1347,14 +1347,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 #endif
 #endif
 
-#ifdef ANDROID
-#ifndef RK3368
-#ifdef  ANDROID_7_DRM
-    /* if Android 7.0 and above using drm should configure this parameter. */
-    rgaReg.render_mode |= RGA_BUF_GEM_TYPE_DMA;
-#endif
-#endif
-#endif
     if(src->sync_mode == RGA_BLIT_ASYNC || dst->sync_mode == RGA_BLIT_ASYNC) {
         sync_mode = RGA_BLIT_ASYNC;
     }
@@ -1591,12 +1583,6 @@ int RgaCollorFill(rga_info *dst) {
 #ifdef LINUX
 #if __DEBUG
     NormalRgaLogOutRgaReq(rgaReg);
-#endif
-#endif
-
-#ifndef RK3368
-#ifdef  ANDROID_7_DRM
-    rgaReg.render_mode |= RGA_BUF_GEM_TYPE_DMA;
 #endif
 #endif
 

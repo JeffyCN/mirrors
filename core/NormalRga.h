@@ -46,11 +46,6 @@
 
 #include "NormalRgaContext.h"
 
-#ifdef ANDROID_7_DRM
-#define RGA_BUF_GEM_TYPE_MASK      0xC0
-#define RGA_BUF_GEM_TYPE_DMA       0x80
-#endif
-
 int         RgaInit(void **ctx);
 int         RgaDeInit(void **ctx);
 int         RgaBlit(rga_info_t *src, rga_info_t *dst, rga_info_t *src1);
