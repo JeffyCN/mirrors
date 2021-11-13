@@ -1974,9 +1974,9 @@ IM_API IM_STATUS improcess_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pa
     else if (usage & IM_SYNC)
         dstinfo.sync_mode = RGA_BLIT_SYNC;
 
-    srcinfo.in_fence_fd = in_fence_fd;
-    srcinfo.core = opt->core;
-    srcinfo.priority = opt->priority;
+    dstinfo.in_fence_fd = in_fence_fd;
+    dstinfo.core = opt->core;
+    dstinfo.priority = opt->priority;
 
     if (usage & IM_COLOR_FILL) {
         dstinfo.color = dst.color;

@@ -1351,9 +1351,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
         sync_mode = RGA_BLIT_ASYNC;
     }
 
-	rgaReg.in_fence_fd = src->in_fence_fd;
-	rgaReg.core = src->core;
-	rgaReg.priority = src->priority;
+	rgaReg.in_fence_fd = dst->in_fence_fd;
+	rgaReg.core = dst->core;
+	rgaReg.priority = dst->priority;
 
     /* using sync to pass config to rga driver. */
     if(ioctl(ctx->rgaFd, sync_mode, &rgaReg)) {
@@ -1589,6 +1589,10 @@ int RgaCollorFill(rga_info *dst) {
     if(dst->sync_mode == RGA_BLIT_ASYNC) {
         sync_mode = dst->sync_mode;
     }
+
+	rgaReg.in_fence_fd = dst->in_fence_fd;
+	rgaReg.core = dst->core;
+	rgaReg.priority = dst->priority;
 
     if(ioctl(ctx->rgaFd, sync_mode, &rgaReg)) {
         printf(" %s(%d) RGA_COLORFILL fail: %s",__FUNCTION__, __LINE__,strerror(errno));
@@ -2139,6 +2143,10 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
             rgaReg.palette_mode = 3;
             break;
     }
+
+    rgaReg.in_fence_fd = dst->in_fence_fd;
+	rgaReg.core = dst->core;
+	rgaReg.priority = dst->priority;
 
     if (!(lutFd == -1 && lutBuf == NULL)) {
         rgaReg.fading.g = 0xff;
