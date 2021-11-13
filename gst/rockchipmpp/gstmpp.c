@@ -39,160 +39,106 @@
 GST_DEBUG_CATEGORY_STATIC (mpp_debug);
 #define GST_CAT_DEFAULT mpp_debug
 
-#define MPP_CASE_RETURN(a, b) case a: return b
+struct gst_mpp_format
+{
+  GstVideoFormat gst_format;
+  MppFrameFormat mpp_format;
+#ifdef HAVE_RGA
+  RgaSURF_FORMAT rga_format;
+#endif
+  gint stride;
+  gboolean is_yuv;
+};
+
+#ifdef HAVE_RGA
+#define GST_MPP_FORMAT(gst, mpp, rga, stride, yuv) \
+  { GST_VIDEO_FORMAT_ ## gst, MPP_FMT_ ## mpp, RK_FORMAT_ ## rga, stride, yuv }
+#else
+#define GST_MPP_FORMAT(gst, mpp, rga, stride, yuv) \
+  { GST_VIDEO_FORMAT_ ## gst, MPP_FMT_ ## mpp, stride, yuv}
+#endif
+
+struct gst_mpp_format gst_mpp_formats[] = {
+  GST_MPP_FORMAT (I420, YUV420P, YCbCr_420_P, 1, 1),
+  GST_MPP_FORMAT (YV12, BUTT, YCrCb_420_P, 1, 1),
+  GST_MPP_FORMAT (NV12, YUV420SP, YCbCr_420_SP, 1, 1),
+  GST_MPP_FORMAT (NV21, YUV420SP_VU, YCrCb_420_SP, 1, 1),
+#ifdef HAVE_NV12_10LE40
+  GST_MPP_FORMAT (NV12_10LE40, YUV420SP_10BIT, YCbCr_420_SP_10B, 1, 1),
+#else
+  GST_MPP_FORMAT (UNKNOWN, YUV420SP_10BIT, YCbCr_420_SP_10B, 1, 1),
+#endif
+  GST_MPP_FORMAT (Y42B, YUV422P, YCbCr_422_P, 1, 1),
+  GST_MPP_FORMAT (NV16, YUV422SP, YCbCr_422_SP, 1, 1),
+  GST_MPP_FORMAT (NV61, YUV422SP_VU, YCrCb_422_SP, 1, 1),
+  GST_MPP_FORMAT (YUY2, YUV422_YUYV, UNKNOWN, 1, 1),
+  GST_MPP_FORMAT (YVYU, YUV422_YVYU, UNKNOWN, 1, 1),
+  GST_MPP_FORMAT (UYVY, YUV422_UYVY, UNKNOWN, 1, 1),
+  GST_MPP_FORMAT (VYUY, YUV422_VYUY, UNKNOWN, 1, 1),
+  GST_MPP_FORMAT (RGB16, RGB565LE, UNKNOWN, 2, 0),
+  GST_MPP_FORMAT (BGR16, BGR565LE, RGB_565, 2, 0),
+  GST_MPP_FORMAT (RGB, RGB888, RGB_888, 3, 0),
+  GST_MPP_FORMAT (BGR, BGR888, BGR_888, 3, 0),
+  GST_MPP_FORMAT (ARGB, ARGB8888, UNKNOWN, 4, 0),
+  GST_MPP_FORMAT (ABGR, ABGR8888, UNKNOWN, 4, 0),
+  GST_MPP_FORMAT (RGBA, RGBA8888, RGBA_8888, 4, 0),
+  GST_MPP_FORMAT (BGRA, BGRA8888, BGRA_8888, 4, 0),
+  GST_MPP_FORMAT (xRGB, ARGB8888, UNKNOWN, 4, 0),
+  GST_MPP_FORMAT (xBGR, ABGR8888, UNKNOWN, 4, 0),
+  GST_MPP_FORMAT (RGBx, RGBA8888, RGBX_8888, 4, 0),
+  GST_MPP_FORMAT (BGRx, BGRA8888, BGRX_8888, 4, 0),
+};
+
+#define GST_MPP_GET_FORMAT(type, format) ({ \
+  struct gst_mpp_format *_tmp; \
+  for (guint i = 0; i < ARRAY_SIZE (gst_mpp_formats) || (_tmp = NULL); i++) { \
+    _tmp = &gst_mpp_formats[i]; \
+    if (_tmp->type ## _format == format) break;\
+  }; _tmp; \
+})
 
 GstVideoFormat
 gst_mpp_mpp_format_to_gst_format (MppFrameFormat mpp_format)
 {
-  switch ((gint) mpp_format) {
-      MPP_CASE_RETURN (MPP_FMT_YUV420P, GST_VIDEO_FORMAT_I420);
-      MPP_CASE_RETURN (MPP_FMT_YUV420SP, GST_VIDEO_FORMAT_NV12);
-      MPP_CASE_RETURN (MPP_FMT_YUV420SP_VU, GST_VIDEO_FORMAT_NV21);
-#ifdef HAVE_NV12_10LE40
-      MPP_CASE_RETURN (MPP_FMT_YUV420SP_10BIT, GST_VIDEO_FORMAT_NV12_10LE40);
-#endif
-      MPP_CASE_RETURN (MPP_FMT_YUV422P, GST_VIDEO_FORMAT_Y42B);
-      MPP_CASE_RETURN (MPP_FMT_YUV422SP, GST_VIDEO_FORMAT_NV16);
-      MPP_CASE_RETURN (MPP_FMT_YUV422SP_VU, GST_VIDEO_FORMAT_NV61);
-      MPP_CASE_RETURN (MPP_FMT_YUV422_YUYV, GST_VIDEO_FORMAT_YUY2);
-      MPP_CASE_RETURN (MPP_FMT_YUV422_YVYU, GST_VIDEO_FORMAT_YVYU);
-      MPP_CASE_RETURN (MPP_FMT_YUV422_UYVY, GST_VIDEO_FORMAT_UYVY);
-      MPP_CASE_RETURN (MPP_FMT_YUV422_VYUY, GST_VIDEO_FORMAT_VYUY);
-      MPP_CASE_RETURN (MPP_FMT_RGB565LE, GST_VIDEO_FORMAT_RGB16);
-      MPP_CASE_RETURN (MPP_FMT_BGR565LE, GST_VIDEO_FORMAT_BGR16);
-      MPP_CASE_RETURN (MPP_FMT_RGB888, GST_VIDEO_FORMAT_RGB);
-      MPP_CASE_RETURN (MPP_FMT_BGR888, GST_VIDEO_FORMAT_BGR);
-      MPP_CASE_RETURN (MPP_FMT_ARGB8888, GST_VIDEO_FORMAT_ARGB);
-      MPP_CASE_RETURN (MPP_FMT_ABGR8888, GST_VIDEO_FORMAT_ABGR);
-      MPP_CASE_RETURN (MPP_FMT_RGBA8888, GST_VIDEO_FORMAT_RGBA);
-      MPP_CASE_RETURN (MPP_FMT_BGRA8888, GST_VIDEO_FORMAT_BGRA);
-    default:
-      return GST_VIDEO_FORMAT_UNKNOWN;
-  }
+  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (mpp, mpp_format);
+  return format ? format->gst_format : GST_VIDEO_FORMAT_UNKNOWN;
 }
 
 MppFrameFormat
-gst_mpp_gst_format_to_mpp_format (GstVideoFormat format)
+gst_mpp_gst_format_to_mpp_format (GstVideoFormat gst_format)
 {
-  switch (format) {
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_I420, MPP_FMT_YUV420P);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_NV12, MPP_FMT_YUV420SP);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_NV21, MPP_FMT_YUV420SP_VU);
-#ifdef HAVE_NV12_10LE40
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_NV12_10LE40, MPP_FMT_YUV420SP_10BIT);
-#endif
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_Y42B, MPP_FMT_YUV422P);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_NV16, MPP_FMT_YUV422SP);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_NV61, MPP_FMT_YUV422SP_VU);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_YUY2, MPP_FMT_YUV422_YUYV);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_YVYU, MPP_FMT_YUV422_YVYU);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_UYVY, MPP_FMT_YUV422_UYVY);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_VYUY, MPP_FMT_YUV422_VYUY);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_RGB16, MPP_FMT_RGB565LE);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGR16, MPP_FMT_BGR565LE);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_RGB, MPP_FMT_RGB888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGR, MPP_FMT_BGR888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_ARGB, MPP_FMT_ARGB8888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_ABGR, MPP_FMT_ABGR8888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_RGBA, MPP_FMT_RGBA8888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGRA, MPP_FMT_BGRA8888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_xRGB, MPP_FMT_ARGB8888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_xBGR, MPP_FMT_ABGR8888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_RGBx, MPP_FMT_RGBA8888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGRx, MPP_FMT_BGRA8888);
-    default:
-      return MPP_FMT_BUTT;
-  }
+  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (gst, gst_format);
+  return format ? format->mpp_format : MPP_FMT_BUTT;
 }
 
 #ifdef HAVE_RGA
 static RgaSURF_FORMAT
 gst_mpp_mpp_format_to_rga_format (MppFrameFormat mpp_format)
 {
-  switch ((gint) mpp_format) {
-      MPP_CASE_RETURN (MPP_FMT_YUV420P, RK_FORMAT_YCbCr_420_P);
-      MPP_CASE_RETURN (MPP_FMT_YUV420SP, RK_FORMAT_YCbCr_420_SP);
-      MPP_CASE_RETURN (MPP_FMT_YUV420SP_VU, RK_FORMAT_YCrCb_420_SP);
-      MPP_CASE_RETURN (MPP_FMT_YUV420SP_10BIT, RK_FORMAT_YCbCr_420_SP_10B);
-      MPP_CASE_RETURN (MPP_FMT_YUV422P, RK_FORMAT_YCbCr_422_P);
-      MPP_CASE_RETURN (MPP_FMT_YUV422SP, RK_FORMAT_YCbCr_422_SP);
-      MPP_CASE_RETURN (MPP_FMT_YUV422SP_VU, RK_FORMAT_YCrCb_422_SP);
-      MPP_CASE_RETURN (MPP_FMT_BGR565LE, RK_FORMAT_RGB_565);
-      MPP_CASE_RETURN (MPP_FMT_BGR888, RK_FORMAT_BGR_888);
-      MPP_CASE_RETURN (MPP_FMT_RGB888, RK_FORMAT_RGB_888);
-      MPP_CASE_RETURN (MPP_FMT_BGRA8888, RK_FORMAT_BGRA_8888);
-      MPP_CASE_RETURN (MPP_FMT_RGBA8888, RK_FORMAT_RGBA_8888);
-    default:
-      return RK_FORMAT_UNKNOWN;
-  }
+  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (mpp, mpp_format);
+  return format ? format->rga_format : RK_FORMAT_UNKNOWN;
 }
 
 static RgaSURF_FORMAT
-gst_mpp_gst_format_to_rga_format (GstVideoFormat format)
+gst_mpp_gst_format_to_rga_format (GstVideoFormat gst_format)
 {
-  switch (format) {
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_I420, RK_FORMAT_YCbCr_420_P);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_YV12, RK_FORMAT_YCrCb_420_P);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_NV12, RK_FORMAT_YCbCr_420_SP);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_NV21, RK_FORMAT_YCrCb_420_SP);
-#ifdef HAVE_NV12_10LE40
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_NV12_10LE40,
-          RK_FORMAT_YCbCr_420_SP_10B);
-#endif
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_Y42B, RK_FORMAT_YCbCr_422_P);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_NV16, RK_FORMAT_YCbCr_422_SP);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_NV61, RK_FORMAT_YCrCb_422_SP);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGR16, RK_FORMAT_RGB_565);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGR, RK_FORMAT_BGR_888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_RGB, RK_FORMAT_RGB_888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGRA, RK_FORMAT_BGRA_8888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_RGBA, RK_FORMAT_RGBA_8888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_BGRx, RK_FORMAT_BGRX_8888);
-      MPP_CASE_RETURN (GST_VIDEO_FORMAT_RGBx, RK_FORMAT_RGBX_8888);
-    default:
-      return RK_FORMAT_UNKNOWN;
-  }
+  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (gst, gst_format);
+  return format ? format->rga_format : RK_FORMAT_UNKNOWN;
 }
 
 static gboolean
-gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT format,
+gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT rga_format,
     guint width, guint height, guint hstride, guint vstride)
 {
-  gint pixel_stride;
+  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (rga, rga_format);
 
-  switch (format) {
-    case RK_FORMAT_RGBX_8888:
-    case RK_FORMAT_BGRX_8888:
-    case RK_FORMAT_RGBA_8888:
-    case RK_FORMAT_BGRA_8888:
-      pixel_stride = 4;
-      break;
-    case RK_FORMAT_RGB_888:
-    case RK_FORMAT_BGR_888:
-      pixel_stride = 3;
-      break;
-    case RK_FORMAT_RGB_565:
-      pixel_stride = 2;
-      break;
-    case RK_FORMAT_YCbCr_420_SP_10B:
-    case RK_FORMAT_YCbCr_422_SP:
-    case RK_FORMAT_YCrCb_422_SP:
-    case RK_FORMAT_YCbCr_422_P:
-    case RK_FORMAT_YCrCb_422_P:
-    case RK_FORMAT_YCbCr_420_SP:
-    case RK_FORMAT_YCrCb_420_SP:
-    case RK_FORMAT_YCbCr_420_P:
-    case RK_FORMAT_YCrCb_420_P:
-      pixel_stride = 1;
+  g_assert (format);
+  if (format->is_yuv) {
+    /* RGA requires yuv image rect align to 2 */
+    width &= ~1;
+    height &= ~1;
 
-      /* RGA requires yuv image rect align to 2 */
-      width &= ~1;
-      height &= ~1;
-
-      if (vstride % 2)
-        return FALSE;
-      break;
-    default:
+    if (vstride % 2)
       return FALSE;
   }
 
@@ -200,11 +146,11 @@ gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT format,
     return FALSE;
 
   /* HACK: The MPP might provide pixel stride in some cases */
-  if (hstride / pixel_stride >= width)
-    hstride /= pixel_stride;
+  if (hstride / format->stride >= width)
+    hstride /= format->stride;
 
   info->mmuFlag = 1;
-  rga_set_rect (&info->rect, 0, 0, width, height, hstride, vstride, format);
+  rga_set_rect (&info->rect, 0, 0, width, height, hstride, vstride, rga_format);
   return TRUE;
 }
 
