@@ -474,7 +474,7 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE,
                                                 {0} },
-        { RGA_2_ENHANCE , 8192, 4096, 16,  2,   IM_RGA_SUPPORT_FORMAT_RGB |
+        { RGA_2_ENHANCE , 8192, 8192, 16,  2,   IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_8 |
                                                 IM_RGA_SUPPORT_FORMAT_YUV_10,
