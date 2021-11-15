@@ -1017,7 +1017,6 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
   gboolean expose = buf == NULL;
   guint32 fb_id;
   gint ret;
-  float scl_w, scl_h;
 
   /* We take the flow_lock. If expose is in there we don't want to run
      concurrently from the data flow thread */
@@ -1089,33 +1088,6 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
       &result.h);
   xwindow_calculate_display_ratio (ximagesink, &result.x, &result.y, &result.w,
       &result.h);
-
-  /* Adjust for fake 4k */
-  if (ximagesink->hdisplay * ximagesink->vdisplay > 3800 * 2000 &&
-      XWidthOfScreen (ximagesink->xcontext->screen) *
-      XHeightOfScreen (ximagesink->xcontext->screen) < 3800 * 2000) {
-    result.x *= 2;
-    result.y *= 2;
-    result.w *= 2;
-    result.h *= 2;
-  }
-
-  /* handle hardware limition */
-  scl_w = src.w / result.w;
-  scl_h = src.h / result.h;
-  if (scl_w > 8 || scl_w < 1 / 8 || scl_h > 8 || scl_w < 1 / 8) {
-    /* VOP can't scale up/down more than 8 */
-    goto out;
-  }
-
-  if (scl_w >= 2 && scl_h >= 4) {
-    /* Skip Line */
-    src.h /= 2;
-  }
-  if (src.w >= 4090) {
-    /* drop pixel */
-    src.w = 3840;
-  }
 
   GST_TRACE_OBJECT (ximagesink,
       "drmModeSetPlane at (%i,%i) %ix%i sourcing at (%i,%i) %ix%i",
