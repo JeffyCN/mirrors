@@ -58,12 +58,12 @@ const struct format_table_entry format_table[] = {
     { RK_FORMAT_YCbCr_422_SP,       "cbcr422sp" },
     { RK_FORMAT_YCbCr_422_P,        "cbcr422p" },
     { RK_FORMAT_YCbCr_420_SP,       "nv12" },
-    { RK_FORMAT_YCbCr_420_P,        "crcb420p" },
+    { RK_FORMAT_YCbCr_420_P,        "cbcr420p" },
 
     { RK_FORMAT_YCrCb_422_SP,       "crcb422sp" },
     { RK_FORMAT_YCrCb_422_P,        "crcb422p" },
     { RK_FORMAT_YCrCb_420_SP,       "crcb420sp" },
-    { RK_FORMAT_YCrCb_420_P,        "crcb422p" },
+    { RK_FORMAT_YCrCb_420_P,        "crcb420p" },
 
     { RK_FORMAT_BPP1,               "bpp1" },
     { RK_FORMAT_BPP2,               "bpp2" },
