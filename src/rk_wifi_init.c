@@ -95,6 +95,8 @@ static wifi_device supported_wifi_devices[] = {
 	{"AP6335",		"02d0:4335"},
 	{"AP6255",      "02d0:a9bf"},
 	{"AP6212A",     "02d0:a9a6"},
+	{"AP6275S",     "02d0:aae8"},
+	{"AP6275P",     "14e4:449d"},
 	{"RTL8822BE",	"10ec:b822"},
 };
 
@@ -140,6 +142,7 @@ static wifi_device supported_wifi_devices[] = {
 #define AP6356_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/BCM4356A2.hcd"
 #define AP6398s_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/BCM4359C0.hcd"
 #define AP6236_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/BCM4343B0.hcd"
+#define AP6275_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/BCM4362A2.hcd"
 
 wifi_ko_file_name module_list[] =
 {
@@ -165,6 +168,8 @@ wifi_ko_file_name module_list[] =
 	{"AP6212A",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6212A_BT_FIRMWARE_MODULE_PATH},
 	{"AP6356",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6356_BT_FIRMWARE_MODULE_PATH},
 	{"AP6398S",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6398s_BT_FIRMWARE_MODULE_PATH},
+	{"AP6275S",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6275_BT_FIRMWARE_MODULE_PATH},
+	{"AP6275P",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6275_BT_FIRMWARE_MODULE_PATH},
 	{"APXXX",           BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
 	{"UNKNOW",       DRIVER_MODULE_PATH_UNKNOW, UNKKOWN_DRIVER_MODULE_ARG, ""}
 
