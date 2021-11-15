@@ -1062,75 +1062,31 @@ int NormalRgaInitTables() {
 }
 
 void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
-#if defined(__arm64__) || defined(__aarch64__)
-    ALOGE("render_mode=%d rotate_mode=%d",
-          rgaReg.render_mode, rgaReg.rotate_mode);
+    ALOGE("render_mode = %d rotate_mode = %d in_fence_fd = %d",
+          rgaReg.render_mode, rgaReg.rotate_mode, rgaReg.in_fence_fd);
     ALOGE("src:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
-          rgaReg.src.yrgb_addr, rgaReg.src.uv_addr, rgaReg.src.v_addr,
+          (unsigned long)rgaReg.src.yrgb_addr, (unsigned long)rgaReg.src.uv_addr, (unsigned long)rgaReg.src.v_addr,
           rgaReg.src.x_offset, rgaReg.src.y_offset,
           rgaReg.src.act_w, rgaReg.src.act_h,
           rgaReg.src.vir_w, rgaReg.src.vir_h, rgaReg.src.format, rgaReg.src.rd_mode);
     ALOGE("dst:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
-          rgaReg.dst.yrgb_addr, rgaReg.dst.uv_addr, rgaReg.dst.v_addr,
+          (unsigned long)rgaReg.dst.yrgb_addr, (unsigned long)rgaReg.dst.uv_addr, (unsigned long)rgaReg.dst.v_addr,
           rgaReg.dst.x_offset, rgaReg.dst.y_offset,
           rgaReg.dst.act_w, rgaReg.dst.act_h,
           rgaReg.dst.vir_w, rgaReg.dst.vir_h, rgaReg.dst.format, rgaReg.dst.rd_mode);
     ALOGE("pat:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
-          rgaReg.pat.yrgb_addr, rgaReg.pat.uv_addr, rgaReg.pat.v_addr,
+          (unsigned long)rgaReg.pat.yrgb_addr, (unsigned long)rgaReg.pat.uv_addr, (unsigned long)rgaReg.pat.v_addr,
           rgaReg.pat.x_offset, rgaReg.pat.y_offset,
           rgaReg.pat.act_w, rgaReg.pat.act_h,
           rgaReg.pat.vir_w, rgaReg.pat.vir_h, rgaReg.pat.format, rgaReg.pat.rd_mode);
-    ALOGE("ROP:[%lx,%x,%x],LUT[%lx]", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
-          rgaReg.rop_code, rgaReg.LUT_addr);
+    ALOGE("ROP:[%lx,%x,%x],LUT[%lx]", (unsigned long)rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
+          rgaReg.rop_code, (unsigned long)rgaReg.LUT_addr);
 
     ALOGE("color:[%x,%x,%x,%x,%x]", rgaReg.color_key_max, rgaReg.color_key_min,
           rgaReg.fg_color, rgaReg.bg_color, rgaReg.color_fill_mode);
 
     ALOGE("MMU:[%d,%lx,%x]", rgaReg.mmu_info.mmu_en,
-          rgaReg.mmu_info.base_addr, rgaReg.mmu_info.mmu_flag);
-
-
-    ALOGE("mode[%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
-          rgaReg.endian_mode, rgaReg.src_trans_mode);
-
-    ALOGE("Full CSC : en[%d]", rgaReg.full_csc.flag);
-    if (rgaReg.full_csc.flag > 0)
-        ALOGE("factor: "
-              "Y[%d, %d, %d, %d] "
-              "U[%d, %d, %d, %d] "
-              "V[%d, %d, %d, %d]",
-              rgaReg.full_csc.coe_y.r_v, rgaReg.full_csc.coe_y.g_y, rgaReg.full_csc.coe_y.b_u, rgaReg.full_csc.coe_y.off,
-              rgaReg.full_csc.coe_u.r_v, rgaReg.full_csc.coe_u.g_y, rgaReg.full_csc.coe_u.b_u, rgaReg.full_csc.coe_u.off,
-              rgaReg.full_csc.coe_v.r_v, rgaReg.full_csc.coe_v.g_y, rgaReg.full_csc.coe_v.b_u, rgaReg.full_csc.coe_v.off);
-
-    ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_x_r, rgaReg.gr_color.gr_x_g, rgaReg.gr_color.gr_x_b);
-    ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_y_r, rgaReg.gr_color.gr_y_g, rgaReg.gr_color.gr_y_b);
-#else
-    ALOGE("render_mode = %d rotate_mode = %d in_fence_fd = %d",
-          rgaReg.render_mode, rgaReg.rotate_mode, rgaReg.in_fence_fd);
-    ALOGE("src:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
-          rgaReg.src.yrgb_addr, rgaReg.src.uv_addr, rgaReg.src.v_addr,
-          rgaReg.src.x_offset, rgaReg.src.y_offset,
-          rgaReg.src.act_w, rgaReg.src.act_h,
-          rgaReg.src.vir_w, rgaReg.src.vir_h, rgaReg.src.format, rgaReg.src.rd_mode);
-    ALOGE("dst:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
-          rgaReg.dst.yrgb_addr, rgaReg.dst.uv_addr, rgaReg.dst.v_addr,
-          rgaReg.dst.x_offset, rgaReg.dst.y_offset,
-          rgaReg.dst.act_w, rgaReg.dst.act_h,
-          rgaReg.dst.vir_w, rgaReg.dst.vir_h, rgaReg.dst.format, rgaReg.dst.rd_mode);
-    ALOGE("pat:[%x,%x,%x],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
-          rgaReg.pat.yrgb_addr, rgaReg.pat.uv_addr, rgaReg.pat.v_addr,
-          rgaReg.pat.x_offset, rgaReg.pat.y_offset,
-          rgaReg.pat.act_w, rgaReg.pat.act_h,
-          rgaReg.pat.vir_w, rgaReg.pat.vir_h, rgaReg.pat.format, rgaReg.pat.rd_mode);
-    ALOGE("ROP:[%x,%x,%x],LUT[%x]", rgaReg.rop_mask_addr, rgaReg.alpha_rop_flag,
-          rgaReg.rop_code, rgaReg.LUT_addr);
-
-    ALOGE("color:[%x,%x,%x,%x,%x]", rgaReg.color_key_max, rgaReg.color_key_min,
-          rgaReg.fg_color, rgaReg.bg_color, rgaReg.color_fill_mode);
-
-    ALOGE("MMU:[%d,%x,%x]", rgaReg.mmu_info.mmu_en,
-          rgaReg.mmu_info.base_addr, rgaReg.mmu_info.mmu_flag);
+          (unsigned long)rgaReg.mmu_info.base_addr, rgaReg.mmu_info.mmu_flag);
 
 
     ALOGE("mode[%d,%d,%d,%d,%d]", rgaReg.palette_mode, rgaReg.yuv2rgb_mode,
@@ -1144,6 +1100,6 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
 
     ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_x_r, rgaReg.gr_color.gr_x_g, rgaReg.gr_color.gr_x_b);
     ALOGE("gr_color_x [%x, %x, %x]", rgaReg.gr_color.gr_y_r, rgaReg.gr_color.gr_y_g, rgaReg.gr_color.gr_y_b);
-#endif
+
     return;
 }

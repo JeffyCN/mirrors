@@ -209,115 +209,79 @@ enum
 };
 
 typedef struct rga_img_info_t {
-#if defined(__arm64__) || defined(__aarch64__)
-    unsigned long yrgb_addr;      /* yrgb    mem addr         */
-    unsigned long uv_addr;        /* cb/cr   mem addr         */
-    unsigned long v_addr;         /* cr      mem addr         */
-#else
-    unsigned int yrgb_addr;      /* yrgb    mem addr         */
-    unsigned int uv_addr;        /* cb/cr   mem addr         */
-    unsigned int v_addr;         /* cr      mem addr         */
-#endif
-    unsigned int format;         //definition by RK_FORMAT
-    unsigned short act_w;
-    unsigned short act_h;
-    unsigned short x_offset;
-    unsigned short y_offset;
+    uint64_t yrgb_addr;          /* yrgb    mem addr         */
+    uint64_t uv_addr;            /* cb/cr   mem addr         */
+    uint64_t v_addr;             /* cr      mem addr         */
 
-    unsigned short vir_w;
-    unsigned short vir_h;
+    uint32_t format;             //definition by RK_FORMAT
+    uint16_t act_w;
+    uint16_t act_h;
+    uint16_t x_offset;
+    uint16_t y_offset;
 
-    unsigned short endian_mode; //for BPP
-    unsigned short alpha_swap;
+    uint16_t vir_w;
+    uint16_t vir_h;
+
+    uint16_t endian_mode; //for BPP
+    uint16_t alpha_swap;
 
 	//used by RGA3
-	unsigned short rotate_mode;
-    unsigned short rd_mode;
+	uint16_t rotate_mode;
+    uint16_t rd_mode;
 
-	unsigned short is_10b_compact;
-	unsigned short is_10b_endian;
+	uint16_t is_10b_compact;
+	uint16_t is_10b_endian;
 
-	unsigned short enable;
+	uint16_t enable;
 }
 rga_img_info_t;
 
-
-typedef struct mdp_img_act {
-    unsigned short w;         // width
-    unsigned short h;         // height
-    short x_off;     // x offset for the vir
-    short y_off;     // y offset for the vir
-}
-mdp_img_act;
-
-
-
-typedef struct RANGE {
-    unsigned short min;
-    unsigned short max;
-}
-RANGE;
-
 typedef struct POINT {
-    unsigned short x;
-    unsigned short y;
+    uint16_t x;
+    uint16_t y;
 }
 POINT;
 
 typedef struct RECT {
-    unsigned short xmin;
-    unsigned short xmax; // width - 1
-    unsigned short ymin;
-    unsigned short ymax; // height - 1
+    uint16_t xmin;
+    uint16_t xmax; // width - 1
+    uint16_t ymin;
+    uint16_t ymax; // height - 1
 } RECT;
 
-typedef struct RGB {
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-    unsigned char res;
-}RGB;
-
-
 typedef struct MMU {
-    unsigned char mmu_en;
-#if defined(__arm64__) || defined(__aarch64__)
-    unsigned long base_addr;
-#else
-    unsigned int base_addr;
-#endif
-    unsigned int mmu_flag;     /* [0] mmu enable [1] src_flush [2] dst_flush [3] CMD_flush [4~5] page size*/
+    uint8_t mmu_en;
+    uint64_t base_addr;
+    uint32_t mmu_flag;     /* [0] mmu enable [1] src_flush [2] dst_flush [3] CMD_flush [4~5] page size*/
 } MMU;
 
 typedef struct COLOR_FILL {
-    short gr_x_a;
-    short gr_y_a;
-    short gr_x_b;
-    short gr_y_b;
-    short gr_x_g;
-    short gr_y_g;
-    short gr_x_r;
-    short gr_y_r;
-
+    int16_t gr_x_a;
+    int16_t gr_y_a;
+    int16_t gr_x_b;
+    int16_t gr_y_b;
+    int16_t gr_x_g;
+    int16_t gr_y_g;
+    int16_t gr_x_r;
+    int16_t gr_y_r;
     //u8  cp_gr_saturation;
 }
 COLOR_FILL;
 
 typedef struct FADING {
-    unsigned char b;
-    unsigned char g;
-    unsigned char r;
-    unsigned char res;
+    uint8_t b;
+    uint8_t g;
+    uint8_t r;
+    uint8_t res;
 }
 FADING;
-
 
 typedef struct line_draw_t {
     POINT start_point;                  /* LineDraw_start_point                */
     POINT end_point;                    /* LineDraw_end_point                  */
-    unsigned int   color;               /* LineDraw_color                      */
-    unsigned int   flag;                /* (enum) LineDrawing mode sel         */
-    unsigned int   line_width;          /* range 1~16 */
+    uint32_t   color;                   /* LineDraw_color                      */
+    uint32_t   flag;                    /* (enum) LineDrawing mode sel         */
+    uint32_t   line_width;              /* range 1~16 */
 }
 line_draw_t;
 
@@ -330,34 +294,29 @@ typedef struct csc_coe_t {
 } csc_coe_t;
 
 typedef struct full_csc_t {
-    unsigned char flag;
+    uint8_t flag;
     csc_coe_t coe_y;
     csc_coe_t coe_u;
     csc_coe_t coe_v;
 } full_csc_t;
 
 struct rga_req {
-    unsigned char render_mode;            /* (enum) process mode sel */
+    uint8_t render_mode;                  /* (enum) process mode sel */
 
     rga_img_info_t src;                   /* src image info */
     rga_img_info_t dst;                   /* dst image info */
     rga_img_info_t pat;                   /* patten image info */
 
-#if defined(__arm64__) || defined(__aarch64__)
-    unsigned long rop_mask_addr;          /* rop4 mask addr */
-    unsigned long LUT_addr;               /* LUT addr */
-#else
-    unsigned int rop_mask_addr;           /* rop4 mask addr */
-    unsigned int LUT_addr;                /* LUT addr */
-#endif
+    uint64_t rop_mask_addr;               /* rop4 mask addr */
+    uint64_t LUT_addr;                    /* LUT addr */
 
     RECT clip;                            /* dst clip window default value is dst_vir */
                                           /* value from [0, w-1] / [0, h-1]*/
 
-    int sina;                             /* dst angle  default value 0  16.16 scan from table */
-    int cosa;                             /* dst angle  default value 0  16.16 scan from table */
+    int32_t sina;                         /* dst angle  default value 0  16.16 scan from table */
+    int32_t cosa;                         /* dst angle  default value 0  16.16 scan from table */
 
-    unsigned short alpha_rop_flag;        /* alpha rop process flag           */
+    uint16_t alpha_rop_flag;              /* alpha rop process flag           */
                                           /* ([0] = 1 alpha_rop_enable)       */
                                           /* ([1] = 1 rop enable)             */
                                           /* ([2] = 1 fading_enable)          */
@@ -369,13 +328,13 @@ struct rga_req {
                                           /* ([8] = 1 nn_quantize)            */
                                           /* ([9] = 1 Real color mode)        */
 
-    unsigned char  scale_mode;            /* 0 nearst / 1 bilnear / 2 bicubic */
+    uint8_t  scale_mode;                  /* 0 nearst / 1 bilnear / 2 bicubic */
 
-    unsigned int color_key_max;           /* color key max */
-    unsigned int color_key_min;           /* color key min */
+    uint32_t color_key_max;               /* color key max */
+    uint32_t color_key_min;               /* color key min */
 
-    unsigned int fg_color;                /* foreground color */
-    unsigned int bg_color;                /* background color */
+    uint32_t fg_color;                    /* foreground color */
+    uint32_t bg_color;                    /* background color */
 
     COLOR_FILL gr_color;                  /* color fill use gradient */
 
@@ -383,325 +342,49 @@ struct rga_req {
 
     FADING fading;
 
-    unsigned char PD_mode;                /* porter duff alpha mode sel */
+    uint8_t PD_mode;                      /* porter duff alpha mode sel */
 
-    unsigned char alpha_global_value;     /* global alpha value */
+    uint8_t alpha_global_value;           /* global alpha value */
 
-    unsigned short rop_code;              /* rop2/3/4 code  scan from rop code table*/
+    uint16_t rop_code;                    /* rop2/3/4 code  scan from rop code table*/
 
-    unsigned char bsfilter_flag;          /* [2] 0 blur 1 sharp / [1:0] filter_type*/
+    uint8_t bsfilter_flag;                /* [2] 0 blur 1 sharp / [1:0] filter_type*/
 
-    unsigned char palette_mode;           /* (enum) color palatte  0/1bpp, 1/2bpp 2/4bpp 3/8bpp*/
+    uint8_t palette_mode;                 /* (enum) color palatte  0/1bpp, 1/2bpp 2/4bpp 3/8bpp*/
 
-    unsigned char yuv2rgb_mode;           /* (enum) BT.601 MPEG / BT.601 JPEG / BT.709  */
+    uint8_t yuv2rgb_mode;                 /* (enum) BT.601 MPEG / BT.601 JPEG / BT.709  */
 
-    unsigned char endian_mode;            /* 0/big endian 1/little endian*/
+    uint8_t endian_mode;                  /* 0/big endian 1/little endian*/
 
-    unsigned char rotate_mode;            /* (enum) rotate mode  */
+    uint8_t rotate_mode;                  /* (enum) rotate mode  */
                                           /* 0x0,     no rotate  */
                                           /* 0x1,     rotate     */
                                           /* 0x2,     x_mirror   */
                                           /* 0x3,     y_mirror   */
 
-    unsigned char color_fill_mode;        /* 0 solid color / 1 patten color */
+    uint8_t color_fill_mode;              /* 0 solid color / 1 patten color */
 
     MMU mmu_info;                         /* mmu information */
 
-    unsigned char  alpha_rop_mode;        /* ([0~1] alpha mode)       */
+    uint8_t  alpha_rop_mode;              /* ([0~1] alpha mode)       */
                                           /* ([2~3] rop   mode)       */
                                           /* ([4]   zero  mode en)    */
                                           /* ([5]   dst   alpha mode) (RGA1) */
 
-    unsigned char  src_trans_mode;
+    uint8_t  src_trans_mode;
 
-    unsigned char  dither_mode;
+    uint8_t  dither_mode;
 
-    full_csc_t full_csc;            /* full color space convert */
+    full_csc_t full_csc;                  /* full color space convert */
 
-	int in_fence_fd;
-    unsigned char core;
-    unsigned char priority;
-    int out_fence_fd;
+	int32_t in_fence_fd;
+    uint8_t core;
+    uint8_t priority;
+    int32_t out_fence_fd;
 
-	unsigned char reservr[128];
+	uint8_t reservr[128];
 };
 
-int
-RGA_set_src_act_info(
-    struct rga_req *req,
-    unsigned int   width,       /* act width  */
-    unsigned int   height,      /* act height */
-    unsigned int   x_off,       /* x_off      */
-    unsigned int   y_off        /* y_off      */
-);
-
-#if defined(__arm64__) || defined(__aarch64__)
-int
-RGA_set_src_vir_info(
-    struct rga_req *req,
-    unsigned long   yrgb_addr,      /* yrgb_addr  */
-    unsigned long   uv_addr,        /* uv_addr    */
-    unsigned long   v_addr,         /* v_addr     */
-    unsigned int   vir_w,           /* vir width  */
-    unsigned int   vir_h,           /* vir height */
-    unsigned char   format,         /* format     */
-    unsigned char  a_swap_en        /* only for 32bit RGB888 format */
-);
-#else
-int
-RGA_set_src_vir_info(
-    struct rga_req *req,
-    unsigned int   yrgb_addr,       /* yrgb_addr  */
-    unsigned int   uv_addr,         /* uv_addr    */
-    unsigned int   v_addr,          /* v_addr     */
-    unsigned int   vir_w,           /* vir width  */
-    unsigned int   vir_h,           /* vir height */
-    unsigned char  format,          /* format     */
-    unsigned char  a_swap_en        /* only for 32bit RGB888 format */
-);
-#endif
-
-int
-RGA_set_dst_act_info(
-    struct rga_req *req,
-    unsigned int   width,       /* act width  */
-    unsigned int   height,      /* act height */
-    unsigned int   x_off,       /* x_off      */
-    unsigned int   y_off        /* y_off      */
-);
-
-#if defined(__arm64__) || defined(__aarch64__)
-int
-RGA_set_dst_vir_info(
-    struct rga_req *msg,
-    unsigned long   yrgb_addr,  /* yrgb_addr   */
-    unsigned long   uv_addr,    /* uv_addr     */
-    unsigned long   v_addr,     /* v_addr      */
-    unsigned int   vir_w,       /* vir width   */
-    unsigned int   vir_h,       /* vir height  */
-    RECT           *clip,       /* clip window */
-    unsigned char  format,      /* format      */
-    unsigned char  a_swap_en
-);
-#else
-int
-RGA_set_dst_vir_info(
-    struct rga_req *msg,
-    unsigned int   yrgb_addr,   /* yrgb_addr   */
-    unsigned int   uv_addr,     /* uv_addr     */
-    unsigned int   v_addr,      /* v_addr      */
-    unsigned int   vir_w,       /* vir width   */
-    unsigned int   vir_h,       /* vir height  */
-    RECT           *clip,       /* clip window */
-    unsigned char  format,      /* format      */
-    unsigned char  a_swap_en
-);
-#endif
-
-int
-RGA_set_pat_info(
-    struct rga_req *msg,
-    unsigned int width,
-    unsigned int height,
-    unsigned int x_off,
-    unsigned int y_off,
-    unsigned int pat_format
-);
-
-#if defined(__arm64__) || defined(__aarch64__)
-int
-RGA_set_rop_mask_info(
-    struct rga_req *msg,
-    unsigned long rop_mask_addr,
-    unsigned int rop_mask_endian_mode
-);
-#else
-int
-RGA_set_rop_mask_info(
-    struct rga_req *msg,
-    unsigned int rop_mask_addr,
-    unsigned int rop_mask_endian_mode
-);
-#endif
-
-int RGA_set_alpha_en_info(
-    struct rga_req *msg,
-    unsigned int  alpha_cal_mode,    /* 0:alpha' = alpha + (alpha>>7) | alpha' = alpha */
-    unsigned int  alpha_mode,        /* 0 global alpha / 1 per pixel alpha / 2 mix mode */
-    unsigned int  global_a_value,
-    unsigned int  PD_en,             /* porter duff alpha mode en */
-    unsigned int  PD_mode,
-    unsigned int  dst_alpha_en );    /* use dst alpha  */
-
-int
-RGA_set_rop_en_info(
-    struct rga_req *msg,
-    unsigned int ROP_mode,
-    unsigned int ROP_code,
-    unsigned int color_mode,
-    unsigned int solid_color
-);
-
-
-int
-RGA_set_fading_en_info(
-    struct rga_req *msg,
-    unsigned char r,
-    unsigned char g,
-    unsigned char b
-);
-
-int
-RGA_set_src_trans_mode_info(
-    struct rga_req *msg,
-    unsigned char trans_mode,
-    unsigned char a_en,
-    unsigned char b_en,
-    unsigned char g_en,
-    unsigned char r_en,
-    unsigned char color_key_min,
-    unsigned char color_key_max,
-    unsigned char zero_mode_en
-);
-
-
-int
-RGA_set_bitblt_mode(
-    struct rga_req *msg,
-    unsigned char scale_mode,    // 0/near  1/bilnear  2/bicubic
-    unsigned char rotate_mode,   // 0/copy 1/rotate_scale 2/x_mirror 3/y_mirror
-    unsigned int  angle,         // rotate angle
-    unsigned int  dither_en,     // dither en flag
-    unsigned int  AA_en,         // AA flag
-    unsigned int  yuv2rgb_mode
-);
-
-
-int
-RGA_set_color_palette_mode(
-    struct rga_req *msg,
-    unsigned char  palette_mode,        /* 1bpp/2bpp/4bpp/8bpp */
-    unsigned char  endian_mode,         /* src endian mode sel */
-    unsigned int  bpp1_0_color,         /* BPP1 = 0 */
-    unsigned int  bpp1_1_color          /* BPP1 = 1 */
-);
-
-
-int
-RGA_set_color_fill_mode(
-    struct rga_req *msg,
-    COLOR_FILL  *gr_color,                   /* gradient color part         */
-    unsigned char  gr_satur_mode,            /* saturation mode             */
-    unsigned char  cf_mode,                  /* patten fill or solid fill   */
-    unsigned int color,                      /* solid color                 */
-    unsigned short pat_width,                /* pattern width               */
-    unsigned short pat_height,               /* pattern height              */
-    unsigned char pat_x_off,                 /* pattern x offset            */
-    unsigned char pat_y_off,                 /* pattern y offset            */
-    unsigned char aa_en                      /* alpha en                    */
-);
-
-
-int
-RGA_set_line_point_drawing_mode(
-    struct rga_req *msg,
-    POINT sp,                     /* start point              */
-    POINT ep,                     /* end   point              */
-    unsigned int color,           /* line point drawing color */
-    unsigned int line_width,      /* line width               */
-    unsigned char AA_en,          /* AA en                    */
-    unsigned char last_point_en   /* last point en            */
-);
-
-
-int
-RGA_set_blur_sharp_filter_mode(
-    struct rga_req *msg,
-    unsigned char filter_mode,   /* blur/sharpness   */
-    unsigned char filter_type,   /* filter intensity */
-    unsigned char dither_en      /* dither_en flag   */
-);
-
-int
-RGA_set_pre_scaling_mode(
-    struct rga_req *msg,
-    unsigned char dither_en
-);
-
-#if defined(__arm64__) || defined(__aarch64__)
-int
-RGA_update_palette_table_mode(
-    struct rga_req *msg,
-    unsigned long LUT_addr,     /* LUT table addr      */
-    unsigned int palette_mode   /* 1bpp/2bpp/4bpp/8bpp */
-);
-#else
-int
-RGA_update_palette_table_mode(
-    struct rga_req *msg,
-    unsigned int LUT_addr,      /* LUT table addr      */
-    unsigned int palette_mode   /* 1bpp/2bpp/4bpp/8bpp */
-);
-#endif
-
-int
-RGA_set_update_patten_buff_mode(
-    struct rga_req *msg,
-    unsigned int pat_addr, /* patten addr    */
-    unsigned int w,        /* patten width   */
-    unsigned int h,        /* patten height  */
-    unsigned int format    /* patten format  */
-);
-
-#if defined(__arm64__) || defined(__aarch64__)
-int
-RGA_set_mmu_info(
-    struct rga_req *msg,
-    unsigned char  mmu_en,
-    unsigned char  src_flush,
-    unsigned char  dst_flush,
-    unsigned char  cmd_flush,
-    unsigned long base_addr,
-    unsigned char  page_size
-);
-#else
-int
-RGA_set_mmu_info(
-    struct rga_req *msg,
-    unsigned char  mmu_en,
-    unsigned char  src_flush,
-    unsigned char  dst_flush,
-    unsigned char  cmd_flush,
-    unsigned int base_addr,
-    unsigned char  page_size
-);
-#endif
-
-void rga_set_fds_offsets(
-    struct rga_req *rga_request,
-    unsigned short src_fd,
-    unsigned short dst_fd,
-    unsigned int src_offset,
-    unsigned int dst_offset);
-
-int
-RGA_set_src_fence_flag(
-    struct rga_req *msg,
-    int acq_fence,
-    int src_flag
-);
-
-
-int
-RGA_set_dst_fence_flag(
-    struct rga_req *msg,
-    int dst_flag
-);
-
-int
-RGA_get_dst_fence(
-    struct rga_req *msg
-);
 #ifdef __cplusplus
 }
 #endif
