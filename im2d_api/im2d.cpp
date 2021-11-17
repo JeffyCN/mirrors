@@ -485,7 +485,8 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                                                 IM_RGA_SUPPORT_FORMAT_YUYV_420 |
                                                 IM_RGA_SUPPORT_FORMAT_YUYV_422,
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
-                                                IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE,
+                                                IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE |
+                                                IM_RGA_SUPPORT_FEATURE_ROP,
                                                 {0} }
     };
 
