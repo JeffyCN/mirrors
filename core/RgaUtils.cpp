@@ -181,11 +181,6 @@ float get_bpp_from_format(int format) {
         case RK_FORMAT_YCbCr_420_P:
         case RK_FORMAT_YCrCb_420_P:
         case RK_FORMAT_YCrCb_420_SP:
-        /* yuyv */
-        case RK_FORMAT_YVYU_420:
-        case RK_FORMAT_VYUY_420:
-        case RK_FORMAT_YUYV_420:
-        case RK_FORMAT_UYVY_420:
             bpp = 1.5;
             break;
         case RK_FORMAT_RGB_565:
@@ -207,6 +202,10 @@ float get_bpp_from_format(int format) {
         case RK_FORMAT_VYUY_422:
         case RK_FORMAT_YUYV_422:
         case RK_FORMAT_UYVY_422:
+        case RK_FORMAT_YVYU_420:
+        case RK_FORMAT_VYUY_420:
+        case RK_FORMAT_YUYV_420:
+        case RK_FORMAT_UYVY_420:
             bpp = 2;
             break;
         /*RK encoder requires alignment of odd multiples of 256.*/
