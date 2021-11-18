@@ -1976,10 +1976,7 @@ IM_API IM_STATUS improcess_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pa
         dstinfo.sync_mode = RGA_BLIT_SYNC;
 
     dstinfo.in_fence_fd = in_fence_fd;
-    if (opt->core == 0)
-        dstinfo.core = IM_SCHEDULER_RGA2_DEFAULT;
-    else
-        dstinfo.core = opt->core;
+    dstinfo.core = opt->core;
     dstinfo.priority = opt->priority;
 
     if (usage & IM_COLOR_FILL) {

@@ -1314,13 +1314,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
         rgaReg.alpha_rop_mode = 0x1;
     }
 
-	/* rga3 rd_mode */
-    /* If rd_mode is not configured, raster mode is executed by default. */
-	rgaReg.src.rd_mode = src->rd_mode ? src->rd_mode : raster_mode;
-	rgaReg.dst.rd_mode = dst->rd_mode ? dst->rd_mode : raster_mode;
-	if (src1)
-		rgaReg.pat.rd_mode = src1->rd_mode ? src1->rd_mode : raster_mode;
-
     /*color key*/
     /* if need this funtion, maybe should patch the rga driver. */
     if(src->colorkey_en == 1) {
@@ -1350,6 +1343,13 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     if(src->sync_mode == RGA_BLIT_ASYNC || dst->sync_mode == RGA_BLIT_ASYNC) {
         sync_mode = RGA_BLIT_ASYNC;
     }
+
+    /* rga3 rd_mode */
+    /* If rd_mode is not configured, raster mode is executed by default. */
+	rgaReg.src.rd_mode = src->rd_mode ? src->rd_mode : raster_mode;
+	rgaReg.dst.rd_mode = dst->rd_mode ? dst->rd_mode : raster_mode;
+	if (src1)
+		rgaReg.pat.rd_mode = src1->rd_mode ? src1->rd_mode : raster_mode;
 
 	rgaReg.in_fence_fd = dst->in_fence_fd;
 	rgaReg.core = dst->core;
@@ -1589,6 +1589,10 @@ int RgaCollorFill(rga_info *dst) {
     if(dst->sync_mode == RGA_BLIT_ASYNC) {
         sync_mode = dst->sync_mode;
     }
+
+    /* rga3 rd_mode */
+    /* If rd_mode is not configured, raster mode is executed by default. */
+	rgaReg.dst.rd_mode = dst->rd_mode ? dst->rd_mode : raster_mode;
 
 	rgaReg.in_fence_fd = dst->in_fence_fd;
 	rgaReg.core = dst->core;
@@ -2143,6 +2147,13 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
             rgaReg.palette_mode = 3;
             break;
     }
+
+    /* rga3 rd_mode */
+    /* If rd_mode is not configured, raster mode is executed by default. */
+	rgaReg.src.rd_mode = src->rd_mode ? src->rd_mode : raster_mode;
+	rgaReg.dst.rd_mode = dst->rd_mode ? dst->rd_mode : raster_mode;
+	if (lut)
+		rgaReg.pat.rd_mode = lut->rd_mode ? lut->rd_mode : raster_mode;
 
     rgaReg.in_fence_fd = dst->in_fence_fd;
 	rgaReg.core = dst->core;
