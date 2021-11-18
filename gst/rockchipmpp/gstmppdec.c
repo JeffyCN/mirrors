@@ -546,6 +546,9 @@ gst_mpp_dec_rga_convert (GstVideoDecoder * decoder, MppFrame mframe,
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoInfo *info = &self->info;
   GstMemory *mem;
+  gboolean ret;
+
+  GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
 
   mem = gst_allocator_alloc (self->allocator, GST_VIDEO_INFO_SIZE (info), NULL);
   g_return_val_if_fail (mem, FALSE);
@@ -553,11 +556,14 @@ gst_mpp_dec_rga_convert (GstVideoDecoder * decoder, MppFrame mframe,
   if (!gst_mpp_rga_convert_from_mpp_frame (mframe, mem, info, self->rotation)) {
     GST_WARNING_OBJECT (self, "failed to convert");
     gst_memory_unref (mem);
-    return FALSE;
+    ret = FALSE;
+  } else {
+    gst_buffer_replace_all_memory (buffer, mem);
+    ret = TRUE;
   }
 
-  gst_buffer_replace_all_memory (buffer, mem);
-  return TRUE;
+  GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+  return ret;
 }
 #endif
 
