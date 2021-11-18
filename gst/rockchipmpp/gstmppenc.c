@@ -933,6 +933,7 @@ gst_mpp_enc_handle_frame (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
 
   GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
   buffer = gst_mpp_enc_convert (encoder, frame);
+  GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
   if (G_UNLIKELY (!buffer))
     goto not_negotiated;
 
@@ -940,8 +941,10 @@ gst_mpp_enc_handle_frame (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
   gst_buffer_unref (buffer);
 
   /* Avoid holding too much frames */
+  GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
   GST_MPP_ENC_WAIT (encoder, self->pending_frames < MPP_PENDING_MAX
       || self->flushing);
+  GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
 
   self->pending_frames++;
 
