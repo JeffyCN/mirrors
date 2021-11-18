@@ -2451,7 +2451,8 @@ gst_x_image_sink_start (GstBaseSink * bsink)
   GST_INFO_OBJECT (self, "connector id = %d / crtc id = %d / plane id = %d",
       self->conn_id, self->crtc_id, self->plane_id);
 
-  drm_prepare_planes (self, res, pres);
+  if (g_getenv ("GST_RKXIMAGE_USE_COLORKEY"))
+    drm_prepare_planes (self, res, pres);
 
   self->hdisplay = crtc->mode.hdisplay;
   self->vdisplay = crtc->mode.vdisplay;
