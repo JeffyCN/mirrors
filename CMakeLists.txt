@@ -69,6 +69,7 @@ set(IM2D_SRCS
     core/NormalRga.cpp
     core/NormalRgaApi.cpp
     core/RgaUtils.cpp
+    core/RgaApi.cpp
     im2d_api/im2d.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_EXT} -DUN_NEED_GL")
