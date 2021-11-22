@@ -1427,7 +1427,7 @@ IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync) {
 
     usage |= IM_COLOR_FILL;
 
-    dst.color = color;
+    opt.color = color;
 
     if (sync == 0)
         usage |= IM_ASYNC;
@@ -1551,7 +1551,7 @@ IM_API IM_STATUS imcolorkey_t(const rga_buffer_t src, rga_buffer_t dst, im_color
 
     usage |= mode;
 
-    dst.colorkey_range = range;
+    opt.colorkey_range = range;
 
     if (sync == 0)
         usage |= IM_ASYNC;
@@ -1637,7 +1637,7 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
 
     usage |= IM_NN_QUANTIZE;
 
-    dst.nn = nn_info;
+    opt.nn = nn_info;
 
     if (sync == 0)
         usage |= IM_ASYNC;
@@ -1666,7 +1666,7 @@ IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code,
 
     usage |= IM_ROP;
 
-    dst.rop_code = rop_code;
+    opt.rop_code = rop_code;
 
     if (sync == 0)
         usage |= IM_ASYNC;
@@ -1821,8 +1821,8 @@ IM_API IM_STATUS improcess_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pa
         srcinfo.blend = 0xff0105;
 
         srcinfo.colorkey_en = 1;
-        srcinfo.colorkey_min = dst.colorkey_range.min;
-        srcinfo.colorkey_max = dst.colorkey_range.max;
+        srcinfo.colorkey_min = opt->colorkey_range.min;
+        srcinfo.colorkey_max = opt->colorkey_range.max;
         switch (usage & IM_ALPHA_COLORKEY_MASK) {
             case IM_ALPHA_COLORKEY_NORMAL:
                 srcinfo.colorkey_mode = 0;
@@ -1836,17 +1836,17 @@ IM_API IM_STATUS improcess_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pa
     /* set NN quantize */
     if (usage & IM_NN_QUANTIZE) {
         dstinfo.nn.nn_flag = 1;
-        dstinfo.nn.scale_r = dst.nn.scale_r;
-        dstinfo.nn.scale_g = dst.nn.scale_g;
-        dstinfo.nn.scale_b = dst.nn.scale_b;
-        dstinfo.nn.offset_r = dst.nn.offset_r;
-        dstinfo.nn.offset_g = dst.nn.offset_g;
-        dstinfo.nn.offset_b = dst.nn.offset_b;
+        dstinfo.nn.scale_r  = opt->nn.scale_r;
+        dstinfo.nn.scale_g  = opt->nn.scale_g;
+        dstinfo.nn.scale_b  = opt->nn.scale_b;
+        dstinfo.nn.offset_r = opt->nn.offset_r;
+        dstinfo.nn.offset_g = opt->nn.offset_g;
+        dstinfo.nn.offset_b = opt->nn.offset_b;
     }
 
     /* set ROP */
     if (usage & IM_ROP) {
-        srcinfo.rop_code = dst.rop_code;
+        srcinfo.rop_code = opt->rop_code;
     }
 
     /* special config for color space convert */
@@ -1981,7 +1981,7 @@ IM_API IM_STATUS improcess_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pa
     dstinfo.priority = opt->priority ? opt->priority : g_im2d_context.priority;
 
     if (usage & IM_COLOR_FILL) {
-        dstinfo.color = dst.color;
+        dstinfo.color = opt->color;
         ret = rkRga.RkRgaCollorFill(&dstinfo);
     } else if (usage & IM_COLOR_PALETTE) {
         ret = rkRga.RkRgaCollorPalette(&srcinfo, &dstinfo, &patinfo);

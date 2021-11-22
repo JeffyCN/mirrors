@@ -265,21 +265,30 @@ typedef struct {
     void* vir_addr;                     /* virtual address */
     void* phy_addr;                     /* physical address */
     int fd;                             /* shared fd */
+
     int width;                          /* width */
     int height;                         /* height */
     int wstride;                        /* wstride */
     int hstride;                        /* hstride */
     int format;                         /* format */
+
     int color_space_mode;               /* color_space_mode */
-    int color;                          /* color, used by color fill */
     int global_alpha;                   /* global_alpha */
+    int rd_mode;
+
+    /* legarcy */
+    int color;                          /* color, used by color fill */
     im_colorkey_range colorkey_range;   /* range value of color key */
     im_nn_t nn;
     int rop_code;
-	int rd_mode;
 } rga_buffer_t;
 
 typedef struct im_opt {
+    int color;                          /* color, used by color fill */
+    im_colorkey_range colorkey_range;   /* range value of color key */
+    im_nn_t nn;
+    int rop_code;
+
     int priority;
     int core;
 } im_opt_t;
