@@ -7,6 +7,7 @@ rockchipmpp_sources = [
   'gstmppenc.c',
   'gstmppjpegenc.c',
   'gstmpph264enc.c',
+  'gstmpph265enc.c',
   'gstmppvp8enc.c',
 ]
 

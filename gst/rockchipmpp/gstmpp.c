@@ -31,6 +31,7 @@
 
 #include "gstmpp.h"
 #include "gstmpph264enc.h"
+#include "gstmpph265enc.h"
 #include "gstmppvp8enc.h"
 #include "gstmppjpegenc.h"
 #include "gstmppjpegdec.h"
@@ -355,6 +356,10 @@ plugin_init (GstPlugin * plugin)
 
   if (!gst_element_register (plugin, "mpph264enc", GST_RANK_PRIMARY + 1,
           gst_mpp_h264_enc_get_type ()))
+    return FALSE;
+
+  if (!gst_element_register (plugin, "mpph265enc", GST_RANK_PRIMARY + 1,
+          gst_mpp_h265_enc_get_type ()))
     return FALSE;
 
   if (!gst_element_register (plugin, "mppvp8enc", GST_RANK_PRIMARY + 1,
