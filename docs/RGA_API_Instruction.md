@@ -953,7 +953,7 @@ dst = 【(src + offset) * scale 】
 #### imrop
 
 ```C++
-IM_STATUS imquantize(const rga_buffer_t src,
+IM_STATUS imrop(const rga_buffer_t src,
                      rga_buffer_t dst,
                      int rop_code,
                      int sync = 1)
@@ -1063,6 +1063,29 @@ IM_STATUS imsync(void);
 > RGA异步模式需要调用该接口等待操作完成。
 >
 > 其他API 将 sync 设置为0，效果相当于opengl中的 glFlush，如果进一步调用imsync 可以达到glFinish的效果。
+
+
+
+### 线程上下文配置
+
+------
+
+#### imconfig
+
+```C++
+IM_STATUS  imconfig(IM_CONFIG_NAME name, uint64_t value);
+```
+
+> 通过不同的配置名对当前线程的上下文进行配置，该上下文将作为该线程的默认配置。
+>
+> 线程上下文的配置优先级低于接口的传参配置。如果接口传参配置未配置相关参数，则本地调用使用上下文默认配置完成本地调用；如果接口传参配置相关参数，以接口传参的配置完成本次调用。
+
+| parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| name      | **[required]** context config name：<br/>IM_CONFIG_SCHEDULER_CORE —— 指定任务处理核心<br/>IM_CONFIG_PRIORITY                  —— 任务优先级<br/>IM_CHECK_CONFIG                      —— 校验使能 |
+| value     | **[required]** config value<br/>IM_CONFIG_SCHEDULER_CORE :<br/>    IM_SCHEDULER_RGA3_CORE0<br/>    IM_SCHEDULER_RGA3_CORE1<br/>    IM_SCHEDULER_RGA2_CORE0<br/>    IM_SCHEDULER_RGA3_DEFAULT<br/>    IM_SCHEDULER_RGA2_DEFAULT<br/>IM_CONFIG_PRIORITY:<br/>    0 ~ 6<br/>IM_CHECK_CONFIG:<br/>    TRUE<br/>    FALSE |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code
 
 
 

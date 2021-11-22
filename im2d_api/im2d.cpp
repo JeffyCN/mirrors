@@ -49,6 +49,7 @@ using namespace std;
 
 extern struct rgaContext *rgaCtx;
 __thread char rga_err_str[ERR_MSG_LEN] = "The current error message is empty!";
+__thread im_context_t g_im2d_context;
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 #define DOWN_ALIGN(val, align) ((val) & ~((align) - 1))
@@ -1976,8 +1977,8 @@ IM_API IM_STATUS improcess_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pa
         dstinfo.sync_mode = RGA_BLIT_SYNC;
 
     dstinfo.in_fence_fd = in_fence_fd;
-    dstinfo.core = opt->core;
-    dstinfo.priority = opt->priority;
+    dstinfo.core = opt->core ? opt->core : g_im2d_context.core;
+    dstinfo.priority = opt->priority ? opt->priority : g_im2d_context.priority;
 
     if (usage & IM_COLOR_FILL) {
         dstinfo.color = dst.color;
@@ -2026,3 +2027,37 @@ IM_API IM_STATUS imsync(int fence_fd) {
 #endif
 }
 
+IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
+
+    switch (name) {
+        case IM_CONFIG_SCHEDULER_CORE :
+            if (value & IM_SCHEDULER_MASK) {
+                g_im2d_context.core = (IM_SCHEDULER_CORE)value;
+            } else {
+                ALOGE("IM2D: It's not legal rga_core, it needs to be a 'IM_SCHEDULER_CORE'.");
+                return IM_STATUS_ILLEGAL_PARAM;
+            }
+            break;
+        case IM_CONFIG_PRIORITY :
+            if (value >= 0 && value <= 6) {
+                g_im2d_context.priority = (int)value;
+            } else {
+                ALOGE("IM2D: It's not legal priority, it needs to be a 'int', and it should be in the range of 0~6.");
+                return IM_STATUS_ILLEGAL_PARAM;
+            }
+            break;
+        case IM_CHECK_CONFIG :
+            if (value == false || value == true) {
+                g_im2d_context.check_mode = (bool)value;
+            } else {
+                ALOGE("IM2D: It's not legal check config, it needs to be a 'bool'.");
+                return IM_STATUS_ILLEGAL_PARAM;
+            }
+            break;
+        default :
+            ALOGE("IM2D: Unsupported config name!");
+            return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    return IM_STATUS_SUCCESS;
+}

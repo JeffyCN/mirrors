@@ -83,6 +83,7 @@ typedef enum {
     IM_SCHEDULER_RGA2_CORE0 = 1 << 2,
     IM_SCHEDULER_RGA3_DEFAULT = IM_SCHEDULER_RGA3_CORE0,
     IM_SCHEDULER_RGA2_DEFAULT = IM_SCHEDULER_RGA2_CORE0,
+    IM_SCHEDULER_MASK       = 0x7,
     IM_SCHEDULER_DEFAULT = 0,
 } IM_SCHEDULER_CORE;
 
@@ -216,6 +217,12 @@ typedef enum {
     RGA_2_ENHANCE              = 0x6,
 } RGA_VERSION_NUM;
 
+typedef enum {
+    IM_CONFIG_SCHEDULER_CORE,
+    IM_CONFIG_PRIORITY,
+    IM_CHECK_CONFIG,
+} IM_CONFIG_NAME;
+
 //struct AHardwareBuffer AHardwareBuffer;
 
 typedef struct {
@@ -276,6 +283,12 @@ typedef struct im_opt {
     int priority;
     int core;
 } im_opt_t;
+
+typedef struct im_context {
+    int priority;
+    IM_SCHEDULER_CORE core;
+    bool check_mode;
+} im_context_t;
 
 /*
  * @return error message string
@@ -920,6 +933,17 @@ IM_API IM_STATUS improcess_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pa
  * @returns success or else negative error code.
  */
 IM_API IM_STATUS imsync(int out_fence_fd);
+
+/*
+ * config
+ *
+ * @param name
+ *      enum IM_CONFIG_NAME
+ * @param value
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value);
 
 #ifdef __cplusplus
 }
