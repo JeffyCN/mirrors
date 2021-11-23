@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 #ifndef IM_API
 #define IM_API /* define API export as needed */
 #endif
