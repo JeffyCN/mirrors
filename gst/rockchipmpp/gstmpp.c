@@ -36,6 +36,7 @@
 #include "gstmppjpegenc.h"
 #include "gstmppjpegdec.h"
 #include "gstmppvideodec.h"
+#include "gstmppvpxalphadecodebin.h"
 
 GST_DEBUG_CATEGORY_STATIC (mpp_debug);
 #define GST_CAT_DEFAULT mpp_debug
@@ -373,6 +374,14 @@ plugin_init (GstPlugin * plugin)
   if (!gst_element_register (plugin, "mppjpegdec", GST_RANK_PRIMARY + 1,
           gst_mpp_jpeg_dec_get_type ()))
     return FALSE;
+
+  /* Both codecalphademux and alphacombine elements were added in 1.19 */
+  if (GST_VERSION_MAJOR == 1 && GST_VERSION_MINOR >= 19) {
+    if (!gst_element_register (plugin, "mppvpxalphadecodebin",
+            GST_RANK_PRIMARY + GST_MPP_ALPHA_DECODE_BIN_RANK_OFFSET,
+            gst_mpp_vpx_alpha_decode_bin_get_type ()))
+      return FALSE;
+  }
 
   return TRUE;
 }

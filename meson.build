@@ -80,6 +80,8 @@ gstallocators_dep = dependency('gstreamer-allocators-1.0', version : gst_req,
   fallback : ['gst-plugins-base', 'allocators_dep'])
 gstvideo_dep = dependency('gstreamer-video-1.0', version : gst_req,
   fallback : ['gst-plugins-base', 'video_dep'])
+gstpbutils_dep = dependency('gstreamer-pbutils-1.0', version : gst_req,
+  fallback : ['gst-plugins-base', 'pbutils_dep'])
 
 glib_dep = dependency('glib-2.0', version : glib_req,
   fallback : ['glib', 'libglib_dep'])
