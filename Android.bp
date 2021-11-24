@@ -58,6 +58,7 @@ cc_library_shared {
         "core/NormalRgaApi.cpp",
         "core/RgaApi.cpp",
         "core/RgaUtils.cpp",
+        "core/rga_sync.cpp",
         "im2d_api/im2d.cpp"
     ],
     export_include_dirs: [
