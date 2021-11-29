@@ -5,8 +5,6 @@ if(NOT CMAKE_BUILD_TYPE)
         FORCE)
 endif()
 
-execute_process(COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/genversion.sh cmake)
-
 if(CMAKE_BUILD_TARGET STREQUAL android_ndk)
     message("set ndk toolchain")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error -DLOG_TAG=librga")

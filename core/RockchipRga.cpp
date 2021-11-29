@@ -62,7 +62,7 @@
 #endif
 #endif
 
-#include "version.h"
+#include "im2d_api/im2d.h"
 
 #ifdef ANDROID
 namespace android {
@@ -78,7 +78,11 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         mLogAlways(0),
         mContext(NULL) {
         RkRgaInit();
-        ALOGE("%s", RGA_API_FULL_VERSION);
+
+#ifdef ANDROID
+        property_set("vendor.rga_api.version", RGA_API_VERSION);
+#endif
+        ALOGE("%s", RGA_API_VERSION);
     }
 
     RockchipRga::~RockchipRga() {

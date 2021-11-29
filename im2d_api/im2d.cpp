@@ -21,7 +21,6 @@
 #include <sstream>
 
 #include "im2d.hpp"
-#include "version.h"
 #include "RgaUtils.h"
 #include "core/rga_sync.h"
 
@@ -699,7 +698,6 @@ IM_API const char* querystring(int name) {
 
             case RGA_VERSION :
                 out << version_name[RGA_API] << "v" << RGA_API_VERSION << endl;
-                out << version_name[RGA_BUILT] << RGA_API_GIT_BUILD_VERSION <<endl;
                 out << output_name[name] << output_version[rga_info.version] << endl;
                 break;
 

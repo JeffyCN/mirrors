@@ -17,7 +17,6 @@
  */
 #include "NormalRga.h"
 #include "NormalRgaContext.h"
-#include "version.h"
 
 #ifdef ANDROID
 #include "GrallocOps.h"
@@ -195,10 +194,7 @@ int NormalRgaClose(void **context) {
 int RgaInit(void **ctx) {
     int ret = 0;
     ret = NormalRgaOpen(ctx);
-#ifdef ANDROID
-    property_set("vendor.rga_api.version", RGA_API_VERSION);
-    property_set("vendor.rga_built.version", RGA_API_GIT_BUILD_VERSION);
-#endif
+
     return ret;
 }
 

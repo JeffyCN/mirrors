@@ -28,8 +28,6 @@
 
 LOCAL_PATH:= $(call my-dir)
 
-$(info $(shell $(LOCAL_PATH)/genversion.sh Android.mk))
-
 ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \< 28)))
 
 ifneq ($(strip $(BOARD_USE_DRM)), true)
