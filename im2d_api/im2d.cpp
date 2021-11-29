@@ -1317,7 +1317,7 @@ IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx,
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(src, dst, pat, srect, drect, prect, -1, &out_fence_fd, &opt, usage);
 
@@ -1346,7 +1346,7 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(src, dst, pat, rect, drect, prect, -1, &out_fence_fd, &opt, usage);
 
@@ -1374,7 +1374,7 @@ IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotati
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(src, dst, pat, srect, drect, prect, -1, &out_fence_fd, &opt, usage);
 
@@ -1401,7 +1401,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(src, dst, pat, srect, drect, prect, -1, &out_fence_fd, &opt, usage);
 
@@ -1432,7 +1432,7 @@ IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync) {
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(src, dst, pat, srect, rect, prect, -1, &out_fence_fd, &opt, usage);
 
@@ -1461,7 +1461,7 @@ IM_API IM_STATUS impalette_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lu
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(src, dst, lut, srect, drect, prect, -1, &out_fence_fd, &opt, usage);
 
@@ -1489,7 +1489,7 @@ IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, 
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     srect.width = src.width - x;
     srect.height = src.height - y;
@@ -1527,7 +1527,7 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync) {
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(src, dst, pat, srect, drect, prect, -1, &out_fence_fd, &opt, usage);
 
@@ -1556,7 +1556,7 @@ IM_API IM_STATUS imcolorkey_t(const rga_buffer_t src, rga_buffer_t dst, im_color
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(src, dst, pat, srect, drect, prect, -1, &out_fence_fd, &opt, usage);
 
@@ -1581,7 +1581,7 @@ IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(srcA, dst, srcB, srect, drect, prect, -1, &out_fence_fd, &opt, usage);
 
@@ -1613,7 +1613,7 @@ IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int 
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(src, dst, pat, srect, drect, prect, -1, &out_fence_fd, &opt, usage);
 
@@ -1642,7 +1642,7 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(src, dst, pat, srect, drect, prect, -1, &out_fence_fd, &opt, usage);
 
@@ -1671,7 +1671,7 @@ IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code,
     if (sync == 0)
         usage |= IM_ASYNC;
     else if (sync == 1)
-        usage != IM_SYNC;
+        usage |= IM_SYNC;
 
     ret = improcess_t(src, dst, pat, srect, drect, prect, -1, &out_fence_fd, &opt, usage);
 
