@@ -43,3 +43,21 @@ v2.85 revision(2021/05/20)
 
 v2.86 revision(2021/05/26)
 1.support to write image by address
+
+v2.87 revision(2021/07/30)
+1.support to download firmware into different storage
+
+v2.88 revision(2021/08/26)
+1.support to choose device when more devices connected
+2.give prompt for error
+
+v2.89 revision(2021/09/07)
+1.check partition size and offset if larger than flash
+
+v2.9 revision(2021/09/22)
+1.test storage operation pass
+2.support custom vidpids
+
+v2.91 revision(2021/11/10)
+1.add check pagesize during download ubi image
+2.add destrory gpt during download parameter
