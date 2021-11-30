@@ -26,14 +26,15 @@ if(CMAKE_BUILD_TARGET STREQUAL cmake_linux)
     add_compile_options(-DLINUX)
 	# TO support pass external CMAKE_CXX_FLAGS
 	set(CMAKE_CXX_FLAGS_EXT "-std=c++11 -O2 -pthread")
-endif()
 
-if (NOT DEFINED CMAKE_C_COMPILER)
-    message(FATAL_ERROR "RGA: CMAKE_C_COMPILER not define")
-endif()
+    if (NOT DEFINED CMAKE_C_COMPILER)
+        message(FATAL_ERROR "RGA: CMAKE_C_COMPILER not define")
+    endif()
+    
+    if (NOT DEFINED CMAKE_CXX_COMPILER)
+        message(FATAL_ERROR "RGA: CMAKE_CXX_COMPILER not define")
+    endif()
 
-if (NOT DEFINED CMAKE_CXX_COMPILER)
-    message(FATAL_ERROR "RGA: CMAKE_CXX_COMPILER not define")
 endif()
 
 cmake_minimum_required(VERSION 2.8)
@@ -73,7 +74,7 @@ set(IM2D_SRCS
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_EXT} -DUN_NEED_GL")
 
-if(CMAKE_BUILD_TARGET STREQUAL ndk)
+if(CMAKE_BUILD_TARGET STREQUAL android_ndk)
     string(REPLACE "-DANDROID" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
 
