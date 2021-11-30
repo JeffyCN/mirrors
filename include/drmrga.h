@@ -179,7 +179,7 @@ typedef struct rga_info {
 	int priority;
 
 	unsigned short enable;
-	int reserve[126];
+	char reserve[482];
 } rga_info_t;
 
 
