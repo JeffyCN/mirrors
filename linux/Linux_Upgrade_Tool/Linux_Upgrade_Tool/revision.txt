@@ -117,3 +117,18 @@ v1.64 revision(2021/04/22)
 
 v1.65 revision(2021/04/30)
 1.fix last used lba on gpt bug
+
+v1.66 revision(2021/05/21)
+1.modify default of rb_check_off as true when no config.ini
+2.add log_off into config.ini
+
+v1.67 revision(2021/07/02)
+1.fix download ubi image bug when ubi image is in the last partition
+
+v2.0 revision(2021/08/23)
+1.add switch storage function
+2.support upgrade loader with storage
+
+v2.1 revision(2021/11/11)
+1.add function to check pagesize for ubi image
+2.destrory gpt content when download parameter
