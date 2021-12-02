@@ -29,7 +29,6 @@ libthreads_dep = dependency('threads')
 add_project_arguments('-DLINUX=1', language : 'cpp')
 
 librga_srcs = [
-	gen_version,
     'core/GrallocOps.cpp',
     'core/NormalRgaApi.cpp',
 	'core/NormalRga.cpp',
