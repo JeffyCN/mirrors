@@ -82,7 +82,7 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
 #ifdef ANDROID
         property_set("vendor.rga_api.version", RGA_API_VERSION);
 #endif
-        ALOGE("%s", RGA_API_VERSION);
+        ALOGE("%s", RGA_API_FULL_VERSION);
     }
 
     RockchipRga::~RockchipRga() {
