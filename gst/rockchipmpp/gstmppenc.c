@@ -664,7 +664,7 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
 
   gst_buffer_pool_set_config (pool, config);
 
-  gst_query_add_allocation_pool (query, pool, size, 0, 0);
+  gst_query_add_allocation_pool (query, pool, size, MPP_PENDING_MAX, 0);
   gst_query_add_allocation_param (query, self->allocator, NULL);
 
   gst_object_unref (pool);
@@ -823,7 +823,8 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
 
   GST_MPP_ENC_BROADCAST (encoder);
 
-  mem = gst_buffer_peek_memory (frame->input_buffer, 0);
+  /* HACK: get the converted input buffer from frame->output_buffer */
+  mem = gst_buffer_peek_memory (frame->output_buffer, 0);
   mbuf = gst_mpp_mpp_buffer_from_gst_memory (mem);
 
   mframe = self->mpp_frame;
@@ -854,14 +855,14 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
     if (!buffer)
       goto error;
 
-    frame->output_buffer = buffer;
-
     /* Allocated from the same DRM allocator in MPP */
     mpp_buffer_set_index (mbuf, gst_mpp_allocator_get_index (self->allocator));
 
     mem = gst_mpp_allocator_import_mppbuf (self->allocator, mbuf);
-    if (!mem)
+    if (!mem) {
+      gst_buffer_unref (buffer);
       goto error;
+    }
 
     gst_memory_resize (mem, 0, pkt_size);
     gst_buffer_append_memory (buffer, mem);
@@ -870,10 +871,11 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
     if (!buffer)
       goto error;
 
-    frame->output_buffer = buffer;
-
     gst_buffer_fill (buffer, 0, mpp_buffer_get_ptr (mbuf), pkt_size);
   }
+
+  gst_buffer_replace (&frame->output_buffer, buffer);
+  gst_buffer_unref (buffer);
 
   if (self->flushing && !self->draining)
     goto drop;
@@ -937,8 +939,8 @@ gst_mpp_enc_handle_frame (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
   if (G_UNLIKELY (!buffer))
     goto not_negotiated;
 
-  gst_buffer_replace (&frame->input_buffer, buffer);
-  gst_buffer_unref (buffer);
+  /* HACK: store the converted input buffer in frame->output_buffer */
+  frame->output_buffer = buffer;
 
   /* Avoid holding too much frames */
   GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
