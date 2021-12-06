@@ -19,6 +19,8 @@
 #ifndef _rockchip_normal_rga_context_h_
 #define _rockchip_normal_rga_context_h_
 
+#include "rga.h"
+
 #ifdef LINUX
 #define __DEBUG 0
 
@@ -32,6 +34,7 @@ struct rgaContext {
     float mVersion;
     int Is_debug;
     char mVersion_str[16];
-    char reserved[128];
+    struct rga_hw_versions_t mHwVersions;
+    struct rga_version_t mDriverVersion;
 };
 #endif

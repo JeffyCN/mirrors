@@ -19,12 +19,22 @@
 #ifndef _RGA_DRIVER_H_
 #define _RGA_DRIVER_H_
 
+#include <asm/ioctl.h>
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#include <stdint.h>
+/* Use 'r' as magic number */
+#define RGA_IOC_MAGIC		'r'
+#define RGA_IOW(nr, type)	_IOW(RGA_IOC_MAGIC, nr, type)
+#define RGA_IOR(nr, type)	_IOR(RGA_IOC_MAGIC, nr, type)
+#define RGA_IOWR(nr, type)	_IOWR(RGA_IOC_MAGIC, nr, type)
+
+#define RGA_IOC_GET_DRVIER_VERSION 	RGA_IOR(0x1, struct rga_version_t)
+#define RGA_IOC_GET_HW_VERSION		RGA_IOR(0x2, struct rga_hw_versions_t)
 
 #define RGA_BLIT_SYNC   0x5017
 #define RGA_BLIT_ASYNC  0x5018
@@ -36,7 +46,6 @@ extern "C"
 #define RGA2_BLIT_ASYNC  0x6018
 #define RGA2_FLUSH       0x6019
 #define RGA2_GET_RESULT  0x601a
-#define RGA2_GET_VERSION 0x601b
 #define RGA2_GET_VERSION 0x601b
 
 #define RGA_REG_CTRL_LEN    0x8    /* 8  */
@@ -299,6 +308,21 @@ typedef struct full_csc_t {
     csc_coe_t coe_u;
     csc_coe_t coe_v;
 } full_csc_t;
+
+#define RGA_VERSION_SIZE	16
+#define RGA_HW_SIZE			5
+
+struct rga_version_t {
+	uint32_t major;
+	uint32_t minor;
+	uint32_t revision;
+	uint8_t str[RGA_VERSION_SIZE];
+};
+
+struct rga_hw_versions_t {
+	struct rga_version_t version[RGA_HW_SIZE];
+	uint32_t size;
+};
 
 struct rga_req {
     uint8_t render_mode;                  /* (enum) process mode sel */

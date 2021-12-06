@@ -103,14 +103,43 @@ int NormalRgaOpen(void **context) {
         }
         ctx->rgaFd = fd;
 
-        /* Get RGA hardware version. */
-        ret = ioctl(fd, RGA2_GET_VERSION, buf);
-        if (ret < 0) {
-            ret = ioctl(fd, RGA_GET_VERSION, buf);
-        }
+        ret = ioctl(fd, RGA_IOC_GET_DRVIER_VERSION, &ctx->mDriverVersion);
+        if (ret >= 0) {
+            ret = ioctl(fd, RGA_IOC_GET_HW_VERSION, &ctx->mHwVersions);
+            if (ret < 0) {
+                ALOGE("librga fail to get hw versions!\n");
+                goto getVersionError;
+            }
+            /*
+             * For legacy:  Because normalRGA needs 'mVersion' to use rga2 normally.
+             *              So here assign the version of RGA2 to 'mVersion'.
+             */
+            ctx->mVersion = atof((char *)ctx->mHwVersions.version[2].str);
+            memcpy(ctx->mVersion_str, ctx->mHwVersions.version[2].str, sizeof(ctx->mVersion_str));
+        } else {
+            ALOGE("librga fail to get driver version! Legacy mode will be enabled.\n");
 
-        ctx->mVersion = atof(buf);
-        memcpy(ctx->mVersion_str, buf, sizeof(ctx->mVersion_str));
+            /* Choose legacy mode. */
+            ctx->mHwVersions.size = 1;
+            /* Try to get the version of RGA2 */
+            ret = ioctl(fd, RGA2_GET_VERSION, ctx->mHwVersions.version[0].str);
+            if (ret < 0) {
+                /* Try to get the version of RGA1 */
+                ret = ioctl(fd, RGA_GET_VERSION, ctx->mHwVersions.version[0].str);
+                if (ret < 0) {
+                    ALOGE("librga fail to get RGA2/RGA1 version! %s\n", strerror(ret));
+                    goto getVersionError;
+                }
+            }
+
+            sscanf((char *)ctx->mHwVersions.version[0].str, "%x.%x.%x",
+                &ctx->mHwVersions.version[0].major,
+                &ctx->mHwVersions.version[0].minor,
+                &ctx->mHwVersions.version[0].revision);
+
+            ctx->mVersion = atof((char *)ctx->mHwVersions.version[0].str);
+            memcpy(ctx->mVersion_str, ctx->mHwVersions.version[0].str, sizeof(ctx->mVersion_str));
+        }
 
         NormalRgaInitTables();
 
@@ -130,6 +159,7 @@ int NormalRgaOpen(void **context) {
     *context = (void *)ctx;
     return ret;
 
+getVersionError:
 rgaOpenErr:
     free(ctx);
 mallocErr:
