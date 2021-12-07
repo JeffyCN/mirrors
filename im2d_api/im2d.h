@@ -37,7 +37,7 @@ extern "C" {
 #define RGA_API_MAJOR_VERSION	 1
 #define RGA_API_MINOR_VERSION	 6
 #define RGA_API_REVISION_VERSION 1
-#define RGA_API_BUILD_VERSION	 2
+#define RGA_API_BUILD_VERSION	 3
 
 #define RGA_API_VERSION STR(RGA_API_MAJOR_VERSION) "." STR(RGA_API_MINOR_VERSION) "." STR(RGA_API_REVISION_VERSION) "_[" STR(RGA_API_BUILD_VERSION) "]"
 #define RGA_API_FULL_VERSION "rga_api version " RGA_API_VERSION
@@ -111,6 +111,30 @@ typedef enum {
 } IM_ROP_CODE;
 
 typedef enum {
+    IM_RGA_HW_VERSION_RGA_V_ERR_INDEX = 0x0,
+    IM_RGA_HW_VERSION_RGA_1_INDEX,
+    IM_RGA_HW_VERSION_RGA_1_PLUS_INDEX,
+    IM_RGA_HW_VERSION_RGA_2_INDEX,
+    IM_RGA_HW_VERSION_RGA_2_LITE0_INDEX,
+    IM_RGA_HW_VERSION_RGA_2_LITE1_INDEX,
+    IM_RGA_HW_VERSION_RGA_2_ENHANCE_INDEX,
+    IM_RGA_HW_VERSION_RGA_3_INDEX,
+    IM_RGA_HW_VERSION_MASK_INDEX,
+} IM_RGA_HW_VERSION_INDEX;
+
+typedef enum {
+    IM_RGA_HW_VERSION_RGA_V_ERR     = 1 << IM_RGA_HW_VERSION_RGA_V_ERR_INDEX,
+    IM_RGA_HW_VERSION_RGA_1         = 1 << IM_RGA_HW_VERSION_RGA_1_INDEX,
+    IM_RGA_HW_VERSION_RGA_1_PLUS    = 1 << IM_RGA_HW_VERSION_RGA_1_PLUS_INDEX,
+    IM_RGA_HW_VERSION_RGA_2         = 1 << IM_RGA_HW_VERSION_RGA_2_INDEX,
+    IM_RGA_HW_VERSION_RGA_2_LITE0   = 1 << IM_RGA_HW_VERSION_RGA_2_LITE0_INDEX,
+    IM_RGA_HW_VERSION_RGA_2_LITE1   = 1 << IM_RGA_HW_VERSION_RGA_2_LITE1_INDEX,
+    IM_RGA_HW_VERSION_RGA_2_ENHANCE = 1 << IM_RGA_HW_VERSION_RGA_2_ENHANCE_INDEX,
+    IM_RGA_HW_VERSION_RGA_3         = 1 << IM_RGA_HW_VERSION_RGA_3_INDEX,
+    IM_RGA_HW_VERSION_MASK          = ~((~(unsigned int)0x0 << IM_RGA_HW_VERSION_MASK_INDEX) | 1),
+}IM_RGA_HW_VERSION;
+
+typedef enum {
     IM_RGA_SUPPORT_FORMAT_ERROR_INDEX = 0,
     IM_RGA_SUPPORT_FORMAT_RGB_INDEX,
     IM_RGA_SUPPORT_FORMAT_RGB_OTHER_INDEX,
@@ -178,6 +202,32 @@ typedef enum {
     IM_RGA_SUPPORT_FEATURE_MASK           = ~((~(unsigned int)0x0 << IM_RGA_SUPPORT_FEATURE_MASK_INDEX) | 1),
 } IM_RGA_SUPPORT_FEATURE;
 
+/* Get RGA basic information index */
+typedef enum {
+    RGA_VENDOR = 0,
+    RGA_VERSION,
+    RGA_MAX_INPUT,
+    RGA_MAX_OUTPUT,
+    RGA_SCALE_LIMIT,
+    RGA_INPUT_FORMAT,
+    RGA_OUTPUT_FORMAT,
+    RGA_FEATURE,
+    RGA_EXPECTED,
+    RGA_ALL,
+} IM_INFORMATION;
+
+typedef struct {
+    unsigned int version;
+    unsigned int input_resolution;
+    unsigned int output_resolution;
+    unsigned int scale_limit;
+    unsigned int performance;
+    unsigned int input_format;
+    unsigned int output_format;
+    unsigned int feature;
+    char reserved[28];
+} rga_info_table_entry;
+
 /* Status codes, returned by any blit function */
 typedef enum {
     IM_STATUS_NOERROR         =  2,
@@ -224,51 +274,11 @@ typedef enum {
     INTER_CUBIC,
 } IM_SCALE_MODE;
 
-/* Get RGA basic information index */
-typedef enum {
-    RGA_VENDOR = 0,
-    RGA_VERSION,
-    RGA_MAX_INPUT,
-    RGA_MAX_OUTPUT,
-    RGA_SCALE_LIMIT,
-    RGA_INPUT_FORMAT,
-    RGA_OUTPUT_FORMAT,
-    RGA_FEATURE,
-    RGA_EXPECTED,
-    RGA_ALL,
-} IM_INFORMATION;
-
-/*rga version index*/
-typedef enum {
-    RGA_V_ERR                  = 0x0,
-    RGA_1                      = 0x1,
-    RGA_1_PLUS                 = 0x2,
-    RGA_2                      = 0x3,
-    RGA_2_LITE0                = 0x4,
-    RGA_2_LITE1                = 0x5,
-    RGA_2_ENHANCE              = 0x6,
-    RGA_3                      = 0x7,
-} RGA_VERSION_NUM;
-
 typedef enum {
     IM_CONFIG_SCHEDULER_CORE,
     IM_CONFIG_PRIORITY,
     IM_CHECK_CONFIG,
 } IM_CONFIG_NAME;
-
-//struct AHardwareBuffer AHardwareBuffer;
-
-typedef struct {
-    RGA_VERSION_NUM version;
-    unsigned int input_resolution;
-    unsigned int output_resolution;
-    unsigned int scale_limit;
-    unsigned int performance;
-    unsigned int input_format;
-    unsigned int output_format;
-    unsigned int feature;
-    char reserved[28];
-} rga_info_table_entry;
 
 /* Rectangle definition */
 typedef struct {
