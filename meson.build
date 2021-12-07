@@ -2,7 +2,7 @@ project('gst-plugins-bad', 'c',
   version : '1.10.0',
   license : 'LGPL',
   meson_version : '>= 0.47',
-  default_options : [ 'warning_level=1',
+  default_options : [ 'warning_level=3',
                       'buildtype=debugoptimized' ])
 
 gst_version = meson.project_version()
@@ -50,8 +50,6 @@ message('Disabling deprecated GLib API')
 add_project_arguments('-DG_DISABLE_DEPRECATED', language: 'c')
 
 add_project_arguments('-DUNUSED=__attribute__((unused))', language: 'c')
-
-add_project_arguments(['-Wall', '-Werror'], language: 'c')
 
 cdata = configuration_data()
 
