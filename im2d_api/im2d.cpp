@@ -326,6 +326,40 @@ IM_API static bool rga_is_rect_valid(im_rect rect) {
     return (rect.x > 0 || rect.y > 0 || (rect.width > 0 && rect.height > 0));
 }
 
+IM_API static IM_STATUS rga_align_check_yuv_8(const char *name, rga_buffer_t info, im_rect rect) {
+    if ((info.wstride % 4) || (info.hstride % 2) ||
+        (info.width % 2)  || (info.height % 2) ||
+        (rect.x % 2) || (rect.y % 2) ||
+        (rect.width % 2) || (rect.height % 2)) {
+        imSetErrorMsg("%s, Error yuv not align to 2 or width stride not align to 4, "
+                        "rect[x,y,w,h] = [%d, %d, %d, %d], "
+                        "wstride = %d, hstride = %d, format = 0x%x(%s)\n%s",
+                        name, rect.x, rect.y, info.width, info.height, info.wstride, info.hstride,
+                        info.format, translate_format_str(info.format),
+                        querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
+        return IM_STATUS_INVALID_PARAM;
+    }
+
+    return IM_STATUS_SUCCESS;
+}
+
+IM_API static IM_STATUS rga_align_check_yuv_10(const char *name, rga_buffer_t info, im_rect rect) {
+    if ((info.wstride % 16) || (info.hstride % 2) ||
+        (info.width % 2)  || (info.height % 2) ||
+        (rect.x % 2) || (rect.y % 2) ||
+        (rect.width % 2) || (rect.height % 2)) {
+        imSetErrorMsg("%s, Err src wstride is not align to 16 or yuv not align to 2, "
+                        "rect[x,y,w,h] = [%d, %d, %d, %d], "
+                        "wstride = %d, hstride = %d, format = 0x%x(%s)\n%s",
+                        name, rect.x, rect.y, info.width, info.height, info.wstride, info.hstride,
+                        info.format, translate_format_str(info.format),
+                        querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
+        return IM_STATUS_INVALID_PARAM;
+    }
+
+    return IM_STATUS_SUCCESS;
+}
+
 IM_API IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo) {
     if(NULL == dstinfo) {
         ALOGE("rga_im2d: invaild dstinfo");
@@ -423,71 +457,156 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
 
     static rga_info_table_entry table[] = {
         { RGA_V_ERR     ,    0,     0,  0, 0,   0, 0, 0, {0} },
-        { RGA_1         , 8192, 2048,   8, 1,   IM_RGA_SUPPORT_FORMAT_RGB |
+        { RGA_1         , 8192, 2048,   8, 1,   /* input format */
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_BPP |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT,
+                                                /* output format */
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT,
+                                                /* feature */
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE |
                                                 IM_RGA_SUPPORT_FEATURE_ROP,
+                                                /* resived */
                                                 {0} },
-        { RGA_1_PLUS    , 8192, 2048,   8, 1,   IM_RGA_SUPPORT_FORMAT_RGB |
+        { RGA_1_PLUS    , 8192, 2048,   8, 1,   /* input format */
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
                                                 IM_RGA_SUPPORT_FORMAT_BPP |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT,
+                                                /* output format */
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT,
+                                                /* feature */
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE,
+                                                /* resived */
                                                 {0} },
-        { RGA_2         , 8192, 4096, 16, 2,    IM_RGA_SUPPORT_FORMAT_RGB |
-                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+        { RGA_2         , 8192, 4096, 16, 2,    /* input format */
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT,
+                                                /* output format */
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT,
+                                                /* feature */
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE |
                                                 IM_RGA_SUPPORT_FEATURE_ROP,
+                                                /* resived */
                                                 {0} },
-        { RGA_2_LITE0   , 8192, 4096,   8, 2,   IM_RGA_SUPPORT_FORMAT_RGB |
-                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+        { RGA_2_LITE0   , 8192, 4096,   8, 2,   /* input format */
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT,
+                                                /* output format */
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT,
+                                                /* feature */
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE |
                                                 IM_RGA_SUPPORT_FEATURE_ROP,
+                                                /* resived */
                                                 {0} },
-        { RGA_2_LITE1   , 8192, 4096,   8, 2,   IM_RGA_SUPPORT_FORMAT_RGB |
-                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8 |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_10,
+        { RGA_2_LITE1   , 8192, 4096,   8, 2,   /* input format */
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8,
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_10_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_10_BIT,
+                                                /* output format */
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT,
+                                                /* feature */
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE,
+                                                /* resived */
                                                 {0} },
-        { RGA_2_ENHANCE , 8192, 8192, 16,  2,   IM_RGA_SUPPORT_FORMAT_RGB |
-                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8 |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_10,
+        { RGA_2_ENHANCE , 8192, 8192, 16,  2,   /* input format */
                                                 IM_RGA_SUPPORT_FORMAT_RGB |
                                                 IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_8 |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_10 |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_10_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_10_BIT,
+                                                /* output format */
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT |
                                                 IM_RGA_SUPPORT_FORMAT_YUYV_420 |
                                                 IM_RGA_SUPPORT_FORMAT_YUYV_422,
+                                                /* feature */
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_FILL |
                                                 IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE |
                                                 IM_RGA_SUPPORT_FEATURE_ROP,
-                                                {0} }
+                                                /* resived */
+                                                {0} },
+        { RGA_3         , 8128, 8128,  8,  4,   /* input format */
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUYV_422,
+                                                /* output format */
+                                                IM_RGA_SUPPORT_FORMAT_RGB |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT |
+                                                IM_RGA_SUPPORT_FORMAT_YUYV_422,
+                                                /* feature */
+                                                IM_RGA_SUPPORT_FEATURE_FBC |
+                                                IM_RGA_SUPPORT_FEATURE_BLEND_YUV |
+                                                IM_RGA_SUPPORT_FEATURE_BT2020,
+                                                /* resived */
+                                                {0} },
     };
 
     /* Get RGA context */
@@ -524,6 +643,10 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                 break;
             case 0x22245 :
                 rga_version = RGA_2_ENHANCE;
+                memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
+                break;
+            case 0x76831 :
+                rga_version = RGA_3;
                 memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
                 break;
             default :
@@ -621,7 +744,6 @@ IM_API const char* querystring(int name) {
     long usage = 0;
     enum {
         RGA_API = 0,
-        RGA_BUILT,
     };
     const char *temp;
     const char *output_vendor = "Rockchip Electronics Co.,Ltd.";
@@ -638,7 +760,6 @@ IM_API const char* querystring(int name) {
     };
     const char *version_name[] = {
         "RGA_api version       : ",
-        "RGA_built version     : "
     };
     const char *output_version[] = {
         "unknown",
@@ -647,13 +768,15 @@ IM_API const char* querystring(int name) {
         "RGA_2",
         "RGA_2_lite0",
         "RGA_2_lite1",
-        "RGA_2_Enhance"
+        "RGA_2_Enhance",
+        "RGA_3",
     };
     const char *output_resolution[] = {
         "unknown",
         "2048x2048",
         "4096x4096",
-        "8192x8192"
+        "8192x8192",
+        "8128x8128",
     };
     const char *output_scale_limit[] = {
         "unknown",
@@ -665,8 +788,14 @@ IM_API const char* querystring(int name) {
         "RGBA_8888 RGB_888 RGB_565 ",
         "RGBA_4444 RGBA_5551 ",
         "BPP8 BPP4 BPP2 BPP1 ",
-        "YUV420/YUV422 ",
-        "YUV420_10bit/YUV422_10bit ",
+        "YUV420_sp_8bit ",
+        "YUV420_sp_10bit ",
+        "YUV420_p_8bit ",
+        "YUV420_p_10bit ",
+        "YUV422_sp_8bit ",
+        "YUV422_sp_10bit ",
+        "YUV422_p_8bit ",
+        "YUV422_p_10bit ",
         "YUYV420 ",
         "YUYV422 ",
         "YUV400/Y4 "
@@ -679,6 +808,9 @@ IM_API const char* querystring(int name) {
         "quantize ",
         "src1_r2y_csc ",
         "dst_full_csc ",
+        "FBC_mode ",
+        "blend_in_YUV ",
+        "BT.2020 ",
     };
     const char *performance[] = {
         "unknown",
@@ -719,6 +851,9 @@ IM_API const char* querystring(int name) {
                     case 8192 :
                         out << output_name[name] << output_resolution[3] << endl;
                         break;
+                    case 8128 :
+                        out << output_name[name] << output_resolution[4] << endl;
+                        break;
                     default :
                         out << output_name[name] << output_resolution[RGA_V_ERR] << endl;
                         break;
@@ -735,6 +870,9 @@ IM_API const char* querystring(int name) {
                         break;
                     case 8192 :
                         out << output_name[name] << output_resolution[3] << endl;
+                        break;
+                    case 8128 :
+                        out << output_name[name] << output_resolution[4] << endl;
                         break;
                     default :
                         out << output_name[name] << output_resolution[RGA_V_ERR] << endl;
@@ -764,10 +902,22 @@ IM_API const char* querystring(int name) {
                     out << output_format[IM_RGA_SUPPORT_FORMAT_RGB_OTHER_INDEX];
                 if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_BPP)
                     out << output_format[IM_RGA_SUPPORT_FORMAT_BPP_INDEX];
-                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_8)
-                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_8_INDEX];
-                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_10)
-                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_10_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_10_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_10_BIT_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT_INDEX];
+                if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_10_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_10_BIT_INDEX];
                 if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUYV_420)
                     out << output_format[IM_RGA_SUPPORT_FORMAT_YUYV_420_INDEX];
                 if(rga_info.input_format & IM_RGA_SUPPORT_FORMAT_YUYV_422)
@@ -787,10 +937,22 @@ IM_API const char* querystring(int name) {
                     out << output_format[IM_RGA_SUPPORT_FORMAT_RGB_OTHER_INDEX];
                 if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_BPP)
                     out << output_format[IM_RGA_SUPPORT_FORMAT_BPP_INDEX];
-                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_8)
-                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_8_INDEX];
-                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_10)
-                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_10_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_10_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_10_BIT_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT_INDEX];
+                if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_10_BIT)
+                    out << output_format[IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_10_BIT_INDEX];
                 if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUYV_420)
                     out << output_format[IM_RGA_SUPPORT_FORMAT_YUYV_420_INDEX];
                 if(rga_info.output_format & IM_RGA_SUPPORT_FORMAT_YUYV_422)
@@ -816,6 +978,12 @@ IM_API const char* querystring(int name) {
                     out << feature[IM_RGA_SUPPORT_FEATURE_SRC1_R2Y_CSC_INDEX];
                 if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC)
                     out << feature[IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_FBC)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_FBC_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_BLEND_YUV)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_BLEND_YUV_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_BT2020)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_BT2020_INDEX];
                 out << endl;
                 break;
 
@@ -953,6 +1121,7 @@ IM_API IM_STATUS rga_check_limit(rga_buffer_t src, rga_buffer_t dst, int scale_u
 }
 
 IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, int format_usage, int mode_usgae) {
+    IM_STATUS ret;
     int format = -1;
 
     format = RkRgaGetRgaFormat(RkRgaCompatibleFormat(info.format));
@@ -993,49 +1162,61 @@ IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect r
                           querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
             return IM_STATUS_NOT_SUPPORTED;
         }
-    } else if (format == RK_FORMAT_YCrCb_420_SP || format == RK_FORMAT_YCbCr_420_SP ||
-               format == RK_FORMAT_YCrCb_420_P  || format == RK_FORMAT_YCbCr_420_P  ||
-               format == RK_FORMAT_YCrCb_422_SP || format == RK_FORMAT_YCbCr_422_SP ||
-               format == RK_FORMAT_YCrCb_422_P  || format == RK_FORMAT_YCbCr_422_P) {
-        if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUV_8) {
-            imSetErrorMsg("%s unsupported YUV 8bit format, format = 0x%x(%s)\n%s",
+    } else if (format == RK_FORMAT_YCrCb_420_SP || format == RK_FORMAT_YCbCr_420_SP) {
+        if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT) {
+            imSetErrorMsg("%s unsupported YUV420 semi-planner 8bit format, format = 0x%x(%s)\n%s",
                           name, info.format, translate_format_str(info.format),
                           querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
             return IM_STATUS_NOT_SUPPORTED;
         }
-        /*Align check*/
-        if ((info.wstride % 4) || (info.hstride % 2) ||
-            (info.width % 2)  || (info.height % 2) ||
-            (rect.x % 2) || (rect.y % 2) ||
-            (rect.width % 2) || (rect.height % 2)) {
-            imSetErrorMsg("%s, Error yuv not align to 2 or width stride not align to 4, "
-                          "rect[x,y,w,h] = [%d, %d, %d, %d], "
-                          "wstride = %d, hstride = %d, format = 0x%x(%s)\n%s",
-                          name, rect.x, rect.y, info.width, info.height, info.wstride, info.hstride,
-                          info.format, translate_format_str(info.format),
-                          querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
-            return IM_STATUS_INVALID_PARAM;
-        }
-    } else if (format == RK_FORMAT_YCbCr_420_SP_10B || format == RK_FORMAT_YCrCb_420_SP_10B) {
-        if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUV_10) {
-            imSetErrorMsg("%s unsupported YUV 10bit format, format = 0x%x(%s)\n%s",
+
+        ret = rga_align_check_yuv_8(name, info, rect);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
+    } else if (format == RK_FORMAT_YCrCb_420_P  || format == RK_FORMAT_YCbCr_420_P) {
+        if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT) {
+            imSetErrorMsg("%s unsupported YUV420 planner 8bit format, format = 0x%x(%s)\n%s",
                           name, info.format, translate_format_str(info.format),
                           querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
             return IM_STATUS_NOT_SUPPORTED;
         }
-        /*Align check*/
-        if ((info.wstride % 16) || (info.hstride % 2) ||
-            (info.width % 2)  || (info.height % 2) ||
-            (rect.x % 2) || (rect.y % 2) ||
-            (rect.width % 2) || (rect.height % 2)) {
-            imSetErrorMsg("%s, Err src wstride is not align to 16 or yuv not align to 2, "
-                          "rect[x,y,w,h] = [%d, %d, %d, %d], "
-                          "wstride = %d, hstride = %d, format = 0x%x(%s)\n%s",
-                          name, rect.x, rect.y, info.width, info.height, info.wstride, info.hstride,
-                          info.format, translate_format_str(info.format),
+
+        ret = rga_align_check_yuv_8(name, info, rect);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
+    } else if (format == RK_FORMAT_YCrCb_422_SP || format == RK_FORMAT_YCbCr_422_SP) {
+        if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT) {
+            imSetErrorMsg("%s unsupported YUV422 semi-planner 8bit format, format = 0x%x(%s)\n%s",
+                          name, info.format, translate_format_str(info.format),
                           querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
-            return IM_STATUS_INVALID_PARAM;
+            return IM_STATUS_NOT_SUPPORTED;
         }
+
+        ret = rga_align_check_yuv_8(name, info, rect);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
+    } else if (format == RK_FORMAT_YCrCb_422_P  || format == RK_FORMAT_YCbCr_422_P) {
+        if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT) {
+            imSetErrorMsg("%s unsupported YUV422 planner 8bit format, format = 0x%x(%s)\n%s",
+                          name, info.format, translate_format_str(info.format),
+                          querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+
+        ret = rga_align_check_yuv_8(name, info, rect);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
+    } else if (format == RK_FORMAT_YCrCb_420_SP_10B || format == RK_FORMAT_YCbCr_420_SP_10B) {
+        if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT) {
+            imSetErrorMsg("%s unsupported YUV420 semi-planner 10bit format, format = 0x%x(%s)\n%s",
+                          name, info.format, translate_format_str(info.format),
+                          querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+
+        ret = rga_align_check_yuv_10(name, info, rect);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
         ALOGE("If it is an RK encoder output, it needs to be aligned with an odd multiple of 256.\n");
     } else if (format == RK_FORMAT_YUYV_420 || format == RK_FORMAT_YVYU_420 ||
                format == RK_FORMAT_UYVY_420 || format == RK_FORMAT_VYUY_420) {
@@ -1045,6 +1226,10 @@ IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect r
                           querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
             return IM_STATUS_NOT_SUPPORTED;
         }
+
+        ret = rga_align_check_yuv_8(name, info, rect);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
     } else if (format == RK_FORMAT_YUYV_422 || format == RK_FORMAT_YVYU_422 ||
                format == RK_FORMAT_UYVY_422 || format == RK_FORMAT_VYUY_422) {
         if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUYV_422) {
@@ -1053,6 +1238,10 @@ IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect r
                           querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
             return IM_STATUS_NOT_SUPPORTED;
         }
+
+        ret = rga_align_check_yuv_8(name, info, rect);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
     } else if (format == RK_FORMAT_YCbCr_400) {
         if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUV_400) {
             imSetErrorMsg("%s unsupported YUV400 format, format = 0x%x(%s)\n%s",
@@ -1060,6 +1249,10 @@ IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect r
                           querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
             return IM_STATUS_NOT_SUPPORTED;
         }
+
+        ret = rga_align_check_yuv_8(name, info, rect);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
     } else if (format == RK_FORMAT_Y4) {
         if (~format_usage & IM_RGA_SUPPORT_FORMAT_Y4) {
             imSetErrorMsg("%s unsupported Y4/Y1 format, format = 0x%x(%s)\n%s",
@@ -1067,6 +1260,10 @@ IM_API IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect r
                           querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
             return IM_STATUS_NOT_SUPPORTED;
         }
+
+        ret = rga_align_check_yuv_8(name, info, rect);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
     } else {
         imSetErrorMsg("%s unsupported this format, format = 0x%x(%s)\n%s",
                       name, info.format, translate_format_str(info.format),
