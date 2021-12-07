@@ -626,16 +626,14 @@ static gboolean
 gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
 {
   GstMppEnc *self = GST_MPP_ENC (encoder);
+  GstStructure *config, *params;
   GstVideoAlignment align;
-  GstVideoInfo info;
   GstBufferPool *pool;
-  GstStructure *config;
+  GstVideoInfo info;
   GstCaps *caps;
   guint size;
 
   GST_DEBUG_OBJECT (self, "propose allocation");
-
-  gst_query_add_allocation_meta (query, GST_VIDEO_META_API_TYPE, NULL);
 
   gst_query_parse_allocation (query, &caps, NULL);
   if (caps == NULL)
@@ -644,7 +642,23 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
   if (!gst_video_info_from_caps (&info, caps))
     return FALSE;
 
-  size = MAX (GST_VIDEO_INFO_SIZE (&info), GST_VIDEO_INFO_SIZE (&self->info));
+  gst_mpp_video_info_align (&info, 0, 0);
+  size = GST_VIDEO_INFO_SIZE (&info);
+
+  gst_video_alignment_reset (&align);
+  align.padding_right = GST_MPP_VIDEO_INFO_HSTRIDE (&info) -
+      GST_VIDEO_INFO_WIDTH (&info);
+  align.padding_bottom = GST_MPP_VIDEO_INFO_VSTRIDE (&info) -
+      GST_VIDEO_INFO_HEIGHT (&info);
+
+  /* Expose alignment to video-meta */
+  params = gst_structure_new ("video-meta",
+      "padding-top", G_TYPE_UINT, align.padding_top,
+      "padding-bottom", G_TYPE_UINT, align.padding_bottom,
+      "padding-left", G_TYPE_UINT, align.padding_left,
+      "padding-right", G_TYPE_UINT, align.padding_right, NULL);
+  gst_query_add_allocation_meta (query, GST_VIDEO_META_API_TYPE, params);
+  gst_structure_free (params);
 
   pool = gst_video_buffer_pool_new ();
 
@@ -652,12 +666,7 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
   gst_buffer_pool_config_set_params (config, caps, size, 0, 0);
   gst_buffer_pool_config_set_allocator (config, self->allocator, NULL);
 
-  gst_video_alignment_reset (&align);
-  align.padding_right = GST_MPP_ALIGN (GST_VIDEO_INFO_WIDTH (&info)) -
-      GST_VIDEO_INFO_WIDTH (&info);
-  align.padding_bottom = GST_MPP_ALIGN (GST_VIDEO_INFO_HEIGHT (&info)) -
-      GST_VIDEO_INFO_HEIGHT (&info);
-
+  /* Expose alignment to pool */
   gst_buffer_pool_config_add_option (config,
       GST_BUFFER_POOL_OPTION_VIDEO_ALIGNMENT);
   gst_buffer_pool_config_set_video_alignment (config, &align);
