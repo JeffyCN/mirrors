@@ -418,8 +418,8 @@ IM_API void rga_check_perpare(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t
 }
 
 IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
-    char buf[16];
-    int  rga_version = 0, rga_svn_version = 0;
+    int  rga_version = 0;
+    int i = 0;
 
     static rga_info_table_entry table[] = {
         { RGA_V_ERR     ,    0,     0,  0, 0,   0, 0, 0, {0} },
@@ -504,18 +504,20 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
         }
     }
 
-    sprintf(buf, "%f", rgaCtx->mVersion);
-    sscanf(rgaCtx->mVersion_str, "%*[^.].%*[^.].%x", &rga_svn_version);
+    /* Currently only 3588 is multi-core, if it is 3588, it points to RGA2. */
+    i = rgaCtx->mHwVersions.size > 1 ? 2 : 0;
 
-    if (strncmp(buf, "2.0", 4) == 0) {
-        if (rga_svn_version == 0) {
+    if (rgaCtx->mHwVersions.version[i].major == 2 &&
+        rgaCtx->mHwVersions.version[i].minor == 0) {
+        if (rgaCtx->mHwVersions.version[i].revision == 0) {
             rga_version = RGA_2;
             memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
         } else {
             goto TRY_TO_COMPATIBLE;
         }
-    } else if (strncmp(buf, "3.0", 3) == 0) {
-        switch (rga_svn_version) {
+    } else if (rgaCtx->mHwVersions.version[i].major == 3 &&
+               rgaCtx->mHwVersions.version[i].minor == 0) {
+        switch (rgaCtx->mHwVersions.version[i].revision) {
             case 0x16445 :
                 rga_version = RGA_2;
                 memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
@@ -527,8 +529,9 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
             default :
                 goto TRY_TO_COMPATIBLE;
         }
-    } else if (strncmp(buf, "3.2", 3) == 0) {
-        switch (rga_svn_version) {
+    } else if (rgaCtx->mHwVersions.version[i].major == 3 &&
+               rgaCtx->mHwVersions.version[i].minor == 2) {
+        switch (rgaCtx->mHwVersions.version[i].revision) {
             case 0x18218 :
                 rga_version = RGA_2_ENHANCE;
                 memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
@@ -549,8 +552,9 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
             default :
                 goto TRY_TO_COMPATIBLE;
         }
-    } else if (strncmp(buf, "4.0", 3) == 0) {
-        switch (rga_svn_version) {
+    } else if (rgaCtx->mHwVersions.version[i].major == 4 &&
+               rgaCtx->mHwVersions.version[i].minor == 0) {
+        switch (rgaCtx->mHwVersions.version[i].revision) {
             case 0x18632 :
                 rga_version = RGA_2_LITE0;
                 memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
@@ -563,8 +567,9 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
             default :
                 goto TRY_TO_COMPATIBLE;
         }
-    } else if (strncmp(buf, "42.0", 4) == 0) {
-        if (rga_svn_version == 17760) {
+    } else if (rgaCtx->mHwVersions.version[i].major == 42 &&
+               rgaCtx->mHwVersions.version[i].minor == 0) {
+        if (rgaCtx->mHwVersions.version[i].revision == 0x17760) {
             rga_version = RGA_2_LITE1;
             memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
         } else {
@@ -577,22 +582,22 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
     return IM_STATUS_SUCCESS;
 
 TRY_TO_COMPATIBLE:
-    if (strncmp(buf,"1.3",3) == 0)
+    if (strncmp((char *)rgaCtx->mHwVersions.version[i].str, "1.3", 3) == 0)
         rga_version = RGA_1;
-    else if (strncmp(buf,"1.6",3) == 0)
+    else if (strncmp((char *)rgaCtx->mHwVersions.version[i].str, "1.6", 3) == 0)
         rga_version = RGA_1_PLUS;
     /*3288 vesion is 2.00*/
-    else if (strncmp(buf,"2.00",4) == 0)
+    else if (strncmp((char *)rgaCtx->mHwVersions.version[i].str, "2.00", 4) == 0)
         rga_version = RGA_2;
     /*3288w version is 3.00*/
-    else if (strncmp(buf,"3.00",4) == 0)
+    else if (strncmp((char *)rgaCtx->mHwVersions.version[i].str, "3.00", 4) == 0)
         rga_version = RGA_2;
-    else if (strncmp(buf,"3.02",4) == 0)
+    else if (strncmp((char *)rgaCtx->mHwVersions.version[i].str, "3.02", 4) == 0)
         rga_version = RGA_2_ENHANCE;
-    else if (strncmp(buf,"4.00",4) == 0)
+    else if (strncmp((char *)rgaCtx->mHwVersions.version[i].str, "4.00", 4) == 0)
         rga_version = RGA_2_LITE0;
     /*The version number of lite1 cannot be obtained temporarily.*/
-    else if (strncmp(buf,"4.00",4) == 0)
+    else if (strncmp((char *)rgaCtx->mHwVersions.version[i].str, "4.00", 4) == 0)
         rga_version = RGA_2_LITE1;
     else
         rga_version = RGA_V_ERR;
@@ -600,8 +605,10 @@ TRY_TO_COMPATIBLE:
     memcpy(return_table, &table[rga_version], sizeof(rga_info_table_entry));
 
     if (rga_version == RGA_V_ERR) {
-        ALOGE("rga_im2d: Can not get the correct RGA version, please check the driver, version=%s\n", rgaCtx->mVersion_str);
-        imSetErrorMsg("Can not get the correct RGA version, please check the driver, version=%s", rgaCtx->mVersion_str);
+        ALOGE("rga_im2d: Can not get the correct RGA version, please check the driver, version=%s\n",
+              rgaCtx->mHwVersions.version[i].str);
+        imSetErrorMsg("Can not get the correct RGA version, please check the driver, version=%s",
+                      rgaCtx->mHwVersions.version[i].str);
         return IM_STATUS_FAILED;
     }
 

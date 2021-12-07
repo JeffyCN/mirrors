@@ -110,12 +110,12 @@ int NormalRgaOpen(void **context) {
                 ALOGE("librga fail to get hw versions!\n");
                 goto getVersionError;
             }
+
             /*
-             * For legacy:  Because normalRGA needs 'mVersion' to use rga2 normally.
-             *              So here assign the version of RGA2 to 'mVersion'.
+             * For legacy: Because normalRGA requires a version greater
+             *             than 2.0 to use rga2 normally.
              */
-            ctx->mVersion = atof((char *)ctx->mHwVersions.version[2].str);
-            memcpy(ctx->mVersion_str, ctx->mHwVersions.version[2].str, sizeof(ctx->mVersion_str));
+            ctx->mVersion = (float)3.2;
         } else {
             ALOGE("librga fail to get driver version! Legacy mode will be enabled.\n");
 
@@ -138,7 +138,6 @@ int NormalRgaOpen(void **context) {
                 &ctx->mHwVersions.version[0].revision);
 
             ctx->mVersion = atof((char *)ctx->mHwVersions.version[0].str);
-            memcpy(ctx->mVersion_str, ctx->mHwVersions.version[0].str, sizeof(ctx->mVersion_str));
         }
 
         NormalRgaInitTables();

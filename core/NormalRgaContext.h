@@ -33,7 +33,6 @@ struct rgaContext {
     int mLogOnce;
     float mVersion;
     int Is_debug;
-    char mVersion_str[16];
     struct rga_hw_versions_t mHwVersions;
     struct rga_version_t mDriverVersion;
 };
