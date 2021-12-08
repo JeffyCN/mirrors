@@ -25,6 +25,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include "rga.h"
 
 #ifndef IM_API
 #define IM_API /* define API export as needed */
@@ -36,8 +37,8 @@ extern "C" {
 /* RGA im2d api verison */
 #define RGA_API_MAJOR_VERSION	 1
 #define RGA_API_MINOR_VERSION	 6
-#define RGA_API_REVISION_VERSION 1
-#define RGA_API_BUILD_VERSION	 3
+#define RGA_API_REVISION_VERSION 2
+#define RGA_API_BUILD_VERSION	 0
 
 #define RGA_API_VERSION STR(RGA_API_MAJOR_VERSION) "." STR(RGA_API_MINOR_VERSION) "." STR(RGA_API_REVISION_VERSION) "_[" STR(RGA_API_BUILD_VERSION) "]"
 #define RGA_API_FULL_VERSION "rga_api version " RGA_API_VERSION
@@ -228,6 +229,11 @@ typedef struct {
     char reserved[28];
 } rga_info_table_entry;
 
+typedef struct {
+    struct rga_version_t user;
+    struct rga_version_t driver;
+} rga_dirver_bind_table_entry;
+
 /* Status codes, returned by any blit function */
 typedef enum {
     IM_STATUS_NOERROR         =  2,
@@ -236,6 +242,7 @@ typedef enum {
     IM_STATUS_OUT_OF_MEMORY   = -2,
     IM_STATUS_INVALID_PARAM   = -3,
     IM_STATUS_ILLEGAL_PARAM   = -4,
+    IM_STATUS_ERROR_VERSION   = -5,
     IM_STATUS_FAILED          =  0,
 } IM_STATUS;
 
