@@ -35,7 +35,7 @@
 #include "rtk_bt.h"
 #include "rtk_misc.h"
 
-#define VERSION "3.1.9321f79.20200610-155144"
+#define VERSION "3.1.99b8145.20210324-112606"
 
 #ifdef BTCOEX
 #include "rtk_coex.h"
@@ -78,6 +78,55 @@ static struct usb_device_id btusb_table[] = {
 		.match_flags = USB_DEVICE_ID_MATCH_VENDOR |
 			USB_DEVICE_ID_MATCH_INT_INFO,
 		.idVendor = 0x1358,
+		.bInterfaceClass = 0xe0,
+		.bInterfaceSubClass = 0x01,
+		.bInterfaceProtocol = 0x01
+	}, {
+		.match_flags = USB_DEVICE_ID_MATCH_VENDOR |
+			USB_DEVICE_ID_MATCH_INT_INFO,
+		.idVendor = 0x04ca,
+		.bInterfaceClass = 0xe0,
+		.bInterfaceSubClass = 0x01,
+		.bInterfaceProtocol = 0x01
+	}, {
+		.match_flags = USB_DEVICE_ID_MATCH_VENDOR |
+			USB_DEVICE_ID_MATCH_INT_INFO,
+		.idVendor = 0x2ff8,
+		.bInterfaceClass = 0xe0,
+		.bInterfaceSubClass = 0x01,
+		.bInterfaceProtocol = 0x01
+	}, {
+		.match_flags = USB_DEVICE_ID_MATCH_VENDOR |
+			USB_DEVICE_ID_MATCH_INT_INFO,
+		.idVendor = 0x0b05,
+		.bInterfaceClass = 0xe0,
+		.bInterfaceSubClass = 0x01,
+		.bInterfaceProtocol = 0x01
+	}, {
+		.match_flags = USB_DEVICE_ID_MATCH_VENDOR |
+			USB_DEVICE_ID_MATCH_INT_INFO,
+		.idVendor = 0x0930,
+		.bInterfaceClass = 0xe0,
+		.bInterfaceSubClass = 0x01,
+		.bInterfaceProtocol = 0x01
+	}, {
+		.match_flags = USB_DEVICE_ID_MATCH_VENDOR |
+			USB_DEVICE_ID_MATCH_INT_INFO,
+		.idVendor = 0x10ec,
+		.bInterfaceClass = 0xe0,
+		.bInterfaceSubClass = 0x01,
+		.bInterfaceProtocol = 0x01
+	}, {
+		.match_flags = USB_DEVICE_ID_MATCH_VENDOR |
+			USB_DEVICE_ID_MATCH_INT_INFO,
+		.idVendor = 0x04c5,
+		.bInterfaceClass = 0xe0,
+		.bInterfaceSubClass = 0x01,
+		.bInterfaceProtocol = 0x01
+	}, {
+		.match_flags = USB_DEVICE_ID_MATCH_VENDOR |
+			USB_DEVICE_ID_MATCH_INT_INFO,
+		.idVendor = 0x0cb5,
 		.bInterfaceClass = 0xe0,
 		.bInterfaceSubClass = 0x01,
 		.bInterfaceProtocol = 0x01
@@ -1162,6 +1211,57 @@ static void btusb_waker(struct work_struct *work)
 	RTKBT_DBG("%s end", __FUNCTION__);
 }
 
+#ifdef RTKBT_TV_POWERON_WHITELIST
+static int rtkbt_lookup_le_device_poweron_whitelist(struct hci_dev *hdev,
+						struct usb_device *udev)
+{
+	struct hci_conn_params *p;
+	u8 *cmd;
+	int result = 0;
+
+	hci_dev_lock(hdev);
+	list_for_each_entry(p, &hdev->le_conn_params, list) {
+#if 0 // for debug message
+		RTKBT_DBG("%s(): auto_connect = %d", __FUNCTION__, p->auto_connect);
+		RTKBT_DBG("%s(): addr_type = 0x%02x", __FUNCTION__, p->addr_type);
+		RTKBT_DBG("%s(): addr=%02x:%02x:%02x:%02x:%02x:%02x", __FUNCTION__,
+                                p->addr.b[5], p->addr.b[4], p->addr.b[3],
+                                p->addr.b[2], p->addr.b[1], p->addr.b[0]);
+#endif
+		if ( p->auto_connect == HCI_AUTO_CONN_ALWAYS &&
+			p->addr_type == ADDR_LE_DEV_PUBLIC ) {
+
+			RTKBT_DBG("%s(): Set RTKBT LE Power-on Whitelist for "
+				"%02x:%02x:%02x:%02x:%02x:%02x", __FUNCTION__,
+                                p->addr.b[5], p->addr.b[4], p->addr.b[3],
+                                p->addr.b[2], p->addr.b[1], p->addr.b[0]);
+
+			cmd = kzalloc(16, GFP_ATOMIC);
+			if (!cmd) {
+				RTKBT_ERR("Can't allocate memory for cmd");
+				return -ENOMEM;
+			}
+			cmd[0] = 0x7b;
+			cmd[1] = 0xfc;
+			cmd[2] = 0x07;
+			cmd[3] = 0x00;
+			cmd[4] = p->addr.b[0];
+			cmd[5] = p->addr.b[1];
+			cmd[6] = p->addr.b[2];
+			cmd[7] = p->addr.b[3];
+			cmd[8] = p->addr.b[4];
+			cmd[9] = p->addr.b[5];
+
+			result = __rtk_send_hci_cmd(udev, cmd, 10);
+			kfree(cmd);
+		}
+	}
+	hci_dev_unlock(hdev);
+
+	return result;
+}
+#endif
+
 int rtkbt_pm_notify(struct notifier_block *notifier,
 		    ulong pm_event, void *unused)
 {
@@ -1170,9 +1270,11 @@ int rtkbt_pm_notify(struct notifier_block *notifier,
 	struct usb_interface *intf;
 	struct hci_dev *hdev;
 	/* int err; */
+#if defined RTKBT_SWITCH_PATCH || defined RTKBT_TV_POWERON_WHITELIST
+	int result = 0;
+#endif
 #ifdef RTKBT_SWITCH_PATCH
 	u8 *cmd;
-	int result;
 	static u8 hci_state = 0;
 	struct api_context ctx;
 #endif
@@ -1258,6 +1360,12 @@ int rtkbt_pm_notify(struct notifier_block *notifier,
 		/* Send special vendor commands */
 #endif
 
+#ifdef RTKBT_TV_POWERON_WHITELIST
+		result = rtkbt_lookup_le_device_poweron_whitelist(hdev, udev);
+		if (result < 0) {
+			RTKBT_ERR("rtkbt_lookup_le_device_poweron_whitelist error: %d", result);
+		}
+#endif
 		break;
 
 	case PM_POST_SUSPEND:

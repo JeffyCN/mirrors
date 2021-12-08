@@ -10,6 +10,6 @@ all:
 	$(MAKE) -C $(KDIR) M=$(PWD) modules
 
 clean:
-	rm -rf *.o *.mod.c *.mod.o *.ko *.symvers *.order *.a
+	rm -rf *.o  .*.cmd *.mod.c *.mod.o *.ko *.symvers *.order *.a *.mod
 
 endif

@@ -166,7 +166,7 @@ typedef struct {
 #define FW_TABLE_VERSION "v1.1 20161117"
 static const fw_auto_detection_entry_t fw_auto_detection_table[] = {
 	{"4343A0","bcm43438a0"},    //AP6212
-	{"BCM43430A1","bcm43438a1"}, //AP6212A
+	{"BCM43430A1","BCM43430A1"}, //AP6212A
 	{"BCM20702A","BCM20710A1"}, //AP6210B
 	{"BCM4335C0","bcm4339a0"}, //AP6335
 	{"BCM4330B1","BCM40183B2"}, //AP6330

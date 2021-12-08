@@ -44,6 +44,7 @@ int check_wireless_ready(void);
 int get_kernel_version(void);
 
 static int identify_sucess = -1;
+static int rtl_usb_bt = 0;
 static char recoginze_wifi_chip[64];
 static const char USB_DIR[] = "/sys/bus/usb/devices";
 static const char SDIO_DIR[]= "/sys/bus/sdio/devices";
@@ -98,6 +99,7 @@ static wifi_device supported_wifi_devices[] = {
 	{"AP6275S",     "02d0:aae8"},
 	{"AP6275P",     "14e4:449d"},
 	{"RTL8822BE",	"10ec:b822"},
+	{"RTL8822CE",	"10ec:c822"},
 };
 
 // TODO: use new ANDROID_SOCKET mechanism, once support for multiple
@@ -116,7 +118,9 @@ static wifi_device supported_wifi_devices[] = {
 #define RTL8192DU_DRIVER_MODULE_PATH "/system/lib/modules/8192du.ko"
 #define RTL8812AU_DRIVER_MODULE_PATH "/system/lib/modules/8812au.ko"
 #define RTL8822BE_DRIVER_MODULE_PATH "/system/lib/modules/8822be.ko"
+#define RTL8822CE_DRIVER_MODULE_PATH "/system/lib/modules/8822ce.ko"
 #define BCM_DRIVER_MODULE_PATH       "/system/lib/modules/bcmdhd.ko"
+#define BCM_PCIE_DRIVER_MODULE_PATH   "/system/lib/modules/bcmdhd.ko"
 #define DRIVER_MODULE_PATH_UNKNOW    ""
 
 #define RTL8822BS_DRIVER_MODULE_NAME "8822bs"
@@ -131,6 +135,7 @@ static wifi_device supported_wifi_devices[] = {
 #define RTL8189FS_DRIVER_MODULE_NAME "8189fs"
 #define RTL8192DU_DRIVER_MODULE_NAME "8192du"
 #define RTL8812AU_DRIVER_MODULE_NAME "8812au"
+#define RTL8822CE_DRIVER_MODULE_NAME "8822ce"
 #define BCM_DRIVER_MODULE_NAME       "bcmdhd"
 
 #define AP6330_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/rk903.hcd"
@@ -143,6 +148,7 @@ static wifi_device supported_wifi_devices[] = {
 #define AP6398s_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/BCM4359C0.hcd"
 #define AP6236_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/BCM4343B0.hcd"
 #define AP6275_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/BCM4362A2.hcd"
+#define AP_BT_FIRMWARE_MODULE_PATH "/system/etc/firmware/"
 
 wifi_ko_file_name module_list[] =
 {
@@ -159,17 +165,18 @@ wifi_ko_file_name module_list[] =
 	{"RTL8812AU", RTL8812AU_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
 	{"RTL8189FS", RTL8189FS_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
 	{"RTL8822BE", RTL8822BE_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
+	{"RTL8822CE", RTL8822CE_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
 	{"AP6335",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6335_BT_FIRMWARE_MODULE_PATH},
 	{"AP6330",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6330_BT_FIRMWARE_MODULE_PATH},
 	{"AP6354",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6354_BT_FIRMWARE_MODULE_PATH},
 	{"AP6356S",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6356_BT_FIRMWARE_MODULE_PATH},
 	{"AP6255",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6255_BT_FIRMWARE_MODULE_PATH},
 	{"AP6212",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6212_BT_FIRMWARE_MODULE_PATH},
-	{"AP6212A",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6212A_BT_FIRMWARE_MODULE_PATH},
+	{"AP6212A",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP_BT_FIRMWARE_MODULE_PATH},
 	{"AP6356",          BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6356_BT_FIRMWARE_MODULE_PATH},
 	{"AP6398S",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6398s_BT_FIRMWARE_MODULE_PATH},
 	{"AP6275S",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6275_BT_FIRMWARE_MODULE_PATH},
-	{"AP6275P",         BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6275_BT_FIRMWARE_MODULE_PATH},
+	{"AP6275P",         BCM_PCIE_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, AP6275_BT_FIRMWARE_MODULE_PATH},
 	{"APXXX",           BCM_DRIVER_MODULE_PATH, UNKKOWN_DRIVER_MODULE_ARG, ""},
 	{"UNKNOW",       DRIVER_MODULE_PATH_UNKNOW, UNKKOWN_DRIVER_MODULE_ARG, ""}
 
@@ -348,7 +355,7 @@ static int create_bt_test_file_for_brcm(void)
 		fputs("sleep 1\n", fp);
 		fputs("echo 1 > /sys/class/rfkill/rfkill0/state\n", fp);
 		fputs("sleep 1\n", fp);
-		sprintf(cmdline, "brcm_patchram_plus1 --bd_addr_rand --enable_hci --no2bytes --use_baudrate_for_download  --tosleep  200000 --baudrate 1500000 --patchram  %s %s &\n", bt_firmware_patch, bt_tty_dev);
+		sprintf(cmdline, "brcm_patchram_plus1 --enable_hci --no2bytes --use_baudrate_for_download  --tosleep  200000 --baudrate 1500000 --patchram  %s %s &\n", AP_BT_FIRMWARE_MODULE_PATH, bt_tty_dev);
 		fputs(cmdline, fp);
 		fputs("sleep 1\n", fp);
 		fclose(fp);
@@ -366,18 +373,25 @@ static int create_bt_test_file_for_rtl(void)
 
 	fp = fopen(BT_TEST_FILE, "wt+");
 
+	if (strstr(recoginze_wifi_chip , "E")) {
+		system("chmod 777 /userdata/bt_pcba_test");
+		system("mount --bind /userdata/bt_pcba_test /usr/bin/bt_pcba_test");
+		fclose(fp);
+		return 0;
+	}
+
 	if (fp != 0) {
 		fputs("echo 0 > /sys/class/rfkill/rfkill0/state\n", fp);
-		fputs("sleep 1\n", fp);
+		fputs("sleep 0.5\n", fp);
 		fputs("echo 1 > /sys/class/rfkill/rfkill0/state\n", fp);
-		fputs("sleep 1\n", fp);
+		fputs("sleep 0.5\n", fp);
 
 		fputs("insmod /usr/lib/modules/hci_uart.ko\n", fp);
 		fputs("sleep 1\n", fp);
 
 		sprintf(cmdline, "rtk_hciattach -n -s 115200 %s rtk_h5 &\n", bt_tty_dev);
 		fputs(cmdline, fp);
-		fputs("sleep 1\n", fp);
+		fputs("sleep 0.5\n", fp);
 
 		fclose(fp);
 		system("chmod 777 /userdata/bt_pcba_test");
@@ -440,34 +454,39 @@ int wifibt_load_driver(void)
 	}
 
 	//bt init
-	if (strstr(bt_firmware_patch , "system")) {
+	if (strstr(recoginze_wifi_chip , "AP")) {
 		create_bt_test_file_for_brcm();
 		memset(temp, 0, 256);
 		system("echo 0 > /sys/class/rfkill/rfkill0/state");
-		usleep(2);
+		usleep(5000);
 		system("echo 1 > /sys/class/rfkill/rfkill0/state");
-		usleep(2);
+		usleep(5000);
 
-		sprintf(temp, "brcm_patchram_plus1 --bd_addr_rand --enable_hci --no2bytes --use_baudrate_for_download  --tosleep  200000 --baudrate 1500000 --patchram  %s %s &", bt_firmware_patch, bt_tty_dev);
+		sprintf(temp, "brcm_patchram_plus1 --enable_hci --no2bytes --use_baudrate_for_download  --tosleep  200000 --baudrate 1500000 --patchram  %s %s &", AP_BT_FIRMWARE_MODULE_PATH, bt_tty_dev);
 		pr_info("%s %s\n", __func__, temp);
 		if (system(temp)) {
 			pr_info("bt_init: %s failed \n", temp);
 			return -1;
 		}
-	} else if (strstr(bt_firmware_patch , "RTL")) {
+	} else if (strstr(recoginze_wifi_chip , "RTL")) {
 		create_bt_test_file_for_rtl();
-		system("echo 0 > /sys/class/rfkill/rfkill0/state");
-		usleep(5000);
-		system("echo 1 > /sys/class/rfkill/rfkill0/state\n");
-		usleep(5000);
 
-		system("insmod /usr/lib/modules/hci_uart.ko\n");
-		usleep(5000);
+		if (strstr(recoginze_wifi_chip , "E")) {
+			system("insmod /system/lib/modules/rtk_btusb.ko");
+		} else {
+			system("echo 0 > /sys/class/rfkill/rfkill0/state");
+			usleep(5000);
+			system("echo 1 > /sys/class/rfkill/rfkill0/state");
+			usleep(5000);
 
-		memset(temp, 0, 256);
-		sprintf(temp, "rtk_hciattach -n -s 115200 %s rtk_h5 &", bt_tty_dev);
-		system(temp);
-		usleep(5000);
+			system("insmod /usr/lib/modules/hci_uart.ko");
+			usleep(5000);
+
+			memset(temp, 0, 256);
+			sprintf(temp, "rtk_hciattach -n -s 115200 %s rtk_h5 &", bt_tty_dev);
+			system(temp);
+			usleep(5000);
+		}
 	}
 
 	return 0;
@@ -475,7 +494,7 @@ int wifibt_load_driver(void)
 
 int main(int argc, char *argv[])
 {
-	pr_info("Rockchip Linux WifiBt init \n");
+	pr_info("Rockchip Linux WifiBt init (ver 1.0)\n");
 
 	strncpy(bt_tty_dev, argv[1], 10);
 	pr_info("BT TTY: %s \n", bt_tty_dev);
