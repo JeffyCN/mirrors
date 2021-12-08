@@ -349,7 +349,7 @@ int main(int argc, char*  argv[]) {
 
 	            ret = imcheck(src, dst, src_rect, dst_rect);
 	            if (IM_STATUS_NOERROR != ret) {
-	                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+	                printf("%d, check error! %s\n", __LINE__, imStrError((IM_STATUS)ret));
 	                return -1;
 	            }
 				gettimeofday(&start, NULL);
@@ -478,7 +478,7 @@ int main(int argc, char*  argv[]) {
 
 	            ret = imcheck(src, dst, src_rect, dst_rect);
 	            if (IM_STATUS_NOERROR != ret) {
-	                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+	                printf("%d, check error! %s\n", __LINE__, imStrError((IM_STATUS)ret));
 	                return -1;
 	            }
 
@@ -501,7 +501,7 @@ int main(int argc, char*  argv[]) {
 
 	            ret = imcheck(src, dst, src_rect, dst_rect, IM_CROP);
 	            if (IM_STATUS_NOERROR != ret) {
-	                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+	                printf("%d, check error! %s\n", __LINE__, imStrError((IM_STATUS)ret));
 	                return -1;
 	            }
 
@@ -528,7 +528,7 @@ int main(int argc, char*  argv[]) {
 
 	            ret = imcheck(src, dst, src_rect, dst_rect, ROTATE);
 	            if (IM_STATUS_NOERROR != ret) {
-	                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+	                printf("%d, check error! %s\n", __LINE__, imStrError((IM_STATUS)ret));
 	                return -1;
 	            }
 
@@ -548,7 +548,7 @@ int main(int argc, char*  argv[]) {
 
 	            ret = imcheck(src, dst, src_rect, dst_rect);
 	            if (IM_STATUS_NOERROR != ret) {
-	                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+	                printf("%d, check error! %s\n", __LINE__, imStrError((IM_STATUS)ret));
 	                return -1;
 	            }
 
@@ -569,7 +569,7 @@ int main(int argc, char*  argv[]) {
 
 	            ret = imcheck(src, dst, src_rect, dst_rect);
 	            if (IM_STATUS_NOERROR != ret) {
-	                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+	                printf("%d, check error! %s\n", __LINE__, imStrError((IM_STATUS)ret));
 	                return -1;
 	            }
 
@@ -587,7 +587,7 @@ int main(int argc, char*  argv[]) {
 
 	            ret = imcheck(src, dst, src_rect, dst_rect);
 	            if (IM_STATUS_NOERROR != ret) {
-	                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+	                printf("%d, check error! %s\n", __LINE__, imStrError((IM_STATUS)ret));
 	                return -1;
 	            }
 
@@ -614,7 +614,7 @@ int main(int argc, char*  argv[]) {
 
 	            ret = imcheck(src, dst, src_rect, dst_rect);
 	            if (IM_STATUS_NOERROR != ret) {
-	                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+	                printf("%d, check error! %s\n", __LINE__, imStrError((IM_STATUS)ret));
 	                return -1;
 	            }
 
@@ -639,7 +639,7 @@ int main(int argc, char*  argv[]) {
 
 	            ret = imcheck(src, dst, src_rect, dst_rect, IM_COLOR_FILL);
 	            if (IM_STATUS_NOERROR != ret) {
-	                printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+	                printf("%d, check error! %s\n", __LINE__, imStrError((IM_STATUS)ret));
 	                return -1;
 	            }
 
