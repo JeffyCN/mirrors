@@ -2,7 +2,7 @@
 
 文件标识：RK-PC-YF-0002
 
-发布版本：V1.0.1
+发布版本：V2.0.0
 
 日期：2020-07-10
 
@@ -51,11 +51,12 @@ Rockchip Electronics Co., Ltd.
 
 **修订记录**
 
-| **日期**   | **版本** | **作者**           | **修改说明** |
-| ---------- | -------- | ------------------ | ------------ |
-| 2020/06/24 | 1.0.0    | 陈城，李煌         | 初始版本     |
-| 2020/10/16 | 1.0.1    | 陈城，李煌，余乔伟 | 更新部分接口 |
-|            |          |                    |              |
+| **日期**   | **版本** | **作者**           | **修改说明**     |
+| ---------- | -------- | ------------------ | ---------------- |
+| 2020/06/24 | 1.0.0    | 陈城，李煌         | 初始版本         |
+| 2020/10/16 | 1.0.1    | 陈城，李煌，余乔伟 | 更新部分接口     |
+| 2021/12/07 | 2.0.0    | 陈城，李煌，余乔伟 | 增加RGA3相关支持 |
+|            |          |                    |                  |
 
 
 
@@ -77,19 +78,27 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 <table>
    <tr>
-      <td>Version</td>
-      <td>Codename</td>
-      <td>Chip</td>
-      <td>Source</td>
-      <td>Destination</td>
-      <td>Pixels/Cycle</td>
-      <td>Performance w/o scale</td>
+      <td rowspan="2">Version</td>
+      <td rowspan="2">Codename</td>
+      <td rowspan="2">Chip</td>
+      <td rowspan="1" colspan="2">Source</td>
+      <td rowspan="1" colspan="2">Destination</td>
+      <td rowspan="2">Pixels/Cycle</td>
+      <td rowspan="2">Performance w/o scale<br/>(freq = 300Mhz)</td>
+   </tr>
+   <tr>
+       <td>min</td>
+       <td>max</td>
+       <td>min</td>
+       <td>max</td>
    </tr>
    <tr>
       <td rowspan="4">RGA1</td>
       <td>Pagani</td>
       <td>RK3066</td>
+      <td rowspan="4">2x2</td>
       <td rowspan="4">8192x8192</td>
+      <td rowspan="4">2x2</td>
       <td rowspan="4">2048x2048</td>
       <td rowspan="4">1</td>
       <td rowspan="4">≈300Mpix/s</td>
@@ -110,7 +119,9 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA1_plus</td>
       <td>Audi</td>
       <td>RK3128</td>
+      <td rowspan="2">2x2</td>
       <td rowspan="2">8192x8192</td>
+      <td rowspan="2">2x2</td>
       <td rowspan="2">2048x2048</td>
       <td rowspan="2">1</td>
       <td rowspan="2">≈300Mpix/s</td>
@@ -123,7 +134,9 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA2</td>
       <td>Lincoln</td>
       <td>RK3288/3288w</td>
+      <td rowspan="2">2x2</td>
       <td rowspan="2">8192x8192</td>
+      <td rowspan="2">2x2</td>
       <td rowspan="2">4096x4096</td>
       <td rowspan="2">2</td>
       <td rowspan="2">≈600Mpix/s</td>
@@ -133,10 +146,50 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RK3190</td>
    </tr>
    <tr>
+      <td rowspan="2">RGA2-Lite0</td>
+      <td>Maybach</td>
+      <td>RK3368</td>
+      <td rowspan="2">2x2</td>
+      <td rowspan="2">8192x8192</td>
+      <td rowspan="2">2x2</td>
+      <td rowspan="2">4096x4096</td>
+      <td rowspan="2">2</td>
+      <td rowspan="2">≈520Mpix/s</td>
+   </tr>
+   <tr>
+      <td>BMW</td>
+      <td>RK3366</td>
+   </tr>
+   <tr>
+      <td rowspan="4">RGA2-Lite1</td>
+      <td>Benz</td>
+      <td>RK3228</td>
+      <td rowspan="4">2x2</td>
+      <td rowspan="4">8192x8192</td>
+      <td rowspan="4">2x2</td>
+      <td rowspan="4">4096x4096</td>
+      <td rowspan="4">2</td>
+      <td rowspan="4">≈520Mpix/s</td>
+   </tr>
+   <tr>
+      <td>Infiniti</td>
+      <td>RK3228H</td>
+   </tr>
+   <tr>
+      <td>Gemini</td>
+      <td>RK3326</td>
+   </tr>
+   <tr>
+      <td>Lion</td>
+      <td>RK1808</td>
+   </tr>
+   <tr>
       <td rowspan="4">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
+      <td rowspan="4">2x2</td>
       <td rowspan="4">8192x8192</td>
+      <td rowspan="4">2x2</td>
       <td rowspan="4">4096x4096</td>
       <td rowspan="4">2</td>
       <td rowspan="4">≈600Mpix/s</td>
@@ -154,40 +207,18 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RK3566/RK3568</td>
    </tr>
    <tr>
-      <td rowspan="2">RGA2-Lite0</td>
-      <td>Maybach</td>
-      <td>RK3368</td>
-      <td rowspan="2">8192x8192</td>
-      <td rowspan="2">4096x4096</td>
-      <td rowspan="2">2</td>
-      <td rowspan="2">≈520Mpix/s</td>
-   </tr>
-   <tr>
-      <td>BMW</td>
-      <td>RK3366</td>
-   </tr>
-   <tr>
-      <td rowspan="4">RGA2-Lite1</td>
-      <td>Benz</td>
-      <td>RK3228</td>
-      <td rowspan="4">8192x8192</td>
-      <td rowspan="4">4096x4096</td>
-      <td rowspan="4">2</td>
-      <td rowspan="4">≈520Mpix/s</td>
-   </tr>
-   <tr>
-      <td>Infiniti</td>
-      <td>RK3228H</td>
-   </tr>
-   <tr>
-      <td>Gemini</td>
-      <td>RK3326</td>
-   </tr>
-   <tr>
-      <td>Lion</td>
-      <td>RK1808</td>
+      <td rowspan="1">RGA3</td>
+      <td>Orion</td>
+      <td>RK3588</td>
+      <td rowspan="1">128x128</td>
+      <td rowspan="1">8128x8128</td>
+      <td rowspan="1">128x128</td>
+      <td rowspan="1">8128x8128</td>
+      <td rowspan="1">4 (by pass)<br/>2 (scale)</td>
+      <td rowspan="1">≈1200Mpix/s (by pass)<br/>≈600Mpix/s (scale)</td>
    </tr>
 </table>
+
 
 * 预期性能为默认RGA频率下计算得出，实际运行性能表现与内存频率等相关，列表数据仅供参考。
 
@@ -197,7 +228,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 ------
 
-- Pixel Format conversion, BT.601/BT.709
+- Pixel Format conversion, BT.601/BT.709/BT.2020(only RGA3)
 - Dither operation
 
 <table>
@@ -212,8 +243,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">RGA1</td>
       <td>Pagani</td>
       <td>RK3066</td>
-      <td rowspan="4">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422<br/>BPP8/BPP4/BPP2/BPP1</td>
-      <td rowspan="4">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422(only for Blur/sharpness) 8bit</td>
+      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit<br/>BPP8/BPP4/BPP2/BPP1</td>
+      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (only for Blur/sharpness)<br/>YUV422 8bit (only for Blur/sharpness)</td>
    </tr>
    <tr>
       <td>Jaguar Plus</td>
@@ -231,8 +262,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA1_plus</td>
       <td>Audi</td>
       <td>RK3128</td>
-      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422<br/>BPP8/BPP4/BPP2/BPP1</td>
-      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422<br/>(only for Blur/sharpness) 8it<br/>YUV420/YUV422 output<br/>(only for normal Bitblt without alpha)</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422<br/>BPP8/BPP4/BPP2/BPP1</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (only for Blur/sharpness)<br/>YUV422 8it (only for Blur/sharpness)<br/>YUV420 8bit (only for normal Bitblt without alpha)<br/>YUV422 8bit (only for normal Bitblt without alpha)</td>
    </tr>
    <tr>
       <td>Granite</td>
@@ -242,40 +273,19 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA2</td>
       <td>Lincoln</td>
       <td>RK3288/3288w</td>
-      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422</td>
-      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit</td>
    </tr>
    <tr>
       <td>Capricorn</td>
       <td>RK3190</td>
    </tr>
    <tr>
-      <td rowspan="4">RGA2-Enhance</td>
-      <td>Mclaren</td>
-      <td>RK3399</td>
-      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)</td>
-      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)<br/>YVYU422/YUYV420</td>
-   </tr>
-   <tr>
-      <td>Mercury</td>
-      <td>RK1108</td>
-   </tr>
-   <tr>
-      <td>Puma</td>
-      <td>RV1126/ RV1109</td>
-      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)<br/>YVYU422</td>
-      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)<br/>YUV400/Y4/Y1<br/>YVYU422/YUYV420</td>
-   </tr>
-   <tr>
-      <td>skylarkV2</td>
-      <td>RK3566/RK3568</td>
-   </tr>
-   <tr>
       <td rowspan="2">RGA2-Lite0</td>
       <td>Maybach</td>
       <td>RK3368</td>
-      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422</td>
-      <td rowspan="2">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit</td>
    </tr>
    <tr>
       <td>BMW</td>
@@ -285,8 +295,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">RGA2-Lite1</td>
       <td>Benz</td>
       <td>RK3228</td>
-      <td rowspan="4">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)</td>
-      <td rowspan="4">RGBA8888/4444/5551<br/> RGB888/565<br> YUV420/YUV422 (8/10bit)</td>
+      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV420 10bit<br/>YUV422 8bit<br/>YUV422 10bit<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
+      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit</td>
    </tr>
    <tr>
       <td>Infiniti</td>
@@ -300,7 +310,36 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>Lion</td>
       <td>RK1808</td>
    </tr>
+   <tr>
+      <td rowspan="4">RGA2-Enhance</td>
+      <td>Mclaren</td>
+      <td>RK3399</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV420 10bit<br/>YUV422 8bit<br/>YUV422 10bit<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit<br/>YUYV422<br/>YUYV420</td>
+   </tr>
+   <tr>
+      <td>Mercury</td>
+      <td>RK1108</td>
+   </tr>
+   <tr>
+      <td>Puma</td>
+      <td>RV1126/ RV1109</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV420 10bit<br/>YUV422 8bit<br/>YUV422 10bit<br/>YUYV/YVYU/UYVY/VYUY422<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit<br/>YUYV/YVYU/UYVY/VYUY422<br/>YUYV/YVYU/UYVY/VYUY420<br/>YUV400<br/>Y4/Y1</td>
+   </tr>
+   <tr>
+      <td>skylarkV2</td>
+      <td>RK3566/RK3568</td>
+   </tr>
+   <tr>
+      <td rowspan="1">RGA3</td>
+      <td>Orion</td>
+      <td>RK3588</td>
+      <td rowspan="1">RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (only semi-planer)<br/>YUV420 10bit (only semi-planer)<br/>YUV422 8bit (only semi-planer)<br/>YUV422 10bit (only semi-planer)<br/>YUYV/YVYU/UYVY/VYUY422</td>
+      <td rowspan="1">RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (only semi-planer)<br/>YUV420 10bit (only semi-planer)<br/>YUV422 8bit (only semi-planer)<br/>YUV422 10bit (only semi-planer)<br/>YUYV/YVYU/UYVY/VYUY422</td>
+   </tr>
 </table>
+
 
 
 
@@ -312,12 +351,43 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 ------
 
-| Format                               | Alignment                               |
-| :----------------------------------- | --------------------------------------- |
-| YUV420/422 YUV400/Y4 YVYU422/YUYV420 | width stride须4对齐，其余参数均须2对齐  |
-| YUV420/422 10bit                     | width stride须16对齐，其余参数均须2对齐 |
-| RGB888                               | width stride须4对齐                     |
-| RGB565                               | width stride须2对齐                     |
+<table>
+    <tr>
+        <td>HW_version</td>
+        <td>Format</td>
+        <td>Alignment</td>
+    </tr>
+	<tr>
+        <td rowspan="4">RGA1<br/>RGA1_Plus<br/>RGA2<br/>RGA2_Lite0<br/>RGA2_Lite1<br/>RGA2_Enhance</td>
+        <td>RGB/BGR888</td>
+        <td>width stride须4对齐</td>
+    </tr>
+    <tr>
+        <td>RGB/BGR565</td>
+        <td>width stride须2对齐</td>
+    </tr>
+    <tr>
+        <td>YUV420 8bit<br/>YUV422 8bit<br/>YUV400<br/>Y4/Y1<br/>YUYV/YVYU/UYVY/VYUY422<br/>YUYV/YVYU/UYVY/VYUY420</td>
+        <td>width stride须4对齐，其余参数均须2对齐</td>
+    </tr>
+    <tr>
+        <td>YUV420 10bit<br/>422 10bit</td>
+        <td>width stride须16对齐，其余参数均须2对齐</td>
+    </tr>
+	<tr>
+		<td rowspan="3">RGA3</td>
+        <td>RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/></td>
+        <td>width stride须4对齐</td>
+    </tr>
+	<tr>
+        <td>YUV420 8bit<br/>YUV420 10bit<br/>YUV422 8bit<br/>YUV422 10bit<br/>YUYV/YVYU/UYVY/VYUY422</td>
+        <td>width stride须4对齐，其余参数均须2对齐</td>
+	</tr>
+    <tr>
+        <td>FBC mode</td>
+        <td>width stride须16对齐</td>
+    </tr>
+</table>
 
 
 
@@ -339,7 +409,7 @@ major.minor.revision_[build]
 
 > 例：
 >
-> 1.2.1_[1]
+> 1.0.0_[0]
 
 
 
@@ -354,30 +424,6 @@ major.minor.revision_[build]
 
 
 
-#### API 编译版本号
-
-##### 格式
-
-```
-(git_commit build: build_time base: build_platform)
-```
-
-> 例：
->
-> (be7518a build: 2021-04-29 12:01:46 base: rk3566_r)
-
-
-
-##### 递增规则
-
-| 名称           | 规则                            |
-| -------------- | ------------------------------- |
-| git_commit     | 代码版本提交commit。            |
-| build_time     | 编译时间。                      |
-| build_paltform | 芯片平台（仅支持Android系统）。 |
-
-
-
 ### 版本号查询
 
 #### strings命令查询：
@@ -386,7 +432,7 @@ major.minor.revision_[build]
 
 ```shell
 :/# strings vendor/lib64/librga.so |grep rga_api |grep version
-rga_api version 1.2.1_[1] (be7518a build: 2021-04-29 12:01:46 base: rk3566_r)
+rga_api version 1.0.0_[0]
 ```
 
 
@@ -396,7 +442,7 @@ rga_api version 1.2.1_[1] (be7518a build: 2021-04-29 12:01:46 base: rk3566_r)
 当每个进程首次调用RGA API时，会打印版本号。
 
 ```
-rockchiprga: rga_api version 1.2.1_[1] (5519100 build: 2021-04-30 15:17:33 base: rk3566_r)
+rockchiprga: rga_api version 1.0.0_[0]
 ```
 
 
@@ -411,8 +457,7 @@ querystring(RGA_VERSION);
 
 > 字符串格式如下：
 >
-> RGA_api version       : v1.2.1_[1]
-> RGA_built version     : be7518a build: 2021-04-29 12:01:46
+> RGA_api version       : v1.0.0_[0]
 > RGA version               : RGA_2_Enhance
 
 
@@ -423,8 +468,7 @@ querystring(RGA_VERSION);
 
 ```shell
 :/# getprop |grep rga
-[vendor.rga_api.version]: [1.2.1_[1]]
-[vendor.rga_built.version]: [be7518a build: 2021-04-29 12:01:46]
+[vendor.rga_api.version]: [1.0.0_[0]]
 ```
 
 
@@ -483,26 +527,26 @@ const char* querystring(int name);
 > 一般推荐使用fd作为buffer类型。
 
 ```C++
-rga_buffer_t wrapbuffer_virtualaddr(void* vir_addr, 
-                                    int width, 
+rga_buffer_t wrapbuffer_virtualaddr(void* vir_addr,
+                                    int width,
                                     int height,
                                     int wstride = width,
-                                    int hstride = height, 
+                                    int hstride = height,
                                     int format);
 ```
 ```C++
 rga_buffer_t wrapbuffer_physicaladdr(void* phy_addr,
                                      int width,
                                      int height,
-                                     int wstride = width, 
-                                     int hstride = height, 
+                                     int wstride = width,
+                                     int hstride = height,
                                      int format);
 ```
 ```C++
-rga_buffer_t wrapbuffer_fd(int fd, 
-                           int width, 
+rga_buffer_t wrapbuffer_fd(int fd,
+                           int width,
                            int height,
-                           int wstride = width, 
+                           int wstride = width,
                            int hstride = height,
                            int format);
 ```
@@ -528,10 +572,10 @@ rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf);
 ```C++
 IM_STATUS
 imresize(const rga_buffer_t src,
-         rga_buffer_t dst, 
-         double fx = 0, 
-         double fy = 0, 
-         int interpolation = INTER_LINEAR, 
+         rga_buffer_t dst,
+         double fx = 0,
+         double fy = 0,
+         int interpolation = INTER_LINEAR,
          int sync = 1);
 ```
 
@@ -557,7 +601,7 @@ imresize(const rga_buffer_t src,
 #### impyramid
 
 ```C++
-IM_STATUS impyramid (const rga_buffer_t src, 
+IM_STATUS impyramid (const rga_buffer_t src,
                      rga_buffer_t dst，
                      IM_SCALE direction)
 ```
@@ -581,9 +625,9 @@ IM_STATUS impyramid (const rga_buffer_t src,
 #### imcrop
 
 ```C++
-IM_STATUS imcrop(const rga_buffer_t src, 
-                 rga_buffer_t dst, 
-                 im_rect rect, 
+IM_STATUS imcrop(const rga_buffer_t src,
+                 rga_buffer_t dst,
+                 im_rect rect,
                  int sync = 1);
 ```
 
@@ -607,9 +651,9 @@ IM_STATUS imcrop(const rga_buffer_t src,
 #### imrotate
 
 ```c++
-IM_STATUS imrotate(const rga_buffer_t src, 
-                   rga_buffer_t dst, 
-                   int rotation, 
+IM_STATUS imrotate(const rga_buffer_t src,
+                   rga_buffer_t dst,
+                   int rotation,
                    int sync = 1);
 ```
 
@@ -634,9 +678,9 @@ IM_STATUS imrotate(const rga_buffer_t src,
 #### imfilp
 
 ```c++
-IM_STATUS imflip (const rga_buffer_t src, 
-                  rga_buffer_t dst, 
-                  int mode, 
+IM_STATUS imflip (const rga_buffer_t src,
+                  rga_buffer_t dst,
+                  int mode,
                   int sync = 1);
 ```
 
@@ -660,27 +704,27 @@ IM_STATUS imflip (const rga_buffer_t src,
 #### imfill/imreset/imdraw
 
 ```C++
-IM_STATUS imfill(rga_buffer_t buf, 
-                 im_rect rect, 
-                 int color = 0x00000000, 
+IM_STATUS imfill(rga_buffer_t buf,
+                 im_rect rect,
+                 int color = 0x00000000,
                  int sync = 1);
 ```
 
 > 对RGBA 格式的图像的指定区域rect进行颜色填充。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
 
 ```C++
-IM_STATUS imreset(rga_buffer_t buf, 
-                 im_rect rect, 
-                 int color = 0x00000000, 
+IM_STATUS imreset(rga_buffer_t buf,
+                 im_rect rect,
+                 int color = 0x00000000,
                  int sync = 1);
 ```
 
 > 对RGBA 格式的图像的指定区域rect内存中的内容全部设置为指定的值color。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
 
 ```C++
-IM_STATUS imdraw(rga_buffer_t buf, 
-                 im_rect rect, 
-                 int color = 0x00000000, 
+IM_STATUS imdraw(rga_buffer_t buf,
+                 im_rect rect,
+                 int color = 0x00000000,
                  int sync = 1);
 ```
 
@@ -707,10 +751,10 @@ IM_STATUS imdraw(rga_buffer_t buf,
 #### imtranslate
 
 ```C++
-IM_STATUS imtranslate(const rga_buffer_t src, 
-                      rga_buffer_t dst, 
-                      int x, 
-                      int y, 
+IM_STATUS imtranslate(const rga_buffer_t src,
+                      rga_buffer_t dst,
+                      int x,
+                      int y,
                       int sync = 1)
 ```
 
@@ -735,8 +779,8 @@ IM_STATUS imtranslate(const rga_buffer_t src,
 #### imcopy
 
 ```C++
-IM_STATUS imcopy(const rga_buffer_t src, 
-                 rga_buffer_t dst, 
+IM_STATUS imcopy(const rga_buffer_t src,
+                 rga_buffer_t dst,
                  int sync = 1);
 ```
 
@@ -759,9 +803,9 @@ IM_STATUS imcopy(const rga_buffer_t src,
 #### imblend/imcomposite
 
 ```c++
-IM_STATUS imblend(const rga_buffer_t srcA, 
-                  rga_buffer_t dst, 
-                  int mode = IM_ALPHA_BLEND_SRC_OVER, 
+IM_STATUS imblend(const rga_buffer_t srcA,
+                  rga_buffer_t dst,
+                  int mode = IM_ALPHA_BLEND_SRC_OVER,
                   int sync = 1);
 ```
 
@@ -882,11 +926,11 @@ IM_STATUS imcolorkey(const rga_buffer_t src,
 #### imcvtcolor
 
 ```C++
-IM_STATUS imcvtcolor(rga_buffer_t src, 
-                     rga_buffer_t dst, 
-                     int sfmt, 
-                     int dfmt, 
-                     int mode = IM_COLOR_SPACE_DEFAULT, 
+IM_STATUS imcvtcolor(rga_buffer_t src,
+                     rga_buffer_t dst,
+                     int sfmt,
+                     int dfmt,
+                     int mode = IM_COLOR_SPACE_DEFAULT,
                      int sync = 1)
 ```
 
@@ -914,9 +958,9 @@ IM_STATUS imcvtcolor(rga_buffer_t src,
 #### imquantize
 
 ```c++
-IM_STATUS imquantize(const rga_buffer_t src, 
-                     rga_buffer_t dst, 
-                     rga_nn_t nn_info, 
+IM_STATUS imquantize(const rga_buffer_t src,
+                     rga_buffer_t dst,
+                     rga_nn_t nn_info,
                      int sync = 1)
 ```
 
@@ -980,9 +1024,9 @@ IM_STATUS imrop(const rga_buffer_t src,
 
 ```C++
 IM_STATUS improcess(rga_buffer_t src,
-                    rga_buffer_t dst, 
+                    rga_buffer_t dst,
                     rga_buffer_t pat,
-                    im_rect srect, 
+                    im_rect srect,
                     im_rect drect,
                     im_rect prect,
                     int usage)
@@ -1257,9 +1301,9 @@ gr_color_x [0, 0, 0]
 > demo中提供了两种buffer用于RGA合成——Graphicbuffer、AHardwareBuffer。这两种buffer通过宏USE_AHARDWAREBUFFER区分。
 
 ```c++
-目录：librga/samples/im2d_api_demo/Android.mk 
+目录：librga/samples/im2d_api_demo/Android.mk
 （line +15）
-    
+
 ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \> 25)))
 /*USE_AHARDWAREBUFFER为1则使用AHardwareBuffer，为0使用Graphicbuffer*/
 LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
@@ -1276,14 +1320,14 @@ endif
 	/*传入src/dst的宽、高、图像格式，初始化Graphicbuffer*/
 	src_buf = GraphicBuffer_Init(SRC_WIDTH, SRC_HEIGHT, SRC_FORMAT);
 	dst_buf = GraphicBuffer_Init(DST_WIDTH, DST_HEIGHT, DST_FORMAT);
-        
+
 	/*通过枚举值FILL_BUFF/EMPTY_BUFF，执行填充/清空Graphicbuffer*/
-	GraphicBuffer_Fill(src_buf, FILL_BUFF, 0);    
+	GraphicBuffer_Fill(src_buf, FILL_BUFF, 0);
 	if(MODE == MODE_BLEND)
 		GraphicBuffer_Fill(dst_buf, FILL_BUFF, 1);
 	else
 		GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1);
-	
+
 	/*填充rga_buffer_t结构体:src、dst*/
 	src = wrapbuffer_GraphicBuffer(src_buf);
 	dst = wrapbuffer_GraphicBuffer(dst_buf);
@@ -1306,7 +1350,7 @@ endif
 		AHardwareBuffer_Fill(&dst_buf, FILL_BUFF, 1);
 	else
 		AHardwareBuffer_Fill(&dst_buf, EMPTY_BUFF, 1);
-	    
+
 	/*填充rga_buffer_t结构体:src、dst*/
 	src = wrapbuffer_AHardwareBuffer(src_buf);
 	dst = wrapbuffer_AHardwareBuffer(dst_buf);
@@ -1446,22 +1490,22 @@ options：
 
 ```c++
 	switch(parm_data[MODE_RESIZE])
-	{    
+	{
         /*放大图像*/
 		case IM_UP_SCALE :
             /*重新初始化Graphicbuffer为分辨率1920x1080对应大小*/
 			dst_buf = GraphicBuffer_Init(1920, 1080, DST_FORMAT);
             /*清空buffer*/
-			GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1);          
+			GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1);
             /*重新填充存储dst数据的rga_buffer_t结构体*/
-			dst = wrapbuffer_GraphicBuffer(dst_buf);            
+			dst = wrapbuffer_GraphicBuffer(dst_buf);
 			break;
 
 		case IM_DOWN_SCALE :
             /*重新初始化Graphicbuffer为分辨率1920x1080对应大小*/
-			dst_buf = GraphicBuffer_Init(720, 480, DST_FORMAT);           
+			dst_buf = GraphicBuffer_Init(720, 480, DST_FORMAT);
             /*清空buffer*/
-			GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1);            
+			GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 1);
             /*重新填充存储dst数据的rga_buffer_t结构体*/
 			dst = wrapbuffer_GraphicBuffer(dst_buf);
 			break;
@@ -1666,7 +1710,7 @@ rgaImDemo --copy
 > 将存储src、dst图像数据的rga_buffer_t结构体传入imcopy()。
 
 ```c++
-	/*rga_buffer_t格式的结构体src、dst传入imcopy()*/	
+	/*rga_buffer_t格式的结构体src、dst传入imcopy()*/
 	STATUS = imcopy(src, dst);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
 	printf("copying .... %s\n", imStrError(STATUS));
@@ -1691,7 +1735,7 @@ rgaImDemo --blend
 > 将存储src、dst图像数据的rga_buffer_t结构体传入imblend()。
 
 ```c++
-	/*rga_buffer_t格式的结构体src、dst传入imblend()*/	
+	/*rga_buffer_t格式的结构体src、dst传入imblend()*/
 	STATUS = imblend(src, dst);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
 	printf("blending .... %s\n", imStrError(STATUS));
@@ -1720,7 +1764,7 @@ rgaImDemo --cvtcolor
 	src.format = HAL_PIXEL_FORMAT_RGBA_8888;
 	dst.format = HAL_PIXEL_FORMAT_YCrCb_NV12;
 
-	/*将需要转换的格式与rga_buffer_t格式的结构体src、dst一同传入imcvtcolor()*/	
+	/*将需要转换的格式与rga_buffer_t格式的结构体src、dst一同传入imcvtcolor()*/
 	STATUS = imcvtcolor(src, dst, src.format, dst.format);
 	/*根据返回的IM_STATUS枚举值打印运行状态*/
 	printf("cvtcolor .... %s\n", imStrError(STATUS));
