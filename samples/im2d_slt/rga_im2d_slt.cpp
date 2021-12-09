@@ -1,0 +1,451 @@
+/*
+ * Copyright (C) 2021 Rockchip Electronics Co., Ltd.
+ * Authors:
+ *  Cerf Yu <cerf.yu@rock-chips.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#define LOG_NDEBUG 0
+#define LOG_TAG "rga_im2d_slt"
+
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <math.h>
+#include <fcntl.h>
+#include <memory.h>
+#include <pthread.h>
+
+#include "hardware/gralloc_rockchip.h"
+#include "drm_alloc.h"
+#include "xf86drm.h"
+#include "rga.h"
+#include "RockchipRga.h"
+#include "im2d_api/im2d.hpp"
+#include "RgaUtils.h"
+#include "slt_config.h"
+
+enum {
+    FILL_BUFF  = 0,
+    EMPTY_BUFF = 1
+};
+
+typedef struct private_data {
+    int id;
+    const char *name;
+    int mode;
+    unsigned int num;
+
+    int width;
+    int height;
+    int format;
+
+    int rd_mode;
+    int core;
+    int priority;
+
+    int result;
+} private_data_t;
+
+/******************************************************************************/
+#if IM2D_SLT_GRAPHICBUFFER_EN
+sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format) {
+#if IM2D_SLT_BUFFER_CACHEABLE
+    sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format, GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN));
+#else
+    sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format, 0));
+    // sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format, 0, RK_GRALLOC_USAGE_WITHIN_4G));
+#endif
+
+    if (gb->initCheck()) {
+        printf("GraphicBuffer check error : %s\n",strerror(errno));
+        return NULL;
+    }
+
+    return gb;
+}
+
+/* Write data to buffer or init buffer. */
+int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int flag, int index, int mode) {
+    int ret;
+	char* buf = NULL;
+    ret = gb->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&buf);
+    if (ret) {
+        printf("lock buffer error : %s\n",strerror(errno));
+        return -1;
+    }
+
+    if(flag) {
+        memset(buf,index,gb->getWidth()*gb->getHeight()*get_bpp_from_format(gb->getPixelFormat()));
+    } else {
+        if (mode == IM_AFBC_MODE) {
+            ret = get_buf_from_file_AFBC(buf, gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index);
+        } else {
+            ret = get_buf_from_file(buf, gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index);
+        }
+        if (ret != 0) {
+            printf ("open file %s \n", "fault");
+
+            ret = gb->unlock();
+            if (ret) {
+                printf("unlock buffer error : %s\n",strerror(errno));
+                return -1;
+            }
+
+            return -1;
+        }
+    }
+
+    ret = gb->unlock();
+	if (ret) {
+        printf("unlock buffer error : %s\n",strerror(errno));
+        return -1;
+    }
+
+    return 0;
+}
+#endif
+
+void *pthread_rga_run(void *args) {
+    int ret = 0, time = 0;
+    unsigned int num;
+    int srcWidth,srcHeight,srcFormat;
+    int dstWidth,dstHeight,dstFormat;
+
+    char *src_va, *dst_va;
+#if IM2D_SLT_DRM_BUFFER_EN
+    struct drm_object drm_src, drm_dst;
+#elif IM2D_SLT_GRAPHICBUFFER_EN
+    sp<GraphicBuffer> src_buf;
+    sp<GraphicBuffer> dst_buf;
+#endif
+
+    rga_buffer_t src;
+    rga_buffer_t dst;
+    im_rect src_rect;
+    im_rect dst_rect;
+
+    private_data_t *data = (private_data_t *)args;
+
+    num = data->num;
+
+    srcWidth = data->width;
+    srcHeight = data->height;
+    srcFormat = data->format;
+
+    dstWidth = data->width;
+    dstHeight = data->height;
+    dstFormat = data->format;
+
+    memset(&src, 0x0, sizeof(src));
+    memset(&dst, 0x0, sizeof(dst));
+    memset(&src_rect, 0x0, sizeof(src_rect));
+    memset(&dst_rect, 0x0, sizeof(dst_rect));
+
+    do {
+        time++;
+
+#if IM2D_SLT_DRM_BUFFER_EN
+        if (data->rd_mode != IM_AFBC_MODE) {
+            drm_src.drm_buf = (uint8_t *)drm_buf_alloc(srcWidth, srcHeight, get_bpp_from_format(srcFormat) * 8,
+                                                       &drm_src.drm_buffer_fd, &drm_src.drm_buffer_handle,
+                                                       &drm_src.actual_size, IM2D_SLT_BUFFER_PHY_EN ? ROCKCHIP_BO_CONTIG : 0);
+            drm_dst.drm_buf = (uint8_t *)drm_buf_alloc(dstWidth, dstHeight, get_bpp_from_format(dstFormat) * 8,
+                                                       &drm_dst.drm_buffer_fd, &drm_dst.drm_buffer_handle,
+                                                       &drm_dst.actual_size, IM2D_SLT_BUFFER_PHY_EN ? ROCKCHIP_BO_CONTIG : 0);
+
+            src_va = (char *)drm_src.drm_buf;
+            dst_va = (char *)drm_dst.drm_buf;
+
+            ret = get_buf_from_file(src_va, srcFormat, srcWidth, dstHeight, 0);
+            if (ret != 0) {
+                printf ("ID[%d] %s open file %s \n", data->id, data->name, "fault");
+                goto NORMAL_ERR;
+            }
+
+            memset(dst_va, 0xff, dstWidth * dstHeight * get_bpp_from_format(dstFormat));
+        } else {
+            drm_src.drm_buf = (uint8_t *)drm_buf_alloc(srcWidth, srcHeight * 1.5, get_bpp_from_format(srcFormat) * 8,
+                                                       &drm_src.drm_buffer_fd, &drm_src.drm_buffer_handle,
+                                                       &drm_src.actual_size, IM2D_SLT_BUFFER_PHY_EN ? ROCKCHIP_BO_CONTIG : 0);
+            drm_dst.drm_buf = (uint8_t *)drm_buf_alloc(dstWidth, dstHeight * 1.5, get_bpp_from_format(dstFormat) * 8,
+                                                       &drm_dst.drm_buffer_fd, &drm_dst.drm_buffer_handle,
+                                                       &drm_dst.actual_size, IM2D_SLT_BUFFER_PHY_EN ? ROCKCHIP_BO_CONTIG : 0);
+
+            src_va = (char *)drm_src.drm_buf;
+            dst_va = (char *)drm_dst.drm_buf;
+
+            ret = get_buf_from_file_AFBC(src_va, srcFormat, srcWidth, dstHeight, 0);
+            if (ret != 0) {
+                printf ("ID[%d] %s open file %s \n", data->id, data->name, "fault");
+                goto NORMAL_ERR;
+            }
+
+            memset(dst_va, 0xff, dstWidth * dstHeight * 1.5 * get_bpp_from_format(dstFormat));
+        }
+
+        src = wrapbuffer_fd(drm_src.drm_buffer_fd, srcWidth, srcHeight, srcFormat);
+        dst = wrapbuffer_fd(drm_dst.drm_buffer_fd, dstWidth, dstHeight, dstFormat);
+        if (src.width == 0 || dst.width == 0) {
+            printf("%s", imStrError());
+            goto NORMAL_ERR;
+        }
+#elif IM2D_SLT_GRAPHICBUFFER_EN
+        if (data->rdmode == IM_AFBC_MODE) {
+            src_buf = GraphicBuffer_Init(srcWidth, srcHeight * 1.5, srcFormat);
+            dst_buf = GraphicBuffer_Init(dstWidth, dstHeight * 1.5, dstFormat);
+        } else {
+            src_buf = GraphicBuffer_Init(srcWidth, srcHeight, srcFormat);
+            dst_buf = GraphicBuffer_Init(dstWidth, dstHeight, dstFormat);
+        }
+        if (src_buf == NULL || dst_buf == NULL) {
+            printf("GraphicBuff init error!\n");
+            goto NORMAL_ERR;
+        }
+
+        if(-1 == GraphicBuffer_Fill(src_buf, FILL_BUFF, 0, data->rdmode)) {
+            printf("%s, src write Graphicbuffer error!\n", __FUNCTION__);
+            goto NORMAL_ERR;
+        }
+        if(-1 == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 0xff, data->rdmode)) {
+            printf("%s, dst write Graphicbuffer error!\n", __FUNCTION__);
+            goto NORMAL_ERR;
+        }
+
+        src = wrapbuffer_GraphicBuffer(src_buf);
+        dst = wrapbuffer_GraphicBuffer(dst_buf);
+        /* If it is in fbc mode, because the height of the alloc memory
+         * is modified, it needs to be corrected here */
+        if (data->rdmode == IM_AFBC_MODE) {
+            src.height  = srcHeight;
+            src.hstride = srcHeight;
+            dst.height  = dstHeight;
+            dst.hstride = dstHeight;
+        }
+        if (src.width == 0 || dst.width == 0) {
+            printf("%s", imStrError());
+        }
+#endif
+
+        ret = imcheck(src, dst, src_rect, dst_rect);
+        if (ret != IM_STATUS_NOERROR) {
+            printf("ID[%d]: %s check %d time error! %s", data->id, data->name, time, imStrError((IM_STATUS)ret));
+
+            goto NORMAL_ERR;
+        }
+
+        imconfig(IM_CONFIG_SCHEDULER_CORE, data->core);
+        imconfig(IM_CONFIG_PRIORITY, data->priority);
+
+        src.rd_mode = data->rd_mode;
+        dst.rd_mode = data->rd_mode;
+
+        ret = imcopy(src, dst);
+        if (ret == IM_STATUS_SUCCESS) {
+            printf("ID[%d]: %s imcopy %d time success!\n", data->id, data->name, time);
+
+#if IM2D_SLT_GRAPHICBUFFER_EN
+            ret = src_buf->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&src_va);
+            if (ret) {
+                printf("lock src_buf error : %s\n",strerror(errno));
+                goto NORMAL_ERR;
+            }
+
+            ret = dst_buf->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&dst_va);
+            if (ret) {
+                printf("lock dst_buf error : %s\n",strerror(errno));
+                goto NORMAL_ERR;
+            }
+#endif
+
+            ret = memcmp(src_va, dst_va, dst.wstride * dst.hstride * get_bpp_from_format(dst.format));
+            if (ret < 0) {
+                printf("ID[%d]: %s check buffer %d time error!\n", data->id, data->name, time);
+                printf("src: %x %x %x %x\n", (int)src_va[0], (int)src_va[1], (int)src_va[2], (int)src_va[3]);
+                printf("dst: %x %x %x %x\n", (int)dst_va[0], (int)dst_va[1], (int)dst_va[2], (int)dst_va[3]);
+                output_buf_data_to_file(dst_va, dst.format, dst.wstride, dst.hstride, data->id + 1);
+                output_buf_data_to_file(src_va, src.format, src.wstride, src.hstride, data->id + 2);
+
+                goto CHECK_ERR;
+            } else {
+                printf("ID[%d]: %s check buffer %d time success!\n", data->id, data->name, time);
+            }
+
+#if IM2D_SLT_GRAPHICBUFFER_EN
+            ret = src_buf->unlock();
+            if (ret) {
+                printf("unlock src_buf error : %s\n",strerror(errno));
+                goto NORMAL_ERR;
+            }
+
+            ret = dst_buf->unlock();
+            if (ret) {
+                printf("unlock dst_buf error : %s\n",strerror(errno));
+                goto NORMAL_ERR;
+            }
+#endif
+        } else {
+            printf("ID[%d]: %s run %d time error!, %s\n", data->id, data->name, time, imStrError((IM_STATUS)ret));
+            goto NORMAL_ERR;
+        }
+
+#if IM2D_SLT_DRM_BUFFER_EN
+        drm_buf_destroy(drm_src.drm_buffer_fd, drm_src.drm_buffer_handle,
+                        drm_src.drm_buf, drm_src.actual_size);
+        drm_buf_destroy(drm_dst.drm_buffer_fd, drm_dst.drm_buffer_handle,
+                        drm_dst.drm_buf, drm_dst.actual_size);
+#endif
+    } while (data->mode && --num);
+
+#if IM2D_SLT_THREAD_EN
+    data->result = 0;
+    pthread_exit(NULL);
+
+NORMAL_ERR:
+    data->result = -1;
+    pthread_exit(NULL);
+CHECK_ERR:
+    data->result = -2;
+    pthread_exit(NULL);
+#else
+    data->result = 0;
+    return NULL;
+
+NORMAL_ERR:
+    data->result = -1;
+    return NULL;
+CHECK_ERR:
+    data->result = -2;
+    return NULL;
+#endif
+}
+
+int main() {
+    int pthread_num = 0;
+    pthread_t tdSyncID[IM2D_SLT_THREAD_MAX];
+    private_data_t data[IM2D_SLT_THREAD_MAX];
+
+    memset(&data, 0x0, sizeof(private_data_t) * IM2D_SLT_THREAD_MAX);
+    printf("-------------------------------------------------\n");
+
+#if IM2D_SLT_TEST_RGA3_0_EN
+    pthread_num++;
+    data[pthread_num].id = pthread_num;
+    data[pthread_num].name = "RGA3_core0";
+    data[pthread_num].mode = IM2D_SLT_WHILE_EN;
+    data[pthread_num].num = IM2D_SLT_WHILE_NUM;
+    data[pthread_num].width = IM2D_SLT_DEFAULT_WIDTH;
+    data[pthread_num].height = IM2D_SLT_DEFAULT_HEIGHT;
+    data[pthread_num].format = IM2D_SLT_DEFAULT_FORMAT;
+    data[pthread_num].rd_mode = IM_RASTER_MODE;
+    data[pthread_num].core = IM_SCHEDULER_RGA3_CORE0;
+    data[pthread_num].priority = 1;
+#endif
+
+#if IM2D_SLT_TEST_RGA3_1_EN
+    pthread_num++;
+    data[pthread_num].id = pthread_num;
+    data[pthread_num].name = "RGA3_core1";
+    data[pthread_num].mode = IM2D_SLT_WHILE_EN;
+    data[pthread_num].num = IM2D_SLT_WHILE_NUM;
+    data[pthread_num].width = IM2D_SLT_DEFAULT_WIDTH;
+    data[pthread_num].height = IM2D_SLT_DEFAULT_HEIGHT;
+    data[pthread_num].format = IM2D_SLT_DEFAULT_FORMAT;
+    data[pthread_num].rd_mode = IM_RASTER_MODE;
+    data[pthread_num].core = IM_SCHEDULER_RGA3_CORE1;
+    data[pthread_num].priority = 1;
+#endif
+
+#if IM2D_SLT_TEST_RGA2_EN
+    pthread_num++;
+    data[pthread_num].id = pthread_num;
+    data[pthread_num].name = "RGA2";
+    data[pthread_num].mode = IM2D_SLT_WHILE_EN;
+    data[pthread_num].num = IM2D_SLT_WHILE_NUM;
+    data[pthread_num].width = IM2D_SLT_DEFAULT_WIDTH;
+    data[pthread_num].height = IM2D_SLT_DEFAULT_HEIGHT;
+    data[pthread_num].format = IM2D_SLT_DEFAULT_FORMAT;
+    data[pthread_num].rd_mode = IM_RASTER_MODE;
+    data[pthread_num].core = IM_SCHEDULER_RGA2_CORE0;
+    data[pthread_num].priority = 1;
+#endif
+
+#if IM2D_SLT_TEST_RGA3_0_FBC_EN
+    pthread_num++;
+    data[pthread_num].id = pthread_num;
+    data[pthread_num].name = "RGA3_core0_afbc";
+    data[pthread_num].mode = IM2D_SLT_WHILE_EN;
+    data[pthread_num].num = IM2D_SLT_WHILE_NUM;
+    data[pthread_num].width = IM2D_SLT_DEFAULT_WIDTH;
+    data[pthread_num].height = IM2D_SLT_DEFAULT_HEIGHT;
+    data[pthread_num].format = IM2D_SLT_DEFAULT_FORMAT;
+    data[pthread_num].rd_mode = IM_AFBC_MODE;
+    data[pthread_num].core = IM_SCHEDULER_RGA3_CORE0;
+    data[pthread_num].priority = 1;
+#endif
+
+#if IM2D_SLT_TEST_RGA3_1_FBC_EN
+    pthread_num++;
+    data[pthread_num].id = pthread_num;
+    data[pthread_num].name = "RGA3_core1_afbc";
+    data[pthread_num].mode = IM2D_SLT_WHILE_EN;
+    data[pthread_num].num = IM2D_SLT_WHILE_NUM;
+    data[pthread_num].width = IM2D_SLT_DEFAULT_WIDTH;
+    data[pthread_num].height = IM2D_SLT_DEFAULT_HEIGHT;
+    data[pthread_num].format = IM2D_SLT_DEFAULT_FORMAT;
+    data[pthread_num].rd_mode = IM_AFBC_MODE;
+    data[pthread_num].core = IM_SCHEDULER_RGA3_CORE1;
+    data[pthread_num].priority = 1;
+#endif
+
+#if IM2D_SLT_THREAD_EN
+    for (int i = 1; i <= pthread_num; i++) {
+        pthread_create(&tdSyncID[i], NULL, pthread_rga_run, (void *)(&data[i]));
+        printf("creat Sync pthread[%ld] = %d, id = %d\n", tdSyncID[i], i, data[i].id);
+    }
+
+    for (int i = 1; i <= pthread_num; i++) {
+        pthread_join(tdSyncID[i], NULL);
+        if (data[i].result < 0) {
+            printf("ID[%d] case '%s' is faile!\n", data[i].id, data[i].name);
+            printf("-------------------------------------------------\n");
+            printf("im2d api slt fail!\n");
+            return -1;
+        }
+    }
+
+    printf("-------------------------------------------------\n");
+    printf("im2d api slt success!\n");
+
+    pthread_exit(NULL);
+#else
+    (void)(tdSyncID);
+
+    for (int i = 1; i <= pthread_num; i++) {
+        pthread_rga_run((void *)(&data[i]));
+        printf("ID[%d] %s run end!\n", data[i].id, data[i].name);
+        if (data[i].result < 0) {
+            printf("ID[%d] case '%s' is faile!\n", data[i].id, data[i].name);
+            return -1;
+        }
+    }
+
+    printf("-------------------------------------------------\n");
+    printf("im2d api slt success!\n");
+
+    return 0;
+#endif
+}
+
