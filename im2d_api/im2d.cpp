@@ -616,7 +616,7 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                                             IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE,
                                             /* reserved */
                                             {0} },
-        { IM_RGA_HW_VERSION_RGA_2_ENHANCE   , 8192, 8192, 16,  2,
+        { IM_RGA_HW_VERSION_RGA_2_ENHANCE   , 8192, 4096, 16,  2,
                                             /* input format */
                                             IM_RGA_SUPPORT_FORMAT_RGB |
                                             IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
@@ -643,7 +643,7 @@ IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                                             IM_RGA_SUPPORT_FEATURE_ROP,
                                             /* reserved */
                                             {0} },
-        { IM_RGA_HW_VERSION_RGA_3           , 8128, 8128,  8,  4,
+        { IM_RGA_HW_VERSION_RGA_3           , 8176, 8128,  8,  4,
                                             /* input format */
                                             IM_RGA_SUPPORT_FORMAT_RGB |
                                             IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |
