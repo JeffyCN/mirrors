@@ -1388,7 +1388,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     }
 
 	dst->out_fence_fd = rgaReg.out_fence_fd;
-	printf("rk-debug out_fence_fd = %d\n", rgaReg.out_fence_fd);
 
     return 0;
 }
