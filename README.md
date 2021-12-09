@@ -4,7 +4,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 ### 版本说明
 
-**RGA API** 版本: 1.6.0
+**RGA API** 版本: 1.6.4
 
 ### 适用芯片平台
 
@@ -35,12 +35,8 @@ Rockchip RK3066 | RK3188 | RK2926 | RK2928 | RK3026 | RK3028 | RK3128 | Sofia3gr
 修改librga源码根目录下的文件**cmake-android.sh**。执行以下操作完成编译：
 
 ```bash
-$ mkdir build
-$ cd build
-$ cp ../cmake-android.sh ./
 $ chmod +x ./cmake-android.sh
 $ ./cmake-android.sh
-$ make
 ```
 
 **[编译选项]**
@@ -52,13 +48,10 @@ $ make
 
 * **Cmake (buildroot/debian)**
 
-修改librga源码根目录下的**buildroot.cmake**文件。执行以下操作完成编译:
+修改librga源码根目录下的**buildroot.cmake**文件。执行以下脚本完成编译:
 
 ```bash
-$ mkdir build
-$ cd build
-$ cp ../cmake-linux.sh ./
-$ chmod +x ./cmake-linux.sh
+$ chmod +x ./cmake-android.sh
 $ ./cmake-linux.sh
 ```
 

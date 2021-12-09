@@ -8,3 +8,5 @@ rgaImDemo
 .vscode/
 *.patch
 build/
+build_linux/
+build_android_ndk/
