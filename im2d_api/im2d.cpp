@@ -1510,7 +1510,8 @@ IM_API static IM_STATUS rga_check_driver(void) {
 
     /* First, find the driver version corresponding to librga. */
     for (int i = (table_size - 1); i >= 0; i--) {
-        if (rga_version_compare({ RGA_API_MAJOR_VERSION,
+        if (rga_version_compare((struct rga_version_t)
+                                { RGA_API_MAJOR_VERSION,
                                   RGA_API_MINOR_VERSION,
                                   RGA_API_REVISION_VERSION,
                                   RGA_API_VERSION },
@@ -1521,6 +1522,7 @@ IM_API static IM_STATUS rga_check_driver(void) {
 
                 break;
             } else if (rga_version_compare(driver_bind_table[i + 1].user,
+                                           (struct rga_version_t)
                                            { RGA_API_MAJOR_VERSION,
                                              RGA_API_MINOR_VERSION,
                                              RGA_API_REVISION_VERSION,
