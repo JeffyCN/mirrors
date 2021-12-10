@@ -1380,9 +1380,11 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 	rgaReg.core = dst->core;
 	rgaReg.priority = dst->priority;
 
-    /* using sync to pass config to rga driver. */
-    if(ioctl(ctx->rgaFd, sync_mode, &rgaReg)) {
-        printf(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+    do {
+        ret = ioctl(ctx->rgaFd, sync_mode, &rgaReg);
+    } while (ret == -1 && (errno == EINTR || errno == 512));   /* ERESTARTSYS is 512. */
+    if(ret) {
+        printf(" %s(%d) RGA_BLIT fail: %s\n",__FUNCTION__, __LINE__,strerror(errno));
         ALOGE(" %s(%d) RGA_BLIT fail: %s",__FUNCTION__, __LINE__,strerror(errno));
         return -errno;
     }
@@ -1622,8 +1624,11 @@ int RgaCollorFill(rga_info *dst) {
 	rgaReg.core = dst->core;
 	rgaReg.priority = dst->priority;
 
-    if(ioctl(ctx->rgaFd, sync_mode, &rgaReg)) {
-        printf(" %s(%d) RGA_COLORFILL fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+    do {
+        ret = ioctl(ctx->rgaFd, sync_mode, &rgaReg);
+    } while (ret == -1 && (errno == EINTR || errno == 512));   /* ERESTARTSYS is 512. */
+    if(ret) {
+        printf(" %s(%d) RGA_COLORFILL fail: %s\n",__FUNCTION__, __LINE__,strerror(errno));
         ALOGE(" %s(%d) RGA_COLORFILL fail: %s",__FUNCTION__, __LINE__,strerror(errno));
         return -errno;
     }
@@ -2196,9 +2201,13 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
     rgaReg.render_mode = color_palette_mode;
     rgaReg.endian_mode = 1;
 
-    if(ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg) != 0) {
-      printf("color palette ioctl err\n");
-        return -1;
+    do {
+        ret = ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg);
+    } while (ret == -1 && (errno == EINTR || errno == 512));   /* ERESTARTSYS is 512. */
+    if(ret) {
+        printf(" %s(%d) RGA_COLOR_PALETTE fail: %s\n",__FUNCTION__, __LINE__,strerror(errno));
+        ALOGE(" %s(%d) RGA_COLOR_PALETTE fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        return -errno;
     }
 
     return 0;
