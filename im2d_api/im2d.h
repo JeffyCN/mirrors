@@ -36,12 +36,14 @@ extern "C" {
 
 /* RGA im2d api verison */
 #define RGA_API_MAJOR_VERSION	 1
-#define RGA_API_MINOR_VERSION	 6
-#define RGA_API_REVISION_VERSION 6
+#define RGA_API_MINOR_VERSION	 7
+#define RGA_API_REVISION_VERSION 0
 #define RGA_API_BUILD_VERSION	 0
 
 #define RGA_API_VERSION STR(RGA_API_MAJOR_VERSION) "." STR(RGA_API_MINOR_VERSION) "." STR(RGA_API_REVISION_VERSION) "_[" STR(RGA_API_BUILD_VERSION) "]"
 #define RGA_API_FULL_VERSION "rga_api version " RGA_API_VERSION
+
+#define ERR_MSG_LEN 300
 
 typedef enum {
     /* Rotation */
@@ -111,141 +113,6 @@ typedef enum {
     IM_ROP_NOT_XOR              = 0xf9,
 } IM_ROP_CODE;
 
-typedef enum {
-    IM_RGA_HW_VERSION_RGA_V_ERR_INDEX = 0x0,
-    IM_RGA_HW_VERSION_RGA_1_INDEX,
-    IM_RGA_HW_VERSION_RGA_1_PLUS_INDEX,
-    IM_RGA_HW_VERSION_RGA_2_INDEX,
-    IM_RGA_HW_VERSION_RGA_2_LITE0_INDEX,
-    IM_RGA_HW_VERSION_RGA_2_LITE1_INDEX,
-    IM_RGA_HW_VERSION_RGA_2_ENHANCE_INDEX,
-    IM_RGA_HW_VERSION_RGA_3_INDEX,
-    IM_RGA_HW_VERSION_MASK_INDEX,
-} IM_RGA_HW_VERSION_INDEX;
-
-typedef enum {
-    IM_RGA_HW_VERSION_RGA_V_ERR     = 1 << IM_RGA_HW_VERSION_RGA_V_ERR_INDEX,
-    IM_RGA_HW_VERSION_RGA_1         = 1 << IM_RGA_HW_VERSION_RGA_1_INDEX,
-    IM_RGA_HW_VERSION_RGA_1_PLUS    = 1 << IM_RGA_HW_VERSION_RGA_1_PLUS_INDEX,
-    IM_RGA_HW_VERSION_RGA_2         = 1 << IM_RGA_HW_VERSION_RGA_2_INDEX,
-    IM_RGA_HW_VERSION_RGA_2_LITE0   = 1 << IM_RGA_HW_VERSION_RGA_2_LITE0_INDEX,
-    IM_RGA_HW_VERSION_RGA_2_LITE1   = 1 << IM_RGA_HW_VERSION_RGA_2_LITE1_INDEX,
-    IM_RGA_HW_VERSION_RGA_2_ENHANCE = 1 << IM_RGA_HW_VERSION_RGA_2_ENHANCE_INDEX,
-    IM_RGA_HW_VERSION_RGA_3         = 1 << IM_RGA_HW_VERSION_RGA_3_INDEX,
-    IM_RGA_HW_VERSION_MASK          = ~((~(unsigned int)0x0 << IM_RGA_HW_VERSION_MASK_INDEX) | 1),
-}IM_RGA_HW_VERSION;
-
-typedef enum {
-    IM_RGA_SUPPORT_FORMAT_ERROR_INDEX = 0,
-    IM_RGA_SUPPORT_FORMAT_RGB_INDEX,
-    IM_RGA_SUPPORT_FORMAT_RGB_OTHER_INDEX,
-    IM_RGA_SUPPORT_FORMAT_BPP_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_10_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_10_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUYV_420_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUYV_422_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_400_INDEX,
-    IM_RGA_SUPPORT_FORMAT_Y4_INDEX,
-    IM_RGA_SUPPORT_FORMAT_MASK_INDEX,
-} IM_RGA_SUPPORT_FORMAT_INDEX;
-
-typedef enum {
-    IM_RGA_SUPPORT_FORMAT_ERROR                         = 1 << IM_RGA_SUPPORT_FORMAT_ERROR_INDEX,
-    IM_RGA_SUPPORT_FORMAT_RGB                           = 1 << IM_RGA_SUPPORT_FORMAT_RGB_INDEX,
-    IM_RGA_SUPPORT_FORMAT_RGB_OTHER                     = 1 << IM_RGA_SUPPORT_FORMAT_RGB_OTHER_INDEX,
-    IM_RGA_SUPPORT_FORMAT_BPP                           = 1 << IM_RGA_SUPPORT_FORMAT_BPP_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT    = 1 << IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT   = 1 << IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_10_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT         = 1 << IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_8_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_10_BIT        = 1 << IM_RGA_SUPPORT_FORMAT_YUV_420_PLANNER_10_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT    = 1 << IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_8_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT   = 1 << IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT         = 1 << IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_8_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_10_BIT        = 1 << IM_RGA_SUPPORT_FORMAT_YUV_422_PLANNER_10_BIT_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUYV_420                      = 1 << IM_RGA_SUPPORT_FORMAT_YUYV_420_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUYV_422                      = 1 << IM_RGA_SUPPORT_FORMAT_YUYV_422_INDEX,
-    IM_RGA_SUPPORT_FORMAT_YUV_400                       = 1 << IM_RGA_SUPPORT_FORMAT_YUV_400_INDEX,
-    IM_RGA_SUPPORT_FORMAT_Y4                            = 1 << IM_RGA_SUPPORT_FORMAT_Y4_INDEX,
-    IM_RGA_SUPPORT_FORMAT_MASK                          = ~((~(unsigned int)0x0 << IM_RGA_SUPPORT_FORMAT_MASK_INDEX) | 1),
-} IM_RGA_SUPPORT_FORMAT;
-
-typedef enum {
-    IM_RGA_SUPPORT_FEATURE_ERROR_INDEX = 0,
-    IM_RGA_SUPPORT_FEATURE_COLOR_FILL_INDEX,
-    IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE_INDEX,
-    IM_RGA_SUPPORT_FEATURE_ROP_INDEX,
-    IM_RGA_SUPPORT_FEATURE_QUANTIZE_INDEX,
-    IM_RGA_SUPPORT_FEATURE_SRC1_R2Y_CSC_INDEX,
-    IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC_INDEX,
-    IM_RGA_SUPPORT_FEATURE_FBC_INDEX,
-    IM_RGA_SUPPORT_FEATURE_BLEND_YUV_INDEX,
-    IM_RGA_SUPPORT_FEATURE_BT2020_INDEX,
-    IM_RGA_SUPPORT_FEATURE_MASK_INDEX,
-} IM_RGA_SUPPORT_FEATURE_INDEX;
-
-typedef enum {
-    IM_RGA_SUPPORT_FEATURE_ERROR          = 1 << IM_RGA_SUPPORT_FEATURE_ERROR_INDEX,
-    IM_RGA_SUPPORT_FEATURE_COLOR_FILL     = 1 << IM_RGA_SUPPORT_FEATURE_COLOR_FILL_INDEX,
-    IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE  = 1 << IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE_INDEX,
-    IM_RGA_SUPPORT_FEATURE_ROP            = 1 << IM_RGA_SUPPORT_FEATURE_ROP_INDEX,
-    IM_RGA_SUPPORT_FEATURE_QUANTIZE       = 1 << IM_RGA_SUPPORT_FEATURE_QUANTIZE_INDEX,
-    IM_RGA_SUPPORT_FEATURE_SRC1_R2Y_CSC   = 1 << IM_RGA_SUPPORT_FEATURE_SRC1_R2Y_CSC_INDEX,
-    IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC   = 1 << IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC_INDEX,
-    IM_RGA_SUPPORT_FEATURE_FBC            = 1 << IM_RGA_SUPPORT_FEATURE_FBC_INDEX,
-    IM_RGA_SUPPORT_FEATURE_BLEND_YUV      = 1 << IM_RGA_SUPPORT_FEATURE_BLEND_YUV_INDEX,
-    IM_RGA_SUPPORT_FEATURE_BT2020         = 1 << IM_RGA_SUPPORT_FEATURE_BT2020_INDEX,
-    IM_RGA_SUPPORT_FEATURE_MASK           = ~((~(unsigned int)0x0 << IM_RGA_SUPPORT_FEATURE_MASK_INDEX) | 1),
-} IM_RGA_SUPPORT_FEATURE;
-
-/* Get RGA basic information index */
-typedef enum {
-    RGA_VENDOR = 0,
-    RGA_VERSION,
-    RGA_MAX_INPUT,
-    RGA_MAX_OUTPUT,
-    RGA_SCALE_LIMIT,
-    RGA_INPUT_FORMAT,
-    RGA_OUTPUT_FORMAT,
-    RGA_FEATURE,
-    RGA_EXPECTED,
-    RGA_ALL,
-} IM_INFORMATION;
-
-typedef struct {
-    unsigned int version;
-    unsigned int input_resolution;
-    unsigned int output_resolution;
-    unsigned int scale_limit;
-    unsigned int performance;
-    unsigned int input_format;
-    unsigned int output_format;
-    unsigned int feature;
-    char reserved[28];
-} rga_info_table_entry;
-
-typedef struct {
-    struct rga_version_t user;
-    struct rga_version_t driver;
-} rga_dirver_bind_table_entry;
-
-/* Status codes, returned by any blit function */
-typedef enum {
-    IM_STATUS_NOERROR         =  2,
-    IM_STATUS_SUCCESS         =  1,
-    IM_STATUS_NOT_SUPPORTED   = -1,
-    IM_STATUS_OUT_OF_MEMORY   = -2,
-    IM_STATUS_INVALID_PARAM   = -3,
-    IM_STATUS_ILLEGAL_PARAM   = -4,
-    IM_STATUS_ERROR_VERSION   = -5,
-    IM_STATUS_FAILED          =  0,
-} IM_STATUS;
-
 /* Status codes, returned by any blit function */
 typedef enum {
     IM_YUV_TO_RGB_BT601_LIMIT     = 1 << 0,
@@ -286,6 +153,32 @@ typedef enum {
     IM_CONFIG_PRIORITY,
     IM_CONFIG_CHECK,
 } IM_CONFIG_NAME;
+
+/* Get RGA basic information index */
+typedef enum {
+    RGA_VENDOR = 0,
+    RGA_VERSION,
+    RGA_MAX_INPUT,
+    RGA_MAX_OUTPUT,
+    RGA_SCALE_LIMIT,
+    RGA_INPUT_FORMAT,
+    RGA_OUTPUT_FORMAT,
+    RGA_FEATURE,
+    RGA_EXPECTED,
+    RGA_ALL,
+} IM_INFORMATION;
+
+/* Status codes, returned by any blit function */
+typedef enum {
+    IM_STATUS_NOERROR         =  2,
+    IM_STATUS_SUCCESS         =  1,
+    IM_STATUS_NOT_SUPPORTED   = -1,
+    IM_STATUS_OUT_OF_MEMORY   = -2,
+    IM_STATUS_INVALID_PARAM   = -3,
+    IM_STATUS_ILLEGAL_PARAM   = -4,
+    IM_STATUS_ERROR_VERSION   = -5,
+    IM_STATUS_FAILED          =  0,
+} IM_STATUS;
 
 /* Rectangle definition */
 typedef struct {
@@ -420,24 +313,6 @@ IM_API const char* imStrError_t(IM_STATUS status);
 IM_API rga_buffer_t wrapbuffer_virtualaddr_t(void* vir_addr, int width, int height, int wstride, int hstride, int format);
 IM_API rga_buffer_t wrapbuffer_physicaladdr_t(void* phy_addr, int width, int height, int wstride, int hstride, int format);
 IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, int hstride, int format);
-
-/*
- * Get RGA basic information, supported resolution, supported format, etc.
- *
- * @param name
- *      RGA_VENDOR
- *      RGA_VERSION
- *      RGA_MAX_INPUT
- *      RGA_MAX_OUTPUT
- *      RGA_INPUT_FORMAT
- *      RGA_OUTPUT_FORMAT
- *      RGA_EXPECTED
- *      RGA_ALL
- *
- * @returns a usage describing properties of RGA.
- */
-//IM_API int rga_get_info(rga_info_table_entry *);
-IM_API IM_STATUS rga_get_info(rga_info_table_entry *return_table);
 
 /*
  * Query RGA basic information, supported resolution, supported format, etc.

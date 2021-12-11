@@ -36,6 +36,7 @@ librga_srcs = [
 	'core/RockchipRga.cpp',
 	'core/RgaApi.cpp',
 	'core/rga_sync.cpp',
+    'im2d_api/im2d_common.cpp',
 	'im2d_api/im2d.cpp',
 ]
 

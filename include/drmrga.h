@@ -20,6 +20,7 @@
 #define _rk_drm_rga_
 
 #include <stdint.h>
+#include <errno.h>
 #include <sys/cdefs.h>
 
 #ifdef ANDROID

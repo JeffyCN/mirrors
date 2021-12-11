@@ -81,6 +81,7 @@ LOCAL_SRC_FILES:= \
     core/NormalRgaApi.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
+    im2d_api/im2d_common.cpp \
     im2d_api/im2d.cpp
 
 ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.0)))
@@ -128,6 +129,7 @@ LOCAL_SRC_FILES += \
     core/NormalRgaApi.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
+    im2d_api/im2d_common.cpp \
     im2d_api/im2d.cpp
 
 LOCAL_MODULE := librga
@@ -158,7 +160,7 @@ LOCAL_CFLAGS += -DUSE_AHARDWAREBUFFER=1
 endif
 
 ifneq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
-LOCAL_SHARED_LIBRARIES += libgralloc_drm 
+LOCAL_SHARED_LIBRARIES += libgralloc_drm
 endif
 
 ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.9)))
@@ -198,6 +200,7 @@ LOCAL_SRC_FILES += \
     drm/DrmmodeRga.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
+    im2d_api/im2d_common.cpp \
     im2d_api/im2d.cpp
 
 LOCAL_MODULE := librga

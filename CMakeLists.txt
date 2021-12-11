@@ -30,7 +30,7 @@ if(CMAKE_BUILD_TARGET STREQUAL cmake_linux)
     if (NOT DEFINED CMAKE_C_COMPILER)
         message(FATAL_ERROR "RGA: CMAKE_C_COMPILER not define")
     endif()
-    
+
     if (NOT DEFINED CMAKE_CXX_COMPILER)
         message(FATAL_ERROR "RGA: CMAKE_CXX_COMPILER not define")
     endif()
@@ -70,6 +70,7 @@ set(IM2D_SRCS
     core/RgaUtils.cpp
     core/RgaApi.cpp
     core/rga_sync.cpp
+    im2d_api/im2d_common.cpp
     im2d_api/im2d.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_EXT} -DUN_NEED_GL")
