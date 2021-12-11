@@ -157,30 +157,6 @@ int AHardwareBuffer_Fill(AHardwareBuffer** buffer, int flag, int index) {
 #endif
 #endif
 
-int print_expected(rga_buffer_t src, rga_buffer_t dst) {
-    int ret;
-    long volume = 0, time = 0;
-    rga_info_table_entry info_table;
-
-    volume = src.wstride*src.hstride*get_bpp_from_format(src.format);
-    printf("Expected read data	: %ld bit\n", volume);
-    volume = dst.wstride*dst.hstride*get_bpp_from_format(dst.format);
-    printf("Expected write data	: %ld bit\n", volume );
-
-    ret = rga_get_info(&info_table);
-    if (ret == IM_STATUS_FAILED) {
-        printf("RGA get info error\n");
-        return -1;
-    }
-
-    /* The calculation formula only supports RGA copy mode:
-     * Number of pixels / pixels that aclk can process per second */
-    time = (src.wstride*src.hstride) / (info_table.performance*300);
-    printf("Expected time	 	: %ld us\n", time);
-
-    return 0;
-}
-
 int main(int argc, char*  argv[]) {
     int ret = 0, while_time = 0;
     int parm_data[MODE_MAX] = {0};
@@ -359,8 +335,6 @@ int main(int argc, char*  argv[]) {
 	            gettimeofday(&end, NULL);
 	            usec1 = 1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec);
 	            printf("copying .... cost time %ld us, %s\n", usec1, imStrError(STATUS));
-
-				print_expected(src, dst);
 
 	            break;
 
