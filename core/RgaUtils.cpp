@@ -273,7 +273,7 @@ int get_buf_from_file(void *buf, int f, int sw, int sh, int index) {
     return 0;
 }
 
-int get_buf_from_file_AFBC(void *buf, int f, int sw, int sh, int index) {
+int get_buf_from_file_FBC(void *buf, int f, int sw, int sh, int index) {
 #ifdef ANDROID
     const char *inputFilePath = "/data/in%dw%d-h%d-%s-afbc.bin";
 #endif
@@ -326,7 +326,7 @@ int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index) {
     return 0;
 }
 
-int output_buf_data_to_file_AFBC(void *buf, int f, int sw, int sh, int index) {
+int output_buf_data_to_file_FBC(void *buf, int f, int sw, int sh, int index) {
 #ifdef ANDROID
     const char *outputFilePath = "/data/out%dw%d-h%d-%s-afbc.bin";
 #endif

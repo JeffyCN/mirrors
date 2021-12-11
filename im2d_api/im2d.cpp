@@ -2438,7 +2438,7 @@ IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
                 return IM_STATUS_ILLEGAL_PARAM;
             }
             break;
-        case IM_CHECK_CONFIG :
+        case IM_CONFIG_CHECK :
             if (value == false || value == true) {
                 g_im2d_context.check_mode = (bool)value;
             } else {

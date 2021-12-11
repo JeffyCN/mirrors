@@ -213,7 +213,7 @@ typedef enum _Rga_SURF_FORMAT {
 enum
 {
     raster_mode             = 0x1 << 0,
-    afbc_mode               = 0x1 << 1,
+    fbc_mode                = 0x1 << 1,
     tile_mode               = 0x1 << 2,
 };
 

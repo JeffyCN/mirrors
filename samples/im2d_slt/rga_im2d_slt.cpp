@@ -90,8 +90,8 @@ int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int flag, int index, int mode) {
     if(flag) {
         memset(buf,index,gb->getWidth()*gb->getHeight()*get_bpp_from_format(gb->getPixelFormat()));
     } else {
-        if (mode == IM_AFBC_MODE) {
-            ret = get_buf_from_file_AFBC(buf, gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index);
+        if (mode == IM_FBC_MODE) {
+            ret = get_buf_from_file_FBC(buf, gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index);
         } else {
             ret = get_buf_from_file(buf, gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index);
         }
@@ -158,7 +158,7 @@ void *pthread_rga_run(void *args) {
         time++;
 
 #if IM2D_SLT_DRM_BUFFER_EN
-        if (data->rd_mode != IM_AFBC_MODE) {
+        if (data->rd_mode != IM_FBC_MODE) {
             drm_src.drm_buf = (uint8_t *)drm_buf_alloc(srcWidth, srcHeight, get_bpp_from_format(srcFormat) * 8,
                                                        &drm_src.drm_buffer_fd, &drm_src.drm_buffer_handle,
                                                        &drm_src.actual_size, IM2D_SLT_BUFFER_PHY_EN ? ROCKCHIP_BO_CONTIG : 0);
@@ -187,7 +187,7 @@ void *pthread_rga_run(void *args) {
             src_va = (char *)drm_src.drm_buf;
             dst_va = (char *)drm_dst.drm_buf;
 
-            ret = get_buf_from_file_AFBC(src_va, srcFormat, srcWidth, dstHeight, 0);
+            ret = get_buf_from_file_FBC(src_va, srcFormat, srcWidth, dstHeight, 0);
             if (ret != 0) {
                 printf ("ID[%d] %s open file %s \n", data->id, data->name, "fault");
                 goto NORMAL_ERR;
@@ -203,7 +203,7 @@ void *pthread_rga_run(void *args) {
             goto NORMAL_ERR;
         }
 #elif IM2D_SLT_GRAPHICBUFFER_EN
-        if (data->rdmode == IM_AFBC_MODE) {
+        if (data->rdmode == IM_FBC_MODE) {
             src_buf = GraphicBuffer_Init(srcWidth, srcHeight * 1.5, srcFormat);
             dst_buf = GraphicBuffer_Init(dstWidth, dstHeight * 1.5, dstFormat);
         } else {
@@ -228,7 +228,7 @@ void *pthread_rga_run(void *args) {
         dst = wrapbuffer_GraphicBuffer(dst_buf);
         /* If it is in fbc mode, because the height of the alloc memory
          * is modified, it needs to be corrected here */
-        if (data->rdmode == IM_AFBC_MODE) {
+        if (data->rdmode == IM_FBC_MODE) {
             src.height  = srcHeight;
             src.hstride = srcHeight;
             dst.height  = dstHeight;
@@ -385,13 +385,13 @@ int main() {
 #if IM2D_SLT_TEST_RGA3_0_FBC_EN
     pthread_num++;
     data[pthread_num].id = pthread_num;
-    data[pthread_num].name = "RGA3_core0_afbc";
+    data[pthread_num].name = "RGA3_core0_fbc";
     data[pthread_num].mode = IM2D_SLT_WHILE_EN;
     data[pthread_num].num = IM2D_SLT_WHILE_NUM;
     data[pthread_num].width = IM2D_SLT_DEFAULT_WIDTH;
     data[pthread_num].height = IM2D_SLT_DEFAULT_HEIGHT;
     data[pthread_num].format = IM2D_SLT_DEFAULT_FORMAT;
-    data[pthread_num].rd_mode = IM_AFBC_MODE;
+    data[pthread_num].rd_mode = IM_FBC_MODE;
     data[pthread_num].core = IM_SCHEDULER_RGA3_CORE0;
     data[pthread_num].priority = 1;
 #endif
@@ -399,13 +399,13 @@ int main() {
 #if IM2D_SLT_TEST_RGA3_1_FBC_EN
     pthread_num++;
     data[pthread_num].id = pthread_num;
-    data[pthread_num].name = "RGA3_core1_afbc";
+    data[pthread_num].name = "RGA3_core1_fbc";
     data[pthread_num].mode = IM2D_SLT_WHILE_EN;
     data[pthread_num].num = IM2D_SLT_WHILE_NUM;
     data[pthread_num].width = IM2D_SLT_DEFAULT_WIDTH;
     data[pthread_num].height = IM2D_SLT_DEFAULT_HEIGHT;
     data[pthread_num].format = IM2D_SLT_DEFAULT_FORMAT;
-    data[pthread_num].rd_mode = IM_AFBC_MODE;
+    data[pthread_num].rd_mode = IM_FBC_MODE;
     data[pthread_num].core = IM_SCHEDULER_RGA3_CORE1;
     data[pthread_num].priority = 1;
 #endif

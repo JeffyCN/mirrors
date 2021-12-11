@@ -37,8 +37,8 @@ extern "C" {
 /* RGA im2d api verison */
 #define RGA_API_MAJOR_VERSION	 1
 #define RGA_API_MINOR_VERSION	 6
-#define RGA_API_REVISION_VERSION 5
-#define RGA_API_BUILD_VERSION	 1
+#define RGA_API_REVISION_VERSION 6
+#define RGA_API_BUILD_VERSION	 0
 
 #define RGA_API_VERSION STR(RGA_API_MAJOR_VERSION) "." STR(RGA_API_MINOR_VERSION) "." STR(RGA_API_REVISION_VERSION) "_[" STR(RGA_API_BUILD_VERSION) "]"
 #define RGA_API_FULL_VERSION "rga_api version " RGA_API_VERSION
@@ -88,7 +88,7 @@ typedef enum {
 
 typedef enum {
     IM_RASTER_MODE  = 1 << 0,
-    IM_AFBC_MODE    = 1 << 1,
+    IM_FBC_MODE    = 1 << 1,
     IM_TILE_MODE    = 1 << 2,
 } IM_RD_MODE;
 
@@ -284,7 +284,7 @@ typedef enum {
 typedef enum {
     IM_CONFIG_SCHEDULER_CORE,
     IM_CONFIG_PRIORITY,
-    IM_CHECK_CONFIG,
+    IM_CONFIG_CHECK,
 } IM_CONFIG_NAME;
 
 /* Rectangle definition */
