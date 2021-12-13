@@ -38,7 +38,7 @@ extern "C" {
 #define RGA_API_MAJOR_VERSION	 1
 #define RGA_API_MINOR_VERSION	 7
 #define RGA_API_REVISION_VERSION 0
-#define RGA_API_BUILD_VERSION	 0
+#define RGA_API_BUILD_VERSION	 1
 
 #define RGA_API_VERSION STR(RGA_API_MAJOR_VERSION) "." STR(RGA_API_MINOR_VERSION) "." STR(RGA_API_REVISION_VERSION) "_[" STR(RGA_API_BUILD_VERSION) "]"
 #define RGA_API_FULL_VERSION "rga_api version " RGA_API_VERSION
@@ -89,19 +89,19 @@ typedef enum {
 } IM_USAGE;
 
 typedef enum {
-    IM_RASTER_MODE  = 1 << 0,
-    IM_FBC_MODE    = 1 << 1,
-    IM_TILE_MODE    = 1 << 2,
+    IM_RASTER_MODE              = 1 << 0,
+    IM_FBC_MODE                 = 1 << 1,
+    IM_TILE_MODE                = 1 << 2,
 } IM_RD_MODE;
 
 typedef enum {
-    IM_SCHEDULER_RGA3_CORE0 = 1 << 0,
-    IM_SCHEDULER_RGA3_CORE1 = 1 << 1,
-    IM_SCHEDULER_RGA2_CORE0 = 1 << 2,
-    IM_SCHEDULER_RGA3_DEFAULT = IM_SCHEDULER_RGA3_CORE0,
-    IM_SCHEDULER_RGA2_DEFAULT = IM_SCHEDULER_RGA2_CORE0,
-    IM_SCHEDULER_MASK       = 0x7,
-    IM_SCHEDULER_DEFAULT = 0,
+    IM_SCHEDULER_RGA3_CORE0     = 1 << 0,
+    IM_SCHEDULER_RGA3_CORE1     = 1 << 1,
+    IM_SCHEDULER_RGA2_CORE0     = 1 << 2,
+    IM_SCHEDULER_RGA3_DEFAULT   = IM_SCHEDULER_RGA3_CORE0,
+    IM_SCHEDULER_RGA2_DEFAULT   = IM_SCHEDULER_RGA2_CORE0,
+    IM_SCHEDULER_MASK           = 0x7,
+    IM_SCHEDULER_DEFAULT        = 0,
 } IM_SCHEDULER_CORE;
 
 typedef enum {
@@ -115,26 +115,26 @@ typedef enum {
 
 /* Status codes, returned by any blit function */
 typedef enum {
-    IM_YUV_TO_RGB_BT601_LIMIT     = 1 << 0,
-    IM_YUV_TO_RGB_BT601_FULL      = 2 << 0,
-    IM_YUV_TO_RGB_BT709_LIMIT     = 3 << 0,
-    IM_YUV_TO_RGB_MASK            = 3 << 0,
-    IM_RGB_TO_YUV_BT601_FULL      = 1 << 2,
-    IM_RGB_TO_YUV_BT601_LIMIT     = 2 << 2,
-    IM_RGB_TO_YUV_BT709_LIMIT     = 3 << 2,
-    IM_RGB_TO_YUV_MASK            = 3 << 2,
-    IM_RGB_TO_Y4                  = 1 << 4,
-    IM_RGB_TO_Y4_DITHER           = 2 << 4,
-    IM_RGB_TO_Y1_DITHER           = 3 << 4,
-    IM_Y4_MASK                    = 3 << 4,
-    IM_RGB_FULL                   = 1 << 8,
-    IM_RGB_CLIP                   = 2 << 8,
-    IM_YUV_BT601_LIMIT_RANGE      = 3 << 8,
-    IM_YUV_BT601_FULL_RANGE       = 4 << 8,
-    IM_YUV_BT709_LIMIT_RANGE      = 5 << 8,
-    IM_YUV_BT709_FULL_RANGE       = 6 << 8,
-    IM_FULL_CSC_MASK              = 0xf << 8,
-    IM_COLOR_SPACE_DEFAULT        = 0,
+    IM_YUV_TO_RGB_BT601_LIMIT   = 1 << 0,
+    IM_YUV_TO_RGB_BT601_FULL    = 2 << 0,
+    IM_YUV_TO_RGB_BT709_LIMIT   = 3 << 0,
+    IM_YUV_TO_RGB_MASK          = 3 << 0,
+    IM_RGB_TO_YUV_BT601_FULL    = 1 << 2,
+    IM_RGB_TO_YUV_BT601_LIMIT   = 2 << 2,
+    IM_RGB_TO_YUV_BT709_LIMIT   = 3 << 2,
+    IM_RGB_TO_YUV_MASK          = 3 << 2,
+    IM_RGB_TO_Y4                = 1 << 4,
+    IM_RGB_TO_Y4_DITHER         = 2 << 4,
+    IM_RGB_TO_Y1_DITHER         = 3 << 4,
+    IM_Y4_MASK                  = 3 << 4,
+    IM_RGB_FULL                 = 1 << 8,
+    IM_RGB_CLIP                 = 2 << 8,
+    IM_YUV_BT601_LIMIT_RANGE    = 3 << 8,
+    IM_YUV_BT601_FULL_RANGE     = 4 << 8,
+    IM_YUV_BT709_LIMIT_RANGE    = 5 << 8,
+    IM_YUV_BT709_FULL_RANGE     = 6 << 8,
+    IM_FULL_CSC_MASK            = 0xf << 8,
+    IM_COLOR_SPACE_DEFAULT      = 0,
 } IM_COLOR_SPACE_MODE;
 
 typedef enum {
@@ -170,14 +170,14 @@ typedef enum {
 
 /* Status codes, returned by any blit function */
 typedef enum {
-    IM_STATUS_NOERROR         =  2,
-    IM_STATUS_SUCCESS         =  1,
-    IM_STATUS_NOT_SUPPORTED   = -1,
-    IM_STATUS_OUT_OF_MEMORY   = -2,
-    IM_STATUS_INVALID_PARAM   = -3,
-    IM_STATUS_ILLEGAL_PARAM   = -4,
-    IM_STATUS_ERROR_VERSION   = -5,
-    IM_STATUS_FAILED          =  0,
+    IM_STATUS_NOERROR           =  2,
+    IM_STATUS_SUCCESS           =  1,
+    IM_STATUS_NOT_SUPPORTED     = -1,
+    IM_STATUS_OUT_OF_MEMORY     = -2,
+    IM_STATUS_INVALID_PARAM     = -3,
+    IM_STATUS_ILLEGAL_PARAM     = -4,
+    IM_STATUS_ERROR_VERSION     = -5,
+    IM_STATUS_FAILED            =  0,
 } IM_STATUS;
 
 /* Rectangle definition */
