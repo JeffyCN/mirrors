@@ -649,6 +649,18 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
         if (ret != IM_STATUS_SUCCESS)
             return ret;
         ALOGE("If it is an RK encoder output, it needs to be aligned with an odd multiple of 256.\n");
+    } else if (format == RK_FORMAT_YCrCb_422_10b_SP || format == RK_FORMAT_YCbCr_422_10b_SP) {
+        if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUV_422_SEMI_PLANNER_10_BIT) {
+            imSetErrorMsg("%s unsupported YUV422 semi-planner 10bit format, format = 0x%x(%s)\n%s",
+                          name, info.format, translate_format_str(info.format),
+                          querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+
+        ret = rga_align_check_yuv_10(name, info, rect);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
+        ALOGE("If it is an RK encoder output, it needs to be aligned with an odd multiple of 256.\n");
     } else if (format == RK_FORMAT_YUYV_420 || format == RK_FORMAT_YVYU_420 ||
                format == RK_FORMAT_UYVY_420 || format == RK_FORMAT_VYUY_420) {
         if (~format_usage & IM_RGA_SUPPORT_FORMAT_YUYV_420) {
