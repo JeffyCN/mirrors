@@ -61,14 +61,15 @@ enum
   PROP_LAST,
 };
 
+#define GST_MPP_H265_ENC_SIZE_CAPS \
+    "width  = (int) [ 96, MAX ], height = (int) [ 64, MAX ]"
+
 static GstStaticPadTemplate gst_mpp_h265_enc_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-h265, "
-        "width  = (int) [ 96, 1920 ], "
-        "height = (int) [ 64, 2176 ], "
-        "framerate = " GST_VIDEO_FPS_RANGE ", "
+        GST_MPP_H265_ENC_SIZE_CAPS ","
         "stream-format = (string) { byte-stream }, "
         "alignment = (string) { au }")
     );
@@ -79,9 +80,7 @@ static GstStaticPadTemplate gst_mpp_h265_enc_sink_template =
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw,"
         "format = (string) { " MPP_ENC_FORMATS " }, "
-        "width  = (int) [ 96, 1920 ], "
-        "height = (int) [ 64, 2176 ], "
-        "framerate = " GST_VIDEO_FPS_RANGE ";"));
+        GST_MPP_H265_ENC_SIZE_CAPS ";"));
 
 static void
 gst_mpp_h265_enc_set_property (GObject * object,

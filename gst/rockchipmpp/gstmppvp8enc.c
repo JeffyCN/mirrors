@@ -62,7 +62,7 @@ enum
 };
 
 #define GST_MPP_VP8_ENC_SIZE_CAPS \
-    "width  = (int) [ 128, 1920 ], height = (int) [ 64, 1088 ]"
+    "width  = (int) [ 128, MAX ], height = (int) [ 64, MAX ]"
 
 static GstStaticPadTemplate gst_mpp_vp8_enc_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",

@@ -80,7 +80,7 @@ static GstStaticPadTemplate gst_mpp_jpeg_dec_src_template =
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw, "
         "format = (string) { " MPP_DEC_FORMATS ", " MPP_JPEGD_FORMATS " }, "
-        "width  = (int) [ 48, 8176 ], " "height =  (int) [ 48, 8176 ]" ";")
+        "width = (int) [ 48, MAX ], height = (int) [ 48, MAX ]" ";")
     );
 
 static const GstVideoFormat gst_mpp_jpeg_dec_pp_formats[] = {

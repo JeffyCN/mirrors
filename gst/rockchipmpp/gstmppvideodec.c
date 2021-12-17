@@ -81,7 +81,7 @@ static GstStaticPadTemplate gst_mpp_video_dec_src_template =
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw, "
         "format = (string) { " MPP_DEC_FORMATS ", NV12_10LE40 }, "
-        "width  = (int) [ 32, 4096 ], " "height =  (int) [ 32, 4096 ]" ";"));
+        "width = (int) [ 32, MAX ], height = (int) [ 32, MAX ]" ";"));
 
 static MppCodingType
 gst_mpp_video_dec_get_mpp_type (GstStructure * s)

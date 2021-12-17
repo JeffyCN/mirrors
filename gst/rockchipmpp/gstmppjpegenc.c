@@ -56,7 +56,7 @@ enum
 };
 
 #define GST_MPP_JPEG_ENC_SIZE_CAPS \
-    "width  = (int) [ 16, 8176 ], height = (int) [ 16, 8176 ]"
+    "width  = (int) [ 16, MAX ], height = (int) [ 16, MAX ]"
 
 static GstStaticPadTemplate gst_mpp_jpeg_enc_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",

@@ -79,7 +79,7 @@ enum
 };
 
 #define GST_MPP_H264_ENC_SIZE_CAPS \
-    "width  = (int) [ 96, 1920 ], height = (int) [ 64, 2176 ]"
+    "width  = (int) [ 96, MAX ], height = (int) [ 64, MAX ]"
 
 static GstStaticPadTemplate gst_mpp_h264_enc_src_template =
 GST_STATIC_PAD_TEMPLATE ("src",
