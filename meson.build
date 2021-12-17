@@ -1,5 +1,5 @@
 project('gst-plugins-bad', 'c',
-  version : '1.10.0',
+  version : '1.14.4',
   license : 'LGPL',
   meson_version : '>= 0.47',
   default_options : [ 'warning_level=3',
@@ -98,7 +98,6 @@ endif
 
 gst_rockchip_args = ['-DHAVE_CONFIG_H']
 configinc = include_directories('.')
-libsinc = include_directories('gst-libs')
 
 subdir('gst')
 

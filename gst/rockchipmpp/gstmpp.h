@@ -29,7 +29,6 @@
 #include <rga/RgaApi.h>
 #endif
 
-#include <gst/gst-compat-private.h>
 #include <rockchip/rk_mpi.h>
 
 G_BEGIN_DECLS;
