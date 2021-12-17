@@ -50,6 +50,24 @@ G_BEGIN_DECLS;
     (GST_VIDEO_INFO_N_PLANES(i) == 1 ? GST_VIDEO_INFO_HEIGHT(i) : \
     (gint) (GST_VIDEO_INFO_PLANE_OFFSET(i, 1) / GST_MPP_VIDEO_INFO_HSTRIDE(i)))
 
+#ifndef GST_VIDEO_FLAG_ARM_AFBC
+#define GST_VIDEO_FLAG_ARM_AFBC (1UL << 31)
+#define GST_VIDEO_INFO_SET_AFBC(i) \
+  GST_VIDEO_INFO_FLAG_SET (i, GST_VIDEO_FLAG_ARM_AFBC)
+#define GST_VIDEO_INFO_UNSET_AFBC(i) \
+  GST_VIDEO_INFO_FLAG_UNSET (i, GST_VIDEO_FLAG_ARM_AFBC)
+#define GST_VIDEO_INFO_IS_AFBC(i) \
+  GST_VIDEO_INFO_FLAG_IS_SET (i, GST_VIDEO_FLAG_ARM_AFBC)
+#endif
+
+#ifdef HAVE_NV12_10LE40
+#define MPP_FMT_NV12_10 "NV12_10LE40"
+#else
+/* HACK: Support fake format for nv12_10le40 */
+#define GST_VIDEO_FORMAT_NV12_10LE40 GST_VIDEO_FORMAT_NV12_10LE32
+#define MPP_FMT_NV12_10 "NV12_10LE32"
+#endif
+
 /* The MPP requires alignment 16 by default */
 #define GST_MPP_ALIGNMENT 16
 #define GST_MPP_ALIGN(v) GST_ROUND_UP_N (v, GST_MPP_ALIGNMENT)
@@ -59,6 +77,8 @@ G_BEGIN_DECLS;
     "NV12, NV21, I420, YV12, NV16, NV61, " \
     "BGR16, RGB, BGR, RGBA, BGRA, RGBx, BGRx"
 #endif
+
+const gchar *gst_mpp_video_format_to_string (GstVideoFormat format);
 
 GstVideoFormat gst_mpp_mpp_format_to_gst_format (MppFrameFormat mpp_format);
 

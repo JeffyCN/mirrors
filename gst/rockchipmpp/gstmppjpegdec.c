@@ -303,8 +303,8 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   if (dst_format != src_format || dst_width != width || dst_height != height) {
     /* Conversion required */
     GST_INFO_OBJECT (self, "convert from %s (%dx%d) to %s (%dx%d)",
-        gst_video_format_to_string (src_format), width, height,
-        gst_video_format_to_string (dst_format), dst_width, dst_height);
+        gst_mpp_video_format_to_string (src_format), width, height,
+        gst_mpp_video_format_to_string (dst_format), dst_width, dst_height);
 
     align = 0;
   }
@@ -321,8 +321,8 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
       MAX (self->buf_size, GST_VIDEO_INFO_PLANE_OFFSET (info, 1) * 2);
 
   /* Update final output info */
-  return gst_mpp_dec_update_video_info (decoder, dst_format,
-      dst_width, dst_height, 0, 0, align);
+  return gst_mpp_dec_update_simple_video_info (decoder, dst_format,
+      dst_width, dst_height, align);
 }
 
 static MppPacket
