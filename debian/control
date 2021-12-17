@@ -1,12 +1,14 @@
 Source: gstreamer1.0-rockchip
 Priority: optional
 Maintainer: Jeffy Chen <jeffy.chen@rock-chips.com>
-Build-Depends: debhelper (>= 9), autotools-dev,
+Build-Depends: debhelper (>= 9), meson, pkg-config,
  librockchip-mpp-dev, librga-dev, libx11-dev, libdrm-dev,
- libgstreamer1.0-dev, libgstreamer-plugins-base1.0-dev
+ libgstreamer1.0-dev (>= 1.14), libgstreamer-plugins-base1.0-dev (>= 1.14)
 Standards-Version: 3.9.8
 Section: libs
-Homepage: http://www.rock-chips.com/
+Homepage: https://github.com/rockchip-linux/gstreamer-rockchip
+Vcs-Git: https://github.com/rockchip-linux/gstreamer-rockchip
+Vcs-Browser: https://github.com/rockchip-linux/gstreamer-rockchip
 
 Package: gstreamer1.0-rockchip1
 Architecture: any
