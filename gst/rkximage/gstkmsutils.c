@@ -31,10 +31,6 @@
 
 #include "gstkmsutils.h"
 
-#ifndef DRM_FORMAT_NV12_10
-#define DRM_FORMAT_NV12_10 fourcc_code('N', 'A', '1', '2')
-#endif
-
 /* *INDENT-OFF* */
 static const struct
 {
@@ -51,9 +47,8 @@ static const struct
   DEF_FMT (XRGB8888, BGRx),
   DEF_FMT (ABGR8888, RGBA),
   DEF_FMT (XBGR8888, RGBx),
-#ifdef HAVE_NV12_10LE40
   DEF_FMT (NV12_10, NV12_10LE40),
-#endif
+  DEF_FMT (NV15, NV12_10LE40),
 #else
   DEF_FMT (ARGB8888, ARGB),
   DEF_FMT (XRGB8888, xRGB),
@@ -115,6 +110,7 @@ gst_drm_bpp_from_drm (guint32 drmfmt)
       bpp = 8;
       break;
     case DRM_FORMAT_NV12_10:
+    case DRM_FORMAT_NV15:
       bpp = 10;
       break;
     case DRM_FORMAT_UYVY:
@@ -141,6 +137,7 @@ gst_drm_height_from_drm (guint32 drmfmt, guint32 height)
     case DRM_FORMAT_YUV422:
     case DRM_FORMAT_NV12:
     case DRM_FORMAT_NV12_10:
+    case DRM_FORMAT_NV15:
     case DRM_FORMAT_NV21:
       ret = height * 3 / 2;
       break;
