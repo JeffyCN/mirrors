@@ -10,10 +10,6 @@
 
 #include <gst/video/gstvideometa.h>
 
-/* Object header */
-#include "ximagesink.h"
-#include "gstkmsutils.h"
-
 /* Debugging category */
 #include <gst/gstinfo.h>
 
@@ -28,6 +24,9 @@
 #include <string.h>
 #include <unistd.h>
 
+/* Object header */
+#include "ximagesink.h"
+#include "gstkmsutils.h"
 #include "gstkmsbufferpool.h"
 #include "gstkmsallocator.h"
 
