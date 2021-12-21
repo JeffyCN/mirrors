@@ -54,6 +54,8 @@ struct _GstMppDec
   gint width;
   gint height;
 
+  guint crop_x, crop_y, crop_w, crop_h;
+
   gboolean arm_afbc;
 
   /* stop handling new frame when flushing */

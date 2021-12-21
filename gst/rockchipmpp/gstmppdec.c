@@ -66,6 +66,7 @@ enum
   PROP_ROTATION,
   PROP_WIDTH,
   PROP_HEIGHT,
+  PROP_CROP_RECTANGLE,
   PROP_LAST,
 };
 
@@ -97,6 +98,32 @@ gst_mpp_dec_set_property (GObject * object,
         GST_WARNING_OBJECT (decoder, "unable to change height");
       else
         self->height = g_value_get_uint (value);
+      break;
+    }
+    case PROP_CROP_RECTANGLE:{
+      const GValue *v;
+      gint rect[4], i;
+
+      if (gst_value_array_get_size (value) != 4) {
+        GST_WARNING_OBJECT (decoder, "too less values for crop-rectangle");
+        break;
+      }
+
+      for (i = 0; i < 4; i++) {
+        v = gst_value_array_get_value (value, i);
+        if (!G_VALUE_HOLDS_INT (v)) {
+          GST_WARNING_OBJECT (decoder, "crop-rectangle needs int values");
+          break;
+        }
+
+        rect[i] = g_value_get_int (v);
+      }
+
+      self->crop_x = rect[0];
+      self->crop_y = rect[1];
+      self->crop_w = rect[2];
+      self->crop_h = rect[3];
+
       break;
     }
     default:
@@ -630,12 +657,15 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
 {
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoInfo *info = &self->info;
-  GstVideoCropMeta *cmeta;
   GstBuffer *buffer;
   GstMemory *mem;
   MppBuffer mbuf;
   gint offset_x = mpp_frame_get_offset_x (mframe);
   gint offset_y = mpp_frame_get_offset_y (mframe);
+  gint crop_x = self->crop_x + offset_x;
+  gint crop_y = self->crop_y + offset_y;
+  guint crop_w = self->crop_w;
+  guint crop_h = self->crop_h;
 
   mbuf = mpp_frame_get_buffer (mframe);
   if (!mbuf)
@@ -654,11 +684,24 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
     return NULL;
   }
 
-  cmeta = gst_buffer_add_video_crop_meta (buffer);
-  cmeta->x = offset_x;
-  cmeta->y = offset_y;
-  cmeta->width = GST_VIDEO_INFO_WIDTH (info);
-  cmeta->height = GST_VIDEO_INFO_HEIGHT (info);
+  if (crop_x || crop_y || crop_w || crop_h) {
+    GstVideoCropMeta *cmeta = gst_buffer_add_video_crop_meta (buffer);
+
+    cmeta->x = CLAMP (crop_x, 0, GST_VIDEO_INFO_WIDTH (info) - 1);
+    cmeta->y = CLAMP (crop_y, 0, GST_VIDEO_INFO_HEIGHT (info) - 1);
+
+    cmeta->width = GST_VIDEO_INFO_WIDTH (info) - cmeta->x;
+    cmeta->height = GST_VIDEO_INFO_HEIGHT (info) - cmeta->y;
+
+    if (crop_w && crop_w < cmeta->width)
+      cmeta->width = crop_w;
+
+    if (crop_h && crop_h < cmeta->height)
+      cmeta->height = crop_h;
+
+    GST_DEBUG_OBJECT (self, "cropping to <%d,%d,%d,%d>",
+        cmeta->x, cmeta->y, cmeta->width, cmeta->height);
+  }
 
   if (GST_VIDEO_INFO_IS_AFBC (info))
     GST_MEMORY_FLAGS (mem) |= GST_MEMORY_FLAG_NOT_MAPPABLE;
@@ -1016,6 +1059,14 @@ gst_mpp_dec_class_init (GstMppDecClass * klass)
           0, G_MAXINT, DEFAULT_PROP_HEIGHT,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 #endif
+
+  g_object_class_install_property (gobject_class, PROP_CROP_RECTANGLE,
+      gst_param_spec_array ("crop-rectangle", "Crop Rectangle",
+          "The crop rectangle ('<x, y, width, height>')",
+          g_param_spec_int ("rect-value", "Rectangle Value",
+              "One of x, y, width or height value.", 0, G_MAXINT, 0,
+              G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS),
+          G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
 
   element_class->change_state = GST_DEBUG_FUNCPTR (gst_mpp_dec_change_state);
 }
