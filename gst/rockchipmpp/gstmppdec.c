@@ -839,6 +839,9 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
 
   gst_mpp_dec_update_interlace_mode (decoder, buffer, mode);
 
+  /* HACK: Mark lockable to avoid copying in make_writable() while shared */
+  GST_MINI_OBJECT_FLAG_SET (buffer, GST_MINI_OBJECT_FLAG_LOCKABLE);
+
   frame->output_buffer = buffer;
 
   if (self->flushing && !self->draining)
