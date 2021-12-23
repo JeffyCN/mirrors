@@ -324,15 +324,15 @@ void __show_regs(struct pt_regs *regs)
 
 		pr_cont("\n");
 	}
-	if (!user_mode(regs))
-		show_extra_register_data(regs, 128);
-	printk("\n");
 }
 
 void show_regs(struct pt_regs * regs)
 {
 	__show_regs(regs);
 	dump_backtrace(regs, NULL);
+
+	if (!user_mode(regs))
+		show_extra_register_data(regs, 256);
 }
 
 static void tls_thread_flush(void)
