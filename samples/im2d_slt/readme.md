@@ -16,7 +16,7 @@
 
 由于RGA硬件执行需要外部输入图像进行处理，所以需要提前准备对应的图片并确保将图像存入设备指定目录。
 
-Android系统须将源图片存储在设备/data/目录下，文件命名规则如下：
+图像存储的目录可以在slt_config.h中进行配置，文件命名规则如下：
 
 - Raster mode
 
@@ -60,24 +60,26 @@ out%dw%d-h%d-%s-afbc.bin
 
 在工具编译前，可以通过修改 slt_config.h 配置测试工具。
 
-| 配置                        | 说明                                                         |
-| :-------------------------- | :----------------------------------------------------------- |
-| IM2D_SLT_THREAD_EN          | 使能该配置后，将使能多线程模式，每个case都单独在一个线程运行。 |
-| IM2D_SLT_THREAD_MAX         | 多线程模式有效，配置最大的线程数量。                         |
-| IM2D_SLT_WHILE_EN           | 使能该配置后，将使能测试case循环模式。                       |
-| IM2D_SLT_WHILE_NUM          | 循环模式有效，测试case循环次数。                             |
-| IM2D_SLT_DRM_BUFFER_EN      | 使能该配置后，测试工具的内存分配器将选择DRM。                |
-| IM2D_SLT_GRAPHICBUFFER_EN   | 使能该配置后，测试工具的内存分配器将选择Gralloc。            |
-| IM2D_SLT_BUFFER_CACHEABLE   | 使能该配置后，测试工具将申请cacheable的内存。                |
-| IM2D_SLT_BUFFER_PHY_EN      | 使能该配置后，测试工具将申请使用物理地址。                   |
-| IM2D_SLT_TEST_RGA2_EN       | 使能该配置后，将使能RGA2 拷贝测试case。                      |
-| IM2D_SLT_TEST_RGA3_0_EN     | 使能该配置后，将使能RGA3 core0 拷贝测试case。                |
-| IM2D_SLT_TEST_RGA3_1_EN     | 使能该配置后，将使能RGA3 core1 拷贝测试case。                |
-| IM2D_SLT_TEST_RGA3_0_FBC_EN | 使能该配置后，将使能RGA3 core0 FBC模式 拷贝测试case。        |
-| IM2D_SLT_TEST_RGA3_1_FBC_EN | 使能该配置后，将使能RGA3 core1 FBC模式 拷贝测试case。        |
-| IM2D_SLT_DEFAULT_WIDTH      | 默认的图像宽。                                               |
-| IM2D_SLT_DEFAULT_HWIGHT     | 默认的图像高。                                               |
-| IM2D_SLT_DEFAULT_FORMAT     | 默认的图像格式。                                             |
+| 配置                         | 说明                                                         |
+| :--------------------------- | :----------------------------------------------------------- |
+| IM2D_SLT_THREAD_EN           | 使能该配置后，将使能多线程模式，每个case都单独在一个线程运行。 |
+| IM2D_SLT_THREAD_MAX          | 多线程模式有效，配置最大的线程数量。                         |
+| IM2D_SLT_WHILE_EN            | 使能该配置后，将使能测试case循环模式。                       |
+| IM2D_SLT_WHILE_NUM           | 循环模式有效，测试case循环次数。                             |
+| IM2D_SLT_DRM_BUFFER_EN       | 使能该配置后，测试工具的内存分配器将选择DRM。                |
+| IM2D_SLT_GRAPHICBUFFER_EN    | 使能该配置后，测试工具的内存分配器将选择Gralloc。            |
+| IM2D_SLT_BUFFER_CACHEABLE    | 使能该配置后，测试工具将申请cacheable的内存。                |
+| IM2D_SLT_BUFFER_PHY_EN       | 使能该配置后，测试工具将申请使用物理地址。                   |
+| IM2D_SLT_TEST_RGA2_EN        | 使能该配置后，将使能RGA2 拷贝测试case。                      |
+| IM2D_SLT_TEST_RGA3_0_EN      | 使能该配置后，将使能RGA3 core0 拷贝测试case。                |
+| IM2D_SLT_TEST_RGA3_1_EN      | 使能该配置后，将使能RGA3 core1 拷贝测试case。                |
+| IM2D_SLT_TEST_RGA3_0_FBC_EN  | 使能该配置后，将使能RGA3 core0 FBC模式 拷贝测试case。        |
+| IM2D_SLT_TEST_RGA3_1_FBC_EN  | 使能该配置后，将使能RGA3 core1 FBC模式 拷贝测试case。        |
+| IM2D_SLT_DEFAULT_WIDTH       | 默认的图像宽。                                               |
+| IM2D_SLT_DEFAULT_HWIGHT      | 默认的图像高。                                               |
+| IM2D_SLT_DEFAULT_FORMAT      | 默认的图像格式。                                             |
+| IM2D_SLT_DEFAULT_INPUT_PATH  | 默认的输入图像路径                                           |
+| IM2D_SLT_DEFAULT_OUTPUT_PATH | 默认的输出图像路径                                           |
 
 
 
@@ -93,7 +95,7 @@ mm
 
 ### 工具运行
 
-将编译生成的im2dd_slt 推入设备后，直接运行即可。
+将编译生成的im2d_slt 推入设备后，直接运行即可。
 
 
 

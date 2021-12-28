@@ -59,14 +59,76 @@ typedef struct private_data {
     int result;
 } private_data_t;
 
+static int get_buf_size_by_w_h_f(int w, int h, int f) {
+    float bpp = get_bpp_from_format(f);
+    int size = 0;
+
+    size = (int)w * h * bpp;
+    return size;
+}
+
+int read_image_from_path(void *buf, const char *path, int f, int sw, int sh, int index, int mode) {
+    const char *inputFilePath = "%s/in%dw%d-h%d-%s.bin";
+    const char *inputFbcFilePath = "%s/in%dw%d-h%d-%s-fbc.bin";
+    char filePath[100];
+
+    snprintf(filePath, 100, (mode == IM_FBC_MODE) ? inputFbcFilePath : inputFilePath,
+             path, index, sw, sh, translate_format_str(f));
+
+    FILE *file = fopen(filePath, "rb");
+    if (!file) {
+        fprintf(stderr, "Could not open %s\n", filePath);
+        return -EINVAL;
+    }
+
+    if (mode == IM_FBC_MODE)
+        fread(buf, get_buf_size_by_w_h_f(sw, sh, f) * 1.5, 1, file);
+    else
+        fread(buf, get_buf_size_by_w_h_f(sw, sh, f), 1, file);
+
+    fclose(file);
+
+    return 0;
+}
+
+static int write_image_to_path(void *buf, const char *path, int f, int sw, int sh, int index, int mode) {
+    const char *outputFilePath = "%s/out%dw%d-h%d-%s.bin";
+    const char *outputFbcFilePath = "%s/out%dw%d-h%d-%s-fbc.bin";
+    char filePath[100];
+
+    snprintf(filePath, 100, (mode == IM_FBC_MODE) ? outputFbcFilePath : outputFilePath,
+             path, index, sw, sh, translate_format_str(f));
+
+    FILE *file = fopen(filePath, "wb+");
+    if (!file) {
+        fprintf(stderr, "Could not open %s\n", filePath);
+        return false;
+    } else {
+        fprintf(stderr, "open %s and write ok\n", filePath);
+    }
+
+    if (mode == IM_FBC_MODE)
+        fwrite(buf, get_buf_size_by_w_h_f(sw, sh, f) * 1.5, 1, file);
+    else
+        fwrite(buf, get_buf_size_by_w_h_f(sw, sh, f), 1, file);
+
+    fclose(file);
+
+    return 0;
+}
+
 /******************************************************************************/
 #if IM2D_SLT_GRAPHICBUFFER_EN
-sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format) {
+sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format, bool use_rga2) {
 #if IM2D_SLT_BUFFER_CACHEABLE
     sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format, GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN));
 #else
-    sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format, 0));
-    // sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format, 0, RK_GRALLOC_USAGE_WITHIN_4G));
+    uint64_t flag = 0;
+
+    if (use_rga2)
+        flag |= RK_GRALLOC_USAGE_WITHIN_4G;
+
+    sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format, 0, flag));
 #endif
 
     if (gb->initCheck()) {
@@ -90,10 +152,13 @@ int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int flag, int index, int mode) {
     if(flag) {
         memset(buf,index,gb->getWidth()*gb->getHeight()*get_bpp_from_format(gb->getPixelFormat()));
     } else {
+
         if (mode == IM_FBC_MODE) {
-            ret = get_buf_from_file_FBC(buf, gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index);
+            read_image_from_path(buf, IM2D_SLT_DEFAULT_INPUT_PATH,
+                                 gb->getPixelFormat(), gb->getWidth(), gb->getHeight()/1.5, index, mode);
         } else {
-            ret = get_buf_from_file(buf, gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index);
+            read_image_from_path(buf, IM2D_SLT_DEFAULT_INPUT_PATH,
+                                 gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index, mode);
         }
         if (ret != 0) {
             printf ("open file %s \n", "fault");
@@ -169,7 +234,8 @@ void *pthread_rga_run(void *args) {
             src_va = (char *)drm_src.drm_buf;
             dst_va = (char *)drm_dst.drm_buf;
 
-            ret = get_buf_from_file(src_va, srcFormat, srcWidth, dstHeight, 0);
+            ret = read_image_from_path(src_va, IM2D_SLT_DEFAULT_INPUT_PATH,
+                                       srcFormat, srcWidth, srcHeight, 0, data->rd_mode);
             if (ret != 0) {
                 printf ("ID[%d] %s open file %s \n", data->id, data->name, "fault");
                 goto NORMAL_ERR;
@@ -187,7 +253,8 @@ void *pthread_rga_run(void *args) {
             src_va = (char *)drm_src.drm_buf;
             dst_va = (char *)drm_dst.drm_buf;
 
-            ret = get_buf_from_file_FBC(src_va, srcFormat, srcWidth, dstHeight, 0);
+            ret = read_image_from_path(src_va, IM2D_SLT_DEFAULT_INPUT_PATH,
+                                       srcFormat, srcWidth, srcHeight, 0, data->rd_mode);
             if (ret != 0) {
                 printf ("ID[%d] %s open file %s \n", data->id, data->name, "fault");
                 goto NORMAL_ERR;
@@ -203,32 +270,38 @@ void *pthread_rga_run(void *args) {
             goto NORMAL_ERR;
         }
 #elif IM2D_SLT_GRAPHICBUFFER_EN
-        if (data->rdmode == IM_FBC_MODE) {
-            src_buf = GraphicBuffer_Init(srcWidth, srcHeight * 1.5, srcFormat);
-            dst_buf = GraphicBuffer_Init(dstWidth, dstHeight * 1.5, dstFormat);
+        if (data->rd_mode == IM_FBC_MODE) {
+            src_buf = GraphicBuffer_Init(srcWidth, srcHeight * 1.5, srcFormat,
+                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false);
+            dst_buf = GraphicBuffer_Init(dstWidth, dstHeight * 1.5, dstFormat,
+                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false);
         } else {
-            src_buf = GraphicBuffer_Init(srcWidth, srcHeight, srcFormat);
-            dst_buf = GraphicBuffer_Init(dstWidth, dstHeight, dstFormat);
+            src_buf = GraphicBuffer_Init(srcWidth, srcHeight, srcFormat,
+                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false);
+            dst_buf = GraphicBuffer_Init(dstWidth, dstHeight, dstFormat,
+                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false);
         }
         if (src_buf == NULL || dst_buf == NULL) {
             printf("GraphicBuff init error!\n");
             goto NORMAL_ERR;
         }
 
-        if(-1 == GraphicBuffer_Fill(src_buf, FILL_BUFF, 0, data->rdmode)) {
+        if(-1 == GraphicBuffer_Fill(src_buf, FILL_BUFF, 0, data->rd_mode)) {
             printf("%s, src write Graphicbuffer error!\n", __FUNCTION__);
             goto NORMAL_ERR;
         }
-        if(-1 == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 0xff, data->rdmode)) {
+        if(-1 == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 0xff, data->rd_mode)) {
             printf("%s, dst write Graphicbuffer error!\n", __FUNCTION__);
             goto NORMAL_ERR;
         }
 
         src = wrapbuffer_GraphicBuffer(src_buf);
+        src = wrapbuffer_fd(src.fd, srcWidth, srcHeight, srcFormat);
         dst = wrapbuffer_GraphicBuffer(dst_buf);
+        dst = wrapbuffer_fd(dst.fd, dstWidth, dstHeight, dstFormat);
         /* If it is in fbc mode, because the height of the alloc memory
          * is modified, it needs to be corrected here */
-        if (data->rdmode == IM_FBC_MODE) {
+        if (data->rd_mode == IM_FBC_MODE) {
             src.height  = srcHeight;
             src.hstride = srcHeight;
             dst.height  = dstHeight;
@@ -257,13 +330,13 @@ void *pthread_rga_run(void *args) {
             printf("ID[%d]: %s imcopy %d time success!\n", data->id, data->name, time);
 
 #if IM2D_SLT_GRAPHICBUFFER_EN
-            ret = src_buf->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&src_va);
+            ret = src_buf->lock(GRALLOC_USAGE_SW_READ_OFTEN, (void**)&src_va);
             if (ret) {
                 printf("lock src_buf error : %s\n",strerror(errno));
                 goto NORMAL_ERR;
             }
 
-            ret = dst_buf->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&dst_va);
+            ret = dst_buf->lock(GRALLOC_USAGE_SW_READ_OFTEN, (void**)&dst_va);
             if (ret) {
                 printf("lock dst_buf error : %s\n",strerror(errno));
                 goto NORMAL_ERR;
@@ -275,8 +348,10 @@ void *pthread_rga_run(void *args) {
                 printf("ID[%d]: %s check buffer %d time error!\n", data->id, data->name, time);
                 printf("src: %x %x %x %x\n", (int)src_va[0], (int)src_va[1], (int)src_va[2], (int)src_va[3]);
                 printf("dst: %x %x %x %x\n", (int)dst_va[0], (int)dst_va[1], (int)dst_va[2], (int)dst_va[3]);
-                output_buf_data_to_file(dst_va, dst.format, dst.wstride, dst.hstride, data->id + 1);
-                output_buf_data_to_file(src_va, src.format, src.wstride, src.hstride, data->id + 2);
+                write_image_to_path(dst_va, IM2D_SLT_DEFAULT_OUTPUT_PATH,
+                                    dst.format, dst.wstride, dst.hstride, data->id + 1, dst.rd_mode);
+                write_image_to_path(src_va, IM2D_SLT_DEFAULT_OUTPUT_PATH,
+                                    src.format, src.wstride, src.hstride, data->id + 2, src.rd_mode);
 
                 goto CHECK_ERR;
             } else {

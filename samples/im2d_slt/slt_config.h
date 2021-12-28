@@ -22,10 +22,10 @@
 #define IM2D_SLT_WHILE_EN               1   /* Enable while mode, 1: while, 0 single. */
 #define IM2D_SLT_WHILE_NUM              3   /* Number of while mode. */
 
-#define IM2D_SLT_DRM_BUFFER_EN          1   /* Enable use drm buffer. */
-#define IM2D_SLT_GRAPHICBUFFER_EN       0   /* Enable use GraphicBuffer. */
-#define IM2D_SLT_BUFFER_CACHEABLE       0   /* Enable buffer cache. */
-#define IM2D_SLT_BUFFER_PHY_EN          0   /* Enable physical memory. */
+#define IM2D_SLT_DRM_BUFFER_EN          0   /* Enable use drm buffer. */
+#define IM2D_SLT_GRAPHICBUFFER_EN       1   /* Enable use GraphicBuffer. */
+#define IM2D_SLT_BUFFER_CACHEABLE       0   /* Enable buffer cache. Only support GraphicBuffer. */
+#define IM2D_SLT_BUFFER_PHY_EN          0   /* Enable physical memory. Only support drm buffer.*/
 
 #define IM2D_SLT_TEST_RGA2_EN           1   /* Enable rga2 case. */
 #define IM2D_SLT_TEST_RGA3_0_EN         1   /* Enable rga3_core0 case. */
@@ -40,3 +40,6 @@
 #else
 #define IM2D_SLT_DEFAULT_FORMAT         RK_FORMAT_RGBA_8888         /* Default image format. */
 #endif
+
+#define IM2D_SLT_DEFAULT_INPUT_PATH     "/data"
+#define IM2D_SLT_DEFAULT_OUTPUT_PATH    "/data"
