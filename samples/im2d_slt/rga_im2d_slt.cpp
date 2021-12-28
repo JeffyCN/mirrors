@@ -154,11 +154,11 @@ int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int flag, int index, int mode) {
     } else {
 
         if (mode == IM_FBC_MODE) {
-            read_image_from_path(buf, IM2D_SLT_DEFAULT_INPUT_PATH,
-                                 gb->getPixelFormat(), gb->getWidth(), gb->getHeight()/1.5, index, mode);
+            ret = read_image_from_path(buf, IM2D_SLT_DEFAULT_INPUT_PATH,
+                                       gb->getPixelFormat(), gb->getWidth(), gb->getHeight()/1.5, index, mode);
         } else {
-            read_image_from_path(buf, IM2D_SLT_DEFAULT_INPUT_PATH,
-                                 gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index, mode);
+            ret = read_image_from_path(buf, IM2D_SLT_DEFAULT_INPUT_PATH,
+                                       gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index, mode);
         }
         if (ret != 0) {
             printf ("open file %s \n", "fault");
@@ -504,7 +504,7 @@ int main() {
     printf("-------------------------------------------------\n");
     printf("im2d api slt success!\n");
 
-    pthread_exit(NULL);
+    return 0;
 #else
     (void)(tdSyncID);
 
