@@ -662,8 +662,8 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
   MppBuffer mbuf;
   gint offset_x = mpp_frame_get_offset_x (mframe);
   gint offset_y = mpp_frame_get_offset_y (mframe);
-  gint crop_x = self->crop_x + offset_x;
-  gint crop_y = self->crop_y + offset_y;
+  gint crop_x = self->crop_x;
+  gint crop_y = self->crop_y;
   guint crop_w = self->crop_w;
   guint crop_h = self->crop_h;
 
@@ -684,7 +684,7 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
     return NULL;
   }
 
-  if (crop_x || crop_y || crop_w || crop_h) {
+  if (offset_x || offset_y || crop_x || crop_y || crop_w || crop_h) {
     GstVideoCropMeta *cmeta = gst_buffer_add_video_crop_meta (buffer);
 
     cmeta->x = CLAMP (crop_x, 0, GST_VIDEO_INFO_WIDTH (info) - 1);
@@ -699,8 +699,13 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
     if (crop_h && crop_h < cmeta->height)
       cmeta->height = crop_h;
 
-    GST_DEBUG_OBJECT (self, "cropping to <%d,%d,%d,%d>",
-        cmeta->x, cmeta->y, cmeta->width, cmeta->height);
+    /* Apply MPP offsets */
+    cmeta->x += offset_x;
+    cmeta->y += offset_y;
+
+    GST_DEBUG_OBJECT (self, "cropping <%d,%d,%d,%d> within <%d,%d,%d,%d>",
+        cmeta->x, cmeta->y, cmeta->width, cmeta->height, offset_x, offset_y,
+        GST_VIDEO_INFO_WIDTH (info), GST_VIDEO_INFO_HEIGHT (info));
   }
 
   if (GST_VIDEO_INFO_IS_AFBC (info))
