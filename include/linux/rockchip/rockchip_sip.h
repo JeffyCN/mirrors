@@ -122,6 +122,16 @@ enum {
 	RK_AMP_SUB_FUNC_END,
 };
 
+struct dram_addrmap_info {
+	u64 ch_mask[2];
+	u64 bk_mask[4];
+	u64 bg_mask[2];
+	u64 cs_mask[2];
+	u32 reserved[20];
+	u32 bank_bit_first;
+	u32 bank_bit_mask;
+};
+
 enum {
 	FIRMWARE_NONE,
 	FIRMWARE_TEE_32BIT,
@@ -138,6 +148,7 @@ typedef enum {
 	SHARE_PAGE_TYPE_DDRDBG,
 	SHARE_PAGE_TYPE_DDRECC,
 	SHARE_PAGE_TYPE_DDRFSP,
+	SHARE_PAGE_TYPE_DDR_ADDRMAP,
 	SHARE_PAGE_TYPE_LAST_LOG,
 	SHARE_PAGE_TYPE_MAX,
 } share_page_type_t;
@@ -168,6 +179,7 @@ u32 sip_smc_secure_reg_read(u32 addr_phy);
 struct arm_smccc_res sip_smc_bus_config(u32 arg0, u32 arg1, u32 arg2);
 int sip_smc_amp_config(u32 sub_func_id, u32 arg1, u32 arg2, u32 arg3);
 struct arm_smccc_res sip_smc_get_amp_info(u32 sub_func_id, u32 arg1);
+struct dram_addrmap_info *sip_smc_get_dram_map(void);
 
 /***************************fiq debugger **************************************/
 void sip_fiq_debugger_enable_fiq(bool enable, uint32_t tgt_cpu);
@@ -243,6 +255,10 @@ static inline int sip_smc_secure_reg_write(u32 addr_phy, u32 val) { return 0; }
 static inline int sip_smc_soc_bus_div(u32 arg0, u32 arg1, u32 arg2)
 {
 	return 0;
+}
+static inline struct dram_addrmap_info *sip_smc_get_dram_map(void)
+{
+	return NULL;
 }
 
 static inline int sip_smc_amp_config(u32 sub_func_id,
