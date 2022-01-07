@@ -498,6 +498,8 @@ gst_kms_allocator_add_fb (GstKMSAllocator * alloc, GstKMSMemory * kmsmem,
 
       if (fmt == DRM_FORMAT_NV12) {
         _fmt = DRM_FORMAT_YUV420_8BIT;
+        /* The bpp of YUV420_8BIT is 12 */
+        _pitches[0] *= 1.5;
       } else {
         _fmt = DRM_FORMAT_YUV420_10BIT;
         /* The bpp of YUV420_10BIT is 15 */
