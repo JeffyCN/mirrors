@@ -1,3 +1,9 @@
+librga (2.2.0-1) unstable; urgency=medium
+
+  * debian: Update to support rga3
+
+ -- Jeffy Chen <jeffy.chen@rock-chips.com>  Fri, 7 Jan 2022 15:44:00 +0800
+
 librga (2.1.0-1) unstable; urgency=medium
 
   * debian: Update license
