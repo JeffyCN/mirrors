@@ -152,6 +152,18 @@ gst_mpp_enc_video_info_matched (GstVideoInfo * info, GstVideoInfo * other)
   return TRUE;
 }
 
+gboolean
+gst_mpp_enc_video_info_align (GstVideoInfo * info)
+{
+  gint vstride = 0;
+
+  /* Allow skipping vstride aligning for RKVENC */
+  if (g_getenv ("GST_MPP_ENC_UNALIGNED_VSTRIDE"))
+    vstride = GST_MPP_VIDEO_INFO_VSTRIDE (info);
+
+  return gst_mpp_video_info_align (info, 0, vstride);
+}
+
 static void
 gst_mpp_enc_set_property (GObject * object,
     guint prop_id, const GValue * value, GParamSpec * pspec)
@@ -565,7 +577,7 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
 
   *info = state->info;
 
-  if (!gst_mpp_video_info_align (info, 0, 0))
+  if (!gst_mpp_enc_video_info_align (info))
     return FALSE;
 
   format = gst_mpp_gst_format_to_mpp_format (GST_VIDEO_INFO_FORMAT (info));
@@ -586,7 +598,7 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
     gst_video_info_set_format (info, gst_mpp_mpp_format_to_gst_format (format),
         width, height);
 
-    if (!gst_mpp_video_info_align (info, 0, 0))
+    if (!gst_mpp_enc_video_info_align (info))
       return FALSE;
 
     GST_INFO_OBJECT (self, "converting to aligned NV12");
@@ -642,7 +654,7 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
   if (!gst_video_info_from_caps (&info, caps))
     return FALSE;
 
-  gst_mpp_video_info_align (&info, 0, 0);
+  gst_mpp_enc_video_info_align (&info);
   size = GST_VIDEO_INFO_SIZE (&info);
 
   gst_video_alignment_reset (&align);
