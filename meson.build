@@ -2,7 +2,7 @@ project('gst-plugins-bad', 'c',
   version : '1.14.4',
   license : 'LGPL',
   meson_version : '>= 0.47',
-  default_options : [ 'warning_level=3',
+  default_options : [ 'warning_level=2',
                       'buildtype=debugoptimized' ])
 
 gst_version = meson.project_version()
