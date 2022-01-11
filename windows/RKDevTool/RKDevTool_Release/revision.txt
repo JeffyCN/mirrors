@@ -61,3 +61,7 @@ v2.9 revision(2021/09/22)
 v2.91 revision(2021/11/10)
 1.add check pagesize during download ubi image
 2.add destrory gpt during download parameter
+
+v2.92 revision(2021/11/30)
+1.support 4 images for idblock
+2.support one single idblock for nor flash

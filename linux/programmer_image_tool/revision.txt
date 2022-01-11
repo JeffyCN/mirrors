@@ -7,3 +7,6 @@ v1.1 revision(2021/03/29)
 
 v1.2 revision(2021/04/08)
 1.support 356X
+
+v1.21 revision(2021/09/18)
+1.change out_image.img into out_image.bin

@@ -7,5 +7,6 @@ Linux_Upgrade_Tool     | 烧录固件工具
 Linux_SecureBoot       | 固件签名工具
 Firmware_Merger        | SPI NOR固件打包工具(生成的固件可以用于烧录器)
 programmer_image_tool  | 打包SPI NOR/SPI NAND/SLC NAND/eMMC的烧录器固件
+boot_merger            | 打包或解包loader工具
 
 联系Email:liuyi@rock-chips.com
