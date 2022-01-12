@@ -42,6 +42,8 @@ Optional properties:
   - xhci-trb-ent-quirk: set if this xhci platform need to enable the Evaluate
     Next TRB(ENT) flag in the TRB data structure to force xHC to pre-fetch
     the next TRB of a TD.
+  - quirk-skip-phy-init: indicate that do not manage the PHY state in the HCD core
+    and handle this in the controller's driver.
   - imod-interval-ns: default interrupt moderation interval is 5000ns
   - phys : see usb-hcd.txt in the current directory
 
