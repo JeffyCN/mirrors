@@ -225,6 +225,8 @@ enum
     tile_mode               = 0x1 << 2,
 };
 
+typedef int rga_buffer_handle_t;
+
 typedef struct rga_img_info_t {
     uint64_t yrgb_addr;          /* yrgb    mem addr         */
     uint64_t uv_addr;            /* cb/cr   mem addr         */

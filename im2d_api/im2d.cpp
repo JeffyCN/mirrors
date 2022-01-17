@@ -103,6 +103,22 @@ IM_API const char* imStrError_t(IM_STATUS status) {
     return error_str;
 }
 
+IM_API rga_buffer_handle_t importbuffer_fd(int fd, im_handle_param_t *param) {
+    return rga_import_buffer((uint64_t)fd, RGA_DMA_BUFFER, param);
+}
+
+IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, im_handle_param_t *param) {
+    return rga_import_buffer((uint64_t)va, RGA_VIRTUAL_ADDRESS, param);
+}
+
+IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, im_handle_param_t *param) {
+    return rga_import_buffer(pa, RGA_PHYSICAL_ADDRESS, param);
+}
+
+IM_API IM_STATUS releasebuffer_handle(rga_buffer_handle_t handle) {
+    return rga_release_buffer(handle);
+}
+
 IM_API rga_buffer_t wrapbuffer_virtualaddr_t(void* vir_addr, int width, int height, int wstride, int hstride, int format) {
     rga_buffer_t buffer;
 

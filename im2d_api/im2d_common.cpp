@@ -854,3 +854,80 @@ IM_STATUS rga_check_feature(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst
 
     return IM_STATUS_NOERROR;
 }
+
+IM_API IM_STATUS rga_import_buffers(struct rga_buffer_pool *buffer_pool) {
+    int ret = 0;
+
+    ret = rga_get_context();
+    if (ret != IM_STATUS_SUCCESS)
+        return (IM_STATUS)ret;
+
+    if (buffer_pool == NULL) {
+        imSetErrorMsg("buffer pool is null!");
+        return IM_STATUS_FAILED;
+    }
+
+    ret = ioctl(rgaCtx->rgaFd, RGA_IOC_IMPORT_BUFFER, buffer_pool);
+    if (ret < 0) {
+        imSetErrorMsg("RGA_IOC_IMPORT_BUFFER fail! %s", strerror(errno));
+        return IM_STATUS_FAILED;
+    }
+
+    return IM_STATUS_SUCCESS;
+}
+
+IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, im_handle_param_t *param) {
+    struct rga_buffer_pool buffer_pool;
+    struct rga_external_buffer buffers[1];
+
+    memset(&buffer_pool, 0x0, sizeof(buffer_pool));
+    memset(buffers, 0x0, sizeof(buffers));
+
+    buffers[0].type = type;
+    buffers[0].memory = memory;
+    memcpy(&buffers[0].memory_info, param, sizeof(struct rga_memory_parm));
+
+    buffer_pool.buffers = buffers;
+    buffer_pool.size = 1;
+
+    if (rga_import_buffers(&buffer_pool) != IM_STATUS_SUCCESS)
+        return -1;
+
+    return buffers[0].handle;
+}
+
+IM_API IM_STATUS rga_release_buffers(struct rga_buffer_pool *buffer_pool) {
+    int ret = 0;
+
+    ret = rga_get_context();
+    if (ret != IM_STATUS_SUCCESS)
+        return (IM_STATUS)ret;
+
+    if (buffer_pool == NULL) {
+        imSetErrorMsg("buffer pool is null!");
+        return IM_STATUS_FAILED;
+    }
+
+    ret = ioctl(rgaCtx->rgaFd, RGA_IOC_RELEASE_BUFFER, buffer_pool);
+    if (ret < 0) {
+        imSetErrorMsg("RGA_IOC_RELEASE_BUFFER fail! %s", strerror(errno));
+        return IM_STATUS_FAILED;
+    }
+
+    return IM_STATUS_SUCCESS;
+}
+
+IM_API IM_STATUS rga_release_buffer(int handle) {
+    struct rga_buffer_pool buffer_pool;
+    struct rga_external_buffer buffers[1];
+
+    memset(&buffer_pool, 0x0, sizeof(buffer_pool));
+    memset(buffers, 0x0, sizeof(buffers));
+
+    buffers[0].handle = handle;
+
+    buffer_pool.buffers = buffers;
+    buffer_pool.size = 1;
+
+    return rga_release_buffers(&buffer_pool);
+}

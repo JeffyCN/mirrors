@@ -38,7 +38,7 @@ extern "C" {
 #define RGA_API_MAJOR_VERSION	 1
 #define RGA_API_MINOR_VERSION	 7
 #define RGA_API_REVISION_VERSION 1
-#define RGA_API_BUILD_VERSION	 2
+#define RGA_API_BUILD_VERSION	 3
 
 #define RGA_API_VERSION STR(RGA_API_MAJOR_VERSION) "." STR(RGA_API_MINOR_VERSION) "." STR(RGA_API_REVISION_VERSION) "_[" STR(RGA_API_BUILD_VERSION) "]"
 #define RGA_API_FULL_VERSION "rga_api version " RGA_API_VERSION
@@ -242,6 +242,8 @@ typedef struct im_context {
     bool check_mode;
 } im_context_t;
 
+typedef struct rga_memory_parm im_handle_param_t;
+
 /*
  * @return error message string
  */
@@ -261,6 +263,30 @@ typedef struct im_context {
         im2d_api_err; \
     })
 IM_API const char* imStrError_t(IM_STATUS status);
+
+/*
+ * Import external buffers into RGA driver.
+ *
+ * @param fd/va/pa
+ *      Select dma_fd/virtual_address/physical_address by buffer type
+ * @param param
+ *      Configure buffer parameters
+ *
+ * @return rga_buffer_handle_t
+ */
+IM_API rga_buffer_handle_t importbuffer_fd(int fd, im_handle_param_t *param);
+IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, im_handle_param_t *param);
+IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, im_handle_param_t *param);
+
+/*
+ * Import external buffers into RGA driver.
+ *
+ * @param handle
+ *      rga buffer handle
+ *
+ * @return success or else negative error code.
+ */
+IM_API IM_STATUS releasebuffer_handle(rga_buffer_handle_t handle);
 
 /*
  * @return rga_buffer_t
