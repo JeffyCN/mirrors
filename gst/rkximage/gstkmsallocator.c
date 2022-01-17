@@ -488,8 +488,9 @@ gst_kms_allocator_add_fb (GstKMSAllocator * alloc, GstKMSMemory * kmsmem,
     for (i = 0; i < num_planes; i++)
       modifiers[i] = DRM_AFBC_MODIFIER;
 
-    if (fmt == DRM_FORMAT_NV12 || fmt == DRM_FORMAT_NV12_10) {
-      /* The newer kernel might use DRM_FORMAT_YUV420_(8|10)BIT instead */
+    if (fmt == DRM_FORMAT_NV12 || fmt == DRM_FORMAT_NV12_10 ||
+        fmt == DRM_FORMAT_NV16) {
+      /* The newer kernel might use new formats instead */
       guint32 _handles[4] = { bo_handles[0], 0, };
       guint32 _pitches[4] = { pitches[0], 0, };
       guint32 _offsets[4] = { offsets[0], 0, };
@@ -500,10 +501,14 @@ gst_kms_allocator_add_fb (GstKMSAllocator * alloc, GstKMSMemory * kmsmem,
         _fmt = DRM_FORMAT_YUV420_8BIT;
         /* The bpp of YUV420_8BIT is 12 */
         _pitches[0] *= 1.5;
-      } else {
+      } else if (fmt == DRM_FORMAT_NV12_10) {
         _fmt = DRM_FORMAT_YUV420_10BIT;
         /* The bpp of YUV420_10BIT is 15 */
         _pitches[0] *= 1.5;
+      } else {
+        _fmt = DRM_FORMAT_YUYV;
+        /* The bpp of YUYV (AFBC) is 16 */
+        _pitches[0] *= 2;
       }
 
       ret = drmModeAddFB2WithModifiers (alloc->priv->fd, w, h, _fmt, _handles,
