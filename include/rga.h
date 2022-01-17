@@ -35,6 +35,8 @@ extern "C"
 
 #define RGA_IOC_GET_DRVIER_VERSION 	RGA_IOR(0x1, struct rga_version_t)
 #define RGA_IOC_GET_HW_VERSION		RGA_IOR(0x2, struct rga_hw_versions_t)
+#define RGA_IOC_IMPORT_BUFFER		RGA_IOWR(0x3, struct rga_buffer_pool)
+#define RGA_IOC_RELEASE_BUFFER		RGA_IOW(0x4, struct rga_buffer_pool)
 
 #define RGA_BLIT_SYNC   0x5017
 #define RGA_BLIT_ASYNC  0x5018
@@ -59,6 +61,12 @@ extern "C"
 #ifndef DISABLE
 #define DISABLE 0
 #endif
+
+enum rga_memory_type {
+	RGA_DMA_BUFFER = 0,
+	RGA_VIRTUAL_ADDRESS,
+	RGA_PHYSICAL_ADDRESS
+};
 
 /* RGA process mode enum */
 enum {
@@ -324,6 +332,27 @@ struct rga_hw_versions_t {
 	uint32_t size;
 };
 
+struct rga_memory_parm {
+    uint32_t width;
+    uint32_t height;
+    uint32_t format;
+};
+
+struct rga_external_buffer {
+	uint64_t memory;
+	uint32_t type;
+
+	uint32_t handle;
+	struct rga_memory_parm memory_info;
+
+	uint8_t reserve[256];
+};
+
+struct rga_buffer_pool {
+	struct rga_external_buffer __user *buffers;
+	uint32_t size;
+};
+
 struct rga_req {
     uint8_t render_mode;                  /* (enum) process mode sel */
 
@@ -406,8 +435,9 @@ struct rga_req {
     uint8_t priority;
     int32_t out_fence_fd;
 
-	uint8_t reservr[128];
-};
+    uint8_t handle_flag;
+
+	uint8_t reservr[127];};
 
 #ifdef __cplusplus
 }
