@@ -37,6 +37,21 @@ using namespace android;
 extern struct rgaContext *rgaCtx;
 extern __thread char rga_err_str[ERR_MSG_LEN];
 
+IM_API static IM_STATUS rga_get_context(void) {
+    if (rgaCtx == NULL) {
+        RockchipRga& rkRga(RockchipRga::get());
+        if (rgaCtx == NULL) {
+            ALOGE("rga_im2d: The current RockchipRga singleton is destroyed. "
+                  "Please check if RkRgaInit/RkRgaDeInit are called, if so, please disable them.");
+            imSetErrorMsg("The current RockchipRga singleton is destroyed."
+                          "Please check if RkRgaInit/RkRgaDeInit are called, if so, please disable them.");
+            return IM_STATUS_FAILED;
+        }
+    }
+
+    return IM_STATUS_SUCCESS;
+}
+
 static IM_STATUS rga_support_info_merge_table(rga_info_table_entry *dst_table, rga_info_table_entry *merge_table) {
     if (dst_table == NULL || merge_table == NULL) {
         ALOGE("%s[%d] dst or merge table is NULL!\n", __FUNCTION__, __LINE__);
@@ -224,22 +239,13 @@ IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, rga_info
 }
 
 IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
-    rga_info_table_entry merge_table;
+    int ret;
     int  rga_version = 0;
+    rga_info_table_entry merge_table;
 
-    /* Get RGA context */
-    if (rgaCtx == NULL) {
-        RockchipRga& rkRga(RockchipRga::get());
-        if (rgaCtx == NULL) {
-            memcpy(return_table, &hw_info_table[IM_RGA_HW_VERSION_RGA_V_ERR_INDEX], sizeof(return_table));
-
-            ALOGE("rga_im2d: The current RockchipRga singleton is destroyed. "
-                  "Please check if RkRgaInit/RkRgaDeInit are called, if so, please disable them.");
-            imSetErrorMsg("The current RockchipRga singleton is destroyed."
-                          "Please check if RkRgaInit/RkRgaDeInit are called, if so, please disable them.");
-            return IM_STATUS_FAILED;
-        }
-    }
+    ret = rga_get_context();
+    if (ret != IM_STATUS_SUCCESS)
+        return (IM_STATUS)ret;
 
     memset(&merge_table, 0x0, sizeof(merge_table));
 

@@ -391,6 +391,7 @@ IM_API const char* querystring(int name) {
 
     rga_info_table_entry rga_info;
 
+    memset(&rga_info, 0x0, sizeof(rga_info));
     usage = rga_get_info(&rga_info);
     if (IM_STATUS_FAILED == usage) {
         ALOGE("rga im2d: rga2 get info failed!\n");
@@ -624,6 +625,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     IM_STATUS ret = IM_STATUS_NOERROR;
     rga_info_table_entry rga_info;
 
+    memset(&rga_info, 0x0, sizeof(rga_info));
     ret = rga_get_info(&rga_info);
     if (IM_STATUS_FAILED == ret) {
         ALOGE("rga im2d: rga2 get info failed!\n");
