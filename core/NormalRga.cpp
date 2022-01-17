@@ -468,8 +468,34 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
         ALOGD("dst: Fd = %.2d , phyAddr = %p , virAddr = %p\n",dst->fd,dst->phyAddr,dst->virAddr);
     }
 #endif
+
+    if (src1) {
+        if (src->handle > 0 && dst->handle > 0 && src1->handle > 0) {
+            if (src->handle <= 0 || dst->handle <= 0 || src1->handle <= 0) {
+                ALOGE("librga only supports the use of handles only or no handles, [src,src1,dst] = [%d, %d, %d]\n",
+                      src->handle, src1->handle, dst->handle);
+                return -EINVAL;
+            }
+
+            /* This will mark the use of handle */
+            rgaReg.handle_flag |= 1;
+        }
+    } else if (src->handle > 0 && dst->handle > 0) {
+        if (src->handle <= 0 || dst->handle <= 0) {
+            ALOGE("librga only supports the use of handles only or no handles, [src,dst] = [%d, %d]\n",
+                  src->handle, dst->handle);
+            return -EINVAL;
+        }
+
+        /* This will mark the use of handle */
+        rgaReg.handle_flag |= 1;
+    }
+
     /*********** get src addr *************/
-    if (src && src->phyAddr) {
+    if (src && src->handle) {
+        /* In order to minimize changes, the handle here will reuse the variable of Fd. */
+        srcFd = src->handle;
+    } else if (src && src->phyAddr) {
         srcBuf = src->phyAddr;
     } else if (src && src->fd > 0) {
         srcFd = src->fd;
@@ -528,7 +554,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
     /*********** get src1 addr *************/
     if (src1) {
-        if (src1 && src1->phyAddr) {
+        if (src1 && src1->handle) {
+            /* In order to minimize changes, the handle here will reuse the variable of Fd. */
+            src1Fd = src1->handle;
+        } else if (src1 && src1->phyAddr) {
             src1Buf = src1->phyAddr;
         } else if (src1 && src1->fd > 0) {
             src1Fd = src1->fd;
@@ -587,7 +616,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     }
 
     /*********** get dst addr *************/
-    if (dst && dst->phyAddr) {
+    if (dst && dst->handle) {
+        /* In order to minimize changes, the handle here will reuse the variable of Fd. */
+        dstFd = dst->handle;
+    } else if (dst && dst->phyAddr) {
         dstBuf = dst->phyAddr;
     } else if (dst && dst->fd > 0) {
         dstFd = dst->fd;

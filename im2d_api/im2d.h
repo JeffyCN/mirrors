@@ -38,7 +38,7 @@ extern "C" {
 #define RGA_API_MAJOR_VERSION	 1
 #define RGA_API_MINOR_VERSION	 7
 #define RGA_API_REVISION_VERSION 1
-#define RGA_API_BUILD_VERSION	 3
+#define RGA_API_BUILD_VERSION	 4
 
 #define RGA_API_VERSION STR(RGA_API_MAJOR_VERSION) "." STR(RGA_API_MINOR_VERSION) "." STR(RGA_API_REVISION_VERSION) "_[" STR(RGA_API_BUILD_VERSION) "]"
 #define RGA_API_FULL_VERSION "rga_api version " RGA_API_VERSION
@@ -224,6 +224,8 @@ typedef struct {
     im_colorkey_range colorkey_range;   /* range value of color key */
     im_nn_t nn;
     int rop_code;
+
+    rga_buffer_handle_t handle;         /* buffer handle */
 } rga_buffer_t;
 
 typedef struct im_opt {
@@ -336,9 +338,25 @@ IM_API IM_STATUS releasebuffer_handle(rga_buffer_handle_t handle);
         im2d_api_buffer; \
     })
 
+#define wrapbuffer_handle(handle, width, height, format, ...) \
+    ({ \
+        rga_buffer_t im2d_api_buffer; \
+        int im2d_api_args[] = {__VA_ARGS__}; \
+        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
+        if (im2d_api_argc == 0) { \
+            im2d_api_buffer = wrapbuffer_handle_t(handle, width, height, width, height, format); \
+        } else if (im2d_api_argc == 2){ \
+            im2d_api_buffer = wrapbuffer_handle_t(handle, width, height, im2d_api_args[0], im2d_api_args[1], format); \
+        } else { \
+            printf("invalid parameter\n"); \
+        } \
+        im2d_api_buffer; \
+    })
+
 IM_API rga_buffer_t wrapbuffer_virtualaddr_t(void* vir_addr, int width, int height, int wstride, int hstride, int format);
 IM_API rga_buffer_t wrapbuffer_physicaladdr_t(void* phy_addr, int width, int height, int wstride, int hstride, int format);
 IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, int hstride, int format);
+IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t handle, int width, int height, int wstride, int hstride, int format);
 
 /*
  * Query RGA basic information, supported resolution, supported format, etc.

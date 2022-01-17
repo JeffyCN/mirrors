@@ -175,9 +175,11 @@ IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo) {
         return IM_STATUS_INVALID_PARAM;
     }
 
-    if(dst.phy_addr != NULL)
+    if (dst.handle > 0) {
+        dstinfo->handle = dst.handle;
+    } else if(dst.phy_addr != NULL) {
         dstinfo->phyAddr= dst.phy_addr;
-    else if(dst.fd > 0) {
+    } else if(dst.fd > 0) {
         dstinfo->fd = dst.fd;
         dstinfo->mmuFlag = 1;
     } else if(dst.vir_addr != NULL) {
@@ -185,8 +187,8 @@ IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo) {
         dstinfo->mmuFlag = 1;
     } else {
         ALOGE("rga_im2d: invaild dst buffer");
-        imSetErrorMsg("No address available in dst buffer, phy_addr = %ld, fd = %d, vir_addr = %ld",
-                      (unsigned long)dst.phy_addr, dst.fd, (unsigned long)dst.vir_addr);
+        imSetErrorMsg("No address available in dst buffer, phy_addr = %ld, fd = %d, vir_addr = %ld, handle = %d",
+                      (unsigned long)dst.phy_addr, dst.fd, (unsigned long)dst.vir_addr, dst.handle);
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -205,9 +207,11 @@ IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, rga_info
         return IM_STATUS_INVALID_PARAM;
     }
 
-    if(src.phy_addr != NULL)
+    if (src.handle > 0) {
+        srcinfo->handle = src.handle;
+    } else if(src.phy_addr != NULL) {
         srcinfo->phyAddr = src.phy_addr;
-    else if(src.fd > 0) {
+    } else if(src.fd > 0) {
         srcinfo->fd = src.fd;
         srcinfo->mmuFlag = 1;
     } else if(src.vir_addr != NULL) {
@@ -215,14 +219,16 @@ IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, rga_info
         srcinfo->mmuFlag = 1;
     } else {
         ALOGE("rga_im2d: invaild src buffer");
-        imSetErrorMsg("No address available in src buffer, phy_addr = %ld, fd = %d, vir_addr = %ld",
-                      (unsigned long)src.phy_addr, src.fd, (unsigned long)src.vir_addr);
+        imSetErrorMsg("No address available in src buffer, phy_addr = %ld, fd = %d, vir_addr = %ld, handle = %d",
+                      (unsigned long)src.phy_addr, src.fd, (unsigned long)src.vir_addr, src.handle);
         return IM_STATUS_INVALID_PARAM;
     }
 
-    if(dst.phy_addr != NULL)
+    if (dst.handle > 0) {
+        dstinfo->handle = dst.handle;
+    } else if(dst.phy_addr != NULL) {
         dstinfo->phyAddr= dst.phy_addr;
-    else if(dst.fd > 0) {
+    } else if(dst.fd > 0) {
         dstinfo->fd = dst.fd;
         dstinfo->mmuFlag = 1;
     } else if(dst.vir_addr != NULL) {
@@ -230,8 +236,8 @@ IM_STATUS rga_set_buffer_info(const rga_buffer_t src, rga_buffer_t dst, rga_info
         dstinfo->mmuFlag = 1;
     } else {
         ALOGE("rga_im2d: invaild dst buffer");
-        imSetErrorMsg("No address available in dst buffer, phy_addr = %ld, fd = %d, vir_addr = %ld",
-                      (unsigned long)dst.phy_addr, dst.fd, (unsigned long)dst.vir_addr);
+        imSetErrorMsg("No address available in dst buffer, phy_addr = %ld, fd = %d, vir_addr = %ld, handle = %d",
+                      (unsigned long)dst.phy_addr, dst.fd, (unsigned long)dst.vir_addr, dst.handle);
         return IM_STATUS_INVALID_PARAM;
     }
 

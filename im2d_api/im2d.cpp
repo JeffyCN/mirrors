@@ -164,6 +164,23 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
     return buffer;
 }
 
+IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t  handle,
+                                        int width, int height, int wstride,
+                                        int hstride, int format) {
+    rga_buffer_t buffer;
+
+    memset(&buffer, 0, sizeof(rga_buffer_t));
+
+    buffer.handle  = handle;
+    buffer.width   = width;
+    buffer.height  = height;
+    buffer.wstride = wstride;
+    buffer.hstride = hstride;
+    buffer.format  = format;
+
+    return buffer;
+}
+
 #ifdef ANDROID
 /*When wrapbuffer_GraphicBuffer and wrapbuffer_AHardwareBuffer are used, */
 /*it is necessary to check whether fd and virtual address of the return rga_buffer_t are valid parameters*/
