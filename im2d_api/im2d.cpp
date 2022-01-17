@@ -151,7 +151,7 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
 #ifdef ANDROID
 /*When wrapbuffer_GraphicBuffer and wrapbuffer_AHardwareBuffer are used, */
 /*it is necessary to check whether fd and virtual address of the return rga_buffer_t are valid parameters*/
-IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
+IM_API rga_buffer_t wrapbuffer_GraphicBuffer_handle(buffer_handle_t hnd) {
     int ret = 0;
     rga_buffer_t buffer;
     std::vector<int> dstAttrs;
