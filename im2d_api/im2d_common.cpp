@@ -133,7 +133,7 @@ int imSetErrorMsg(const char* format, ...) {
 }
 
 bool rga_is_buffer_valid(rga_buffer_t buf) {
-    return (buf.phy_addr != NULL || buf.fd > 0 || buf.vir_addr != NULL);
+    return (buf.phy_addr != NULL || buf.vir_addr != NULL || buf.fd > 0 || buf.handle > 0);
 }
 
 bool rga_is_rect_valid(im_rect rect) {
