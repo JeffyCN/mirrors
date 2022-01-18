@@ -115,12 +115,13 @@ typedef struct {
     unsigned int version;
     unsigned int input_resolution;
     unsigned int output_resolution;
+    unsigned int byte_stride;
     unsigned int scale_limit;
     unsigned int performance;
     unsigned int input_format;
     unsigned int output_format;
     unsigned int feature;
-    char reserved[28];
+    char reserved[24];
 } rga_info_table_entry;
 
 typedef struct {
@@ -129,8 +130,8 @@ typedef struct {
 } rga_dirver_bind_table_entry;
 
 const rga_info_table_entry hw_info_table[] = {
-    { IM_RGA_HW_VERSION_RGA_V_ERR       ,    0,     0,  0, 0,   0, 0, 0, {0} },
-    {   IM_RGA_HW_VERSION_RGA_1         , 8192, 2048,   8, 1,
+    { IM_RGA_HW_VERSION_RGA_V_ERR       ,    0,    0, 0, 0, 0,   0, 0, 0, {0} },
+    {   IM_RGA_HW_VERSION_RGA_1         , 8192, 2048, 4, 8, 1,
                                         /* input format */
                                         IM_RGA_SUPPORT_FORMAT_RGB |
                                         IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
@@ -152,7 +153,7 @@ const rga_info_table_entry hw_info_table[] = {
                                         IM_RGA_SUPPORT_FEATURE_ROP,
                                         /* reserved */
                                         {0} },
-    { IM_RGA_HW_VERSION_RGA_1_PLUS      , 8192, 2048,   8, 1,
+    { IM_RGA_HW_VERSION_RGA_1_PLUS      , 8192, 2048, 4, 8, 1,
                                         /* input format */
                                         IM_RGA_SUPPORT_FORMAT_RGB |
                                         IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
@@ -173,7 +174,7 @@ const rga_info_table_entry hw_info_table[] = {
                                         IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE,
                                         /* reserved */
                                         {0} },
-    { IM_RGA_HW_VERSION_RGA_2           , 8192, 4096, 16, 2,
+    { IM_RGA_HW_VERSION_RGA_2           , 8192, 4096, 4, 16, 2,
                                         /* input format */
                                         IM_RGA_SUPPORT_FORMAT_RGB |
                                         IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
@@ -194,7 +195,7 @@ const rga_info_table_entry hw_info_table[] = {
                                         IM_RGA_SUPPORT_FEATURE_ROP,
                                         /* reserved */
                                         {0} },
-    { IM_RGA_HW_VERSION_RGA_2_LITE0     , 8192, 4096,   8, 2,
+    { IM_RGA_HW_VERSION_RGA_2_LITE0     , 8192, 4096, 4, 8, 2,
                                         /* input format */
                                         IM_RGA_SUPPORT_FORMAT_RGB |
                                         IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
@@ -215,7 +216,7 @@ const rga_info_table_entry hw_info_table[] = {
                                         IM_RGA_SUPPORT_FEATURE_ROP,
                                         /* reserved */
                                         {0} },
-    { IM_RGA_HW_VERSION_RGA_2_LITE1     , 8192, 4096,   8, 2,
+    { IM_RGA_HW_VERSION_RGA_2_LITE1     , 8192, 4096, 4, 8, 2,
                                         /* input format */
                                         IM_RGA_SUPPORT_FORMAT_RGB |
                                         IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
@@ -239,7 +240,7 @@ const rga_info_table_entry hw_info_table[] = {
                                         IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE,
                                         /* reserved */
                                         {0} },
-    { IM_RGA_HW_VERSION_RGA_2_ENHANCE   , 8192, 4096, 16,  2,
+    { IM_RGA_HW_VERSION_RGA_2_ENHANCE   , 8192, 4096, 4, 16,  2,
                                         /* input format */
                                         IM_RGA_SUPPORT_FORMAT_RGB |
                                         IM_RGA_SUPPORT_FORMAT_RGB_OTHER |
@@ -266,7 +267,7 @@ const rga_info_table_entry hw_info_table[] = {
                                         IM_RGA_SUPPORT_FEATURE_ROP,
                                         /* reserved */
                                         {0} },
-    { IM_RGA_HW_VERSION_RGA_3           , 8176, 8128,  8,  4,
+    { IM_RGA_HW_VERSION_RGA_3           , 8176, 8128, 16, 8,  4,
                                         /* input format */
                                         IM_RGA_SUPPORT_FORMAT_RGB |
                                         IM_RGA_SUPPORT_FORMAT_YUV_420_SEMI_PLANNER_8_BIT |

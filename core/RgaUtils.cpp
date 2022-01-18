@@ -240,6 +240,88 @@ float get_bpp_from_format(int format) {
     return bpp;
 }
 
+int get_perPixel_stride_from_format(int format) {
+    #ifdef LINUX
+    if (!(format & 0xFF00 || format == 0)) {
+        format = RkRgaCompatibleFormat(format);
+    }
+#endif
+
+    switch (format) {
+#ifdef ANDROID
+        case HAL_PIXEL_FORMAT_RGB_565:
+            return (2 * 8);
+        case HAL_PIXEL_FORMAT_RGB_888:
+            return (3 * 8);
+        case HAL_PIXEL_FORMAT_RGBA_8888:
+        case HAL_PIXEL_FORMAT_RGBX_8888:
+        case HAL_PIXEL_FORMAT_BGRA_8888:
+            return  (4 * 8);
+        case HAL_PIXEL_FORMAT_YCrCb_420_SP:
+        case HAL_PIXEL_FORMAT_YCrCb_NV12:
+            return  (1 * 8);
+        case HAL_PIXEL_FORMAT_YCrCb_NV12_10:
+            return  (1 * 10);
+#endif
+        case RK_FORMAT_Y4:
+            return  0.5 * 8;
+        case RK_FORMAT_BPP1:
+        case RK_FORMAT_BPP2:
+        case RK_FORMAT_BPP4:
+        case RK_FORMAT_BPP8:
+        case RK_FORMAT_YCbCr_400:
+        case RK_FORMAT_YCbCr_420_SP:
+        case RK_FORMAT_YCbCr_420_P:
+        case RK_FORMAT_YCrCb_420_P:
+        case RK_FORMAT_YCrCb_420_SP:
+        case RK_FORMAT_YCbCr_422_SP:
+        case RK_FORMAT_YCbCr_422_P:
+        case RK_FORMAT_YCrCb_422_SP:
+        case RK_FORMAT_YCrCb_422_P:
+            return  (1 * 8);
+        case RK_FORMAT_YCbCr_420_SP_10B:
+        case RK_FORMAT_YCrCb_420_SP_10B:
+        case RK_FORMAT_YCbCr_422_10b_SP:
+        case RK_FORMAT_YCrCb_422_10b_SP:
+            return  (1 * 10);
+        case RK_FORMAT_RGB_565:
+        case RK_FORMAT_RGBA_5551:
+        case RK_FORMAT_RGBA_4444:
+        case RK_FORMAT_BGR_565:
+        case RK_FORMAT_BGRA_5551:
+        case RK_FORMAT_BGRA_4444:
+        case RK_FORMAT_ARGB_5551:
+        case RK_FORMAT_ARGB_4444:
+        case RK_FORMAT_ABGR_5551:
+        case RK_FORMAT_ABGR_4444:
+        /* yuyv */
+        case RK_FORMAT_YVYU_422:
+        case RK_FORMAT_VYUY_422:
+        case RK_FORMAT_YUYV_422:
+        case RK_FORMAT_UYVY_422:
+        case RK_FORMAT_YVYU_420:
+        case RK_FORMAT_VYUY_420:
+        case RK_FORMAT_YUYV_420:
+        case RK_FORMAT_UYVY_420:
+            return  (2 * 8);
+        case RK_FORMAT_BGR_888:
+        case RK_FORMAT_RGB_888:
+            return  (3 * 8);
+        case RK_FORMAT_RGBA_8888:
+        case RK_FORMAT_RGBX_8888:
+        case RK_FORMAT_BGRA_8888:
+        case RK_FORMAT_BGRX_8888:
+        case RK_FORMAT_ARGB_8888:
+        case RK_FORMAT_XRGB_8888:
+        case RK_FORMAT_ABGR_8888:
+        case RK_FORMAT_XBGR_8888:
+            return  (4 * 8);
+        default:
+            printf("Is unsupport format now, please fix \n");
+            return 0;
+    }
+}
+
 int get_buf_size_by_w_h_f(int w, int h, int f) {
     float bpp = get_bpp_from_format(f);
     int size = 0;

@@ -34,6 +34,18 @@
 using namespace android;
 #endif
 
+#define MAX(p1, p2) (p1 > p2 ? p1 : p2)
+#define GET_GCD(n1, n2) \
+    ({ \
+        int i; \
+        for(i = 1; i <= (n1) && i <= (n2); i++) { \
+            if((n1) % i==0 && (n2) % i==0) \
+                gcd = i; \
+        } \
+        gcd; \
+    })
+#define GET_LCM(n1, n2, gcd) (((n1) * (n2)) / gcd)
+
 extern struct rgaContext *rgaCtx;
 extern __thread char rga_err_str[ERR_MSG_LEN];
 
@@ -58,19 +70,16 @@ static IM_STATUS rga_support_info_merge_table(rga_info_table_entry *dst_table, r
         return IM_STATUS_FAILED;
     }
 
-    dst_table->version |= merge_table->version;
-    dst_table->input_format |= merge_table->input_format;
-    dst_table->output_format |= merge_table->output_format;
-    dst_table->feature |= merge_table->feature;
+    dst_table->version              |= merge_table->version;
+    dst_table->input_format         |= merge_table->input_format;
+    dst_table->output_format        |= merge_table->output_format;
+    dst_table->feature              |= merge_table->feature;
 
-    dst_table->input_resolution = dst_table->input_resolution > merge_table->input_resolution ?
-                                  dst_table->input_resolution : merge_table->input_resolution;
-    dst_table->output_resolution = dst_table->output_resolution > merge_table->output_resolution ?
-                                   dst_table->output_resolution : merge_table->output_resolution;
-    dst_table->scale_limit = dst_table->scale_limit > merge_table->scale_limit ?
-                             dst_table->scale_limit : merge_table->scale_limit;
-    dst_table->performance = dst_table->performance > merge_table->performance ?
-                             dst_table->performance : merge_table->performance;
+    dst_table->input_resolution     = MAX(dst_table->input_resolution, merge_table->input_resolution);
+    dst_table->output_resolution    = MAX(dst_table->output_resolution, merge_table->output_resolution);
+    dst_table->byte_stride          = MAX(dst_table->byte_stride, merge_table->byte_stride);
+    dst_table->scale_limit          = MAX(dst_table->scale_limit, merge_table->scale_limit);
+    dst_table->performance          = MAX(dst_table->performance, merge_table->performance);
 
     return IM_STATUS_SUCCESS;
 }
@@ -97,6 +106,21 @@ static inline int rga_version_compare(struct rga_version_t version1, struct rga_
     return -1;
 }
 
+static IM_STATUS rga_yuv_legality_check(const char *name, rga_buffer_t info, im_rect rect) {
+    if ((info.wstride % 2) || (info.hstride % 2) ||
+        (info.width % 2)  || (info.height % 2) ||
+        (rect.x % 2) || (rect.y % 2) ||
+        (rect.width % 2) || (rect.height % 2)) {
+        imSetErrorMsg("%s, Error yuv not align to 2, rect[x,y,w,h] = [%d, %d, %d, %d], "
+                      "wstride = %d, hstride = %d, format = 0x%x(%s)",
+                      name, rect.x, rect.y, info.width, info.height, info.wstride, info.hstride,
+                      info.format, translate_format_str(info.format));
+        return IM_STATUS_INVALID_PARAM;
+    }
+
+    return IM_STATUS_SUCCESS;
+}
+
 int imSetErrorMsg(const char* format, ...) {
     int ret = 0;
     va_list ap;
@@ -108,8 +132,16 @@ int imSetErrorMsg(const char* format, ...) {
     return ret;
 }
 
+bool rga_is_buffer_valid(rga_buffer_t buf) {
+    return (buf.phy_addr != NULL || buf.fd > 0 || buf.vir_addr != NULL);
+}
+
+bool rga_is_rect_valid(im_rect rect) {
+    return (rect.x > 0 || rect.y > 0 || (rect.width > 0 && rect.height > 0));
+}
+
 void empty_structure(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
-                                im_rect *srect, im_rect *drect, im_rect *prect, im_opt_t *opt) {
+                     im_rect *srect, im_rect *drect, im_rect *prect, im_opt_t *opt) {
     if (src != NULL)
         memset(src, 0, sizeof(*src));
     if (dst != NULL)
@@ -124,48 +156,6 @@ void empty_structure(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
         memset(prect, 0, sizeof(*prect));
     if (opt != NULL)
         memset(opt, 0, sizeof(*opt));
-}
-
-bool rga_is_buffer_valid(rga_buffer_t buf) {
-    return (buf.phy_addr != NULL || buf.fd > 0 || buf.vir_addr != NULL);
-}
-
-bool rga_is_rect_valid(im_rect rect) {
-    return (rect.x > 0 || rect.y > 0 || (rect.width > 0 && rect.height > 0));
-}
-
-IM_STATUS rga_align_check_yuv_8(const char *name, rga_buffer_t info, im_rect rect) {
-    if ((info.wstride % 4) || (info.hstride % 2) ||
-        (info.width % 2)  || (info.height % 2) ||
-        (rect.x % 2) || (rect.y % 2) ||
-        (rect.width % 2) || (rect.height % 2)) {
-        imSetErrorMsg("%s, Error yuv not align to 2 or width stride not align to 4, "
-                        "rect[x,y,w,h] = [%d, %d, %d, %d], "
-                        "wstride = %d, hstride = %d, format = 0x%x(%s)\n%s",
-                        name, rect.x, rect.y, info.width, info.height, info.wstride, info.hstride,
-                        info.format, translate_format_str(info.format),
-                        querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
-        return IM_STATUS_INVALID_PARAM;
-    }
-
-    return IM_STATUS_SUCCESS;
-}
-
-IM_STATUS rga_align_check_yuv_10(const char *name, rga_buffer_t info, im_rect rect) {
-    if ((info.wstride % 16) || (info.hstride % 2) ||
-        (info.width % 2)  || (info.height % 2) ||
-        (rect.x % 2) || (rect.y % 2) ||
-        (rect.width % 2) || (rect.height % 2)) {
-        imSetErrorMsg("%s, Err src wstride is not align to 16 or yuv not align to 2, "
-                        "rect[x,y,w,h] = [%d, %d, %d, %d], "
-                        "wstride = %d, hstride = %d, format = 0x%x(%s)\n%s",
-                        name, rect.x, rect.y, info.width, info.height, info.wstride, info.hstride,
-                        info.format, translate_format_str(info.format),
-                        querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
-        return IM_STATUS_INVALID_PARAM;
-    }
-
-    return IM_STATUS_SUCCESS;
 }
 
 IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo) {
@@ -613,7 +603,7 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
             return IM_STATUS_NOT_SUPPORTED;
         }
 
-        ret = rga_align_check_yuv_8(name, info, rect);
+        ret = rga_yuv_legality_check(name, info, rect);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
     } else if (format == RK_FORMAT_YCrCb_420_P  || format == RK_FORMAT_YCbCr_420_P) {
@@ -624,7 +614,7 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
             return IM_STATUS_NOT_SUPPORTED;
         }
 
-        ret = rga_align_check_yuv_8(name, info, rect);
+        ret = rga_yuv_legality_check(name, info, rect);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
     } else if (format == RK_FORMAT_YCrCb_422_SP || format == RK_FORMAT_YCbCr_422_SP) {
@@ -635,7 +625,7 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
             return IM_STATUS_NOT_SUPPORTED;
         }
 
-        ret = rga_align_check_yuv_8(name, info, rect);
+        ret = rga_yuv_legality_check(name, info, rect);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
     } else if (format == RK_FORMAT_YCrCb_422_P  || format == RK_FORMAT_YCbCr_422_P) {
@@ -646,7 +636,7 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
             return IM_STATUS_NOT_SUPPORTED;
         }
 
-        ret = rga_align_check_yuv_8(name, info, rect);
+        ret = rga_yuv_legality_check(name, info, rect);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
     } else if (format == RK_FORMAT_YCrCb_420_SP_10B || format == RK_FORMAT_YCbCr_420_SP_10B) {
@@ -657,7 +647,7 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
             return IM_STATUS_NOT_SUPPORTED;
         }
 
-        ret = rga_align_check_yuv_10(name, info, rect);
+        ret = rga_yuv_legality_check(name, info, rect);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
         ALOGE("If it is an RK encoder output, it needs to be aligned with an odd multiple of 256.\n");
@@ -669,7 +659,7 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
             return IM_STATUS_NOT_SUPPORTED;
         }
 
-        ret = rga_align_check_yuv_10(name, info, rect);
+        ret = rga_yuv_legality_check(name, info, rect);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
         ALOGE("If it is an RK encoder output, it needs to be aligned with an odd multiple of 256.\n");
@@ -682,7 +672,7 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
             return IM_STATUS_NOT_SUPPORTED;
         }
 
-        ret = rga_align_check_yuv_8(name, info, rect);
+        ret = rga_yuv_legality_check(name, info, rect);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
     } else if (format == RK_FORMAT_YUYV_422 || format == RK_FORMAT_YVYU_422 ||
@@ -694,7 +684,7 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
             return IM_STATUS_NOT_SUPPORTED;
         }
 
-        ret = rga_align_check_yuv_8(name, info, rect);
+        ret = rga_yuv_legality_check(name, info, rect);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
     } else if (format == RK_FORMAT_YCbCr_400) {
@@ -705,7 +695,7 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
             return IM_STATUS_NOT_SUPPORTED;
         }
 
-        ret = rga_align_check_yuv_8(name, info, rect);
+        ret = rga_yuv_legality_check(name, info, rect);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
     } else if (format == RK_FORMAT_Y4) {
@@ -716,13 +706,33 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
             return IM_STATUS_NOT_SUPPORTED;
         }
 
-        ret = rga_align_check_yuv_8(name, info, rect);
+        ret = rga_yuv_legality_check(name, info, rect);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
     } else {
         imSetErrorMsg("%s unsupported this format, format = 0x%x(%s)\n%s",
                       name, info.format, translate_format_str(info.format),
                       querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    return IM_STATUS_NOERROR;
+}
+
+IM_STATUS rga_check_align(const char *name, rga_buffer_t info, int byte_stride) {
+    int bpp = 0;
+    int bit_stride, pixel_stride, align, gcd;
+
+    pixel_stride = get_perPixel_stride_from_format(info.format);
+
+    bit_stride = pixel_stride * info.wstride;
+    if (bit_stride % (byte_stride * 8) == 0) {
+        return IM_STATUS_NOERROR;
+    } else {
+        gcd = GET_GCD(pixel_stride, byte_stride * 8);
+        align = GET_LCM(pixel_stride, byte_stride * 8, gcd) / pixel_stride;
+        imSetErrorMsg("%s unsupport width stride %d, %s width stride should be %d aligned!",
+                      name, info.wstride, translate_format_str(info.format), align);
         return IM_STATUS_NOT_SUPPORTED;
     }
 

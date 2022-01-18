@@ -353,6 +353,7 @@ IM_API const char* querystring(int name) {
         "RGA version           : ",
         "Max input             : ",
         "Max output            : ",
+        "Byte stride           : ",
         "Scale limit           : ",
         "Input support format  : ",
         "output support format : ",
@@ -500,6 +501,14 @@ IM_API const char* querystring(int name) {
                         out << output_name[name] << output_resolution[IM_RGA_HW_VERSION_RGA_V_ERR_INDEX] << endl;
                         break;
                 }
+                break;
+
+            case RGA_BYTE_STRIDE :
+                if (rga_info.byte_stride > 0)
+                    out << output_name[name] << rga_info.byte_stride << " byte" << endl;
+                else
+                    out << output_name[name] << "unknown" << endl;
+
                 break;
 
             case RGA_SCALE_LIMIT :
@@ -688,6 +697,9 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         ret = rga_check_format("src", src, src_rect, rga_info.input_format, mode_usage);
         if (ret != IM_STATUS_NOERROR)
             return ret;
+        ret = rga_check_align("src", src, rga_info.byte_stride);
+        if (ret != IM_STATUS_NOERROR)
+            return ret;
     }
     if (pat_enable) {
         /* RGA1 cannot support src1. */
@@ -703,11 +715,17 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         ret = rga_check_format("pat", pat, pat_rect, rga_info.input_format, mode_usage);
         if (ret != IM_STATUS_NOERROR)
             return ret;
+        ret = rga_check_align("pat", pat, rga_info.byte_stride);
+        if (ret != IM_STATUS_NOERROR)
+            return ret;
     }
     ret = rga_check_info("dst", dst, dst_rect, rga_info.output_resolution);
     if (ret != IM_STATUS_NOERROR)
         return ret;
     ret = rga_check_format("dst", dst, dst_rect, rga_info.output_format, mode_usage);
+    if (ret != IM_STATUS_NOERROR)
+        return ret;
+    ret = rga_check_align("dst", dst, rga_info.byte_stride);
     if (ret != IM_STATUS_NOERROR)
         return ret;
 

@@ -31,9 +31,6 @@ int imSetErrorMsg(const char* format, ...);
 
 bool rga_is_buffer_valid(rga_buffer_t buf);
 bool rga_is_rect_valid(im_rect rect);
-IM_STATUS rga_align_check_yuv_8(const char *name, rga_buffer_t info, im_rect rect);
-IM_STATUS rga_align_check_yuv_10(const char *name, rga_buffer_t info, im_rect rect);
-
 void empty_structure(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
                                 im_rect *srect, im_rect *drect, im_rect *prect, im_opt_t *opt);
 IM_STATUS rga_set_buffer_info(rga_buffer_t dst, rga_info_t* dstinfo);
@@ -51,6 +48,7 @@ IM_STATUS rga_check_driver(void);
 IM_STATUS rga_check_info(const char *name, const rga_buffer_t info, const im_rect rect, int resolution_usage);
 IM_STATUS rga_check_limit(rga_buffer_t src, rga_buffer_t dst, int scale_usage, int mode_usage);
 IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, int format_usage, int mode_usgae);
+IM_STATUS rga_check_align(const char *name, rga_buffer_t info, int byte_stride);
 IM_STATUS rga_check_blend(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst, int pat_enable, int mode_usage);
 IM_STATUS rga_check_rotate(int mode_usage, rga_info_table_entry &table);
 IM_STATUS rga_check_feature(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst,
