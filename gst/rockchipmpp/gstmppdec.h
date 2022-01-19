@@ -50,6 +50,7 @@ struct _GstMppDec
   /* specified output format */
   GstVideoFormat format;
 
+  gboolean convert;
   gint rotation;
   gint width;
   gint height;

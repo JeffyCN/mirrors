@@ -223,6 +223,7 @@ gst_mpp_dec_start (GstVideoDecoder * decoder)
   self->interlace_mode = GST_VIDEO_INTERLACE_MODE_PROGRESSIVE;
   self->mpp_type = MPP_VIDEO_CodingUnused;
   self->seen_valid_pts = FALSE;
+  self->convert = FALSE;
 
   self->input_state = NULL;
 
@@ -423,7 +424,7 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
   gint offset_x = mpp_frame_get_offset_x (mframe);
   gint offset_y = mpp_frame_get_offset_y (mframe);
   gint dst_width, dst_height;
-  gboolean afbc;
+  gboolean afbc, nv12_10le40;
 
   if (hstride % 2 || vstride % 2)
     return GST_FLOW_NOT_NEGOTIATED;
@@ -442,11 +443,12 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
   dst_format = GST_VIDEO_INFO_FORMAT (info);
   dst_width = GST_VIDEO_INFO_WIDTH (info);
   dst_height = GST_VIDEO_INFO_HEIGHT (info);
+  nv12_10le40 = dst_format == GST_VIDEO_FORMAT_NV12_10LE40;
 
   if (self->rotation || dst_format != src_format ||
       dst_width != width || dst_height != height) {
-    if (offset_x || offset_y) {
-      GST_ERROR_OBJECT (self, "unable to convert with offsets (%d, %d)",
+    if (afbc || offset_x || offset_y) {
+      GST_ERROR_OBJECT (self, "unable to convert with AFBC or offsets (%d, %d)",
           offset_x, offset_y);
       return GST_FLOW_NOT_NEGOTIATED;
     }
@@ -456,13 +458,31 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
         gst_mpp_video_format_to_string (src_format), width, height,
         gst_mpp_video_format_to_string (dst_format), dst_width, dst_height);
 
+    self->convert = TRUE;
+
     hstride = 0;
     vstride = 0;
   }
 
+  if (afbc) {
+    /* HACK: MPP would align width to 64 for AFBC */
+    dst_width = GST_ROUND_UP_64 (dst_width);
+
+    /* HACK: MPP would has extra 16 lines for AFBC */
+    dst_height += 16;
+    vstride += 16;
+
+    /* HACK: Fake hstride for Rockchip VOP driver */
+    hstride = 0;
+
+#ifndef HAVE_NV12_10LE40
+    if (nv12_10le40)
+      hstride = ((dst_width * 5 >> 2) + 4) / 5 * 5;
+#endif
+  }
+
   if (!gst_mpp_dec_update_video_info (decoder, dst_format,
-          dst_width, dst_height, hstride, vstride, 0, afbc,
-          dst_format == GST_VIDEO_FORMAT_NV12_10LE40))
+          dst_width, dst_height, hstride, vstride, 0, afbc, nv12_10le40))
     return GST_FLOW_NOT_NEGOTIATED;
 
   return GST_FLOW_OK;
@@ -582,47 +602,6 @@ out:
   return frame;
 }
 
-static gboolean
-gst_mpp_dec_info_matched (GstVideoDecoder * decoder, MppFrame mframe)
-{
-  GstMppDec *self = GST_MPP_DEC (decoder);
-  GstVideoInfo *info = &self->info;
-  GstVideoFormat format = GST_VIDEO_INFO_FORMAT (info);
-  MppFrameFormat mpp_format = mpp_frame_get_fmt (mframe);
-  gint width = mpp_frame_get_width (mframe);
-  gint height = mpp_frame_get_height (mframe);
-  gint hstride = mpp_frame_get_hor_stride (mframe);
-  gint vstride = mpp_frame_get_ver_stride (mframe);
-
-  if (self->rotation)
-    return FALSE;
-
-  /* NOTE: The output video info is aligned to 2 */
-  width = GST_ROUND_UP_2 (width);
-  height = GST_ROUND_UP_2 (height);
-
-  if (!!MPP_FRAME_FMT_IS_FBC (mpp_format) != !!GST_VIDEO_INFO_IS_AFBC (info))
-    return FALSE;
-
-  mpp_format &= ~MPP_FRAME_FBC_MASK;
-  if (mpp_format != gst_mpp_gst_format_to_mpp_format (format))
-    return FALSE;
-
-  if (width != GST_VIDEO_INFO_WIDTH (info))
-    return FALSE;
-
-  if (height != GST_VIDEO_INFO_HEIGHT (info))
-    return FALSE;
-
-  if (hstride != GST_MPP_VIDEO_INFO_HSTRIDE (info))
-    return FALSE;
-
-  if (vstride != GST_MPP_VIDEO_INFO_VSTRIDE (info))
-    return FALSE;
-
-  return TRUE;
-}
-
 #ifdef HAVE_RGA
 static gboolean
 gst_mpp_dec_rga_convert (GstVideoDecoder * decoder, MppFrame mframe,
@@ -666,6 +645,7 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
   gint crop_y = self->crop_y;
   guint crop_w = self->crop_w;
   guint crop_h = self->crop_h;
+  gboolean afbc = !!MPP_FRAME_FMT_IS_FBC (mpp_frame_get_fmt (mframe));
 
   mbuf = mpp_frame_get_buffer (mframe);
   if (!mbuf)
@@ -684,14 +664,16 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
     return NULL;
   }
 
-  if (offset_x || offset_y || crop_x || crop_y || crop_w || crop_h) {
+  if (afbc || offset_x || offset_y || crop_x || crop_y || crop_w || crop_h) {
     GstVideoCropMeta *cmeta = gst_buffer_add_video_crop_meta (buffer);
+    gint width = mpp_frame_get_width (mframe);
+    gint height = mpp_frame_get_height (mframe);
 
-    cmeta->x = CLAMP (crop_x, 0, GST_VIDEO_INFO_WIDTH (info) - 1);
-    cmeta->y = CLAMP (crop_y, 0, GST_VIDEO_INFO_HEIGHT (info) - 1);
+    cmeta->x = CLAMP (crop_x, 0, width - 1);
+    cmeta->y = CLAMP (crop_y, 0, height - 1);
 
-    cmeta->width = GST_VIDEO_INFO_WIDTH (info) - cmeta->x;
-    cmeta->height = GST_VIDEO_INFO_HEIGHT (info) - cmeta->y;
+    cmeta->width = width - cmeta->x;
+    cmeta->height = height - cmeta->y;
 
     if (crop_w && crop_w < cmeta->width)
       cmeta->width = crop_w;
@@ -723,10 +705,8 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
       GST_VIDEO_INFO_WIDTH (info), GST_VIDEO_INFO_HEIGHT (info),
       GST_VIDEO_INFO_N_PLANES (info), info->offset, info->stride);
 
-  if (gst_mpp_dec_info_matched (decoder, mframe))
+  if (!self->convert)
     return buffer;
-
-  GST_DEBUG_OBJECT (self, "frame format not matched");
 
 #ifdef HAVE_RGA
   if (!GST_VIDEO_INFO_IS_AFBC (info) && !offset_x && !offset_y &&

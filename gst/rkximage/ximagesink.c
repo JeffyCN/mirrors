@@ -686,9 +686,7 @@ gst_kms_sink_import_dmabuf (GstRkXImageSink * self, GstBuffer * inbuf,
     GstBuffer ** outbuf)
 {
   gint prime_fds[GST_VIDEO_MAX_PLANES] = { 0, };
-  GstVideoCropMeta *crop;
   GstVideoMeta *meta;
-  GstVideoInfo info;
   guint i, n_mem, n_planes;
   GstKMSMemory *kmsmem;
   guint mems_idx[GST_VIDEO_MAX_PLANES];
@@ -758,16 +756,8 @@ gst_kms_sink_import_dmabuf (GstRkXImageSink * self, GstBuffer * inbuf,
   GST_LOG_OBJECT (self, "found these prime ids: %d, %d, %d, %d", prime_fds[0],
       prime_fds[1], prime_fds[2], prime_fds[3]);
 
-  info = self->vinfo;
-  if ((crop = gst_buffer_get_video_crop_meta (inbuf))) {
-    int crop_height = crop->y + crop->height;
-
-    if (crop_height > GST_VIDEO_INFO_HEIGHT (&info))
-      GST_VIDEO_INFO_HEIGHT (&info) = crop_height;
-  }
-
   kmsmem = gst_kms_allocator_dmabuf_import (self->allocator,
-      prime_fds, n_planes, mems_skip, &info);
+      prime_fds, n_planes, mems_skip, &self->vinfo);
   if (!kmsmem)
     return FALSE;
 
