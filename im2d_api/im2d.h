@@ -38,7 +38,7 @@ extern "C" {
 #define RGA_API_MAJOR_VERSION	 1
 #define RGA_API_MINOR_VERSION	 7
 #define RGA_API_REVISION_VERSION 1
-#define RGA_API_BUILD_VERSION	 7
+#define RGA_API_BUILD_VERSION	 8
 
 #define RGA_API_VERSION STR(RGA_API_MAJOR_VERSION) "." STR(RGA_API_MINOR_VERSION) "." STR(RGA_API_REVISION_VERSION) "_[" STR(RGA_API_BUILD_VERSION) "]"
 #define RGA_API_FULL_VERSION "rga_api version " RGA_API_VERSION
@@ -292,8 +292,40 @@ IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, im_handle_para
 IM_API IM_STATUS releasebuffer_handle(rga_buffer_handle_t handle);
 
 /*
+ * Wrap image Parameters.
+ *
+ * @param handle
+ *      RGA buffer handle.
+ * @param width
+ *      Width of image manipulation area.
+ * @param height
+ *      Height of image manipulation area.
+ * @param wstride
+ *      Width pixel stride, default (width = wstride).
+ * @param hstride
+ *      Height pixel stride, default (height = hstride).
+ * @param format
+ *      Image format.
+ *
  * @return rga_buffer_t
  */
+#define wrapbuffer_handle(handle, width, height, format, ...) \
+    ({ \
+        rga_buffer_t im2d_api_buffer; \
+        int im2d_api_args[] = {__VA_ARGS__}; \
+        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
+        if (im2d_api_argc == 0) { \
+            im2d_api_buffer = wrapbuffer_handle_t(handle, width, height, width, height, format); \
+        } else if (im2d_api_argc == 2){ \
+            im2d_api_buffer = wrapbuffer_handle_t(handle, width, height, im2d_api_args[0], im2d_api_args[1], format); \
+        } else { \
+            printf("invalid parameter\n"); \
+        } \
+        im2d_api_buffer; \
+    })
+IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t handle, int width, int height, int wstride, int hstride, int format);
+
+/* For legarcy. */
 #define wrapbuffer_virtualaddr(vir_addr, width, height, format, ...) \
     ({ \
         rga_buffer_t im2d_api_buffer; \
@@ -338,26 +370,9 @@ IM_API IM_STATUS releasebuffer_handle(rga_buffer_handle_t handle);
         } \
         im2d_api_buffer; \
     })
-
-#define wrapbuffer_handle(handle, width, height, format, ...) \
-    ({ \
-        rga_buffer_t im2d_api_buffer; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_buffer = wrapbuffer_handle_t(handle, width, height, width, height, format); \
-        } else if (im2d_api_argc == 2){ \
-            im2d_api_buffer = wrapbuffer_handle_t(handle, width, height, im2d_api_args[0], im2d_api_args[1], format); \
-        } else { \
-            printf("invalid parameter\n"); \
-        } \
-        im2d_api_buffer; \
-    })
-
 IM_API rga_buffer_t wrapbuffer_virtualaddr_t(void* vir_addr, int width, int height, int wstride, int hstride, int format);
 IM_API rga_buffer_t wrapbuffer_physicaladdr_t(void* phy_addr, int width, int height, int wstride, int hstride, int format);
 IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, int hstride, int format);
-IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t handle, int width, int height, int wstride, int hstride, int format);
 
 /*
  * Query RGA basic information, supported resolution, supported format, etc.
