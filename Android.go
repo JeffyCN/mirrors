@@ -5,6 +5,8 @@ import (
         "android/soong/cc"
         "fmt"
         "strings"
+        "strconv"
+        "unsafe"
 )
 
 func init() {
@@ -19,9 +21,14 @@ func DefaultsFactory() (android.Module) {
 }
 
 func Defaults(ctx android.LoadHookContext) {
-    sdkVersion := ctx.AConfig().PlatformSdkVersion().FinalOrFutureInt()
+    sdkVersion := ctx.AConfig().PlatformSdkVersion()
+    sdkVersionInt, err := strconv.Atoi(*(*string)(unsafe.Pointer(&sdkVersion)))
+    if err != nil {
+		fmt.Printf("librga cannot get ApiLevel, %q could not be parsed as an integer\n", sdkVersion)
+        panic(1)
+	}
 
-    if (sdkVersion >= 29 ) {
+    if (sdkVersionInt >= 29 ) {
         type props struct {
             Srcs []string
             Cflags []string
@@ -33,12 +40,12 @@ func Defaults(ctx android.LoadHookContext) {
         }
 
         p := &props{}
-        p.Srcs = getSrcs(ctx, sdkVersion)
-        p.Cflags = getCflags(ctx, sdkVersion)
-        p.Shared_libs = getSharedLibs(ctx, sdkVersion)
-        p.Include_dirs = getIncludeDirs(ctx, sdkVersion)
-        p.Header_libs = getHeaders(ctx, sdkVersion)
-        p.Export_header_lib_headers = getExportHeaders(ctx, sdkVersion)
+        p.Srcs = getSrcs(ctx, sdkVersionInt)
+        p.Cflags = getCflags(ctx, sdkVersionInt)
+        p.Shared_libs = getSharedLibs(ctx, sdkVersionInt)
+        p.Include_dirs = getIncludeDirs(ctx, sdkVersionInt)
+        p.Header_libs = getHeaders(ctx, sdkVersionInt)
+        p.Export_header_lib_headers = getExportHeaders(ctx, sdkVersionInt)
 
         double_loadable := true
         p.Double_loadable = &double_loadable
@@ -53,10 +60,10 @@ func Defaults(ctx android.LoadHookContext) {
         }
 
         p := &props{}
-        p.Srcs = getSrcs(ctx, sdkVersion)
-        p.Cflags = getCflags(ctx, sdkVersion)
-        p.Shared_libs = getSharedLibs(ctx, sdkVersion)
-        p.Include_dirs = getIncludeDirs(ctx, sdkVersion)
+        p.Srcs = getSrcs(ctx, sdkVersionInt)
+        p.Cflags = getCflags(ctx, sdkVersionInt)
+        p.Shared_libs = getSharedLibs(ctx, sdkVersionInt)
+        p.Include_dirs = getIncludeDirs(ctx, sdkVersionInt)
 
         ctx.AppendProperties(p)
     }
