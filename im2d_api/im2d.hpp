@@ -37,5 +37,26 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf);
 
 #endif /* USE_AHARDWAREBUFFER */
 #endif /* ANDROID */
+
+/*
+ * process
+ *
+ * @param src
+ * @param dst
+ * @param pat
+ * @param srect
+ * @param drect
+ * @param prect
+ * @param in_fence_fd
+ * @param out_fence_fd
+ * @param opt
+ * @param usage
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                           im_rect srect, im_rect drect, im_rect prect,
+                           int in_fence_fd, int *out_fence_fd, im_opt_t *opt, int usage);
+
 #endif /* _im2d_hpp_ */
 
