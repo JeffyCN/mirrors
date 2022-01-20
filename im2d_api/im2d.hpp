@@ -39,6 +39,205 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf);
 #endif /* ANDROID */
 
 /*
+ * Resize
+ *
+ * @param src
+ * @param dst
+ * @param fx
+ * @param fy
+ * @param interpolation
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imresize
+IM_API IM_STATUS imresize(const rga_buffer_t src, rga_buffer_t dst, double fx = 0, double fy = 0, int interpolation = 0, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * Crop
+ *
+ * @param src
+ * @param dst
+ * @param rect
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imcrop
+IM_API IM_STATUS imcrop(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * rotation
+ *
+ * @param src
+ * @param dst
+ * @param rotation
+ *      IM_HAL_TRANSFORM_ROT_90
+ *      IM_HAL_TRANSFORM_ROT_180
+ *      IM_HAL_TRANSFORM_ROT_270
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imrotate
+IM_API IM_STATUS imrotate(const rga_buffer_t src, rga_buffer_t dst, int rotation, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * flip
+ *
+ * @param src
+ * @param dst
+ * @param mode
+ *      IM_HAL_TRANSFORM_FLIP_H
+ *      IM_HAL_TRANSFORM_FLIP_V
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imflip
+IM_API IM_STATUS imflip(const rga_buffer_t src, rga_buffer_t dst, int mode, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * fill/reset/draw
+ *
+ * @param src
+ * @param dst
+ * @param rect
+ * @param color
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imfill
+IM_API IM_STATUS imfill(rga_buffer_t dst, im_rect rect, int color, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * palette
+ *
+ * @param src
+ * @param dst
+ * @param lut
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef impalette
+IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * translate
+ *
+ * @param src
+ * @param dst
+ * @param x
+ * @param y
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imtranslate
+IM_API IM_STATUS imtranslate(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * copy
+ *
+ * @param src
+ * @param dst
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imcopy
+IM_API IM_STATUS imcopy(const rga_buffer_t src, rga_buffer_t dst, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * blend (SRC + DST -> DST or SRCA + SRCB -> DST)
+ *
+ * @param srcA
+ * @param srcB can be NULL.
+ * @param dst
+ * @param mode
+ *      IM_ALPHA_BLEND_MODE
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imblend
+IM_API IM_STATUS imblend(const rga_buffer_t src, rga_buffer_t dst, int mode = IM_ALPHA_BLEND_SRC_OVER, int sync = 1, int *release_fence_fd = NULL);
+#undef imcomposite
+IM_API IM_STATUS imcomposite(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode = IM_ALPHA_BLEND_SRC_OVER, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * color key
+ *
+ * @param src
+ * @param dst
+ * @param colorkey_range
+ *      max color
+ *      min color
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imcolorkey
+IM_API IM_STATUS imcolorkey(const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode = IM_ALPHA_COLORKEY_NORMAL, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * format convert
+ *
+ * @param src
+ * @param dst
+ * @param sfmt
+ * @param dfmt
+ * @param mode
+ *      color space mode: IM_COLOR_SPACE_MODE
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imcvtcolor
+IM_API IM_STATUS imcvtcolor(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode = IM_COLOR_SPACE_DEFAULT, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * nn quantize
+ *
+ * @param src
+ * @param dst
+ * @param nninfo
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imquantize
+IM_API IM_STATUS imquantize(const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info, int sync = 1, int *release_fence_fd = NULL);
+
+/*
+ * ROP
+ *
+ * @param src
+ * @param dst
+ * @param rop_code
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imrop
+IM_API IM_STATUS imrop(const rga_buffer_t src, rga_buffer_t dst, int rop_code, int sync = 1, int *release_fence_fd = NULL);
+
+/*
  * process
  *
  * @param src
