@@ -204,6 +204,54 @@ IM_API rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t  handle,
 }
 
 #ifdef ANDROID
+IM_API rga_buffer_handle_t importbuffer_GraphicBuffer_handle(buffer_handle_t hnd) {
+    int ret = 0;
+    int fd = -1;
+    void *virt_addr = NULL;
+    std::vector<int> dstAttrs;
+    im_handle_param_t param;
+
+    RockchipRga& rkRga(RockchipRga::get());
+
+    ret = RkRgaGetHandleAttributes(hnd, &dstAttrs);
+    if (ret) {
+        ALOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
+        imSetErrorMsg("handle get Attributes fail, ret = %d,hnd = %p", ret, (void *)hnd);
+        return -1;
+    }
+
+    param.width = dstAttrs.at(ASTRIDE);
+    param.height = dstAttrs.at(AHEIGHT);
+    param.format = dstAttrs.at(AFORMAT);
+
+    ret = rkRga.RkRgaGetBufferFd(hnd, &fd);
+    if (ret)
+        ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(hnd));
+
+    if (fd <= 0) {
+        ret = rkRga.RkRgaGetHandleMapCpuAddress(hnd, &virt_addr);
+        if(!virt_addr) {
+            ALOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
+            imSetErrorMsg("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)hnd);
+            return -1;
+        } else {
+            return importbuffer_virtualaddr(virt_addr, &param);
+        }
+    } else {
+        return importbuffer_fd(fd, &param);
+    }
+}
+
+IM_API rga_buffer_handle_t importbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
+    return importbuffer_GraphicBuffer_handle(buf->handle);
+}
+
+IM_API rga_buffer_handle_t importbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
+    GraphicBuffer *gbuffer = reinterpret_cast<GraphicBuffer*>(buf);
+
+    return importbuffer_GraphicBuffer_handle(gbuffer->handle);
+}
+
 /*When wrapbuffer_GraphicBuffer and wrapbuffer_AHardwareBuffer are used, */
 /*it is necessary to check whether fd and virtual address of the return rga_buffer_t are valid parameters*/
 IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
