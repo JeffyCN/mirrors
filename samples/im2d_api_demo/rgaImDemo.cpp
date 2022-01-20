@@ -173,6 +173,8 @@ int main(int argc, char*  argv[]) {
     im_rect 		dst_rect;
     rga_buffer_t 	src;
     rga_buffer_t 	dst;
+	rga_buffer_handle_t src_handle;
+	rga_buffer_handle_t dst_handle;
 
 #ifdef ANDROID
 #if USE_AHARDWAREBUFFER
@@ -236,12 +238,8 @@ int main(int argc, char*  argv[]) {
             }
         }
 
-        src = wrapbuffer_AHardwareBuffer(src_buf);
-        dst = wrapbuffer_AHardwareBuffer(dst_buf);
-        if(src.width == 0 || dst.width == 0) {
-            printf("%s, %s", __FUNCTION__, imStrError());
-            return ERROR;
-        }
+		src_handle = importbuffer_AHardwareBuffer(src_buf);
+		dst_handle = importbuffer_AHardwareBuffer(dst_buf);
 #else
         src_buf = GraphicBuffer_Init(SRC_WIDTH, SRC_HEIGHT, SRC_FORMAT);
         dst_buf = GraphicBuffer_Init(DST_WIDTH, DST_HEIGHT, DST_FORMAT);
@@ -266,16 +264,10 @@ int main(int argc, char*  argv[]) {
             }
         }
 
-        src = wrapbuffer_GraphicBuffer(src_buf);
-        dst = wrapbuffer_GraphicBuffer(dst_buf);
-        if(src.width == 0 || dst.width == 0) {
-            printf("%s, %s\n", __FUNCTION__, imStrError());
-            return ERROR;
-        }
+		src_handle = importbuffer_GraphicBuffer(src_buf);
+		dst_handle = importbuffer_GraphicBuffer(dst_buf);
 #endif
-#endif
-
-#ifdef LINUX
+#elif LINUX
         src_buf = (char*)malloc(SRC_WIDTH*SRC_HEIGHT*get_bpp_from_format(SRC_FORMAT));
         dst_buf = (char*)malloc(DST_WIDTH*DST_HEIGHT*get_bpp_from_format(DST_FORMAT));
 
@@ -295,13 +287,16 @@ int main(int argc, char*  argv[]) {
             memset(dst_buf,0x00,DST_WIDTH*DST_HEIGHT*get_bpp_from_format(DST_FORMAT));
         }
 
-        src = wrapbuffer_virtualaddr(src_buf, SRC_WIDTH, SRC_HEIGHT, SRC_FORMAT);
-        dst = wrapbuffer_virtualaddr(dst_buf, DST_WIDTH, DST_HEIGHT, DST_FORMAT);
+		src_handle = importbuffer_virtualaddr(src_buf, SRC_WIDTH, SRC_HEIGHT, SRC_FORMAT);
+		dst_handle = importbuffer_virtualaddr(dst_buf, DST_WIDTH, DST_HEIGHT, DST_FORMAT);
+#endif
+
+		src = wrapbuffer_handle(src_handle, SRC_WIDTH, SRC_HEIGHT, SRC_FORMAT);
+        dst = wrapbuffer_handle(dst_handle, DST_WIDTH, DST_HEIGHT, DST_FORMAT);
         if(src.width == 0 || dst.width == 0) {
-            printf("%s, %s\n", __FUNCTION__, imStrError());
+            printf("%s, %s", __FUNCTION__, imStrError());
             return ERROR;
         }
-#endif
     }
 
 	do {
@@ -339,10 +334,11 @@ int main(int argc, char*  argv[]) {
 	            break;
 
 	        case MODE_RESIZE :    //rgaImDemo --resize=up/down
+				releasebuffer_handle(dst_handle);
+				dst_handle = -1;
 
 	            switch(parm_data[MODE_RESIZE]) {
 	                case IM_UP_SCALE :
-
 #ifdef ANDROID
 #if USE_AHARDWAREBUFFER
 	                    if(ERROR == AHardwareBuffer_Init(1920, 1080, DST_FORMAT, &dst_buf)) {
@@ -354,11 +350,8 @@ int main(int argc, char*  argv[]) {
 	                        printf("%s, write AHardwareBuffer error!\n", __FUNCTION__);
 	                        return ERROR;
 	                    }
-	                    dst = wrapbuffer_AHardwareBuffer(dst_buf);
-	                    if(dst.width == 0) {
-	                        printf("%s, dst: %s\n", __FUNCTION__, imStrError());
-	                        return ERROR;
-	                    }
+
+						dst_handle = importbuffer_AHardwareBuffer(dst_buf);
 #else
 	                    dst_buf = GraphicBuffer_Init(1920, 1080, DST_FORMAT);
 	                    if (dst_buf == NULL) {
@@ -369,15 +362,10 @@ int main(int argc, char*  argv[]) {
 	                        printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
 	                        return ERROR;
 	                    }
-	                    dst = wrapbuffer_GraphicBuffer(dst_buf);
-	                    if(dst.width == 0) {
-	                        printf("%s, dst: %s\n", __FUNCTION__, imStrError());
-	                        return ERROR;
-	                    }
-#endif
-#endif
 
-#ifdef LINUX
+						dst_handle = importbuffer_GraphicBuffer(dst_buf);
+#endif
+#elif LINUX
 	                    if (dst_buf != NULL) {
 	                        free(dst_buf);
 	                        dst_buf = NULL;
@@ -386,12 +374,13 @@ int main(int argc, char*  argv[]) {
 
 	                    memset(dst_buf,0x00,1920*1080*get_bpp_from_format(DST_FORMAT));
 
-	                    dst = wrapbuffer_virtualaddr(dst_buf, 1920, 1080, DST_FORMAT);
+						dst_handle = importbuffer_virtualaddr(dst_buf, 1920, 1080, DST_FORMAT);
+#endif
+	                    dst = wrapbuffer_handle(dst_handle, 1920, 1080, DST_FORMAT);
 	                    if(dst.width == 0) {
 	                        printf("%s, %s\n", __FUNCTION__, imStrError());
 	                        return ERROR;
 	                    }
-#endif
 
 	                    break;
 	                case IM_DOWN_SCALE :
@@ -408,11 +397,7 @@ int main(int argc, char*  argv[]) {
 	                        return ERROR;
 	                    }
 
-	                    dst = wrapbuffer_AHardwareBuffer(dst_buf);
-	                    if(dst.width == 0) {
-	                        printf("%s, dst: %s\n", __FUNCTION__, imStrError());
-	                        return ERROR;
-	                    }
+	                    dst_handle = importbuffer_AHardwareBuffer(dst_buf);
 #else
 	                    dst_buf = GraphicBuffer_Init(720, 480, DST_FORMAT);
 	                    if (dst_buf == NULL) {
@@ -423,15 +408,10 @@ int main(int argc, char*  argv[]) {
 	                        printf("%s, write Graphicbuffer error!\n", __FUNCTION__);
 	                        return ERROR;
 	                    }
-	                    dst = wrapbuffer_GraphicBuffer(dst_buf);
-	                    if(dst.width == 0) {
-	                        printf("%s, dst: %s\n", __FUNCTION__, imStrError());
-	                        return ERROR;
-	                    }
-#endif
-#endif
 
-#ifdef LINUX
+	                    dst_handle = importbuffer_GraphicBuffer(dst_buf);
+#endif
+#elif LINUX
 	                    if (dst_buf != NULL) {
 	                        free(dst_buf);
 	                        dst_buf = NULL;
@@ -440,13 +420,13 @@ int main(int argc, char*  argv[]) {
 
 	                    memset(dst_buf,0x00,720*480*get_bpp_from_format(DST_FORMAT));
 
-	                    dst = wrapbuffer_virtualaddr(dst_buf, 720, 480, DST_FORMAT);
+	                    dst_handle = importbuffer_virtualaddr(dst_buf, 1920, 1080, DST_FORMAT);
+#endif
+	                    dst = wrapbuffer_handle(dst_handle, 720, 480, DST_FORMAT);
 	                    if(dst.width == 0) {
 	                        printf("%s, %s\n", __FUNCTION__, imStrError());
 	                        return ERROR;
 	                    }
-#endif
-
 	                    break;
 	            }
 
@@ -645,6 +625,10 @@ int main(int argc, char*  argv[]) {
 			usleep(200000);
 	    }
 	}while(while_time);
+
+	/********** release rga buffer handle **********/
+	releasebuffer_handle(src_handle);
+	releasebuffer_handle(dst_handle);
 
     /********** output buf data to file **********/
 #ifdef ANDROID
