@@ -1165,7 +1165,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                            im_rect srect, im_rect drect, im_rect prect,
-                           int in_fence_fd, int *out_fence_fd, im_opt_t *opt, int usage) {
+                           int acquire_fence_fd, int *release_fence_fd, im_opt_t *opt, int usage) {
     rga_info_t srcinfo;
     rga_info_t dstinfo;
     rga_info_t patinfo;
@@ -1443,12 +1443,19 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
     RockchipRga& rkRga(RockchipRga::get());
 
-    if (usage & IM_ASYNC)
-        dstinfo.sync_mode = RGA_BLIT_ASYNC;
-    else if (usage & IM_SYNC)
-        dstinfo.sync_mode = RGA_BLIT_SYNC;
+    if (usage & IM_ASYNC) {
+        if (release_fence_fd == NULL) {
+            imSetErrorMsg("Async mode release_fence_fd cannot be NULL!");
+            return IM_STATUS_ILLEGAL_PARAM;
+        }
 
-    dstinfo.in_fence_fd = in_fence_fd;
+        dstinfo.sync_mode = RGA_BLIT_ASYNC;
+
+    } else if (usage & IM_SYNC) {
+        dstinfo.sync_mode = RGA_BLIT_SYNC;
+    }
+
+    dstinfo.in_fence_fd = acquire_fence_fd;
     dstinfo.core = opt->core ? opt->core : g_im2d_context.core;
     dstinfo.priority = opt->priority ? opt->priority : g_im2d_context.priority;
 
@@ -1476,7 +1483,8 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         return IM_STATUS_FAILED;
     }
 
-    *out_fence_fd = dstinfo.out_fence_fd;
+    if (usage & IM_ASYNC)
+        *release_fence_fd = dstinfo.out_fence_fd;
 
     return IM_STATUS_SUCCESS;
 }
