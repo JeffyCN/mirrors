@@ -33,12 +33,13 @@ extern "C" {
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
+#define MIN(n1, n2) ((n1) < (n2) ? (n1) : (n2))
 
 /* RGA im2d api verison */
 #define RGA_API_MAJOR_VERSION	 1
 #define RGA_API_MINOR_VERSION	 7
 #define RGA_API_REVISION_VERSION 1
-#define RGA_API_BUILD_VERSION	 10
+#define RGA_API_BUILD_VERSION	 11
 
 #define RGA_API_VERSION STR(RGA_API_MAJOR_VERSION) "." STR(RGA_API_MINOR_VERSION) "." STR(RGA_API_REVISION_VERSION) "_[" STR(RGA_API_BUILD_VERSION) "]"
 #define RGA_API_FULL_VERSION "rga_api version " RGA_API_VERSION
@@ -253,12 +254,12 @@ typedef struct rga_memory_parm im_handle_param_t;
 #define imStrError(...) \
     ({ \
         const char* im2d_api_err; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
             im2d_api_err = imStrError_t(IM_STATUS_INVALID_PARAM); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_err = imStrError_t((IM_STATUS)im2d_api_args[0]); \
+        } else if (__argc == 1){ \
+            im2d_api_err = imStrError_t((IM_STATUS)__args[0]); \
         } else { \
             im2d_api_err = ("Fatal error, imStrError() too many parameters\n"); \
             printf("Fatal error, imStrError() too many parameters\n"); \
@@ -312,12 +313,12 @@ IM_API IM_STATUS releasebuffer_handle(rga_buffer_handle_t handle);
 #define wrapbuffer_handle(handle, width, height, format, ...) \
     ({ \
         rga_buffer_t im2d_api_buffer; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
             im2d_api_buffer = wrapbuffer_handle_t(handle, width, height, width, height, format); \
-        } else if (im2d_api_argc == 2){ \
-            im2d_api_buffer = wrapbuffer_handle_t(handle, width, height, im2d_api_args[0], im2d_api_args[1], format); \
+        } else if (__argc == 2){ \
+            im2d_api_buffer = wrapbuffer_handle_t(handle, width, height, __args[0], __args[1], format); \
         } else { \
             printf("invalid parameter\n"); \
         } \
@@ -329,12 +330,12 @@ IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t handle, int width, i
 #define wrapbuffer_virtualaddr(vir_addr, width, height, format, ...) \
     ({ \
         rga_buffer_t im2d_api_buffer; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
             im2d_api_buffer = wrapbuffer_virtualaddr_t(vir_addr, width, height, width, height, format); \
-        } else if (im2d_api_argc == 2){ \
-            im2d_api_buffer = wrapbuffer_virtualaddr_t(vir_addr, width, height, im2d_api_args[0], im2d_api_args[1], format); \
+        } else if (__argc == 2){ \
+            im2d_api_buffer = wrapbuffer_virtualaddr_t(vir_addr, width, height, __args[0], __args[1], format); \
         } else { \
             printf("invalid parameter\n"); \
         } \
@@ -344,12 +345,12 @@ IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t handle, int width, i
 #define wrapbuffer_physicaladdr(phy_addr, width, height, format, ...) \
     ({ \
         rga_buffer_t im2d_api_buffer; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
             im2d_api_buffer = wrapbuffer_physicaladdr_t(phy_addr, width, height, width, height, format); \
-        } else if (im2d_api_argc == 2){ \
-            im2d_api_buffer = wrapbuffer_physicaladdr_t(phy_addr, width, height, im2d_api_args[0], im2d_api_args[1], format); \
+        } else if (__argc == 2){ \
+            im2d_api_buffer = wrapbuffer_physicaladdr_t(phy_addr, width, height, __args[0], __args[1], format); \
         } else { \
             printf("invalid parameter\n"); \
         } \
@@ -359,12 +360,12 @@ IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t handle, int width, i
 #define wrapbuffer_fd(fd, width, height, format, ...) \
     ({ \
         rga_buffer_t im2d_api_buffer; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
             im2d_api_buffer = wrapbuffer_fd_t(fd, width, height, width, height, format); \
-        } else if (im2d_api_argc == 2){ \
-            im2d_api_buffer = wrapbuffer_fd_t(fd, width, height, im2d_api_args[0], im2d_api_args[1], format); \
+        } else if (__argc == 2){ \
+            im2d_api_buffer = wrapbuffer_fd_t(fd, width, height, __args[0], __args[1], format); \
         } else { \
             printf("invalid parameter\n"); \
         } \
@@ -404,45 +405,45 @@ IM_API const char* querystring(int name);
  */
 #define imcheck(src, dst, src_rect, dst_rect, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_NOERROR; \
-        rga_buffer_t im2d_api_pat; \
-        im_rect im2d_api_pat_rect; \
-        memset(&im2d_api_pat, 0, sizeof(rga_buffer_t)); \
-        memset(&im2d_api_pat_rect, 0, sizeof(im_rect)); \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            rga_check_perpare((rga_buffer_t *)(&src), (rga_buffer_t *)(&dst), (rga_buffer_t *)(&im2d_api_pat), \
-                              (im_rect *)(&src_rect), (im_rect *)(&dst_rect), (im_rect *)(&im2d_api_pat_rect), 0); \
-            im2d_api_ret = imcheck_t(src, dst, im2d_api_pat, src_rect, dst_rect, im2d_api_pat_rect, 0); \
-        } else if (im2d_api_argc == 1){ \
-            rga_check_perpare((rga_buffer_t *)(&src), (rga_buffer_t *)(&dst), (rga_buffer_t *)(&im2d_api_pat), \
-                              (im_rect *)(&src_rect), (im_rect *)(&dst_rect), (im_rect *)(&im2d_api_pat_rect), im2d_api_args[0]); \
-            im2d_api_ret = imcheck_t(src, dst, im2d_api_pat, src_rect, dst_rect, im2d_api_pat_rect, im2d_api_args[0]); \
+        IM_STATUS __ret = IM_STATUS_NOERROR; \
+        rga_buffer_t __pat; \
+        im_rect __pat_rect; \
+        memset(&__pat, 0, sizeof(rga_buffer_t)); \
+        memset(&__pat_rect, 0, sizeof(im_rect)); \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            rga_check_perpare((rga_buffer_t *)(&src), (rga_buffer_t *)(&dst), (rga_buffer_t *)(&__pat), \
+                              (im_rect *)(&src_rect), (im_rect *)(&dst_rect), (im_rect *)(&__pat_rect), 0); \
+            __ret = imcheck_t(src, dst, __pat, src_rect, dst_rect, __pat_rect, 0); \
+        } else if (__argc == 1){ \
+            rga_check_perpare((rga_buffer_t *)(&src), (rga_buffer_t *)(&dst), (rga_buffer_t *)(&__pat), \
+                              (im_rect *)(&src_rect), (im_rect *)(&dst_rect), (im_rect *)(&__pat_rect), __args[0]); \
+            __ret = imcheck_t(src, dst, __pat, src_rect, dst_rect, __pat_rect, __args[0]); \
         } else { \
-            im2d_api_ret = IM_STATUS_FAILED; \
+            __ret = IM_STATUS_FAILED; \
             printf("check failed\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 #define imcheck_composite(src, dst, pat, src_rect, dst_rect, pat_rect, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_NOERROR; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
+        IM_STATUS __ret = IM_STATUS_NOERROR; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
             rga_check_perpare((rga_buffer_t *)(&src), (rga_buffer_t *)(&dst), (rga_buffer_t *)(&pat), \
                               (im_rect *)(&src_rect), (im_rect *)(&dst_rect), (im_rect *)(&pat_rect), 0); \
-            im2d_api_ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, 0); \
-        } else if (im2d_api_argc == 1){ \
+            __ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, 0); \
+        } else if (__argc == 1){ \
             rga_check_perpare((rga_buffer_t *)(&src), (rga_buffer_t *)(&dst), (rga_buffer_t *)(&pat), \
-                              (im_rect *)(&src_rect), (im_rect *)(&dst_rect), (im_rect *)(&pat_rect), im2d_api_args[0]); \
-            im2d_api_ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, im2d_api_args[0]); \
+                              (im_rect *)(&src_rect), (im_rect *)(&dst_rect), (im_rect *)(&pat_rect), __args[0]); \
+            __ret = imcheck_t(src, dst, pat, src_rect, dst_rect, pat_rect, __args[0]); \
         } else { \
-            im2d_api_ret = IM_STATUS_FAILED; \
+            __ret = IM_STATUS_FAILED; \
             printf("check failed\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 IM_API void rga_check_perpare(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
                               im_rect *src_rect, im_rect *dst_rect, im_rect *pat_rect, int mode_usage);
@@ -464,22 +465,22 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
  */
 #define imresize(src, dst, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        double im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(double); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imresize_t(src, dst, 0, 0, INTER_LINEAR, 1); \
-        } else if (im2d_api_argc == 2){ \
-            im2d_api_ret = imresize_t(src, dst, im2d_api_args[0], im2d_api_args[1], INTER_LINEAR, 1); \
-        } else if (im2d_api_argc == 3){ \
-            im2d_api_ret = imresize_t(src, dst, im2d_api_args[0], im2d_api_args[1], (int)im2d_api_args[2], 1); \
-        } else if (im2d_api_argc == 4){ \
-            im2d_api_ret = imresize_t(src, dst, im2d_api_args[0], im2d_api_args[1], (int)im2d_api_args[2], (int)im2d_api_args[3]); \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        double __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(double); \
+        if (__argc == 0) { \
+            __ret = imresize_t(src, dst, 0, 0, INTER_LINEAR, 1); \
+        } else if (__argc == 2){ \
+            __ret = imresize_t(src, dst, __args[MIN(__argc, 0)], __args[MIN(__argc, 1)], INTER_LINEAR, 1); \
+        } else if (__argc == 3){ \
+            __ret = imresize_t(src, dst, __args[MIN(__argc, 0)], __args[MIN(__argc, 1)], (int)__args[MIN(__argc, 2)], 1); \
+        } else if (__argc == 4){ \
+            __ret = imresize_t(src, dst, __args[MIN(__argc, 0)], __args[MIN(__argc, 1)], (int)__args[MIN(__argc, 2)], (int)__args[MIN(__argc, 3)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 
 #define impyramid(src, dst, direction) \
@@ -504,18 +505,18 @@ IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx,
  */
 #define imcrop(src, dst, rect, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imcrop_t(src, dst, rect, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imcrop_t(src, dst, rect, im2d_api_args[0]);; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imcrop_t(src, dst, rect, 1); \
+        } else if (__argc == 1){ \
+            __ret = imcrop_t(src, dst, rect, (int)__args[MIN(__argc, 0)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 
 IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, int sync);
@@ -536,18 +537,18 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
  */
 #define imrotate(src, dst, rotation, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imrotate_t(src, dst, rotation, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imrotate_t(src, dst, rotation, im2d_api_args[0]);; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imrotate_t(src, dst, rotation, 1); \
+        } else if (__argc == 1){ \
+            __ret = imrotate_t(src, dst, rotation, (int)__args[MIN(__argc, 0)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 
 IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotation, int sync);
@@ -567,18 +568,18 @@ IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotati
  */
 #define imflip(src, dst, mode, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imflip_t(src, dst, mode, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imflip_t(src, dst, mode, im2d_api_args[0]);; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imflip_t(src, dst, mode, 1); \
+        } else if (__argc == 1){ \
+            __ret = imflip_t(src, dst, mode, (int)__args[MIN(__argc, 0)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 
 IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, int sync);
@@ -597,50 +598,50 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
  */
 #define imfill(buf, rect, color, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imfill_t(buf, rect, color, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imfill_t(buf, rect, color, im2d_api_args[0]);; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imfill_t(buf, rect, color, 1); \
+        } else if (__argc == 1){ \
+            __ret = imfill_t(buf, rect, color, (int)__args[MIN(__argc, 0)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 
 #define imreset(buf, rect, color, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imfill_t(buf, rect, color, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imfill_t(buf, rect, color, im2d_api_args[0]);; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imfill_t(buf, rect, color, 1); \
+        } else if (__argc == 1){ \
+            __ret = imfill_t(buf, rect, color, (int)__args[MIN(__argc, 0)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 
 #define imdraw(buf, rect, color, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imfill_t(buf, rect, color, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imfill_t(buf, rect, color, im2d_api_args[0]);; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imfill_t(buf, rect, color, 1); \
+        } else if (__argc == 1){ \
+            __ret = imfill_t(buf, rect, color, (int)__args[MIN(__argc, 0)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync);
 
@@ -657,18 +658,18 @@ IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync);
  */
 #define impalette(src, dst, lut,  ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = impalette_t(src, dst, lut, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = impalette_t(src, dst, lut, im2d_api_args[0]);; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = impalette_t(src, dst, lut, 1); \
+        } else if (__argc == 1){ \
+            __ret = impalette_t(src, dst, lut, (int)__args[MIN(__argc, 0)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 IM_API IM_STATUS impalette_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut, int sync);
 
@@ -686,18 +687,18 @@ IM_API IM_STATUS impalette_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lu
  */
 #define imtranslate(src, dst, x, y, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imtranslate_t(src, dst, x, y, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imtranslate_t(src, dst, x, y, im2d_api_args[0]);; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imtranslate_t(src, dst, x, y, 1); \
+        } else if (__argc == 1){ \
+            __ret = imtranslate_t(src, dst, x, y, (int)__args[MIN(__argc, 0)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync);
 
@@ -713,18 +714,18 @@ IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, 
  */
 #define imcopy(src, dst, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imcopy_t(src, dst, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imcopy_t(src, dst, im2d_api_args[0]);; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imcopy_t(src, dst, 1); \
+        } else if (__argc == 1){ \
+            __ret = imcopy_t(src, dst, (int)__args[MIN(__argc, 0)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 
 IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
@@ -744,39 +745,39 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
  */
 #define imblend(srcA, dst, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
         rga_buffer_t srcB; \
         memset(&srcB, 0x00, sizeof(rga_buffer_t)); \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_SRC_OVER, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imblend_t(srcA, srcB, dst, im2d_api_args[0], 1); \
-        } else if (im2d_api_argc == 2){ \
-            im2d_api_ret = imblend_t(srcA, srcB, dst, im2d_api_args[0], im2d_api_args[1]); \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_SRC_OVER, 1); \
+        } else if (__argc == 1){ \
+            __ret = imblend_t(srcA, srcB, dst, (int)__args[MIN(__argc, 0)], 1); \
+        } else if (__argc == 2){ \
+            __ret = imblend_t(srcA, srcB, dst, (int)__args[MIN(__argc, 0)], (int)__args[MIN(__argc, 1)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 #define imcomposite(srcA, srcB, dst, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_SRC_OVER, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imblend_t(srcA, srcB, dst, im2d_api_args[0], 1); \
-        } else if (im2d_api_argc == 2){ \
-            im2d_api_ret = imblend_t(srcA, srcB, dst, im2d_api_args[0], im2d_api_args[1]); \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_SRC_OVER, 1); \
+        } else if (__argc == 1){ \
+            __ret = imblend_t(srcA, srcB, dst, (int)__args[MIN(__argc, 0)], 1); \
+        } else if (__argc == 2){ \
+            __ret = imblend_t(srcA, srcB, dst, (int)__args[MIN(__argc, 0)], (int)__args[MIN(__argc, 1)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode, int sync);
 
@@ -795,20 +796,20 @@ IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga
  */
 #define imcolorkey(src, dst, range, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imcolorkey_t(src, dst, range, IM_ALPHA_COLORKEY_NORMAL, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imcolorkey_t(src, dst, range, im2d_api_args[0], 1); \
-        } else if (im2d_api_argc == 2){ \
-            im2d_api_ret = imcolorkey_t(src, dst, range, im2d_api_args[0], im2d_api_args[1]); \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imcolorkey_t(src, dst, range, IM_ALPHA_COLORKEY_NORMAL, 1); \
+        } else if (__argc == 1){ \
+            __ret = imcolorkey_t(src, dst, range, (int)__args[MIN(__argc, 0)], 1); \
+        } else if (__argc == 2){ \
+            __ret = imcolorkey_t(src, dst, range, (int)__args[MIN(__argc, 0)], (int)__args[MIN(__argc, 1)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 IM_API IM_STATUS imcolorkey_t(const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode, int sync);
 
@@ -828,20 +829,20 @@ IM_API IM_STATUS imcolorkey_t(const rga_buffer_t src, rga_buffer_t dst, im_color
  */
 #define imcvtcolor(src, dst, sfmt, dfmt, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imcvtcolor_t(src, dst, sfmt, dfmt, IM_COLOR_SPACE_DEFAULT, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imcvtcolor_t(src, dst, sfmt, dfmt, im2d_api_args[0], 1); \
-        } else if (im2d_api_argc == 2){ \
-            im2d_api_ret = imcvtcolor_t(src, dst, sfmt, dfmt, im2d_api_args[0], im2d_api_args[1]); \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imcvtcolor_t(src, dst, sfmt, dfmt, IM_COLOR_SPACE_DEFAULT, 1); \
+        } else if (__argc == 1){ \
+            __ret = imcvtcolor_t(src, dst, sfmt, dfmt, (int)__args[MIN(__argc, 0)], 1); \
+        } else if (__argc == 2){ \
+            __ret = imcvtcolor_t(src, dst, sfmt, dfmt, (int)__args[MIN(__argc, 0)], (int)__args[MIN(__argc, 1)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 
 IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync);
@@ -859,18 +860,18 @@ IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int 
  */
 #define imquantize(src, dst, nn_info, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imquantize_t(src, dst, nn_info, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imquantize_t(src, dst, nn_info, im2d_api_args[0]);; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imquantize_t(src, dst, nn_info, 1); \
+        } else if (__argc == 1){ \
+            __ret = imquantize_t(src, dst, nn_info, (int)__args[MIN(__argc, 0)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 
 IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info, int sync);
@@ -888,18 +889,18 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
  */
 #define imrop(src, dst, rop_code, ...) \
     ({ \
-        IM_STATUS im2d_api_ret = IM_STATUS_SUCCESS; \
-        int im2d_api_args[] = {__VA_ARGS__}; \
-        int im2d_api_argc = sizeof(im2d_api_args)/sizeof(int); \
-        if (im2d_api_argc == 0) { \
-            im2d_api_ret = imrop_t(src, dst, rop_code, 1); \
-        } else if (im2d_api_argc == 1){ \
-            im2d_api_ret = imrop_t(src, dst, rop_code, im2d_api_args[0]);; \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imrop_t(src, dst, rop_code, 1); \
+        } else if (__argc == 1){ \
+            __ret = imrop_t(src, dst, rop_code, (int)__args[MIN(__argc, 0)]); \
         } else { \
-            im2d_api_ret = IM_STATUS_INVALID_PARAM; \
+            __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
         } \
-        im2d_api_ret; \
+        __ret; \
     })
 IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code, int sync);
 

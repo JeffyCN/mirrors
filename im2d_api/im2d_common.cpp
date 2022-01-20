@@ -34,7 +34,7 @@
 using namespace android;
 #endif
 
-#define MAX(p1, p2) (p1 > p2 ? p1 : p2)
+#define MAX(n1, n2) ((n1) > (n2) ? (n1) : (n2))
 #define GET_GCD(n1, n2) \
     ({ \
         int i; \
