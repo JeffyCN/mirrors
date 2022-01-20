@@ -4,7 +4,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 ### 版本说明
 
-**RGA API** 版本: 1.6.4
+**RGA API** 版本: 1.7.2
 
 ### 适用芯片平台
 
@@ -39,7 +39,7 @@ $ chmod +x ./cmake-android.sh
 $ ./cmake-android.sh
 ```
 
-**[编译选项]**
+​    **[编译选项]**
 
 1. 指定ANDROID_NDK_HOME为NDK开发包的路径
 2. 指定CMAKE_ANDROID为android SDK包中cmake可执行文件的路径
@@ -55,7 +55,7 @@ $ chmod +x ./cmake-android.sh
 $ ./cmake-linux.sh
 ```
 
-**[编译选项]**
+​    **[编译选项]**
 
 1. 指定TOOLCHAIN_HOME为交叉编译工具的路径
 2. 指定CMAKE_C_COMPILER为gcc编译命令的路径
@@ -76,17 +76,13 @@ $ ninja -C build-rga install
 
 * **头文件引用**
 
-  * 调用librga
-
-    include/RockchipRga.h
-
-  * 调用im2d api
+  * C++调用im2d api
 
     im2d_api/im2d.hpp
 
-  * C_API
+  * C调用im2d api
 
-    include/RgaApi.h
+    im2d_api/im2d.h
 
 * **库文件**
 

@@ -2,9 +2,9 @@
 
 文件标识：RK-PC-YF-0002
 
-发布版本：V2.0.0
+发布版本：V2.1.0
 
-日期：2020-07-10
+日期：2022-01-20
 
 文件密级：□绝密   □秘密   □内部资料   ■公开
 
@@ -22,7 +22,7 @@
 
 本文档可能提及的其他所有注册商标或商标，由其各自拥有者所有。
 
-**版权所有** **© 2019** **瑞芯微电子股份有限公司**
+**版权所有** **© 2022 **瑞芯微电子股份有限公司**
 
 超越合理使用范畴，非经本公司书面许可，任何单位和个人不得擅自摘抄、复制本文档内容的部分或全部，并不得以任何形式传播。
 
@@ -51,12 +51,12 @@ Rockchip Electronics Co., Ltd.
 
 **修订记录**
 
-| **日期**   | **版本** | **作者**           | **修改说明**     |
-| ---------- | -------- | ------------------ | ---------------- |
-| 2020/06/24 | 1.0.0    | 陈城，李煌         | 初始版本         |
-| 2020/10/16 | 1.0.1    | 陈城，李煌，余乔伟 | 更新部分接口     |
-| 2021/12/07 | 2.0.0    | 陈城，李煌，余乔伟 | 增加RGA3相关支持 |
-|            |          |                    |                  |
+| **日期**   | **版本** | **作者**           | **修改说明**                                                 |
+| ---------- | -------- | ------------------ | ------------------------------------------------------------ |
+| 2020/06/24 | 1.0.0    | 陈城，李煌         | 初始版本                                                     |
+| 2020/10/16 | 1.0.1    | 陈城，李煌，余乔伟 | 更新部分接口                                                 |
+| 2021/12/07 | 2.0.0    | 陈城，李煌，余乔伟 | 增加RGA3相关支持                                             |
+| 2022/01/20 | 2.1.0    | 陈城，李煌，余乔伟 | - 更新im2d api接口说明<br/>- 更新硬件指标说明，以及对齐限制<br/>- 增加数据结构介绍 |
 
 
 
@@ -83,8 +83,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">Chip</td>
       <td rowspan="1" colspan="2">Source</td>
       <td rowspan="1" colspan="2">Destination</td>
+      <td rowspan="2">Function</td>
       <td rowspan="2">Pixels/Cycle</td>
-      <td rowspan="2">Performance w/o scale<br/>(freq = 300Mhz)</td>
    </tr>
    <tr>
        <td>min</td>
@@ -100,8 +100,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">8192x8192</td>
       <td rowspan="4">2x2</td>
       <td rowspan="4">2048x2048</td>
+      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/2~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>ROP</td>
       <td rowspan="4">1</td>
-      <td rowspan="4">≈300Mpix/s</td>
    </tr>
    <tr>
       <td>Jaguar Plus</td>
@@ -123,8 +123,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">8192x8192</td>
       <td rowspan="2">2x2</td>
       <td rowspan="2">2048x2048</td>
+      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/2~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette</td>
       <td rowspan="2">1</td>
-      <td rowspan="2">≈300Mpix/s</td>
    </tr>
    <tr>
       <td>Granite</td>
@@ -138,8 +138,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">8192x8192</td>
       <td rowspan="2">2x2</td>
       <td rowspan="2">4096x4096</td>
+      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP</td>
       <td rowspan="2">2</td>
-      <td rowspan="2">≈600Mpix/s</td>
    </tr>
    <tr>
       <td>Capricorn</td>
@@ -153,8 +153,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">8192x8192</td>
       <td rowspan="2">2x2</td>
       <td rowspan="2">4096x4096</td>
+      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP</td>
       <td rowspan="2">2</td>
-      <td rowspan="2">≈520Mpix/s</td>
    </tr>
    <tr>
       <td>BMW</td>
@@ -168,8 +168,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">8192x8192</td>
       <td rowspan="4">2x2</td>
       <td rowspan="4">4096x4096</td>
+      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette</td>
       <td rowspan="4">2</td>
-      <td rowspan="4">≈520Mpix/s</td>
    </tr>
    <tr>
       <td>Infiniti</td>
@@ -184,15 +184,15 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RK1808</td>
    </tr>
    <tr>
-      <td rowspan="4">RGA2-Enhance</td>
+      <td rowspan="5">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
-      <td rowspan="4">2x2</td>
-      <td rowspan="4">8192x8192</td>
-      <td rowspan="4">2x2</td>
-      <td rowspan="4">4096x4096</td>
-      <td rowspan="4">2</td>
-      <td rowspan="4">≈600Mpix/s</td>
+      <td rowspan="5">2x2</td>
+      <td rowspan="5">8192x8192</td>
+      <td rowspan="5">2x2</td>
+      <td rowspan="5">4096x4096</td>
+      <td rowspan="5">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for 1108/1109)<br/>NN quantize(NA for 3399/1108)</td>
+      <td rowspan="5">2</td>
    </tr>
    <tr>
       <td>Mercury</td>
@@ -207,20 +207,24 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RK3566/RK3568</td>
    </tr>
    <tr>
+      <td>Orion</td>
+      <td>RK3588</td>
+   </tr>
+   <tr>
       <td rowspan="1">RGA3</td>
       <td>Orion</td>
       <td>RK3588</td>
       <td rowspan="1">128x128</td>
-      <td rowspan="1">8128x8128</td>
+      <td rowspan="1">8176x8176</td>
       <td rowspan="1">128x128</td>
       <td rowspan="1">8128x8128</td>
-      <td rowspan="1">4 (by pass)<br/>2 (scale)</td>
-      <td rowspan="1">≈1200Mpix/s (by pass)<br/>≈600Mpix/s (scale)</td>
+      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>FBC</td>
+      <td rowspan="1">3 (by pass)<br/>2 (scale)</td>
    </tr>
 </table>
 
 
-* 预期性能为默认RGA频率下计算得出，实际运行性能表现与内存频率等相关，列表数据仅供参考。
+> 预期性能为默认RGA频率下计算得出，实际运行性能表现与内存频率等相关，列表数据仅供参考。
 
 
 
@@ -243,8 +247,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">RGA1</td>
       <td>Pagani</td>
       <td>RK3066</td>
-      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit<br/>BPP8/BPP4/BPP2/BPP1</td>
-      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (only for Blur/sharpness)<br/>YUV422 8bit (only for Blur/sharpness)</td>
+      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1</td>
+      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar, only for Blur/sharpness)<br/>YUV422 8bit (planar/semi-planar, only for Blur/sharpness)</td>
    </tr>
    <tr>
       <td>Jaguar Plus</td>
@@ -262,8 +266,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA1_plus</td>
       <td>Audi</td>
       <td>RK3128</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422<br/>BPP8/BPP4/BPP2/BPP1</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (only for Blur/sharpness)<br/>YUV422 8it (only for Blur/sharpness)<br/>YUV420 8bit (only for normal Bitblt without alpha)<br/>YUV422 8bit (only for normal Bitblt without alpha)</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar, only for normal Bitblt without alpha)<br/>YUV422 8bit (planar/semi-planar, only for normal Bitblt without alpha)</td>
    </tr>
    <tr>
       <td>Granite</td>
@@ -273,8 +277,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA2</td>
       <td>Lincoln</td>
       <td>RK3288/3288w</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)</td>
    </tr>
    <tr>
       <td>Capricorn</td>
@@ -284,8 +288,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA2-Lite0</td>
       <td>Maybach</td>
       <td>RK3368</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)</td>
    </tr>
    <tr>
       <td>BMW</td>
@@ -295,8 +299,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">RGA2-Lite1</td>
       <td>Benz</td>
       <td>RK3228</td>
-      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV420 10bit<br/>YUV422 8bit<br/>YUV422 10bit<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
-      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit</td>
+      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>YUV420 10bit (planar/semi-planar)<br/>YUV422 10bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
+      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)</td>
    </tr>
    <tr>
       <td>Infiniti</td>
@@ -311,11 +315,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RK1808</td>
    </tr>
    <tr>
-      <td rowspan="4">RGA2-Enhance</td>
+      <td rowspan="5">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV420 10bit<br/>YUV422 8bit<br/>YUV422 10bit<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit<br/>YUYV422<br/>YUYV420</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>YUV420 10bit (planar/semi-planar)<br/>YUV422 10bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
+      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar/packed)<br/>YUV422 8bit (planar/semi-planar/packed)</td>
    </tr>
    <tr>
       <td>Mercury</td>
@@ -324,24 +328,25 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
    <tr>
       <td>Puma</td>
       <td>RV1126/ RV1109</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV420 10bit<br/>YUV422 8bit<br/>YUV422 10bit<br/>YUYV/YVYU/UYVY/VYUY422<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit<br/>YUV422 8bit<br/>YUYV/YVYU/UYVY/VYUY422<br/>YUYV/YVYU/UYVY/VYUY420<br/>YUV400<br/>Y4/Y1</td>
+      <td rowspan="3">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar/packed)<br/>YUV420 10bit (planar/semi-planar)<br/>YUV422 10bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
+      <td rowspan="3">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar/packed)<br/>YUV422 8bit (planar/semi-planar/packed)<br/>YUV400<br/>Y4/Y1</td>
    </tr>
    <tr>
       <td>skylarkV2</td>
       <td>RK3566/RK3568</td>
    </tr>
    <tr>
+   	  <td>Orion</td>
+      <td>RK3588</td>
+   </tr>
+   <tr>
       <td rowspan="1">RGA3</td>
       <td>Orion</td>
       <td>RK3588</td>
-      <td rowspan="1">RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (only semi-planer)<br/>YUV420 10bit (only semi-planer)<br/>YUV422 8bit (only semi-planer)<br/>YUV422 10bit (only semi-planer)<br/>YUYV/YVYU/UYVY/VYUY422</td>
-      <td rowspan="1">RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (only semi-planer)<br/>YUV420 10bit (only semi-planer)<br/>YUV422 8bit (only semi-planer)<br/>YUV422 10bit (only semi-planer)<br/>YUYV/YVYU/UYVY/VYUY422</td>
+      <td rowspan="1">RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (semi-planar)<br/>YUV422 8bit (semi-planar/packed)<br/>YUV420 10bit (semi-planar)<br/>YUV422 10bit (semi-planar)</td>
+      <td rowspan="1">RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (semi-planar)<br/>YUV422 8bit (semi-planar/packed)<br/>YUV420 10bit (semi-planar)<br/>YUV422 10bit (semi-planar)</td>
    </tr>
 </table>
-
-
-
 
 > 注：Y4格式即2的4次方色阶灰度图，Y400格式即2的8次方色阶灰度图。
 
@@ -353,41 +358,82 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 <table>
     <tr>
-        <td>HW_version</td>
+        <td>Version</td>
+        <td>Byte_stride</td>
         <td>Format</td>
         <td>Alignment</td>
     </tr>
 	<tr>
-        <td rowspan="4">RGA1<br/>RGA1_Plus<br/>RGA2<br/>RGA2_Lite0<br/>RGA2_Lite1<br/>RGA2_Enhance</td>
+        <td rowspan="4">RGA1<br/>RGA1_Plus</td>
+        <td rowspan="4">4</td>
+        <td>RGBA/BGRA/ARGB/ABGR8888</td>
+        <td>width stride无对齐要求</td>
+    </tr>
+    <tr>
         <td>RGB/BGR888</td>
         <td>width stride须4对齐</td>
     </tr>
     <tr>
-        <td>RGB/BGR565</td>
+        <td>RGB/BGR565<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551</td>
         <td>width stride须2对齐</td>
     </tr>
     <tr>
-        <td>YUV420 8bit<br/>YUV422 8bit<br/>YUV400<br/>Y4/Y1<br/>YUYV/YVYU/UYVY/VYUY422<br/>YUYV/YVYU/UYVY/VYUY420</td>
-        <td>width stride须4对齐，其余参数均须2对齐</td>
+        <td>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)</td>
+        <td>width stride须4对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
     </tr>
     <tr>
-        <td>YUV420 10bit<br/>422 10bit</td>
-        <td>width stride须16对齐，其余参数均须2对齐</td>
+        <td rowspan="5">RGA2<br/>RGA2_Lite0<br/>RGA2_Lite1<br/>RGA2_Enhance</td>
+        <td rowspan="5">4</td>
+        <td>RGBA/BGRA/ARGB/ABGR8888</td>
+        <td>width stride无对齐要求</td>
     </tr>
-	<tr>
-		<td rowspan="3">RGA3</td>
-        <td>RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/></td>
+    <tr>
+        <td>RGB/BGR888</td>
         <td>width stride须4对齐</td>
     </tr>
-	<tr>
-        <td>YUV420 8bit<br/>YUV420 10bit<br/>YUV422 8bit<br/>YUV422 10bit<br/>YUYV/YVYU/UYVY/VYUY422</td>
-        <td>width stride须4对齐，其余参数均须2对齐</td>
-	</tr>
     <tr>
-        <td>FBC mode</td>
+        <td>RGB/BGR565<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551</td>
+        <td>width stride须2对齐</td>
+    </tr>
+    <tr>
+        <td>YUV420 8bit (planar/semi-planar/packed)<br/>YUV422 8bit (planar/semi-planar/packed)<br/>YUV400<br/>Y4/Y1</td>
+        <td>width stride须4对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
+    </tr>
+    <tr>
+        <td>YUV420 10bit (planar/semi-planar)<br/>YUV422 10bit (planar/semi-planar)</td>
+        <td>width stride须16对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
+    </tr>
+	<tr>
+		<td rowspan="6">RGA3</td>
+        <td rowspan="6">16</td>
+        <td>RGBA/BGRA/ARGB/ABGR8888</td>
+        <td>width stride须4对齐</td>
+    </tr>
+    <tr>
+        <td>RGB/BGR888</td>
         <td>width stride须16对齐</td>
     </tr>
+    <tr>
+        <td>RGB/BGR565</td>
+        <td>width stride须8对齐</td>
+    </tr>
+	<tr>
+        <td>YUV420 8bit (semi-planar)<br/>YUV422 8bit (semi-planar/packed)</td>
+        <td>width stride须16对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
+	</tr>
+    <tr>
+        <td>YUV420 10bit<br/>YUV422 10bit</td>
+        <td>width stride须64对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
+    </tr>
+    <tr>
+        <td>FBC mode</td>
+        <td>除上述格式对齐要求外，width、height须16对齐</td>
+    </tr>
 </table>
+
+> 对齐要求计算公式：lcm(bpp，byte_stride * 8) / pixel_stride。
+>
+> 当芯片平台搭载多版本硬件时，按最严格的对齐要求进行约束。
 
 
 
@@ -473,13 +519,44 @@ querystring(RGA_VERSION);
 
 
 
-## 应用接口说明
+## 应用接口
 
 RGA模块支持库为librga.so，通过对图像缓冲区结构体struct rga_info进行配置，实现相应的2D图形操作。为了获得更友好的开发体验，在此基础上进一步封装常用的2D图像操作接口。新的接口主要包含以下特点：
 - 接口定义参考opencv/matlab中常用的2D图形接口定义，以减少二次开发的学习成本。
 - 为消除RGA硬件版本差异带来的兼容问题，加入RGA query查询功能。查询内容主要包括版本信息，输入输出大分辨率及图像格式的支持。
 - 对于2D图像复合操作，增加improcess接口。通过传入一系列预定义的usage执行复合操作。
 - 执行图像操作之前，需要对输入输出图像缓冲区进行处理。调用wrapbuffer_T接口将输入输出图像信息填充到结构体struct rga_buffer_t，结构体中包含分辨率及图像格式等信息。
+
+
+
+### 概述
+
+------
+
+该软件支持库提供以下API，异步模式仅支持C++实现。
+
+- **querystring**： 查询获取当前芯片平台RGA硬件版本与功能支持信息，以字符串的形式返回。
+- **importbuffer_T**： 将外部buffer导入RGA驱动内部，实现硬件快速访问非连续物理地址（dma_fd、虚拟地址）。
+- **releasebuffer_handle**： 将外部buffer从RGA驱动内部解除引用与映射。
+- **wrapbuffer_handle**速封装图像缓冲区结构（rga_buffer_t）。
+- **imcopy**： 调用RGA实现快速图像拷贝操作。
+- **imresize**： 调用RGA实现快速图像缩放操作。 
+- **impyramind**： 调用RGA实现快速图像金字塔操作。
+- **imcrop**： 调用RGA实现快速图像裁剪操作。
+- **imrotate**： 调用RGA实现快速图像旋转操作。
+- **imflip**： 调用RGA实现快速图像翻转操作。
+- **imfill**： 调用RGA实现快速图像填充操作。
+- **imtranslate**： 调用RGA实现快速图像平移操作。
+- **imblend**： 调用RGA实现双通道快速图像合成操作。
+- **imcomposite**： 调用RGA实现三通道快速图像合成操作。
+- **imcolorkey**： 调用RGA实现快速图像颜色键操作。
+- **imcvtcolor**： 调用RGA实现快速图像格式转换。
+- **imquantize**： 调用RGA实现快速图像运算点前处理（量化）操作。
+- **imrop**： 调用RGA实现快速图像光栅操作。
+- **improcess**： 调用RGA实现快速图像复合处理操作。
+- **imcheck**： 校验参数是否合法，以及当前硬件是否支持该操作。
+- **imsync**： 用于异步模式时，同步任务完成状态。
+- **imconfig**： 向当前线程上下文添加默认配置。
 
 
 
@@ -497,7 +574,7 @@ const char* querystring(int name);
 
 | **Parameters** | **Description**                                              |
 | -------------- | ------------------------------------------------------------ |
-| name           | RGA_VENDOR                 - 厂商信息<br/>RGA_VERSION                 - 版本信息<br/>RGA_MAX_INPUT            - 支持的最大输入分辨率<br/>RGA_MAX_OUTPUT        - 支持的最大输出分辨率<br/>RGA_SCALE_LIMIT           - 支持得缩放倍数<br/>RGA_INPUT_FORMAT     - 支持的输入格式<br/>RGA_OUTPUT_FORMAT - 支持的输出格式<br/>RGA_EXPECTED               - 预期性能<br/>RGA_ALL                           - 输出所有信息 |
+| name           | RGA_VENDOR                 - 厂商信息<br/>RGA_VERSION                 - 版本信息<br/>RGA_MAX_INPUT            - 支持的最大输入分辨率<br/>RGA_MAX_OUTPUT        - 支持的最大输出分辨率<br/>RGA_BYTE_STRIDE          - 支持的stride对齐要求<br/>RGA_SCALE_LIMIT           - 支持得缩放倍数<br/>RGA_INPUT_FORMAT     - 支持的输入格式<br/>RGA_OUTPUT_FORMAT - 支持的输出格式<br/>RGA_EXPECTED               - 预期性能<br/>RGA_ALL                           - 输出所有信息 |
 
  **Returns** a string describing properties of RGA.
 
@@ -507,59 +584,122 @@ const char* querystring(int name);
 
 ------
 
-#### wrapbuffer_T
+#### importbuffer_T
 
-> IM2D图形库接口参数中，输入源图像及输出目标图像应支持多种类型（以下内容输入参数用符号‘T’代表支持的类型）。在执行相应的图像操作之前，需要先调用wrapbuffer_T(T)将输入输出图像缓冲类型转化为统一的rga_buffer_t结构体，作为user API的输入参数。支持的输入输出图像缓冲类型具体包括：
+> 对于需要RGA处理的外部内存，可以使用importbuffer_T接口将缓冲区对应的物理地址信息映射到RGA驱动内部，并获取缓冲区相应的地址信息，方便后续的稳定、快速地调用RGA完成工作。
 
-| **Parameters(T)** | Data Type                                                    | Description                                                  |
-| ----------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| virtual address   | void *                                                       | 图像缓冲区虚拟地址                                           |
-| physical address  | void *                                                       | 图像缓冲区物理地址                                           |
-| shared fd         | int                                                          | 图像缓冲区文件描述符                                         |
-| buffer handle     | buffer_handle_t<br/>gralloc_drm_handle_t<br/>gralloc_drm_bo_t | 图像缓冲区handle, 包含缓冲区地址，文件描述符，分辨率及格式等信息 |
-| GraphicBuffer     | GraphicBuffer                                                | android graphic buffer                                       |
-| AHardwareBuffer   | AHardwareBuffer                                              | chunks of memory that can be accessed by various hardware components in the system.<br/>https://developer.android.com/ndk/reference/group/a-hardware-buffer |
+| **Parameters(T)**    | Data Type       | Description                                                  |
+| -------------------- | --------------- | ------------------------------------------------------------ |
+| virtual address      | void *          | 图像缓冲区虚拟地址                                           |
+| physical address     | uint64_t        | 图像缓冲区连续的物理地址                                     |
+| fd                   | int             | 图像缓冲区DMA的文件描述符                                    |
+| GraphicBuffer handle | buffer_handle_t | 图像缓冲区handle, 包含缓冲区地址，文件描述符，分辨率及格式等信息 |
+| GraphicBuffer        | GraphicBuffer   | android graphic buffer                                       |
+| AHardwareBuffer      | AHardwareBuffer | chunks of memory that can be accessed by various hardware components in the system. https://developer.android.com/ndk/reference/group/a-hardware-buffer |
 
 > 不同的buffer类型调用RGA的性能是不同的，性能排序如下所示：
 >
-> physical address > fd = buffer handle = GraphicBuffer = AHardwareBuffer > virtual address
+> physical address > fd > virtual address
 >
 > 一般推荐使用fd作为buffer类型。
 
-```C++
-rga_buffer_t wrapbuffer_virtualaddr(void* vir_addr,
-                                    int width,
-                                    int height,
-                                    int wstride = width,
-                                    int hstride = height,
-                                    int format);
+```c++
+IM_API rga_buffer_handle_t importbuffer_fd(int fd, im_handle_param_t *param);
+IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, im_handle_param_t *param);
+IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, im_handle_param_t *param);
 ```
-```C++
-rga_buffer_t wrapbuffer_physicaladdr(void* phy_addr,
-                                     int width,
-                                     int height,
-                                     int wstride = width,
-                                     int hstride = height,
-                                     int format);
+
+| Parameter | **Description**                            |
+| --------- | ------------------------------------------ |
+| fd/va/pa  | **[required]** external buffer             |
+| param     | **[required]** configure buffer parameters |
+
+```c++
+IM_API rga_buffer_handle_t importbuffer_GraphicBuffer_handle(buffer_handle_t hnd);
+IM_API rga_buffer_handle_t importbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
+IM_API rga_buffer_handle_t importbuffer_AHardwareBuffer(AHardwareBuffer *buf);
 ```
-```C++
-rga_buffer_t wrapbuffer_fd(int fd,
-                           int width,
-                           int height,
-                           int wstride = width,
-                           int hstride = height,
-                           int format);
+
+| Parameter | **Description**                |
+| --------- | ------------------------------ |
+| hnd/buf   | **[required]** external buffer |
+
+```c++
+IM_API rga_buffer_handle_t importbuffer_fd(int fd, int width, int height, int format);
+IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int width, int height, int format);
+IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int width, int height, int format);
 ```
-> Android Only
+
+| Parameter | **Description**                                        |
+| --------- | ------------------------------------------------------ |
+| fd/va/pa  | **[required]** external buffer                         |
+| width     | **[required]** pixel width stride of the image buffer  |
+| height    | **[required]** pixel height stride of the image buffer |
+| format    | **[required]** pixel format of the image buffer        |
+
+**Returns** rga_buffer_handle_t to describe the memory handle.
+
+
+
+#### releasebuffer_handle
+
+> 当使用外部内存调用RGA完毕后，需要通过内存句柄 handle 调用 releasebuffer_handle解除该缓冲区与RGA驱动的映射和绑定关系，并释放RGA驱动内部对应的资源。
+
+```c++
+IM_API IM_STATUS releasebuffer_handle(rga_buffer_handle_t handle);
+```
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+#### wrapbuffer_handle
+
+> IM2D图形库接口参数中，输入源图像及输出目标图像应支持多种类型，它主要包含内存、图像格式、图像宽高等信息。在执行相应的图像操作之前，需要先调用wrapbuffer_handle将输入输出的图像参数转化为统一的 rga_buffer_t 结构作为user API的输入参数。
 
 ```C++
-rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
+rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t handle,
+                               int width,
+                               int height,
+                               int wstride = width,
+                               int hstride = height,
+                               int format);
 ```
-```C++
-rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf);
-```
+| Parameter | **Description**                                              |
+| --------- | ------------------------------------------------------------ |
+| handle    | **[required]** RGA buffer handle                             |
+| width     | **[required]** pixel width of the image that needs to be processed |
+| height    | **[required]** pixel height of the image that needs to be processed |
+| wtride    | **[optional]** pixel width stride of the image               |
+| hstride   | **[optional]** pixel width stride of the image               |
+| format    | **[required]** pixel format                                  |
 
  **Returns** a rga_buffer_t to desribe image information.
+
+
+
+### 图像拷贝
+
+------
+
+#### imcopy
+
+```C++
+IM_STATUS imcopy(const rga_buffer_t src,
+                 rga_buffer_t dst,
+                 int sync = 1);
+```
+
+> 对图像做拷贝操作，RGA基础操作。作用与memcpy 类似。
+
+| Parameter        | **Description**                                              |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -585,14 +725,15 @@ imresize(const rga_buffer_t src,
 >
 > 注意：使用缩放系数fx/fy进行倍率缩放时，YUV等对宽高对齐有要求的格式将强制向下对齐至符合要求，使用该功能有可能会改变预期缩放效果。
 
-| Parameters    | Description                                                  |
-| ------------- | ------------------------------------------------------------ |
-| src           | **[required]** input image                                   |
-| dst           | **[required]** output image; it has the size dsize (when it is non-zero) or the size computed from src.size(), fx, and fy; the type of dst is the same as of src. |
-| fx            | **[optional]** scale factor along the horizontal axis; when it equals 0, it is computed as:<br/>fx = (double) dst.width / src.width |
-| fy            | **[optional]** scale factor along the vertical axis; when it equals 0, it is computed as:<br/>fy = (double) dst.height / src.height |
-| interpolation | **[optional]** interpolation method:<br/>INTER_NEAREST - a nearest-neighbor interpolation<br/>INTER_LINEAR - a bilinear interpolation (used by default)<br/>INTER_CUBIC - a bicubic interpolation over 4x4 pixel neighborhood |
-| sync          | **[optional]** wait until operation complete                 |
+| Parameters       | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image; it has the size dsize (when it is non-zero) or the size computed from src.size(), fx, and fy; the type of dst is the same as of src. |
+| fx               | **[optional]** scale factor along the horizontal axis; when it equals 0, it is computed as:<br/>fx = (double) dst.width / src.width |
+| fy               | **[optional]** scale factor along the vertical axis; when it equals 0, it is computed as:<br/>fy = (double) dst.height / src.height |
+| interpolation    | **[optional]** interpolation method:<br/>INTER_NEAREST - a nearest-neighbor interpolation<br/>INTER_LINEAR - a bilinear interpolation (used by default)<br/>INTER_CUBIC - a bicubic interpolation over 4x4 pixel neighborhood |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 
@@ -608,11 +749,12 @@ IM_STATUS impyramid (const rga_buffer_t src,
 
 > 金字塔缩放。根据direction 宽高同时做1/2 或者 2 倍的缩放。
 
-| Parameters | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| src        | **[required]** input image                                   |
-| dst        | **[required]** output image;                                 |
-| direction  | **[required]** scale mode<br/>IM_UP_SCALE  ——  up scale <br/>IM_DOWN_SCALE —— down scale |
+| Parameters       | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image;                                 |
+| direction        | **[required]** scale mode<br/>IM_UP_SCALE  ——  up scale <br/>IM_DOWN_SCALE —— down scale |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 
@@ -633,12 +775,13 @@ IM_STATUS imcrop(const rga_buffer_t src,
 
 > 通过指定Rect 的大小区域执行图像裁剪。
 
-| Parameter | Description                                                  |
-| --------- | ------------------------------------------------------------ |
-| src       | **[required] **input image                                   |
-| dst       | **[required]** output image                                  |
-| rect      | **[required]** crop region<br/>x - upper-left x coordinate<br/>y - upper-left y coordinate<br/>width - region width<br/>height - region height |
-| sync      | **[optional]** wait until operation complete                 |
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required] **input image                                   |
+| dst              | **[required]** output image                                  |
+| rect             | **[required]** crop region<br/>x - upper-left x coordinate<br/>y - upper-left y coordinate<br/>width - region width<br/>height - region height |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 
@@ -660,12 +803,13 @@ IM_STATUS imrotate(const rga_buffer_t src,
 >
 >  支持图像旋转90，180，270度。
 
-| Parameter | Description                                                  |
-| --------- | ------------------------------------------------------------ |
-| src       | **[required]** input image                                   |
-| dst       | **[required]** output image                                  |
-| rotation  | **[required]** rotation angle:<br/>0<br/>IM_HAL_TRANSFORM_ROT_90<br/>IM_HAL_TRANSFORM_ROT_180<br/>IM_HAL_TRANSFORM_ROT_270 |
-| sync      | **[optional]** wait until operation complete                 |
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| rotation         | **[required]** rotation angle:<br/>0<br/>IM_HAL_TRANSFORM_ROT_90<br/>IM_HAL_TRANSFORM_ROT_180<br/>IM_HAL_TRANSFORM_ROT_270 |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 
@@ -686,12 +830,13 @@ IM_STATUS imflip (const rga_buffer_t src,
 
 > 支持图像做水平、垂直镜像翻转。
 
-| Parameter | Description                                                  |
-| --------- | ------------------------------------------------------------ |
-| src       | **[required]** input image                                   |
-| dst       | **[required]** output image                                  |
-| mode      | **[optional]** flip mode:<br/>0<br/>IM_HAL_TRANSFORM_FLIP_H<br/>IM_HAL_TRANSFORM_FLIP_V<br/> |
-| sync      | **[optional]** wait until operation complete                 |
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| mode             | **[optional]** flip mode:<br/>0<br/>IM_HAL_TRANSFORM_FLIP_H<br/>IM_HAL_TRANSFORM_FLIP_V<br/> |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 
@@ -732,13 +877,14 @@ IM_STATUS imdraw(rga_buffer_t buf,
 
 【注意】填充区域rect宽高需大于或等于2
 
-| Parameter | Description                                                  |
-| --------- | ------------------------------------------------------------ |
-| src       | **[required]** input image                                   |
-| dst       | **[required]** output image                                  |
-| rect      | **[required]** image region to fill specified color<br/>width and height of rect must be greater than or equal to 2 |
-| color     | **[required]** fill with color, default=0x00000000           |
-| sync      | **[optional]** wait until operation complete                 |
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| rect             | **[required]** image region to fill specified color<br/>width and height of rect must be greater than or equal to 2 |
+| color            | **[required]** fill with color, default=0x00000000           |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 
@@ -760,37 +906,14 @@ IM_STATUS imtranslate(const rga_buffer_t src,
 
 > 对图像做平移操作，移动到（x, y）坐标位置，src和dst 宽高须一致，超出部分会被裁剪。
 
-| Parameter | Description                                  |
-| --------- | -------------------------------------------- |
-| src       | **[required]**input image                    |
-| dst       | **[required]** output image                  |
-| x         | **[optional]** horizontal translation        |
-| y         | **[optional]** vertical translation          |
-| sync      | **[optional]** wait until operation complete |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-### 图像拷贝
-
-------
-
-#### imcopy
-
-```C++
-IM_STATUS imcopy(const rga_buffer_t src,
-                 rga_buffer_t dst,
-                 int sync = 1);
-```
-
-> 对图像做拷贝操作，RGA基础操作。作用与memcpy 类似。
-
-| Parameter | **Description**                              |
-| --------- | -------------------------------------------- |
-| src       | **[required]** input image                   |
-| dst       | **[required]** output image                  |
-| sync      | **[optional]** wait until operation complete |
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]**input image                                    |
+| dst              | **[required]** output image                                  |
+| x                | **[optional]** horizontal translation                        |
+| y                | **[optional]** vertical translation                          |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 
@@ -870,13 +993,14 @@ RGA支持以下几种混合模型：
 
 【注意】图像合成模式不支持YUV格式之间合成，imblend函数dst图像不支持YUV格式，imcomposite函数srcB图像不支持YUV格式。
 
-| Parameter | Description                                                  |
-| --------- | ------------------------------------------------------------ |
-| srcA      | **[required]** input image A                                 |
-| srcB      | **[required]** input image B                                 |
-| dst       | **[required]** output image                                  |
-| mode      | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC —— SRC模式<br/>IM_ALPHA_BLEND_DST —— DST模式  <br/>IM_ALPHA_BLEND_SRC_OVER —— SRC OVER模式<br/>IM_ALPHA_BLEND_DST_OVER —— DST OVER模式<br />IM_ALPHA_BLEND_PRE_MUL —— 预乘使能，当需要预乘时须将该标识与其他模式标识进行或处理，再赋值给mode |
-| sync      | **[optional]** wait until operation complete                 |
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| srcA             | **[required]** input image A                                 |
+| srcB             | **[required]** input image B                                 |
+| dst              | **[required]** output image                                  |
+| mode             | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC —— SRC模式<br/>IM_ALPHA_BLEND_DST —— DST模式  <br/>IM_ALPHA_BLEND_SRC_OVER —— SRC OVER模式<br/>IM_ALPHA_BLEND_DST_OVER —— DST OVER模式<br />IM_ALPHA_BLEND_PRE_MUL —— 预乘使能，当需要预乘时须将该标识与其他模式标识进行或处理，再赋值给mode |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 
@@ -907,13 +1031,14 @@ IM_STATUS imcolorkey(const rga_buffer_t src,
 | max            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最大值，排列为ABGR |
 | min            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最小值，排列为ABGR |
 
-| parameter | Description                                                  |
-| --------- | ------------------------------------------------------------ |
-| src       | **[required]** input image                                   |
-| dst       | **[required]** output image                                  |
-| range     | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
-| Mode      | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED<br/> |
-| sync      | **[optional]** wait until operation complete                 |
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| range            | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
+| Mode             | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS  on success or else negative error code.
 
@@ -938,20 +1063,21 @@ IM_STATUS imcvtcolor(rga_buffer_t src,
 >
 > 格式可以通过rga_buffer_t 设置，也可以通过sfmt/dfmt分别配置源图像及输出图像格式。
 
-| parameter | Description                                                  |
-| --------- | ------------------------------------------------------------ |
-| src       | **[required]** input image                                   |
-| dst       | **[required]** output image                                  |
-| sfmt      | **[optional]** source image format                           |
-| dfmt      | **[optional]** destination image format                      |
-| Mode      | **[optional]** color space mode:<br/>IM_YUV_TO_RGB_BT601_LIMIT<br/>IM_YUV_TO_RGB_BT601_FULL<br/>IM_YUV_TO_RGB_BT709_LIMIT<br/>IM_RGB_TO_YUV_BT601_LIMIT<br/>IM_RGB_TO_YUV_BT601_FULL<br/>IM_RGB_TO_YUV_BT709_LIMIT |
-| sync      | **[optional]** wait until operation complete                 |
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| sfmt             | **[optional]** source image format                           |
+| dfmt             | **[optional]** destination image format                      |
+| Mode             | **[optional]** color space mode:<br/>IM_YUV_TO_RGB_BT601_LIMIT<br/>IM_YUV_TO_RGB_BT601_FULL<br/>IM_YUV_TO_RGB_BT709_LIMIT<br/>IM_RGB_TO_YUV_BT601_LIMIT<br/>IM_RGB_TO_YUV_BT601_FULL<br/>IM_RGB_TO_YUV_BT709_LIMIT |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS  on success or else negative error code.
 
 
 
-### NN运算点前处理
+### NN运算点前处理（量化）
 
 ------
 
@@ -979,18 +1105,19 @@ dst = 【(src + offset) * scale 】
 | **scale**      | 0 ~ 3.99   | 10bit，从左往右，高位2个bit 表示整数部分，低位8bit表示小数部分 |
 | **offset**     | -255 ~ 255 | 9bit，从左往右，高位表示符号位，地位表示0～255的偏移量       |
 
-| parameter | Description                                                  |
-| --------- | ------------------------------------------------------------ |
-| src       | **[required]** input image                                   |
-| dst       | **[required]** output image                                  |
-| nn_info   | **[required]** rga_nn_t结构体对RGB三个通道offset及scale进行单独配置<br />typedef struct rga_nn { <br/>  int nn_flag;<br/>  int scale_r;<br/>  int scale_g;<br/>  int scale_b;<br/>  int offset_r;<br/>  int offset_g;<br/>  int offset_b;<br/>} rga_nn_t; |
-| sync      | **[optional]** wait until operation complete                 |
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| nn_info          | **[required]** rga_nn_t结构体对RGB三个通道offset及scale进行单独配置<br />typedef struct rga_nn { <br/>  int nn_flag;<br/>  int scale_r;<br/>  int scale_g;<br/>  int scale_b;<br/>  int offset_r;<br/>  int offset_g;<br/>  int offset_b;<br/>} rga_nn_t; |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code
 
 
 
-### ROP 与或非运算
+### 图像光栅操作 ROP 
 
 ------
 
@@ -1005,12 +1132,13 @@ IM_STATUS imrop(const rga_buffer_t src,
 
 > 对两个图形做ROP 与或非运算
 
-| parameter | Description                                                  |
-| --------- | ------------------------------------------------------------ |
-| src       | **[required]** input image                                   |
-| dst       | **[required]** output image                                  |
-| rop_code  | **[required]** rop code mode <br /><br/> IM_ROP_AND : dst = dst **AND** src;<br/> IM_ROP_OR : dst = dst **OR** src <br/> IM_ROP_NOT_DST : dst = **NOT** dst<br/> IM_ROP_NOT_SRC : dst = **NOT** src<br/> IM_ROP_XOR : dst = dst **XOR** src<br/> IM_ROP_NOT_XOR : dst = **NOT** (dst **XOR** src)<br/> |
-| sync      | **[optional]** wait until operation complete                 |
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| rop_code         | **[required]** rop code mode <br /><br/> IM_ROP_AND : dst = dst **AND** src;<br/> IM_ROP_OR : dst = dst **OR** src <br/> IM_ROP_NOT_DST : dst = **NOT** dst<br/> IM_ROP_NOT_SRC : dst = **NOT** src<br/> IM_ROP_XOR : dst = dst **XOR** src<br/> IM_ROP_NOT_XOR : dst = **NOT** (dst **XOR** src)<br/> |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code
 
@@ -1041,10 +1169,10 @@ IM_STATUS improcess(rga_buffer_t src,
 | src       | **[required]** input imageA          |
 | dst       | **[required]** output image          |
 | pat       | **[required]** input imageB          |
-| srect     | **[optional]** src crop region       |
-| drect     | **[optional]** dst crop region       |
-| prect     | **[optional]** pat crop region       |
-| usage     | **[optional]** image operation usage |
+| srect     | **[required]** src crop region       |
+| drect     | **[required]** dst crop region       |
+| prect     | **[required]** pat crop region       |
+| usage     | **[required]** image operation usage |
 
 usage 参照定义：
 
@@ -1094,6 +1222,71 @@ typedef enum {
 
 
 
+```C++
+IM_STATUS improcess(rga_buffer_t src, 
+                    rga_buffer_t dst, 
+                    rga_buffer_t pat,
+                    im_rect srect, 
+                    im_rect drect, 
+                    im_rect prect,
+                    int acquire_fence_fd, 
+                    int *release_fence_fd, 
+                    im_opt_t *opt, 
+                    int usage)
+```
+
+> RGA 图像复合操作函数，其他API都是基于此API开发，improcess 可以实现更复杂的复合操作。
+>
+> 图像操作通过usage 的方式进行配置。
+
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input imageA                                  |
+| dst              | **[required]** output image                                  |
+| pat              | **[required]** input imageB                                  |
+| srect            | **[required]** src crop region                               |
+| drect            | **[required]** dst crop region                               |
+| prect            | **[required]** pat crop region                               |
+| acquire_fence_fd | **[required]** Used in async mode, run the job after waiting foracquire_fence signal |
+| release_fence_fd | **[required]** Used in async mode, as a parameter of imsync() |
+| opt              | **[required]** operation options<br/>typedef struct im_opt {<br/>    int color;<br/>    im_colorkey_range colorkey_range; <br/>    im_nn_t nn;<br/>    int rop_code;<br/>     <br/>    int priority;<br/>    int core;<br/>} im_opt_t; |
+| usage            | **[required]** image operation usage                         |
+
+
+
+### 参数校验
+
+---
+
+#### imcheck
+
+```c++
+IM_API IM_STATUS imcheck(const rga_buffer_t src, const rga_buffer_t dst,
+                         const im_rect src_rect, const im_rect dst_rect, 
+                         const int mode_usage);
+IM_API IM_STATUS imcheck_composite(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
+                                   const im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect, 
+                                   const int mode_usage);
+```
+
+> 在配置完毕RGA任务参数后，可以通过该接口校验当前参数是否合法，并根据当前硬件情况判断硬件是否支持。
+>
+> 建议该接口仅在开发调试阶段使用，避免多次校验导致性能损耗。
+
+| Parameter | Description                          |
+| --------- | ------------------------------------ |
+| src       | **[required]** input imageA          |
+| dst       | **[required]** output image          |
+| pat       | **[optional]** input imageB          |
+| srect     | **[required]** src crop region       |
+| drect     | **[required]** dst crop region       |
+| prect     | **[optional]** pat crop region       |
+| usage     | **[optional]** image operation usage |
+
+**Return** IM_STATUS_NOERROR on success or else negative error code.
+
+
+
 ### 同步操作
 
 ------
@@ -1101,12 +1294,18 @@ typedef enum {
 #### imsync
 
 ```C++
-IM_STATUS imsync(void);
+IM_STATUS imsync(int fence_fd);
 ```
 
-> RGA异步模式需要调用该接口等待操作完成。
+> RGA异步模式需要调用该接口等待操作完成，将返回的release_fence_fd作为传入参数。
 >
-> 其他API 将 sync 设置为0，效果相当于opengl中的 glFlush，如果进一步调用imsync 可以达到glFinish的效果。
+> 其他API 将 形参sync 设置为0时，使能异步调用模式，效果相当于opengl中的 glFlush，如果进一步调用imsync 可以达到glFinish的效果。
+
+| Parameter | Description                     |
+| --------- | ------------------------------- |
+| fence_fd  | **[required]** fence_fd to wait |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -1129,7 +1328,281 @@ IM_STATUS  imconfig(IM_CONFIG_NAME name, uint64_t value);
 | name      | **[required]** context config name：<br/>IM_CONFIG_SCHEDULER_CORE —— 指定任务处理核心<br/>IM_CONFIG_PRIORITY                  —— 任务优先级<br/>IM_CHECK_CONFIG                      —— 校验使能 |
 | value     | **[required]** config value<br/>IM_CONFIG_SCHEDULER_CORE :<br/>    IM_SCHEDULER_RGA3_CORE0<br/>    IM_SCHEDULER_RGA3_CORE1<br/>    IM_SCHEDULER_RGA2_CORE0<br/>    IM_SCHEDULER_RGA3_DEFAULT<br/>    IM_SCHEDULER_RGA2_DEFAULT<br/>IM_CONFIG_PRIORITY:<br/>    0 ~ 6<br/>IM_CHECK_CONFIG:<br/>    TRUE<br/>    FALSE |
 
+> 注意：priority、core权限极高，操作不当可能导致系统崩溃或死锁，建议仅用于开发调试阶段，极度不建议在实际产品场景进行配置。
+
 **Return** IM_STATUS_SUCCESS on success or else negative error code
+
+
+
+## 数据结构
+
+本章节将详细描述应用接口中涉及的数据结构。
+
+### 概述
+
+| 数据结构            | 说明                     |
+| ------------------- | ------------------------ |
+| rga_buffer_t        | 描述图像缓冲区信息       |
+| im_rect             | 描述图像实际操作区域     |
+| im_opt_t            | 描述图像操作选项         |
+| rga_buffer_handle_t | RGA驱动图像缓冲区句柄    |
+| im_handle_param_t   | 描述待导入图像缓冲区属性 |
+| im_context_t        | 当前线程默认上下文       |
+| im_nn_t             | 描述运算点前处理参数     |
+| im_colorkey_range   | Colorkey关键色范围       |
+
+
+
+### 详细描述
+
+#### rga_buffer_t
+
+- **说明**
+
+描述单一通道的图像缓冲区信息。
+
+- **路径**
+
+im2d_api/im2d.h
+
+- **定义**
+
+```c++
+typedef struct {
+    void* vir_addr;                     /* virtual address */
+    void* phy_addr;                     /* physical address */
+    int fd;                             /* shared fd */
+    rga_buffer_handle_t handle;         /* buffer handle */
+
+    int width;                          /* width */
+    int height;                         /* height */
+    int wstride;                        /* wstride */
+    int hstride;                        /* hstride */
+    int format;                         /* format */
+
+    int color_space_mode;               /* color_space_mode */
+    int global_alpha;                   /* global_alpha */
+    int rd_mode;
+} rga_buffer_t;
+```
+
+| 成员参数         | 描述                                    |
+| ---------------- | --------------------------------------- |
+| vir_addr         | 图像缓冲区虚拟地址。                    |
+| phy_addr         | 图像缓冲区连续的物理地址。              |
+| fd               | 图像缓冲区DMA的文件描述符。             |
+| handle           | 导入RGA驱动的图像缓冲区对应的内存句柄。 |
+| width            | 图像实际操作区域的宽度，以像素为单位。  |
+| height           | 图像实际操作区域的高度，以像素为单位。  |
+| wstride          | 图像宽度的步幅，以像素为单位。          |
+| hstride          | 图像高度的步幅，以像素为单位。          |
+| format           | 图像格式。                              |
+| color_space_mode | 图像色域空间。                          |
+| global_alpha     | 全局Alpha配置。                         |
+| rd_mode          | 当前通道读取数据模式。                  |
+
+- **注意事项**
+
+vir_addr、phy_addr、fd、handle只需选择其一作为图像缓冲区的描述即可，如多项赋值，则只会根据默认优先级选择其一作为图像缓冲区描述，优先级如下：handle > phy_addr > fd > vir_addr。
+
+
+
+#### im_rect
+
+- **说明**
+
+描述单一通道的图形实际操作区域。
+
+- **路径**
+
+im2d_api/im2d.h
+
+- **定义**
+
+```c++
+typedef struct {
+    int x;        /* upper-left x */
+    int y;        /* upper-left y */
+    int width;    /* width */
+    int height;   /* height */
+} im_rect;
+```
+
+| 成员参数 | 描述                                         |
+| -------- | -------------------------------------------- |
+| x        | 图像实际操作区域的起始横坐标，以像素为单位。 |
+| y        | 图像实际操作区域的起始纵坐标，以像素为单位。 |
+| width    | 图像实际操作区域的宽度，以像素为单位。       |
+| height   | 图像实际操作区域的高度，以像素为单位。       |
+
+- **注意事项**
+
+实际操作区域不能超出图像大小，即（x + width）<= wstride， （y + height） <= hstride。
+
+
+
+#### im_opt_t
+
+- **说明**
+
+描述当前任务图像操作选项。
+
+- **路径**
+
+im2d_api/im2d.h
+
+- **定义**
+
+```c++
+typedef struct im_opt {
+    int color;                          /* color, used by color fill */
+    im_colorkey_range colorkey_range;   /* range value of color key */
+    im_nn_t nn;
+    int rop_code;
+
+    int priority;
+    int core;
+} im_opt_t;
+```
+
+| 成员参数       | 描述                       |
+| -------------- | -------------------------- |
+| color          | 填充图像颜色配置。         |
+| colorkey_range | Colorkey关键色范围配置。   |
+| nn             | 运算点前处理（量化）配置。 |
+| rop_code       | 光栅操作ROP操作码配置。    |
+| priority       | 当前任务优先级配置。       |
+| core           | 当前任务指定硬件核心。     |
+
+- **注意事项**
+
+priority、core权限极高，操作不当可能导致系统崩溃或死锁，建议仅用于开发调试阶段，极度不建议在实际产品场景进行配置。
+
+
+
+#### rga_buffer_handle_t
+
+- **说明**
+
+RGA驱动图像缓冲区句柄。
+
+- **路径**
+
+include/rga.h
+
+- **定义**
+
+```c++
+typedef int rga_buffer_handle_t;
+```
+
+- **注意事项**
+
+无
+
+
+
+#### im_handle_param_t
+
+- **说明**
+
+描述待导入的图像缓冲区描述参数。
+
+- **路径**
+
+im2d_api/im2d.h
+
+include/rga.h
+
+- **定义**
+
+```c++
+typedef struct rga_memory_parm im_handle_param_t;
+
+struct rga_memory_parm {
+    uint32_t width_stride;
+    uint32_t height_stride;
+    uint32_t format;
+};
+```
+
+| 成员参数      | 描述                                               |
+| ------------- | -------------------------------------------------- |
+| width_stride  | 描述待导入图像缓冲区的水平方向步幅，以像素为单位。 |
+| height_stride | 描述待导入图像缓冲区的垂直方向步幅，以像素为单位。 |
+| format        | 描述待导入图像缓冲区的格式。                       |
+
+- **注意事项**
+
+该结构描述为缓冲区内存开辟大小，如若实际开辟内存大小小于该结构配置大小，会导致 importbuffer_T 接口错误。
+
+
+
+#### im_nn_t
+
+- **说明**
+
+描述运算点前处理（量化）的参数。
+
+- **路径**
+
+im2d_api/im2d.h
+
+- **定义**
+
+```c++
+typedef struct im_nn {
+    int scale_r;                /* scaling factor on R channal */
+    int scale_g;                /* scaling factor on G channal */
+    int scale_b;                /* scaling factor on B channal */
+    int offset_r;               /* offset on R channal */
+    int offset_g;               /* offset on G channal */
+    int offset_b;               /* offset on B channal */
+} im_nn_t;
+```
+
+| 成员参数 | 描述                |
+| -------- | ------------------- |
+| scale_r  | red分量缩放系数。   |
+| scale_g  | green分量缩放系数。 |
+| scale_b  | blue分量缩放系数。  |
+| offset_r | red分量偏移值。     |
+| offset_g | green分量偏移值。   |
+| offset_b | blue分量偏移值。    |
+
+- **注意事项**
+
+无
+
+
+
+#### im_colorkey_range
+
+- **说明**
+
+Colorkey关键色范围。
+
+- **路径**
+
+im2d_api/im2d.h
+
+- **定义**
+
+```c++
+typedef struct {
+    int max;                    /* The Maximum value of the color key */
+    int min;                    /* The minimum value of the color key */
+} im_colorkey_range;
+```
+
+| 成员参数 | 描述               |
+| -------- | ------------------ |
+| max      | 关键色范围最大值。 |
+| min      | 关键色范围最小值。 |
+
+- **注意事项**
+
+无
 
 
 
