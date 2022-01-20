@@ -652,13 +652,13 @@ int main(int argc, char*  argv[]) {
 #if USE_AHARDWAREBUFFER
     sp<GraphicBuffer> gbuffer = reinterpret_cast<GraphicBuffer*>(dst_buf);
     if (gbuffer != NULL) {
-        ret = gbuffer->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&outbuf);
+        ret = gbuffer->lock(GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN, (void**)&outbuf);
         output_buf_data_to_file(outbuf, dst.format, dst.wstride, dst.hstride, 0);
         ret = gbuffer->unlock();
     }
 #else
     if (dst_buf != NULL) {
-        ret = dst_buf->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&outbuf);
+        ret = dst_buf->lock(GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN, (void**)&outbuf);
         output_buf_data_to_file(outbuf, dst.format, dst.wstride, dst.hstride, 0);
         ret = dst_buf->unlock();
     }
