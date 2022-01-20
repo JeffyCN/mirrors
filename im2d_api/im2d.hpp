@@ -27,8 +27,37 @@
 #include <ui/GraphicBuffer.h>
 
 using namespace android;
+#endif
 
-IM_API rga_buffer_t wrapbuffer_GraphicBuffer_handle(buffer_handle_t hnd);
+/*
+ * Import external buffers into RGA driver.
+ *
+ * @param fd/va/pa
+ *      Select dma_fd/virtual_address/physical_address by buffer type
+ * @param width
+ *      Describes the pixel width stride of the image buffer
+ * @param height
+ *      Describes the pixel height stride of the image buffer
+ * @param format
+ *      Describes the pixel format of the image buffer
+ *
+ * @return rga_buffer_handle_t
+ */
+IM_API rga_buffer_handle_t importbuffer_fd(int fd, int width, int height, int format);
+IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int width, int height, int format);
+IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int width, int height, int format);
+
+#undef wrapbuffer_handle
+IM_API rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t  handle,
+                                      int width, int height,
+                                      int wstride, int hstride,
+                                      int format);
+IM_API rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t  handle,
+                                      int width, int height,
+                                      int format);
+
+#if ANDROID
+IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd);
 IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf);
 
 #if USE_AHARDWAREBUFFER

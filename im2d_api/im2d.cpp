@@ -107,12 +107,27 @@ IM_API rga_buffer_handle_t importbuffer_fd(int fd, im_handle_param_t *param) {
     return rga_import_buffer((uint64_t)fd, RGA_DMA_BUFFER, param);
 }
 
+IM_API rga_buffer_handle_t importbuffer_fd(int fd, int width, int height, int format) {
+    im_handle_param_t param = {(uint32_t)width, (uint32_t)height, (uint32_t)format};
+    return rga_import_buffer((uint64_t)fd, RGA_DMA_BUFFER, &param);
+}
+
 IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, im_handle_param_t *param) {
     return rga_import_buffer((uint64_t)va, RGA_VIRTUAL_ADDRESS, param);
 }
 
+IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int width, int height, int format) {
+    im_handle_param_t param = {(uint32_t)width, (uint32_t)height, (uint32_t)format};
+    return rga_import_buffer((uint64_t)va, RGA_VIRTUAL_ADDRESS, &param);
+}
+
 IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, im_handle_param_t *param) {
     return rga_import_buffer(pa, RGA_PHYSICAL_ADDRESS, param);
+}
+
+IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int width, int height, int format) {
+    im_handle_param_t param = {(uint32_t)width, (uint32_t)height, (uint32_t)format};
+    return rga_import_buffer(pa, RGA_PHYSICAL_ADDRESS, &param);
 }
 
 IM_API IM_STATUS releasebuffer_handle(rga_buffer_handle_t handle) {
@@ -164,9 +179,10 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
     return buffer;
 }
 
-IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t  handle,
-                                        int width, int height, int wstride,
-                                        int hstride, int format) {
+IM_API rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t  handle,
+                                      int width, int height,
+                                      int wstride, int hstride,
+                                      int format) {
     rga_buffer_t buffer;
 
     memset(&buffer, 0, sizeof(rga_buffer_t));
@@ -181,10 +197,16 @@ IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t  handle,
     return buffer;
 }
 
+IM_API rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t  handle,
+                                      int width, int height,
+                                      int format) {
+    return wrapbuffer_handle(handle, width, height, width, height, format);
+}
+
 #ifdef ANDROID
 /*When wrapbuffer_GraphicBuffer and wrapbuffer_AHardwareBuffer are used, */
 /*it is necessary to check whether fd and virtual address of the return rga_buffer_t are valid parameters*/
-IM_API rga_buffer_t wrapbuffer_GraphicBuffer_handle(buffer_handle_t hnd) {
+IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
     int ret = 0;
     rga_buffer_t buffer;
     std::vector<int> dstAttrs;
@@ -1528,6 +1550,13 @@ IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
 }
 
 /* For the C interface */
+IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t  handle,
+                                        int width, int height,
+                                        int wstride, int hstride,
+                                        int format) {
+    return wrapbuffer_handle(handle, width, height, wstride, hstride, format);
+}
+
 IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync) {
     return imresize(src, dst, fx, fy, interpolation, sync, NULL);
 }
