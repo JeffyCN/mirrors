@@ -42,17 +42,6 @@ cmake_minimum_required(VERSION 2.8)
 #project name
 project(librga)
 
-include_directories(
-    ./
-    ./include
-    external/libdrm
-    external/libdrm/include/drm
-    hardware/libhardware/include/hardware
-    hardware/libhardware/modules/gralloc
-    system/core/liblog/includeNDROID_NDK_REVISION_REGEX
-    system/core/libion/kernel-headers
-    )
-
 if (BUILD_WITH_LIBDRM STREQUAL true)
     message("RGA build with libdrm")
     add_compile_options(-DLIBDRM=1)
@@ -81,6 +70,16 @@ endif()
 
 add_library(rga SHARED ${IM2D_SRCS})
 
+target_include_directories(rga PUBLIC
+        ./
+        ./include
+        external/libdrm
+        external/libdrm/include/drm
+        hardware/libhardware/include/hardware
+        hardware/libhardware/modules/gralloc
+        system/core/liblog/includeNDROID_NDK_REVISION_REGEX
+        system/core/libion/kernel-headers
+)
 
 #build rgaImDemo test
 set(IM2D_DEMO_SRCS
