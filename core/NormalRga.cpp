@@ -1502,8 +1502,15 @@ int RgaCollorFill(rga_info *dst) {
     }
 #endif
 
-    if (dst && dstFd < 0)
-        dstFd = dst->fd;
+    if (dst && dstFd < 0) {
+        if (dst->handle > 0) {
+            dstFd = dst->handle;
+            /* This will mark the use of handle */
+            rgaReg.handle_flag |= 1;
+        } else {
+            dstFd = dst->fd;
+        }
+    }
 
     if (dst && dst->phyAddr)
         dstBuf = dst->phyAddr;
@@ -1730,8 +1737,33 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
     }
 #endif
 
+    if (lut) {
+        if (src->handle > 0 && dst->handle > 0 && lut->handle > 0) {
+            if (src->handle <= 0 || dst->handle <= 0 || lut->handle <= 0) {
+                ALOGE("librga only supports the use of handles only or no handles, [src,lut,dst] = [%d, %d, %d]\n",
+                      src->handle, lut->handle, dst->handle);
+                return -EINVAL;
+            }
+
+            /* This will mark the use of handle */
+            rgaReg.handle_flag |= 1;
+        }
+    } else if (src->handle > 0 && dst->handle > 0) {
+        if (src->handle <= 0 || dst->handle <= 0) {
+            ALOGE("librga only supports the use of handles only or no handles, [src,dst] = [%d, %d]\n",
+                  src->handle, dst->handle);
+            return -EINVAL;
+        }
+
+        /* This will mark the use of handle */
+        rgaReg.handle_flag |= 1;
+    }
+
     /*********** get src addr *************/
-    if (src && src->phyAddr) {
+    if (src && src->handle) {
+        /* In order to minimize changes, the handle here will reuse the variable of Fd. */
+        srcFd = src->handle;
+    } else if (src && src->phyAddr) {
         srcBuf = src->phyAddr;
     } else if (src && src->fd > 0) {
         srcFd = src->fd;
@@ -1785,7 +1817,10 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
         srcFd = -1;
 
     /*********** get dst addr *************/
-    if (dst && dst->phyAddr) {
+    if (dst && dst->handle) {
+        /* In order to minimize changes, the handle here will reuse the variable of Fd. */
+        dstFd = dst->handle;
+    } else if (dst && dst->phyAddr) {
         dstBuf = dst->phyAddr;
     } else if (dst && dst->fd > 0) {
         dstFd = dst->fd;
@@ -1839,7 +1874,10 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
         dstFd = -1;
 
     /*********** get lut addr *************/
-    if (lut && lut->phyAddr) {
+    if (lut && lut->handle) {
+        /* In order to minimize changes, the handle here will reuse the variable of Fd. */
+        lutFd = lut->handle;
+    } else if (lut && lut->phyAddr) {
         lutBuf = lut->phyAddr;
     } else if (lut && lut->fd > 0) {
         lutFd = lut->fd;
