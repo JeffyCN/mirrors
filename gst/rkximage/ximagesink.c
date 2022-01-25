@@ -141,11 +141,8 @@ static drmModePlane *
 drm_find_plane_for_crtc_by_type (int fd, drmModeRes * res,
     drmModePlaneRes * pres, int crtc_id, int type)
 {
-  drmModePlane *plane;
-  int i, pipe;
+  int i, pipe = -1, num_primary = 0;
 
-  plane = NULL;
-  pipe = -1;
   for (i = 0; i < res->count_crtcs; i++) {
     if (crtc_id == res->crtcs[i]) {
       pipe = i;
@@ -157,9 +154,13 @@ drm_find_plane_for_crtc_by_type (int fd, drmModeRes * res,
     return NULL;
 
   for (i = 0; i < pres->count_planes; i++) {
-    plane = drmModeGetPlane (fd, pres->planes[i]);
-    if (plane->possible_crtcs & (1 << pipe)) {
-      if (drm_plane_get_type (fd, plane) == type)
+    drmModePlane *plane = drmModeGetPlane (fd, pres->planes[i]);
+    int plane_type = drm_plane_get_type (fd, plane);
+    int primary = plane_type == DRM_PLANE_TYPE_PRIMARY;
+
+    num_primary += primary;
+    if ((plane->possible_crtcs & (1 << pipe)) && plane_type == type) {
+      if (!primary || pipe == num_primary - 1)
         return plane;
     }
     drmModeFreePlane (plane);
