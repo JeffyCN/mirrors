@@ -76,11 +76,6 @@ G_BEGIN_DECLS
   GST_VIDEO_INFO_FLAG_IS_SET (i, GST_VIDEO_FLAG_ARM_AFBC)
 #endif
 
-#ifndef HAVE_NV12_10LE40
-/* HACK: Support fake format for nv12_10le40 */
-#define GST_VIDEO_FORMAT_NV12_10LE40 GST_VIDEO_FORMAT_NV12_10LE32
-#endif
-
 GstVideoFormat gst_video_format_from_drm (guint32 drmfmt);
 guint32        gst_drm_format_from_video (GstVideoFormat fmt);
 guint32        gst_drm_bpp_from_drm (guint32 drmfmt);

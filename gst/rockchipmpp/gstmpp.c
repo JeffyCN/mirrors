@@ -65,7 +65,11 @@ struct gst_mpp_format gst_mpp_formats[] = {
   GST_MPP_FORMAT (YV12, BUTT, YCrCb_420_P, 1, 1),
   GST_MPP_FORMAT (NV12, YUV420SP, YCbCr_420_SP, 1, 1),
   GST_MPP_FORMAT (NV21, YUV420SP_VU, YCrCb_420_SP, 1, 1),
+#ifdef HAVE_NV12_10LE40
   GST_MPP_FORMAT (NV12_10LE40, YUV420SP_10BIT, YCbCr_420_SP_10B, 1, 1),
+#else
+  GST_MPP_FORMAT (UNKNOWN, YUV420SP_10BIT, YCbCr_420_SP_10B, 1, 1),
+#endif
   GST_MPP_FORMAT (Y42B, YUV422P, YCbCr_422_P, 1, 1),
   GST_MPP_FORMAT (NV16, YUV422SP, YCbCr_422_SP, 1, 1),
   GST_MPP_FORMAT (NV61, YUV422SP_VU, YCrCb_422_SP, 1, 1),
@@ -100,9 +104,6 @@ gst_mpp_video_format_to_string (GstVideoFormat format)
 {
   if (format == GST_VIDEO_FORMAT_UNKNOWN)
     return "UNKNOWN";
-
-  if (format == GST_VIDEO_FORMAT_NV12_10LE40)
-    return "NV12_10";
 
   return gst_video_format_to_string (format);
 }

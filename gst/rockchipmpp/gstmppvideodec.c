@@ -78,21 +78,13 @@ static GstStaticPadTemplate gst_mpp_video_dec_sink_template =
         "systemstream = (boolean) false"
         ";" "video/x-vp8" ";" "video/x-vp9" ";"));
 
-#define MPP_DEC_CAPS_ARM_AFBC(caps) \
-    caps ", " MPP_DEC_FEATURE_ARM_AFBC " = (int) 1"
-
-#define MPP_DEC_CAPS_NV12_10LE40(caps) \
-    caps ", " MPP_DEC_FEATURE_NV12_10LE40 " = (int) 1"
-
 static GstStaticPadTemplate gst_mpp_video_dec_src_template =
     GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE ("{" MPP_DEC_FORMATS "}") ";"
-        MPP_DEC_CAPS_ARM_AFBC (GST_VIDEO_CAPS_MAKE ("{NV12, " MPP_FMT_NV12_10
-                "}")) ";"
-        MPP_DEC_CAPS_ARM_AFBC (MPP_DEC_CAPS_NV12_10LE40 (GST_VIDEO_CAPS_MAKE
-                ("{" MPP_FMT_NV12_10 "}"))) ";"));
+        GST_VIDEO_CAPS_MAKE ("{NV12, NV12_10LE40}") ", "
+        MPP_DEC_FEATURE_ARM_AFBC " = (int) 1" ";"));
 
 static MppCodingType
 gst_mpp_video_dec_get_mpp_type (GstStructure * s)

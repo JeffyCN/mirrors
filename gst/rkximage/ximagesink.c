@@ -458,12 +458,6 @@ drm_ensure_allowed_caps (GstRkXImageSink * self, drmModePlane * plane,
     if (!caps)
       continue;
 
-#ifndef HAVE_NV12_10LE40
-    /* HACK: Fake format needs negotiation */
-    if (fmt == GST_VIDEO_FORMAT_NV12_10LE40)
-      gst_caps_set_simple (caps, "nv12-10le40", G_TYPE_INT, 1, NULL);
-#endif
-
     check_afbc (self, plane, plane->formats[i], &linear, &afbc);
 
     if (afbc) {
@@ -1907,14 +1901,6 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
     else
       GST_VIDEO_INFO_UNSET_AFBC (&info);
   }
-
-#ifndef HAVE_NV12_10LE40
-  /* HACK: Fake format needs negotiation */
-  if (GST_VIDEO_INFO_FORMAT (&info) == GST_VIDEO_FORMAT_NV12_10LE40) {
-    if (!gst_structure_get_int (s, "nv12-10le40", &value) || !value)
-      goto invalid_format;
-  }
-#endif
 
   GST_VIDEO_SINK_WIDTH (ximagesink) = info.width;
   GST_VIDEO_SINK_HEIGHT (ximagesink) = info.height;

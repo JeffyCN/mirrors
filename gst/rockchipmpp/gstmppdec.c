@@ -326,7 +326,7 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
 static gboolean
 gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
     guint width, guint height, gint hstride, gint vstride, guint align,
-    gboolean afbc, gboolean nv12_10le40 UNUSED)
+    gboolean afbc)
 {
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoInfo *info = &self->info;
@@ -353,12 +353,6 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
     GST_VIDEO_INFO_UNSET_AFBC (&output_state->info);
   }
 
-#ifndef HAVE_NV12_10LE40
-  if (nv12_10le40)
-    gst_caps_set_simple (output_state->caps,
-        MPP_DEC_FEATURE_NV12_10LE40, G_TYPE_INT, 1, NULL);
-#endif
-
   *info = output_state->info;
   gst_video_codec_state_unref (output_state);
 
@@ -381,7 +375,7 @@ gst_mpp_dec_update_simple_video_info (GstVideoDecoder * decoder,
     GstVideoFormat format, guint width, guint height, guint align)
 {
   return gst_mpp_dec_update_video_info (decoder, format, width, height, 0, 0,
-      align, FALSE, FALSE);
+      align, FALSE);
 }
 
 void
@@ -402,9 +396,11 @@ gst_mpp_dec_fixup_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
     /* Fallback to NV12 */
     format = GST_VIDEO_FORMAT_NV12;
 
+#ifdef HAVE_NV12_10LE40
   if (format == GST_VIDEO_FORMAT_NV12_10LE40 &&
       g_getenv ("GST_MPP_DEC_DISABLE_NV12_10"))
     format = GST_VIDEO_FORMAT_NV12;
+#endif
 
   gst_video_info_set_format (info, format,
       self->width ? : width, self->height ? : height);
@@ -424,7 +420,7 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
   gint offset_x = mpp_frame_get_offset_x (mframe);
   gint offset_y = mpp_frame_get_offset_y (mframe);
   gint dst_width, dst_height;
-  gboolean afbc, nv12_10le40;
+  gboolean afbc;
 
   if (hstride % 2 || vstride % 2)
     return GST_FLOW_NOT_NEGOTIATED;
@@ -443,7 +439,6 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
   dst_format = GST_VIDEO_INFO_FORMAT (info);
   dst_width = GST_VIDEO_INFO_WIDTH (info);
   dst_height = GST_VIDEO_INFO_HEIGHT (info);
-  nv12_10le40 = dst_format == GST_VIDEO_FORMAT_NV12_10LE40;
 
   if (self->rotation || dst_format != src_format ||
       dst_width != width || dst_height != height) {
@@ -474,15 +469,10 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
 
     /* HACK: Fake hstride for Rockchip VOP driver */
     hstride = 0;
-
-#ifndef HAVE_NV12_10LE40
-    if (nv12_10le40)
-      hstride = ((dst_width * 5 >> 2) + 4) / 5 * 5;
-#endif
   }
 
   if (!gst_mpp_dec_update_video_info (decoder, dst_format,
-          dst_width, dst_height, hstride, vstride, 0, afbc, nv12_10le40))
+          dst_width, dst_height, hstride, vstride, 0, afbc))
     return GST_FLOW_NOT_NEGOTIATED;
 
   return GST_FLOW_OK;
@@ -692,11 +682,6 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
 
   if (GST_VIDEO_INFO_IS_AFBC (info))
     GST_MEMORY_FLAGS (mem) |= GST_MEMORY_FLAG_NOT_MAPPABLE;
-
-#ifndef HAVE_NV12_10LE40
-  if (GST_VIDEO_INFO_FORMAT (info) == GST_VIDEO_FORMAT_NV12_10LE40)
-    GST_MEMORY_FLAGS (mem) |= GST_MEMORY_FLAG_NOT_MAPPABLE;
-#endif
 
   gst_buffer_append_memory (buffer, mem);
 

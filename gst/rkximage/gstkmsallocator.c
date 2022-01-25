@@ -148,7 +148,9 @@ extrapolate_stride (const GstVideoFormatInfo * finfo, gint plane, gint stride)
   switch (finfo->format) {
     case GST_VIDEO_FORMAT_NV12:
     case GST_VIDEO_FORMAT_NV12_64Z32:
+#ifdef HAVE_NV12_10LE40
     case GST_VIDEO_FORMAT_NV12_10LE40:
+#endif
     case GST_VIDEO_FORMAT_NV21:
     case GST_VIDEO_FORMAT_NV16:
     case GST_VIDEO_FORMAT_NV61:
