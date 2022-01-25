@@ -445,3 +445,10 @@ gst_mpp_video_dec_class_init (GstMppVideoDecClass * klass)
       "Randy Li <randy.li@rock-chips.com>, "
       "Jeffy Chen <jeffy.chen@rock-chips.com>");
 }
+
+gboolean
+gst_mpp_video_dec_register (GstPlugin * plugin, guint rank)
+{
+  return gst_element_register (plugin, "mppvideodec", rank,
+      gst_mpp_video_dec_get_type ());
+}

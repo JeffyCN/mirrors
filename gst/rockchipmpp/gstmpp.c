@@ -359,35 +359,17 @@ plugin_init (GstPlugin * plugin)
 {
   GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "mpp", 0, "MPP");
 
-  if (!gst_element_register (plugin, "mppvideodec", GST_RANK_PRIMARY + 1,
-          gst_mpp_video_dec_get_type ()))
-    return FALSE;
+  gst_mpp_h264_enc_register (plugin, GST_RANK_PRIMARY + 1);
+  gst_mpp_h265_enc_register (plugin, GST_RANK_PRIMARY + 1);
+  gst_mpp_vp8_enc_register (plugin, GST_RANK_PRIMARY + 1);
+  gst_mpp_jpeg_enc_register (plugin, GST_RANK_PRIMARY + 1);
 
-  if (!gst_element_register (plugin, "mpph264enc", GST_RANK_PRIMARY + 1,
-          gst_mpp_h264_enc_get_type ()))
-    return FALSE;
-
-  if (!gst_element_register (plugin, "mpph265enc", GST_RANK_PRIMARY + 1,
-          gst_mpp_h265_enc_get_type ()))
-    return FALSE;
-
-  if (!gst_element_register (plugin, "mppvp8enc", GST_RANK_PRIMARY + 1,
-          gst_mpp_vp8_enc_get_type ()))
-    return FALSE;
-
-  if (!gst_element_register (plugin, "mppjpegenc", GST_RANK_PRIMARY + 1,
-          gst_mpp_jpeg_enc_get_type ()))
-    return FALSE;
-
-  if (!gst_element_register (plugin, "mppjpegdec", GST_RANK_PRIMARY + 1,
-          gst_mpp_jpeg_dec_get_type ()))
-    return FALSE;
+  gst_mpp_video_dec_register (plugin, GST_RANK_PRIMARY + 1);
+  gst_mpp_jpeg_dec_register (plugin, GST_RANK_PRIMARY + 1);
 
 #ifdef USE_VPXALPHADEC
-  if (!gst_element_register (plugin, "mppvpxalphadecodebin",
-          GST_RANK_PRIMARY + GST_MPP_ALPHA_DECODE_BIN_RANK_OFFSET,
-          gst_mpp_vpx_alpha_decode_bin_get_type ()))
-    return FALSE;
+  gst_mpp_vpx_alpha_decode_bin_register (plugin,
+      GST_RANK_PRIMARY + GST_MPP_ALPHA_DECODE_BIN_RANK_OFFSET);
 #endif
 
   return TRUE;

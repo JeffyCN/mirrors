@@ -245,3 +245,13 @@ gst_mpp_vp8_enc_class_init (GstMppVp8EncClass * klass)
       "Encode video streams via Rockchip Mpp",
       "Jeffy Chen <jeffy.chen@rock-chips.com>");
 }
+
+gboolean
+gst_mpp_vp8_enc_register (GstPlugin * plugin, guint rank)
+{
+  if (!gst_mpp_enc_supported (MPP_VIDEO_CodingVP8))
+    return FALSE;
+
+  return gst_element_register (plugin, "mppvp8enc", rank,
+      gst_mpp_vp8_enc_get_type ());
+}

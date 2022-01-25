@@ -102,6 +102,8 @@ struct _GstMppEnc
 gboolean gst_mpp_enc_apply_properties (GstVideoEncoder * encoder);
 gboolean gst_mpp_enc_set_src_caps (GstVideoEncoder * encoder, GstCaps * caps);
 
+gboolean gst_mpp_enc_supported (MppCodingType mpp_type);
+
 G_END_DECLS;
 
 #endif /* __GST_MPP_ENC_H__ */

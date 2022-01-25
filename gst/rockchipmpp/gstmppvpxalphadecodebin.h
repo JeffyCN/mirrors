@@ -24,11 +24,15 @@
 
 #include "gstmppalphadecodebin.h"
 
-G_BEGIN_DECLS
+G_BEGIN_DECLS;
+
 #define GST_TYPE_MPP_VPX_ALPHA_DECODE_BIN (gst_mpp_vpx_alpha_decode_bin_get_type())
 G_DECLARE_FINAL_TYPE (GstMppVpxAlphaDecodeBin,
     gst_mpp_vpx_alpha_decode_bin, GST, MPP_VPX_ALPHA_DECODE_BIN,
     GstMppAlphaDecodeBin);
 
-G_END_DECLS
-#endif
+gboolean gst_mpp_vpx_alpha_decode_bin_register (GstPlugin * plugin, guint rank);
+
+G_END_DECLS;
+
+#endif /* __GST_MPP_VPX_ALPHA_DECODE_BIN_H__ */

@@ -69,3 +69,10 @@ gst_mpp_vpx_alpha_decode_bin_init (GstMppVpxAlphaDecodeBin * self)
 {
   (void) self;
 }
+
+gboolean
+gst_mpp_vpx_alpha_decode_bin_register (GstPlugin * plugin, guint rank)
+{
+  return gst_element_register (plugin, "mppvpxalphadecodebin", rank,
+      gst_mpp_vpx_alpha_decode_bin_get_type ());
+}

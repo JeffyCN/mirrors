@@ -33,6 +33,8 @@ G_BEGIN_DECLS;
 G_DECLARE_FINAL_TYPE (GstMppH264Enc, gst_mpp_h264_enc, GST,
     MPP_H264_ENC, GstMppEnc);
 
+gboolean gst_mpp_h264_enc_register (GstPlugin * plugin, guint rank);
+
 G_END_DECLS;
 
 #endif /* __GST_MPP_H264_ENC_H__ */

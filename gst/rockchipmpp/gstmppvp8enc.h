@@ -33,6 +33,8 @@ G_BEGIN_DECLS;
 G_DECLARE_FINAL_TYPE (GstMppVp8Enc, gst_mpp_vp8_enc, GST,
     MPP_VP8_ENC, GstMppEnc);
 
+gboolean gst_mpp_vp8_enc_register (GstPlugin * plugin, guint rank);
+
 G_END_DECLS;
 
 #endif /* __GST_MPP_VP8_ENC_H__ */

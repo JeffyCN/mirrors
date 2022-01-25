@@ -426,3 +426,13 @@ gst_mpp_h264_enc_class_init (GstMppH264EncClass * klass)
       "Randy Li <randy.li@rock-chips.com>, "
       "Jeffy Chen <jeffy.chen@rock-chips.com>");
 }
+
+gboolean
+gst_mpp_h264_enc_register (GstPlugin * plugin, guint rank)
+{
+  if (!gst_mpp_enc_supported (MPP_VIDEO_CodingAVC))
+    return FALSE;
+
+  return gst_element_register (plugin, "mpph264enc", rank,
+      gst_mpp_h264_enc_get_type ());
+}

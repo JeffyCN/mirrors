@@ -585,3 +585,10 @@ gst_mpp_jpeg_dec_class_init (GstMppJpegDecClass * klass)
       "Randy Li <randy.li@rock-chips.com>, "
       "Jeffy Chen <jeffy.chen@rock-chips.com>");
 }
+
+gboolean
+gst_mpp_jpeg_dec_register (GstPlugin * plugin, guint rank)
+{
+  return gst_element_register (plugin, "mppjpegdec", rank,
+      gst_mpp_jpeg_dec_get_type ());
+}

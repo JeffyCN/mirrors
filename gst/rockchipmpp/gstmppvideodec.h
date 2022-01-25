@@ -33,6 +33,8 @@ G_BEGIN_DECLS;
 G_DECLARE_FINAL_TYPE (GstMppVideoDec, gst_mpp_video_dec, GST,
     MPP_VIDEO_DEC, GstMppDec);
 
+gboolean gst_mpp_video_dec_register (GstPlugin * plugin, guint rank);
+
 G_END_DECLS;
 
 #endif /* __GST_MPP_VIDEO_DEC_H__ */

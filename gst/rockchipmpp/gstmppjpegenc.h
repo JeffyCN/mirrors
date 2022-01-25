@@ -33,6 +33,8 @@ G_BEGIN_DECLS;
 G_DECLARE_FINAL_TYPE (GstMppJpegEnc, gst_mpp_jpeg_enc, GST,
     MPP_JPEG_ENC, GstMppEnc);
 
+gboolean gst_mpp_jpeg_enc_register (GstPlugin * plugin, guint rank);
+
 G_END_DECLS;
 
 #endif /* __GST_MPP_JPEG_ENC_H__ */

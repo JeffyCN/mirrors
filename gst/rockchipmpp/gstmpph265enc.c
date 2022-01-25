@@ -300,3 +300,13 @@ gst_mpp_h265_enc_class_init (GstMppH265EncClass * klass)
       "Encode video streams via Rockchip Mpp",
       "Jeffy Chen <jeffy.chen@rock-chips.com>");
 }
+
+gboolean
+gst_mpp_h265_enc_register (GstPlugin * plugin, guint rank)
+{
+  if (!gst_mpp_enc_supported (MPP_VIDEO_CodingHEVC))
+    return FALSE;
+
+  return gst_element_register (plugin, "mpph265enc", rank,
+      gst_mpp_h265_enc_get_type ());
+}

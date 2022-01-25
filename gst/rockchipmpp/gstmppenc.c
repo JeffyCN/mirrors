@@ -126,6 +126,24 @@ gst_mpp_enc_format_supported (MppFrameFormat format)
   return FALSE;
 }
 
+gboolean
+gst_mpp_enc_supported (MppCodingType mpp_type)
+{
+  MppCtx mpp_ctx;
+  MppApi *mpi;
+
+  if (mpp_create (&mpp_ctx, &mpi))
+    return FALSE;
+
+  if (mpp_init (mpp_ctx, MPP_CTX_ENC, mpp_type)) {
+    mpp_destroy (mpp_ctx);
+    return FALSE;
+  }
+
+  mpp_destroy (mpp_ctx);
+  return TRUE;
+}
+
 static gboolean
 gst_mpp_enc_video_info_matched (GstVideoInfo * info, GstVideoInfo * other)
 {
@@ -470,7 +488,7 @@ gst_mpp_enc_start (GstVideoEncoder * encoder)
     goto err_unref_alloc;
 
   if (mpp_init (self->mpp_ctx, MPP_CTX_ENC, self->mpp_type))
-    goto err_unref_alloc;
+    goto err_destroy_mpp;
 
   if (mpp_frame_init (&self->mpp_frame))
     goto err_destroy_mpp;

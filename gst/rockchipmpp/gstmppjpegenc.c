@@ -204,3 +204,13 @@ gst_mpp_jpeg_enc_class_init (GstMppJpegEncClass * klass)
       "Randy Li <randy.li@rock-chips.com>, "
       "Jeffy Chen <jeffy.chen@rock-chips.com>");
 }
+
+gboolean
+gst_mpp_jpeg_enc_register (GstPlugin * plugin, guint rank)
+{
+  if (!gst_mpp_enc_supported (MPP_VIDEO_CodingMJPEG))
+    return FALSE;
+
+  return gst_element_register (plugin, "mppjpegenc", rank,
+      gst_mpp_jpeg_enc_get_type ());
+}
