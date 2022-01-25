@@ -9,9 +9,11 @@ rockchipmpp_sources = [
   'gstmpph264enc.c',
   'gstmpph265enc.c',
   'gstmppvp8enc.c',
-  'gstmppalphadecodebin.c',
-  'gstmppvpxalphadecodebin.c',
 ]
+
+if vpxalphadec
+  rockchipmpp_sources += ['gstmppalphadecodebin.c', 'gstmppvpxalphadecodebin.c']
+endif
 
 if not mpp_dep.found()
   subdir_done()

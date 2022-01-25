@@ -383,13 +383,12 @@ plugin_init (GstPlugin * plugin)
           gst_mpp_jpeg_dec_get_type ()))
     return FALSE;
 
-  /* Both codecalphademux and alphacombine elements were added in 1.19 */
-  if (GST_VERSION_MAJOR == 1 && GST_VERSION_MINOR >= 19) {
-    if (!gst_element_register (plugin, "mppvpxalphadecodebin",
-            GST_RANK_PRIMARY + GST_MPP_ALPHA_DECODE_BIN_RANK_OFFSET,
-            gst_mpp_vpx_alpha_decode_bin_get_type ()))
-      return FALSE;
-  }
+#ifdef USE_VPXALPHADEC
+  if (!gst_element_register (plugin, "mppvpxalphadecodebin",
+          GST_RANK_PRIMARY + GST_MPP_ALPHA_DECODE_BIN_RANK_OFFSET,
+          gst_mpp_vpx_alpha_decode_bin_get_type ()))
+    return FALSE;
+#endif
 
   return TRUE;
 }
