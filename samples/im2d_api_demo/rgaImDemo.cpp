@@ -420,7 +420,7 @@ int main(int argc, char*  argv[]) {
 
 	                    memset(dst_buf,0x00,720*480*get_bpp_from_format(DST_FORMAT));
 
-	                    dst_handle = importbuffer_virtualaddr(dst_buf, 1920, 1080, DST_FORMAT);
+	                    dst_handle = importbuffer_virtualaddr(dst_buf, 720, 480, DST_FORMAT);
 #endif
 	                    dst = wrapbuffer_handle(dst_handle, 720, 480, DST_FORMAT);
 	                    if(dst.width == 0) {
