@@ -306,6 +306,7 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
                     break;
                 case 0x23998 :
+                case 0x28610 :
                     rga_version = IM_RGA_HW_VERSION_RGA_2_LITE1_INDEX;
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
 
