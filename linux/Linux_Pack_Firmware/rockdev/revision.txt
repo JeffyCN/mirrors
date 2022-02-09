@@ -1,0 +1,5 @@
+v2.0 revision(2021/08/16):
+afptool:
+1.fix bug when place normal item after replicated item in the package-file
+rkImageMaker:
+1.support input storage info
