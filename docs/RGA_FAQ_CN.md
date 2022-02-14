@@ -188,51 +188,111 @@ E librga  : gr_color_x [0, 0, 0]												//填充颜色配置，对应R、G�
 
 不同的RGA硬件版本开启驱动调试节点方式相同，但调试节点分别储存在对应的硬件大版本的文件夹下：
 
-> RGA1 :
-> /sys/kernel/debug/rga_debug/rga
-> RGA2 :
-> /sys/kernel/debug/rga2_debug/rga2
+> /sys/kerne/debug/rkrga/debug
 
 - 调试功能说明
 
 以RGA2为例，在对应的目录下可以通过cat节点，获取对应功能说明：
 
 ```shell
-/# cd /sys/kernel/debug/rga2_debug/
-/# cat rga2
-echo reg > rga2 to open rga reg MSG 		//开启寄存器配置打印
-echo msg > rga2 to open rga msg MSG 		//开启传递参数打印
-echo time > rga2 to open rga time MSG 		//开启耗时打印
-echo check > rga2 to open rga check flag 	//打开检查 case 功能
-echo stop > rga2 to stop using hardware 	//停用 rga 驱动
-echo int > rga2 to open interruppt MSG 		//打开中断信息打印
-echo slt > rga2 to open slt test 			// 进行内部 slt 测试
+/# cd /sys/kerne/debug/rkrga/
+/# cat debug
+REG [DIS]
+MSG [DIS]
+TIME [DIS]
+INT [DIS]
+CHECK [DIS]
+STOP [DIS]
+
+help:
+ 'echo reg > debug' to enable/disable register log printing.
+ 'echo msg > debug' to enable/disable message log printing.
+ 'echo time > debug' to enable/disable time log printing.
+ 'echo int > debug' to enable/disable interruppt log printing.
+ 'echo check > debug' to enable/disable check mode.
+ 'echo stop > debug' to enable/disable stop using hardware
 ```
 
-> echo reg > rga2：该命令开关 RGA 寄存器配置信息的打印。打开该打印时，将会打印每次 rga 工作寄存器的配置值
+> echo reg > debug：该命令开关 RGA 寄存器配置信息的打印。打开该打印时，将会打印每次 rga 工作寄存器的配置值
 >
-> echo msg> rga2：该命令开关 RGA 上层配置参数信息的打印。打开该打印时，上层调用 rga 驱动传递的参数将被打印出来。
+> echo msg> debug：该命令开关 RGA 上层配置参数信息的打印。打开该打印时，上层调用 rga 驱动传递的参数将被打印出来。
 >
-> echo time> rga2：该命令开关 RGA 工作耗时信息的打印。打开该打印时，将会打印每一次的调用rga 工作的耗时
+> echo time> debug：该命令开关 RGA 工作耗时信息的打印。打开该打印时，将会打印每一次的调用rga 工作的耗时
 >
-> echo check> rga2：该命令开关 RGA 内部的测试 case。打开该打印时，将会在 RGA 每次工作的时候检查相关的参数，主要是内存的检查，和对齐是否满足要求。若输出如下 log 表示通过检查。若内存存在越界的情况，将会导致内核 crash。可以通过 cash 之前的打印 log 确认是 src 数据的问题还是 dst 数据的问题。
+> echo check> debug：该命令开关 RGA 内部的测试 case。打开该打印时，将会在 RGA 每次工作的时候检查相关的参数，主要是内存的检查，和对齐是否满足要求。若输出如下 log 表示通过检查。若内存存在越界的情况，将会导致内核 crash。可以通过 cash 之前的打印 log 确认是 src 数据的问题还是 dst 数据的问题。
 >
-> echo stop> rga2：该命令开关 RGA 的工作状态。开启时，rga 将不工作直接返回。用于一些特殊情况下的调式。
+> echo stop> debug：该命令开关 RGA 的工作状态。开启时，rga 将不工作直接返回。用于一些特殊情况下的调式。
 >
-> echo int> rga2：该命令开关 RGA 寄存器中断信息的打印。打开该打印时，将会在 RGA 进入中断后打印中断寄存器和状态基础器的当前值。
+> echo int> debug：该命令开关 RGA 寄存器中断信息的打印。打开该打印时，将会在 RGA 进入中断后打印中断寄存器和状态基础器的当前值。
 >
-> echo slt> rga2：该命令让 rga 驱动执行内部 SLT case 测试 rga 硬件是否正常。 若输出日志“rga slt success !!”则表示功能正常。
+> echo slt> debug：该命令让 rga 驱动执行内部 SLT case 测试 rga 硬件是否正常。 若输出日志“rga slt success !!”则表示功能正常。
 
 - 开关调试节点
 
-日志打印的开启与关闭命令是相同的，每次输入命令进行切换状态（开启/关闭），可以通过输入命令后打印的日志信息（“open xxx”或者“close xxx”）确认日志打印功能是否如预期般开启或者关闭。
+日志打印的开启与关闭命令是相同的，每次输入命令进行切换状态（开启/关闭），可以通过cat debug节点或者输入命令后打印的日志信息（“open xxx”或者“close xxx”）确认日志打印功能是否如预期般开启或者关闭。
+
+> cat debug节点:
 
 ```shell
-/ # echo reg > /sys/kernel/debug/rga2_debug/rga2
-/ # dmesg -c						//通过节点打开的相关日志的打印等级为KERNEL_DEBUG，需要使用dmesg命令才能在串口或者adb看到对应的日志打印。
-[ 4802.344683] rga2: open rga2 reg!	
-/ # echo reg > /sys/kernel/debug/rga2_debug/rga2
-/ # dmesg -c
+/# cd /sys/kernel/debug/rkrga/
+/# cat debug
+REG [DIS]
+MSG [DIS]
+TIME [DIS]
+INT [DIS]
+CHECK [DIS]
+STOP [DIS]
+
+help:
+ 'echo reg > debug' to enable/disable register log printing.
+ 'echo msg > debug' to enable/disable message log printing.
+ 'echo time > debug' to enable/disable time log printing.
+ 'echo int > debug' to enable/disable interruppt log printing.
+ 'echo check > debug' to enable/disable check mode.
+ 'echo stop > debug' to enable/disable stop using hardware
+/# echo msg > debug
+/# echo ref > debug
+/# cat debug
+REG [DIS]
+MSG [EN]
+TIME [DIS]
+INT [DIS]
+CHECK [DIS]
+STOP [DIS]
+
+help:
+ 'echo reg > debug' to enable/disable register log printing.
+ 'echo msg > debug' to enable/disable message log printing.
+ 'echo time > debug' to enable/disable time log printing.
+ 'echo int > debug' to enable/disable interruppt log printing.
+ 'echo check > debug' to enable/disable check mode.
+ 'echo stop > debug' to enable/disable stop using hardware
+/# echo msg > debug
+/# cat debug
+REG [DIS]
+MSG [DIS]
+TIME [DIS]
+INT [DIS]
+CHECK [DIS]
+STOP [DIS]
+
+help:
+ 'echo reg > debug' to enable/disable register log printing.
+ 'echo msg > debug' to enable/disable message log printing.
+ 'echo time > debug' to enable/disable time log printing.
+ 'echo int > debug' to enable/disable interruppt log printing.
+ 'echo check > debug' to enable/disable check mode.
+ 'echo stop > debug' to enable/disable stop using hardware
+```
+
+> 日志打印:
+
+```shell
+/# echo reg > /sys/kerne/debug/rkrga/debug
+/# dmesg -c						//For logs opened through nodes, the printing level is KERNEL_DEBUG. You need to run the dmesg command to view the corresponding logs on the serial port or adb.
+[ 4802.344683] rga2: open rga2 reg!
+/# echo reg > /sys/kernel/debug/rga2_debug/rga2
+/# dmesg -c
 [ 5096.412419] rga2: close rga2 reg!
 ```
 
