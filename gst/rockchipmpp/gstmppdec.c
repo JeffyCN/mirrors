@@ -504,6 +504,8 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
         if (GST_CLOCK_TIME_IS_VALID (frame->pts))
           self->mpp_delta_pts = frame->pts - MPP_TO_GST_PTS (pts);
 
+        pts = frame->pts;
+
         GST_DEBUG_OBJECT (self, "MPP delta pts=%" GST_TIME_FORMAT,
             GST_TIME_ARGS (self->mpp_delta_pts));
       }
@@ -525,6 +527,8 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
   /* Fixup MPP PTS */
   if (self->use_mpp_pts && GST_CLOCK_TIME_IS_VALID (pts)) {
     pts = MPP_TO_GST_PTS (pts);
+
+    /* Apply delta PTS for frame matching */
     pts += self->mpp_delta_pts;
   }
 
@@ -584,6 +588,8 @@ out:
   if (frame) {
     gst_video_codec_frame_ref (frame);
 
+    /* Prefer using MPP PTS */
+    pts -= self->mpp_delta_pts;
     if (GST_CLOCK_TIME_IS_VALID (pts))
       frame->pts = pts;
   }
