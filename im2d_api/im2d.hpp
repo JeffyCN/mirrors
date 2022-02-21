@@ -271,6 +271,20 @@ IM_API IM_STATUS imquantize(const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn
 IM_API IM_STATUS imrop(const rga_buffer_t src, rga_buffer_t dst, int rop_code, int sync = 1, int *release_fence_fd = NULL);
 
 /*
+ * MOSAIC
+ *
+ * @param src
+ * @param dst
+ * @param mosaic_mode
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef immosaic
+IM_API IM_STATUS immosaic(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync = 1, int *release_fence_fd = NULL);
+
+/*
  * process
  *
  * @param src

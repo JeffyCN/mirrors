@@ -1218,6 +1218,34 @@ IM_API IM_STATUS imrop(const rga_buffer_t src, rga_buffer_t dst, int rop_code, i
     return ret;
 }
 
+IM_API IM_STATUS immosaic(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync, int *release_fence_fd) {
+    int usage = 0;
+    IM_STATUS ret = IM_STATUS_NOERROR;
+
+    im_opt_t opt;
+
+    rga_buffer_t pat;
+
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    usage |= IM_MOSAIC;
+
+    opt.mosaic_mode = mosaic_mode;
+
+    if (sync == 0)
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage |= IM_SYNC;
+
+    ret = improcess(src, dst, pat, srect, drect, prect, -1, release_fence_fd, &opt, usage);
+
+    return ret;
+}
+
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                         im_rect srect, im_rect drect, im_rect prect, int usage) {
     IM_STATUS ret = IM_STATUS_NOERROR;
@@ -1387,6 +1415,12 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     /* set ROP */
     if (usage & IM_ROP) {
         srcinfo.rop_code = opt->rop_code;
+    }
+
+    /* set mosaic */
+    if (usage & IM_MOSAIC) {
+        srcinfo.mosaic_info.enable = true;
+        srcinfo.mosaic_info.mode = opt->mosaic_mode;
     }
 
     /* special config for color space convert */
@@ -1664,4 +1698,8 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
 
 IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code, int sync) {
     return imrop(src, dst, rop_code, sync, NULL);
+}
+
+IM_API IM_STATUS immosaic_t(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync) {
+    return immosaic(src, dst, mosaic_mode, sync, NULL);
 }

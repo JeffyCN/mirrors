@@ -79,13 +79,14 @@ typedef enum {
     IM_ALPHA_COLORKEY_MASK      = 0x60000,
 
     IM_SYNC                     = 1 << 19,
-    IM_ASYNC                    = 1 << 26,
     IM_CROP                     = 1 << 20,    /* Unused */
     IM_COLOR_FILL               = 1 << 21,
     IM_COLOR_PALETTE            = 1 << 22,
     IM_NN_QUANTIZE              = 1 << 23,
     IM_ROP                      = 1 << 24,
     IM_ALPHA_BLEND_PRE_MUL      = 1 << 25,
+    IM_ASYNC                    = 1 << 26,
+    IM_MOSAIC                   = 1 << 27,
 
 } IM_USAGE;
 
@@ -113,6 +114,14 @@ typedef enum {
     IM_ROP_XOR                  = 0xf6,
     IM_ROP_NOT_XOR              = 0xf9,
 } IM_ROP_CODE;
+
+typedef enum {
+    IM_MOSAIC_8                 = 0x0,
+    IM_MOSAIC_16                = 0x1,
+    IM_MOSAIC_32                = 0x2,
+    IM_MOSAIC_64                = 0x3,
+    IM_MOSAIC_128               = 0x4,
+} IM_MOSAIC_MODE;
 
 /* Status codes, returned by any blit function */
 typedef enum {
@@ -238,6 +247,8 @@ typedef struct im_opt {
 
     int priority;
     int core;
+
+    int mosaic_mode;
 } im_opt_t;
 
 typedef struct im_context {
@@ -903,6 +914,34 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
         __ret; \
     })
 IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code, int sync);
+
+/*
+ * MOSAIC
+ *
+ * @param src
+ * @param dst
+ * @param mosaic_mode
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#define immosaic(src, dst, mosaic_mode, ...) \
+    ({ \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = immosaic_t(src, dst, mosaic_mode, 1); \
+        } else if (__argc == 1){ \
+            __ret = immosaic_t(src, dst, mosaic_mode, (int)__args[RGA_GET_MIN(__argc, 0)]); \
+        } else { \
+            __ret = IM_STATUS_INVALID_PARAM; \
+            printf("invalid parameter\n"); \
+        } \
+        __ret; \
+    })
+IM_API IM_STATUS immosaic_t(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync);
 
 /*
  * process

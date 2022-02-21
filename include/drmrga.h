@@ -185,7 +185,9 @@ typedef struct rga_info {
 
     rga_buffer_handle_t handle;
 
-	char reserve[478];
+    struct rga_mosaic_info mosaic_info;
+
+	char reserve[476];
 } rga_info_t;
 
 
