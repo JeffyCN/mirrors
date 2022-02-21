@@ -198,8 +198,11 @@ typedef enum _Rga_SURF_FORMAT {
 
     RK_FORMAT_YCbCr_420_SP_10B = 0x20 << 8,
     RK_FORMAT_YCrCb_420_SP_10B = 0x21 << 8,
-    RK_FORMAT_YCbCr_422_10b_SP = 0x22 << 8,
-    RK_FORMAT_YCrCb_422_10b_SP = 0x23 << 8,
+    RK_FORMAT_YCbCr_422_SP_10B = 0x22 << 8,
+    RK_FORMAT_YCrCb_422_SP_10B = 0x23 << 8,
+    /* For compatibility with misspellings */
+    RK_FORMAT_YCbCr_422_10b_SP = RK_FORMAT_YCbCr_422_SP_10B,
+    RK_FORMAT_YCrCb_422_10b_SP = RK_FORMAT_YCrCb_422_SP_10B,
 
     RK_FORMAT_BGR_565      = 0x24 << 8,
     RK_FORMAT_BGRA_5551    = 0x25 << 8,
