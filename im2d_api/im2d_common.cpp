@@ -905,7 +905,7 @@ IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, im_handl
     buffers[0].memory = memory;
     memcpy(&buffers[0].memory_info, param, sizeof(struct rga_memory_parm));
 
-    buffer_pool.buffers = buffers;
+    buffer_pool.buffers = (uint64_t)buffers;
     buffer_pool.size = 1;
 
     if (rga_import_buffers(&buffer_pool) != IM_STATUS_SUCCESS)
@@ -944,7 +944,7 @@ IM_API IM_STATUS rga_release_buffer(int handle) {
 
     buffers[0].handle = handle;
 
-    buffer_pool.buffers = buffers;
+    buffer_pool.buffers = (uint64_t)buffers;
     buffer_pool.size = 1;
 
     return rga_release_buffers(&buffer_pool);
