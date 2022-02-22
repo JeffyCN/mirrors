@@ -483,6 +483,9 @@ IM_API const char* querystring(int name) {
         "FBC_mode ",
         "blend_in_YUV ",
         "BT.2020 ",
+        "mosaic ",
+        "OSD ",
+        "early_interruption ",
     };
     const char *performance[] = {
         "unknown",
@@ -685,6 +688,12 @@ IM_API const char* querystring(int name) {
                     out << feature[IM_RGA_SUPPORT_FEATURE_BLEND_YUV_INDEX];
                 if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_BT2020)
                     out << feature[IM_RGA_SUPPORT_FEATURE_BT2020_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_MOSAIC)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_MOSAIC_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_OSD)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_OSD_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_EARLY_INTR)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_EARLY_INTR_INDEX];
                 out << endl;
                 break;
 
