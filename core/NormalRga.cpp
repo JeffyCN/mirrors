@@ -1066,6 +1066,17 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     else
         ditherEn = 0;
 
+    /* YUV HDS or VDS enable */
+    if (NormalRgaIsYuvFormat(relDstRect.format)) {
+        rgaReg.uvhds_mode = 1;
+        if ((relDstRect.format == RK_FORMAT_YCbCr_420_SP ||
+             relDstRect.format == RK_FORMAT_YCrCb_420_SP) &&
+            rotation == 0 && hScale == 1.0f && vScale == 1.0f) {
+            /* YUV420SP only support vds when without rotation and scale. */
+            rgaReg.uvvds_mode = 1;
+        }
+    }
+
 #ifdef ANDROID
     if(is_out_log())
         ALOGE("rgaVersion = %lf  , ditherEn =%d ",ctx->mVersion,ditherEn);
