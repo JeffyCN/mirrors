@@ -87,7 +87,7 @@ typedef enum {
     IM_ALPHA_BLEND_PRE_MUL      = 1 << 25,
     IM_ASYNC                    = 1 << 26,
     IM_MOSAIC                   = 1 << 27,
-
+    IM_OSD                      = 1 << 28,
 } IM_USAGE;
 
 typedef enum {
@@ -164,6 +164,52 @@ typedef enum {
     IM_CONFIG_CHECK,
 } IM_CONFIG_NAME;
 
+typedef enum {
+    IM_OSD_MODE_STATISTICS      = 0x1 << 0,
+    IM_OSD_MODE_AUTO_INVERT     = 0x1 << 1,
+} IM_OSD_MODE;
+
+typedef enum {
+    IM_OSD_INVERT_CHANNEL_NONE          = 0x0,
+    IM_OSD_INVERT_CHANNEL_Y_G           = 0x1 << 0,
+    IM_OSD_INVERT_CHANNEL_C_RB          = 0x1 << 1,
+    IM_OSD_INVERT_CHANNEL_ALPHA         = 0x1 << 2,
+    IM_OSD_INVERT_CHANNEL_COLOR         = IM_OSD_INVERT_CHANNEL_Y_G |
+                                          IM_OSD_INVERT_CHANNEL_C_RB,
+    IM_OSD_INVERT_CHANNEL_BOTH          = IM_OSD_INVERT_CHANNEL_COLOR |
+                                          IM_OSD_INVERT_CHANNEL_ALPHA,
+} IM_OSD_INVERT_CHANNEL;
+
+typedef enum {
+    IM_OSD_FLAGS_INTERNAL = 0,
+    IM_OSD_FLAGS_EXTERNAL,
+} IM_OSD_FLAGS_MODE;
+
+typedef enum {
+    IM_OSD_INVERT_USE_FACTOR,
+    IM_OSD_INVERT_USE_SWAP,
+} IM_OSD_INVERT_MODE;
+
+typedef enum {
+    IM_OSD_BACKGROUND_DEFAULT_BRIGHT = 0,
+    IM_OSD_BACKGROUND_DEFAULT_DARK,
+} IM_OSD_BACKGROUND_DEFAULT;
+
+typedef enum {
+    IM_OSD_BLOCK_MODE_NORMAL = 0,
+    IM_OSD_BLOCK_MODE_DIFFERENT,
+} IM_OSD_BLOCK_WIDTH_MODE;
+
+typedef enum {
+    IM_OSD_MODE_HORIZONTAL,
+    IM_OSD_MODE_VERTICAL,
+} IM_OSD_DIRECTION;
+
+typedef enum {
+    IM_OSD_COLOR_PIXEL,
+    IM_OSD_COLOR_EXTERNAL,
+} IM_OSD_COLOR_MODE;
+
 /* Get RGA basic information index */
 typedef enum {
     RGA_VENDOR = 0,
@@ -239,6 +285,67 @@ typedef struct {
     rga_buffer_handle_t handle;         /* buffer handle */
 } rga_buffer_t;
 
+typedef struct rga_osd_invert_factor im_osd_invert_factor_t;
+
+typedef struct im_osd_block {
+    int width_mode;             // normal or different
+                                //   IM_OSD_BLOCK_MODE_NORMAL
+                                //   IM_OSD_BLOCK_MODE_DIFFERENT
+    union {
+        int width;              // normal_mode block width
+        int width_index;        // different_mode block width index in RAM
+    };
+
+    int block_count;            // block count
+
+    int background_config;      // background config is bright or dark
+                                //   IM_OSD_BACKGROUND_DEFAULT_BRIGHT
+                                //   IM_OSD_BACKGROUND_DEFAULT_DARK
+
+    int direction;              // osd block direction
+                                //   IM_OSD_MODE_HORIZONTAL
+                                //   IM_OSD_MODE_VERTICAL
+
+    int color_mode;             // using src1 color or config color
+                                //   IM_OSD_COLOR_PIXEL
+                                //   IM_OSD_COLOR_EXTERNAL
+    int background_color;       // config color: background
+    int Foreground_color;       // config color: foreground
+} im_osd_block_t;
+
+typedef struct im_osd_invert {
+    int invert_channel;         // invert channel config:
+                                //   IM_OSD_INVERT_CHANNEL_NONE
+                                //   IM_OSD_INVERT_CHANNEL_Y_G
+                                //   IM_OSD_INVERT_CHANNEL_C_RB
+                                //   IM_OSD_INVERT_CHANNEL_ALPHA
+                                //   IM_OSD_INVERT_CHANNEL_COLOR
+                                //   IM_OSD_INVERT_CHANNEL_BOTH
+    int flags_mode;             // use external or inertnal RAM invert flags
+                                //   IM_OSD_FLAGS_EXTERNAL
+                                //   IM_OSD_FLAGS_INTERNAL
+    int flags_index;            // flags index when using internal RAM invert flags
+
+    uint64_t invert_flags;      // external invert flags
+    uint64_t current_flags;     // current flags
+
+    int invert_mode;            // invert use swap or factor
+                                //   IM_OSD_INVERT_USE_FACTOR
+                                //   IM_OSD_INVERT_USE_SWAP
+    im_osd_invert_factor_t factor;
+
+    int threash;
+} im_osd_invert_t;
+
+typedef struct im_osd {
+    int osd_mode;                       // osd mode: statistics or auto_invert
+                                        //   IM_OSD_MODE_STATISTICS
+                                        //   IM_OSD_MODE_AUTO_INVERT
+    im_osd_block_t block_parm;          // osd block info config
+
+    im_osd_invert_t invert_config;
+} im_osd_t;
+
 typedef struct im_opt {
     int color;                          /* color, used by color fill */
     im_colorkey_range colorkey_range;   /* range value of color key */
@@ -249,6 +356,8 @@ typedef struct im_opt {
     int core;
 
     int mosaic_mode;
+
+    im_osd_t osd_config;
 } im_opt_t;
 
 typedef struct im_context {
@@ -942,6 +1051,39 @@ IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code,
         __ret; \
     })
 IM_API IM_STATUS immosaic_t(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync);
+
+/*
+ * OSD
+ *
+ * @param osd
+ *      osd block
+ * @param dst
+ *      background image
+ * @param osd_rect
+ * @param osd_config
+ *      osd mode config
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#define imosd(osd, dst, osd_rect, osd_config, ...) \
+    ({ \
+        IM_STATUS __ret = IM_STATUS_SUCCESS; \
+        int __args[] = {__VA_ARGS__}; \
+        int __argc = sizeof(__args)/sizeof(int); \
+        if (__argc == 0) { \
+            __ret = imosd_t(osd, dst, osd_rect, osd_config, 1); \
+        } else if (__argc == 1){ \
+            __ret = imosd_t(osd, dst, osd_rect, osd_config, (int)__args[RGA_GET_MIN(__argc, 0)]); \
+        } else { \
+            __ret = IM_STATUS_INVALID_PARAM; \
+            printf("invalid parameter\n"); \
+        } \
+        __ret; \
+    })
+IM_API IM_STATUS imosd_t(const rga_buffer_t osd,const rga_buffer_t dst,
+                         const im_rect osd_rect, im_osd_t *osd_config, int sync);
 
 /*
  * process

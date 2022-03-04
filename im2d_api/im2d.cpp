@@ -1133,6 +1133,28 @@ IM_API IM_STATUS imblend(const rga_buffer_t src, rga_buffer_t dst, int mode, int
     return imcomposite(src, pat, dst, mode, sync, release_fence_fd);
 }
 
+IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
+                       const im_rect osd_rect, im_osd_t *osd_info,
+                       int sync, int *release_fence_fd) {
+    int usage = 0;
+    im_opt_t opt;
+    im_rect tmp_rect;
+
+    memset(&opt, 0x0, sizeof(opt));
+    memset(&tmp_rect, 0x0, sizeof(tmp_rect));
+
+    memcpy(&opt.osd_config, osd_info, sizeof(im_osd_t));
+
+    usage |= IM_ALPHA_BLEND_DST_OVER | IM_OSD;
+
+    if (sync == 0)
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage |= IM_SYNC;
+
+    return improcess(dst, dst, osd, osd_rect, osd_rect, tmp_rect, -1, release_fence_fd, &opt, usage);
+}
+
 IM_API IM_STATUS imcvtcolor(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync, int *release_fence_fd) {
     int usage = 0;
     IM_STATUS ret = IM_STATUS_NOERROR;
@@ -1399,6 +1421,58 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                 srcinfo.colorkey_mode = 1;
                 break;
         }
+    }
+
+    /* OSD */
+    if (usage & IM_OSD) {
+        srcinfo.osd_info.enable = true;
+
+        srcinfo.osd_info.mode_ctrl.mode = opt->osd_config.osd_mode;
+
+        srcinfo.osd_info.mode_ctrl.width_mode = opt->osd_config.block_parm.width_mode;
+        if (opt->osd_config.block_parm.width_mode == IM_OSD_BLOCK_MODE_NORMAL)
+            srcinfo.osd_info.mode_ctrl.block_fix_width = opt->osd_config.block_parm.width;
+        else if (opt->osd_config.block_parm.width_mode == IM_OSD_BLOCK_MODE_DIFFERENT)
+            srcinfo.osd_info.mode_ctrl.unfix_index = opt->osd_config.block_parm.width_index;
+        srcinfo.osd_info.mode_ctrl.block_num = opt->osd_config.block_parm.block_count;
+        srcinfo.osd_info.mode_ctrl.default_color_sel = opt->osd_config.block_parm.background_config;
+        srcinfo.osd_info.mode_ctrl.direction_mode = opt->osd_config.block_parm.direction;
+        srcinfo.osd_info.mode_ctrl.color_mode = opt->osd_config.block_parm.color_mode;
+
+        srcinfo.osd_info.bpp2_info.color0 = opt->osd_config.block_parm.background_color;
+        srcinfo.osd_info.bpp2_info.color1 = opt->osd_config.block_parm.Foreground_color;
+
+        switch (opt->osd_config.invert_config.invert_channel) {
+            case IM_OSD_INVERT_CHANNEL_NONE:
+                srcinfo.osd_info.mode_ctrl.invert_enable = (0x1 << 1) | (0x1 << 3);
+                break;
+            case IM_OSD_INVERT_CHANNEL_Y_G:
+                srcinfo.osd_info.mode_ctrl.invert_enable = 0x1 <<3;
+                break;
+            case IM_OSD_INVERT_CHANNEL_C_RB:
+                srcinfo.osd_info.mode_ctrl.invert_enable = 0x1 << 1;
+                break;
+            case IM_OSD_INVERT_CHANNEL_ALPHA:
+                srcinfo.osd_info.mode_ctrl.invert_enable = (0x1 << 0) | (0x1 << 1) | (0x1 << 3);
+                break;
+            case IM_OSD_INVERT_CHANNEL_COLOR:
+                srcinfo.osd_info.mode_ctrl.invert_enable = 0;
+                break;
+            case IM_OSD_INVERT_CHANNEL_BOTH:
+                srcinfo.osd_info.mode_ctrl.invert_enable = 0x1 << 0;
+        }
+        srcinfo.osd_info.mode_ctrl.invert_flags_mode = opt->osd_config.invert_config.flags_mode;
+        srcinfo.osd_info.mode_ctrl.flags_index = opt->osd_config.invert_config.flags_index;
+
+        srcinfo.osd_info.last_flags = opt->osd_config.invert_config.invert_flags;
+        srcinfo.osd_info.cur_flags = opt->osd_config.invert_config.current_flags;
+
+        srcinfo.osd_info.mode_ctrl.invert_mode = opt->osd_config.invert_config.invert_mode;
+        if (opt->osd_config.invert_config.invert_mode == IM_OSD_INVERT_USE_FACTOR) {
+            memcpy(&srcinfo.osd_info.cal_factor, &opt->osd_config.invert_config.factor,
+                   sizeof(im_osd_invert_factor_t));
+        }
+        srcinfo.osd_info.mode_ctrl.invert_thresh = opt->osd_config.invert_config.threash;
     }
 
     /* set NN quantize */
@@ -1686,6 +1760,11 @@ IM_API IM_STATUS imcolorkey_t(const rga_buffer_t src, rga_buffer_t dst, im_color
 
 IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode, int sync) {
     return imcomposite(srcA, srcB, dst, mode, sync, NULL);
+}
+
+IM_API IM_STATUS imosd_t(const rga_buffer_t osd,const rga_buffer_t dst, const im_rect osd_rect,
+                         im_osd_t *osd_info, int sync, int *release_fence_fd) {
+    return imosd(osd, dst, osd_rect, osd_info, sync, NULL);
 }
 
 IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync) {

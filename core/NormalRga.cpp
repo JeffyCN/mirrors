@@ -1399,6 +1399,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     /* mosaic */
     memcpy(&rgaReg.mosaic_info, &src->mosaic_info, sizeof(struct rga_mosaic_info));
 
+    /* OSD */
+    memcpy(&rgaReg.osd_info, &src->osd_info, sizeof(struct rga_osd_info));
+
 #ifdef ANDROID
     if(is_out_log()) {
         ALOGD("srcMmuFlag = %d , dstMmuFlag = %d , rotateMode = %d \n", srcMmuFlag, dstMmuFlag,rotateMode);

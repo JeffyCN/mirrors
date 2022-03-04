@@ -285,6 +285,26 @@ IM_API IM_STATUS imrop(const rga_buffer_t src, rga_buffer_t dst, int rop_code, i
 IM_API IM_STATUS immosaic(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync = 1, int *release_fence_fd = NULL);
 
 /*
+ * OSD
+ *
+ * @param osd
+ *      osd block
+ * @param dst
+ *      background image
+ * @param osd_rect
+ * @param osd_config
+ *      osd mode config
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+#undef imosd
+IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
+                       const im_rect osd_rect, im_osd_t *osd_config,
+                       int sync = 1, int *release_fence_fd = NULL);
+
+/*
  * process
  *
  * @param src
