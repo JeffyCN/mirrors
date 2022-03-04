@@ -1402,6 +1402,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     /* OSD */
     memcpy(&rgaReg.osd_info, &src->osd_info, sizeof(struct rga_osd_info));
 
+    /* pre_intr */
+    memcpy(&rgaReg.pre_intr_info, &src->pre_intr, sizeof(src->pre_intr));
+
 #ifdef ANDROID
     if(is_out_log()) {
         ALOGD("srcMmuFlag = %d , dstMmuFlag = %d , rotateMode = %d \n", srcMmuFlag, dstMmuFlag,rotateMode);

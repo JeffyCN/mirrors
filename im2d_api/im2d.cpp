@@ -692,8 +692,8 @@ IM_API const char* querystring(int name) {
                     out << feature[IM_RGA_SUPPORT_FEATURE_MOSAIC_INDEX];
                 if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_OSD)
                     out << feature[IM_RGA_SUPPORT_FEATURE_OSD_INDEX];
-                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_EARLY_INTR)
-                    out << feature[IM_RGA_SUPPORT_FEATURE_EARLY_INTR_INDEX];
+                if(rga_info.feature & IM_RGA_SUPPORT_FEATURE_PRE_INTR)
+                    out << feature[IM_RGA_SUPPORT_FEATURE_PRE_INTR_INDEX];
                 out << endl;
                 break;
 
@@ -1495,6 +1495,24 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     if (usage & IM_MOSAIC) {
         srcinfo.mosaic_info.enable = true;
         srcinfo.mosaic_info.mode = opt->mosaic_mode;
+    }
+
+    /* set intr config */
+    if (usage & IM_PRE_INTR) {
+        srcinfo.pre_intr.enable = true;
+
+        srcinfo.pre_intr.read_intr_en = opt->intr_config.flags & IM_INTR_READ_INTR ? true : false;
+        if (srcinfo.pre_intr.read_intr_en) {
+            srcinfo.pre_intr.read_intr_en = true;
+            srcinfo.pre_intr.read_hold_en = opt->intr_config.flags & IM_INTR_READ_HOLD;
+            srcinfo.pre_intr.read_threshold = opt->intr_config.read_threshold;
+        }
+
+        srcinfo.pre_intr.write_intr_en = opt->intr_config.flags & IM_INTR_WRITE_INTR ? true : false;
+        if (srcinfo.pre_intr.write_intr_en > 0) {
+                srcinfo.pre_intr.write_start = opt->intr_config.write_start;
+                srcinfo.pre_intr.write_step = opt->intr_config.write_step;
+        }
     }
 
     /* special config for color space convert */

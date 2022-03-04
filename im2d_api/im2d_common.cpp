@@ -314,7 +314,7 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                                            IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC |
                                            IM_RGA_SUPPORT_FEATURE_MOSAIC |
                                            IM_RGA_SUPPORT_FEATURE_OSD |
-                                           IM_RGA_SUPPORT_FEATURE_EARLY_INTR;
+                                           IM_RGA_SUPPORT_FEATURE_PRE_INTR;
                     break;
                 default :
                     goto TRY_TO_COMPATIBLE;

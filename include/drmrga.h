@@ -189,7 +189,9 @@ typedef struct rga_info {
 
     struct rga_osd_info osd_info;
 
-	char reserve[426];
+    struct rga_pre_intr_info pre_intr;
+
+	char reserve[410];
 } rga_info_t;
 
 

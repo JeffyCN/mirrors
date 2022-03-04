@@ -88,6 +88,7 @@ typedef enum {
     IM_ASYNC                    = 1 << 26,
     IM_MOSAIC                   = 1 << 27,
     IM_OSD                      = 1 << 28,
+    IM_PRE_INTR                 = 1 << 29,
 } IM_USAGE;
 
 typedef enum {
@@ -209,6 +210,12 @@ typedef enum {
     IM_OSD_COLOR_PIXEL,
     IM_OSD_COLOR_EXTERNAL,
 } IM_OSD_COLOR_MODE;
+
+typedef enum {
+    IM_INTR_READ_INTR           = 1 << 0,
+    IM_INTR_READ_HOLD           = 1 << 1,
+    IM_INTR_WRITE_INTR          = 1 << 2,
+} IM_PRE_INTR_FLAGS;
 
 /* Get RGA basic information index */
 typedef enum {
@@ -346,6 +353,14 @@ typedef struct im_osd {
     im_osd_invert_t invert_config;
 } im_osd_t;
 
+typedef struct im_intr_config {
+    uint32_t flags;
+
+    int read_threshold;
+    int write_start;
+    int write_step;
+} im_intr_config_t;
+
 typedef struct im_opt {
     int color;                          /* color, used by color fill */
     im_colorkey_range colorkey_range;   /* range value of color key */
@@ -358,6 +373,8 @@ typedef struct im_opt {
     int mosaic_mode;
 
     im_osd_t osd_config;
+
+    im_intr_config_t intr_config;
 } im_opt_t;
 
 typedef struct im_context {
