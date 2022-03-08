@@ -33,13 +33,13 @@ extern "C" {
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
-#define MIN(n1, n2) ((n1) < (n2) ? (n1) : (n2))
+#define RGA_GET_MIN(n1, n2) ((n1) < (n2) ? (n1) : (n2))
 
 /* RGA im2d api verison */
 #define RGA_API_MAJOR_VERSION	 1
 #define RGA_API_MINOR_VERSION	 7
 #define RGA_API_REVISION_VERSION 2
-#define RGA_API_BUILD_VERSION	 10
+#define RGA_API_BUILD_VERSION	 11
 
 #define RGA_API_VERSION STR(RGA_API_MAJOR_VERSION) "." STR(RGA_API_MINOR_VERSION) "." STR(RGA_API_REVISION_VERSION) "_[" STR(RGA_API_BUILD_VERSION) "]"
 #define RGA_API_FULL_VERSION "rga_api version " RGA_API_VERSION
@@ -471,11 +471,11 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
         if (__argc == 0) { \
             __ret = imresize_t(src, dst, 0, 0, INTER_LINEAR, 1); \
         } else if (__argc == 2){ \
-            __ret = imresize_t(src, dst, __args[MIN(__argc, 0)], __args[MIN(__argc, 1)], INTER_LINEAR, 1); \
+            __ret = imresize_t(src, dst, __args[RGA_GET_MIN(__argc, 0)], __args[RGA_GET_MIN(__argc, 1)], INTER_LINEAR, 1); \
         } else if (__argc == 3){ \
-            __ret = imresize_t(src, dst, __args[MIN(__argc, 0)], __args[MIN(__argc, 1)], (int)__args[MIN(__argc, 2)], 1); \
+            __ret = imresize_t(src, dst, __args[RGA_GET_MIN(__argc, 0)], __args[RGA_GET_MIN(__argc, 1)], (int)__args[RGA_GET_MIN(__argc, 2)], 1); \
         } else if (__argc == 4){ \
-            __ret = imresize_t(src, dst, __args[MIN(__argc, 0)], __args[MIN(__argc, 1)], (int)__args[MIN(__argc, 2)], (int)__args[MIN(__argc, 3)]); \
+            __ret = imresize_t(src, dst, __args[RGA_GET_MIN(__argc, 0)], __args[RGA_GET_MIN(__argc, 1)], (int)__args[RGA_GET_MIN(__argc, 2)], (int)__args[RGA_GET_MIN(__argc, 3)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -511,7 +511,7 @@ IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx,
         if (__argc == 0) { \
             __ret = imcrop_t(src, dst, rect, 1); \
         } else if (__argc == 1){ \
-            __ret = imcrop_t(src, dst, rect, (int)__args[MIN(__argc, 0)]); \
+            __ret = imcrop_t(src, dst, rect, (int)__args[RGA_GET_MIN(__argc, 0)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -543,7 +543,7 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
         if (__argc == 0) { \
             __ret = imrotate_t(src, dst, rotation, 1); \
         } else if (__argc == 1){ \
-            __ret = imrotate_t(src, dst, rotation, (int)__args[MIN(__argc, 0)]); \
+            __ret = imrotate_t(src, dst, rotation, (int)__args[RGA_GET_MIN(__argc, 0)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -574,7 +574,7 @@ IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotati
         if (__argc == 0) { \
             __ret = imflip_t(src, dst, mode, 1); \
         } else if (__argc == 1){ \
-            __ret = imflip_t(src, dst, mode, (int)__args[MIN(__argc, 0)]); \
+            __ret = imflip_t(src, dst, mode, (int)__args[RGA_GET_MIN(__argc, 0)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -604,7 +604,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
         if (__argc == 0) { \
             __ret = imfill_t(buf, rect, color, 1); \
         } else if (__argc == 1){ \
-            __ret = imfill_t(buf, rect, color, (int)__args[MIN(__argc, 0)]); \
+            __ret = imfill_t(buf, rect, color, (int)__args[RGA_GET_MIN(__argc, 0)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -620,7 +620,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
         if (__argc == 0) { \
             __ret = imfill_t(buf, rect, color, 1); \
         } else if (__argc == 1){ \
-            __ret = imfill_t(buf, rect, color, (int)__args[MIN(__argc, 0)]); \
+            __ret = imfill_t(buf, rect, color, (int)__args[RGA_GET_MIN(__argc, 0)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -636,7 +636,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
         if (__argc == 0) { \
             __ret = imfill_t(buf, rect, color, 1); \
         } else if (__argc == 1){ \
-            __ret = imfill_t(buf, rect, color, (int)__args[MIN(__argc, 0)]); \
+            __ret = imfill_t(buf, rect, color, (int)__args[RGA_GET_MIN(__argc, 0)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -664,7 +664,7 @@ IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync);
         if (__argc == 0) { \
             __ret = impalette_t(src, dst, lut, 1); \
         } else if (__argc == 1){ \
-            __ret = impalette_t(src, dst, lut, (int)__args[MIN(__argc, 0)]); \
+            __ret = impalette_t(src, dst, lut, (int)__args[RGA_GET_MIN(__argc, 0)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -693,7 +693,7 @@ IM_API IM_STATUS impalette_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lu
         if (__argc == 0) { \
             __ret = imtranslate_t(src, dst, x, y, 1); \
         } else if (__argc == 1){ \
-            __ret = imtranslate_t(src, dst, x, y, (int)__args[MIN(__argc, 0)]); \
+            __ret = imtranslate_t(src, dst, x, y, (int)__args[RGA_GET_MIN(__argc, 0)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -720,7 +720,7 @@ IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, 
         if (__argc == 0) { \
             __ret = imcopy_t(src, dst, 1); \
         } else if (__argc == 1){ \
-            __ret = imcopy_t(src, dst, (int)__args[MIN(__argc, 0)]); \
+            __ret = imcopy_t(src, dst, (int)__args[RGA_GET_MIN(__argc, 0)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -753,9 +753,9 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
         if (__argc == 0) { \
             __ret = imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_SRC_OVER, 1); \
         } else if (__argc == 1){ \
-            __ret = imblend_t(srcA, srcB, dst, (int)__args[MIN(__argc, 0)], 1); \
+            __ret = imblend_t(srcA, srcB, dst, (int)__args[RGA_GET_MIN(__argc, 0)], 1); \
         } else if (__argc == 2){ \
-            __ret = imblend_t(srcA, srcB, dst, (int)__args[MIN(__argc, 0)], (int)__args[MIN(__argc, 1)]); \
+            __ret = imblend_t(srcA, srcB, dst, (int)__args[RGA_GET_MIN(__argc, 0)], (int)__args[RGA_GET_MIN(__argc, 1)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -770,9 +770,9 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
         if (__argc == 0) { \
             __ret = imblend_t(srcA, srcB, dst, IM_ALPHA_BLEND_SRC_OVER, 1); \
         } else if (__argc == 1){ \
-            __ret = imblend_t(srcA, srcB, dst, (int)__args[MIN(__argc, 0)], 1); \
+            __ret = imblend_t(srcA, srcB, dst, (int)__args[RGA_GET_MIN(__argc, 0)], 1); \
         } else if (__argc == 2){ \
-            __ret = imblend_t(srcA, srcB, dst, (int)__args[MIN(__argc, 0)], (int)__args[MIN(__argc, 1)]); \
+            __ret = imblend_t(srcA, srcB, dst, (int)__args[RGA_GET_MIN(__argc, 0)], (int)__args[RGA_GET_MIN(__argc, 1)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -802,9 +802,9 @@ IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga
         if (__argc == 0) { \
             __ret = imcolorkey_t(src, dst, range, IM_ALPHA_COLORKEY_NORMAL, 1); \
         } else if (__argc == 1){ \
-            __ret = imcolorkey_t(src, dst, range, (int)__args[MIN(__argc, 0)], 1); \
+            __ret = imcolorkey_t(src, dst, range, (int)__args[RGA_GET_MIN(__argc, 0)], 1); \
         } else if (__argc == 2){ \
-            __ret = imcolorkey_t(src, dst, range, (int)__args[MIN(__argc, 0)], (int)__args[MIN(__argc, 1)]); \
+            __ret = imcolorkey_t(src, dst, range, (int)__args[RGA_GET_MIN(__argc, 0)], (int)__args[RGA_GET_MIN(__argc, 1)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -835,9 +835,9 @@ IM_API IM_STATUS imcolorkey_t(const rga_buffer_t src, rga_buffer_t dst, im_color
         if (__argc == 0) { \
             __ret = imcvtcolor_t(src, dst, sfmt, dfmt, IM_COLOR_SPACE_DEFAULT, 1); \
         } else if (__argc == 1){ \
-            __ret = imcvtcolor_t(src, dst, sfmt, dfmt, (int)__args[MIN(__argc, 0)], 1); \
+            __ret = imcvtcolor_t(src, dst, sfmt, dfmt, (int)__args[RGA_GET_MIN(__argc, 0)], 1); \
         } else if (__argc == 2){ \
-            __ret = imcvtcolor_t(src, dst, sfmt, dfmt, (int)__args[MIN(__argc, 0)], (int)__args[MIN(__argc, 1)]); \
+            __ret = imcvtcolor_t(src, dst, sfmt, dfmt, (int)__args[RGA_GET_MIN(__argc, 0)], (int)__args[RGA_GET_MIN(__argc, 1)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -866,7 +866,7 @@ IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int 
         if (__argc == 0) { \
             __ret = imquantize_t(src, dst, nn_info, 1); \
         } else if (__argc == 1){ \
-            __ret = imquantize_t(src, dst, nn_info, (int)__args[MIN(__argc, 0)]); \
+            __ret = imquantize_t(src, dst, nn_info, (int)__args[RGA_GET_MIN(__argc, 0)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
@@ -895,7 +895,7 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
         if (__argc == 0) { \
             __ret = imrop_t(src, dst, rop_code, 1); \
         } else if (__argc == 1){ \
-            __ret = imrop_t(src, dst, rop_code, (int)__args[MIN(__argc, 0)]); \
+            __ret = imrop_t(src, dst, rop_code, (int)__args[RGA_GET_MIN(__argc, 0)]); \
         } else { \
             __ret = IM_STATUS_INVALID_PARAM; \
             printf("invalid parameter\n"); \
