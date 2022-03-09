@@ -33,8 +33,6 @@ extern "C" {
 
 #define RGA_GET_MIN(n1, n2) ((n1) < (n2) ? (n1) : (n2))
 
-#define ERR_MSG_LEN 300
-
 /*
  * @return error message string
  */

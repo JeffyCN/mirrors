@@ -27,6 +27,8 @@
 #define DOWN_ALIGN(val, align) ((val) & ~((align) - 1))
 #define UNUSED(...) (void)(__VA_ARGS__)
 
+#define ERR_MSG_LEN 300
+
 int imSetErrorMsg(const char* format, ...);
 
 bool rga_is_buffer_valid(rga_buffer_t buf);
