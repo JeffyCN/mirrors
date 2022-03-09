@@ -26,23 +26,13 @@ extern "C" {
 
 #include <stdint.h>
 #include "rga.h"
+#include "im2d_version.h"
 
 #ifndef IM_API
 #define IM_API /* define API export as needed */
 #endif
 
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
 #define RGA_GET_MIN(n1, n2) ((n1) < (n2) ? (n1) : (n2))
-
-/* RGA im2d api verison */
-#define RGA_API_MAJOR_VERSION	 1
-#define RGA_API_MINOR_VERSION	 7
-#define RGA_API_REVISION_VERSION 2
-#define RGA_API_BUILD_VERSION	 11
-
-#define RGA_API_VERSION STR(RGA_API_MAJOR_VERSION) "." STR(RGA_API_MINOR_VERSION) "." STR(RGA_API_REVISION_VERSION) "_[" STR(RGA_API_BUILD_VERSION) "]"
-#define RGA_API_FULL_VERSION "rga_api version " RGA_API_VERSION
 
 #define ERR_MSG_LEN 300
 
