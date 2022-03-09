@@ -219,6 +219,9 @@ typedef enum {
     IM_STATUS_FAILED            =  0,
 } IM_STATUS;
 
+typedef uint32_t im_api_version_t;
+typedef uint32_t rga_buffer_handle_t;
+
 /* Rectangle definition */
 typedef struct {
     int x;        /* upper-left x */
@@ -241,8 +244,6 @@ typedef struct im_nn {
     int offset_g;               /* offset on G channal */
     int offset_b;               /* offset on B channal */
 } im_nn_t;
-
-typedef uint32_t rga_buffer_handle_t;
 
 /* im_info definition */
 typedef struct {
@@ -346,6 +347,8 @@ typedef struct im_intr_config {
 } im_intr_config_t;
 
 typedef struct im_opt {
+    im_api_version_t version;
+
     int color;                          /* color, used by color fill */
     im_colorkey_range colorkey_range;   /* range value of color key */
     im_nn_t nn;
@@ -359,6 +362,8 @@ typedef struct im_opt {
     im_osd_t osd_config;
 
     im_intr_config_t intr_config;
+
+    char reserve[128];
 } im_opt_t;
 
 typedef struct im_context {

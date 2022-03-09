@@ -26,6 +26,19 @@
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 #define DOWN_ALIGN(val, align) ((val) & ~((align) - 1))
 #define UNUSED(...) (void)(__VA_ARGS__)
+/*
+ * version bit:
+ *     0~7b   build
+ *     8~15b  revision
+ *     16~23b minor
+ *     24~31b major
+ */
+#define RGA_GET_API_VERSION(v) {\
+    (((v) >> 24) & 0xff), \
+    (((v) >> 16) & 0xff), \
+    (((v) >> 8) & 0xff), \
+    {0}\
+    }
 
 #define ERR_MSG_LEN 300
 
@@ -60,5 +73,7 @@ IM_API IM_STATUS rga_import_buffers(struct rga_buffer_pool *buffer_pool);
 IM_API IM_STATUS rga_release_buffers(struct rga_buffer_pool *buffer_pool);
 IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, im_handle_param_t *param);
 IM_API IM_STATUS rga_release_buffer(int handle);
+
+IM_STATUS rga_get_opt(im_opt_t *opt, void *ptr);
 
 #endif

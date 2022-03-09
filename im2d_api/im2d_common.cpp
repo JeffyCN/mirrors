@@ -970,3 +970,30 @@ IM_API IM_STATUS rga_release_buffer(int handle) {
 
     return rga_release_buffers(&buffer_pool);
 }
+
+IM_STATUS rga_get_opt(im_opt_t *opt, void *ptr) {
+    if (opt == NULL || ptr == NULL)
+        return IM_STATUS_FAILED;
+
+    /*
+     * Prevent the value of 'color' from being mistakenly used as
+     * version information.
+     */
+    if (rga_version_compare(RGA_GET_API_VERSION(*(im_api_version_t *)ptr),
+                            (struct rga_version_t){ 2, 0, 0, {0}}) > 0)
+        return IM_STATUS_FAILED;
+
+    if (rga_version_compare(RGA_GET_API_VERSION(*(im_api_version_t *)ptr),
+                            (struct rga_version_t){ 1, 7, 2, {0}}) <= 0) {
+        opt->color = ((im_opt_t *)ptr)->color;
+        memcpy(&opt->colorkey_range, &((im_opt_t *)ptr)->colorkey_range, sizeof(im_colorkey_range));
+        memcpy(&opt->nn, &((im_opt_t *)ptr)->nn, sizeof(im_nn_t));
+        opt->rop_code = ((im_opt_t *)ptr)->rop_code;
+        opt->priority = ((im_opt_t *)ptr)->priority;
+        opt->core = ((im_opt_t *)ptr)->core;
+    } else {
+        memcpy(opt, ptr, sizeof(im_opt_t));
+    }
+
+    return IM_STATUS_SUCCESS;
+}

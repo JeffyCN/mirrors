@@ -322,7 +322,7 @@ IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
  */
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                            im_rect srect, im_rect drect, im_rect prect,
-                           int acquire_fence_fd, int *release_fence_fd, im_opt_t *opt, int usage);
+                           int acquire_fence_fd, int *release_fence_fd, im_opt_t *opt_ptr, int usage);
 
 #endif /* _im2d_hpp_ */
 

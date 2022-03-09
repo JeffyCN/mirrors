@@ -1143,6 +1143,7 @@ IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
     memset(&opt, 0x0, sizeof(opt));
     memset(&tmp_rect, 0x0, sizeof(tmp_rect));
 
+    opt.version = RGA_SET_CURRENT_API_VERISON;
     memcpy(&opt.osd_config, osd_info, sizeof(im_osd_t));
 
     usage |= IM_ALPHA_BLEND_DST_OVER | IM_OSD;
@@ -1256,6 +1257,7 @@ IM_API IM_STATUS immosaic(const rga_buffer_t src, rga_buffer_t dst, int mosaic_m
 
     usage |= IM_MOSAIC;
 
+    opt.version = RGA_SET_CURRENT_API_VERISON;
     opt.mosaic_mode = mosaic_mode;
 
     if (sync == 0)
@@ -1283,11 +1285,16 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                            im_rect srect, im_rect drect, im_rect prect,
-                           int acquire_fence_fd, int *release_fence_fd, im_opt_t *opt, int usage) {
+                           int acquire_fence_fd, int *release_fence_fd, im_opt_t *opt_ptr, int usage) {
+    int ret;
     rga_info_t srcinfo;
     rga_info_t dstinfo;
     rga_info_t patinfo;
-    int ret;
+
+    im_opt_t opt;
+
+    if (rga_get_opt(&opt, opt_ptr) == IM_STATUS_FAILED)
+        memset(&opt, 0x0, sizeof(opt));
 
     src.format = RkRgaCompatibleFormat(src.format);
     dst.format = RkRgaCompatibleFormat(dst.format);
@@ -1411,8 +1418,8 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         srcinfo.blend = 0xff0105;
 
         srcinfo.colorkey_en = 1;
-        srcinfo.colorkey_min = opt->colorkey_range.min;
-        srcinfo.colorkey_max = opt->colorkey_range.max;
+        srcinfo.colorkey_min = opt.colorkey_range.min;
+        srcinfo.colorkey_max = opt.colorkey_range.max;
         switch (usage & IM_ALPHA_COLORKEY_MASK) {
             case IM_ALPHA_COLORKEY_NORMAL:
                 srcinfo.colorkey_mode = 0;
@@ -1427,22 +1434,22 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     if (usage & IM_OSD) {
         srcinfo.osd_info.enable = true;
 
-        srcinfo.osd_info.mode_ctrl.mode = opt->osd_config.osd_mode;
+        srcinfo.osd_info.mode_ctrl.mode = opt.osd_config.osd_mode;
 
-        srcinfo.osd_info.mode_ctrl.width_mode = opt->osd_config.block_parm.width_mode;
-        if (opt->osd_config.block_parm.width_mode == IM_OSD_BLOCK_MODE_NORMAL)
-            srcinfo.osd_info.mode_ctrl.block_fix_width = opt->osd_config.block_parm.width;
-        else if (opt->osd_config.block_parm.width_mode == IM_OSD_BLOCK_MODE_DIFFERENT)
-            srcinfo.osd_info.mode_ctrl.unfix_index = opt->osd_config.block_parm.width_index;
-        srcinfo.osd_info.mode_ctrl.block_num = opt->osd_config.block_parm.block_count;
-        srcinfo.osd_info.mode_ctrl.default_color_sel = opt->osd_config.block_parm.background_config;
-        srcinfo.osd_info.mode_ctrl.direction_mode = opt->osd_config.block_parm.direction;
-        srcinfo.osd_info.mode_ctrl.color_mode = opt->osd_config.block_parm.color_mode;
+        srcinfo.osd_info.mode_ctrl.width_mode = opt.osd_config.block_parm.width_mode;
+        if (opt.osd_config.block_parm.width_mode == IM_OSD_BLOCK_MODE_NORMAL)
+            srcinfo.osd_info.mode_ctrl.block_fix_width = opt.osd_config.block_parm.width;
+        else if (opt.osd_config.block_parm.width_mode == IM_OSD_BLOCK_MODE_DIFFERENT)
+            srcinfo.osd_info.mode_ctrl.unfix_index = opt.osd_config.block_parm.width_index;
+        srcinfo.osd_info.mode_ctrl.block_num = opt.osd_config.block_parm.block_count;
+        srcinfo.osd_info.mode_ctrl.default_color_sel = opt.osd_config.block_parm.background_config;
+        srcinfo.osd_info.mode_ctrl.direction_mode = opt.osd_config.block_parm.direction;
+        srcinfo.osd_info.mode_ctrl.color_mode = opt.osd_config.block_parm.color_mode;
 
-        srcinfo.osd_info.bpp2_info.color0 = opt->osd_config.block_parm.background_color;
-        srcinfo.osd_info.bpp2_info.color1 = opt->osd_config.block_parm.Foreground_color;
+        srcinfo.osd_info.bpp2_info.color0 = opt.osd_config.block_parm.background_color;
+        srcinfo.osd_info.bpp2_info.color1 = opt.osd_config.block_parm.Foreground_color;
 
-        switch (opt->osd_config.invert_config.invert_channel) {
+        switch (opt.osd_config.invert_config.invert_channel) {
             case IM_OSD_INVERT_CHANNEL_NONE:
                 srcinfo.osd_info.mode_ctrl.invert_enable = (0x1 << 1) | (0x1 << 3);
                 break;
@@ -1461,61 +1468,61 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
             case IM_OSD_INVERT_CHANNEL_BOTH:
                 srcinfo.osd_info.mode_ctrl.invert_enable = 0x1 << 0;
         }
-        srcinfo.osd_info.mode_ctrl.invert_flags_mode = opt->osd_config.invert_config.flags_mode;
-        srcinfo.osd_info.mode_ctrl.flags_index = opt->osd_config.invert_config.flags_index;
+        srcinfo.osd_info.mode_ctrl.invert_flags_mode = opt.osd_config.invert_config.flags_mode;
+        srcinfo.osd_info.mode_ctrl.flags_index = opt.osd_config.invert_config.flags_index;
 
-        srcinfo.osd_info.last_flags = opt->osd_config.invert_config.invert_flags;
-        srcinfo.osd_info.cur_flags = opt->osd_config.invert_config.current_flags;
+        srcinfo.osd_info.last_flags = opt.osd_config.invert_config.invert_flags;
+        srcinfo.osd_info.cur_flags = opt.osd_config.invert_config.current_flags;
 
-        srcinfo.osd_info.mode_ctrl.invert_mode = opt->osd_config.invert_config.invert_mode;
-        if (opt->osd_config.invert_config.invert_mode == IM_OSD_INVERT_USE_FACTOR) {
-            srcinfo.osd_info.cal_factor.alpha_max = opt->osd_config.invert_config.factor.alpha_max;
-            srcinfo.osd_info.cal_factor.alpha_min = opt->osd_config.invert_config.factor.alpha_min;
-            srcinfo.osd_info.cal_factor.crb_max = opt->osd_config.invert_config.factor.crb_max;
-            srcinfo.osd_info.cal_factor.crb_min = opt->osd_config.invert_config.factor.crb_min;
-            srcinfo.osd_info.cal_factor.yg_max = opt->osd_config.invert_config.factor.yg_max;
-            srcinfo.osd_info.cal_factor.yg_min = opt->osd_config.invert_config.factor.yg_min;
+        srcinfo.osd_info.mode_ctrl.invert_mode = opt.osd_config.invert_config.invert_mode;
+        if (opt.osd_config.invert_config.invert_mode == IM_OSD_INVERT_USE_FACTOR) {
+            srcinfo.osd_info.cal_factor.alpha_max = opt.osd_config.invert_config.factor.alpha_max;
+            srcinfo.osd_info.cal_factor.alpha_min = opt.osd_config.invert_config.factor.alpha_min;
+            srcinfo.osd_info.cal_factor.crb_max = opt.osd_config.invert_config.factor.crb_max;
+            srcinfo.osd_info.cal_factor.crb_min = opt.osd_config.invert_config.factor.crb_min;
+            srcinfo.osd_info.cal_factor.yg_max = opt.osd_config.invert_config.factor.yg_max;
+            srcinfo.osd_info.cal_factor.yg_min = opt.osd_config.invert_config.factor.yg_min;
         }
-        srcinfo.osd_info.mode_ctrl.invert_thresh = opt->osd_config.invert_config.threash;
+        srcinfo.osd_info.mode_ctrl.invert_thresh = opt.osd_config.invert_config.threash;
     }
 
     /* set NN quantize */
     if (usage & IM_NN_QUANTIZE) {
         dstinfo.nn.nn_flag = 1;
-        dstinfo.nn.scale_r  = opt->nn.scale_r;
-        dstinfo.nn.scale_g  = opt->nn.scale_g;
-        dstinfo.nn.scale_b  = opt->nn.scale_b;
-        dstinfo.nn.offset_r = opt->nn.offset_r;
-        dstinfo.nn.offset_g = opt->nn.offset_g;
-        dstinfo.nn.offset_b = opt->nn.offset_b;
+        dstinfo.nn.scale_r  = opt.nn.scale_r;
+        dstinfo.nn.scale_g  = opt.nn.scale_g;
+        dstinfo.nn.scale_b  = opt.nn.scale_b;
+        dstinfo.nn.offset_r = opt.nn.offset_r;
+        dstinfo.nn.offset_g = opt.nn.offset_g;
+        dstinfo.nn.offset_b = opt.nn.offset_b;
     }
 
     /* set ROP */
     if (usage & IM_ROP) {
-        srcinfo.rop_code = opt->rop_code;
+        srcinfo.rop_code = opt.rop_code;
     }
 
     /* set mosaic */
     if (usage & IM_MOSAIC) {
         srcinfo.mosaic_info.enable = true;
-        srcinfo.mosaic_info.mode = opt->mosaic_mode;
+        srcinfo.mosaic_info.mode = opt.mosaic_mode;
     }
 
     /* set intr config */
     if (usage & IM_PRE_INTR) {
         srcinfo.pre_intr.enable = true;
 
-        srcinfo.pre_intr.read_intr_en = opt->intr_config.flags & IM_INTR_READ_INTR ? true : false;
+        srcinfo.pre_intr.read_intr_en = opt.intr_config.flags & IM_INTR_READ_INTR ? true : false;
         if (srcinfo.pre_intr.read_intr_en) {
             srcinfo.pre_intr.read_intr_en = true;
-            srcinfo.pre_intr.read_hold_en = opt->intr_config.flags & IM_INTR_READ_HOLD;
-            srcinfo.pre_intr.read_threshold = opt->intr_config.read_threshold;
+            srcinfo.pre_intr.read_hold_en = opt.intr_config.flags & IM_INTR_READ_HOLD;
+            srcinfo.pre_intr.read_threshold = opt.intr_config.read_threshold;
         }
 
-        srcinfo.pre_intr.write_intr_en = opt->intr_config.flags & IM_INTR_WRITE_INTR ? true : false;
+        srcinfo.pre_intr.write_intr_en = opt.intr_config.flags & IM_INTR_WRITE_INTR ? true : false;
         if (srcinfo.pre_intr.write_intr_en > 0) {
-                srcinfo.pre_intr.write_start = opt->intr_config.write_start;
-                srcinfo.pre_intr.write_step = opt->intr_config.write_step;
+                srcinfo.pre_intr.write_start = opt.intr_config.write_start;
+                srcinfo.pre_intr.write_step = opt.intr_config.write_step;
         }
     }
 
@@ -1654,11 +1661,11 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     }
 
     dstinfo.in_fence_fd = acquire_fence_fd;
-    dstinfo.core = opt->core ? opt->core : g_im2d_context.core;
-    dstinfo.priority = opt->priority ? opt->priority : g_im2d_context.priority;
+    dstinfo.core = opt.core ? opt.core : g_im2d_context.core;
+    dstinfo.priority = opt.priority ? opt.priority : g_im2d_context.priority;
 
     if (usage & IM_COLOR_FILL) {
-        dstinfo.color = opt->color;
+        dstinfo.color = opt.color;
         ret = rkRga.RkRgaCollorFill(&dstinfo);
     } else if (usage & IM_COLOR_PALETTE) {
         ret = rkRga.RkRgaCollorPalette(&srcinfo, &dstinfo, &patinfo);
