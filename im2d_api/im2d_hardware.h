@@ -19,6 +19,8 @@
 #ifndef _RGA_IM2D_HARDWARE_H_
 #define _RGA_IM2D_HARDWARE_H_
 
+#include "rga.h"
+
 typedef enum {
     IM_RGA_HW_VERSION_RGA_V_ERR_INDEX = 0x0,
     IM_RGA_HW_VERSION_RGA_1_INDEX,

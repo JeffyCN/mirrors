@@ -183,7 +183,7 @@ typedef struct rga_info {
 
 	unsigned short enable;
 
-    rga_buffer_handle_t handle;
+    int handle;
 
     struct rga_mosaic_info mosaic_info;
 

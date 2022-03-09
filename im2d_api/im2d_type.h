@@ -19,7 +19,7 @@
 #ifndef _RGA_IM2D_TYPE_H_
 #define _RGA_IM2D_TYPE_H_
 
-#include "rga.h"
+#include <stdint.h>
 
 typedef enum {
     /* Rotation */
@@ -242,6 +242,8 @@ typedef struct im_nn {
     int offset_b;               /* offset on B channal */
 } im_nn_t;
 
+typedef uint32_t rga_buffer_handle_t;
+
 /* im_info definition */
 typedef struct {
     void* vir_addr;                     /* virtual address */
@@ -267,7 +269,14 @@ typedef struct {
     rga_buffer_handle_t handle;         /* buffer handle */
 } rga_buffer_t;
 
-typedef struct rga_osd_invert_factor im_osd_invert_factor_t;
+typedef struct im_osd_invert_factor {
+	uint8_t alpha_max;
+	uint8_t alpha_min;
+	uint8_t yg_max;
+	uint8_t yg_min;
+	uint8_t crb_max;
+	uint8_t crb_min;
+} im_osd_invert_factor_t;
 
 typedef struct im_osd_block {
     int width_mode;             // normal or different
@@ -358,6 +367,10 @@ typedef struct im_context {
     int check_mode;
 } im_context_t;
 
-typedef struct rga_memory_parm im_handle_param_t;
+typedef struct im_handle_param {
+    uint32_t width;
+    uint32_t height;
+    uint32_t format;
+}im_handle_param_t;
 
 #endif /* _RGA_IM2D_TYPE_H_ */

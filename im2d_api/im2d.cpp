@@ -1469,8 +1469,12 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
         srcinfo.osd_info.mode_ctrl.invert_mode = opt->osd_config.invert_config.invert_mode;
         if (opt->osd_config.invert_config.invert_mode == IM_OSD_INVERT_USE_FACTOR) {
-            memcpy(&srcinfo.osd_info.cal_factor, &opt->osd_config.invert_config.factor,
-                   sizeof(im_osd_invert_factor_t));
+            srcinfo.osd_info.cal_factor.alpha_max = opt->osd_config.invert_config.factor.alpha_max;
+            srcinfo.osd_info.cal_factor.alpha_min = opt->osd_config.invert_config.factor.alpha_min;
+            srcinfo.osd_info.cal_factor.crb_max = opt->osd_config.invert_config.factor.crb_max;
+            srcinfo.osd_info.cal_factor.crb_min = opt->osd_config.invert_config.factor.crb_min;
+            srcinfo.osd_info.cal_factor.yg_max = opt->osd_config.invert_config.factor.yg_max;
+            srcinfo.osd_info.cal_factor.yg_min = opt->osd_config.invert_config.factor.yg_min;
         }
         srcinfo.osd_info.mode_ctrl.invert_thresh = opt->osd_config.invert_config.threash;
     }
