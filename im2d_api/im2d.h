@@ -700,22 +700,7 @@ IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code,
  *
  * @returns success or else negative error code.
  */
-#define immosaic(src, dst, mosaic_mode, ...) \
-    ({ \
-        IM_STATUS __ret = IM_STATUS_SUCCESS; \
-        int __args[] = {__VA_ARGS__}; \
-        int __argc = sizeof(__args)/sizeof(int); \
-        if (__argc == 0) { \
-            __ret = immosaic_t(src, dst, mosaic_mode, 1); \
-        } else if (__argc == 1){ \
-            __ret = immosaic_t(src, dst, mosaic_mode, (int)__args[RGA_GET_MIN(__argc, 0)]); \
-        } else { \
-            __ret = IM_STATUS_INVALID_PARAM; \
-            printf("invalid parameter\n"); \
-        } \
-        __ret; \
-    })
-IM_API IM_STATUS immosaic_t(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync);
+IM_API IM_STATUS immosaic(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync);
 
 /*
  * OSD
@@ -732,23 +717,8 @@ IM_API IM_STATUS immosaic_t(const rga_buffer_t src, rga_buffer_t dst, int mosaic
  *
  * @returns success or else negative error code.
  */
-#define imosd(osd, dst, osd_rect, osd_config, ...) \
-    ({ \
-        IM_STATUS __ret = IM_STATUS_SUCCESS; \
-        int __args[] = {__VA_ARGS__}; \
-        int __argc = sizeof(__args)/sizeof(int); \
-        if (__argc == 0) { \
-            __ret = imosd_t(osd, dst, osd_rect, osd_config, 1); \
-        } else if (__argc == 1){ \
-            __ret = imosd_t(osd, dst, osd_rect, osd_config, (int)__args[RGA_GET_MIN(__argc, 0)]); \
-        } else { \
-            __ret = IM_STATUS_INVALID_PARAM; \
-            printf("invalid parameter\n"); \
-        } \
-        __ret; \
-    })
-IM_API IM_STATUS imosd_t(const rga_buffer_t osd,const rga_buffer_t dst,
-                         const im_rect osd_rect, im_osd_t *osd_config, int sync);
+IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
+                       const im_rect osd_rect, im_osd_t *osd_config, int sync);
 
 /*
  * process

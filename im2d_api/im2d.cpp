@@ -1791,11 +1791,6 @@ IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga
     return imcomposite(srcA, srcB, dst, mode, sync, NULL);
 }
 
-IM_API IM_STATUS imosd_t(const rga_buffer_t osd,const rga_buffer_t dst, const im_rect osd_rect,
-                         im_osd_t *osd_info, int sync, int *release_fence_fd) {
-    return imosd(osd, dst, osd_rect, osd_info, sync, NULL);
-}
-
 IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync) {
     return imcvtcolor(src, dst, sfmt, dfmt, mode, sync, NULL);
 }
@@ -1808,6 +1803,11 @@ IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code,
     return imrop(src, dst, rop_code, sync, NULL);
 }
 
-IM_API IM_STATUS immosaic_t(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync) {
+IM_API IM_STATUS immosaic(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync) {
     return immosaic(src, dst, mosaic_mode, sync, NULL);
+}
+
+IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst, const im_rect osd_rect,
+                       im_osd_t *osd_info, int sync) {
+    return imosd(osd, dst, osd_rect, osd_info, sync, NULL);
 }
