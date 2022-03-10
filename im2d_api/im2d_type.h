@@ -270,6 +270,18 @@ typedef struct {
     rga_buffer_handle_t handle;         /* buffer handle */
 } rga_buffer_t;
 
+typedef struct im_color {
+    union {
+        struct {
+            uint8_t red;
+            uint8_t green;
+            uint8_t blue;
+            uint8_t alpha;
+        };
+        uint32_t value;
+    };
+} im_color_t;
+
 typedef struct im_osd_invert_factor {
 	uint8_t alpha_max;
 	uint8_t alpha_min;
@@ -279,30 +291,41 @@ typedef struct im_osd_invert_factor {
 	uint8_t crb_min;
 } im_osd_invert_factor_t;
 
+typedef struct im_osd_bpp2 {
+    uint8_t  ac_swap;       // ac swap flag
+                            // 0: CA
+                            // 1: AC
+    uint8_t  endian_swap;   // rgba2bpp endian swap
+                            // 0: Big endian
+                            // 1: Little endian
+    im_color_t color0;
+    im_color_t color1;
+} im_osd_bpp2_t;
+
 typedef struct im_osd_block {
-    int width_mode;             // normal or different
-                                //   IM_OSD_BLOCK_MODE_NORMAL
-                                //   IM_OSD_BLOCK_MODE_DIFFERENT
+    int width_mode;                 // normal or different
+                                    //   IM_OSD_BLOCK_MODE_NORMAL
+                                    //   IM_OSD_BLOCK_MODE_DIFFERENT
     union {
-        int width;              // normal_mode block width
-        int width_index;        // different_mode block width index in RAM
+        int width;                  // normal_mode block width
+        int width_index;            // different_mode block width index in RAM
     };
 
-    int block_count;            // block count
+    int block_count;                // block count
 
-    int background_config;      // background config is bright or dark
-                                //   IM_OSD_BACKGROUND_DEFAULT_BRIGHT
-                                //   IM_OSD_BACKGROUND_DEFAULT_DARK
+    int background_config;          // background config is bright or dark
+                                    //   IM_OSD_BACKGROUND_DEFAULT_BRIGHT
+                                    //   IM_OSD_BACKGROUND_DEFAULT_DARK
 
-    int direction;              // osd block direction
-                                //   IM_OSD_MODE_HORIZONTAL
-                                //   IM_OSD_MODE_VERTICAL
+    int direction;                  // osd block direction
+                                    //   IM_OSD_MODE_HORIZONTAL
+                                    //   IM_OSD_MODE_VERTICAL
 
-    int color_mode;             // using src1 color or config color
-                                //   IM_OSD_COLOR_PIXEL
-                                //   IM_OSD_COLOR_EXTERNAL
-    int background_color;       // config color: background
-    int Foreground_color;       // config color: foreground
+    int color_mode;                 // using src1 color or config color
+                                    //   IM_OSD_COLOR_PIXEL
+                                    //   IM_OSD_COLOR_EXTERNAL
+    im_color_t background_color;    // config color: background
+    im_color_t Foreground_color;    // config color: foreground
 } im_osd_block_t;
 
 typedef struct im_osd_invert {
@@ -336,6 +359,8 @@ typedef struct im_osd {
     im_osd_block_t block_parm;          // osd block info config
 
     im_osd_invert_t invert_config;
+
+    im_osd_bpp2_t bpp2_info;
 } im_osd_t;
 
 typedef struct im_intr_config {
