@@ -344,9 +344,10 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>Orion</td>
       <td>RK3588</td>
       <td rowspan="1">RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (semi-planar)<br/>YUV422 8bit (semi-planar/packed)<br/>YUV420 10bit (semi-planar)<br/>YUV422 10bit (semi-planar)</td>
-      <td rowspan="1">RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (semi-planar)<br/>YUV422 8bit (semi-planar/packed)<br/>YUV420 10bit (semi-planar)<br/>YUV422 10bit (semi-planar)</td>
+      <td rowspan="1">RGBA/BGRA8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (semi-planar)<br/>YUV422 8bit (semi-planar/packed)<br/>YUV420 10bit (semi-planar)<br/>YUV422 10bit (semi-planar)</td>
    </tr>
 </table>
+
 
 > 注：Y4格式即2的4次方色阶灰度图，Y400格式即2的8次方色阶灰度图。
 
@@ -855,7 +856,7 @@ IM_STATUS imfill(rga_buffer_t buf,
                  int sync = 1);
 ```
 
-> 对RGBA 格式的图像的指定区域rect进行颜色填充。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+> 对RGBA 格式的图像的指定区域rect进行颜色填充。color参数由高到低位分别是A，B，G，R，例如，红色：color = 0x000000ff.
 
 ```C++
 IM_STATUS imreset(rga_buffer_t buf,
@@ -864,7 +865,7 @@ IM_STATUS imreset(rga_buffer_t buf,
                  int sync = 1);
 ```
 
-> 对RGBA 格式的图像的指定区域rect内存中的内容全部设置为指定的值color。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+> 对RGBA 格式的图像的指定区域rect内存中的内容全部设置为指定的值color。color参数由高到低位分别是A，B，G，R，例如，红色：color = 0x000000ff.
 
 ```C++
 IM_STATUS imdraw(rga_buffer_t buf,
@@ -873,7 +874,7 @@ IM_STATUS imdraw(rga_buffer_t buf,
                  int sync = 1);
 ```
 
-> 对RGBA 格式的图像的指定区域rect根据指定颜色color进行绘制。color参数由高到低位分别是R，G，B，A，例如，红色：color = 0xff000000.
+> 对RGBA 格式的图像的指定区域rect根据指定颜色color进行绘制。color参数由高到低位分别是A，B，G，R，例如，红色：color = 0x000000ff.
 
 【注意】填充区域rect宽高需大于或等于2
 
