@@ -852,25 +852,25 @@ IM_STATUS rga_check_rotate(int mode_usage, rga_info_table_entry &table) {
 
 IM_STATUS rga_check_feature(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst,
                                    int pat_enable, int mode_usage, int feature_usage) {
-    if (mode_usage == IM_COLOR_FILL && (~feature_usage & IM_RGA_SUPPORT_FEATURE_COLOR_FILL)) {
+    if ((mode_usage & IM_COLOR_FILL) && (~feature_usage & IM_RGA_SUPPORT_FEATURE_COLOR_FILL)) {
         imSetErrorMsg("The platform does not support color fill featrue. \n%s",
                       querystring(RGA_FEATURE));
         return IM_STATUS_NOT_SUPPORTED;
     }
 
-    if (mode_usage == IM_COLOR_PALETTE && (~feature_usage & IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE)) {
+    if ((mode_usage & IM_COLOR_PALETTE) && (~feature_usage & IM_RGA_SUPPORT_FEATURE_COLOR_PALETTE)) {
         imSetErrorMsg("The platform does not support color palette featrue. \n%s",
                       querystring(RGA_FEATURE));
         return IM_STATUS_NOT_SUPPORTED;
     }
 
-    if (mode_usage == IM_ROP && (~feature_usage & IM_RGA_SUPPORT_FEATURE_ROP)) {
+    if ((mode_usage & IM_ROP) && (~feature_usage & IM_RGA_SUPPORT_FEATURE_ROP)) {
         imSetErrorMsg("The platform does not support ROP featrue. \n%s",
                       querystring(RGA_FEATURE));
         return IM_STATUS_NOT_SUPPORTED;
     }
 
-    if (mode_usage == IM_NN_QUANTIZE && (~feature_usage & IM_RGA_SUPPORT_FEATURE_QUANTIZE)) {
+    if ((mode_usage & IM_NN_QUANTIZE) && (~feature_usage & IM_RGA_SUPPORT_FEATURE_QUANTIZE)) {
         imSetErrorMsg("The platform does not support quantize featrue. \n%s",
                       querystring(RGA_FEATURE));
         return IM_STATUS_NOT_SUPPORTED;
@@ -887,6 +887,24 @@ IM_STATUS rga_check_feature(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst
         (pat_enable ? (pat.color_space_mode & IM_FULL_CSC_MASK) : 0)) &&
         (~feature_usage & IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC)) {
         imSetErrorMsg("The platform does not support dst channel full color space convert(Y2Y/Y2R) featrue. \n%s",
+                      querystring(RGA_FEATURE));
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    if ((mode_usage & IM_MOSAIC) && (~feature_usage & IM_RGA_SUPPORT_FEATURE_MOSAIC)) {
+        imSetErrorMsg("The platform does not support mosaic featrue. \n%s",
+                      querystring(RGA_FEATURE));
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    if ((mode_usage & IM_OSD) && (~feature_usage & IM_RGA_SUPPORT_FEATURE_OSD)) {
+        imSetErrorMsg("The platform does not support osd featrue. \n%s",
+                      querystring(RGA_FEATURE));
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    if ((mode_usage & IM_PRE_INTR) && (~feature_usage & IM_RGA_SUPPORT_FEATURE_PRE_INTR)) {
+        imSetErrorMsg("The platform does not support pre_intr featrue. \n%s",
                       querystring(RGA_FEATURE));
         return IM_STATUS_NOT_SUPPORTED;
     }
