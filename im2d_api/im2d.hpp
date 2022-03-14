@@ -281,7 +281,7 @@ IM_API IM_STATUS imrop(const rga_buffer_t src, rga_buffer_t dst, int rop_code, i
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS immosaic(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync = 1, int *release_fence_fd = NULL);
+IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mode, int sync = 1, int *release_fence_fd = NULL);
 
 /*
  * OSD

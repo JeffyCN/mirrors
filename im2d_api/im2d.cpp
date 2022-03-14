@@ -1241,19 +1241,16 @@ IM_API IM_STATUS imrop(const rga_buffer_t src, rga_buffer_t dst, int rop_code, i
     return ret;
 }
 
-IM_API IM_STATUS immosaic(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync, int *release_fence_fd) {
-    int usage = 0;
+IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mode, int sync, int *release_fence_fd) {
     IM_STATUS ret = IM_STATUS_NOERROR;
-
+    int usage = 0;
     im_opt_t opt;
+    rga_buffer_t tmp_image;
+    im_rect tmp_rect;
 
-    rga_buffer_t pat;
-
-    im_rect srect;
-    im_rect drect;
-    im_rect prect;
-
-    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+    memset(&opt, 0x0, sizeof(opt));
+    memset(&tmp_image, 0x0, sizeof(tmp_image));
+    memset(&tmp_rect, 0x0, sizeof(tmp_rect));
 
     usage |= IM_MOSAIC;
 
@@ -1265,9 +1262,7 @@ IM_API IM_STATUS immosaic(const rga_buffer_t src, rga_buffer_t dst, int mosaic_m
     else if (sync == 1)
         usage |= IM_SYNC;
 
-    ret = improcess(src, dst, pat, srect, drect, prect, -1, release_fence_fd, &opt, usage);
-
-    return ret;
+    return improcess(image, image, tmp_image, rect, rect, tmp_rect, -1, release_fence_fd, &opt, usage);
 }
 
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
@@ -1810,8 +1805,8 @@ IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code,
     return imrop(src, dst, rop_code, sync, NULL);
 }
 
-IM_API IM_STATUS immosaic(const rga_buffer_t src, rga_buffer_t dst, int mosaic_mode, int sync) {
-    return immosaic(src, dst, mosaic_mode, sync, NULL);
+IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mode, int sync) {
+    return immosaic(image, rect, mosaic_mode, sync, NULL);
 }
 
 IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst, const im_rect osd_rect,
