@@ -132,29 +132,17 @@ gst_mpp_video_dec_set_property (GObject * object,
 
   switch (prop_id) {
     case PROP_FORMAT:{
-      GstVideoFormat format = g_value_get_enum (value);
-      if (mppdec->format == format)
-        return;
-
-      if (mppdec->input_state) {
+      if (mppdec->input_state)
         GST_WARNING_OBJECT (decoder, "unable to change output format");
-        return;
-      }
-
-      mppdec->format = format;
+      else
+        mppdec->format = g_value_get_enum (value);
       break;
     }
     case PROP_ARM_AFBC:{
-      gboolean arm_afbc = g_value_get_boolean (value);
-      if (mppdec->arm_afbc == arm_afbc)
-        return;
-
-      if (mppdec->input_state) {
+      if (mppdec->input_state)
         GST_WARNING_OBJECT (decoder, "unable to change ARM AFBC");
-        return;
-      }
-
-      mppdec->arm_afbc = arm_afbc;
+      else
+        mppdec->arm_afbc = g_value_get_boolean (value);
       break;
     }
     default:

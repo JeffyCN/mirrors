@@ -143,16 +143,10 @@ gst_mpp_jpeg_dec_set_property (GObject * object,
 
   switch (prop_id) {
     case PROP_FORMAT:{
-      GstVideoFormat format = g_value_get_enum (value);
-      if (mppdec->format == format)
-        return;
-
-      if (mppdec->input_state) {
+      if (mppdec->input_state)
         GST_WARNING_OBJECT (decoder, "unable to change output format");
-        return;
-      }
-
-      mppdec->format = format;
+      else
+        mppdec->format = g_value_get_enum (value);
       break;
     }
 
