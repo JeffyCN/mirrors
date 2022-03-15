@@ -60,6 +60,8 @@ G_DEFINE_ABSTRACT_TYPE (GstMppDec, gst_mpp_dec, GST_TYPE_VIDEO_DECODER);
 #define DEFAULT_PROP_WIDTH 0    /* Original */
 #define DEFAULT_PROP_HEIGHT 0   /* Original */
 
+static gboolean DEFAULT_PROP_IGNORE_ERROR = FALSE;
+
 enum
 {
   PROP_0,
@@ -67,6 +69,7 @@ enum
   PROP_WIDTH,
   PROP_HEIGHT,
   PROP_CROP_RECTANGLE,
+  PROP_IGNORE_ERROR,
   PROP_LAST,
 };
 
@@ -126,6 +129,13 @@ gst_mpp_dec_set_property (GObject * object,
 
       break;
     }
+    case PROP_IGNORE_ERROR:{
+      if (self->input_state)
+        GST_WARNING_OBJECT (decoder, "unable to change error mode");
+      else
+        self->ignore_error = g_value_get_boolean (value);
+      break;
+    }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -148,6 +158,9 @@ gst_mpp_dec_get_property (GObject * object,
       break;
     case PROP_HEIGHT:
       g_value_set_uint (value, self->height);
+      break;
+    case PROP_IGNORE_ERROR:
+      g_value_set_boolean (value, self->ignore_error);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -318,6 +331,9 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
     group = gst_mpp_allocator_get_mpp_group (self->allocator);
     self->mpi->control (self->mpp_ctx, MPP_DEC_SET_EXT_BUF_GROUP, group);
   }
+
+  if (self->ignore_error)
+    self->mpi->control (self->mpp_ctx, MPP_DEC_SET_DISABLE_ERROR, NULL);
 
   self->input_state = gst_video_codec_state_ref (state);
   return TRUE;
@@ -980,6 +996,8 @@ gst_mpp_dec_init (GstMppDec * self)
 {
   GstVideoDecoder *decoder = GST_VIDEO_DECODER (self);
 
+  self->ignore_error = DEFAULT_PROP_IGNORE_ERROR;
+
   gst_video_decoder_set_packetized (decoder, TRUE);
 }
 
@@ -1051,6 +1069,14 @@ gst_mpp_dec_class_init (GstMppDecClass * klass)
               "One of x, y, width or height value.", 0, G_MAXINT, 0,
               G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS),
           G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
+
+  if (g_getenv ("GST_MPP_DEC_DEFAULT_IGNORE_ERROR"))
+    DEFAULT_PROP_IGNORE_ERROR = TRUE;
+
+  g_object_class_install_property (gobject_class, PROP_IGNORE_ERROR,
+      g_param_spec_boolean ("ignore-error", "Ignore error",
+          "Ignore MPP decode errors", DEFAULT_PROP_IGNORE_ERROR,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   element_class->change_state = GST_DEBUG_FUNCPTR (gst_mpp_dec_change_state);
 }

@@ -59,6 +59,8 @@ struct _GstMppDec
 
   gboolean arm_afbc;
 
+  gboolean ignore_error;
+
   /* stop handling new frame when flushing */
   gboolean flushing;
 
