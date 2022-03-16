@@ -62,6 +62,8 @@ install_headers(
 	'include/RgaApi.h',
 	'im2d_api/im2d.h',
 	'im2d_api/im2d.hpp',
+    'im2d_api/im2d_type.h',
+    'im2d_api/im2d_version.h',
     subdir : 'rga',
 )
 
