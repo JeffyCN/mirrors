@@ -1,0 +1,572 @@
+cc_defaults {
+    name: "algo_defaults",
+    rtti: true,
+    stl: "c++_static",
+
+    defaults: [ "rkaiq-defaults", "rkaiq-defaults-flags", ],
+
+    cppflags: [
+        "-ffast-math",
+        "-funroll-loops",
+        "-Os",
+        "-g",
+        "-Wno-error",
+        "-Wno-unused-value",
+        "-Wno-unused-variable",
+        "-Wno-unused-private-field",
+        "-Wno-unused-but-set-variable",
+        "-Wno-unused-function",
+        "-Wno-implicit-fallthrough",
+        "-Wno-address-of-packed-member",
+        "-Wno-ignored-qualifiers",
+        "-Wno-unused-label",
+        "-fno-strict-aliasing",
+        "-Wno-reorder",
+        "-Wno-overloaded-virtual",
+        "-Wno-unused-parameter",
+        "-Wno-extern-c-compat",
+        "-Wno-missing-braces",
+        "-Wno-missing-field-initializers",
+        "-DGENMESH_ONLINE"
+    ],
+    include_dirs: [
+        "external/camera_engine_rkaiq",
+        "external/camera_engine_rkaiq/iq_parser",
+        "external/camera_engine_rkaiq/iq_parser_v2",
+        "external/camera_engine_rkaiq/include/algos",
+        "external/camera_engine_rkaiq/include",
+        "external/camera_engine_rkaiq/algos/",
+        "external/camera_engine_rkaiq/include/xcore/base",
+        "external/camera_engine_rkaiq/include/xcore",
+        "external/camera_engine_rkaiq/include/iq_parser",
+        "external/camera_engine_rkaiq/include/iq_parser_v2",
+        "external/camera_engine_rkaiq/include/iq_parser_v2/j2s",
+        "external/camera_engine_rkaiq/include/common",
+        "external/camera_engine_rkaiq/include/uAPI",
+        "external/camera_engine_rkaiq/include/uAPI2",
+        "external/camera_engine_rkaiq/common",
+        "external/camera_engine_rkaiq/xcore/base",
+        "external/camera_engine_rkaiq/xcore",
+        "external/camera_engine_rkaiq/aiq_core",
+    ],
+}
+
+subdirs = [
+    "algos/ae",
+    "algos/awb",
+    "algos/af",
+    "algos/asd",
+]
+
+cc_library_static {
+    name: "librkaiq_amerge",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/amerge",
+    ],
+    srcs: [
+        "amerge/rk_aiq_algo_amerge_itf.cpp",
+        "amerge/rk_aiq_amerge_algo.cpp",
+        "amerge/rk_aiq_uapi_amerge_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_atmo",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/atmo",
+    ],
+    srcs: [
+        "atmo/rk_aiq_algo_atmo_itf.cpp",
+        "atmo/rk_aiq_atmo_algo.cpp",
+        "atmo/rk_aiq_uapi_atmo_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_a3dlut",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/a3dlut",
+    ],
+    srcs: [
+        "a3dlut/rk_aiq_algo_a3dlut_itf.cpp",
+        "a3dlut/rk_aiq_a3dlut_algo.cpp",
+        "a3dlut/rk_aiq_uapi_a3dlut_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_ablc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/ablc",
+    ],
+    srcs: [
+        "ablc/rk_aiq_algo_ablc_itf.cpp",
+        "ablc/rk_aiq_ablc_algo.cpp",
+        "ablc/rk_aiq_uapi_ablc_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_accm",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/accm",
+    ],
+    srcs: [
+        "accm/rk_aiq_algo_accm_itf.cpp",
+        "accm/rk_aiq_accm_algo.cpp",
+        "accm/rk_aiq_uapi_accm_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_adebayer",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/adebayer",
+    ],
+    srcs: [
+        "adebayer/rk_aiq_algo_adebayer_itf.cpp",
+        "adebayer/rk_aiq_algo_adebayer.cpp",
+        "adebayer/rk_aiq_uapi_adebayer_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_adpcc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/adpcc",
+    ],
+    srcs: [
+        "adpcc/rk_aiq_algo_adpcc_itf.cpp",
+        "adpcc/rk_aiq_adpcc_algo.cpp",
+        "adpcc/rk_aiq_uapi_adpcc_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_afec",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/afec",
+    ],
+    srcs: [
+        "afec/rk_aiq_algo_afec_itf.cpp",
+        "afec/rk_aiq_uapi_afec_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_agamma",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/agamma",
+    ],
+    srcs: [
+        "agamma/rk_aiq_algo_agamma_itf.cpp",
+        "agamma/rk_aiq_agamma_algo.cpp",
+        "agamma/rk_aiq_uapi_agamma_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_adegamma",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/adegamma",
+    ],
+    srcs: [
+        "adegamma/rk_aiq_algo_adegamma_itf.cpp",
+        "adegamma/rk_aiq_adegamma_algo.cpp",
+        "adegamma/rk_aiq_uapi_adegamma_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_agic",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/agic",
+    ],
+    srcs: [
+        "agic/rk_aiq_algo_agic_itf.cpp",
+        "agic/rk_aiq_algo_agic.cpp",
+        "agic/rk_aiq_uapi_agic_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_aldch",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aldch",
+    ],
+    srcs: [
+        "aldch/rk_aiq_algo_aldch_itf.cpp",
+        "aldch/rk_aiq_uapi_aldch_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_alsc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/alsc",
+    ],
+    srcs: [
+        "alsc/rk_aiq_algo_alsc_itf.cpp",
+        "alsc/rk_aiq_alsc_algo.cpp",
+        "alsc/rk_aiq_uapi_alsc_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_aorb",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aorb",
+    ],
+    srcs: [
+        "aorb/rk_aiq_algo_aorb_itf.cpp",
+        "aorb/orb_algos.cpp",
+        "aorb/orb_algos_opencv.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_ar2y",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    srcs: [
+        "ar2y/rk_aiq_algo_ar2y_itf.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_awdr",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    srcs: [
+        "awdr/rk_aiq_algo_awdr_itf.cpp",
+    ],
+}
+
+
+cc_library_static {
+    name: "librkaiq_adrc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/adrc",
+    ],
+    srcs: [
+        "adrc/rk_aiq_algo_adrc_itf.cpp",
+        "adrc/rk_aiq_adrc_algo.cpp",
+        "adrc/rk_aiq_uapi_adrc_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_anr",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/anr",
+    ],
+    srcs: [
+        "anr/rk_aiq_algo_anr_itf.cpp",
+        "anr/rk_aiq_anr_algo.cpp",
+        "anr/rk_aiq_anr_algo_bayernr.cpp",
+        "anr/rk_aiq_anr_algo_mfnr.cpp",
+        "anr/rk_aiq_anr_algo_uvnr.cpp",
+        "anr/rk_aiq_anr_algo_ynr.cpp",
+        "anr/rk_aiq_uapi_anr_int.cpp",
+        "anr/rk_aiq_anr_algo_gain.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_asharp",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/asharp",
+    ],
+    srcs: [
+        "asharp/rk_aiq_algo_asharp_itf.cpp",
+        "asharp/rk_aiq_asharp_algo.cpp",
+        "asharp/rk_aiq_asharp_algo_edgefilter.cpp",
+        "asharp/rk_aiq_asharp_algo_sharp.cpp",
+        "asharp/rk_aiq_uapi_asharp_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_acp",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/acp",
+    ],
+    srcs: [
+        "acp/rk_aiq_algo_acp_itf.cpp",
+        "acp/rk_aiq_uapi_acp_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_aie",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aie",
+    ],
+    srcs: [
+        "aie/rk_aiq_algo_aie_itf.cpp",
+        "aie/rk_aiq_algo_aie_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_adhaz",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/adehaze",
+    ],
+    srcs: [
+        "adehaze/rk_aiq_algo_adhaz_itf.cpp",
+        "adehaze/rk_aiq_adehaze_algo.cpp",
+        "adehaze/rk_aiq_uapi_adehaze_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_acgc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    srcs: [
+        "acgc/rk_aiq_algo_acgc_itf.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_asharp_v3",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/asharp3",
+    ],
+    srcs: [
+        "asharp3/rk_aiq_asharp_algo_itf_v3.cpp",
+        "asharp3/rk_aiq_asharp_algo_sharp_v3.cpp",
+        "asharp3/rk_aiq_asharp_algo_v3.cpp",
+        "asharp3/rk_aiq_uapi_asharp_int_v3.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_again_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/again",
+    ],
+    srcs: [
+        "again/rk_aiq_again_algo_itf.cpp",
+        "again/rk_aiq_again_algo_gain.cpp",
+        "again/rk_aiq_again_algo.cpp",
+        "again/rk_aiq_uapi_again_int.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_mfnr_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/amfnr",
+    ],
+    srcs: [
+        "amfnr/rk_aiq_amfnr_algo_itf_v1.cpp",
+        "amfnr/rk_aiq_amfnr_algo_mfnr_v1.cpp",
+        "amfnr/rk_aiq_amfnr_algo_v1.cpp",
+        "amfnr/rk_aiq_uapi_amfnr_int_v1.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_aynr_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aynr",
+    ],
+    srcs: [
+        "aynr/rk_aiq_aynr_algo_itf_v1.cpp",
+        "aynr/rk_aiq_aynr_algo_ynr_v1.cpp",
+        "aynr/rk_aiq_aynr_algo_v1.cpp",
+        "aynr/rk_aiq_uapi_aynr_int_v1.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_aynr_v2",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aynr2",
+    ],
+    srcs: [
+        "aynr2/rk_aiq_aynr_algo_itf_v2.cpp",
+        "aynr2/rk_aiq_aynr_algo_ynr_v2.cpp",
+        "aynr2/rk_aiq_aynr_algo_v2.cpp",
+        "aynr2/rk_aiq_uapi_aynr_int_v2.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_uvnr_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/auvnr",
+    ],
+    srcs: [
+        "auvnr/rk_aiq_auvnr_algo_itf_v1.cpp",
+        "auvnr/rk_aiq_auvnr_algo_uvnr_v1.cpp",
+        "auvnr/rk_aiq_auvnr_algo_v1.cpp",
+        "auvnr/rk_aiq_uapi_auvnr_int_v1.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_acnr_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/acnr",
+    ],
+    srcs: [
+        "acnr/rk_aiq_acnr_algo_itf_v1.cpp",
+        "acnr/rk_aiq_acnr_algo_cnr_v1.cpp",
+        "acnr/rk_aiq_acnr_algo_v1.cpp",
+        "acnr/rk_aiq_uapi_acnr_int_v1.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_arawnr_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/arawnr",
+    ],
+    srcs: [
+        "arawnr/rk_aiq_abayernr_algo_itf_v1.cpp",
+        "arawnr/rk_aiq_abayernr_algo_bayernr_v1.cpp",
+        "arawnr/rk_aiq_abayernr_algo_v1.cpp",
+        "arawnr/rk_aiq_uapi_abayernr_int_v1.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_arawnr_v2",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/arawnr2",
+    ],
+    srcs: [
+        "arawnr2/rk_aiq_abayernr_algo_itf_v2.cpp",
+        "arawnr2/rk_aiq_abayernr_algo_bayernr_v2.cpp",
+        "arawnr2/rk_aiq_abayernr_algo_v2.cpp",
+        "arawnr2/rk_aiq_uapi_abayernr_int_v2.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_amd",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/amd",
+    ],
+    srcs: [
+        "amd/rk_aiq_algo_amd_itf.cpp",
+    ],
+}
+
+cc_library_static {
+    name: "librkaiq_aeis",
+    vendor: true,
+    defaults: ["algo_defaults"],
+    stl: "c++_static",
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/hwi",
+        "external/camera_engine_rkaiq/hwi/isp20",
+        "external/camera_engine_rkaiq/include/algos/aeis",
+    ],
+    srcs: [
+        "aeis/eis_loader.cpp",
+        "aeis/scaler_service.cpp",
+        "aeis/remap_backend.cpp",
+        "aeis/imu_service.cpp",
+        "aeis/eis_algo_service.cpp",
+        "aeis/rk_aiq_uapi_aeis_int.cpp",
+        "aeis/rk_aiq_algo_aeis_itf.cpp",
+    ],
+}

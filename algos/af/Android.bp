@@ -1,0 +1,13 @@
+
+cc_prebuilt_library_static {
+		name: "librkaiq_af",
+		vendor: true,
+		arch: {
+		  arm: {
+			  srcs: ["android/arm/librkaiq_af.a"],
+		  },
+		  arm64: {
+			  srcs: ["android/arm64/librkaiq_af.a"],
+		  },
+		},
+}
