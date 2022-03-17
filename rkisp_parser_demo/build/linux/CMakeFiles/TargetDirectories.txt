@@ -1,0 +1,3 @@
+/home/zyc/rk1109_isp_simulator/rkisp_parser_demo/build/linux/CMakeFiles/edit_cache.dir
+/home/zyc/rk1109_isp_simulator/rkisp_parser_demo/build/linux/CMakeFiles/rebuild_cache.dir
+/home/zyc/rk1109_isp_simulator/rkisp_parser_demo/build/linux/CMakeFiles/rkisp_parser.dir

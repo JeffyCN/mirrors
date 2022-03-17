@@ -1,0 +1,55 @@
+[
+{
+  "directory": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64",
+  "command": "/home/camera/camera/rv1109_sdk/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-gcc  --sysroot=/home/camera/camera/rk356x_linux/buildroot/output/rockchip_rk3566/host/aarch64-buildroot-linux-gnu/sysroot -D_CRT_SECURE_NO_WARNINGS -I../../../../demo -I../../../../demo/include -I../../../../demo/include/rga -I../../../../demo/include/libdrm -I../../../../demo/drmDsp -I../../../../demo/iio/include -I../../../../../rk_aiq -I../../../../../rk_aiq/include -I../../../../../rk_aiq/include/uAPI -I../../../../../rk_aiq/include/uAPI2 -I../../../../../rk_aiq/include/xcore -I../../../../../rk_aiq/include/algos -I../../../../../rk_aiq/include/common -I../../../../../rk_aiq/include/iq_parser -I../../../../../rk_aiq/include/iq_parser_v2  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os   -DISP_HW_V21 -std=c++11 -Os -DADD_RK_AIQ \"-D_FORTIFY_SOURCE=2 -fstack-protector-strong\" -o CMakeFiles/rkisp_demo.dir/demo/rkdrm_display.c.o   -c /home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/rkdrm_display.c",
+  "file": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/rkdrm_display.c"
+},
+
+{
+  "directory": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64",
+  "command": "/home/camera/camera/rv1109_sdk/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-gcc  --sysroot=/home/camera/camera/rk356x_linux/buildroot/output/rockchip_rk3566/host/aarch64-buildroot-linux-gnu/sysroot -D_CRT_SECURE_NO_WARNINGS -I../../../../demo -I../../../../demo/include -I../../../../demo/include/rga -I../../../../demo/include/libdrm -I../../../../demo/drmDsp -I../../../../demo/iio/include -I../../../../../rk_aiq -I../../../../../rk_aiq/include -I../../../../../rk_aiq/include/uAPI -I../../../../../rk_aiq/include/uAPI2 -I../../../../../rk_aiq/include/xcore -I../../../../../rk_aiq/include/algos -I../../../../../rk_aiq/include/common -I../../../../../rk_aiq/include/iq_parser -I../../../../../rk_aiq/include/iq_parser_v2  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os   -DISP_HW_V21 -std=c++11 -Os -DADD_RK_AIQ \"-D_FORTIFY_SOURCE=2 -fstack-protector-strong\" -o CMakeFiles/rkisp_demo.dir/demo/drmDsp.c.o   -c /home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/drmDsp.c",
+  "file": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/drmDsp.c"
+},
+
+{
+  "directory": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64",
+  "command": "/home/camera/camera/rv1109_sdk/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-gcc  --sysroot=/home/camera/camera/rk356x_linux/buildroot/output/rockchip_rk3566/host/aarch64-buildroot-linux-gnu/sysroot -D_CRT_SECURE_NO_WARNINGS -I../../../../demo -I../../../../demo/include -I../../../../demo/include/rga -I../../../../demo/include/libdrm -I../../../../demo/drmDsp -I../../../../demo/iio/include -I../../../../../rk_aiq -I../../../../../rk_aiq/include -I../../../../../rk_aiq/include/uAPI -I../../../../../rk_aiq/include/uAPI2 -I../../../../../rk_aiq/include/xcore -I../../../../../rk_aiq/include/algos -I../../../../../rk_aiq/include/common -I../../../../../rk_aiq/include/iq_parser -I../../../../../rk_aiq/include/iq_parser_v2  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os   -DISP_HW_V21 -std=c++11 -Os -DADD_RK_AIQ \"-D_FORTIFY_SOURCE=2 -fstack-protector-strong\" -o CMakeFiles/rkisp_demo.dir/demo/rga_control.c.o   -c /home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/rga_control.c",
+  "file": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/rga_control.c"
+},
+
+{
+  "directory": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64",
+  "command": "/home/camera/camera/rv1109_sdk/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-g++  --sysroot=/home/camera/camera/rk356x_linux/buildroot/output/rockchip_rk3566/host/aarch64-buildroot-linux-gnu/sysroot  -D_CRT_SECURE_NO_WARNINGS -I../../../../demo -I../../../../demo/include -I../../../../demo/include/rga -I../../../../demo/include/libdrm -I../../../../demo/drmDsp -I../../../../demo/iio/include -I../../../../../rk_aiq -I../../../../../rk_aiq/include -I../../../../../rk_aiq/include/uAPI -I../../../../../rk_aiq/include/uAPI2 -I../../../../../rk_aiq/include/xcore -I../../../../../rk_aiq/include/algos -I../../../../../rk_aiq/include/common -I../../../../../rk_aiq/include/iq_parser -I../../../../../rk_aiq/include/iq_parser_v2  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os   -DISP_HW_V21 -std=c++11 -Os -DADD_RK_AIQ \"-D_FORTIFY_SOURCE=2 -fstack-protector-strong\" -o CMakeFiles/rkisp_demo.dir/demo/rkisp_demo.cpp.o -c /home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/rkisp_demo.cpp",
+  "file": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/rkisp_demo.cpp"
+},
+
+{
+  "directory": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64",
+  "command": "/home/camera/camera/rv1109_sdk/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-gcc  --sysroot=/home/camera/camera/rk356x_linux/buildroot/output/rockchip_rk3566/host/aarch64-buildroot-linux-gnu/sysroot -D_CRT_SECURE_NO_WARNINGS -I../../../../demo -I../../../../demo/include -I../../../../demo/include/rga -I../../../../demo/include/libdrm -I../../../../demo/drmDsp -I../../../../demo/iio/include -I../../../../../rk_aiq -I../../../../../rk_aiq/include -I../../../../../rk_aiq/include/uAPI -I../../../../../rk_aiq/include/uAPI2 -I../../../../../rk_aiq/include/xcore -I../../../../../rk_aiq/include/algos -I../../../../../rk_aiq/include/common -I../../../../../rk_aiq/include/iq_parser -I../../../../../rk_aiq/include/iq_parser_v2  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os   -DISP_HW_V21 -std=c++11 -Os -DADD_RK_AIQ \"-D_FORTIFY_SOURCE=2 -fstack-protector-strong\" -o CMakeFiles/rkisp_demo.dir/demo/display.c.o   -c /home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/display.c",
+  "file": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/display.c"
+},
+
+{
+  "directory": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64",
+  "command": "/home/camera/camera/rv1109_sdk/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-g++  --sysroot=/home/camera/camera/rk356x_linux/buildroot/output/rockchip_rk3566/host/aarch64-buildroot-linux-gnu/sysroot  -D_CRT_SECURE_NO_WARNINGS -I../../../../demo -I../../../../demo/include -I../../../../demo/include/rga -I../../../../demo/include/libdrm -I../../../../demo/drmDsp -I../../../../demo/iio/include -I../../../../../rk_aiq -I../../../../../rk_aiq/include -I../../../../../rk_aiq/include/uAPI -I../../../../../rk_aiq/include/uAPI2 -I../../../../../rk_aiq/include/xcore -I../../../../../rk_aiq/include/algos -I../../../../../rk_aiq/include/common -I../../../../../rk_aiq/include/iq_parser -I../../../../../rk_aiq/include/iq_parser_v2  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os   -DISP_HW_V21 -std=c++11 -Os -DADD_RK_AIQ \"-D_FORTIFY_SOURCE=2 -fstack-protector-strong\" -o CMakeFiles/rkisp_demo.dir/demo/rkRgaApi.cpp.o -c /home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/rkRgaApi.cpp",
+  "file": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/rkRgaApi.cpp"
+},
+
+{
+  "directory": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64",
+  "command": "/home/camera/camera/rv1109_sdk/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-gcc  --sysroot=/home/camera/camera/rk356x_linux/buildroot/output/rockchip_rk3566/host/aarch64-buildroot-linux-gnu/sysroot -D_CRT_SECURE_NO_WARNINGS -I../../../../demo -I../../../../demo/include -I../../../../demo/include/rga -I../../../../demo/include/libdrm -I../../../../demo/drmDsp -I../../../../demo/iio/include -I../../../../../rk_aiq -I../../../../../rk_aiq/include -I../../../../../rk_aiq/include/uAPI -I../../../../../rk_aiq/include/uAPI2 -I../../../../../rk_aiq/include/xcore -I../../../../../rk_aiq/include/algos -I../../../../../rk_aiq/include/common -I../../../../../rk_aiq/include/iq_parser -I../../../../../rk_aiq/include/iq_parser_v2  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os   -DISP_HW_V21 -std=c++11 -Os -DADD_RK_AIQ \"-D_FORTIFY_SOURCE=2 -fstack-protector-strong\" -o CMakeFiles/rkisp_demo.dir/demo/drmDsp/bo.c.o   -c /home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/drmDsp/bo.c",
+  "file": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/drmDsp/bo.c"
+},
+
+{
+  "directory": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64",
+  "command": "/home/camera/camera/rv1109_sdk/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-gcc  --sysroot=/home/camera/camera/rk356x_linux/buildroot/output/rockchip_rk3566/host/aarch64-buildroot-linux-gnu/sysroot -D_CRT_SECURE_NO_WARNINGS -I../../../../demo -I../../../../demo/include -I../../../../demo/include/rga -I../../../../demo/include/libdrm -I../../../../demo/drmDsp -I../../../../demo/iio/include -I../../../../../rk_aiq -I../../../../../rk_aiq/include -I../../../../../rk_aiq/include/uAPI -I../../../../../rk_aiq/include/uAPI2 -I../../../../../rk_aiq/include/xcore -I../../../../../rk_aiq/include/algos -I../../../../../rk_aiq/include/common -I../../../../../rk_aiq/include/iq_parser -I../../../../../rk_aiq/include/iq_parser_v2  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os   -DISP_HW_V21 -std=c++11 -Os -DADD_RK_AIQ \"-D_FORTIFY_SOURCE=2 -fstack-protector-strong\" -o CMakeFiles/rkisp_demo.dir/demo/drmDsp/dev.c.o   -c /home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/drmDsp/dev.c",
+  "file": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/drmDsp/dev.c"
+},
+
+{
+  "directory": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64",
+  "command": "/home/camera/camera/rv1109_sdk/buildroot/output/rockchip_puma/host/bin/arm-linux-gnueabihf-gcc  --sysroot=/home/camera/camera/rk356x_linux/buildroot/output/rockchip_rk3566/host/aarch64-buildroot-linux-gnu/sysroot -D_CRT_SECURE_NO_WARNINGS -I../../../../demo -I../../../../demo/include -I../../../../demo/include/rga -I../../../../demo/include/libdrm -I../../../../demo/drmDsp -I../../../../demo/iio/include -I../../../../../rk_aiq -I../../../../../rk_aiq/include -I../../../../../rk_aiq/include/uAPI -I../../../../../rk_aiq/include/uAPI2 -I../../../../../rk_aiq/include/xcore -I../../../../../rk_aiq/include/algos -I../../../../../rk_aiq/include/common -I../../../../../rk_aiq/include/iq_parser -I../../../../../rk_aiq/include/iq_parser_v2  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Os   -DISP_HW_V21 -std=c++11 -Os -DADD_RK_AIQ \"-D_FORTIFY_SOURCE=2 -fstack-protector-strong\" -o CMakeFiles/rkisp_demo.dir/demo/drmDsp/modeset.c.o   -c /home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/drmDsp/modeset.c",
+  "file": "/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/demo/drmDsp/modeset.c"
+}
+]

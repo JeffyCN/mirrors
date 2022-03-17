@@ -1,0 +1,9 @@
+# ninja log v5
+1	61	0	CMakeFiles/rkisp_demo.dir/demo/rga_control.c.o	655ab67959b3c98d
+2	86	0	CMakeFiles/rkisp_demo.dir/demo/drmDsp/modeset.c.o	cee46958546d6c44
+1	87	0	CMakeFiles/rkisp_demo.dir/demo/drmDsp/bo.c.o	d353e3516b3c3d44
+1	107	0	CMakeFiles/rkisp_demo.dir/demo/rkRgaApi.cpp.o	9c2f1a0ed4c8590d
+1	113	0	CMakeFiles/rkisp_demo.dir/demo/display.c.o	e92f5a2f419810a7
+1	114	0	CMakeFiles/rkisp_demo.dir/demo/drmDsp.c.o	8a2ec28d462e4fdb
+2	135	0	CMakeFiles/rkisp_demo.dir/demo/drmDsp/dev.c.o	e0ff282cba7f5c0
+0	208	0	CMakeFiles/rkisp_demo.dir/demo/rkdrm_display.c.o	d7f2dd1ade20e8c7
