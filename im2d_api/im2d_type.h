@@ -324,8 +324,8 @@ typedef struct im_osd_block {
     int color_mode;                 // using src1 color or config color
                                     //   IM_OSD_COLOR_PIXEL
                                     //   IM_OSD_COLOR_EXTERNAL
-    im_color_t background_color;    // config color: background
-    im_color_t Foreground_color;    // config color: foreground
+    im_color_t normal_color;        // config color: normal
+    im_color_t invert_color;        // config color: invert
 } im_osd_block_t;
 
 typedef struct im_osd_invert {

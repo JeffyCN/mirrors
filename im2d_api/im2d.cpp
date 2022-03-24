@@ -1447,8 +1447,8 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
             srcinfo.osd_info.bpp2_info.color0.value = opt.osd_config.bpp2_info.color0.value;
             srcinfo.osd_info.bpp2_info.color1.value = opt.osd_config.bpp2_info.color1.value;
         } else {
-            srcinfo.osd_info.bpp2_info.color0.value = opt.osd_config.block_parm.background_color.value;
-            srcinfo.osd_info.bpp2_info.color1.value = opt.osd_config.block_parm.Foreground_color.value;
+            srcinfo.osd_info.bpp2_info.color0.value = opt.osd_config.block_parm.normal_color.value;
+            srcinfo.osd_info.bpp2_info.color1.value = opt.osd_config.block_parm.invert_color.value;
         }
 
         switch (opt.osd_config.invert_config.invert_channel) {
