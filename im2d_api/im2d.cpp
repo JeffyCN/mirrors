@@ -1453,16 +1453,16 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
         switch (opt.osd_config.invert_config.invert_channel) {
             case IM_OSD_INVERT_CHANNEL_NONE:
-                srcinfo.osd_info.mode_ctrl.invert_enable = (0x1 << 1) | (0x1 << 3);
+                srcinfo.osd_info.mode_ctrl.invert_enable = (0x1 << 1) | (0x1 << 2);
                 break;
             case IM_OSD_INVERT_CHANNEL_Y_G:
-                srcinfo.osd_info.mode_ctrl.invert_enable = 0x1 <<3;
+                srcinfo.osd_info.mode_ctrl.invert_enable = 0x1 << 2;
                 break;
             case IM_OSD_INVERT_CHANNEL_C_RB:
                 srcinfo.osd_info.mode_ctrl.invert_enable = 0x1 << 1;
                 break;
             case IM_OSD_INVERT_CHANNEL_ALPHA:
-                srcinfo.osd_info.mode_ctrl.invert_enable = (0x1 << 0) | (0x1 << 1) | (0x1 << 3);
+                srcinfo.osd_info.mode_ctrl.invert_enable = (0x1 << 0) | (0x1 << 1) | (0x1 << 2);
                 break;
             case IM_OSD_INVERT_CHANNEL_COLOR:
                 srcinfo.osd_info.mode_ctrl.invert_enable = 0;

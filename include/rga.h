@@ -399,7 +399,7 @@ struct rga_osd_mode_ctrl {
 	uint8_t invert_enable;		// invert channel enable
 					//   1 << 0: aplha enable
 					//   1 << 1: Y/G disable
-					//   1 << 3: C/RB disable
+					//   1 << 2: C/RB disable
 	uint8_t invert_mode;		// invert cal mode
 					//   0: normal(max-data)
 					//   1: swap
