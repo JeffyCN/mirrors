@@ -306,7 +306,8 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
 
                     merge_table.input_format |= IM_RGA_SUPPORT_FORMAT_YUYV_422 |
-                                                IM_RGA_SUPPORT_FORMAT_YUV_400;
+                                                IM_RGA_SUPPORT_FORMAT_YUV_400 |
+                                                IM_RGA_SUPPORT_FORMAT_RGBA2BPP;
                     merge_table.output_format |= IM_RGA_SUPPORT_FORMAT_YUV_400 |
                                                  IM_RGA_SUPPORT_FORMAT_Y4;
                     merge_table.feature |= IM_RGA_SUPPORT_FEATURE_QUANTIZE |
@@ -732,6 +733,13 @@ IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, in
         ret = rga_yuv_legality_check(name, info, rect);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
+    } else if (format == RK_FORMAT_RGBA2BPP) {
+        if (~format_usage & IM_RGA_SUPPORT_FORMAT_RGBA2BPP) {
+            imSetErrorMsg("%s unsupported rgba2bpp format, format = 0x%x(%s)\n%s",
+                          name, info.format, translate_format_str(info.format),
+                          querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
+            return IM_STATUS_NOT_SUPPORTED;
+        }
     } else {
         imSetErrorMsg("%s unsupported this format, format = 0x%x(%s)\n%s",
                       name, info.format, translate_format_str(info.format),
