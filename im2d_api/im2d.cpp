@@ -1517,7 +1517,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         srcinfo.pre_intr.read_intr_en = opt.intr_config.flags & IM_INTR_READ_INTR ? true : false;
         if (srcinfo.pre_intr.read_intr_en) {
             srcinfo.pre_intr.read_intr_en = true;
-            srcinfo.pre_intr.read_hold_en = opt.intr_config.flags & IM_INTR_READ_HOLD;
+            srcinfo.pre_intr.read_hold_en = opt.intr_config.flags & IM_INTR_READ_HOLD ? true : false;
             srcinfo.pre_intr.read_threshold = opt.intr_config.read_threshold;
         }
 
