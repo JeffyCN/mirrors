@@ -1066,6 +1066,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     else
         ditherEn = 0;
 
+#if 0
     /* YUV HDS or VDS enable */
     if (NormalRgaIsYuvFormat(relDstRect.format)) {
         rgaReg.uvhds_mode = 1;
@@ -1076,6 +1077,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
             rgaReg.uvvds_mode = 1;
         }
     }
+#endif
 
 #ifdef ANDROID
     if(is_out_log())
