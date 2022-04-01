@@ -1024,3 +1024,16 @@ IM_STATUS rga_get_opt(im_opt_t *opt, void *ptr) {
 
     return IM_STATUS_SUCCESS;
 }
+
+IM_API im_ctx_id_t rga_begin_job(uint32_t flags) {
+    if (rga_get_context() != IM_STATUS_SUCCESS)
+        return IM_STATUS_FAILED;
+
+    if (ioctl(rgaCtx->rgaFd, RGA_START_CONFIG, &flags) < 0) {
+        printf(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        ALOGE(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        return IM_STATUS_FAILED;
+    }
+
+    return (im_ctx_id_t)flags;
+}

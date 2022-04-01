@@ -1281,6 +1281,13 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                            im_rect srect, im_rect drect, im_rect prect,
                            int acquire_fence_fd, int *release_fence_fd, im_opt_t *opt_ptr, int usage) {
+    return improcess(src, dst, pat, srect, drect, prect, acquire_fence_fd, release_fence_fd, opt_ptr, usage, 0);
+}
+
+IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                           im_rect srect, im_rect drect, im_rect prect,
+                           int acquire_fence_fd, int *release_fence_fd,
+                           im_opt_t *opt_ptr, int usage, im_ctx_id_t ctx_id) {
     int ret;
     rga_info_t srcinfo;
     rga_info_t dstinfo;
@@ -1666,6 +1673,15 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     dstinfo.core = opt.core ? opt.core : g_im2d_context.core;
     dstinfo.priority = opt.priority ? opt.priority : g_im2d_context.priority;
 
+    if (ctx_id != 0) {
+        dstinfo.ctx_id = ctx_id;
+        if (dstinfo.ctx_id <= 0) {
+            imSetErrorMsg("ctx id is invalid");
+            return IM_STATUS_ILLEGAL_PARAM;
+        }
+        dstinfo.mpi_mode = 1;
+    }
+
     if (usage & IM_COLOR_FILL) {
         dstinfo.color = opt.color;
         ret = rkRga.RkRgaCollorFill(&dstinfo);
@@ -1743,6 +1759,10 @@ IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
     }
 
     return IM_STATUS_SUCCESS;
+}
+
+IM_API im_ctx_id_t imbegin(uint32_t flags) {
+    return rga_begin_job(flags);
 }
 
 /* For the C interface */

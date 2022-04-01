@@ -752,6 +752,8 @@ IM_API IM_STATUS imsync(int out_fence_fd);
  */
 IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value);
 
+IM_API im_ctx_id_t imbegin(uint32_t flags);
+
 #ifdef __cplusplus
 }
 #endif

@@ -37,6 +37,10 @@ extern "C"
 #define RGA_IOC_GET_HW_VERSION		RGA_IOR(0x2, struct rga_hw_versions_t)
 #define RGA_IOC_IMPORT_BUFFER		RGA_IOWR(0x3, struct rga_buffer_pool)
 #define RGA_IOC_RELEASE_BUFFER		RGA_IOW(0x4, struct rga_buffer_pool)
+#define RGA_START_CONFIG            RGA_IOR(0x5, uint32_t)
+#define RGA_END_CONFIG              RGA_IOWR(0x6, struct rga_user_ctx_t)
+#define RGA_CMD_CONFIG              RGA_IOWR(0x7, struct rga_user_ctx_t)
+#define RGA_CANCEL_CONFIG           RGA_IOWR(0x8, uint32_t)
 
 #define RGA_BLIT_SYNC   0x5017
 #define RGA_BLIT_ASYNC  0x5018
@@ -562,6 +566,18 @@ struct rga_req {
 	struct rga_pre_intr_info pre_intr_info;
 
     uint8_t reservr[59];
+};
+
+struct rga_user_ctx_t {
+	uint64_t cmd_ptr;
+	uint32_t cmd_num;
+	uint32_t id;
+	uint32_t sync_mode;
+	uint32_t out_fence_fd;
+
+	uint32_t mpi_config_flags;
+
+	uint8_t reservr[124];
 };
 
 #ifdef __cplusplus
