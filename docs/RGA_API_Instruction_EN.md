@@ -184,15 +184,15 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td>RK1808</td>
    </tr>
    <tr>
-      <td rowspan="5">RGA2-Enhance</td>
+      <td rowspan="6">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
-      <td rowspan="5">2x2</td>
-      <td rowspan="5">8192x8192</td>
-      <td rowspan="5">2x2</td>
-      <td rowspan="5">4096x4096</td>
-      <td rowspan="5">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for 1108/1109)<br/>NN quantize(NA for 3399/1108)</td>
-      <td rowspan="5">2</td>
+      <td rowspan="6">2x2</td>
+      <td rowspan="6">8192x8192</td>
+      <td rowspan="6">2x2</td>
+      <td rowspan="6">4096x4096</td>
+      <td rowspan="6">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for 1108/1109)<br/>NN quantize(NA for 3399/1108)<br/>osd(only 1106/1103)</td>
+      <td rowspan="6">2</td>
    </tr>
    <tr>
       <td>Mercury</td>
@@ -211,6 +211,10 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td>RK3588</td>
    </tr>
    <tr>
+      <td>Otter</td>
+      <td>RV1106/1103</td>
+   </tr>
+   <tr>
       <td rowspan="1">RGA3</td>
       <td>Orion</td>
       <td>RK3588</td>
@@ -222,6 +226,7 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td rowspan="1">3 (by pass)<br/>2 (scale)</td>
    </tr>
 </table>
+
 
 
 > The expected performance is calculated at the default RGA frequency. The actual performance is affected by the memory frequency. The data above is for reference only.
@@ -316,7 +321,7 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td>RK1808</td>
    </tr>
    <tr>
-      <td rowspan="5">RGA2-Enhance</td>
+      <td rowspan="6">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
       <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>YUV420 10bit (planar/semi-planar)<br/>YUV422 10bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
@@ -329,16 +334,20 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
    <tr>
       <td>Puma</td>
       <td>RV1126/ RV1109</td>
-      <td rowspan="3">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar/packed)<br/>YUV420 10bit (planar/semi-planar)<br/>YUV422 10bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
-      <td rowspan="3">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar/packed)<br/>YUV422 8bit (planar/semi-planar/packed)<br/>YUV400<br/>Y4/Y1</td>
+      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar/packed)<br/>YUV420 10bit (planar/semi-planar)<br/>YUV422 10bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
+      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar/packed)<br/>YUV422 8bit (planar/semi-planar/packed)<br/>YUV400<br/>Y4/Y1</td>
    </tr>
    <tr>
       <td>skylarkV2</td>
       <td>RK3566/RK3568</td>
    </tr>
    <tr>
-   	  <td>Orion</td>
+   <td>Orion</td>
       <td>RK3588</td>
+   </tr>
+   <tr>
+   <td>Otter</td>
+      <td>RV1106/1103</td>
    </tr>
    <tr>
       <td rowspan="1">RGA3</td>
@@ -348,6 +357,7 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td rowspan="1">RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (semi-planar)<br/>YUV422 8bit (semi-planar/packed)<br/>YUV420 10bit (semi-planar)<br/>YUV422 10bit (semi-planar)</td>
    </tr>
 </table>
+
 
 > Note: Y4 format is 2 to the 4th power grayscale, Y400 format is 2 to the 8th power grayscale.
 
