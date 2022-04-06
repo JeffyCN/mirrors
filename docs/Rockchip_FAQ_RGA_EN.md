@@ -1,5 +1,3 @@
-
-
 # RGA FAQ
 
 File No.：RK-PC-YF-0003
@@ -76,7 +74,7 @@ For RGA driver and user-mode API librga, this document summarizes some common pr
 
 ### Hardware Version
 
-RGA hardware consists of three versions: RGA1, RGA2, and RGA3. See section Introducions in 《RGA_API_Instruction.md》 for detailed platform information, supported functions, and restrictions.
+RGA hardware consists of three versions: RGA1, RGA2, and RGA3. See section Introducions in Rockchip_Developer_Guide_RGA_EN.pdf for detailed platform information, supported functions, and restrictions.
 
 
 
