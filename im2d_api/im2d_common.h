@@ -77,5 +77,6 @@ IM_API IM_STATUS rga_release_buffer(int handle);
 IM_STATUS rga_get_opt(im_opt_t *opt, void *ptr);
 
 IM_API im_ctx_id_t rga_begin_job(uint32_t flags);
+IM_API IM_STATUS rga_cancel(im_ctx_id_t id);
 
 #endif

@@ -1037,3 +1037,17 @@ IM_API im_ctx_id_t rga_begin_job(uint32_t flags) {
 
     return (im_ctx_id_t)flags;
 }
+
+IM_API IM_STATUS rga_cancel(im_ctx_id_t id) {
+    if (rga_get_context() != IM_STATUS_SUCCESS)
+        return IM_STATUS_FAILED;
+
+    if (ioctl(rgaCtx->rgaFd, RGA_CANCEL_CONFIG, &id) < 0) {
+        printf(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        ALOGE(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+
+        return IM_STATUS_FAILED;
+    }
+
+    return IM_STATUS_SUCCESS;
+}

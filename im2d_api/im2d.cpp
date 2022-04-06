@@ -1771,6 +1771,10 @@ IM_API im_ctx_id_t imbegin(uint32_t flags) {
     return rga_begin_job(flags);
 }
 
+IM_API IM_STATUS imcancel(im_ctx_id_t id) {
+    return rga_cancel(id);
+}
+
 /* For the C interface */
 IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t  handle,
                                         int width, int height,
