@@ -52,8 +52,8 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES += \
-    rga_im2d_slt.cpp \
-    drm_alloc.cpp
+    sources/rga_im2d_slt.cpp \
+    sources/drm_alloc.cpp
 
 LOCAL_MODULE:= im2d_slt
 

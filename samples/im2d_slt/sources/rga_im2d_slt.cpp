@@ -28,9 +28,17 @@
 #include <memory.h>
 #include <pthread.h>
 
+#ifndef LINUX
 #include "hardware/gralloc_rockchip.h"
+#endif
+
+#if LIBDRM
 #include "drm_alloc.h"
 #include "xf86drm.h"
+#endif
+
+#include "dma_alloc.h"
+
 #include "rga.h"
 #include "RockchipRga.h"
 #include "im2d_api/im2d.hpp"
@@ -195,6 +203,9 @@ void *pthread_rga_run(void *args) {
 #elif IM2D_SLT_GRAPHICBUFFER_EN
     sp<GraphicBuffer> src_buf;
     sp<GraphicBuffer> dst_buf;
+#elif IM2D_SLT_RK_DMA_HEAP_EN
+    int src_fd, dst_fd;
+    rga_buffer_handle_t src_handle, dst_handle;
 #endif
 
     rga_buffer_t src;
@@ -310,6 +321,55 @@ void *pthread_rga_run(void *args) {
         if (src.width == 0 || dst.width == 0) {
             printf("%s", imStrError());
         }
+#elif IM2D_SLT_RK_DMA_HEAP_EN
+        ret = dma_buf_alloc(srcWidth, srcHeight, srcFormat, &src_fd, (void **)&src_va);
+        if (ret < 0) {
+            printf("ID[%d] %s alloc src dma_buf failed!\n", data->id, data->name);
+            goto NORMAL_ERR;
+        }
+
+        ret = dma_buf_alloc(dstWidth, dstHeight, dstFormat, &dst_fd, (void **)&dst_va);
+        if (ret < 0) {
+            printf("ID[%d] %s alloc dst dma_buf failed!\n", data->id, data->name);
+            goto NORMAL_ERR;
+        }
+
+        dma_sync_device_to_cpu(src_fd);
+        dma_sync_device_to_cpu(dst_fd);
+
+        ret = read_image_from_path(src_va, IM2D_SLT_DEFAULT_INPUT_PATH,
+                                    srcFormat, srcWidth, srcHeight, 0, data->rd_mode);
+        if (ret != 0) {
+            printf ("ID[%d] %s open file %s \n", data->id, data->name, "fault");
+            goto NORMAL_ERR;
+        }
+
+        memset(dst_va, 0xff, dstWidth * dstHeight * get_bpp_from_format(dstFormat));
+
+        dma_sync_cpu_to_device(src_fd);
+        dma_sync_cpu_to_device(dst_fd);
+
+        src_handle = importbuffer_fd(src_fd, srcWidth, srcHeight, srcFormat);
+        if (src_handle <= 0) {
+            printf("ID[%d] %s import src dma_buf failed!\n", data->id, data->name);
+            goto NORMAL_ERR;
+        }
+        dst_handle = importbuffer_fd(dst_fd, dstWidth, dstHeight, dstFormat);
+        if (dst_handle <= 0) {
+            printf("ID[%d] %s import dst dma_buf failed!\n", data->id, data->name);
+            releasebuffer_handle(src_handle);
+            goto NORMAL_ERR;
+        }
+
+        src = wrapbuffer_handle(src_handle, srcWidth, srcHeight, srcFormat);
+        dst = wrapbuffer_handle(dst_handle, dstWidth, dstHeight, dstFormat);
+        if (src.width == 0 || dst.width == 0) {
+            printf("%s", imStrError());
+
+            releasebuffer_handle(src_handle);
+            releasebuffer_handle(dst_handle);
+            goto NORMAL_ERR;
+        }
 #endif
 
         ret = imcheck(src, dst, src_rect, dst_rect);
@@ -341,6 +401,9 @@ void *pthread_rga_run(void *args) {
                 printf("lock dst_buf error : %s\n",strerror(errno));
                 goto NORMAL_ERR;
             }
+#elif IM2D_SLT_RK_DMA_HEAP_EN
+            dma_sync_device_to_cpu(src_fd);
+            dma_sync_device_to_cpu(dst_fd);
 #endif
 
             ret = memcmp(src_va, dst_va, dst.wstride * dst.hstride * get_bpp_from_format(dst.format));
@@ -381,6 +444,12 @@ void *pthread_rga_run(void *args) {
                         drm_src.drm_buf, drm_src.actual_size);
         drm_buf_destroy(drm_dst.drm_buffer_fd, drm_dst.drm_buffer_handle,
                         drm_dst.drm_buf, drm_dst.actual_size);
+#elif IM2D_SLT_RK_DMA_HEAP_EN
+        releasebuffer_handle(src_handle);
+        releasebuffer_handle(dst_handle);
+
+        dma_buf_free(srcWidth, srcHeight, srcFormat, &src_fd, (void *)src_va);
+        dma_buf_free(dstWidth, dstHeight, dstFormat, &dst_fd, (void *)dst_va);
 #endif
     } while (data->mode && --num);
 
@@ -488,7 +557,7 @@ int main() {
 #if IM2D_SLT_THREAD_EN
     for (int i = 1; i <= pthread_num; i++) {
         pthread_create(&tdSyncID[i], NULL, pthread_rga_run, (void *)(&data[i]));
-        printf("creat Sync pthread[%ld] = %d, id = %d\n", tdSyncID[i], i, data[i].id);
+        printf("creat Sync pthread[0x%lx] = %d, id = %d\n", tdSyncID[i], i, data[i].id);
     }
 
     for (int i = 1; i <= pthread_num; i++) {

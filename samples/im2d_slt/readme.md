@@ -58,7 +58,7 @@ out%dw%d-h%d-%s-afbc.bin
 
 #### 编译配置
 
-在工具编译前，可以通过修改 slt_config.h 配置测试工具。
+在工具编译前，可以通过修改 slt_config.h 配置测试工具，该文件配置可以参考chip_config中的template进行替换使用。
 
 | 配置                         | 说明                                                         |
 | :--------------------------- | :----------------------------------------------------------- |
@@ -68,6 +68,7 @@ out%dw%d-h%d-%s-afbc.bin
 | IM2D_SLT_WHILE_NUM           | 循环模式有效，测试case循环次数。                             |
 | IM2D_SLT_DRM_BUFFER_EN       | 使能该配置后，测试工具的内存分配器将选择DRM。                |
 | IM2D_SLT_GRAPHICBUFFER_EN    | 使能该配置后，测试工具的内存分配器将选择Gralloc。            |
+| IM2D_SLT_RK_DMA_HEAP_EN      | 使能该配置后，测试工具的内存分配器将选择rk_dma_deap。        |
 | IM2D_SLT_BUFFER_CACHEABLE    | 使能该配置后，测试工具将申请cacheable的内存。                |
 | IM2D_SLT_BUFFER_PHY_EN       | 使能该配置后，测试工具将申请使用物理地址。                   |
 | IM2D_SLT_TEST_RGA2_EN        | 使能该配置后，将使能RGA2 拷贝测试case。                      |
@@ -85,11 +86,39 @@ out%dw%d-h%d-%s-afbc.bin
 
 ### 编译
 
+#### Android
+
 在配置好Android SDK编译环境后，在源码目录下使用如下命令编译即可。
 
 ```
 mm
 ```
+
+
+
+#### Linux
+
+- cmake
+
+  - 修改librga源码根目录下的**/cmake/buildroot.cmake**文件。执行以下脚本完成编译:
+
+  ```
+  $ chmod +x ./cmake-linux.sh
+  $ ./cmake-linux.sh
+  ```
+
+   **[编译选项]**
+
+  1. 指定TOOLCHAIN_HOME为交叉编译工具的路径
+  2. 指定CMAKE_C_COMPILER为gcc编译命令的路径
+  3. 指定CMAKE_CXX_COMPILER为g++编译命令的路径
+
+  - 前级librga目录未编译时，需要修改librga.so的链接路径：
+
+  ```
+  vim CmakeList.txt +82
+  修改 target_link_libraries(im2d_slt librga.so）路径
+  ```
 
 
 
