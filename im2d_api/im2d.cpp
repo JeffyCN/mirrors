@@ -994,8 +994,11 @@ IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut,
     empty_structure(NULL, NULL, NULL, &srect, &drect, &prect, &opt);
 
     /*Don't know if it supports zooming.*/
-    if ((src.width != dst.width) || (src.height != dst.height))
+    if ((src.width != dst.width) || (src.height != dst.height)) {
+        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                      src.width, src.height, dst.width, dst.height);
         return IM_STATUS_INVALID_PARAM;
+    }
 
     usage |= IM_COLOR_PALETTE;
 
@@ -1023,8 +1026,11 @@ IM_API IM_STATUS imtranslate(const rga_buffer_t src, rga_buffer_t dst, int x, in
 
     empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
 
-    if ((src.width != dst.width) || (src.height != dst.height))
+    if ((src.width != dst.width) || (src.height != dst.height)) {
+        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                      src.width, src.height, dst.width, dst.height);
         return IM_STATUS_INVALID_PARAM;
+    }
 
     if (sync == 0)
         usage |= IM_ASYNC;
