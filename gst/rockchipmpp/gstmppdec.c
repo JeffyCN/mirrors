@@ -60,7 +60,7 @@ G_DEFINE_ABSTRACT_TYPE (GstMppDec, gst_mpp_dec, GST_TYPE_VIDEO_DECODER);
 #define DEFAULT_PROP_WIDTH 0    /* Original */
 #define DEFAULT_PROP_HEIGHT 0   /* Original */
 
-static gboolean DEFAULT_PROP_IGNORE_ERROR = FALSE;
+static gboolean DEFAULT_PROP_IGNORE_ERROR = TRUE;
 
 enum
 {
@@ -1028,6 +1028,7 @@ gst_mpp_dec_class_init (GstMppDecClass * klass)
   GstVideoDecoderClass *decoder_class = GST_VIDEO_DECODER_CLASS (klass);
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
+  const char *env;
 
   GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "mppdec", 0, "MPP decoder");
 
@@ -1070,8 +1071,9 @@ gst_mpp_dec_class_init (GstMppDecClass * klass)
               G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS),
           G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
 
-  if (g_getenv ("GST_MPP_DEC_DEFAULT_IGNORE_ERROR"))
-    DEFAULT_PROP_IGNORE_ERROR = TRUE;
+  env = g_getenv ("GST_MPP_DEC_DEFAULT_IGNORE_ERROR");
+  if (env && !strcmp (env, "0"))
+    DEFAULT_PROP_IGNORE_ERROR = FALSE;
 
   g_object_class_install_property (gobject_class, PROP_IGNORE_ERROR,
       g_param_spec_boolean ("ignore-error", "Ignore error",
