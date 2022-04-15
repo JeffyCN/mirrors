@@ -61,6 +61,7 @@ G_DEFINE_ABSTRACT_TYPE (GstMppDec, gst_mpp_dec, GST_TYPE_VIDEO_DECODER);
 #define DEFAULT_PROP_HEIGHT 0   /* Original */
 
 static gboolean DEFAULT_PROP_IGNORE_ERROR = TRUE;
+static gboolean DEFAULT_PROP_FAST_MODE = TRUE;
 
 enum
 {
@@ -70,6 +71,7 @@ enum
   PROP_HEIGHT,
   PROP_CROP_RECTANGLE,
   PROP_IGNORE_ERROR,
+  PROP_FAST_MODE,
   PROP_LAST,
 };
 
@@ -136,6 +138,13 @@ gst_mpp_dec_set_property (GObject * object,
         self->ignore_error = g_value_get_boolean (value);
       break;
     }
+    case PROP_FAST_MODE:{
+      if (self->input_state)
+        GST_WARNING_OBJECT (decoder, "unable to change fast mode");
+      else
+        self->fast_mode = g_value_get_boolean (value);
+      break;
+    }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -161,6 +170,9 @@ gst_mpp_dec_get_property (GObject * object,
       break;
     case PROP_IGNORE_ERROR:
       g_value_set_boolean (value, self->ignore_error);
+      break;
+    case PROP_FAST_MODE:
+      g_value_set_boolean (value, self->fast_mode);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -322,6 +334,10 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
     self->input_state = NULL;
   } else {
     MppBufferGroup group;
+
+    /* NOTE: MPP fast mode must be applied before mpp_init() */
+    self->mpi->control (self->mpp_ctx, MPP_DEC_SET_PARSER_FAST_MODE,
+        &self->fast_mode);
 
     if (mpp_init (self->mpp_ctx, MPP_CTX_DEC, self->mpp_type)) {
       GST_ERROR_OBJECT (self, "failed to init mpp ctx");
@@ -997,6 +1013,7 @@ gst_mpp_dec_init (GstMppDec * self)
   GstVideoDecoder *decoder = GST_VIDEO_DECODER (self);
 
   self->ignore_error = DEFAULT_PROP_IGNORE_ERROR;
+  self->fast_mode = DEFAULT_PROP_FAST_MODE;
 
   gst_video_decoder_set_packetized (decoder, TRUE);
 }
@@ -1078,6 +1095,15 @@ gst_mpp_dec_class_init (GstMppDecClass * klass)
   g_object_class_install_property (gobject_class, PROP_IGNORE_ERROR,
       g_param_spec_boolean ("ignore-error", "Ignore error",
           "Ignore MPP decode errors", DEFAULT_PROP_IGNORE_ERROR,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  env = g_getenv ("GST_MPP_DEC_DEFAULT_FAST_MODE");
+  if (env && !strcmp (env, "0"))
+    DEFAULT_PROP_FAST_MODE = FALSE;
+
+  g_object_class_install_property (gobject_class, PROP_FAST_MODE,
+      g_param_spec_boolean ("fast-mode", "Fast mode",
+          "Enable MPP fast decode mode", DEFAULT_PROP_FAST_MODE,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   element_class->change_state = GST_DEBUG_FUNCPTR (gst_mpp_dec_change_state);

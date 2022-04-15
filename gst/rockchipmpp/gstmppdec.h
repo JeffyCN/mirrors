@@ -61,6 +61,8 @@ struct _GstMppDec
 
   gboolean ignore_error;
 
+  gboolean fast_mode;
+
   /* stop handling new frame when flushing */
   gboolean flushing;
 
