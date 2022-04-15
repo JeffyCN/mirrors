@@ -294,12 +294,12 @@ typedef struct im_color {
 } im_color_t;
 
 typedef struct im_osd_invert_factor {
-	uint8_t alpha_max;
-	uint8_t alpha_min;
-	uint8_t yg_max;
-	uint8_t yg_min;
-	uint8_t crb_max;
-	uint8_t crb_min;
+    uint8_t alpha_max;
+    uint8_t alpha_min;
+    uint8_t yg_max;
+    uint8_t yg_min;
+    uint8_t crb_max;
+    uint8_t crb_min;
 } im_osd_invert_factor_t;
 
 typedef struct im_osd_bpp2 {

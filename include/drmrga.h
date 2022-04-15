@@ -171,17 +171,17 @@ typedef struct rga_info {
     rga_nn_t nn;
     rga_dither_t dither;
     int rop_code;
-	int rd_mode;
-	unsigned short is_10b_compact;
-	unsigned short is_10b_endian;
+    int rd_mode;
+    unsigned short is_10b_compact;
+    unsigned short is_10b_endian;
 
-	int in_fence_fd;
-	int out_fence_fd;
+    int in_fence_fd;
+    int out_fence_fd;
 
-	int core;
-	int priority;
+    int core;
+    int priority;
 
-	unsigned short enable;
+    unsigned short enable;
 
     int handle;
 
@@ -192,9 +192,9 @@ typedef struct rga_info {
     struct rga_pre_intr_info pre_intr;
 
     int mpi_mode;
-	int ctx_id;
+    int ctx_id;
 
-	char reserve[402];
+    char reserve[402];
 } rga_info_t;
 
 

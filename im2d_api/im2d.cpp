@@ -1656,10 +1656,10 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
         dstinfo.dither.lut1_h = 0xfedc;
     }
 
-	srcinfo.rd_mode = src.rd_mode;
-	dstinfo.rd_mode = dst.rd_mode;
-	if (rga_is_buffer_valid(pat))
-		patinfo.rd_mode = pat.rd_mode;
+    srcinfo.rd_mode = src.rd_mode;
+    dstinfo.rd_mode = dst.rd_mode;
+    if (rga_is_buffer_valid(pat))
+        patinfo.rd_mode = pat.rd_mode;
 
     RockchipRga& rkRga(RockchipRga::get());
 
