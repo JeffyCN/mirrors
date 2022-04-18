@@ -71,6 +71,7 @@ IM_STATUS rga_check_feature(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst
 
 IM_API IM_STATUS rga_import_buffers(struct rga_buffer_pool *buffer_pool);
 IM_API IM_STATUS rga_release_buffers(struct rga_buffer_pool *buffer_pool);
+IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, uint32_t size);
 IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, im_handle_param_t *param);
 IM_API IM_STATUS rga_release_buffer(int handle);
 

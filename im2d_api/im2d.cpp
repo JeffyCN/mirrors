@@ -103,6 +103,10 @@ IM_API const char* imStrError_t(IM_STATUS status) {
     return error_str;
 }
 
+IM_API rga_buffer_handle_t importbuffer_fd(int fd, int size) {
+    return rga_import_buffer((uint64_t)fd, RGA_DMA_BUFFER, (uint32_t)size);
+}
+
 IM_API rga_buffer_handle_t importbuffer_fd(int fd, im_handle_param_t *param) {
     return rga_import_buffer((uint64_t)fd, RGA_DMA_BUFFER, param);
 }
@@ -116,6 +120,10 @@ IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, im_handle_param_t 
     return rga_import_buffer((uint64_t)va, RGA_VIRTUAL_ADDRESS, param);
 }
 
+IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int size) {
+    return rga_import_buffer((uint64_t)va, RGA_VIRTUAL_ADDRESS, (uint32_t)size);
+}
+
 IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int width, int height, int format) {
     im_handle_param_t param = {(uint32_t)width, (uint32_t)height, (uint32_t)format};
     return rga_import_buffer((uint64_t)va, RGA_VIRTUAL_ADDRESS, &param);
@@ -123,6 +131,10 @@ IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int width, int hei
 
 IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, im_handle_param_t *param) {
     return rga_import_buffer(pa, RGA_PHYSICAL_ADDRESS, param);
+}
+
+IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int size) {
+    return rga_import_buffer(pa, RGA_PHYSICAL_ADDRESS, (uint32_t)size);
 }
 
 IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int width, int height, int format) {

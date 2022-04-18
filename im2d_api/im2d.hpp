@@ -34,6 +34,20 @@ using namespace android;
  *
  * @param fd/va/pa
  *      Select dma_fd/virtual_address/physical_address by buffer type
+ * @param size
+ *      Describes the size of the image buffer
+ *
+ * @return rga_buffer_handle_t
+ */
+IM_API rga_buffer_handle_t importbuffer_fd(int fd, int size);
+IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int size);
+IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int size);
+
+/*
+ * Import external buffers into RGA driver.
+ *
+ * @param fd/va/pa
+ *      Select dma_fd/virtual_address/physical_address by buffer type
  * @param width
  *      Describes the pixel width stride of the image buffer
  * @param height

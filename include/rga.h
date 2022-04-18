@@ -454,6 +454,8 @@ struct rga_memory_parm {
     uint32_t width;
     uint32_t height;
     uint32_t format;
+
+    uint32_t size;
 };
 
 struct rga_external_buffer {
@@ -463,7 +465,7 @@ struct rga_external_buffer {
     uint32_t handle;
     struct rga_memory_parm memory_info;
 
-    uint8_t reserve[256];
+    uint8_t reserve[252];
 };
 
 struct rga_buffer_pool {
