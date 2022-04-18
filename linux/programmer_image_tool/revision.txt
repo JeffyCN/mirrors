@@ -10,3 +10,10 @@ v1.2 revision(2021/04/08)
 
 v1.21 revision(2021/09/18)
 1.change out_image.img into out_image.bin
+
+v1.22 revision(2021/12/01)
+1.support create new idb image with 4 entrys
+
+v1.23 revision(2022/03/10)
+1.support to cross compile
+2.fix page_2k only work on idblock

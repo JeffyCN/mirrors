@@ -1,0 +1,13 @@
+2021/12/29 01:
+1.add "idb" command to create idblock binary from loader or files
+
+2022/01/25 01:
+1.support chip name start with RV
+
+v1.2 2022/02/28 01:
+1.add create_idb flag in config file
+2.support to create idblock binary after packing loader
+
+v1.3 2022/03/09:
+1.support to compile on mac
+

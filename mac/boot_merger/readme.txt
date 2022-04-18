@@ -1,0 +1,1 @@
+boot_merger is a tool for packing or unpacking loader.
