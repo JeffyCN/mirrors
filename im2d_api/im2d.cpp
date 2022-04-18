@@ -246,12 +246,6 @@ IM_API rga_buffer_handle_t importbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
     return importbuffer_GraphicBuffer_handle(buf->handle);
 }
 
-IM_API rga_buffer_handle_t importbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
-    GraphicBuffer *gbuffer = reinterpret_cast<GraphicBuffer*>(buf);
-
-    return importbuffer_GraphicBuffer_handle(gbuffer->handle);
-}
-
 /*When wrapbuffer_GraphicBuffer and wrapbuffer_AHardwareBuffer are used, */
 /*it is necessary to check whether fd and virtual address of the return rga_buffer_t are valid parameters*/
 IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
@@ -346,6 +340,12 @@ INVAILD:
 
 #if USE_AHARDWAREBUFFER
 #include <android/hardware_buffer.h>
+IM_API rga_buffer_handle_t importbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
+    GraphicBuffer *gbuffer = reinterpret_cast<GraphicBuffer*>(buf);
+
+    return importbuffer_GraphicBuffer_handle(gbuffer->handle);
+}
+
 IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
     int ret = 0;
     rga_buffer_t buffer;
