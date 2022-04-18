@@ -53,7 +53,8 @@ endif
 
 LOCAL_SRC_FILES += \
     sources/rga_im2d_slt.cpp \
-    sources/drm_alloc.cpp
+    sources/drm_alloc.cpp \
+    sources/dma_alloc.cpp
 
 LOCAL_MODULE:= im2d_slt
 
