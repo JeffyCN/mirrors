@@ -444,7 +444,17 @@ drm_ensure_allowed_caps (GstRkXImageSink * self, drmModePlane * plane,
   for (i = 0; i < plane->count_formats; i++) {
     gboolean linear = FALSE, afbc = FALSE;
 
-    fmt = gst_video_format_from_drm (plane->formats[i]);
+    check_afbc (self, plane, plane->formats[i], &linear, &afbc);
+
+    if (plane->formats[i] == DRM_FORMAT_YUV420_8BIT)
+      fmt = GST_VIDEO_FORMAT_NV12;
+    else if (plane->formats[i] == DRM_FORMAT_YUV420_10BIT)
+      fmt = GST_VIDEO_FORMAT_NV12_10LE40;
+    else if (afbc && plane->formats[i] == DRM_FORMAT_YUYV)
+      fmt = GST_VIDEO_FORMAT_NV16;
+      else
+        fmt = gst_video_format_from_drm (plane->formats[i]);
+
     if (fmt == GST_VIDEO_FORMAT_UNKNOWN) {
       GST_INFO_OBJECT (self, "ignoring format %" GST_FOURCC_FORMAT,
           GST_FOURCC_ARGS (plane->formats[i]));
@@ -458,8 +468,6 @@ drm_ensure_allowed_caps (GstRkXImageSink * self, drmModePlane * plane,
         "framerate", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT, 1, NULL);
     if (!caps)
       continue;
-
-    check_afbc (self, plane, plane->formats[i], &linear, &afbc);
 
     if (afbc) {
       GstCaps *afbc_caps = gst_caps_copy (caps);
