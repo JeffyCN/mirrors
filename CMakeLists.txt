@@ -25,7 +25,7 @@ if(CMAKE_BUILD_TARGET STREQUAL cmake_linux)
     message("RGA build with cmake")
     add_compile_options(-DLINUX)
     # TO support pass external CMAKE_CXX_FLAGS
-    set(CMAKE_CXX_FLAGS_EXT "-std=c++11 -O2 -pthread")
+    set(CMAKE_CXX_FLAGS_EXT "-std=c++11 -O2 -pthread -fdata-sections -ffunction-sections -fno-exceptions -fno-rtti")
 
     if (NOT DEFINED CMAKE_C_COMPILER)
         message(FATAL_ERROR "RGA: CMAKE_C_COMPILER not define")
