@@ -192,7 +192,11 @@ typedef struct rga_info {
     struct rga_pre_intr_info pre_intr;
 
     int mpi_mode;
-    int ctx_id;
+
+    union {
+        int ctx_id;
+        int job_id;
+    };
 
     char reserve[402];
 } rga_info_t;

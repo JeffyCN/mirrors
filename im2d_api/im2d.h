@@ -756,9 +756,11 @@ IM_API IM_STATUS imsync(int out_fence_fd);
  */
 IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value);
 
-IM_API im_ctx_id_t imbegin(uint32_t flags);
+IM_API im_job_id_t imbegin(uint32_t flags);
 
-IM_API IM_STATUS imcancel(im_ctx_id_t id);
+IM_API IM_STATUS imcancel(im_job_id_t id);
+
+IM_API IM_STATUS imend(im_job_id_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd);
 
 #ifdef __cplusplus
 }

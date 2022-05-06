@@ -316,7 +316,7 @@ IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
                        int sync = 1, int *release_fence_fd = NULL);
 
 /*
- * process
+ * process for single task mode
  *
  * @param src
  * @param dst
@@ -333,10 +333,66 @@ IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
  */
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                            im_rect srect, im_rect drect, im_rect prect,
-                           int acquire_fence_fd, int *release_fence_fd, im_opt_t *opt_ptr, int usage);
+                           int acquire_fence_fd, int *release_fence_fd,
+                           im_opt_t *opt_ptr, int usage);
+
+/*
+ * color fill for batch mode
+ *
+ * @param job_id
+ * @param src
+ * @param dst
+ * @param rect
+ * @param color
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS imfill(im_job_id_t id, rga_buffer_t dst, im_rect rect, int color);
+
+/*
+ * process for batch mode
+ *
+ * @param job_id
+ * @param src
+ * @param dst
+ * @param pat
+ * @param srect
+ * @param drect
+ * @param prect
+ * @param acquire_fence_fd
+ * @param release_fence_fd
+ * @param opt
+ * @param usage
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS improcess(im_job_id_t job_id,
+                           rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                           im_rect srect, im_rect drect, im_rect prect,
+                           im_opt_t *opt_ptr, int usage);
+
+/*
+ * process for rockit-ko
+ *
+ * @param src
+ * @param dst
+ * @param pat
+ * @param srect
+ * @param drect
+ * @param prect
+ * @param acquire_fence_fd
+ * @param release_fence_fd
+ * @param opt
+ * @param usage
+ * @param ctx_id
+ *
+ * @returns success or else negative error code.
+ */
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                            im_rect srect, im_rect drect, im_rect prect,
-                           int acquire_fence_fd, int *release_fence_fd, im_opt_t *opt, int usage, im_ctx_id_t ctx_id);
+                           int acquire_fence_fd, int *release_fence_fd,
+                           im_opt_t *opt, int usage, im_ctx_id_t ctx_id);
+
 
 #endif /* _im2d_hpp_ */
 

@@ -37,10 +37,10 @@ extern "C"
 #define RGA_IOC_GET_HW_VERSION      RGA_IOR(0x2, struct rga_hw_versions_t)
 #define RGA_IOC_IMPORT_BUFFER       RGA_IOWR(0x3, struct rga_buffer_pool)
 #define RGA_IOC_RELEASE_BUFFER      RGA_IOW(0x4, struct rga_buffer_pool)
-#define RGA_START_CONFIG            RGA_IOR(0x5, uint32_t)
-#define RGA_END_CONFIG              RGA_IOWR(0x6, struct rga_user_ctx_t)
-#define RGA_CMD_CONFIG              RGA_IOWR(0x7, struct rga_user_ctx_t)
-#define RGA_CANCEL_CONFIG           RGA_IOWR(0x8, uint32_t)
+#define RGA_IOC_REQUEST_CREATE      RGA_IOR(0x5, uint32_t)
+#define RGA_IOC_REQUEST_SUBMIT      RGA_IOWR(0x6, struct rga_user_request)
+#define RGA_IOC_REQUEST_CONFIG      RGA_IOWR(0x7, struct rga_user_request)
+#define RGA_IOC_REQUEST_CANCEL      RGA_IOWR(0x8, uint32_t)
 
 #define RGA_BLIT_SYNC   0x5017
 #define RGA_BLIT_ASYNC  0x5018
@@ -54,9 +54,16 @@ extern "C"
 #define RGA2_GET_RESULT  0x601a
 #define RGA2_GET_VERSION 0x601b
 
+#define RGA_START_CONFIG            RGA_IOC_REQUEST_CREATE
+#define RGA_END_CONFIG              RGA_IOC_REQUEST_SUBMIT
+#define RGA_CMD_CONFIG              RGA_IOC_REQUEST_CONFIG
+#define RGA_CANCEL_CONFIG           RGA_IOC_REQUEST_CANCEL
+
 #define RGA_REG_CTRL_LEN    0x8    /* 8  */
 #define RGA_REG_CMD_LEN     0x1c   /* 28 */
 #define RGA_CMD_BUF_SIZE    0x700  /* 16*28*4 */
+
+#define RGA_TASK_NUM_MAX		50
 
 #ifndef ENABLE
 #define ENABLE 1
@@ -570,16 +577,18 @@ struct rga_req {
     uint8_t reservr[59];
 };
 
-struct rga_user_ctx_t {
-    uint64_t cmd_ptr;
-    uint32_t cmd_num;
+struct rga_user_request {
+    uint64_t task_ptr;
+    uint32_t task_num;
     uint32_t id;
     uint32_t sync_mode;
-    uint32_t out_fence_fd;
+    uint32_t release_fence_fd;
 
     uint32_t mpi_config_flags;
 
-    uint8_t reservr[124];
+    uint32_t acquire_fence_fd;
+
+    uint8_t reservr[120];
 };
 
 #ifdef __cplusplus

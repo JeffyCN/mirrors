@@ -50,6 +50,10 @@ using namespace android;
 extern struct rgaContext *rgaCtx;
 extern __thread char rga_err_str[ERR_MSG_LEN];
 
+struct im2d_job_manager g_im2d_job_manager;
+__thread im_context_t g_im2d_context;
+__thread char rga_err_str[ERR_MSG_LEN] = "The current error message is empty!";
+
 IM_API static IM_STATUS rga_get_context(void) {
     if (rgaCtx == NULL) {
         RockchipRga& rkRga(RockchipRga::get());
@@ -1067,29 +1071,605 @@ IM_STATUS rga_get_opt(im_opt_t *opt, void *ptr) {
     return IM_STATUS_SUCCESS;
 }
 
-IM_API im_ctx_id_t rga_begin_job(uint32_t flags) {
-    if (rga_get_context() != IM_STATUS_SUCCESS)
-        return IM_STATUS_FAILED;
+static IM_STATUS rga_task_submit(im_job_id_t job_id, rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                                 im_rect srect, im_rect drect, im_rect prect,
+                                 int acquire_fence_fd, int *release_fence_fd,
+                                 im_opt_t *opt_ptr, int usage) {
+    int ret;
+    rga_info_t srcinfo;
+    rga_info_t dstinfo;
+    rga_info_t patinfo;
 
-    if (ioctl(rgaCtx->rgaFd, RGA_START_CONFIG, &flags) < 0) {
-        printf(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
-        ALOGE(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+    im_opt_t opt;
+
+    if (rga_get_opt(&opt, opt_ptr) == IM_STATUS_FAILED)
+        memset(&opt, 0x0, sizeof(opt));
+
+    src.format = RkRgaCompatibleFormat(src.format);
+    dst.format = RkRgaCompatibleFormat(dst.format);
+    pat.format = RkRgaCompatibleFormat(pat.format);
+
+    memset(&srcinfo, 0, sizeof(rga_info_t));
+    memset(&dstinfo, 0, sizeof(rga_info_t));
+    memset(&patinfo, 0, sizeof(rga_info_t));
+
+    if (usage & IM_COLOR_FILL)
+        ret = rga_set_buffer_info(dst, &dstinfo);
+    else
+        ret = rga_set_buffer_info(src, dst, &srcinfo, &dstinfo);
+
+    if (ret <= 0)
+        return (IM_STATUS)ret;
+
+    rga_apply_rect(&src, &srect);
+    rga_apply_rect(&dst, &drect);
+
+    rga_set_rect(&srcinfo.rect, srect.x, srect.y, src.width, src.height, src.wstride, src.hstride, src.format);
+    rga_set_rect(&dstinfo.rect, drect.x, drect.y, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
+
+    if (((usage & IM_COLOR_PALETTE) || (usage & IM_ALPHA_BLEND_MASK)) &&
+        rga_is_buffer_valid(pat)) {
+
+        ret = rga_set_buffer_info(pat, &patinfo);
+        if (ret <= 0)
+            return (IM_STATUS)ret;
+
+        rga_apply_rect(&pat, &prect);
+
+        rga_set_rect(&patinfo.rect, prect.x, prect.y, pat.width, pat.height, pat.wstride, pat.hstride, pat.format);
+    }
+
+    if ((usage & IM_ALPHA_BLEND_MASK) && rga_is_buffer_valid(pat)) /* A+B->C */
+        ret = imcheck_composite(src, dst, pat, srect, drect, prect, usage);
+    else
+        ret = imcheck(src, dst, srect, drect, usage);
+    if(ret != IM_STATUS_NOERROR)
+        return (IM_STATUS)ret;
+
+    /* Transform */
+    if (usage & IM_HAL_TRANSFORM_MASK) {
+        switch (usage & (IM_HAL_TRANSFORM_ROT_90 + IM_HAL_TRANSFORM_ROT_180 + IM_HAL_TRANSFORM_ROT_270)) {
+            case IM_HAL_TRANSFORM_ROT_90:
+                srcinfo.rotation = HAL_TRANSFORM_ROT_90;
+                break;
+            case IM_HAL_TRANSFORM_ROT_180:
+                srcinfo.rotation = HAL_TRANSFORM_ROT_180;
+                break;
+            case IM_HAL_TRANSFORM_ROT_270:
+                srcinfo.rotation = HAL_TRANSFORM_ROT_270;
+                break;
+        }
+
+        switch (usage & (IM_HAL_TRANSFORM_FLIP_V + IM_HAL_TRANSFORM_FLIP_H + IM_HAL_TRANSFORM_FLIP_H_V)) {
+            case IM_HAL_TRANSFORM_FLIP_V:
+                srcinfo.rotation |= srcinfo.rotation ?
+                                    HAL_TRANSFORM_FLIP_V << 4 :
+                                    HAL_TRANSFORM_FLIP_V;
+                break;
+            case IM_HAL_TRANSFORM_FLIP_H:
+                srcinfo.rotation |= srcinfo.rotation ?
+                                    HAL_TRANSFORM_FLIP_H << 4 :
+                                    HAL_TRANSFORM_FLIP_H;
+                break;
+            case IM_HAL_TRANSFORM_FLIP_H_V:
+                srcinfo.rotation |= srcinfo.rotation ?
+                                    HAL_TRANSFORM_FLIP_H_V << 4 :
+                                    HAL_TRANSFORM_FLIP_H_V;
+                break;
+        }
+
+        if(srcinfo.rotation ==0)
+            ALOGE("rga_im2d: Could not find rotate/flip usage : 0x%x \n", usage);
+    }
+
+    /* Blend */
+    if (usage & IM_ALPHA_BLEND_MASK) {
+        switch(usage & IM_ALPHA_BLEND_MASK) {
+            case IM_ALPHA_BLEND_SRC:
+                srcinfo.blend = 0x1;
+                break;
+            case IM_ALPHA_BLEND_DST:
+                srcinfo.blend = 0x2;
+                break;
+            case IM_ALPHA_BLEND_SRC_OVER:
+                srcinfo.blend = (usage & IM_ALPHA_BLEND_PRE_MUL) ? 0x405 : 0x105;
+                break;
+            case IM_ALPHA_BLEND_SRC_IN:
+                break;
+            case IM_ALPHA_BLEND_DST_IN:
+                break;
+            case IM_ALPHA_BLEND_SRC_OUT:
+                break;
+            case IM_ALPHA_BLEND_DST_OVER:
+                srcinfo.blend = (usage & IM_ALPHA_BLEND_PRE_MUL) ? 0x504 : 0x501;
+                break;
+            case IM_ALPHA_BLEND_SRC_ATOP:
+                break;
+            case IM_ALPHA_BLEND_DST_OUT:
+                break;
+            case IM_ALPHA_BLEND_XOR:
+                break;
+        }
+
+        if(srcinfo.blend == 0)
+            ALOGE("rga_im2d: Could not find blend usage : 0x%x \n", usage);
+
+        /* set global alpha */
+        if (src.global_alpha > 0)
+            srcinfo.blend ^= src.global_alpha << 16;
+        else {
+            srcinfo.blend ^= 0xFF << 16;
+        }
+    }
+
+    /* color key */
+    if (usage & IM_ALPHA_COLORKEY_MASK) {
+        srcinfo.blend = 0xff0105;
+
+        srcinfo.colorkey_en = 1;
+        srcinfo.colorkey_min = opt.colorkey_range.min;
+        srcinfo.colorkey_max = opt.colorkey_range.max;
+        switch (usage & IM_ALPHA_COLORKEY_MASK) {
+            case IM_ALPHA_COLORKEY_NORMAL:
+                srcinfo.colorkey_mode = 0;
+                break;
+            case IM_ALPHA_COLORKEY_INVERTED:
+                srcinfo.colorkey_mode = 1;
+                break;
+        }
+    }
+
+    /* OSD */
+    if (usage & IM_OSD) {
+        srcinfo.osd_info.enable = true;
+
+        srcinfo.osd_info.mode_ctrl.mode = opt.osd_config.osd_mode;
+
+        srcinfo.osd_info.mode_ctrl.width_mode = opt.osd_config.block_parm.width_mode;
+        if (opt.osd_config.block_parm.width_mode == IM_OSD_BLOCK_MODE_NORMAL)
+            srcinfo.osd_info.mode_ctrl.block_fix_width = opt.osd_config.block_parm.width;
+        else if (opt.osd_config.block_parm.width_mode == IM_OSD_BLOCK_MODE_DIFFERENT)
+            srcinfo.osd_info.mode_ctrl.unfix_index = opt.osd_config.block_parm.width_index;
+        srcinfo.osd_info.mode_ctrl.block_num = opt.osd_config.block_parm.block_count;
+        srcinfo.osd_info.mode_ctrl.default_color_sel = opt.osd_config.block_parm.background_config;
+        srcinfo.osd_info.mode_ctrl.direction_mode = opt.osd_config.block_parm.direction;
+        srcinfo.osd_info.mode_ctrl.color_mode = opt.osd_config.block_parm.color_mode;
+
+        if (pat.format == RK_FORMAT_RGBA2BPP) {
+            srcinfo.osd_info.bpp2_info.ac_swap = opt.osd_config.bpp2_info.ac_swap;
+            srcinfo.osd_info.bpp2_info.endian_swap = opt.osd_config.bpp2_info.endian_swap;
+            srcinfo.osd_info.bpp2_info.color0.value = opt.osd_config.bpp2_info.color0.value;
+            srcinfo.osd_info.bpp2_info.color1.value = opt.osd_config.bpp2_info.color1.value;
+        } else {
+            srcinfo.osd_info.bpp2_info.color0.value = opt.osd_config.block_parm.normal_color.value;
+            srcinfo.osd_info.bpp2_info.color1.value = opt.osd_config.block_parm.invert_color.value;
+        }
+
+        switch (opt.osd_config.invert_config.invert_channel) {
+            case IM_OSD_INVERT_CHANNEL_NONE:
+                srcinfo.osd_info.mode_ctrl.invert_enable = (0x1 << 1) | (0x1 << 2);
+                break;
+            case IM_OSD_INVERT_CHANNEL_Y_G:
+                srcinfo.osd_info.mode_ctrl.invert_enable = 0x1 << 2;
+                break;
+            case IM_OSD_INVERT_CHANNEL_C_RB:
+                srcinfo.osd_info.mode_ctrl.invert_enable = 0x1 << 1;
+                break;
+            case IM_OSD_INVERT_CHANNEL_ALPHA:
+                srcinfo.osd_info.mode_ctrl.invert_enable = (0x1 << 0) | (0x1 << 1) | (0x1 << 2);
+                break;
+            case IM_OSD_INVERT_CHANNEL_COLOR:
+                srcinfo.osd_info.mode_ctrl.invert_enable = 0;
+                break;
+            case IM_OSD_INVERT_CHANNEL_BOTH:
+                srcinfo.osd_info.mode_ctrl.invert_enable = 0x1 << 0;
+        }
+        srcinfo.osd_info.mode_ctrl.invert_flags_mode = opt.osd_config.invert_config.flags_mode;
+        srcinfo.osd_info.mode_ctrl.flags_index = opt.osd_config.invert_config.flags_index;
+
+        srcinfo.osd_info.last_flags = opt.osd_config.invert_config.invert_flags;
+        srcinfo.osd_info.cur_flags = opt.osd_config.invert_config.current_flags;
+
+        srcinfo.osd_info.mode_ctrl.invert_mode = opt.osd_config.invert_config.invert_mode;
+        if (opt.osd_config.invert_config.invert_mode == IM_OSD_INVERT_USE_FACTOR) {
+            srcinfo.osd_info.cal_factor.alpha_max = opt.osd_config.invert_config.factor.alpha_max;
+            srcinfo.osd_info.cal_factor.alpha_min = opt.osd_config.invert_config.factor.alpha_min;
+            srcinfo.osd_info.cal_factor.crb_max = opt.osd_config.invert_config.factor.crb_max;
+            srcinfo.osd_info.cal_factor.crb_min = opt.osd_config.invert_config.factor.crb_min;
+            srcinfo.osd_info.cal_factor.yg_max = opt.osd_config.invert_config.factor.yg_max;
+            srcinfo.osd_info.cal_factor.yg_min = opt.osd_config.invert_config.factor.yg_min;
+        }
+        srcinfo.osd_info.mode_ctrl.invert_thresh = opt.osd_config.invert_config.threash;
+    }
+
+    /* set NN quantize */
+    if (usage & IM_NN_QUANTIZE) {
+        dstinfo.nn.nn_flag = 1;
+        dstinfo.nn.scale_r  = opt.nn.scale_r;
+        dstinfo.nn.scale_g  = opt.nn.scale_g;
+        dstinfo.nn.scale_b  = opt.nn.scale_b;
+        dstinfo.nn.offset_r = opt.nn.offset_r;
+        dstinfo.nn.offset_g = opt.nn.offset_g;
+        dstinfo.nn.offset_b = opt.nn.offset_b;
+    }
+
+    /* set ROP */
+    if (usage & IM_ROP) {
+        srcinfo.rop_code = opt.rop_code;
+    }
+
+    /* set mosaic */
+    if (usage & IM_MOSAIC) {
+        srcinfo.mosaic_info.enable = true;
+        srcinfo.mosaic_info.mode = opt.mosaic_mode;
+    }
+
+    /* set intr config */
+    if (usage & IM_PRE_INTR) {
+        srcinfo.pre_intr.enable = true;
+
+        srcinfo.pre_intr.read_intr_en = opt.intr_config.flags & IM_INTR_READ_INTR ? true : false;
+        if (srcinfo.pre_intr.read_intr_en) {
+            srcinfo.pre_intr.read_intr_en = true;
+            srcinfo.pre_intr.read_hold_en = opt.intr_config.flags & IM_INTR_READ_HOLD ? true : false;
+            srcinfo.pre_intr.read_threshold = opt.intr_config.read_threshold;
+        }
+
+        srcinfo.pre_intr.write_intr_en = opt.intr_config.flags & IM_INTR_WRITE_INTR ? true : false;
+        if (srcinfo.pre_intr.write_intr_en > 0) {
+                srcinfo.pre_intr.write_start = opt.intr_config.write_start;
+                srcinfo.pre_intr.write_step = opt.intr_config.write_step;
+        }
+    }
+
+    /* special config for color space convert */
+    if ((dst.color_space_mode & IM_YUV_TO_RGB_MASK) && (dst.color_space_mode & IM_RGB_TO_YUV_MASK)) {
+        if (rga_is_buffer_valid(pat) &&
+            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
+            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(pat.format)) &&
+            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
+            dstinfo.color_space_mode = dst.color_space_mode;
+        } else {
+            imSetErrorMsg("Not yuv + rgb -> yuv does not need for color_sapce_mode R2Y & Y2R, please fix, "
+                          "src_fromat = 0x%x(%s), src1_format = 0x%x(%s), dst_format = 0x%x(%s)",
+                          src.format, translate_format_str(src.format),
+                          pat.format, translate_format_str(pat.format),
+                          dst.format, translate_format_str(dst.format));
+            return IM_STATUS_ILLEGAL_PARAM;
+        }
+    } else if (dst.color_space_mode & (IM_YUV_TO_RGB_MASK)) {
+        if (rga_is_buffer_valid(pat) &&
+            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
+            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(pat.format)) &&
+            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format))) {
+            dstinfo.color_space_mode = dst.color_space_mode;
+        } else if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
+                   NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format))) {
+            dstinfo.color_space_mode = dst.color_space_mode;
+        } else {
+            imSetErrorMsg("Not yuv to rgb does not need for color_sapce_mode, please fix, "
+                          "src_fromat = 0x%x(%s), src1_format = 0x%x(%s), dst_format = 0x%x(%s)",
+                          src.format, translate_format_str(src.format),
+                          pat.format, rga_is_buffer_valid(pat) ? translate_format_str(pat.format) : "none",
+                          dst.format, translate_format_str(dst.format));
+            return IM_STATUS_ILLEGAL_PARAM;
+        }
+    } else if (dst.color_space_mode & (IM_RGB_TO_YUV_MASK)) {
+        if (rga_is_buffer_valid(pat) &&
+            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format)) &&
+            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(pat.format)) &&
+            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
+            dstinfo.color_space_mode = dst.color_space_mode;
+        } else if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format)) &&
+                   NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
+            dstinfo.color_space_mode = dst.color_space_mode;
+        } else {
+            imSetErrorMsg("Not rgb to yuv does not need for color_sapce_mode, please fix, "
+                          "src_fromat = 0x%x(%s), src1_format = 0x%x(%s), dst_format = 0x%x(%s)",
+                          src.format, translate_format_str(src.format),
+                          pat.format, rga_is_buffer_valid(pat) ? translate_format_str(pat.format) : "none",
+                          dst.format, translate_format_str(dst.format));
+            return IM_STATUS_ILLEGAL_PARAM;
+        }
+    } else if (src.color_space_mode & IM_FULL_CSC_MASK ||
+               dst.color_space_mode & IM_FULL_CSC_MASK) {
+        /* Get default color space */
+        if (src.color_space_mode == IM_COLOR_SPACE_DEFAULT) {
+            if  (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format))) {
+                src.color_space_mode = IM_RGB_FULL;
+            } else if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format))) {
+                src.color_space_mode = IM_YUV_BT601_LIMIT_RANGE;
+            }
+        }
+
+        if (dst.color_space_mode == IM_COLOR_SPACE_DEFAULT) {
+            if  (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format))) {
+                src.color_space_mode = IM_RGB_FULL;
+            } else if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
+                src.color_space_mode = IM_YUV_BT601_LIMIT_RANGE;
+            }
+        }
+
+        if (src.color_space_mode == IM_RGB_FULL &&
+            dst.color_space_mode == IM_YUV_BT709_FULL_RANGE) {
+            dstinfo.color_space_mode = rgb2yuv_709_full;
+        } else if (src.color_space_mode == IM_YUV_BT601_FULL_RANGE &&
+                   dst.color_space_mode == IM_YUV_BT709_LIMIT_RANGE) {
+            dstinfo.color_space_mode = yuv2yuv_601_full_2_709_limit;
+        } else if (src.color_space_mode == IM_YUV_BT709_LIMIT_RANGE &&
+                   dst.color_space_mode == IM_YUV_BT601_LIMIT_RANGE) {
+            dstinfo.color_space_mode = yuv2yuv_709_limit_2_601_limit;
+        } else if (src.color_space_mode == IM_YUV_BT709_FULL_RANGE &&
+                   dst.color_space_mode == IM_YUV_BT601_LIMIT_RANGE) {
+            dstinfo.color_space_mode = yuv2yuv_709_full_2_601_limit;
+        } else if (src.color_space_mode == IM_YUV_BT709_FULL_RANGE &&
+                   dst.color_space_mode == IM_YUV_BT601_FULL_RANGE) {
+            dstinfo.color_space_mode = yuv2yuv_709_full_2_601_full;
+        } else {
+            imSetErrorMsg("Unsupported full csc mode! src_csm = 0x%x, dst_csm = 0x%x",
+                          src.color_space_mode, dst.color_space_mode);
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+    }
+
+    if (dst.format == RK_FORMAT_Y4) {
+        switch (dst.color_space_mode) {
+            case IM_RGB_TO_Y4 :
+                dstinfo.dither.enable = 0;
+                dstinfo.dither.mode = 0;
+                break;
+            case IM_RGB_TO_Y4_DITHER :
+                dstinfo.dither.enable = 1;
+                dstinfo.dither.mode = 0;
+                break;
+            case IM_RGB_TO_Y1_DITHER :
+                dstinfo.dither.enable = 1;
+                dstinfo.dither.mode = 1;
+                break;
+            default :
+                dstinfo.dither.enable = 1;
+                dstinfo.dither.mode = 0;
+                break;
+        }
+        dstinfo.dither.lut0_l = 0x3210;
+        dstinfo.dither.lut0_h = 0x7654;
+        dstinfo.dither.lut1_l = 0xba98;
+        dstinfo.dither.lut1_h = 0xfedc;
+    }
+
+    srcinfo.rd_mode = src.rd_mode;
+    dstinfo.rd_mode = dst.rd_mode;
+    if (rga_is_buffer_valid(pat))
+        patinfo.rd_mode = pat.rd_mode;
+
+    RockchipRga& rkRga(RockchipRga::get());
+
+    if (usage & IM_ASYNC) {
+        if (release_fence_fd == NULL) {
+            imSetErrorMsg("Async mode release_fence_fd cannot be NULL!");
+            return IM_STATUS_ILLEGAL_PARAM;
+        }
+
+        dstinfo.sync_mode = RGA_BLIT_ASYNC;
+
+    } else if (usage & IM_SYNC) {
+        dstinfo.sync_mode = RGA_BLIT_SYNC;
+    }
+
+    dstinfo.in_fence_fd = acquire_fence_fd;
+    dstinfo.core = opt.core ? opt.core : g_im2d_context.core;
+    dstinfo.priority = opt.priority ? opt.priority : g_im2d_context.priority;
+
+    dstinfo.job_id = job_id;
+
+    if (usage & IM_COLOR_FILL) {
+        dstinfo.color = opt.color;
+        ret = rkRga.RkRgaCollorFill(&dstinfo);
+    } else if (usage & IM_COLOR_PALETTE) {
+        ret = rkRga.RkRgaCollorPalette(&srcinfo, &dstinfo, &patinfo);
+    } else if ((usage & IM_ALPHA_BLEND_MASK) && rga_is_buffer_valid(pat)) {
+        ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, &patinfo);
+    }else {
+        ret = rkRga.RkRgaBlit(&srcinfo, &dstinfo, NULL);
+    }
+
+    if (ret) {
+        imSetErrorMsg("Failed to call RockChipRga interface, query log to find the cause of failure.");
+        ALOGE("srect[x,y,w,h] = [%d, %d, %d, %d] src[w,h,ws,hs] = [%d, %d, %d, %d]\n",
+               srect.x, srect.y, srect.width, srect.height, src.width, src.height, src.wstride, src.hstride);
+        if (rga_is_buffer_valid(pat))
+           ALOGE("s1/prect[x,y,w,h] = [%d, %d, %d, %d] src1/pat[w,h,ws,hs] = [%d, %d, %d, %d]\n",
+               prect.x, prect.y, prect.width, prect.height, pat.width, pat.height, pat.wstride, pat.hstride);
+        ALOGE("drect[x,y,w,h] = [%d, %d, %d, %d] dst[w,h,ws,hs] = [%d, %d, %d, %d]\n",
+               drect.x, drect.y, drect.width, drect.height, dst.width, dst.height, dst.wstride, dst.hstride);
+        ALOGE("usage[0x%x]", usage);
         return IM_STATUS_FAILED;
     }
 
-    return (im_ctx_id_t)flags;
+    if (usage & IM_ASYNC)
+        *release_fence_fd = dstinfo.out_fence_fd;
+
+    return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS rga_cancel(im_ctx_id_t id) {
+IM_STATUS rga_single_task_submit(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                                 im_rect srect, im_rect drect, im_rect prect,
+                                 int acquire_fence_fd, int *release_fence_fd,
+                                 im_opt_t *opt_ptr, int usage) {
+    return rga_task_submit(0, src, dst, pat, srect, drect, prect, acquire_fence_fd, release_fence_fd, opt_ptr, usage);
+}
+
+IM_STATUS rga_task_submit(im_job_id_t job_id, rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                          im_rect srect, im_rect drect, im_rect prect, im_opt_t *opt_ptr, int usage) {
+    return rga_task_submit(job_id, src, dst, pat, srect, drect, prect, 0, NULL, opt_ptr, usage);
+}
+
+im_job_id_t rga_job_creat(uint32_t flags) {
+    int ret;
+    im_job_id_t job_id;
+    im_rga_job_t *job = NULL;
+
     if (rga_get_context() != IM_STATUS_SUCCESS)
         return IM_STATUS_FAILED;
 
-    if (ioctl(rgaCtx->rgaFd, RGA_CANCEL_CONFIG, &id) < 0) {
+    if (ioctl(rgaCtx->rgaFd, RGA_IOC_REQUEST_CREATE, &flags) < 0) {
+        printf(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        ALOGE(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        return IM_STATUS_FAILED;
+    }
+
+    job_id = flags;
+
+    if (g_im2d_job_manager.job_map.count(job_id) != 0) {
+        printf("job_map error!\n");
+        ret = IM_STATUS_FAILED;
+        goto error_cancel_job;
+    }
+
+    job = (im_rga_job_t *)malloc(sizeof(*job));
+    if (job == NULL) {
+        printf("rga job alloc error!\n");
+        ret = IM_STATUS_FAILED;
+        goto error_cancel_job;
+    }
+
+    memset(job, 0x0, sizeof(*job));
+
+    job->id = job_id;
+    g_im2d_job_manager.job_map[job_id] = job;
+
+    return job_id;
+
+error_cancel_job:
+    rga_job_cancel(job_id);
+
+    return ret;
+}
+
+IM_STATUS rga_job_cancel(im_job_id_t job_id) {
+    im_rga_job_t *job = NULL;
+
+    if (rga_get_context() != IM_STATUS_SUCCESS)
+        return IM_STATUS_FAILED;
+
+    if (g_im2d_job_manager.job_map.count(job_id) > 0) {
+        job = g_im2d_job_manager.job_map[job_id];
+        if (job != NULL)
+            free(job);
+
+        g_im2d_job_manager.job_map.erase(job_id);
+    }
+
+    if (ioctl(rgaCtx->rgaFd, RGA_IOC_REQUEST_CANCEL, &job_id) < 0) {
         printf(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
         ALOGE(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
 
         return IM_STATUS_FAILED;
     }
+
+    return IM_STATUS_SUCCESS;
+}
+
+IM_STATUS rga_job_submit(im_job_id_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
+    int ret;
+    im_rga_job_t *job = NULL;
+    struct rga_user_request submit_request;
+
+    if (rga_get_context() != IM_STATUS_SUCCESS)
+        return IM_STATUS_FAILED;
+
+    if (g_im2d_job_manager.job_map.count(job_id) == 0) {
+        printf("job_id[%d] is illegal!\n", job_id);
+        return IM_STATUS_ILLEGAL_PARAM;
+    }
+
+    job = g_im2d_job_manager.job_map[job_id];
+    if (job == NULL) {
+        printf("job is NULL!\n");
+        return IM_STATUS_FAILED;
+    }
+
+    memset(&submit_request, 0x0, sizeof(submit_request));
+
+    submit_request.task_ptr = (uint64_t)&job->req;
+    submit_request.task_num = job->task_count;
+    submit_request.id = job->id;
+
+    switch (sync_mode) {
+        case IM_SYNC:
+            submit_request.sync_mode = RGA_BLIT_SYNC;
+            break;
+        case IM_ASYNC:
+            submit_request.sync_mode = RGA_BLIT_ASYNC;
+            break;
+        default:
+            printf("illegal sync mode!\n");
+            return IM_STATUS_ILLEGAL_PARAM;
+    }
+
+    submit_request.acquire_fence_fd = acquire_fence_fd;
+
+    ret = ioctl(rgaCtx->rgaFd, RGA_IOC_REQUEST_SUBMIT, &submit_request);
+    if (ret < 0) {
+        printf(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        ALOGE(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        return IM_STATUS_FAILED;
+    }
+
+    if ((sync_mode == IM_ASYNC) && release_fence_fd)
+        *release_fence_fd = submit_request.release_fence_fd;
+
+    return IM_STATUS_SUCCESS;
+}
+
+IM_STATUS rga_job_config(im_job_id_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
+    int ret;
+    im_rga_job_t *job = NULL;
+    struct rga_user_request config_request;
+
+    if (rga_get_context() != IM_STATUS_SUCCESS)
+        return IM_STATUS_FAILED;
+
+    if (g_im2d_job_manager.job_map.count(job_id) == 0) {
+        printf("job_id[%d] is illegal!\n", job_id);
+        return IM_STATUS_ILLEGAL_PARAM;
+    }
+
+    job = g_im2d_job_manager.job_map[job_id];
+    if (job == NULL) {
+        printf("job is NULL!\n");
+        return IM_STATUS_FAILED;
+    }
+
+    memset(&config_request, 0x0, sizeof(config_request));
+
+    config_request.task_ptr = (uint64_t)&job->req;
+    config_request.task_num = job->task_count;
+    config_request.id = job->id;
+
+    switch (sync_mode) {
+        case IM_SYNC:
+            config_request.sync_mode = RGA_BLIT_SYNC;
+            break;
+        case IM_ASYNC:
+            config_request.sync_mode = RGA_BLIT_ASYNC;
+            break;
+        default:
+            printf("illegal sync mode!\n");
+            return IM_STATUS_ILLEGAL_PARAM;
+    }
+
+    config_request.acquire_fence_fd = acquire_fence_fd;
+
+    ret = ioctl(rgaCtx->rgaFd, RGA_IOC_REQUEST_CONFIG, &config_request);
+    if (ret < 0) {
+        printf(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        ALOGE(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
+        return IM_STATUS_FAILED;
+    }
+
+    if ((sync_mode == IM_ASYNC) && release_fence_fd)
+        *release_fence_fd = config_request.release_fence_fd;
 
     return IM_STATUS_SUCCESS;
 }

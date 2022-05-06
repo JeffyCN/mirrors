@@ -22,6 +22,7 @@
 #include "drmrga.h"
 #include "im2d.h"
 #include "im2d_hardware.h"
+#include <map>
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 #define DOWN_ALIGN(val, align) ((val) & ~((align) - 1))
@@ -41,6 +42,18 @@
     }
 
 #define ERR_MSG_LEN 300
+
+typedef struct im_rga_job {
+    struct rga_req req[RGA_TASK_NUM_MAX];
+    int task_count;
+
+    int id;
+} im_rga_job_t;
+
+struct im2d_job_manager {
+    std::map<im_job_id_t, im_rga_job_t *> job_map;
+    int job_count;
+};
 
 int imSetErrorMsg(const char* format, ...);
 
@@ -77,7 +90,18 @@ IM_API IM_STATUS rga_release_buffer(int handle);
 
 IM_STATUS rga_get_opt(im_opt_t *opt, void *ptr);
 
-IM_API im_ctx_id_t rga_begin_job(uint32_t flags);
-IM_API IM_STATUS rga_cancel(im_ctx_id_t id);
+IM_STATUS rga_single_task_submit(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                                 im_rect srect, im_rect drect, im_rect prect,
+                                 int acquire_fence_fd, int *release_fence_fd,
+                                 im_opt_t *opt_ptr, int usage);
+IM_STATUS rga_task_submit(im_job_id_t job_id,
+                          rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                          im_rect srect, im_rect drect, im_rect prect,
+                          im_opt_t *opt_ptr, int usage);
+
+im_job_id_t rga_job_creat(uint32_t flags);
+IM_STATUS rga_job_cancel(im_job_id_t job_id);
+IM_STATUS rga_job_submit(im_job_id_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd);
+IM_STATUS rga_job_config(im_job_id_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd);
 
 #endif
