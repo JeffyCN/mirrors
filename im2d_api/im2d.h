@@ -33,7 +33,7 @@ extern "C" {
 
 #define RGA_GET_MIN(n1, n2) ((n1) < (n2) ? (n1) : (n2))
 
-/*
+/**
  * @return error message string
  */
 #define imStrError(...) \
@@ -53,7 +53,7 @@ extern "C" {
     })
 IM_API const char* imStrError_t(IM_STATUS status);
 
-/*
+/**
  * Import external buffers into RGA driver.
  *
  * @param fd/va/pa
@@ -67,7 +67,7 @@ IM_API rga_buffer_handle_t importbuffer_fd(int fd, im_handle_param_t *param);
 IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, im_handle_param_t *param);
 IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, im_handle_param_t *param);
 
-/*
+/**
  * Import external buffers into RGA driver.
  *
  * @param handle
@@ -77,7 +77,7 @@ IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, im_handle_para
  */
 IM_API IM_STATUS releasebuffer_handle(rga_buffer_handle_t handle);
 
-/*
+/**
  * Wrap image Parameters.
  *
  * @param handle
@@ -164,7 +164,7 @@ IM_API rga_buffer_t wrapbuffer_virtualaddr_t(void* vir_addr, int width, int heig
 IM_API rga_buffer_t wrapbuffer_physicaladdr_t(void* phy_addr, int width, int height, int wstride, int hstride, int format);
 IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, int hstride, int format);
 
-/*
+/**
  * Query RGA basic information, supported resolution, supported format, etc.
  *
  * @param name
@@ -181,7 +181,7 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
  */
 IM_API const char* querystring(int name);
 
-/*
+/**
  * check RGA basic information, supported resolution, supported format, etc.
  *
  * @param src
@@ -239,7 +239,7 @@ IM_API void rga_check_perpare(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t
 IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
                            const im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect, const int mode_usage);
 
-/*
+/**
  * Resize
  *
  * @param src
@@ -281,7 +281,7 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
 
 IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync);
 
-/*
+/**
  * Crop
  *
  * @param src
@@ -310,7 +310,7 @@ IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx,
 
 IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, int sync);
 
-/*
+/**
  * rotation
  *
  * @param src
@@ -342,7 +342,7 @@ IM_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect
 
 IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotation, int sync);
 
-/*
+/**
  * flip
  *
  * @param src
@@ -373,7 +373,7 @@ IM_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotati
 
 IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, int sync);
 
-/*
+/**
  * fill/reset/draw
  *
  * @param src
@@ -434,7 +434,7 @@ IM_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, i
     })
 IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync);
 
-/*
+/**
  * palette
  *
  * @param src
@@ -462,7 +462,7 @@ IM_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync);
     })
 IM_API IM_STATUS impalette_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut, int sync);
 
-/*
+/**
  * translate
  *
  * @param src
@@ -491,7 +491,7 @@ IM_API IM_STATUS impalette_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lu
     })
 IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync);
 
-/*
+/**
  * copy
  *
  * @param src
@@ -519,7 +519,7 @@ IM_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, 
 
 IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
 
-/*
+/**
  * blend (SRC + DST -> DST or SRCA + SRCB -> DST)
  *
  * @param srcA
@@ -570,7 +570,7 @@ IM_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
     })
 IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode, int sync);
 
-/*
+/**
  * color key
  *
  * @param src
@@ -602,7 +602,7 @@ IM_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga
     })
 IM_API IM_STATUS imcolorkey_t(const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode, int sync);
 
-/*
+/**
  * format convert
  *
  * @param src
@@ -636,7 +636,7 @@ IM_API IM_STATUS imcolorkey_t(const rga_buffer_t src, rga_buffer_t dst, im_color
 
 IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync);
 
-/*
+/**
  * nn quantize
  *
  * @param src
@@ -665,7 +665,7 @@ IM_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int 
 
 IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info, int sync);
 
-/*
+/**
  * ROP
  *
  * @param src
@@ -693,7 +693,7 @@ IM_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_t 
     })
 IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code, int sync);
 
-/*
+/**
  * MOSAIC
  *
  * @param src
@@ -706,7 +706,7 @@ IM_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code,
  */
 IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mode, int sync);
 
-/*
+/**
  * OSD
  *
  * @param osd
@@ -724,7 +724,7 @@ IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mod
 IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
                        const im_rect osd_rect, im_osd_t *osd_config, int sync);
 
-/*
+/**
  * process
  *
  * @param src
@@ -738,14 +738,14 @@ IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                         im_rect srect, im_rect drect, im_rect prect, int usage);
 
-/*
+/**
  * block until all execution is complete
  *
  * @returns success or else negative error code.
  */
 IM_API IM_STATUS imsync(int out_fence_fd);
 
-/*
+/**
  * config
  *
  * @param name

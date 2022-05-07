@@ -29,7 +29,7 @@
 using namespace android;
 #endif
 
-/*
+/**
  * Import external buffers into RGA driver.
  *
  * @param fd/va/pa
@@ -43,7 +43,7 @@ IM_API rga_buffer_handle_t importbuffer_fd(int fd, int size);
 IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int size);
 IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int size);
 
-/*
+/**
  * Import external buffers into RGA driver.
  *
  * @param fd/va/pa
@@ -84,7 +84,7 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf);
 #endif /* USE_AHARDWAREBUFFER */
 #endif /* ANDROID */
 
-/*
+/**
  * Resize
  *
  * @param src
@@ -100,7 +100,7 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf);
 #undef imresize
 IM_API IM_STATUS imresize(const rga_buffer_t src, rga_buffer_t dst, double fx = 0, double fy = 0, int interpolation = 0, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * Crop
  *
  * @param src
@@ -114,7 +114,7 @@ IM_API IM_STATUS imresize(const rga_buffer_t src, rga_buffer_t dst, double fx = 
 #undef imcrop
 IM_API IM_STATUS imcrop(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * rotation
  *
  * @param src
@@ -131,7 +131,7 @@ IM_API IM_STATUS imcrop(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, 
 #undef imrotate
 IM_API IM_STATUS imrotate(const rga_buffer_t src, rga_buffer_t dst, int rotation, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * flip
  *
  * @param src
@@ -147,7 +147,7 @@ IM_API IM_STATUS imrotate(const rga_buffer_t src, rga_buffer_t dst, int rotation
 #undef imflip
 IM_API IM_STATUS imflip(const rga_buffer_t src, rga_buffer_t dst, int mode, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * fill/reset/draw
  *
  * @param src
@@ -162,7 +162,7 @@ IM_API IM_STATUS imflip(const rga_buffer_t src, rga_buffer_t dst, int mode, int 
 #undef imfill
 IM_API IM_STATUS imfill(rga_buffer_t dst, im_rect rect, int color, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * palette
  *
  * @param src
@@ -176,7 +176,7 @@ IM_API IM_STATUS imfill(rga_buffer_t dst, im_rect rect, int color, int sync = 1,
 #undef impalette
 IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * translate
  *
  * @param src
@@ -191,7 +191,7 @@ IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut,
 #undef imtranslate
 IM_API IM_STATUS imtranslate(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * copy
  *
  * @param src
@@ -204,7 +204,7 @@ IM_API IM_STATUS imtranslate(const rga_buffer_t src, rga_buffer_t dst, int x, in
 #undef imcopy
 IM_API IM_STATUS imcopy(const rga_buffer_t src, rga_buffer_t dst, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * blend (SRC + DST -> DST or SRCA + SRCB -> DST)
  *
  * @param srcA
@@ -222,7 +222,7 @@ IM_API IM_STATUS imblend(const rga_buffer_t src, rga_buffer_t dst, int mode = IM
 #undef imcomposite
 IM_API IM_STATUS imcomposite(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode = IM_ALPHA_BLEND_SRC_OVER, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * color key
  *
  * @param src
@@ -238,7 +238,7 @@ IM_API IM_STATUS imcomposite(const rga_buffer_t srcA, const rga_buffer_t srcB, r
 #undef imcolorkey
 IM_API IM_STATUS imcolorkey(const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode = IM_ALPHA_COLORKEY_NORMAL, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * format convert
  *
  * @param src
@@ -255,7 +255,7 @@ IM_API IM_STATUS imcolorkey(const rga_buffer_t src, rga_buffer_t dst, im_colorke
 #undef imcvtcolor
 IM_API IM_STATUS imcvtcolor(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode = IM_COLOR_SPACE_DEFAULT, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * nn quantize
  *
  * @param src
@@ -269,7 +269,7 @@ IM_API IM_STATUS imcvtcolor(rga_buffer_t src, rga_buffer_t dst, int sfmt, int df
 #undef imquantize
 IM_API IM_STATUS imquantize(const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * ROP
  *
  * @param src
@@ -283,7 +283,7 @@ IM_API IM_STATUS imquantize(const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn
 #undef imrop
 IM_API IM_STATUS imrop(const rga_buffer_t src, rga_buffer_t dst, int rop_code, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * MOSAIC
  *
  * @param src
@@ -296,7 +296,7 @@ IM_API IM_STATUS imrop(const rga_buffer_t src, rga_buffer_t dst, int rop_code, i
  */
 IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mode, int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * OSD
  *
  * @param osd
@@ -315,7 +315,7 @@ IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
                        const im_rect osd_rect, im_osd_t *osd_config,
                        int sync = 1, int *release_fence_fd = NULL);
 
-/*
+/**
  * process for single task mode
  *
  * @param src
@@ -336,7 +336,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                            int acquire_fence_fd, int *release_fence_fd,
                            im_opt_t *opt_ptr, int usage);
 
-/*
+/**
  * color fill for batch mode
  *
  * @param job_id
@@ -349,7 +349,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
  */
 IM_API IM_STATUS imfill(im_job_id_t id, rga_buffer_t dst, im_rect rect, int color);
 
-/*
+/**
  * process for batch mode
  *
  * @param job_id
@@ -371,7 +371,7 @@ IM_API IM_STATUS improcess(im_job_id_t job_id,
                            im_rect srect, im_rect drect, im_rect prect,
                            im_opt_t *opt_ptr, int usage);
 
-/*
+/**
  * process for rockit-ko
  *
  * @param src
