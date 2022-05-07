@@ -495,9 +495,9 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
     /* HACK: MPP would align width to 64 for AFBC */
     dst_width = GST_ROUND_UP_64 (dst_width);
 
-    /* HACK: MPP would has extra 16 lines for AFBC */
-    dst_height += 16;
-    vstride += 16;
+    /* HACK: MPP might have extra offsets for AFBC */
+    dst_height += offset_y;
+    vstride = dst_height;
 
     /* HACK: Fake hstride for Rockchip VOP driver */
     hstride = 0;
