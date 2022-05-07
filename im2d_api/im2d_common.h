@@ -23,6 +23,7 @@
 #include "im2d.h"
 #include "im2d_hardware.h"
 #include <map>
+#include <mutex>
 
 #define ALIGN(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
 #define DOWN_ALIGN(val, align) ((val) & ~((align) - 1))
@@ -53,6 +54,8 @@ typedef struct im_rga_job {
 struct im2d_job_manager {
     std::map<im_job_id_t, im_rga_job_t *> job_map;
     int job_count;
+
+    std::mutex mutex;
 };
 
 int imSetErrorMsg(const char* format, ...);

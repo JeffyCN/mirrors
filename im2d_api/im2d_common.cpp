@@ -1520,6 +1520,8 @@ im_job_id_t rga_job_creat(uint32_t flags) {
 
     job_id = flags;
 
+    g_im2d_job_manager.mutex.lock();
+
     if (g_im2d_job_manager.job_map.count(job_id) != 0) {
         printf("job_map error!\n");
         ret = IM_STATUS_FAILED;
@@ -1537,10 +1539,14 @@ im_job_id_t rga_job_creat(uint32_t flags) {
 
     job->id = job_id;
     g_im2d_job_manager.job_map[job_id] = job;
+    g_im2d_job_manager.job_count++;
+
+    g_im2d_job_manager.mutex.unlock();
 
     return job_id;
 
 error_cancel_job:
+    g_im2d_job_manager.mutex.unlock();
     rga_job_cancel(job_id);
 
     return ret;
@@ -1552,6 +1558,8 @@ IM_STATUS rga_job_cancel(im_job_id_t job_id) {
     if (rga_get_context() != IM_STATUS_SUCCESS)
         return IM_STATUS_FAILED;
 
+    g_im2d_job_manager.mutex.lock();
+
     if (g_im2d_job_manager.job_map.count(job_id) > 0) {
         job = g_im2d_job_manager.job_map[job_id];
         if (job != NULL)
@@ -1559,6 +1567,10 @@ IM_STATUS rga_job_cancel(im_job_id_t job_id) {
 
         g_im2d_job_manager.job_map.erase(job_id);
     }
+
+    g_im2d_job_manager.job_count--;
+
+    g_im2d_job_manager.mutex.unlock();
 
     if (ioctl(rgaCtx->rgaFd, RGA_IOC_REQUEST_CANCEL, &job_id) < 0) {
         printf(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
@@ -1578,14 +1590,20 @@ IM_STATUS rga_job_submit(im_job_id_t job_id, int sync_mode, int acquire_fence_fd
     if (rga_get_context() != IM_STATUS_SUCCESS)
         return IM_STATUS_FAILED;
 
+    g_im2d_job_manager.mutex.lock();
+
     if (g_im2d_job_manager.job_map.count(job_id) == 0) {
         printf("job_id[%d] is illegal!\n", job_id);
+
+        g_im2d_job_manager.mutex.unlock();
         return IM_STATUS_ILLEGAL_PARAM;
     }
 
     job = g_im2d_job_manager.job_map[job_id];
     if (job == NULL) {
         printf("job is NULL!\n");
+
+        g_im2d_job_manager.mutex.unlock();
         return IM_STATUS_FAILED;
     }
 
@@ -1594,6 +1612,8 @@ IM_STATUS rga_job_submit(im_job_id_t job_id, int sync_mode, int acquire_fence_fd
     submit_request.task_ptr = (uint64_t)&job->req;
     submit_request.task_num = job->task_count;
     submit_request.id = job->id;
+
+    g_im2d_job_manager.mutex.unlock();
 
     switch (sync_mode) {
         case IM_SYNC:
@@ -1630,14 +1650,20 @@ IM_STATUS rga_job_config(im_job_id_t job_id, int sync_mode, int acquire_fence_fd
     if (rga_get_context() != IM_STATUS_SUCCESS)
         return IM_STATUS_FAILED;
 
+    g_im2d_job_manager.mutex.lock();
+
     if (g_im2d_job_manager.job_map.count(job_id) == 0) {
         printf("job_id[%d] is illegal!\n", job_id);
+
+        g_im2d_job_manager.mutex.unlock();
         return IM_STATUS_ILLEGAL_PARAM;
     }
 
     job = g_im2d_job_manager.job_map[job_id];
     if (job == NULL) {
         printf("job is NULL!\n");
+
+        g_im2d_job_manager.mutex.unlock();
         return IM_STATUS_FAILED;
     }
 
@@ -1646,6 +1672,8 @@ IM_STATUS rga_job_config(im_job_id_t job_id, int sync_mode, int acquire_fence_fd
     config_request.task_ptr = (uint64_t)&job->req;
     config_request.task_num = job->task_count;
     config_request.id = job->id;
+
+    g_im2d_job_manager.mutex.unlock();
 
     switch (sync_mode) {
         case IM_SYNC:

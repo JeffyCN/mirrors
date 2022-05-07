@@ -1452,15 +1452,20 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     {
         im_rga_job_t *job = NULL;
 
-        /* TODO: need lock */
+        g_im2d_job_manager.mutex.lock();
+
         job = g_im2d_job_manager.job_map[dst->job_id];
         if (job->task_count >= RGA_TASK_NUM_MAX) {
             printf("job[%d] add task failed! too many tasks, count = %d\n", dst->job_id, job->task_count);
+
+            g_im2d_job_manager.mutex.unlock();
             return -errno;
         }
 
         job->req[job->task_count] = rgaReg;
         job->task_count++;
+
+        g_im2d_job_manager.mutex.unlock();
 
         return 0;
     } else {
@@ -1720,14 +1725,20 @@ int RgaCollorFill(rga_info *dst) {
     {
         im_rga_job_t *job = NULL;
 
+        g_im2d_job_manager.mutex.lock();
+
         job = g_im2d_job_manager.job_map[dst->job_id];
         if (job->task_count >= RGA_TASK_NUM_MAX) {
             printf("job[%d] add task failed! too many tasks, count = %d\n", dst->job_id, job->task_count);
+
+            g_im2d_job_manager.mutex.unlock();
             return -errno;
         }
 
         job->req[job->task_count] = rgaReg;
         job->task_count++;
+
+        g_im2d_job_manager.mutex.unlock();
 
         return 0;
     } else {
