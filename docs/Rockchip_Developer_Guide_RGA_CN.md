@@ -191,7 +191,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="6">8192x8192</td>
       <td rowspan="6">2x2</td>
       <td rowspan="6">4096x4096</td>
-      <td rowspan="6">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for 1108/1109)<br/>NN quantize(NA for 3399/1108)<br/>osd (only 1106/1103)</td>
+      <td rowspan="6">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for RV1108/RV1109/RK3566)<br/>NN quantize(NA for RK3399/RV1108)<br/>osd (only RV1106/RV1103)</td>
       <td rowspan="6">2</td>
    </tr>
    <tr>
@@ -226,9 +226,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="1">3 (by pass)<br/>2 (scale)</td>
    </tr>
 </table>
-
-
-
+> 注：
+>
 > 预期性能为默认RGA频率下计算得出，实际运行性能表现与内存频率等相关，列表数据仅供参考。
 
 
@@ -357,9 +356,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
    </tr>
 </table>
 
-
-
-> 注：Y4格式即2的4次方色阶灰度图，Y400格式即2的8次方色阶灰度图。
+> 注：
+>
+> 1). Y4格式即2的4次方色阶灰度图，Y400格式即2的8次方色阶灰度图。
+>
+> 2). RGA1/RGA2物理地址寻址能力仅支持32bit，即0~4G的内存空间。
 
 
 
@@ -442,9 +443,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
     </tr>
 </table>
 
-> 对齐要求计算公式：lcm(bpp，byte_stride * 8) / pixel_stride。
+> 注：
 >
-> 当芯片平台搭载多版本硬件时，按最严格的对齐要求进行约束。
+> 1). 对齐要求计算公式：lcm(bpp，byte_stride * 8) / pixel_stride。
+>
+> 2). 当芯片平台搭载多版本硬件时，为了保证硬件利用率，librga会按最严格的对齐要求进行约束。
 
 
 
@@ -647,6 +650,17 @@ IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int width, int
 | width     | **[required]** pixel width stride of the image buffer  |
 | height    | **[required]** pixel height stride of the image buffer |
 | format    | **[required]** pixel format of the image buffer        |
+
+```c++
+IM_API rga_buffer_handle_t importbuffer_fd(int fd, int size);
+IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int size);
+IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int size);
+```
+
+| Parameter | **Description**                |
+| --------- | ------------------------------ |
+| fd/va/pa  | **[required]** external buffer |
+| size      | **[required]** memory size     |
 
 **Returns** rga_buffer_handle_t to describe the memory handle.
 
@@ -853,6 +867,35 @@ IM_STATUS imflip (const rga_buffer_t src,
 
 
 
+### 图像平移
+
+------
+
+#### imtranslate
+
+```C++
+IM_STATUS imtranslate(const rga_buffer_t src,
+                      rga_buffer_t dst,
+                      int x,
+                      int y,
+                      int sync = 1)
+```
+
+> 对图像做平移操作，移动到（x, y）坐标位置，src和dst 宽高须一致，超出部分会被裁剪。
+
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]**input image                                    |
+| dst              | **[required]** output image                                  |
+| x                | **[optional]** horizontal translation                        |
+| y                | **[optional]** vertical translation                          |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
 ### 图像颜色填充、内存赋值、图形绘制
 
 ------
@@ -901,32 +944,29 @@ IM_STATUS imdraw(rga_buffer_t buf,
 
 
 
-### 图像平移
+### Mosaic
 
-------
+----
 
-#### imtranslate
+#### immosaic
 
-```C++
-IM_STATUS imtranslate(const rga_buffer_t src,
-                      rga_buffer_t dst,
-                      int x,
-                      int y,
-                      int sync = 1)
+```c++
+IM_API IM_STATUS immosaic(const rga_buffer_t image, 
+                          im_rect rect, 
+                          int mosaic_mode, 
+                          int sync = 1, 
+                          int *release_fence_fd = NULL);
 ```
 
-> 对图像做平移操作，移动到（x, y）坐标位置，src和dst 宽高须一致，超出部分会被裁剪。
+> 对图像指定区域进行马赛克遮盖。
 
 | Parameter        | Description                                                  |
 | ---------------- | ------------------------------------------------------------ |
-| src              | **[required]**input image                                    |
-| dst              | **[required]** output image                                  |
-| x                | **[optional]** horizontal translation                        |
-| y                | **[optional]** vertical translation                          |
+| image            | **[required]** souce image                                   |
+| rect             | **[required]** image region to mosaic                        |
+| mosaic_mode      | **[required]** set mosaic mode<br />    IM_MOSAIC_8<br/>    IM_MOSAIC_16<br/>    IM_MOSAIC_32<br/>    IM_MOSAIC_64<br/>    IM_MOSAIC_128 |
 | sync             | **[optional]** wait until operation complete                 |
 | release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -1048,6 +1088,33 @@ IM_STATUS imcolorkey(const rga_buffer_t src,
 | dst              | **[required]** output image                                  |
 | range            | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
 | Mode             | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
+### OSD
+
+------
+
+#### imosd
+
+```c++
+IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
+                       const im_rect osd_rect, im_osd_t *osd_config,
+                       int sync = 1, int *release_fence_fd = NULL);
+```
+
+> OSD（On-Screen-Display）功能，可以将文字信息叠加在视频图片上，并对字体进行亮度统计、自动反色功能。
+
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| OSD              | **[required]** osd block image                               |
+| dst              | **[required]** output image                                  |
+| osd_rect         | **[required]** image region to OSD                           |
+| osd_config       | **[required]** OSD function config                           |
 | sync             | **[optional]** wait until operation complete                 |
 | release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
@@ -1610,6 +1677,225 @@ typedef struct {
 | -------- | ------------------ |
 | max      | 关键色范围最大值。 |
 | min      | 关键色范围最小值。 |
+
+- **注意事项**
+
+无
+
+
+
+#### im_osd_block_t
+
+- **说明**
+
+OSD字块描述参数配置。
+
+- **路径**
+
+im2d_api/im2d_type.h
+
+- **定义**
+
+```c++
+typedef struct im_osd_block {
+    int width_mode;                 // normal or different
+                                    //   IM_OSD_BLOCK_MODE_NORMAL
+                                    //   IM_OSD_BLOCK_MODE_DIFFERENT
+    union {
+        int width;                  // normal_mode block width
+        int width_index;            // different_mode block width index in RAM
+    };
+
+    int block_count;                // block count
+
+    int background_config;          // background config is bright or dark
+                                    //   IM_OSD_BACKGROUND_DEFAULT_BRIGHT
+                                    //   IM_OSD_BACKGROUND_DEFAULT_DARK
+
+    int direction;                  // osd block direction
+                                    //   IM_OSD_MODE_HORIZONTAL
+                                    //   IM_OSD_MODE_VERTICAL
+
+    int color_mode;                 // using src1 color or config color
+                                    //   IM_OSD_COLOR_PIXEL
+                                    //   IM_OSD_COLOR_EXTERNAL
+    im_color_t normal_color;        // config color: normal
+    im_color_t invert_color;        // config color: invert
+} im_osd_block_t;
+```
+
+| 成员参数          | 描述                                                         |
+| ----------------- | ------------------------------------------------------------ |
+| width_mode        | 字块宽度模式配置：<br />    字块宽度相同：IM_OSD_BLOCK_MODE_NORMAL<br />    字块宽度不同：IM_OSD_BLOCK_MODE_DIFFERENT |
+| width/width_index | width：字块宽度相同模式时使用，标识当前task OSD字块宽度。<br />width_index：字块宽度不同模式时使用，标识当前使用RAM内部的宽度配置表的索引。 |
+| block_count       | 字块数量                                                     |
+| background_config | 文字背景亮度描述：<br />    白底黑字：IM_OSD_BACKGROUND_DEFAULT_BRIGHT<br />    黑底白字：IM_OSD_BACKGROUND_DEFAULT_DARK |
+| direction         | OSD方向：<br />    垂直方向：IM_OSD_MODE_VERTICAL<br />    水平方向：IM_OSD_MODE_HORIZONTAL |
+| color_mode        | OSD字块颜色模式：<br />    像素颜色：IM_OSD_COLOR_PIXEL<br />    外部指导颜色：IM_OSD_COLOR_EXTERNAL |
+| normal_color      | 外部指导颜色：正常时（非反色状态）字块颜色。                 |
+| invert_color      | 外部指导颜色：反色时字块颜色。                               |
+
+- **注意事项**
+
+无
+
+
+
+#### im_osd_invert_factor_t
+
+- **说明**
+
+OSD反色公式配置。
+
+- **路径**
+
+im2d_api/im2d_type.h
+
+- **定义**
+
+```c++
+typedef struct im_osd_invert_factor {
+    uint8_t alpha_max;
+    uint8_t alpha_min;
+    uint8_t yg_max;
+    uint8_t yg_min;
+    uint8_t crb_max;
+    uint8_t crb_min;
+} im_osd_invert_factor_t;
+```
+
+计算公式如下：
+
+​		**MAX**(channel_min_factor, channel_max_factor - channel_value)
+
+
+- **注意事项**
+
+无
+
+
+
+#### im_osd_invert_t
+
+- **说明**
+
+OSD反色功能配置。
+
+- **路径**
+
+im2d_api/im2d_type.h
+
+- **定义**
+
+```c++
+typedef struct im_osd_invert {
+    int invert_channel;         // invert channel config:
+                                //   IM_OSD_INVERT_CHANNEL_NONE
+                                //   IM_OSD_INVERT_CHANNEL_Y_G
+                                //   IM_OSD_INVERT_CHANNEL_C_RB
+                                //   IM_OSD_INVERT_CHANNEL_ALPHA
+                                //   IM_OSD_INVERT_CHANNEL_COLOR
+                                //   IM_OSD_INVERT_CHANNEL_BOTH
+    int flags_mode;             // use external or inertnal RAM invert flags
+                                //   IM_OSD_FLAGS_EXTERNAL
+                                //   IM_OSD_FLAGS_INTERNAL
+    int flags_index;            // flags index when using internal RAM invert flags
+
+    uint64_t invert_flags;      // external invert flags
+    uint64_t current_flags;     // current flags
+
+    int invert_mode;            // invert use swap or factor
+                                //   IM_OSD_INVERT_USE_FACTOR
+                                //   IM_OSD_INVERT_USE_SWAP
+    im_osd_invert_factor_t factor;
+
+    int threash;
+} im_osd_invert_t;
+```
+
+| 成员参数       | 描述                                                         |
+| -------------- | ------------------------------------------------------------ |
+| invert_channel | 反色通道配置：<br />    默认无通道反色使能：IM_OSD_INVERT_CHANNEL_NONE<br />    Y/G分量反色使能：IM_OSD_INVERT_CHANNEL_Y_G<br />    C（UV）/RB分量反色使能：IM_OSD_INVERT_CHANNEL_C_RB<br />    Alpha分量反色使能：IM_OSD_INVERT_CHANNEL_ALPHA<br />    颜色值反色使能：IM_OSD_INVERT_CHANNEL_COLOR<br />                                   即(IM_OSD_INVERT_CHANNEL_Y_G \| IM_OSD_INVERT_CHANNEL_C_RB)。<br />    全部通道反色使能：IM_OSD_INVERT_CHANNEL_BOTH<br />                                       即(IM_OSD_INVERT_CHANNEL_COLOR \| IM_OSD_INVERT_CHANNEL_ALPHA)。 |
+| flags_mode     | 反色指导模式：<br />    内部指导：IM_OSD_FLAGS_EXTERNAL，使用内部RAM统计的反色flag指导反色功能。<br />    外部指导：IM_OSD_FLAGS_INTERNAL，由外部指导反色功能。 |
+| flags_index    | 当前使用RAM内部的反色指导flag表的索引。                      |
+| invert_flags   | 外部指导反色配置表，共64个bit。                              |
+| current_flags  | 当前task统计的反色配置表，共64个bit，task执行结束后读取。    |
+| invert_mode    | 反色模式：<br />    自定义公式：IM_OSD_INVERT_USE_FACTOR<br />    默认公式：IM_OSD_INVERT_USE_SWAP，YUV格式对U、V分量进行交换，RGB格式对R、B分量进行交换。 |
+| factor         | 反色公式配置。                                               |
+| threash        | 反色阈值。                                                   |
+
+- **注意事项**
+
+无
+
+
+
+#### im_osd_bpp2_t
+
+- **说明**
+
+OSD BPP2 RGB格式映射配置。
+
+- **路径**
+
+im2d_api/im2d_type.h
+
+- **定义**
+
+```c++
+typedef struct im_osd_bpp2 {
+    uint8_t  ac_swap;       // ac swap flag
+                            // 0: CA
+                            // 1: AC
+    uint8_t  endian_swap;   // rgba2bpp endian swap
+                            // 0: Big endian
+                            // 1: Little endian
+    im_color_t color0;
+    im_color_t color1;
+} im_osd_bpp2_t;
+```
+
+| 成员参数    | 描述                     |
+| ----------- | ------------------------ |
+| ac_swap     | AC排布模式。             |
+| endian_swap | 大小端配置。             |
+| color0      | color值为0时映射的颜色。 |
+| color1      | color值为1时映射的颜色。 |
+
+- **注意事项**
+
+无
+
+
+
+#### im_osd_t
+
+- **说明**
+
+OSD功能配置。
+
+- **路径**
+
+im2d_api/im2d_type.h
+
+- **定义**
+
+```c++
+typedef struct im_osd {
+
+  int osd_mode;            		// osd mode: statistics or auto_invert
+  im_osd_block_t block_parm;    // osd block info config
+  im_osd_invert_t invert_config;
+  im_osd_bpp2_t bpp2_info;
+} im_osd_t;
+```
+
+| 成员参数      | 描述                                                         |
+| ------------- | ------------------------------------------------------------ |
+| osd_mode      | OSD模式：<br />    统计模式：IM_OSD_MODE_STATISTICS<br />    反色模式：IM_OSD_MODE_AUTO_INVERT |
+| block_parm    | OSD block参数配置。                                          |
+| invert_config | 反色功能配置。                                               |
+| bpp2_info     | bpp2-rgb格式配置。                                           |
 
 - **注意事项**
 
