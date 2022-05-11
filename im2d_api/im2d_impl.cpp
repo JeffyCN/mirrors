@@ -24,7 +24,7 @@
 #include <sys/ioctl.h>
 
 #include "im2d.h"
-#include "im2d_common.h"
+#include "im2d_impl.h"
 #include "im2d_hardware.h"
 
 #include "RockchipRga.h"

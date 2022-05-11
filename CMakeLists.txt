@@ -59,7 +59,7 @@ set(IM2D_SRCS
     core/RgaUtils.cpp
     core/RgaApi.cpp
     core/rga_sync.cpp
-    im2d_api/im2d_common.cpp
+    im2d_api/im2d_impl.cpp
     im2d_api/im2d.cpp)
 
 set(IM2D_INCLUDE

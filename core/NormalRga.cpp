@@ -29,7 +29,7 @@
 pthread_mutex_t mMutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-#include "im2d_api/im2d_common.h"
+#include "im2d_api/im2d_impl.h"
 
 #define RGA_SRCOVER_EN 1
 

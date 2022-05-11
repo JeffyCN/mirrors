@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-#ifndef _RGA_IM2D_COMMON_H_
-#define _RGA_IM2D_COMMON_H_
+#ifndef _RGA_IM2D_IMPL_H_
+#define _RGA_IM2D_IMPL_H_
 
 #include "drmrga.h"
 #include "im2d.h"

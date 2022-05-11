@@ -81,7 +81,7 @@ LOCAL_SRC_FILES:= \
     core/NormalRgaApi.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
-    im2d_api/im2d_common.cpp \
+    im2d_api/im2d_impl.cpp \
     im2d_api/im2d.cpp
 
 ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.0)))
@@ -129,7 +129,7 @@ LOCAL_SRC_FILES += \
     core/NormalRgaApi.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
-    im2d_api/im2d_common.cpp \
+    im2d_api/im2d_impl.cpp \
     im2d_api/im2d.cpp
 
 LOCAL_MODULE := librga
@@ -200,7 +200,7 @@ LOCAL_SRC_FILES += \
     drm/DrmmodeRga.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
-    im2d_api/im2d_common.cpp \
+    im2d_api/im2d_impl.cpp \
     im2d_api/im2d.cpp
 
 LOCAL_MODULE := librga

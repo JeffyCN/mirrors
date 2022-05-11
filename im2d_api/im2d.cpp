@@ -22,7 +22,7 @@
 
 #include "im2d.hpp"
 #include "im2d_hardware.h"
-#include "im2d_common.h"
+#include "im2d_impl.h"
 #include "RgaUtils.h"
 #include "core/rga_sync.h"
 
