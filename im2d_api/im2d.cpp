@@ -845,6 +845,36 @@ IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const
     return IM_STATUS_NOERROR;
 }
 
+IM_API IM_STATUS imcopy(const rga_buffer_t src, rga_buffer_t dst, int sync, int *release_fence_fd) {
+    int usage = 0;
+    IM_STATUS ret = IM_STATUS_NOERROR;
+
+    im_opt_t opt;
+
+    rga_buffer_t pat;
+
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    if ((src.width != dst.width) || (src.height != dst.height)) {
+        imSetErrorMsg("imcopy cannot support scale, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                      src.width, src.height, dst.width, dst.height);
+        return IM_STATUS_INVALID_PARAM;
+    }
+
+    if (sync == 0)
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage |= IM_SYNC;
+
+    ret = improcess(src, dst, pat, srect, drect, prect, -1, release_fence_fd, &opt, usage);
+
+    return ret;
+}
+
 IM_API IM_STATUS imresize(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync, int *release_fence_fd) {
     int usage = 0;
     int width = 0, height = 0;
@@ -892,6 +922,35 @@ IM_API IM_STATUS imresize(const rga_buffer_t src, rga_buffer_t dst, double fx, d
     return ret;
 }
 
+IM_API IM_STATUS imcvtcolor(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync, int *release_fence_fd) {
+    int usage = 0;
+    IM_STATUS ret = IM_STATUS_NOERROR;
+
+    im_opt_t opt;
+
+    rga_buffer_t pat;
+
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    src.format = sfmt;
+    dst.format = dfmt;
+
+    dst.color_space_mode = mode;
+
+    if (sync == 0)
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage |= IM_SYNC;
+
+    ret = improcess(src, dst, pat, srect, drect, prect, -1, release_fence_fd, &opt, usage);
+
+    return ret;
+}
+
 IM_API IM_STATUS imcrop(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, int sync, int *release_fence_fd) {
     int usage = 0;
     IM_STATUS ret = IM_STATUS_NOERROR;
@@ -914,6 +973,43 @@ IM_API IM_STATUS imcrop(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, 
         usage |= IM_SYNC;
 
     ret = improcess(src, dst, pat, rect, drect, prect, -1, release_fence_fd, &opt, usage);
+
+    return ret;
+}
+
+IM_API IM_STATUS imtranslate(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync, int *release_fence_fd) {
+    int usage = 0;
+    IM_STATUS ret = IM_STATUS_NOERROR;
+
+    im_opt_t opt;
+
+    rga_buffer_t pat;
+
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    if ((src.width != dst.width) || (src.height != dst.height)) {
+        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                      src.width, src.height, dst.width, dst.height);
+        return IM_STATUS_INVALID_PARAM;
+    }
+
+    if (sync == 0)
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage |= IM_SYNC;
+
+    srect.width = src.width - x;
+    srect.height = src.height - y;
+    drect.x = x;
+    drect.y = y;
+    drect.width = src.width - x;
+    drect.height = src.height - y;
+
+    ret = improcess(src, dst, pat, srect, drect, prect, -1, release_fence_fd, &opt, usage);
 
     return ret;
 }
@@ -959,161 +1055,6 @@ IM_API IM_STATUS imflip(const rga_buffer_t src, rga_buffer_t dst, int mode, int 
     empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
 
     usage |= mode;
-
-    if (sync == 0)
-        usage |= IM_ASYNC;
-    else if (sync == 1)
-        usage |= IM_SYNC;
-
-    ret = improcess(src, dst, pat, srect, drect, prect, -1, release_fence_fd, &opt, usage);
-
-    return ret;
-}
-
-IM_API IM_STATUS imfill(rga_buffer_t dst, im_rect rect, int color, int sync, int *release_fence_fd) {
-    int usage = 0;
-    IM_STATUS ret = IM_STATUS_NOERROR;
-
-    im_opt_t opt;
-
-    rga_buffer_t pat;
-    rga_buffer_t src;
-
-    im_rect srect;
-    im_rect prect;
-
-    empty_structure(&src, NULL, &pat, &srect, NULL, &prect, &opt);
-
-    memset(&src, 0, sizeof(rga_buffer_t));
-
-    usage |= IM_COLOR_FILL;
-
-    opt.color = color;
-
-    if (sync == 0)
-        usage |= IM_ASYNC;
-    else if (sync == 1)
-        usage |= IM_SYNC;
-
-    ret = improcess(src, dst, pat, srect, rect, prect, -1, release_fence_fd, &opt, usage);
-
-    return ret;
-}
-
-IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut, int sync, int *release_fence_fd) {
-    int usage = 0;
-    IM_STATUS ret = IM_STATUS_NOERROR;
-    im_rect srect;
-    im_rect drect;
-    im_rect prect;
-
-    im_opt_t opt;
-
-    empty_structure(NULL, NULL, NULL, &srect, &drect, &prect, &opt);
-
-    /*Don't know if it supports zooming.*/
-    if ((src.width != dst.width) || (src.height != dst.height)) {
-        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
-                      src.width, src.height, dst.width, dst.height);
-        return IM_STATUS_INVALID_PARAM;
-    }
-
-    usage |= IM_COLOR_PALETTE;
-
-    if (sync == 0)
-        usage |= IM_ASYNC;
-    else if (sync == 1)
-        usage |= IM_SYNC;
-
-    ret = improcess(src, dst, lut, srect, drect, prect, -1, release_fence_fd, &opt, usage);
-
-    return ret;
-}
-
-IM_API IM_STATUS imtranslate(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync, int *release_fence_fd) {
-    int usage = 0;
-    IM_STATUS ret = IM_STATUS_NOERROR;
-
-    im_opt_t opt;
-
-    rga_buffer_t pat;
-
-    im_rect srect;
-    im_rect drect;
-    im_rect prect;
-
-    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
-
-    if ((src.width != dst.width) || (src.height != dst.height)) {
-        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
-                      src.width, src.height, dst.width, dst.height);
-        return IM_STATUS_INVALID_PARAM;
-    }
-
-    if (sync == 0)
-        usage |= IM_ASYNC;
-    else if (sync == 1)
-        usage |= IM_SYNC;
-
-    srect.width = src.width - x;
-    srect.height = src.height - y;
-    drect.x = x;
-    drect.y = y;
-    drect.width = src.width - x;
-    drect.height = src.height - y;
-
-    ret = improcess(src, dst, pat, srect, drect, prect, -1, release_fence_fd, &opt, usage);
-
-    return ret;
-}
-
-IM_API IM_STATUS imcopy(const rga_buffer_t src, rga_buffer_t dst, int sync, int *release_fence_fd) {
-    int usage = 0;
-    IM_STATUS ret = IM_STATUS_NOERROR;
-
-    im_opt_t opt;
-
-    rga_buffer_t pat;
-
-    im_rect srect;
-    im_rect drect;
-    im_rect prect;
-
-    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
-
-    if ((src.width != dst.width) || (src.height != dst.height)) {
-        imSetErrorMsg("imcopy cannot support scale, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
-                      src.width, src.height, dst.width, dst.height);
-        return IM_STATUS_INVALID_PARAM;
-    }
-
-    if (sync == 0)
-        usage |= IM_ASYNC;
-    else if (sync == 1)
-        usage |= IM_SYNC;
-
-    ret = improcess(src, dst, pat, srect, drect, prect, -1, release_fence_fd, &opt, usage);
-
-    return ret;
-}
-
-IM_API IM_STATUS imcolorkey(const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode, int sync, int *release_fence_fd) {
-    int usage = 0;
-    IM_STATUS ret = IM_STATUS_NOERROR;
-
-    im_opt_t opt;
-
-    rga_buffer_t pat;
-
-    im_rect srect;
-    im_rect drect;
-    im_rect prect;
-
-    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
-
-    usage |= mode;
-
-    opt.colorkey_range = range;
 
     if (sync == 0)
         usage |= IM_ASYNC;
@@ -1180,7 +1121,7 @@ IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
     return improcess(dst, dst, osd, osd_rect, osd_rect, tmp_rect, -1, release_fence_fd, &opt, usage);
 }
 
-IM_API IM_STATUS imcvtcolor(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync, int *release_fence_fd) {
+IM_API IM_STATUS imcolorkey(const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode, int sync, int *release_fence_fd) {
     int usage = 0;
     IM_STATUS ret = IM_STATUS_NOERROR;
 
@@ -1194,10 +1135,9 @@ IM_API IM_STATUS imcvtcolor(rga_buffer_t src, rga_buffer_t dst, int sfmt, int df
 
     empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
 
-    src.format = sfmt;
-    dst.format = dfmt;
+    usage |= mode;
 
-    dst.color_space_mode = mode;
+    opt.colorkey_range = range;
 
     if (sync == 0)
         usage |= IM_ASYNC;
@@ -1287,6 +1227,66 @@ IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mod
         usage |= IM_SYNC;
 
     return improcess(image, image, tmp_image, rect, rect, tmp_rect, -1, release_fence_fd, &opt, usage);
+}
+
+IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut, int sync, int *release_fence_fd) {
+    int usage = 0;
+    IM_STATUS ret = IM_STATUS_NOERROR;
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    im_opt_t opt;
+
+    empty_structure(NULL, NULL, NULL, &srect, &drect, &prect, &opt);
+
+    /*Don't know if it supports zooming.*/
+    if ((src.width != dst.width) || (src.height != dst.height)) {
+        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                      src.width, src.height, dst.width, dst.height);
+        return IM_STATUS_INVALID_PARAM;
+    }
+
+    usage |= IM_COLOR_PALETTE;
+
+    if (sync == 0)
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage |= IM_SYNC;
+
+    ret = improcess(src, dst, lut, srect, drect, prect, -1, release_fence_fd, &opt, usage);
+
+    return ret;
+}
+
+IM_API IM_STATUS imfill(rga_buffer_t dst, im_rect rect, int color, int sync, int *release_fence_fd) {
+    int usage = 0;
+    IM_STATUS ret = IM_STATUS_NOERROR;
+
+    im_opt_t opt;
+
+    rga_buffer_t pat;
+    rga_buffer_t src;
+
+    im_rect srect;
+    im_rect prect;
+
+    empty_structure(&src, NULL, &pat, &srect, NULL, &prect, &opt);
+
+    memset(&src, 0, sizeof(rga_buffer_t));
+
+    usage |= IM_COLOR_FILL;
+
+    opt.color = color;
+
+    if (sync == 0)
+        usage |= IM_ASYNC;
+    else if (sync == 1)
+        usage |= IM_SYNC;
+
+    ret = improcess(src, dst, pat, srect, rect, prect, -1, release_fence_fd, &opt, usage);
+
+    return ret;
 }
 
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
