@@ -252,6 +252,10 @@ gst_mpp_vp8_enc_register (GstPlugin * plugin, guint rank)
   if (!gst_mpp_enc_supported (MPP_VIDEO_CodingVP8))
     return FALSE;
 
+  if (g_getenv ("GST_MPP_VP8ENC_FAKE_VP8ENC"))
+    gst_element_register (plugin, "vp8enc", GST_RANK_PRIMARY,
+        gst_mpp_vp8_enc_get_type ());
+
   return gst_element_register (plugin, "mppvp8enc", rank,
       gst_mpp_vp8_enc_get_type ());
 }
