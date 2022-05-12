@@ -219,11 +219,12 @@ gst_mpp_video_dec_startup (GstVideoDecoder * decoder)
     gst_buffer_unref (codec_data);
   }
 
-  /* Legacy way to inform MPP codec of video info, needed by RKVDEC */
+  /* Some MPP codecs(RKV) need this to apply an odd-256 align to the hor
+     stride to speed up decoding. */
   mpp_frame_init (&mframe);
   mpp_frame_set_width (mframe, GST_VIDEO_INFO_WIDTH (&state->info));
   mpp_frame_set_height (mframe, GST_VIDEO_INFO_HEIGHT (&state->info));
-  mpp_frame_set_fmt (mframe, (MppFrameFormat) mppdec->mpp_type);
+  mpp_frame_set_fmt (mframe, MPP_FMT_YUV420SP);
   mppdec->mpi->control (mppdec->mpp_ctx, MPP_DEC_SET_FRAME_INFO,
       (MppParam) mframe);
   mpp_frame_deinit (&mframe);

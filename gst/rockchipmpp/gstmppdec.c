@@ -814,6 +814,10 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
     goto info_change;
   }
 
+  /* Apply info change when video info not unavaliable (no info-change event) */
+  if (!self->info.size)
+    self->task_ret = gst_mpp_dec_apply_info_change (decoder, mframe);
+
   mode = mpp_frame_get_mode (mframe);
 #ifdef MPP_FRAME_FLAG_IEP_DEI_MASK
   /* IEP deinterlaced */
