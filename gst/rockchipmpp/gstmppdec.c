@@ -326,6 +326,10 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
 
   GST_DEBUG_OBJECT (self, "setting format: %" GST_PTR_FORMAT, state->caps);
 
+  /* The MPP m2vd's PTS is buggy */
+  if (self->mpp_type == MPP_VIDEO_CodingMPEG2)
+    self->use_mpp_pts = FALSE;
+
   if (self->input_state) {
     if (gst_caps_is_strictly_equal (self->input_state->caps, state->caps))
       return TRUE;
