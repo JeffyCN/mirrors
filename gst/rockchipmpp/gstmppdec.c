@@ -225,6 +225,7 @@ gst_mpp_dec_reset (GstVideoDecoder * decoder, gboolean drain, gboolean final)
 
   self->mpi->reset (self->mpp_ctx);
   self->task_ret = GST_FLOW_OK;
+  self->decoded_frames = 0;
 
   GST_MPP_DEC_UNLOCK (decoder);
 }
@@ -253,6 +254,7 @@ gst_mpp_dec_start (GstVideoDecoder * decoder)
   self->input_state = NULL;
 
   self->task_ret = GST_FLOW_OK;
+  self->decoded_frames = 0;
   self->flushing = FALSE;
 
   /* Prefer using MPP PTS */
@@ -519,7 +521,10 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoCodecFrame *frame;
   GList *frames, *l;
+  gboolean is_first_frame = !self->decoded_frames;
   gint i;
+
+  self->decoded_frames++;
 
   frames = gst_video_decoder_get_frames (decoder);
   if (!frames) {
@@ -527,9 +532,9 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
     return NULL;
   }
 
-  frame = frames->data;
-  if (!frame->system_frame_number) {
-    /* Choose PTS source when getting the first frame */
+  /* Choose PTS source when getting the first frame */
+  if (is_first_frame) {
+    frame = frames->data;
 
     if (self->use_mpp_pts) {
       if (!GST_CLOCK_TIME_IS_VALID (pts)) {
@@ -539,7 +544,7 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
         if (GST_CLOCK_TIME_IS_VALID (frame->pts))
           self->mpp_delta_pts = frame->pts - MPP_TO_GST_PTS (pts);
 
-        pts = frame->pts;
+        pts = GST_CLOCK_TIME_NONE;
 
         GST_DEBUG_OBJECT (self, "MPP delta pts=%" GST_TIME_FORMAT,
             GST_TIME_ARGS (self->mpp_delta_pts));
@@ -585,7 +590,7 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
 
     if (GST_CLOCK_TIME_IS_VALID (f->pts)) {
       /* Prefer frame with close PTS */
-      if (abs ((gint) f->pts - (gint) pts) < 3000000) {
+      if (abs ((gint) f->pts - (gint) pts) < 3 * GST_MSECOND) {
         frame = f;
 
         GST_DEBUG_OBJECT (self, "using matched frame (#%d)",
@@ -624,7 +629,6 @@ out:
     gst_video_codec_frame_ref (frame);
 
     /* Prefer using MPP PTS */
-    pts -= self->mpp_delta_pts;
     if (GST_CLOCK_TIME_IS_VALID (pts))
       frame->pts = pts;
   }

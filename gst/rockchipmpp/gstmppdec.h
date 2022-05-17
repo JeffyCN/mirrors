@@ -81,6 +81,8 @@ struct _GstMppDec
   gboolean use_mpp_pts;
   GstClockTime mpp_delta_pts;
 
+  guint32 decoded_frames;
+
   MppCodingType mpp_type;
   MppCtx mpp_ctx;
   MppApi *mpi;
