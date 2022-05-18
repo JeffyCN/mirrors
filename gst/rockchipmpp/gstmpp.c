@@ -48,16 +48,17 @@ struct gst_mpp_format
 #ifdef HAVE_RGA
   RgaSURF_FORMAT rga_format;
 #endif
-  gint stride;
+  gint pixel_stride0;
   gboolean is_yuv;
 };
 
 #ifdef HAVE_RGA
-#define GST_MPP_FORMAT(gst, mpp, rga, stride, yuv) \
-  { GST_VIDEO_FORMAT_ ## gst, MPP_FMT_ ## mpp, RK_FORMAT_ ## rga, stride, yuv }
+#define GST_MPP_FORMAT(gst, mpp, rga, pixel_stride0, yuv) \
+  { GST_VIDEO_FORMAT_ ## gst, MPP_FMT_ ## mpp, RK_FORMAT_ ## rga, \
+    pixel_stride0, yuv }
 #else
-#define GST_MPP_FORMAT(gst, mpp, rga, stride, yuv) \
-  { GST_VIDEO_FORMAT_ ## gst, MPP_FMT_ ## mpp, stride, yuv}
+#define GST_MPP_FORMAT(gst, mpp, rga, pixel_stride0, yuv) \
+  { GST_VIDEO_FORMAT_ ## gst, MPP_FMT_ ## mpp, pixel_stride0, yuv}
 #endif
 
 struct gst_mpp_format gst_mpp_formats[] = {
@@ -73,10 +74,10 @@ struct gst_mpp_format gst_mpp_formats[] = {
   GST_MPP_FORMAT (Y42B, YUV422P, YCbCr_422_P, 1, 1),
   GST_MPP_FORMAT (NV16, YUV422SP, YCbCr_422_SP, 1, 1),
   GST_MPP_FORMAT (NV61, YUV422SP_VU, YCrCb_422_SP, 1, 1),
-  GST_MPP_FORMAT (YUY2, YUV422_YUYV, UNKNOWN, 1, 1),
-  GST_MPP_FORMAT (YVYU, YUV422_YVYU, UNKNOWN, 1, 1),
-  GST_MPP_FORMAT (UYVY, YUV422_UYVY, UNKNOWN, 1, 1),
-  GST_MPP_FORMAT (VYUY, YUV422_VYUY, UNKNOWN, 1, 1),
+  GST_MPP_FORMAT (YUY2, YUV422_YUYV, UNKNOWN, 2, 1),
+  GST_MPP_FORMAT (YVYU, YUV422_YVYU, UNKNOWN, 2, 1),
+  GST_MPP_FORMAT (UYVY, YUV422_UYVY, UNKNOWN, 2, 1),
+  GST_MPP_FORMAT (VYUY, YUV422_VYUY, UNKNOWN, 2, 1),
   GST_MPP_FORMAT (RGB16, RGB565LE, UNKNOWN, 2, 0),
   GST_MPP_FORMAT (BGR16, BGR565LE, RGB_565, 2, 0),
   GST_MPP_FORMAT (RGB, RGB888, RGB_888, 3, 0),
@@ -155,10 +156,6 @@ gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT rga_format,
 
   if (info->fd < 0 && !info->virAddr)
     return FALSE;
-
-  /* HACK: The MPP might provide pixel stride in some cases */
-  if (hstride / format->stride >= width)
-    hstride /= format->stride;
 
   info->mmuFlag = 1;
   rga_set_rect (&info->rect, 0, 0, width, height, hstride, vstride, rga_format);
@@ -353,6 +350,19 @@ gst_mpp_video_info_align (GstVideoInfo * info, gint hstride, gint vstride)
   GST_DEBUG ("aligned size %" G_GSIZE_FORMAT, GST_VIDEO_INFO_SIZE (info));
 
   return TRUE;
+}
+
+guint
+gst_mpp_get_pixel_stride (GstVideoInfo * info)
+{
+  GstVideoFormat gst_format = GST_VIDEO_INFO_FORMAT (info);
+  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (gst, gst_format);
+  guint hstride = GST_MPP_VIDEO_INFO_HSTRIDE (info);
+
+  if (!format)
+    return hstride;
+
+  return hstride / format->pixel_stride0;
 }
 
 static gboolean

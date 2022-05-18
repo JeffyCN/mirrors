@@ -679,7 +679,7 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
   size = GST_VIDEO_INFO_SIZE (&info);
 
   gst_video_alignment_reset (&align);
-  align.padding_right = GST_MPP_VIDEO_INFO_HSTRIDE (&info) -
+  align.padding_right = gst_mpp_get_pixel_stride (&info) -
       GST_VIDEO_INFO_WIDTH (&info);
   align.padding_bottom = GST_MPP_VIDEO_INFO_VSTRIDE (&info) -
       GST_VIDEO_INFO_HEIGHT (&info);

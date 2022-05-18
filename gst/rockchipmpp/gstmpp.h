@@ -87,6 +87,8 @@ gboolean gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
 gboolean gst_mpp_video_info_align (GstVideoInfo * info,
     gint hstride, gint vstride);
 
+guint gst_mpp_get_pixel_stride (GstVideoInfo * info);
+
 G_END_DECLS;
 
 #endif /* __GST_MPP_H__ */
