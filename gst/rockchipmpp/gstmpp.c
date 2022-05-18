@@ -330,6 +330,11 @@ gst_mpp_video_info_align (GstVideoInfo * info, gint hstride, gint vstride)
   if (!gst_video_info_align (info, &align))
     return FALSE;
 
+  /* Apply vstride for single-plane */
+  if (GST_VIDEO_INFO_N_PLANES (info) == 1)
+    GST_VIDEO_INFO_SIZE (info) =
+        GST_VIDEO_INFO_PLANE_STRIDE (info, 0) * vstride;
+
   if (GST_VIDEO_INFO_PLANE_STRIDE (info, 0) == hstride)
     return TRUE;
 

@@ -152,6 +152,9 @@ gst_mpp_enc_video_info_matched (GstVideoInfo * info, GstVideoInfo * other)
   if (GST_VIDEO_INFO_FORMAT (info) != GST_VIDEO_INFO_FORMAT (other))
     return FALSE;
 
+  if (GST_VIDEO_INFO_SIZE (info) != GST_VIDEO_INFO_SIZE (other))
+    return FALSE;
+
   if (GST_VIDEO_INFO_WIDTH (info) != GST_VIDEO_INFO_WIDTH (other))
     return FALSE;
 
