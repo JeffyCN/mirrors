@@ -743,9 +743,11 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
     return buffer;
 
 #ifdef HAVE_RGA
-  if (!GST_VIDEO_INFO_IS_AFBC (info) && !offset_x && !offset_y &&
-      gst_mpp_dec_rga_convert (decoder, mframe, buffer))
-    return buffer;
+  if (gst_mpp_use_rga ()) {
+    if (!GST_VIDEO_INFO_IS_AFBC (info) && !offset_x && !offset_y &&
+        gst_mpp_dec_rga_convert (decoder, mframe, buffer))
+      return buffer;
+  }
 #endif
 
   GST_WARNING_OBJECT (self, "unable to convert frame");
@@ -1076,6 +1078,9 @@ gst_mpp_dec_class_init (GstMppDecClass * klass)
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gst_mpp_dec_get_property);
 
 #ifdef HAVE_RGA
+  if (!gst_mpp_use_rga ())
+    goto no_rga;
+
   g_object_class_install_property (gobject_class, PROP_ROTATION,
       g_param_spec_enum ("rotation", "Rotation",
           "Rotation",
@@ -1093,6 +1098,8 @@ gst_mpp_dec_class_init (GstMppDecClass * klass)
           "Height (0 = original)",
           0, G_MAXINT, DEFAULT_PROP_HEIGHT,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+no_rga:
 #endif
 
   g_object_class_install_property (gobject_class, PROP_CROP_RECTANGLE,

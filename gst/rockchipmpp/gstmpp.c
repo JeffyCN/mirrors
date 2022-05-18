@@ -100,6 +100,24 @@ struct gst_mpp_format gst_mpp_formats[] = {
   }; _tmp; \
 })
 
+gboolean
+gst_mpp_use_rga ()
+{
+  static int mpp_use_rga = -1;
+
+#ifdef HAVE_RGA
+  if (mpp_use_rga < 0) {
+    const gchar *buf = g_getenv ("GST_MPP_NO_RGA");
+    if (!buf || buf[0] == '0')
+      mpp_use_rga = 1;
+    else
+      mpp_use_rga = 0;
+  }
+#endif
+
+  return mpp_use_rga > 0;
+}
+
 const gchar *
 gst_mpp_video_format_to_string (GstVideoFormat format)
 {
@@ -201,7 +219,7 @@ gst_mpp_rga_do_convert (rga_info_t * src_info, rga_info_t * dst_info)
   static gint rga_supported = 1;
   static gint rga_inited = 0;
 
-  if (!rga_supported)
+  if (!rga_supported || !gst_mpp_use_rga ())
     return FALSE;
 
   if (!rga_inited) {

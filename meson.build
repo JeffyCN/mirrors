@@ -88,7 +88,7 @@ drm_dep = dependency('libdrm', required : get_option('rkximage'))
 mpp_dep = dependency('rockchip_mpp', required : get_option('rockchipmpp'))
 rga_dep = dependency('librga', required : get_option('rga'))
 
-if rga_dep.found()
+if rga_dep.found() and not get_option('rga').disabled()
   cdata.set10('HAVE_RGA', 1)
 endif
 

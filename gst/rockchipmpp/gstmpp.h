@@ -70,6 +70,8 @@ G_BEGIN_DECLS;
     "BGR16, RGB, BGR, RGBA, BGRA, RGBx, BGRx"
 #endif
 
+gboolean gst_mpp_use_rga ();
+
 const gchar *gst_mpp_video_format_to_string (GstVideoFormat format);
 
 GstVideoFormat gst_mpp_mpp_format_to_gst_format (MppFrameFormat mpp_format);

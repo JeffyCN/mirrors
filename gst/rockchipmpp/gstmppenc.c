@@ -581,6 +581,7 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   GstVideoInfo *info = &self->info;
   MppFrameFormat format;
   gint width, height;
+  gboolean convert = FALSE;
 
   GST_DEBUG_OBJECT (self, "setting format: %" GST_PTR_FORMAT, state->caps);
 
@@ -611,18 +612,35 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   width = self->width ? : width;
   height = self->height ? : height;
 
-  if (self->rotation || width != GST_VIDEO_INFO_WIDTH (info) ||
-      height != GST_VIDEO_INFO_HEIGHT (info) ||
-      !gst_mpp_enc_format_supported (format) ||
-      !gst_mpp_enc_video_info_matched (info, &state->info)) {
-    format = MPP_FMT_YUV420SP;
+  /* Check for conversion */
+  if (self->rotation || !gst_mpp_enc_format_supported (format) ||
+      width != GST_VIDEO_INFO_WIDTH (info) ||
+      height != GST_VIDEO_INFO_HEIGHT (info)) {
+    if (!gst_mpp_use_rga ()) {
+      GST_ERROR_OBJECT (self, "unable to convert without RGA");
+      return FALSE;
+    }
+
+    convert = TRUE;
+  }
+
+  /* Check for alignment */
+  if (!gst_mpp_enc_video_info_matched (info, &state->info))
+    convert = TRUE;
+
+  if (convert) {
+    /* Prefer NV12 when using RGA conversion */
+    if (gst_mpp_use_rga ())
+      format = MPP_FMT_YUV420SP;
+
     gst_video_info_set_format (info, gst_mpp_mpp_format_to_gst_format (format),
         width, height);
 
     if (!gst_mpp_enc_video_info_align (info))
       return FALSE;
 
-    GST_INFO_OBJECT (self, "converting to aligned NV12");
+    GST_INFO_OBJECT (self, "converting to aligned %s",
+        gst_mpp_video_format_to_string (GST_VIDEO_INFO_FORMAT (info)));
   }
 
   mpp_frame_set_width (self->mpp_frame, width);
@@ -789,13 +807,16 @@ convert:
   gst_buffer_append_memory (outbuf, out_mem);
 
 #ifdef HAVE_RGA
-  if (gst_mpp_rga_convert (inbuf, &src_info, out_mem, dst_info, self->rotation)) {
+  if (gst_mpp_use_rga () &&
+      gst_mpp_rga_convert (inbuf, &src_info, out_mem, dst_info,
+          self->rotation)) {
     GST_DEBUG_OBJECT (self, "using RGA converted buffer");
     return outbuf;
   }
 #endif
 
-  if (self->rotation)
+  if (self->rotation ||
+      GST_VIDEO_INFO_FORMAT (&src_info) != GST_VIDEO_INFO_FORMAT (dst_info))
     goto err;
 
   if (gst_video_frame_map (&src_frame, &src_info, inbuf, GST_MAP_READ)) {
@@ -1167,6 +1188,9 @@ gst_mpp_enc_class_init (GstMppEncClass * klass)
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
 #ifdef HAVE_RGA
+  if (!gst_mpp_use_rga ())
+    goto no_rga;
+
   g_object_class_install_property (gobject_class, PROP_ROTATION,
       g_param_spec_enum ("rotation", "Rotation",
           "Rotation",
@@ -1184,6 +1208,8 @@ gst_mpp_enc_class_init (GstMppEncClass * klass)
           "Height (0 = original)",
           0, G_MAXINT, DEFAULT_PROP_HEIGHT,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+no_rga:
 #endif
 
   g_object_class_install_property (gobject_class, PROP_GOP,
