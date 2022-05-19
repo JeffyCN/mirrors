@@ -643,6 +643,7 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
         gst_mpp_video_format_to_string (GST_VIDEO_INFO_FORMAT (info)));
   }
 
+  mpp_frame_set_fmt (self->mpp_frame, format);
   mpp_frame_set_width (self->mpp_frame, width);
   mpp_frame_set_height (self->mpp_frame, height);
   mpp_frame_set_hor_stride (self->mpp_frame, GST_MPP_VIDEO_INFO_HSTRIDE (info));
