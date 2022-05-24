@@ -341,12 +341,9 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
   } else {
     MppBufferGroup group;
 
-    if (self->mpp_type == MPP_VIDEO_CodingAVC ||
-        self->mpp_type == MPP_VIDEO_CodingHEVC) {
-      /* NOTE: MPP fast mode must be applied before mpp_init() */
-      self->mpi->control (self->mpp_ctx, MPP_DEC_SET_PARSER_FAST_MODE,
-          &self->fast_mode);
-    }
+    /* NOTE: MPP fast mode must be applied before mpp_init() */
+    self->mpi->control (self->mpp_ctx, MPP_DEC_SET_PARSER_FAST_MODE,
+        &self->fast_mode);
 
     if (mpp_init (self->mpp_ctx, MPP_CTX_DEC, self->mpp_type)) {
       GST_ERROR_OBJECT (self, "failed to init mpp ctx");
@@ -1125,7 +1122,7 @@ no_rga:
 
   g_object_class_install_property (gobject_class, PROP_FAST_MODE,
       g_param_spec_boolean ("fast-mode", "Fast mode",
-          "Enable MPP fast decode mode (H264/H265)", DEFAULT_PROP_FAST_MODE,
+          "Enable MPP fast decode mode", DEFAULT_PROP_FAST_MODE,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   element_class->change_state = GST_DEBUG_FUNCPTR (gst_mpp_dec_change_state);
