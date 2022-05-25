@@ -4,11 +4,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 ### 版本说明
 
-**RGA API** 版本: 1.7.2
+**RGA API** 版本: 1.8.0
 
 ### 适用芯片平台
 
-Rockchip RK3066 | RK3188 | RK2926 | RK2928 | RK3026 | RK3028 | RK3128 | Sofia3gr | RK3288 | RK3288w | RK3190 | RK1108 | RK3368 | RK3326 | RK3228 | RK3228H | RK3326 | RK1808 | RV1126 | RV1109 | RK3399 | RK3399pro | RK3566 | RK3568 | RK3588
+Rockchip RK3066 | RK3188 | RK2926 | RK2928 | RK3026 | RK3028 | RK3128 | Sofia3gr | RK3288 | RK3288w | RK3190 | RK1108 | RK3368 | RK3326 | RK3228 | RK3228H | RK3326 | RK1808 | RV1126 | RV1109 | RK3399 | RK3399pro | RK3566 | RK3568 | RK3588 | RK3326S | RV1106 | RV1103
 
 ### 目录说明
 
@@ -88,11 +88,17 @@ $ ninja -C build-rga install
 
   librga.so
 
+  librga.a
+
 * librga应用开发接口说明参考以下文件：
 
-  [RGA_API_Instruction.md](docs/RGA_API_Instruction.md)
+  [IM2D API说明文档【中文】](docs/Rockchip_Developer_Guide_RGA_CN.md)
+
+  [IM2D API说明文档【英文】](docs/Rockchip_Developer_Guide_RGA_EN.md)
 
 * RGA模块FAQ文档：
 
-  [RGA_FAQ.md](docs/RGA_FAQ.md)
+  [RGA_FAQ【中文】](docs/Rockchip_FAQ_RGA_CN.md)
+
+  [RGA_FAQ【英文】](docs/Rockchip_FAQ_RGA_EN.md)
 
