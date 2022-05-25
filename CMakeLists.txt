@@ -13,10 +13,10 @@ if(CMAKE_BUILD_TARGET STREQUAL android_ndk)
 endif()
 
 if(CMAKE_BUILD_TARGET STREQUAL buildroot)
-    message("set buildroot toolchain")
+    message("set ${BUILD_TOOlCHAINS_PATH} toolchain")
     set(CMAKE_TOOLCHAIN_FILE
-        ${CMAKE_SOURCE_DIR}/buildroot.cmake)
-    include(${CMAKE_SOURCE_DIR}/buildroot.cmake)
+        ${CMAKE_SOURCE_DIR}/${BUILD_TOOlCHAINS_PATH})
+    include(${CMAKE_SOURCE_DIR}/${BUILD_TOOlCHAINS_PATH})
     add_compile_options(-DLINUX)
     set(CMAKE_CXX_FLAGS "-std=c++11 -O2 -pthread")
 endif()

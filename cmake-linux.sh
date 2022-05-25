@@ -11,12 +11,14 @@ pushd $BUILD_DIR
 if [ "$1" = "drm" ];then
 	echo "using drm"
 	cmake -DCMAKE_BUILD_TARGET=buildroot \
+		  -DBUILD_TOOlCHAINS_PATH=buildroot.cmake \
 		  -DBUILD_WITH_LIBDRM=true \
 		  -DCMAKE_INSTALL_PREFIX=install \
 		  ..
 else
-	echo "Default mode"
+	echo "Default mode $1"
 	cmake -DCMAKE_BUILD_TARGET=buildroot \
+		  -DBUILD_TOOlCHAINS_PATH=buildroot.cmake \
 		  -DCMAKE_INSTALL_PREFIX=install \
 		  ..
 fi
