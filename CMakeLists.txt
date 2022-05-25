@@ -72,6 +72,22 @@ set(IM2D_INCLUDE
     system/core/liblog/includeNDROID_NDK_REVISION_REGEX
     system/core/libion/kernel-headers)
 
+set(IM2D_PUBLIC_HEADER
+	im2d_api/im2d_version.h
+	im2d_api/im2d_type.h
+	im2d_api/im2d_hardware.h
+	im2d_api/im2d.h
+	im2d_api/im2d.hpp
+	include/drmrga.h
+	include/rga.h
+	include/RgaApi.h
+	include/RockchipRga.h
+	include/RgaUtils.h
+	include/RgaSingleton.h
+	include/RgaMutex.h
+	include/GrallocOps.h
+)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_EXT} -DUN_NEED_GL")
 
 if(CMAKE_BUILD_TARGET STREQUAL android_ndk)
@@ -88,13 +104,13 @@ target_include_directories(${OBJECT_NAME} PUBLIC ${IM2D_INCLUDE})
 # After setting this property, it can be used to generate a shared library
 set_target_properties(${OBJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
-
 # build shared lib
 set(SHARED_LIB_NAME ${PROJECT_NAME})
 
 add_library(${SHARED_LIB_NAME} SHARED $<TARGET_OBJECTS:${OBJECT_NAME}>)
 
 target_include_directories(${SHARED_LIB_NAME} PUBLIC ${IM2D_INCLUDE})
+set_target_properties(${SHARED_LIB_NAME} PROPERTIES PUBLIC_HEADER "${IM2D_PUBLIC_HEADER}")
 
 # build static lib
 set(STATIC_LIB_NAME ${PROJECT_NAME}-static)
@@ -122,14 +138,10 @@ if (NOT DEFINED CMAKE_INSTALL_INCLUDEDIR)
 endif()
 
 install(TARGETS ${SHARED_LIB_NAME}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(TARGETS  ${STATIC_LIB_NAME}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-install(DIRECTORY include/ im2d_api/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        FILES_MATCHING
-        PATTERN "*.h"
-        PATTERN "*.hpp")
 
 # build im2d api demo
 add_subdirectory(samples/im2d_api_demo)
