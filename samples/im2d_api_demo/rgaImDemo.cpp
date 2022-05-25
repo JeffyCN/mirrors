@@ -31,7 +31,7 @@
 #include <ui/GraphicBuffer.h>
 #endif
 
-#include "im2d_api/im2d.hpp"
+#include "im2d.hpp"
 #include "RockchipRga.h"
 #include "RgaUtils.h"
 #include "rga.h"
