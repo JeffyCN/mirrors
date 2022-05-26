@@ -2,9 +2,9 @@
 
 File No.：RK-PC-YF-0003
 
-Current Version：V1.0.0
+Current Version：V1.0.1
 
-Finish Date：2021-06-28
+Finish Date：2022-05-26
 
 Security Class：□Top-Secret   □Secret   □Internal   ■Public
 
@@ -82,13 +82,30 @@ RGA hardware consists of three versions: RGA1, RGA2, and RGA3. See section Intro
 
 #### librga
 
-The API version number consists of major, minor, revision and build. The four levels of version number correspond to different levels of function update. See section API Version Description in 《RGA_API_Instruction.md》 for details.
+The API version number consists of major, minor, revision and build. The four levels of version number correspond to different levels of function update. See section API Version Description in 《Rockchip_Developer_Guide_RGA_EN.md》 for details.
+
+- version query
+
+  The more common query methods are as follows:
+
+  ```
+  strings librga.so |grep rga_api |grep version
+  ```
 
 
 
 #### RGA Driver
 
 The driver version number consists of major, minor, revision and build. The four levels of version number correspond to different levels of function update. Usually HAL library and driver is matching in released SDK, version verification is done within librga, developers do not need to consider about version. If the following error occurs when librga is updated separately, you need to update the driver to the corresponding version.
+
+- version query
+
+  Different chip platforms have different opening paths for debug nodes. Usually, there are two paths as follows.
+
+  ```
+  cat /sys/kernel/debug/rkrga/driver_version
+  cat /proc/rkrga/driver_version
+  ```
 
 
 
@@ -493,7 +510,7 @@ index 02938b0..10a1dc4 100644
 
 **Q2.1：**How do I know what version of RGA is available on my current chip platform and what functions are available?
 
-**A2.1：**See docs/RGA_API_Instruction_EN - Overview for RGA version and support information.
+**A2.1：**See docs/Rockchip_Developer_Guide_RGA_EN - Overview for RGA version and support information.
 
 ​			Different systems have different source code paths. librga source code directory paths in different SDKS are as follows:
 
@@ -513,7 +530,7 @@ index 02938b0..10a1dc4 100644
 
 **Q2.2：**How to call RGA for hardware acceleration? Can there be a demo for reference?
 
-**A2.2：**1). For API call interface, see docs/RGA_API_Instruction_EN - API.
+**A2.2：**1). For API call interface, see docs/Rockchip_Developer_Guide_RGA_EN - API.
 
 ​			2). Demo is located in sample/rga_im2d_demo. The demo internally implements most RGA API and implements corresponding RGA functions through command. It can also be used as a tool to test whether RGA works properly in some scenarios. It is recommended that developers who are learning about RGA for the first time run the demo and get the results to understand the actual functions of RGA, modify parameters in the demo to implement corresponding functions according to their own needs, and finally try to call RGA API in their own projects.
 
@@ -523,17 +540,17 @@ index 02938b0..10a1dc4 100644
 
 ​			**Q2.3.1：**What format is supported by RGA？
 
-​			**A2.3.1：**For detailed support information, see RGA_API_Instruction_EN - Overview -  Image Format Supported to check the format support information of RGA for the corresponding chip version.  Users can also call **querystring(RGA_INPUT_FORMAT | RGA_OUTPUT_FORMAT);** to query the supported input and output formats of current hardware.
+​			**A2.3.1：**For detailed support information, see Rockchip_Developer_Guide_RGA_EN - Overview -  Image Format Supported to check the format support information of RGA for the corresponding chip version.  Users can also call **querystring(RGA_INPUT_FORMAT | RGA_OUTPUT_FORMAT);** to query the supported input and output formats of current hardware.
 
 ​			**Q2.3.2：**What scaling ratio is supported by the RGA？
 
-​			**A2.3.2：**For detailed support information, see  RGA_API_Instruction_EN - Overview - Design Index to query scaling ratio supported by RGA for the corresponding chip version. Users can also call **querystring(RGA_SCALE_LIMIT);** to query the scaling ratio supported by current hardware.
+​			**A2.3.2：**For detailed support information, see  Rockchip_Developer_Guide_RGA_EN - Overview - Design Index to query scaling ratio supported by RGA for the corresponding chip version. Users can also call **querystring(RGA_SCALE_LIMIT);** to query the scaling ratio supported by current hardware.
 
 ​			**Q2.3.3：**What is the max resolution supported by RGA?
 
-​			**A2.3.3：**For detailed support information, see RGA_API_Instruction_EN - Overview - Design Index to query the max input and output resolution supported by RGA for the corresponding chip version. Users can also call **querystring(RGA_MAX_INPUT | RGA_MAX_OUTPUT);** to query the max input/output resolution supported by current hardware.
+​			**A2.3.3：**For detailed support information, see Rockchip_Developer_Guide_RGA_EN - Overview - Design Index to query the max input and output resolution supported by RGA for the corresponding chip version. Users can also call **querystring(RGA_MAX_INPUT | RGA_MAX_OUTPUT);** to query the max input/output resolution supported by current hardware.
 
-**A2.3：**In general, if you have any questions about RGA support, please refer to RGA_API_Instruction_EN, which provides detailed instructions on RGA support information.
+**A2.3：**In general, if you have any questions about RGA support, please refer to Rockchip_Developer_Guide_RGA_EN, which provides detailed instructions on RGA support information.
 
 
 
@@ -543,7 +560,7 @@ index 02938b0..10a1dc4 100644
 
 ​			The support and maintenance of the old version librga has been stopped. The main feature is that the SDK released before November 2020 is loaded with the old version librga. Some chip platforms, such as RK3399 Linux SDK released before June 2021 (V2.5 and below), are also with the old version librga. This version of librga cannot perfectly fit newer drivers and may have color deviation, abnormal format and other problems, so it is not recommended to use it together. When using a newer kernel, users are recommended to update the new version librga, and when using a newer version librga , kernel should be updated to match.
 
-​			The new version librga is currently the main version of support and maintenance, the main feature is to add **im2d_api** directory under source directory. This version integrates with the old version librga, and introduces a simple and easy to use IM2D API, also called IM2D librga. The new version librga supports not only the new IM2D API, but also RockchipRga and C_XXX interfaces of older version. For details about API, see RGA_API_Instruction_EN. This version adds the software management version number, which can be queried through **querystring(RGA_VERSION);**.
+​			The new version librga is currently the main version of support and maintenance, the main feature is to add **im2d_api** directory under source directory. This version integrates with the old version librga, and introduces a simple and easy to use IM2D API, also called IM2D librga. The new version librga supports not only the new IM2D API, but also RockchipRga and C_XXX interfaces of older version. For details about API, see Rockchip_Developer_Guide_RGA_EN. This version adds the software management version number, which can be queried through **querystring(RGA_VERSION);**.
 
 ​			Generally, for librga support information of old and new version, it is recommended to update the overall SDK to avoid dependency problems. It is strongly not recommended to use the new version librga with old driver or the old version librga with new kernel. It may cause obvious errors in certain scenario.
 
@@ -551,7 +568,7 @@ index 02938b0..10a1dc4 100644
 
 **Q2.5：**Does the RGA have alignment requirements?
 
-**A2.5：**Different formats have different alignment requirements，the RGA hardware itself fetches the data of each line of the image in a word aligned manner，that is 4 bytes/32 bits. For example, the RGBA format itself has a single pixel storage size of 32 bit (4 × 8bit), so there is no alignment requirement. RGB565 format storage size is 16 bit (5bit + 6bit + 5bit), so it needs 2 alignment; RGB888 format storage size is 24 bit (3 × 8bit), so the format needs 4 alignment to meet the 32bit fetching requirement of RGA hardware; YUV format storage is relatively special, its own alignment requirement needs 2 alignment, Y channel single pixel storage size is 8bit, so YUV format needs 4 alignment to meet the 32bit fetching requirement of RGA hardware. UV channel according to 420/422 to determine the storage size of each four pixels, so the YUV format Y channel needs 4 alignment to meet the RGA hardware fetching requirements, then the YUV format needs 4 alignment; other unmentioned format alignment requirements are similar in principle. Note that the alignment in the question refers to the alignment requirements of width stride, the actual width and height of YUV format itself, offset due to the characteristics of the format itself is also required 2 alignment. See the RGA_API_Instruction_EN, "Overview" - "Image Format Alignment Instructions" for specific alignment restrictions.
+**A2.5：**Different formats have different alignment requirements，the RGA hardware itself fetches the data of each line of the image in a word aligned manner，that is 4 bytes/32 bits. For example, the RGBA format itself has a single pixel storage size of 32 bit (4 × 8bit), so there is no alignment requirement. RGB565 format storage size is 16 bit (5bit + 6bit + 5bit), so it needs 2 alignment; RGB888 format storage size is 24 bit (3 × 8bit), so the format needs 4 alignment to meet the 32bit fetching requirement of RGA hardware; YUV format storage is relatively special, its own alignment requirement needs 2 alignment, Y channel single pixel storage size is 8bit, so YUV format needs 4 alignment to meet the 32bit fetching requirement of RGA hardware. UV channel according to 420/422 to determine the storage size of each four pixels, so the YUV format Y channel needs 4 alignment to meet the RGA hardware fetching requirements, then the YUV format needs 4 alignment; other unmentioned format alignment requirements are similar in principle. Note that the alignment in the question refers to the alignment requirements of width stride, the actual width and height of YUV format itself, offset due to the characteristics of the format itself is also required 2 alignment. See the Rockchip_Developer_Guide_RGA_EN, "Overview" - "Image Format Alignment Instructions" for specific alignment restrictions.
 
 
 
@@ -605,7 +622,7 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 **Q2.10：**Why does ROP code of RK3399 run on RV1126 without corresponding results?
 
-**A2.10：**Although RGA on both RK3399 and RV1126 is RGA2-ENHANCE, their sub versions are different, and ROP function has been cut out of RV1126. For detailed function support information, see RGA_API_Instruction_EN or call **querystring(RGA_FEATURE);** to query support  functions.
+**A2.10：**Although RGA on both RK3399 and RV1126 is RGA2-ENHANCE, their sub versions are different, and ROP function has been cut out of RV1126. For detailed function support information, see Rockchip_Developer_Guide_RGA_EN or call **querystring(RGA_FEATURE);** to query support  functions.
 
 
 
@@ -633,7 +650,7 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 **A2.12：**If the output is in RGB format, **imblend()** can be used to implement this, usually select src over mode, and the src channel image is overlaid on the dst channel image. If the output is in YUV format, ** imcomposite ()** can be used to implement this, usually select dst over mode, the src1 channel image is overlaid on the src channel image, and then output to the dst channel.
 
-​			The blending principle of this function is **Porter-Duff blending model**. For details, see RGA_API_Instruction_EN - API - Image Blending.
+​			The blending principle of this function is **Porter-Duff blending model**. For details, see Rockchip_Developer_Guide_RGA_EN - API - Image Blending.
 
 ​			The reason RGA requires different configurations for different output formats is that RGA2 has three image channels: src, src1/pat, and dst, in which src channel supports YUV2RGB conversion, src1/pat and dst channel only supports RGB2YUV conversion. The blending inside RGA needs to be performed in RGB format. Therefore, in order to ensure that RGB images are overlaid on YUV images, src must be used as the overlaid background image YUV. Src1 is used as the overlaid RGB foreground image, and the blended RGB image is finally converted into YUV format output by dst channel.
 
@@ -653,7 +670,7 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 **A2.14：**Both versions of librga support configuring the color space for format conversion.
 
-​			1). In the new version librga, see to the RGA_API_Instruction - API - Image Format Conversion, and focus on configuring the mode parameter.
+​			1). In the new version librga, see to the Rockchip_Developer_Guide_RGA_EN - API - Image Format Conversion, and focus on configuring the mode parameter.
 
 ​			2). In the old version librga, you need to modify the source code of librga, that is, yuvToRgbMode value in Normal/NormaRga.cpp, the corresponding parameters are as follows:
 
@@ -690,13 +707,13 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 
 
-**A2.16：**In normal configuration mode, default color value has been pre-multiplied by the corresponding alpha value, while the color value of the original image read directly has not been pre-multiplied by alpha value, so we need to add an extra flag bit when calling imblend to indicate that the color value of the image processed does not need to be pre-multiplied by alpha value. For details of calling method, see RGA_API_Instruction_EN - API - Image Blending.
+**A2.16：**In normal configuration mode, default color value has been pre-multiplied by the corresponding alpha value, while the color value of the original image read directly has not been pre-multiplied by alpha value, so we need to add an extra flag bit when calling imblend to indicate that the color value of the image processed does not need to be pre-multiplied by alpha value. For details of calling method, see Rockchip_Developer_Guide_RGA_EN - API - Image Blending.
 
 
 
 **Q2.17：**Can the IM2D API implement multiple functions in one RGA call?
 
-**A2.17：**Yes, please refer to RGA_API_Instruction - API - Image process, and refer to the implementation of other IM2D API to understand the use of **improcess()**.
+**A2.17：**Yes, please refer to Rockchip_Developer_Guide_RGA_EN - API - Image process, and refer to the implementation of other IM2D API to understand the use of **improcess()**.
 
 
 

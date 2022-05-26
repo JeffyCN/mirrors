@@ -2,9 +2,9 @@
 
 文件标识：RK-PC-YF-0003
 
-发布版本：V1.0.0
+发布版本：V1.0.1
 
-日期：2021-06-28
+日期：2022-05-26
 
 文件密级：□绝密   □秘密   □内部资料   ■公开
 
@@ -74,7 +74,7 @@ Rockchip Electronics Co., Ltd.
 
 ### 硬件版本
 
-RGA硬件主要分为三个版本版本：RGA1、RGA2、RGA3。具体平台搭载信息、支持功能以及限制条件可以查看《RGA IM2D API 开发指南》——概述 章节。
+RGA硬件主要分为三个版本版本：RGA1、RGA2、RGA3。具体平台搭载信息、支持功能以及限制条件可以查看《Rockchip_Developer_Guide_RGA_CN》——概述 章节。
 
 
 
@@ -84,13 +84,30 @@ RGA硬件主要分为三个版本版本：RGA1、RGA2、RGA3。具体平台搭�
 
 API版本号分为主版本号、次版本号、修订版本号、编译版本号，四个等级版本号对应不同程度的功能更新，具体可以查看Rockchip_Developer_Guide_RGA_CN.pdf —— API版本说明 章节。
 
+- 版本号查询
+
+  比较通用的查询方法如下：
+
+  ```
+  strings librga.so |grep rga_api |grep version
+  ```
+
 
 
 #### RGA driver
 
 驱动版本号分为主版本号、次版本号、修订版本号、编译版本号，四个等级版本号对应不同程度的功能更新，通常发布的SDK中HAL库与驱动是匹配的，librga内部会进行校验版本，开发者无需关心该版本。当出现单独更新librga时出现以下报错，则须要更新驱动至对应版本即可。
 
+- 版本号查询
 
+  不同芯片平台debug节点开启路径不同，通常有以下两个路径。
+
+  ```
+  cat /sys/kernel/debug/rkrga/driver_version
+  cat /proc/rkrga/driver_version
+  ```
+
+  
 
 ## 日志获取与说明
 
@@ -493,7 +510,7 @@ index 02938b0..10a1dc4 100644
 
 **Q2.1：**如何知道我当前的芯片平台搭载的RGA版本以及可以实现的功能？
 
-**A2.1：**可以查看源码目录下docs文件夹内的《RGA IM2D API 开发指南》中 “概述” 章节了解RGA的版本以及支持信息。
+**A2.1：**可以查看源码目录下docs文件夹内的《Rockchip_Developer_Guide_RGA_CN》中 “概述” 章节了解RGA的版本以及支持信息。
 
 ​			不同系统的源码路径会有所差异，librga源码目录路径在不同SDK的路径如下：
 
@@ -513,7 +530,7 @@ index 02938b0..10a1dc4 100644
 
 **Q2.2：**如何调用RGA实现硬件加速？可有demo可供参考？
 
-**A2.2：**1). API调用接口可以查询docs目录下《RGA IM2D API 开发指南》中 “应用接口说明” 章节。
+**A2.2：**1). API调用接口可以查询docs目录下《Rockchip_Developer_Guide_RGA_CN》中 “应用接口说明” 章节。
 
 ​			2). 演示demo位于sample目录下rga_im2d_demo，该演示demo内部实现了RGA大部分的接口，通过命令配置实现对应的RGA功能，亦可作为一些场景下测试RGA是否正常的工具。建议初次了解RGA的开发者初期可以直接运行demo并查看结果，从而了解RGA的实际功能，再根据自己的需求在demo中修改参数实现对应功能，最终再尝试单独在自己的工程中调用RGA API。
 
@@ -523,17 +540,17 @@ index 02938b0..10a1dc4 100644
 
 ​			**Q2.3.1：**RGA支持哪些格式？
 
-​			**A2.3.1：**具体支持情况可以查看《RGA IM2D API 开发指南》中 “概述”——“图像格式支持”小节中查询对应的芯片版本搭载的RGA的格式支持情况，也可以在代码中调用**querystring(RGA_INPUT_FORMAT | RGA_OUTPUT_FORMAT);** 接口查询当前硬件的输入输出格式支持情况。
+​			**A2.3.1：**具体支持情况可以查看《Rockchip_Developer_Guide_RGA_CN》中 “概述”——“图像格式支持”小节中查询对应的芯片版本搭载的RGA的格式支持情况，也可以在代码中调用**querystring(RGA_INPUT_FORMAT | RGA_OUTPUT_FORMAT);** 接口查询当前硬件的输入输出格式支持情况。
 
 ​			**Q2.3.2：**RGA支持的缩放倍率是多少？
 
-​			**A2.3.2：**具体支持情况可以查看《RGA IM2D API 开发指南》中 “概述”——“设计指标”小节中查询对应的芯片版本搭载的RGA支持的缩放倍率，也可以在代码中调用**querystring(RGA_SCALE_LIMIT);** 接口查询当前硬件的支持的缩放倍率。
+​			**A2.3.2：**具体支持情况可以查看《Rockchip_Developer_Guide_RGA_CN》中 “概述”——“设计指标”小节中查询对应的芯片版本搭载的RGA支持的缩放倍率，也可以在代码中调用**querystring(RGA_SCALE_LIMIT);** 接口查询当前硬件的支持的缩放倍率。
 
 ​			**Q2.3.3：**RGA支持的最大分辨率是多少？
 
-​			**A2.3.3：**具体支持情况可以查看《RGA IM2D API 开发指南》中 “概述”——“设计指标”小节中查询对应的芯片版本搭载的RGA支持的最大输入输出分辨率，也可以在代码中调用**querystring(RGA_MAX_INPUT | RGA_MAX_OUTPUT);** 接口查询当前硬件的支持的最大输入输出分辨率。
+​			**A2.3.3：**具体支持情况可以查看《Rockchip_Developer_Guide_RGA_CN》中 “概述”——“设计指标”小节中查询对应的芯片版本搭载的RGA支持的最大输入输出分辨率，也可以在代码中调用**querystring(RGA_MAX_INPUT | RGA_MAX_OUTPUT);** 接口查询当前硬件的支持的最大输入输出分辨率。
 
-**A2.3：**总体来说，对于RGA的支持有疑问可以查看《RGA IM2D API 开发指南》，其中对于RGA的支持信息会有较详细的介绍。
+**A2.3：**总体来说，对于RGA的支持有疑问可以查看《Rockchip_Developer_Guide_RGA_CN》，其中对于RGA的支持信息会有较详细的介绍。
 
 
 
@@ -543,7 +560,7 @@ index 02938b0..10a1dc4 100644
 
 ​			旧版本librga目前已经停止支持与维护，主要的表征点为2020年11月前发布的SDK中，搭载的均为旧版本librga，部分芯片平台例如RK3399 Linux SDK 2021年6月前发布的SDK（V2.5即以下）亦为旧版本librga，该版本librga无法完美契合较新的驱动，可能会出现颜色偏差、格式异常等问题，不建议混合使用，如果有需要使用到较新内核时建议更新新版本librga，反之使用到新版本librga亦然，需要更新内核至匹配。
 
-​			新版本librga是目前主要支持与维护的版本，主要表征点为源码目录下增加 **im2d_api** 目录，该版本集成与旧版本librga，并推出简单易用的IM2D API，亦可称呼为IM2D版librga。新版本librga不仅支持新的IM2D API，旧版本的RockchipRga接口和C_XXX接口也是支持的。具体的API调用说明可以查看《RGA IM2D API 开发指南》了解。该版本新增了软件管理版本号可通过 **querystring(RGA_VERSION);** 接口查询。
+​			新版本librga是目前主要支持与维护的版本，主要表征点为源码目录下增加 **im2d_api** 目录，该版本集成与旧版本librga，并推出简单易用的IM2D API，亦可称呼为IM2D版librga。新版本librga不仅支持新的IM2D API，旧版本的RockchipRga接口和C_XXX接口也是支持的。具体的API调用说明可以查看《Rockchip_Developer_Guide_RGA_CN》了解。该版本新增了软件管理版本号可通过 **querystring(RGA_VERSION);** 接口查询。
 
 ​			通常对于一些新旧版本librga功能支持情况一般优先建议更新整体SDK避免出现依赖问题，强烈不建议新版本librga搭配旧驱动或者旧版本librga搭配新内核使用，部分场景会有较明显的错误。
 
@@ -551,7 +568,7 @@ index 02938b0..10a1dc4 100644
 
 **Q2.5：**RGA是否有对齐限制？
 
-**A2.5：**不同的格式对齐要求不同，RGA硬件本身是对图像每行的数据是按照字（world）对齐的方式进行取数的，即4个字节32个bit。例如RGBA格式本身单个像素存储大小为32（4 × 8）bit，所以没有对齐要求；RGB565格式存储大小为16（5 + 6 +5）bit，所以需要2对齐；RGB888格式存储大小为24（8 × 3）bit，所以该格式需要4对齐才能满足RGA硬件的32bit取数要求；YUV格式存储相对较为特殊，本身排列要求需要2对齐，Y通道单像素存储大小为8bit，UV通道根据420/422决定每四个像素的存储大小，所以YUV格式Y通道需要4对齐才能满足RGA的硬件取数要求，则YUV格式需要4对齐；其他的未提及的格式对齐要求原理相通。注意，该题中对齐均指width stride的对齐要求，YUV格式本身实际宽高、偏移量由于格式本身特性也是要求2对齐的。具体对齐限制可以查看《RGA IM2D API 开发指南》中 “概述” —— “图像格式对齐说明”小节。
+**A2.5：**不同的格式对齐要求不同，RGA硬件本身是对图像每行的数据是按照字（world）对齐的方式进行取数的，即4个字节32个bit。例如RGBA格式本身单个像素存储大小为32（4 × 8）bit，所以没有对齐要求；RGB565格式存储大小为16（5 + 6 +5）bit，所以需要2对齐；RGB888格式存储大小为24（8 × 3）bit，所以该格式需要4对齐才能满足RGA硬件的32bit取数要求；YUV格式存储相对较为特殊，本身排列要求需要2对齐，Y通道单像素存储大小为8bit，UV通道根据420/422决定每四个像素的存储大小，所以YUV格式Y通道需要4对齐才能满足RGA的硬件取数要求，则YUV格式需要4对齐；其他的未提及的格式对齐要求原理相通。注意，该题中对齐均指width stride的对齐要求，YUV格式本身实际宽高、偏移量由于格式本身特性也是要求2对齐的。具体对齐限制可以查看《Rockchip_Developer_Guide_RGA_CN》中 “概述” —— “图像格式对齐说明”小节。
 
 
 
@@ -605,7 +622,7 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 **Q2.10：**为什么RK3399上ROP的代码放到RV1126上执行却没有对应的效果？
 
-**A2.10：**虽然RK3399和RV1126上搭载的RGA均为RGA2-ENHANCE，但是他们的小版本是不同的，ROP功能在RV1126上被裁剪掉了，具体功能支持情况可以查看《RGA IM2D API 开发指南》或者在代码中调用 **querystring(RGA_FEATURE);** 接口实现查询支持功能。
+**A2.10：**虽然RK3399和RV1126上搭载的RGA均为RGA2-ENHANCE，但是他们的小版本是不同的，ROP功能在RV1126上被裁剪掉了，具体功能支持情况可以查看《Rockchip_Developer_Guide_RGA_CN》或者在代码中调用 **querystring(RGA_FEATURE);** 接口实现查询支持功能。
 
 
 
@@ -633,7 +650,7 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 **A2.12：**如果输出结果为RGB格式，可以通过 **imblend()** 接口实现，通常选择src over模式，将src通道的图像叠加在dst通道的图像上；如果输出结果为YUV格式，可以通过 **imcomposite()** 接口实现，通常选择dst over‘模式，将src1通道的图像叠加在src通道的图像上，再输出到dst通道。
 
-​			该功能的叠加原理为 **Porter-Duff混合模型** ，详细可以查看《RGA IM2D API 开发指南》中 “应用接口说明” —— “图像合成” 小节。
+​			该功能的叠加原理为 **Porter-Duff混合模型** ，详细可以查看《Rockchip_Developer_Guide_RGA_CN》中 “应用接口说明” —— “图像合成” 小节。
 
 ​			RGA针对不同输出格式，需要不同的配置的原因是，RGA2拥有3个图像通道——src、src1/pat、dst。其中src通道支持YUV2RGB转换，src1/pat和dst通道只支持RGB2YUV转换，而RGA内部的叠加均需要在RGB格式下进行，所以为了保证RGB图像叠加在YUV图像上，必须src作为叠加的背景图像YUV，src1作为叠加的前景图像RGB，最终由dst通道将混合后的RGB图像转换为YUV格式输出。
 
@@ -653,7 +670,7 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 **A2.14：**两个版本的librga都是支持配置格式转换时的色域空间的。
 
-​			1). 新版本librga中，可以参考《RGA IM2D API 开发指南》中 “应用接口说明” —— “图像格式转换” 小节中介绍，重点配置mode参数即可。
+​			1). 新版本librga中，可以参考《Rockchip_Developer_Guide_RGA_CN》中 “应用接口说明” —— “图像格式转换” 小节中介绍，重点配置mode参数即可。
 
 ​			2). 旧版本librga中，需要修改librga源码，Normal/NormaRga.cpp中yuvToRgbMode的值，对应的参数如下：
 
@@ -690,13 +707,13 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 
 
-**A2.16：**我们正常配置的模式是默认颜色值已经预乘过对应的alpha值的结果，而直接读取的原始图片的颜色值并没有预乘过alpha值，所以需要在调用imblend时额外的增加标志位来标识本次处理中的图像颜色值没有需要预乘alpha值。具体调用方式可以查看《RGA IM2D API 开发指南》中 “应用接口说明” —— “图像合成“ 小节。
+**A2.16：**我们正常配置的模式是默认颜色值已经预乘过对应的alpha值的结果，而直接读取的原始图片的颜色值并没有预乘过alpha值，所以需要在调用imblend时额外的增加标志位来标识本次处理中的图像颜色值没有需要预乘alpha值。具体调用方式可以查看《Rockchip_Developer_Guide_RGA_CN》中 “应用接口说明” —— “图像合成“ 小节。
 
 
 
 **Q2.17：**IM2D API可以一次RGA调用实现多种功能么？
 
-**A2.17：**可以的，详细可以查看《RGA IM2D API 开发指南》中 “应用接口说明” —— “图像处理” 小节，并参考IM2D API其他接口的实现，了解 **improcess()** 的用法。
+**A2.17：**可以的，详细可以查看《Rockchip_Developer_Guide_RGA_CN》中 “应用接口说明” —— “图像处理” 小节，并参考IM2D API其他接口的实现，了解 **improcess()** 的用法。
 
 
 
