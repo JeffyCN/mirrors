@@ -11,3 +11,4 @@ build/
 build_linux/
 build_android_ndk/
 .DS_Store
+local_*
