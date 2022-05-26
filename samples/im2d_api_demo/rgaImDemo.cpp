@@ -154,6 +154,10 @@ int AHardwareBuffer_Fill(AHardwareBuffer** buffer, int flag, int index) {
     return 0;
 }
 
+void AHardwareBuffer_Deinit(AHardwareBuffer* buffer) {
+    AHardwareBuffer_release(buffer);
+}
+
 #endif
 #endif
 
@@ -688,6 +692,9 @@ int main(int argc, char*  argv[]) {
         output_buf_data_to_file(outbuf, dst.format, dst.wstride, dst.hstride, 0);
         ret = gbuffer->unlock();
     }
+
+    AHardwareBuffer_Deinit(src_buf);
+    AHardwareBuffer_Deinit(dst_buf);
 #else
     if (dst_buf != NULL) {
         ret = dst_buf->lock(GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN, (void**)&outbuf);
