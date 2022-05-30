@@ -1542,6 +1542,18 @@ IM_API IM_STATUS im_AddMosaicTask(im_job_id_t job_id, const rga_buffer_t image, 
     return im_AddProcessTask(job_id, image, image, tmp_image, rect, rect, tmp_rect, &opt, usage);
 }
 
+IM_API IM_STATUS im_AddMosaicTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, int color) {
+    IM_STATUS ret;
+
+    for (int i = 0; i < array_size; i++) {
+        ret = im_AddMosaicTask(job_id, dst, rect_array[i], color);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
+    }
+
+    return IM_STATUS_SUCCESS;
+}
+
 IM_API IM_STATUS im_AddFillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, int color) {
     int usage = 0;
     im_opt_t opt;
@@ -1559,6 +1571,18 @@ IM_API IM_STATUS im_AddFillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect re
     opt.color = color;
 
     return im_AddProcessTask(job_id, src, dst, pat, srect, rect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddrFillTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, int color) {
+    IM_STATUS ret;
+
+    for (int i = 0; i < array_size; i++) {
+        ret = im_AddFillTask(job_id, dst, rect_array[i], color);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
+    }
+
+    return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS im_AddPaletteTask(im_job_id_t job_id, rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut) {

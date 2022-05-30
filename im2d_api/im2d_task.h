@@ -337,6 +337,30 @@ IM_API IM_STATUS im_AddMosaicTask(im_job_id_t job_id,
                                   const rga_buffer_t image, im_rect rect, int mosaic_mode);
 
 /**
+ * Add mosaic task
+ *
+ * @param job_id
+ *      Insert the job number of the task.
+ * @param image
+ *      The output destination image.
+ * @param rect_array
+ *      The rectangle arrays on the source image that needs to be filled with color.
+ * @param array_size
+ *      The size of rectangular area arrays.
+ * @param mosaic_mode
+ *      mosaic block width configuration:
+ *          IM_MOSAIC_8
+ *          IM_MOSAIC_16
+ *          IM_MOSAIC_32
+ *          IM_MOSAIC_64
+ *          IM_MOSAIC_128
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS im_AddMosaicTaskArray(im_job_id_t job_id,
+                                       const rga_buffer_t image, im_rect *rect_array, int array_size, int mosaic_mode);
+
+/**
  * Add color fill task
  *
  * @param job_id
@@ -353,6 +377,26 @@ IM_API IM_STATUS im_AddMosaicTask(im_job_id_t job_id,
  * @returns success or else negative error code.
  */
 IM_API IM_STATUS im_AddFillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, int color);
+
+/**
+ * Add color fill task array
+ *
+ * @param job_id
+ *      Insert the job number of the task.
+ * @param src
+ *      The input source image.
+ * @param dst
+ *      The output destination image.
+ * @param rect_array
+ *      The rectangle arrays on the source image that needs to be filled with color.
+ * @param array_size
+ *      The size of rectangular area arrays.
+ * @param color
+ *      The fill color value.
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS im_AddrFillTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, int color);
 
 /**
  * Add palette task
