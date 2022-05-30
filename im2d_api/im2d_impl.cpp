@@ -1604,7 +1604,7 @@ IM_STATUS rga_task_submit(im_job_id_t job_id, rga_buffer_t src, rga_buffer_t dst
     return rga_task_submit(job_id, src, dst, pat, srect, drect, prect, 0, NULL, opt_ptr, usage);
 }
 
-im_job_id_t rga_job_creat(uint32_t flags) {
+im_job_id_t rga_job_create(uint32_t flags) {
     int ret;
     im_job_id_t job_id;
     im_rga_job_t *job = NULL;

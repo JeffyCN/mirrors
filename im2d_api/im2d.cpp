@@ -1276,7 +1276,7 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
 /* Start task api */
 IM_API im_job_id_t im_BeginJob(uint64_t flags) {
-    return rga_job_creat(flags);
+    return rga_job_create(flags);
 }
 
 IM_API IM_STATUS im_CancelJob(im_job_id_t id) {
@@ -1593,7 +1593,7 @@ IM_API IM_STATUS im_AddProcessTask(im_job_id_t job_id,
 
 /* for rockit-ko */
 im_ctx_id_t imbegin(uint32_t flags) {
-    return rga_job_creat(flags);
+    return rga_job_create(flags);
 }
 
 IM_STATUS imcancel(im_ctx_id_t id) {
