@@ -209,7 +209,7 @@ IM_API IM_STATUS imfill(rga_buffer_t dst, im_rect rect, int color, int sync = 1,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS imfill_array(rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int sync = 1, int *release_fence_fd = NULL);
+IM_API IM_STATUS imfillArray(rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int sync = 1, int *release_fence_fd = NULL);
 
 /**
  * fill rectangle
@@ -251,7 +251,7 @@ IM_API IM_STATUS imrectangle(rga_buffer_t dst, im_rect rect,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS imrectangle_array(rga_buffer_t dst, im_rect *rect_array, int array_size,
+IM_API IM_STATUS imrectangleArray(rga_buffer_t dst, im_rect *rect_array, int array_size,
                                    uint32_t color, int thickness,
                                    int sync = 1, int *release_fence_fd = NULL);
 
@@ -302,7 +302,7 @@ IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mod
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS immosaic_array(const rga_buffer_t image, im_rect *rect_array, int array_size, int mosaic_mode, int sync = 1, int *release_fence_fd = NULL);
+IM_API IM_STATUS immosaicArray(const rga_buffer_t image, im_rect *rect_array, int array_size, int mosaic_mode, int sync = 1, int *release_fence_fd = NULL);
 
 /**
  * OSD

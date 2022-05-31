@@ -1192,7 +1192,7 @@ IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mod
     return improcess(image, image, tmp_image, rect, rect, tmp_rect, -1, release_fence_fd, &opt, usage);
 }
 
-IM_STATUS immosaic_array(rga_buffer_t dst, im_rect *rect_array, int array_size, int mosaic_mode, int sync, int *release_fence_fd) {
+IM_STATUS immosaicArray(rga_buffer_t dst, im_rect *rect_array, int array_size, int mosaic_mode, int sync, int *release_fence_fd) {
     IM_STATUS ret;
     int tmp_fence_fd = -1;
 
@@ -1276,7 +1276,7 @@ IM_API IM_STATUS imfill(rga_buffer_t dst, im_rect rect, int color, int sync, int
     return ret;
 }
 
-IM_STATUS imfill_array(rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int sync, int *release_fence_fd) {
+IM_STATUS imfillArray(rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int sync, int *release_fence_fd) {
     IM_STATUS ret;
     int tmp_fence_fd = -1;
 
@@ -1313,10 +1313,10 @@ IM_STATUS imrectangle(rga_buffer_t dst, im_rect rect, uint32_t color, int thickn
     fill_rect[2] = {rect.x, rect.y + thickness, thickness, v_length};
     fill_rect[3] = {rect.x + (rect.width - thickness), rect.y + thickness, thickness, v_length};
 
-    return imfill_array(dst, fill_rect, 4, color, sync, release_fence_fd);
+    return imfillArray(dst, fill_rect, 4, color, sync, release_fence_fd);
 }
 
-IM_STATUS imrectangle_array(rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int thickness, int sync, int *release_fence_fd) {
+IM_STATUS imrectangleArray(rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int thickness, int sync, int *release_fence_fd) {
     IM_STATUS ret;
     int tmp_fence_fd = -1;
 
@@ -1630,7 +1630,7 @@ IM_API IM_STATUS immosaicTask(im_job_id_t job_id, const rga_buffer_t image, im_r
     return improcessTask(job_id, image, image, tmp_image, rect, rect, tmp_rect, &opt, usage);
 }
 
-IM_API IM_STATUS immosaicTask_array(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, int color) {
+IM_API IM_STATUS immosaicTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, int color) {
     IM_STATUS ret;
 
     for (int i = 0; i < array_size; i++) {
@@ -1661,7 +1661,7 @@ IM_API IM_STATUS imfillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, 
     return improcessTask(job_id, src, dst, pat, srect, rect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS imfillTask_array(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color) {
+IM_API IM_STATUS imfillTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color) {
     IM_STATUS ret;
 
     for (int i = 0; i < array_size; i++) {
@@ -1686,10 +1686,10 @@ IM_STATUS imrectangleTask(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, ui
     fill_rect[2] = {rect.x, rect.y + thickness, thickness, v_length};
     fill_rect[3] = {rect.x + (rect.width - thickness), rect.y + thickness, thickness, v_length};
 
-    return imfillTask_array(job_id, dst, fill_rect, 4, color);
+    return imfillTaskArray(job_id, dst, fill_rect, 4, color);
 }
 
-IM_STATUS imrectangleTask_array(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int thickness) {
+IM_STATUS imrectangleTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int thickness) {
     IM_STATUS ret;
 
     for (int i = 0; i < array_size; i++) {

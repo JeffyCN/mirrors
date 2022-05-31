@@ -360,9 +360,9 @@ IM_API IM_STATUS immosaicTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS immosaicTask_array(im_job_id_t job_id,
-                                    const rga_buffer_t image,
-                                    im_rect *rect_array, int array_size, int mosaic_mode);
+IM_API IM_STATUS immosaicTaskArray(im_job_id_t job_id,
+                                   const rga_buffer_t image,
+                                   im_rect *rect_array, int array_size, int mosaic_mode);
 
 /**
  * Add color fill task
@@ -400,9 +400,9 @@ IM_API IM_STATUS imfillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, 
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS imfillTask_array(im_job_id_t job_id,
-                                  rga_buffer_t dst,
-                                  im_rect *rect_array, int array_size, uint32_t color);
+IM_API IM_STATUS imfillTaskArray(im_job_id_t job_id,
+                                 rga_buffer_t dst,
+                                 im_rect *rect_array, int array_size, uint32_t color);
 
 /**
  * Add fill rectangle task
@@ -445,10 +445,10 @@ IM_API IM_STATUS imrectangleTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS imrectangleTask(im_job_id_t job_id,
-                                 rga_buffer_t dst,
-                                 im_rect *rect_array, int array_size,
-                                 uint32_t color, int thickness);
+IM_API IM_STATUS imrectangleTaskArray(im_job_id_t job_id,
+                                      rga_buffer_t dst,
+                                      im_rect *rect_array, int array_size,
+                                      uint32_t color, int thickness);
 
 /**
  * Add palette task
