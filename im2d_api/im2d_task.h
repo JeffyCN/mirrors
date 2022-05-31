@@ -30,7 +30,7 @@
  *
  * @returns job id.
  */
-IM_API im_job_id_t im_BeginJob(uint64_t flags = 0);
+IM_API im_job_id_t imbeginJob(uint64_t flags = 0);
 
 /**
  * Submit and run an rga job
@@ -46,7 +46,9 @@ IM_API im_job_id_t im_BeginJob(uint64_t flags = 0);
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_EndJob(im_job_id_t job_id, int sync_mode = IM_SYNC, int acquire_fence_fd = 0, int *release_fence_fd = NULL);
+IM_API IM_STATUS imendJob(im_job_id_t job_id,
+                          int sync_mode = IM_SYNC,
+                          int acquire_fence_fd = 0, int *release_fence_fd = NULL);
 
 /**
  * Cancel and delete an rga job
@@ -56,7 +58,7 @@ IM_API IM_STATUS im_EndJob(im_job_id_t job_id, int sync_mode = IM_SYNC, int acqu
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_CancelJob(im_job_id_t job_id);
+IM_API IM_STATUS imcancelJob(im_job_id_t job_id);
 
 /**
  * Add copy task
@@ -70,7 +72,7 @@ IM_API IM_STATUS im_CancelJob(im_job_id_t job_id);
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddCopyTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst);
+IM_API IM_STATUS imcopyTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst);
 
 /**
  * Add resize task
@@ -90,10 +92,10 @@ IM_API IM_STATUS im_AddCopyTask(im_job_id_t job_id, const rga_buffer_t src, rga_
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddResizeTask(im_job_id_t job_id,
-                                  const rga_buffer_t src, rga_buffer_t dst,
-                                  double fx = 0, double fy = 0,
-                                  int interpolation = 0);
+IM_API IM_STATUS imresizeTask(im_job_id_t job_id,
+                              const rga_buffer_t src, rga_buffer_t dst,
+                              double fx = 0, double fy = 0,
+                              int interpolation = 0);
 
 /**
  * Add crop task
@@ -109,7 +111,8 @@ IM_API IM_STATUS im_AddResizeTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddCropTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, im_rect rect);
+IM_API IM_STATUS imcropTask(im_job_id_t job_id,
+                            const rga_buffer_t src, rga_buffer_t dst, im_rect rect);
 
 /**
  * Add format convert task
@@ -135,9 +138,9 @@ IM_API IM_STATUS im_AddCropTask(im_job_id_t job_id, const rga_buffer_t src, rga_
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddCvtColorTask(im_job_id_t job_id,
-                                    rga_buffer_t src, rga_buffer_t dst,
-                                    int sfmt, int dfmt, int mode = IM_COLOR_SPACE_DEFAULT);
+IM_API IM_STATUS imcvtcolorTask(im_job_id_t job_id,
+                                rga_buffer_t src, rga_buffer_t dst,
+                                int sfmt, int dfmt, int mode = IM_COLOR_SPACE_DEFAULT);
 
 /**
  * Add translate task
@@ -155,8 +158,8 @@ IM_API IM_STATUS im_AddCvtColorTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddTranslateTask(im_job_id_t job_id,
-                                     const rga_buffer_t src, rga_buffer_t dst, int x, int y);
+IM_API IM_STATUS imtranslateTask(im_job_id_t job_id,
+                                 const rga_buffer_t src, rga_buffer_t dst, int x, int y);
 
 /**
  * Add rotation task
@@ -174,8 +177,8 @@ IM_API IM_STATUS im_AddTranslateTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddRotateTask(im_job_id_t job_id,
-                                  const rga_buffer_t src, rga_buffer_t dst, int rotation);
+IM_API IM_STATUS imrotateTask(im_job_id_t job_id,
+                              const rga_buffer_t src, rga_buffer_t dst, int rotation);
 
 /**
  * Add flip task
@@ -192,8 +195,8 @@ IM_API IM_STATUS im_AddRotateTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddFlipTask(im_job_id_t job_id,
-                                const rga_buffer_t src, rga_buffer_t dst, int mode);
+IM_API IM_STATUS imflipTask(im_job_id_t job_id,
+                            const rga_buffer_t src, rga_buffer_t dst, int mode);
 
 /**
  * Add blend(SRC + DST -> DST) task
@@ -213,9 +216,9 @@ IM_API IM_STATUS im_AddFlipTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddBlendTask(im_job_id_t job_id,
-                                 const rga_buffer_t fg_image, rga_buffer_t bg_image,
-                                 int mode = IM_ALPHA_BLEND_SRC_OVER);
+IM_API IM_STATUS imblendTask(im_job_id_t job_id,
+                             const rga_buffer_t fg_image, rga_buffer_t bg_image,
+                             int mode = IM_ALPHA_BLEND_SRC_OVER);
 
 /**
  * Add composite(SRCA + SRCB -> DST) task
@@ -237,10 +240,10 @@ IM_API IM_STATUS im_AddBlendTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddCompositeTask(im_job_id_t job_id,
-                                     const rga_buffer_t fg_image, const rga_buffer_t bg_image,
-                                     rga_buffer_t output_image,
-                                     int mode = IM_ALPHA_BLEND_SRC_OVER);
+IM_API IM_STATUS imcompositeTask(im_job_id_t job_id,
+                                 const rga_buffer_t fg_image, const rga_buffer_t bg_image,
+                                 rga_buffer_t output_image,
+                                 int mode = IM_ALPHA_BLEND_SRC_OVER);
 
 /**
  * Add color key task
@@ -256,9 +259,9 @@ IM_API IM_STATUS im_AddCompositeTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddColorKeyTask(im_job_id_t job_id,
-                                    const rga_buffer_t fg_image, rga_buffer_t bg_image,
-                                    im_colorkey_range range, int mode = IM_ALPHA_COLORKEY_NORMAL);
+IM_API IM_STATUS imcolorkeyTask(im_job_id_t job_id,
+                                const rga_buffer_t fg_image, rga_buffer_t bg_image,
+                                im_colorkey_range range, int mode = IM_ALPHA_COLORKEY_NORMAL);
 
 /**
  * Add OSD task
@@ -276,9 +279,9 @@ IM_API IM_STATUS im_AddColorKeyTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddOsdTask(im_job_id_t job_id,
-                               const rga_buffer_t osd,const rga_buffer_t bg_image,
-                               const im_rect osd_rect, im_osd_t *osd_config);
+IM_API IM_STATUS imosdTask(im_job_id_t job_id,
+                           const rga_buffer_t osd,const rga_buffer_t bg_image,
+                           const im_rect osd_rect, im_osd_t *osd_config);
 
 /**
  * Add nn quantize task
@@ -294,8 +297,8 @@ IM_API IM_STATUS im_AddOsdTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddQuantizeTask(im_job_id_t job_id,
-                                    const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info);
+IM_API IM_STATUS imquantizeTask(im_job_id_t job_id,
+                                const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info);
 
 /**
  * Add ROP task
@@ -311,8 +314,8 @@ IM_API IM_STATUS im_AddQuantizeTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddRopTask(im_job_id_t job_id,
-                               const rga_buffer_t src, rga_buffer_t dst, int rop_code);
+IM_API IM_STATUS imropTask(im_job_id_t job_id,
+                           const rga_buffer_t src, rga_buffer_t dst, int rop_code);
 
 /**
  * Add mosaic task
@@ -333,8 +336,8 @@ IM_API IM_STATUS im_AddRopTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddMosaicTask(im_job_id_t job_id,
-                                  const rga_buffer_t image, im_rect rect, int mosaic_mode);
+IM_API IM_STATUS immosaicTask(im_job_id_t job_id,
+                              const rga_buffer_t image, im_rect rect, int mosaic_mode);
 
 /**
  * Add mosaic task
@@ -357,8 +360,9 @@ IM_API IM_STATUS im_AddMosaicTask(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddMosaicTaskArray(im_job_id_t job_id,
-                                       const rga_buffer_t image, im_rect *rect_array, int array_size, int mosaic_mode);
+IM_API IM_STATUS immosaicTask_array(im_job_id_t job_id,
+                                    const rga_buffer_t image,
+                                    im_rect *rect_array, int array_size, int mosaic_mode);
 
 /**
  * Add color fill task
@@ -376,7 +380,7 @@ IM_API IM_STATUS im_AddMosaicTaskArray(im_job_id_t job_id,
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddFillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, int color);
+IM_API IM_STATUS imfillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, uint32_t color);
 
 /**
  * Add color fill task array
@@ -396,7 +400,9 @@ IM_API IM_STATUS im_AddFillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect re
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddrFillTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, int color);
+IM_API IM_STATUS imfillTask_array(im_job_id_t job_id,
+                                  rga_buffer_t dst,
+                                  im_rect *rect_array, int array_size, uint32_t color);
 
 /**
  * Add palette task
@@ -412,7 +418,8 @@ IM_API IM_STATUS im_AddrFillTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_r
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddPaletteTask(im_job_id_t job_id, rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut);
+IM_API IM_STATUS impaletteTask(im_job_id_t job_id,
+                               rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut);
 
 /**
  * Add process task
@@ -438,10 +445,10 @@ IM_API IM_STATUS im_AddPaletteTask(im_job_id_t job_id, rga_buffer_t src, rga_buf
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS im_AddProcessTask(im_job_id_t job_id,
-                                   rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
-                                   im_rect srect, im_rect drect, im_rect prect,
-                                   im_opt_t *opt_ptr, int usage);
+IM_API IM_STATUS improcessTask(im_job_id_t job_id,
+                               rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                               im_rect srect, im_rect drect, im_rect prect,
+                               im_opt_t *opt_ptr, int usage);
 #endif
 
 #endif /* #ifndef _im2d_task_h_ */

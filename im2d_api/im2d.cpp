@@ -1275,19 +1275,19 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 /* End single task api */
 
 /* Start task api */
-IM_API im_job_id_t im_BeginJob(uint64_t flags) {
+IM_API im_job_id_t imbeginJob(uint64_t flags) {
     return rga_job_create(flags);
 }
 
-IM_API IM_STATUS im_CancelJob(im_job_id_t id) {
+IM_API IM_STATUS imcancelJob(im_job_id_t id) {
     return rga_job_cancel(id);
 }
 
-IM_API IM_STATUS im_EndJob(im_job_id_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
+IM_API IM_STATUS imendJob(im_job_id_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
     return rga_job_submit(job_id, sync_mode, acquire_fence_fd, release_fence_fd);
 }
 
-IM_API IM_STATUS im_AddCopyTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst) {
+IM_API IM_STATUS imcopyTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1303,10 +1303,10 @@ IM_API IM_STATUS im_AddCopyTask(im_job_id_t job_id, const rga_buffer_t src, rga_
         return IM_STATUS_INVALID_PARAM;
     }
 
-    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddResizeTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation) {
+IM_API IM_STATUS imresizeTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation) {
     int usage = 0;
     int width = 0, height = 0;
     IM_STATUS ret = IM_STATUS_NOERROR;
@@ -1340,10 +1340,10 @@ IM_API IM_STATUS im_AddResizeTask(im_job_id_t job_id, const rga_buffer_t src, rg
     }
     UNUSED(interpolation);
 
-    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddCropTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, im_rect rect) {
+IM_API IM_STATUS imcropTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, im_rect rect) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1355,10 +1355,10 @@ IM_API IM_STATUS im_AddCropTask(im_job_id_t job_id, const rga_buffer_t src, rga_
     drect.width = rect.width;
     drect.height = rect.height;
 
-    return im_AddProcessTask(job_id, src, dst, pat, rect, drect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, pat, rect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddCvtColorTask(im_job_id_t job_id, rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode) {
+IM_API IM_STATUS imcvtcolorTask(im_job_id_t job_id, rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1373,10 +1373,10 @@ IM_API IM_STATUS im_AddCvtColorTask(im_job_id_t job_id, rga_buffer_t src, rga_bu
 
     dst.color_space_mode = mode;
 
-    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddTranslateTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int x, int y) {
+IM_API IM_STATUS imtranslateTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int x, int y) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1399,10 +1399,10 @@ IM_API IM_STATUS im_AddTranslateTask(im_job_id_t job_id, const rga_buffer_t src,
     drect.width = src.width - x;
     drect.height = src.height - y;
 
-    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddRotateTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int rotation) {
+IM_API IM_STATUS imrotateTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int rotation) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1415,10 +1415,10 @@ IM_API IM_STATUS im_AddRotateTask(im_job_id_t job_id, const rga_buffer_t src, rg
 
     usage |= rotation;
 
-    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddFlipTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int mode) {
+IM_API IM_STATUS imflipTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int mode) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1430,10 +1430,10 @@ IM_API IM_STATUS im_AddFlipTask(im_job_id_t job_id, const rga_buffer_t src, rga_
 
     usage |= mode;
 
-    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddCompositeTask(im_job_id_t job_id, const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode) {
+IM_API IM_STATUS imcompositeTask(im_job_id_t job_id, const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode) {
     int usage = 0;
     im_opt_t opt;
     im_rect srect;
@@ -1444,18 +1444,18 @@ IM_API IM_STATUS im_AddCompositeTask(im_job_id_t job_id, const rga_buffer_t srcA
 
     usage |= mode;
 
-    return im_AddProcessTask(job_id, srcA, dst, srcB, srect, drect, prect, &opt, usage);
+    return improcessTask(job_id, srcA, dst, srcB, srect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddBlendTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int mode) {
+IM_API IM_STATUS imblendTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int mode) {
     rga_buffer_t pat;
 
     memset(&pat, 0x0, sizeof(pat));
 
-    return im_AddCompositeTask(job_id, src, pat, dst, mode);
+    return imcompositeTask(job_id, src, pat, dst, mode);
 }
 
-IM_API IM_STATUS im_AddColorKeyTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode) {
+IM_API IM_STATUS imcolorkeyTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1469,12 +1469,12 @@ IM_API IM_STATUS im_AddColorKeyTask(im_job_id_t job_id, const rga_buffer_t src, 
 
     opt.colorkey_range = range;
 
-    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddOsdTask(im_job_id_t job_id,
-                               const rga_buffer_t osd,const rga_buffer_t bg_image,
-                               const im_rect osd_rect, im_osd_t *osd_config) {
+IM_API IM_STATUS imosdTask(im_job_id_t job_id,
+                           const rga_buffer_t osd,const rga_buffer_t bg_image,
+                           const im_rect osd_rect, im_osd_t *osd_config) {
     int usage = 0;
     im_opt_t opt;
     im_rect tmp_rect;
@@ -1487,10 +1487,10 @@ IM_API IM_STATUS im_AddOsdTask(im_job_id_t job_id,
 
     usage |= IM_ALPHA_BLEND_DST_OVER | IM_OSD;
 
-    return im_AddProcessTask(job_id, bg_image, bg_image, osd, osd_rect, osd_rect, tmp_rect, &opt, usage);
+    return improcessTask(job_id, bg_image, bg_image, osd, osd_rect, osd_rect, tmp_rect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddQuantizeTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info) {
+IM_API IM_STATUS imquantizeTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1504,10 +1504,10 @@ IM_API IM_STATUS im_AddQuantizeTask(im_job_id_t job_id, const rga_buffer_t src, 
 
     opt.nn = nn_info;
 
-    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddRopTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int rop_code) {
+IM_API IM_STATUS imropTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int rop_code) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1521,10 +1521,10 @@ IM_API IM_STATUS im_AddRopTask(im_job_id_t job_id, const rga_buffer_t src, rga_b
 
     opt.rop_code = rop_code;
 
-    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddMosaicTask(im_job_id_t job_id, const rga_buffer_t image, im_rect rect, int mosaic_mode) {
+IM_API IM_STATUS immosaicTask(im_job_id_t job_id, const rga_buffer_t image, im_rect rect, int mosaic_mode) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t tmp_image;
@@ -1539,14 +1539,14 @@ IM_API IM_STATUS im_AddMosaicTask(im_job_id_t job_id, const rga_buffer_t image, 
     opt.version = RGA_SET_CURRENT_API_VERISON;
     opt.mosaic_mode = mosaic_mode;
 
-    return im_AddProcessTask(job_id, image, image, tmp_image, rect, rect, tmp_rect, &opt, usage);
+    return improcessTask(job_id, image, image, tmp_image, rect, rect, tmp_rect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddMosaicTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, int color) {
+IM_API IM_STATUS immosaicTask_array(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, int color) {
     IM_STATUS ret;
 
     for (int i = 0; i < array_size; i++) {
-        ret = im_AddMosaicTask(job_id, dst, rect_array[i], color);
+        ret = immosaicTask(job_id, dst, rect_array[i], color);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
     }
@@ -1554,7 +1554,7 @@ IM_API IM_STATUS im_AddMosaicTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS im_AddFillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, int color) {
+IM_API IM_STATUS imfillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, uint32_t color) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1570,14 +1570,14 @@ IM_API IM_STATUS im_AddFillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect re
 
     opt.color = color;
 
-    return im_AddProcessTask(job_id, src, dst, pat, srect, rect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, pat, srect, rect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddrFillTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, int color) {
+IM_API IM_STATUS imfillTask_array(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color) {
     IM_STATUS ret;
 
     for (int i = 0; i < array_size; i++) {
-        ret = im_AddFillTask(job_id, dst, rect_array[i], color);
+        ret = imfillTask(job_id, dst, rect_array[i], color);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
     }
@@ -1585,7 +1585,7 @@ IM_API IM_STATUS im_AddrFillTaskArray(im_job_id_t job_id, rga_buffer_t dst, im_r
     return IM_STATUS_SUCCESS;
 }
 
-IM_API IM_STATUS im_AddPaletteTask(im_job_id_t job_id, rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut) {
+IM_API IM_STATUS impaletteTask(im_job_id_t job_id, rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut) {
     int usage = 0;
     im_rect srect;
     im_rect drect;
@@ -1604,13 +1604,13 @@ IM_API IM_STATUS im_AddPaletteTask(im_job_id_t job_id, rga_buffer_t src, rga_buf
 
     usage |= IM_COLOR_PALETTE;
 
-    return im_AddProcessTask(job_id, src, dst, lut, srect, drect, prect, &opt, usage);
+    return improcessTask(job_id, src, dst, lut, srect, drect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS im_AddProcessTask(im_job_id_t job_id,
-                                   rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
-                                   im_rect srect, im_rect drect, im_rect prect,
-                                   im_opt_t *opt_ptr, int usage) {
+IM_API IM_STATUS improcessTask(im_job_id_t job_id,
+                               rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                               im_rect srect, im_rect drect, im_rect prect,
+                               im_opt_t *opt_ptr, int usage) {
     return rga_task_submit(job_id, src, dst, pat, srect, drect, prect, opt_ptr, usage);
 }
 /* End task api */
