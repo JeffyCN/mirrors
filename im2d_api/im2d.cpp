@@ -1300,6 +1300,46 @@ IM_STATUS imfill_array(rga_buffer_t dst, im_rect *rect_array, int array_size, ui
     return IM_STATUS_SUCCESS;
 }
 
+IM_STATUS imrectangle(rga_buffer_t dst, im_rect rect, uint32_t color, int thickness, int sync, int *release_fence_fd) {
+    if (thickness < 0)
+        return imfill(dst, rect, color, sync, release_fence_fd);
+
+    int h_length = rect.width;
+    int v_length = rect.height - 2 * thickness;
+    im_rect fill_rect[4] = {};
+
+    fill_rect[0] = {rect.x, rect.y, h_length, thickness};
+    fill_rect[1] = {rect.x, rect.y + (rect.height - thickness), h_length, thickness};
+    fill_rect[2] = {rect.x, rect.y + thickness, thickness, v_length};
+    fill_rect[3] = {rect.x + (rect.width - thickness), rect.y + thickness, thickness, v_length};
+
+    return imfill_array(dst, fill_rect, 4, color, sync, release_fence_fd);
+}
+
+IM_STATUS imrectangle_array(rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int thickness, int sync, int *release_fence_fd) {
+    IM_STATUS ret;
+    int tmp_fence_fd = -1;
+
+    for (int i = 0; i < array_size; i++) {
+        ret = imrectangle(dst, rect_array[i], color, thickness, sync, release_fence_fd);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
+
+        if (sync == 0 && release_fence_fd) {
+            if (*release_fence_fd >= 0 && tmp_fence_fd >= 0) {
+                tmp_fence_fd = rga_sync_merge("rectangle_array", tmp_fence_fd, *release_fence_fd);
+            } else if (*release_fence_fd >= 0) {
+                tmp_fence_fd = *release_fence_fd;
+            }
+        }
+    }
+
+    if (release_fence_fd)
+        *release_fence_fd = tmp_fence_fd;
+
+    return IM_STATUS_SUCCESS;
+}
+
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                         im_rect srect, im_rect drect, im_rect prect, int usage) {
     IM_STATUS ret = IM_STATUS_NOERROR;
@@ -1626,6 +1666,34 @@ IM_API IM_STATUS imfillTask_array(im_job_id_t job_id, rga_buffer_t dst, im_rect 
 
     for (int i = 0; i < array_size; i++) {
         ret = imfillTask(job_id, dst, rect_array[i], color);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
+    }
+
+    return IM_STATUS_SUCCESS;
+}
+
+IM_STATUS imrectangleTask(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, uint32_t color, int thickness) {
+    if (thickness < 0)
+        return imfillTask(job_id, dst, rect, color);
+
+    int h_length = rect.width;
+    int v_length = rect.height - 2 * thickness;
+    im_rect fill_rect[4] = {};
+
+    fill_rect[0] = {rect.x, rect.y, h_length, thickness};
+    fill_rect[1] = {rect.x, rect.y + (rect.height - thickness), h_length, thickness};
+    fill_rect[2] = {rect.x, rect.y + thickness, thickness, v_length};
+    fill_rect[3] = {rect.x + (rect.width - thickness), rect.y + thickness, thickness, v_length};
+
+    return imfillTask_array(job_id, dst, fill_rect, 4, color);
+}
+
+IM_STATUS imrectangleTask_array(im_job_id_t job_id, rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int thickness) {
+    IM_STATUS ret;
+
+    for (int i = 0; i < array_size; i++) {
+        ret = imrectangleTask(job_id, dst, rect_array[i], color, thickness);
         if (ret != IM_STATUS_SUCCESS)
             return ret;
     }

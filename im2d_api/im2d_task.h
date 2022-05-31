@@ -405,6 +405,52 @@ IM_API IM_STATUS imfillTask_array(im_job_id_t job_id,
                                   im_rect *rect_array, int array_size, uint32_t color);
 
 /**
+ * Add fill rectangle task
+ *
+ * @param job_id
+ *      Insert the job number of the task.
+ * @param dst
+ *      The output destination image.
+ * @param rect
+ *      The rectangle on the source image that needs to be filled with color.
+ * @param color
+ *      The fill color value.
+ * @param thickness
+ *      Thickness of lines that make up the rectangle. Negative values, like -1,
+ *      mean that the function has to draw a filled rectangle.
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS imrectangleTask(im_job_id_t job_id,
+                                 rga_buffer_t dst,
+                                 im_rect rect,
+                                 uint32_t color, int thickness);
+
+/**
+ * Add fill rectangle task array
+ *
+ * @param job_id
+ *      Insert the job number of the task.
+ * @param dst
+ *      The output destination image.
+ * @param rect_array
+ *      The rectangle arrays on the source image that needs to be filled with color.
+ * @param array_size
+ *      The size of rectangular area arrays.
+ * @param color
+ *      The fill color value.
+ * @param thickness
+ *      Thickness of lines that make up the rectangle. Negative values, like -1,
+ *      mean that the function has to draw a filled rectangle.
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS imrectangleTask(im_job_id_t job_id,
+                                 rga_buffer_t dst,
+                                 im_rect *rect_array, int array_size,
+                                 uint32_t color, int thickness);
+
+/**
  * Add palette task
  *
  * @param job_id

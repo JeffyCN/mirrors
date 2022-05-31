@@ -212,6 +212,50 @@ IM_API IM_STATUS imfill(rga_buffer_t dst, im_rect rect, int color, int sync = 1,
 IM_API IM_STATUS imfill_array(rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int sync = 1, int *release_fence_fd = NULL);
 
 /**
+ * fill rectangle
+ *
+ * @param dst
+ *      The output destination image.
+ * @param rect
+ *      The rectangle on the source image that needs to be filled with color.
+ * @param color
+ *      The fill color value.
+ * @param thickness
+ *      Thickness of lines that make up the rectangle. Negative values, like -1,
+ *      mean that the function has to draw a filled rectangle.
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS imrectangle(rga_buffer_t dst, im_rect rect,
+                             uint32_t color, int thickness,
+                             int sync = 1, int *release_fence_fd = NULL);
+
+/**
+ * fill rectangle array
+ *
+ * @param dst
+ *      The output destination image.
+ * @param rect_array
+ *      The rectangle arrays on the source image that needs to be filled with color.
+ * @param array_size
+ *      The size of rectangular area arrays.
+ * @param color
+ *      The fill color value.
+ * @param thickness
+ *      Thickness of lines that make up the rectangle. Negative values, like -1,
+ *      mean that the function has to draw a filled rectangle.
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS imrectangle_array(rga_buffer_t dst, im_rect *rect_array, int array_size,
+                                   uint32_t color, int thickness,
+                                   int sync = 1, int *release_fence_fd = NULL);
+
+/**
  * palette
  *
  * @param src
