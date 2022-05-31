@@ -1192,6 +1192,30 @@ IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mod
     return improcess(image, image, tmp_image, rect, rect, tmp_rect, -1, release_fence_fd, &opt, usage);
 }
 
+IM_STATUS immosaic_array(rga_buffer_t dst, im_rect *rect_array, int array_size, int mosaic_mode, int sync, int *release_fence_fd) {
+    IM_STATUS ret;
+    int tmp_fence_fd = -1;
+
+    for (int i = 0; i < array_size; i++) {
+        ret = immosaic(dst, rect_array[i], mosaic_mode, sync, release_fence_fd);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
+
+        if (sync == 0 && release_fence_fd) {
+            if (*release_fence_fd >= 0 && tmp_fence_fd >= 0) {
+                tmp_fence_fd = rga_sync_merge("mosaic_array", tmp_fence_fd, *release_fence_fd);
+            } else if (*release_fence_fd >= 0) {
+                tmp_fence_fd = *release_fence_fd;
+            }
+        }
+    }
+
+    if (release_fence_fd)
+        *release_fence_fd = tmp_fence_fd;
+
+    return IM_STATUS_SUCCESS;
+}
+
 IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut, int sync, int *release_fence_fd) {
     int usage = 0;
     IM_STATUS ret = IM_STATUS_NOERROR;
@@ -1250,6 +1274,30 @@ IM_API IM_STATUS imfill(rga_buffer_t dst, im_rect rect, int color, int sync, int
     ret = improcess(src, dst, pat, srect, rect, prect, -1, release_fence_fd, &opt, usage);
 
     return ret;
+}
+
+IM_STATUS imfill_array(rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int sync, int *release_fence_fd) {
+    IM_STATUS ret;
+    int tmp_fence_fd = -1;
+
+    for (int i = 0; i < array_size; i++) {
+        ret = imfill(dst, rect_array[i], color, sync, release_fence_fd);
+        if (ret != IM_STATUS_SUCCESS)
+            return ret;
+
+        if (sync == 0 && release_fence_fd) {
+            if (*release_fence_fd >= 0 && tmp_fence_fd >= 0) {
+                tmp_fence_fd = rga_sync_merge("fill_array", tmp_fence_fd, *release_fence_fd);
+            } else if (*release_fence_fd >= 0) {
+                tmp_fence_fd = *release_fence_fd;
+            }
+        }
+    }
+
+    if (release_fence_fd)
+        *release_fence_fd = tmp_fence_fd;
+
+    return IM_STATUS_SUCCESS;
 }
 
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,

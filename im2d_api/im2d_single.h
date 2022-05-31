@@ -183,7 +183,6 @@ IM_API IM_STATUS imrop(const rga_buffer_t src, rga_buffer_t dst, int rop_code, i
 /**
  * fill/reset/draw
  *
- * @param src
  * @param dst
  * @param rect
  * @param color
@@ -193,6 +192,24 @@ IM_API IM_STATUS imrop(const rga_buffer_t src, rga_buffer_t dst, int rop_code, i
  * @returns success or else negative error code.
  */
 IM_API IM_STATUS imfill(rga_buffer_t dst, im_rect rect, int color, int sync = 1, int *release_fence_fd = NULL);
+
+/**
+ * fill array
+ *
+ * @param dst
+ *      The output destination image.
+ * @param rect_array
+ *      The rectangle arrays on the source image that needs to be filled with color.
+ * @param array_size
+ *      The size of rectangular area arrays.
+ * @param color
+ *      The fill color value.
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS imfill_array(rga_buffer_t dst, im_rect *rect_array, int array_size, uint32_t color, int sync = 1, int *release_fence_fd = NULL);
 
 /**
  * palette
@@ -219,6 +236,29 @@ IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut,
  * @returns success or else negative error code.
  */
 IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mode, int sync = 1, int *release_fence_fd = NULL);
+
+/**
+ * MOSAIC array
+ *
+ * @param image
+ *      The output destination image.
+ * @param rect_array
+ *      The rectangle arrays on the source image that needs to be filled with color.
+ * @param array_size
+ *      The size of rectangular area arrays.
+ * @param mosaic_mode
+ *      mosaic block width configuration:
+ *          IM_MOSAIC_8
+ *          IM_MOSAIC_16
+ *          IM_MOSAIC_32
+ *          IM_MOSAIC_64
+ *          IM_MOSAIC_128
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS immosaic_array(const rga_buffer_t image, im_rect *rect_array, int array_size, int mosaic_mode, int sync = 1, int *release_fence_fd = NULL);
 
 /**
  * OSD
