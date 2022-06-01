@@ -46,6 +46,7 @@ extern __thread im_context_t g_im2d_context;
 extern __thread char rga_err_str[ERR_MSG_LEN];
 
 using namespace std;
+using namespace rga;
 
 IM_API const char* imStrError_t(IM_STATUS status) {
     const char *error_type[] = {
@@ -1362,6 +1363,8 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 }
 /* End single task api */
 
+namespace rga {
+
 /* Start task api */
 IM_API im_job_id_t imbeginJob(uint64_t flags) {
     return rga_job_create(flags);
@@ -1730,6 +1733,8 @@ IM_API IM_STATUS improcessTask(im_job_id_t job_id,
     return rga_task_submit(job_id, src, dst, pat, srect, drect, prect, opt_ptr, usage);
 }
 /* End task api */
+
+}; /* namespace rga */
 
 /* for rockit-ko */
 im_ctx_id_t imbegin(uint32_t flags) {

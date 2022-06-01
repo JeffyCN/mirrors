@@ -22,6 +22,8 @@
 
 #ifdef __cplusplus
 
+namespace rga {
+
 /**
  * Create an rga job
  *
@@ -495,6 +497,8 @@ IM_API IM_STATUS improcessTask(im_job_id_t job_id,
                                rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                                im_rect srect, im_rect drect, im_rect prect,
                                im_opt_t *opt_ptr, int usage);
-#endif
+
+}; /* namespace rga */
+#endif /* #ifdef __cplusplus */
 
 #endif /* #ifndef _im2d_task_h_ */
