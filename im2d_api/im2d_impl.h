@@ -52,7 +52,7 @@ typedef struct im_rga_job {
 } im_rga_job_t;
 
 struct im2d_job_manager {
-    std::map<im_job_id_t, im_rga_job_t *> job_map;
+    std::map<im_job_handle_t, im_rga_job_t *> job_map;
     int job_count;
 
     std::mutex mutex;
@@ -100,14 +100,14 @@ IM_STATUS rga_single_task_submit(rga_buffer_t src, rga_buffer_t dst, rga_buffer_
                                  im_rect srect, im_rect drect, im_rect prect,
                                  int acquire_fence_fd, int *release_fence_fd,
                                  im_opt_t *opt_ptr, int usage);
-IM_STATUS rga_task_submit(im_job_id_t job_id,
+IM_STATUS rga_task_submit(im_job_handle_t job_id,
                           rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                           im_rect srect, im_rect drect, im_rect prect,
                           im_opt_t *opt_ptr, int usage);
 
-im_job_id_t rga_job_create(uint32_t flags);
-IM_STATUS rga_job_cancel(im_job_id_t job_id);
-IM_STATUS rga_job_submit(im_job_id_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd);
-IM_STATUS rga_job_config(im_job_id_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd);
+im_job_handle_t rga_job_create(uint32_t flags);
+IM_STATUS rga_job_cancel(im_job_handle_t job_id);
+IM_STATUS rga_job_submit(im_job_handle_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd);
+IM_STATUS rga_job_config(im_job_handle_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd);
 
 #endif

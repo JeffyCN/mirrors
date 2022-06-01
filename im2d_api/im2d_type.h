@@ -22,7 +22,7 @@
 #include <stdint.h>
 
 typedef uint32_t im_api_version_t;
-typedef uint32_t im_job_id_t;
+typedef uint32_t im_job_handle_t;
 typedef uint32_t im_ctx_id_t;
 typedef uint32_t rga_buffer_handle_t;
 
