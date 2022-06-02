@@ -42,6 +42,37 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf);
 #endif /* #if USE_AHARDWAREBUFFER */
 #endif /* #if ANDROID */
 
+namespace rga {
+
+/**
+ * Add color fill task array
+ *
+ * @param src
+ *      The input source image.
+ * @param dst
+ *      The output destination image.
+ * @param top
+ *      the top pixels
+ * @param bottom
+ *      the bottom pixels
+ * @param left
+ *      the left pixels
+ * @param right
+ *      the right pixels
+ * @param border_type
+ *      Border type.
+ * @param value
+ *      The pixel value at which the border is filled.
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS immakeBorder(rga_buffer_t src, rga_buffer_t dst,
+                              int top, int bottom, int left, int right,
+                              int border_type, int value = 0,
+                              int sync = 1, int *release_fence_fd = NULL);
+
+};
+
 #endif /* #ifdef __cplusplus */
 
 #endif

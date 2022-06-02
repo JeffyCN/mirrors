@@ -1365,6 +1365,119 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 
 namespace rga {
 
+IM_STATUS immakeBorder(rga_buffer_t src, rga_buffer_t dst,
+                       int top, int bottom, int left, int right,
+                       int border_type, int value,
+                       int sync, int *release_fence_fd) {
+    IM_STATUS ret;
+    im_job_handle_t job_handle;
+    im_rect border_rect[4], border_src_rect[4];
+    int top_index, bottom_index, left_index, right_index;
+    bool reflect;
+    int copy_fence_fd = -1, *copy_fence_fd_ptr;
+    int sync_mode;
+
+    if (src.width + left + right != dst.width ||
+        src.height + top + bottom != dst.height) {
+        imSetErrorMsg("The width/height of dst must be equal to the width/height after making the border!"
+                      "src[w,h] = [%d, %d], dst[w,h] = [%d, %d], [t,b,l,r] = [%d, %d, %d, %d]\n",
+                      src.width, src.height, dst.width, dst.height, top, bottom, left, right);
+        return IM_STATUS_ILLEGAL_PARAM;
+    }
+
+    if (sync == 1) {
+        copy_fence_fd_ptr = NULL;
+        sync_mode = IM_SYNC;
+    } else {
+        copy_fence_fd_ptr = &copy_fence_fd;
+        sync_mode = IM_ASYNC;
+    }
+
+    ret = improcess(src, dst, {}, {}, {left, top, src.width, src.height}, {}, 0, copy_fence_fd_ptr, NULL, sync_mode);
+    if (ret != IM_STATUS_SUCCESS)
+        return ret;
+
+    job_handle = imbeginJob();
+    if (job_handle <= 0)
+        return IM_STATUS_FAILED;
+
+    /* top */
+    border_rect[0] = {left, 0, src.width, top};
+    /* bottom */
+    border_rect[1] = {left, src.height + top, border_rect[0].width, bottom};
+    /* left */
+    border_rect[2] = {0, 0, left, src.height + top + bottom};
+    /* right */
+    border_rect[3] = {src.width + left, 0, right, border_rect[2].height};
+
+    if (border_type == IM_BORDER_CONSTANT) {
+        ret = imfillTaskArray(job_handle, dst, border_rect, 4, value);
+        if (ret != IM_STATUS_SUCCESS) {
+            imcancelJob(job_handle);
+            return ret;
+        }
+    } else {
+        switch (border_type) {
+            case IM_BORDER_REFLECT:
+                /* top */
+                border_src_rect[0] = {0, 0, src.width, top};
+                /* bottom */
+                border_src_rect[1] = {0, src.height - bottom, src.width, bottom};
+                /* left */
+                border_src_rect[2] = {left, 0, left, border_rect[2].height};
+                /* right */
+                border_src_rect[3] = {border_rect[3].x - right, 0, right, border_rect[3].height};
+
+                reflect = true;
+                break;
+            case IM_BORDER_WRAP:
+                /* top */
+                border_src_rect[0] = {0, src.height - top, src.width, top};
+                /* bottom */
+                border_src_rect[1] = {0, 0, src.width, bottom};
+                /* left */
+                border_src_rect[2] = {border_rect[3].x - left, 0, left, border_rect[3].height};
+                /* right */
+                border_src_rect[3] = {left, 0, right, border_rect[2].height};
+                reflect = false;
+                break;
+            default:
+                imSetErrorMsg("unknown border type 0x%x\n", border_type);
+                return imcancelJob(job_handle);
+        }
+
+        /* top */
+        ret = improcessTask(job_handle, src, dst, {}, border_src_rect[0], border_rect[0], {}, NULL, reflect ? IM_HAL_TRANSFORM_FLIP_V : 0);
+        if (ret != IM_STATUS_SUCCESS) {
+            imcancelJob(job_handle);
+            return ret;
+        }
+
+        /* bottom */
+        ret = improcessTask(job_handle, src, dst, {}, border_src_rect[1], border_rect[1], {}, NULL, reflect ? IM_HAL_TRANSFORM_FLIP_V : 0);
+        if (ret != IM_STATUS_SUCCESS) {
+            imcancelJob(job_handle);
+            return ret;
+        }
+
+        /* left */
+        ret = improcessTask(job_handle, dst, dst, {}, border_src_rect[2], border_rect[2], {}, NULL, reflect ? IM_HAL_TRANSFORM_FLIP_H : 0);
+        if (ret != IM_STATUS_SUCCESS) {
+            imcancelJob(job_handle);
+            return ret;
+        }
+
+        /* right */
+        ret = improcessTask(job_handle, dst, dst, {}, border_src_rect[3], border_rect[3], {}, NULL, reflect ? IM_HAL_TRANSFORM_FLIP_H : 0);
+        if (ret != IM_STATUS_SUCCESS) {
+            imcancelJob(job_handle);
+            return ret;
+        }
+    }
+
+    return imendJob(job_handle, sync_mode, copy_fence_fd, release_fence_fd);
+}
+
 /* Start task api */
 IM_API im_job_handle_t imbeginJob(uint64_t flags) {
     return rga_job_create(flags);

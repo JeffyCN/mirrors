@@ -104,6 +104,12 @@ typedef enum {
     IM_MOSAIC_128               = 0x4,
 } IM_MOSAIC_MODE;
 
+typedef enum {
+    IM_BORDER_CONSTANT = 0,             /* iiiiii|abcdefgh|iiiiiii with some specified value 'i' */
+    IM_BORDER_REFLECT = 2,              /* fedcba|abcdefgh|hgfedcb */
+    IM_BORDER_WRAP = 3,                 /* cdefgh|abcdefgh|abcdefg */
+} IM_BORDER_TYPE;
+
 /* Status codes, returned by any blit function */
 typedef enum {
     IM_YUV_TO_RGB_BT601_LIMIT   = 1 << 0,
