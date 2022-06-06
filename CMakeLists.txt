@@ -1,3 +1,7 @@
+cmake_minimum_required(VERSION 2.8)
+
+INCLUDE(cmake/utils.cmake)
+
 if(NOT CMAKE_BUILD_TYPE)
     message("default to Release build for GCC builds")
     set(CMAKE_BUILD_TYPE Release CACHE STRING
@@ -37,9 +41,6 @@ if(CMAKE_BUILD_TARGET STREQUAL cmake_linux)
 
 endif()
 
-cmake_minimum_required(VERSION 2.8)
-
-#project name
 project(rga)
 
 if (BUILD_WITH_LIBDRM STREQUAL true)
@@ -49,6 +50,10 @@ if (BUILD_WITH_LIBDRM STREQUAL true)
         ${LIBDRM_FILE_INCLUDE}/
         ${LIBDRM_FILE_INCLUDE}/libdrm
     )
+endif()
+
+if (BUILD_WITH_VERSION STREQUAL true)
+    im2d_api_extract_version()
 endif()
 
 set(IM2D_SRCS
@@ -115,7 +120,16 @@ set(SHARED_LIB_NAME ${PROJECT_NAME})
 add_library(${SHARED_LIB_NAME} SHARED $<TARGET_OBJECTS:${OBJECT_NAME}>)
 
 target_include_directories(${SHARED_LIB_NAME} PUBLIC ${IM2D_INCLUDE})
-set_target_properties(${SHARED_LIB_NAME} PROPERTIES PUBLIC_HEADER "${IM2D_PUBLIC_HEADER}")
+
+if(NOT DEFINED IM2D_API_VERSION)
+    set_target_properties(${SHARED_LIB_NAME} PROPERTIES
+        PUBLIC_HEADER "${IM2D_PUBLIC_HEADER}")
+else ()
+    message("Generated im2d api version: v${IM2D_API_VERSION}")
+    set_target_properties(${SHARED_LIB_NAME} PROPERTIES
+        PUBLIC_HEADER "${IM2D_PUBLIC_HEADER}"
+        VERSION ${IM2D_API_VERSION} SOVERSION ${IM2D_API_VERSION_MAJOR})
+endif()
 
 # build static lib
 set(STATIC_LIB_NAME ${PROJECT_NAME}-static)
