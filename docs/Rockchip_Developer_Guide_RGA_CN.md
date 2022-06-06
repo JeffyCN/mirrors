@@ -445,9 +445,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 > 注：
 >
-> 1). 对齐要求计算公式：lcm(bpp，byte_stride * 8) / pixel_stride。
+> 1). x、y、width、height、width stride、height stride必须大于等于2。
 >
-> 2). 当芯片平台搭载多版本硬件时，为了保证硬件利用率，librga会按最严格的对齐要求进行约束。
+> 2). 对齐要求计算公式：lcm(bpp，byte_stride * 8) / pixel_stride。
+>
+> 3). 当芯片平台搭载多版本硬件时，为了保证硬件利用率，librga会按最严格的对齐要求进行约束。
 
 
 

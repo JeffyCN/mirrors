@@ -443,6 +443,8 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
 </table>
 
 
+> x, y, width, height, width stride, height stride must be greater than or equal to 2.
+>
 > Alignment requirement formula: lcm(bpp，byte_stride * 8) / pixel_stride.
 >
 > When loaded with multiple versions of hardware, chip platform constraints according to the most strict alignment requirements.
