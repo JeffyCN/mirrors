@@ -17,6 +17,13 @@
  * limitations under the License.
  */
 
+#ifdef LOG_TAG
+#undef LOG_TAG
+#define LOG_TAG "im2d_rga"
+#else
+#define LOG_TAG "im2d_rga"
+#endif
+
 #include <math.h>
 #include <sstream>
 
@@ -39,8 +46,6 @@ using namespace android;
 
 #include "../core/NormalRga.h"
 #include "../include/RockchipRga.h"
-
-#define ALOGE(...) { printf(__VA_ARGS__); printf("\n"); }
 #endif
 
 extern __thread im_context_t g_im2d_context;
@@ -238,7 +243,7 @@ IM_API rga_buffer_handle_t importbuffer_GraphicBuffer_handle(buffer_handle_t hnd
 
     ret = RkRgaGetHandleAttributes(hnd, &dstAttrs);
     if (ret) {
-        ALOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
+        IM_LOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
         imSetErrorMsg("handle get Attributes fail, ret = %d,hnd = %p", ret, (void *)hnd);
         return -1;
     }
@@ -249,12 +254,12 @@ IM_API rga_buffer_handle_t importbuffer_GraphicBuffer_handle(buffer_handle_t hnd
 
     ret = rkRga.RkRgaGetBufferFd(hnd, &fd);
     if (ret)
-        ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(hnd));
+        IM_LOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(hnd));
 
     if (fd <= 0) {
         ret = rkRga.RkRgaGetHandleMapCpuAddress(hnd, &virt_addr);
         if(!virt_addr) {
-            ALOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
+            IM_LOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
             imSetErrorMsg("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)hnd);
             return -1;
         } else {
@@ -282,12 +287,12 @@ IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
 
     ret = rkRga.RkRgaGetBufferFd(hnd, &buffer.fd);
     if (ret)
-        ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(hnd));
+        IM_LOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(hnd));
 
     if (buffer.fd <= 0) {
         ret = rkRga.RkRgaGetHandleMapCpuAddress(hnd, &buffer.vir_addr);
         if(!buffer.vir_addr) {
-            ALOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
+            IM_LOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
             imSetErrorMsg("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)hnd);
             goto INVAILD;
         }
@@ -295,7 +300,7 @@ IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
 
     ret = RkRgaGetHandleAttributes(hnd, &dstAttrs);
     if (ret) {
-        ALOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
+        IM_LOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
         imSetErrorMsg("handle get Attributes fail, ret = %d,hnd = %p", ret, (void *)hnd);
         goto INVAILD;
     }
@@ -307,7 +312,7 @@ IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
     buffer.format  = dstAttrs.at(AFORMAT);
 
     if (buffer.wstride % 16) {
-        ALOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
+        IM_LOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
         imSetErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
         goto INVAILD;
     }
@@ -327,12 +332,12 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
 
     ret = rkRga.RkRgaGetBufferFd(buf->handle, &buffer.fd);
     if (ret)
-        ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(buf->handle));
+        IM_LOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(buf->handle));
 
     if (buffer.fd <= 0) {
         ret = rkRga.RkRgaGetHandleMapCpuAddress(buf->handle, &buffer.vir_addr);
         if(!buffer.vir_addr) {
-            ALOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
+            IM_LOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
             imSetErrorMsg("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)(buf->handle));
             goto INVAILD;
         }
@@ -340,7 +345,7 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
 
     ret = RkRgaGetHandleAttributes(buf->handle, &dstAttrs);
     if (ret) {
-        ALOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &buf->handle);
+        IM_LOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &buf->handle);
         imSetErrorMsg("handle get Attributes fail, ret = %d, hnd = %p", ret, (void *)(buf->handle));
         goto INVAILD;
     }
@@ -352,7 +357,7 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
     buffer.format  = dstAttrs.at(AFORMAT);
 
     if (buffer.wstride % 16) {
-        ALOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
+        IM_LOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
         imSetErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
         goto INVAILD;
     }
@@ -382,12 +387,12 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
 
     ret = rkRga.RkRgaGetBufferFd(gbuffer->handle, &buffer.fd);
     if (ret)
-        ALOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(gbuffer->handle));
+        IM_LOGE("rga_im2d: get buffer fd fail: %s, hnd=%p", strerror(errno), (void*)(gbuffer->handle));
 
     if (buffer.fd <= 0) {
         ret = rkRga.RkRgaGetHandleMapCpuAddress(gbuffer->handle, &buffer.vir_addr);
         if(!buffer.vir_addr) {
-            ALOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
+            IM_LOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
             imSetErrorMsg("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)(gbuffer->handle));
             goto INVAILD;
         }
@@ -395,7 +400,7 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
 
     ret = RkRgaGetHandleAttributes(gbuffer->handle, &dstAttrs);
     if (ret) {
-        ALOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &gbuffer->handle);
+        IM_LOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &gbuffer->handle);
         imSetErrorMsg("handle get Attributes fail, ret = %d, hnd = %p", ret, (void *)(gbuffer->handle));
         goto INVAILD;
     }
@@ -407,7 +412,7 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
     buffer.format  = dstAttrs.at(AFORMAT);
 
     if (buffer.wstride % 16) {
-        ALOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
+        IM_LOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
         imSetErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
         goto INVAILD;
     }
@@ -510,7 +515,7 @@ IM_API const char* querystring(int name) {
     memset(&rga_info, 0x0, sizeof(rga_info));
     usage = rga_get_info(&rga_info);
     if (IM_STATUS_FAILED == usage) {
-        ALOGE("rga im2d: rga2 get info failed!\n");
+        IM_LOGE("rga im2d: rga2 get info failed!\n");
         return "get info failed";
     }
 
@@ -765,7 +770,7 @@ IM_API IM_STATUS imsync(int fence_fd) {
 
     ret = rga_sync_wait(fence_fd, -1);
     if (ret) {
-        ALOGE("Failed to wait for out fence = %d, ret = %d", fence_fd, ret);
+        IM_LOGE("Failed to wait for out fence = %d, ret = %d", fence_fd, ret);
         return IM_STATUS_FAILED;
     }
 
@@ -781,7 +786,7 @@ IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
             if (value & IM_SCHEDULER_MASK) {
                 g_im2d_context.core = (IM_SCHEDULER_CORE)value;
             } else {
-                ALOGE("IM2D: It's not legal rga_core, it needs to be a 'IM_SCHEDULER_CORE'.");
+                IM_LOGE("IM2D: It's not legal rga_core, it needs to be a 'IM_SCHEDULER_CORE'.");
                 return IM_STATUS_ILLEGAL_PARAM;
             }
             break;
@@ -789,7 +794,7 @@ IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
             if (value >= 0 && value <= 6) {
                 g_im2d_context.priority = (int)value;
             } else {
-                ALOGE("IM2D: It's not legal priority, it needs to be a 'int', and it should be in the range of 0~6.");
+                IM_LOGE("IM2D: It's not legal priority, it needs to be a 'int', and it should be in the range of 0~6.");
                 return IM_STATUS_ILLEGAL_PARAM;
             }
             break;
@@ -797,12 +802,12 @@ IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
             if (value == false || value == true) {
                 g_im2d_context.check_mode = (bool)value;
             } else {
-                ALOGE("IM2D: It's not legal check config, it needs to be a 'bool'.");
+                IM_LOGE("IM2D: It's not legal check config, it needs to be a 'bool'.");
                 return IM_STATUS_ILLEGAL_PARAM;
             }
             break;
         default :
-            ALOGE("IM2D: Unsupported config name!");
+            IM_LOGE("IM2D: Unsupported config name!");
             return IM_STATUS_NOT_SUPPORTED;
     }
 
@@ -870,7 +875,7 @@ IM_API IM_STATUS imresize(const rga_buffer_t src, rga_buffer_t dst, double fx, d
 
             ret = imcheck(src, dst, srect, drect, usage);
             if (ret != IM_STATUS_NOERROR) {
-                ALOGE("imresize error, factor[fx,fy]=[%lf,%lf], ALIGN[dw,dh]=[%d,%d][%d,%d]", fx, fy, width, height, dst.width, dst.height);
+                IM_LOGE("imresize error, factor[fx,fy]=[%lf,%lf], ALIGN[dw,dh]=[%d,%d][%d,%d]", fx, fy, width, height, dst.width, dst.height);
                 return ret;
             }
         }
@@ -1538,7 +1543,7 @@ IM_API IM_STATUS imresizeTask(im_job_handle_t job_handle, const rga_buffer_t src
 
             ret = imcheck(src, dst, srect, drect, usage);
             if (ret != IM_STATUS_NOERROR) {
-                ALOGE("imresize error, factor[fx,fy]=[%lf,%lf], ALIGN[dw,dh]=[%d,%d][%d,%d]", fx, fy, width, height, dst.width, dst.height);
+                IM_LOGE("imresize error, factor[fx,fy]=[%lf,%lf], ALIGN[dw,dh]=[%d,%d][%d,%d]", fx, fy, width, height, dst.width, dst.height);
                 return ret;
             }
         }
