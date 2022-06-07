@@ -17,7 +17,6 @@
  */
 
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
 #include <errno.h>
 #include <math.h>
@@ -25,6 +24,7 @@
 
 #include "im2d.h"
 #include "im2d_impl.h"
+#include "im2d_log.h"
 #include "im2d_hardware.h"
 
 #include "RockchipRga.h"
@@ -48,11 +48,9 @@ using namespace android;
 #define GET_LCM(n1, n2, gcd) (((n1) * (n2)) / gcd)
 
 extern struct rgaContext *rgaCtx;
-extern __thread char rga_err_str[ERR_MSG_LEN];
 
 struct im2d_job_manager g_im2d_job_manager;
 __thread im_context_t g_im2d_context;
-__thread char rga_err_str[ERR_MSG_LEN] = "The current error message is empty!";
 
 IM_API static IM_STATUS rga_get_context(void) {
     if (rgaCtx == NULL) {
@@ -124,17 +122,6 @@ static IM_STATUS rga_yuv_legality_check(const char *name, rga_buffer_t info, im_
     }
 
     return IM_STATUS_SUCCESS;
-}
-
-int imSetErrorMsg(const char* format, ...) {
-    int ret = 0;
-    va_list ap;
-
-    va_start(ap, format);
-    ret = vsnprintf(rga_err_str, ERR_MSG_LEN, format, ap);
-    va_end(ap);
-
-    return ret;
 }
 
 bool rga_is_buffer_valid(rga_buffer_t buf) {

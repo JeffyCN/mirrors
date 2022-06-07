@@ -23,6 +23,7 @@
 #include "im2d.hpp"
 #include "im2d_hardware.h"
 #include "im2d_impl.h"
+#include "im2d_log.h"
 #include "RgaUtils.h"
 #include "core/rga_sync.h"
 
@@ -43,7 +44,7 @@ using namespace android;
 #endif
 
 extern __thread im_context_t g_im2d_context;
-extern __thread char rga_err_str[ERR_MSG_LEN];
+extern __thread char g_rga_err_str[IM_ERR_MSG_LEN];
 
 using namespace std;
 using namespace rga;
@@ -60,7 +61,7 @@ IM_API const char* imStrError_t(IM_STATUS status) {
         "Fatal error",
         "unkown status"
     };
-    static __thread char error_str[ERR_MSG_LEN] = "The current error message is empty!";
+    static __thread char error_str[IM_ERR_MSG_LEN] = "The current error message is empty!";
     const char *ptr = NULL;
 
     switch(status) {
@@ -98,7 +99,7 @@ IM_API const char* imStrError_t(IM_STATUS status) {
             return error_type[8];
     }
 
-    snprintf(error_str, ERR_MSG_LEN, "%s: %s", ptr, rga_err_str);
+    snprintf(error_str, IM_ERR_MSG_LEN, "%s: %s", ptr, g_rga_err_str);
     imSetErrorMsg("No error message, it has been cleared.");
 
     return error_str;

@@ -200,6 +200,7 @@ LOCAL_SRC_FILES += \
     drm/DrmmodeRga.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
+    im2d_api/im2d_log.cpp \
     im2d_api/im2d_impl.cpp \
     im2d_api/im2d.cpp
 

@@ -42,8 +42,6 @@
     {0}\
     }
 
-#define ERR_MSG_LEN 300
-
 typedef struct im_rga_job {
     struct rga_req req[RGA_TASK_NUM_MAX];
     int task_count;
@@ -57,8 +55,6 @@ struct im2d_job_manager {
 
     std::mutex mutex;
 };
-
-int imSetErrorMsg(const char* format, ...);
 
 bool rga_is_buffer_valid(rga_buffer_t buf);
 bool rga_is_rect_valid(im_rect rect);
