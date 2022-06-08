@@ -27,32 +27,23 @@
 #include <math.h>
 #include <sstream>
 
-#include "im2d.hpp"
+#include "RgaUtils.h"
+#include "core/rga_sync.h"
+#include "core/NormalRga.h"
+#include "RockchipRga.h"
 #include "im2d_hardware.h"
 #include "im2d_impl.h"
 #include "im2d_log.h"
-#include "RgaUtils.h"
-#include "core/rga_sync.h"
+#include "im2d.hpp"
 
 #ifdef ANDROID
-#include "core/NormalRga.h"
-#include "RockchipRga.h"
-
 using namespace android;
 #endif
-
-#ifdef LINUX
-#include <sys/ioctl.h>
-
-#include "../core/NormalRga.h"
-#include "../include/RockchipRga.h"
-#endif
+using namespace std;
+using namespace rga;
 
 extern __thread im_context_t g_im2d_context;
 extern __thread char g_rga_err_str[IM_ERR_MSG_LEN];
-
-using namespace std;
-using namespace rga;
 
 IM_API const char* imStrError_t(IM_STATUS status) {
     const char *error_type[] = {
