@@ -21,6 +21,14 @@
 #include <stdarg.h>
 #include <sys/time.h>
 
+#ifndef __cplusplus
+# include <stdatomic.h>
+#else
+# include <atomic>
+# define _Atomic(X) std::atomic< X >
+using namespace std;
+#endif
+
 #ifdef ANDROID
 #include <android/log.h>
 #include <sys/system_properties.h>
@@ -28,11 +36,15 @@
 
 #include "im2d_log.h"
 
-__thread char g_rga_err_str[IM_ERR_MSG_LEN] = "The current error message is empty!";
-int g_log_level = rga_log_level_init();
-size_t g_start_time = rga_get_current_time_ms();
+static int rga_log_property_get(void);
+static int rga_log_level_property_get(void);
 
-int imSetErrorMsg(const char* format, ...) {
+__thread char g_rga_err_str[IM_ERR_MSG_LEN] = "The current error message is empty!";
+static atomic_int g_log_en = ATOMIC_VAR_INIT(rga_log_property_get());
+static atomic_int g_log_level = ATOMIC_VAR_INIT(rga_log_level_property_get());
+static size_t g_start_time = rga_get_current_time_ms();
+
+int rga_error_msg_set(const char* format, ...) {
     int ret = 0;
     va_list ap;
 
@@ -43,12 +55,12 @@ int imSetErrorMsg(const char* format, ...) {
     return ret;
 }
 
-int rga_log_level_init(void) {
+static int inline rga_log_property_get(void) {
 #ifdef ANDROID
     char level[PROP_VALUE_MAX];
     __system_property_get("vendor.rga.log" ,level);
 #else
-    char *level = getenv("RK_RGA_LOG_LEVEL");
+    char *level = getenv("ROCKCHIP_RGA_LOG");
     if (level == nullptr)
         level = (char *)"0";
 #endif
@@ -56,21 +68,33 @@ int rga_log_level_init(void) {
     return atoi(level);
 }
 
-void rga_log_level_update(void) {
+static int inline rga_log_level_property_get(void) {
 #ifdef ANDROID
     char level[PROP_VALUE_MAX];
-    __system_property_get("vendor.rga.log" ,level);
+    __system_property_get("vendor.rga.log_level" ,level);
 #else
-    char *level = getenv("RK_RGA_LOG_LEVEL");
+    char *level = getenv("ROCKCHIP_RGA_LOG_LEVEL");
     if (level == nullptr)
         level = (char *)"0";
 #endif
 
-    g_log_level = atoi(level);
+    return atoi(level);
+}
+
+int rga_log_level_init(void) {
+    return rga_log_level_get();
+}
+
+void rga_log_level_update(void) {
+    g_log_level = rga_log_level_get();
 }
 
 int rga_log_level_get(void) {
     return g_log_level;
+}
+
+int rga_log_enable_get(void) {
+    return g_log_en;
 }
 
 size_t rga_get_current_time_ms(void) {

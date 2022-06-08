@@ -105,7 +105,7 @@ IM_API const char* imStrError_t(IM_STATUS status) {
     }
 
     snprintf(error_str, IM_ERR_MSG_LEN, "%s: %s", ptr, g_rga_err_str);
-    imSetErrorMsg("No error message, it has been cleared.");
+    rga_error_msg_set("No error message, it has been cleared.");
 
     return error_str;
 }
@@ -243,8 +243,7 @@ IM_API rga_buffer_handle_t importbuffer_GraphicBuffer_handle(buffer_handle_t hnd
 
     ret = RkRgaGetHandleAttributes(hnd, &dstAttrs);
     if (ret) {
-        IM_LOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
-        imSetErrorMsg("handle get Attributes fail, ret = %d,hnd = %p", ret, (void *)hnd);
+        IM_LOGE("handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
         return -1;
     }
 
@@ -259,8 +258,7 @@ IM_API rga_buffer_handle_t importbuffer_GraphicBuffer_handle(buffer_handle_t hnd
     if (fd <= 0) {
         ret = rkRga.RkRgaGetHandleMapCpuAddress(hnd, &virt_addr);
         if(!virt_addr) {
-            IM_LOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
-            imSetErrorMsg("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)hnd);
+            IM_LOGE("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)hnd);
             return -1;
         } else {
             return importbuffer_virtualaddr(virt_addr, &param);
@@ -292,16 +290,14 @@ IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
     if (buffer.fd <= 0) {
         ret = rkRga.RkRgaGetHandleMapCpuAddress(hnd, &buffer.vir_addr);
         if(!buffer.vir_addr) {
-            IM_LOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
-            imSetErrorMsg("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)hnd);
+            IM_LOGE("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)hnd);
             goto INVAILD;
         }
     }
 
     ret = RkRgaGetHandleAttributes(hnd, &dstAttrs);
     if (ret) {
-        IM_LOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &hnd);
-        imSetErrorMsg("handle get Attributes fail, ret = %d,hnd = %p", ret, (void *)hnd);
+        IM_LOGE("handle get Attributes fail, ret = %d,hnd = %p", ret, (void *)hnd);
         goto INVAILD;
     }
 
@@ -312,8 +308,7 @@ IM_API rga_buffer_t wrapbuffer_handle(buffer_handle_t hnd) {
     buffer.format  = dstAttrs.at(AFORMAT);
 
     if (buffer.wstride % 16) {
-        IM_LOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types.");
-        imSetErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
+        IM_LOGE("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
         goto INVAILD;
     }
 
@@ -337,16 +332,14 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
     if (buffer.fd <= 0) {
         ret = rkRga.RkRgaGetHandleMapCpuAddress(buf->handle, &buffer.vir_addr);
         if(!buffer.vir_addr) {
-            IM_LOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
-            imSetErrorMsg("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)(buf->handle));
+            IM_LOGE("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)(buf->handle));
             goto INVAILD;
         }
     }
 
     ret = RkRgaGetHandleAttributes(buf->handle, &dstAttrs);
     if (ret) {
-        IM_LOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &buf->handle);
-        imSetErrorMsg("handle get Attributes fail, ret = %d, hnd = %p", ret, (void *)(buf->handle));
+        IM_LOGE("handle get Attributes fail, ret = %d, hnd = %p", ret, (void *)(buf->handle));
         goto INVAILD;
     }
 
@@ -357,8 +350,7 @@ IM_API rga_buffer_t wrapbuffer_GraphicBuffer(sp<GraphicBuffer> buf) {
     buffer.format  = dstAttrs.at(AFORMAT);
 
     if (buffer.wstride % 16) {
-        IM_LOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
-        imSetErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
+        IM_LOGE("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
         goto INVAILD;
     }
 
@@ -392,16 +384,14 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
     if (buffer.fd <= 0) {
         ret = rkRga.RkRgaGetHandleMapCpuAddress(gbuffer->handle, &buffer.vir_addr);
         if(!buffer.vir_addr) {
-            IM_LOGE("rga_im2d: invaild GraphicBuffer, can not get fd and virtual address.");
-            imSetErrorMsg("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)(gbuffer->handle));
+            IM_LOGE("invaild GraphicBuffer, can not get fd and virtual address, hnd = %p", (void *)(gbuffer->handle));
             goto INVAILD;
         }
     }
 
     ret = RkRgaGetHandleAttributes(gbuffer->handle, &dstAttrs);
     if (ret) {
-        IM_LOGE("rga_im2d: handle get Attributes fail ret = %d,hnd=%p", ret, &gbuffer->handle);
-        imSetErrorMsg("handle get Attributes fail, ret = %d, hnd = %p", ret, (void *)(gbuffer->handle));
+        IM_LOGE("handle get Attributes fail, ret = %d, hnd = %p", ret, (void *)(gbuffer->handle));
         goto INVAILD;
     }
 
@@ -412,8 +402,7 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
     buffer.format  = dstAttrs.at(AFORMAT);
 
     if (buffer.wstride % 16) {
-        IM_LOGE("rga_im2d: Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
-        imSetErrorMsg("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
+        IM_LOGE("Graphicbuffer wstride needs align to 16, please align to 16 or use other buffer types, wstride = %d", buffer.wstride);
         goto INVAILD;
     }
 
@@ -830,8 +819,8 @@ IM_API IM_STATUS imcopy(const rga_buffer_t src, rga_buffer_t dst, int sync, int 
     empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
 
     if ((src.width != dst.width) || (src.height != dst.height)) {
-        imSetErrorMsg("imcopy cannot support scale, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
-                      src.width, src.height, dst.width, dst.height);
+        IM_LOGW("imcopy cannot support scale, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                src.width, src.height, dst.width, dst.height);
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -962,8 +951,8 @@ IM_API IM_STATUS imtranslate(const rga_buffer_t src, rga_buffer_t dst, int x, in
     empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
 
     if ((src.width != dst.width) || (src.height != dst.height)) {
-        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
-                      src.width, src.height, dst.width, dst.height);
+        IM_LOGW("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                src.width, src.height, dst.width, dst.height);
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -1236,8 +1225,8 @@ IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut,
 
     /*Don't know if it supports zooming.*/
     if ((src.width != dst.width) || (src.height != dst.height)) {
-        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
-                      src.width, src.height, dst.width, dst.height);
+        IM_LOGW("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                src.width, src.height, dst.width, dst.height);
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -1385,9 +1374,9 @@ IM_STATUS immakeBorder(rga_buffer_t src, rga_buffer_t dst,
 
     if (src.width + left + right != dst.width ||
         src.height + top + bottom != dst.height) {
-        imSetErrorMsg("The width/height of dst must be equal to the width/height after making the border!"
-                      "src[w,h] = [%d, %d], dst[w,h] = [%d, %d], [t,b,l,r] = [%d, %d, %d, %d]\n",
-                      src.width, src.height, dst.width, dst.height, top, bottom, left, right);
+        IM_LOGW("The width/height of dst must be equal to the width/height after making the border!"
+                "src[w,h] = [%d, %d], dst[w,h] = [%d, %d], [t,b,l,r] = [%d, %d, %d, %d]\n",
+                src.width, src.height, dst.width, dst.height, top, bottom, left, right);
         return IM_STATUS_ILLEGAL_PARAM;
     }
 
@@ -1448,7 +1437,7 @@ IM_STATUS immakeBorder(rga_buffer_t src, rga_buffer_t dst,
                 reflect = false;
                 break;
             default:
-                imSetErrorMsg("unknown border type 0x%x\n", border_type);
+                IM_LOGW("unknown border type 0x%x\n", border_type);
                 return imcancelJob(job_handle);
         }
 
@@ -1508,8 +1497,8 @@ IM_API IM_STATUS imcopyTask(im_job_handle_t job_handle, const rga_buffer_t src, 
     empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
 
     if ((src.width != dst.width) || (src.height != dst.height)) {
-        imSetErrorMsg("imcopy cannot support scale, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
-                      src.width, src.height, dst.width, dst.height);
+        IM_LOGW("imcopy cannot support scale, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                src.width, src.height, dst.width, dst.height);
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -1597,8 +1586,8 @@ IM_API IM_STATUS imtranslateTask(im_job_handle_t job_handle, const rga_buffer_t 
     empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
 
     if ((src.width != dst.width) || (src.height != dst.height)) {
-        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
-                      src.width, src.height, dst.width, dst.height);
+        IM_LOGW("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                src.width, src.height, dst.width, dst.height);
         return IM_STATUS_INVALID_PARAM;
     }
 
@@ -1835,8 +1824,8 @@ IM_API IM_STATUS impaletteTask(im_job_handle_t job_handle, rga_buffer_t src, rga
 
     /*Don't know if it supports zooming.*/
     if ((src.width != dst.width) || (src.height != dst.height)) {
-        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
-                      src.width, src.height, dst.width, dst.height);
+        IM_LOGW("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                src.width, src.height, dst.width, dst.height);
         return IM_STATUS_INVALID_PARAM;
     }
 
