@@ -21,9 +21,8 @@
 
 #include "rga.h"
 
-#ifdef LINUX
-#define __DEBUG 0
-
+#ifndef ANDROID
+#define ALOGD(...) { printf(__VA_ARGS__); printf("\n"); }
 #define ALOGE(...) { printf(__VA_ARGS__); printf("\n"); }
 #endif
 

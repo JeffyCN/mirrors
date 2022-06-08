@@ -51,10 +51,9 @@ void NormalRgaSetAlwaysLogFlag(int log) {
     return;
 }
 
-#ifdef ANDROID
 void is_debug_log(void) {
     struct rgaContext *ctx = rgaCtx;
-    ctx->Is_debug = hwc_get_int_property("vendor.rga.log","0");
+    ctx->Is_debug = get_int_property();
 }
 
 int is_out_log( void ) {
@@ -62,22 +61,18 @@ int is_out_log( void ) {
     return ctx->Is_debug;
 }
 
-//return property value of pcProperty
-int hwc_get_int_property(const char* pcProperty, const char* default_value) {
-    char value[PROPERTY_VALUE_MAX];
-    int new_value = 0;
-
-    if (pcProperty == NULL || default_value == NULL) {
-        ALOGE("hwc_get_int_property: invalid param");
-        return -1;
-    }
-
-    property_get(pcProperty, value, default_value);
-    new_value = atoi(value);
-
-    return new_value;
-}
+int get_int_property(void) {
+#ifdef ANDROID
+    char level[PROP_VALUE_MAX];
+    __system_property_get("vendor.rga.log" ,level);
+#else
+    char *level = getenv("ROCKCHIP_RGA_LOG");
+    if (level == nullptr)
+        level = (char *)"0";
 #endif
+
+    return atoi(level);
+}
 
 int NormalRgaOpen(void **context) {
     struct rgaContext *ctx = NULL;
@@ -426,12 +421,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     blend = 0;
     yuvToRgbMode = 0;
 
-#ifdef ANDROID
     /* print debug log by setting property vendor.rga.log as 1 */
     is_debug_log();
     if(is_out_log())
         ALOGD("<<<<-------- print rgaLog -------->>>>");
-#endif
 
     if (!src && !dst && !src1) {
         ALOGE("src = %p, dst = %p, src1 = %p", src, dst, src1);
@@ -462,7 +455,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
     srcFd = dstFd = src1Fd = -1;
 
-#ifdef ANDROID
     if (is_out_log()) {
         ALOGD("src->hnd = %p , dst->hnd = %p , src1->hnd = %p\n", src->hnd, dst->hnd, src1 ? src1->hnd : 0);
         ALOGD("src: Fd = %.2d , phyAddr = %p , virAddr = %p\n",src->fd,src->phyAddr,src->virAddr);
@@ -470,7 +462,6 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
             ALOGD("src1: Fd = %.2d , phyAddr = %p , virAddr = %p\n", src1->fd, src1->phyAddr, src1->virAddr);
         ALOGD("dst: Fd = %.2d , phyAddr = %p , virAddr = %p\n",dst->fd,dst->phyAddr,dst->virAddr);
     }
-#endif
 
     if (src1) {
         if (src->handle > 0 && dst->handle > 0 && src1->handle > 0) {
@@ -680,14 +671,12 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     if (dstFd == 0)
         dstFd = -1;
 
-#ifdef ANDROID
     if(is_out_log()) {
         ALOGD("src: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", srcFd, srcBuf, src->mmuFlag, srcType);
         if (src1)
             ALOGD("src1: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", src1Fd, src1Buf, src1->mmuFlag, src1Type);
         ALOGD("dst: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", dstFd, dstBuf, dst->mmuFlag, dstType);
     }
-#endif
 
     relSrcRect.format = RkRgaCompatibleFormat(relSrcRect.format);
     relDstRect.format = RkRgaCompatibleFormat(relDstRect.format);
@@ -712,10 +701,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     /* determined by format, need pixel alpha or not. */
     perpixelAlpha = NormalRgaFormatHasAlpha(RkRgaGetRgaFormat(relSrcRect.format));
 
-#ifdef ANDROID
     if(is_out_log())
         ALOGE("blend = %x , perpixelAlpha = %d",blend,perpixelAlpha);
-#endif
 
     /* blend bit[0:15] is to set which way to blend,such as whether need glabal alpha,and so on. */
     switch ((blend & 0xFFFF)) {
@@ -873,10 +860,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
             scaleMode = 0;     //  force change scale_mode to 0 ,for rga not support
     }
 
-#ifdef ANDROID
     if(is_out_log())
         ALOGD("scaleMode = %d , stretch = %d;",scaleMode,stretch);
-#endif
 
     /*
      * according to the rotation to set corresponding parameter.It's diffrient from the opengl.
@@ -1093,10 +1078,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     }
 #endif
 
-#ifdef ANDROID
     if(is_out_log())
         ALOGE("rgaVersion = %lf  , ditherEn =%d ",ctx->mVersion,ditherEn);
-#endif
 
     /* only to configure the parameter by driver version, because rga driver has too many version. */
     if (ctx->mVersion <= (float)1.003) {
@@ -1421,17 +1404,11 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     /* pre_intr */
     memcpy(&rgaReg.pre_intr_info, &src->pre_intr, sizeof(src->pre_intr));
 
-#ifdef ANDROID
     if(is_out_log()) {
         ALOGD("srcMmuFlag = %d , dstMmuFlag = %d , rotateMode = %d \n", srcMmuFlag, dstMmuFlag,rotateMode);
         ALOGD("<<<<-------- rgaReg -------->>>>\n");
         NormalRgaLogOutRgaReq(rgaReg);
     }
-#elif LINUX
-#if __DEBUG
-    NormalRgaLogOutRgaReq(rgaReg);
-#endif
-#endif
 
     if(src->sync_mode == RGA_BLIT_ASYNC || dst->sync_mode == RGA_BLIT_ASYNC) {
         sync_mode = RGA_BLIT_ASYNC;
@@ -1786,12 +1763,10 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
 
     srcType = dstType = lutType = srcMmuFlag = dstMmuFlag = lutMmuFlag = 0;
 
-#ifdef ANDROID
     /* print debug log by setting property vendor.rga.log as 1 */
     is_debug_log();
     if(is_out_log())
     ALOGD("<<<<-------- print rgaLog -------->>>>");
-#endif
 
     if (!src && !dst) {
         ALOGE("src = %p, dst = %p, lut = %p", src, dst, lut);
@@ -1808,14 +1783,12 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
 
     srcFd = dstFd = lutFd = -1;
 
-#ifdef ANDROID
     if(is_out_log()) {
         ALOGD("src->hnd = %p , dst->hnd = %p, lut->hnd = %p \n",src->hnd,dst->hnd, lut->hnd);
         ALOGD("src: Fd = %.2d , phyAddr = %p , virAddr = %p\n",src->fd,src->phyAddr,src->virAddr);
         ALOGD("dst: Fd = %.2d , phyAddr = %p , virAddr = %p\n",dst->fd,dst->phyAddr,dst->virAddr);
         ALOGD("lut: Fd = %.2d , phyAddr = %p , virAddr = %p\n",lut->fd,lut->phyAddr,lut->virAddr);
     }
-#endif
 
     if (lut) {
         if (src->handle > 0 && dst->handle > 0 && lut->handle > 0) {
@@ -2000,13 +1973,11 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
     if (lutFd == 0)
         lutFd = -1;
 
-#ifdef ANDROID
     if(is_out_log()) {
         ALOGD("src: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", srcFd, srcBuf, src->mmuFlag, srcType);
         ALOGD("dst: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", dstFd, dstBuf, dst->mmuFlag, dstType);
         ALOGD("lut: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", lutFd, lutBuf, lut->mmuFlag, lutType);
     }
-#endif
 
     relSrcRect.format = RkRgaCompatibleFormat(relSrcRect.format);
     relDstRect.format = RkRgaCompatibleFormat(relDstRect.format);
@@ -2300,17 +2271,11 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
 
     }
 
-#ifdef ANDROID
     if(is_out_log()) {
         ALOGD("srcMmuFlag = %d , dstMmuFlag = %d , lutMmuFlag = %d\n", srcMmuFlag, dstMmuFlag, lutMmuFlag);
         ALOGD("<<<<-------- rgaReg -------->>>>\n");
         NormalRgaLogOutRgaReq(rgaReg);
     }
-#elif LINUX
-#if __DEBUG
-    NormalRgaLogOutRgaReq(rgaReg);
-#endif
-#endif
 
     switch (RkRgaGetRgaFormat(relSrcRect.format)) {
         case RK_FORMAT_BPP1 :
