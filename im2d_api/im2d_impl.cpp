@@ -1593,7 +1593,8 @@ im_job_handle_t rga_job_create(uint32_t flags) {
     g_im2d_job_manager.mutex.lock();
 
     if (g_im2d_job_manager.job_map.count(job_id) != 0) {
-        IM_LOGE("job_map error!\n");
+        IM_LOGE("job_map error! handle[%d] already exists[%lu]!\n",
+                job_id, (unsigned long)g_im2d_job_manager.job_map.count(job_id));
         ret = IM_STATUS_FAILED;
         goto error_cancel_job;
     }
@@ -1680,6 +1681,9 @@ IM_STATUS rga_job_submit(im_job_handle_t job_id, int sync_mode, int acquire_fenc
     submit_request.task_ptr = (uint64_t)&job->req;
     submit_request.task_num = job->task_count;
     submit_request.id = job->id;
+
+    g_im2d_job_manager.job_map.erase(job_id);
+    g_im2d_job_manager.job_count--;
 
     g_im2d_job_manager.mutex.unlock();
 
