@@ -42,13 +42,13 @@ cc_library_shared {
         "core/RgaApi.cpp",
         "core/RgaUtils.cpp",
         "core/rga_sync.cpp",
-        "im2d_api/im2d_log.cpp",
-        "im2d_api/im2d_impl.cpp",
-        "im2d_api/im2d.cpp",
+        "im2d_api/src/im2d_log.cpp",
+        "im2d_api/src/im2d_impl.cpp",
+        "im2d_api/src/im2d.cpp",
     ],
     export_include_dirs: [
         "include",
-        "core"
+        "im2d_api",
     ],
     include_dirs: [
         "external/libdrm",

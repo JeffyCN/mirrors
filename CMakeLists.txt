@@ -64,12 +64,13 @@ set(IM2D_SRCS
     core/RgaUtils.cpp
     core/RgaApi.cpp
     core/rga_sync.cpp
-    im2d_api/im2d_log.cpp
-    im2d_api/im2d_impl.cpp
-    im2d_api/im2d.cpp)
+    im2d_api/src/im2d_log.cpp
+    im2d_api/src/im2d_impl.cpp
+    im2d_api/src/im2d.cpp)
 
 set(IM2D_INCLUDE
     ./
+    ./im2d_api
     ./include
     external/libdrm
     external/libdrm/include/drm
@@ -85,6 +86,7 @@ set(IM2D_PUBLIC_HEADER
     im2d_api/im2d_buffer.h
     im2d_api/im2d_common.h
     im2d_api/im2d_single.h
+    im2d_api/im2d_task.h
     im2d_api/im2d_mpi.h
     im2d_api/im2d_expand.h
 	im2d_api/im2d.h

@@ -81,8 +81,9 @@ LOCAL_SRC_FILES:= \
     core/NormalRgaApi.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
-    im2d_api/im2d_impl.cpp \
-    im2d_api/im2d.cpp
+    im2d_api/src/im2d_log.cpp \
+    im2d_api/src/im2d_impl.cpp \
+    im2d_api/src/im2d.cpp
 
 ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 6.0)))
 ifeq ($(strip $(TARGET_BOARD_PLATFORM_GPU)), mali-t720)
@@ -129,8 +130,9 @@ LOCAL_SRC_FILES += \
     core/NormalRgaApi.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
-    im2d_api/im2d_impl.cpp \
-    im2d_api/im2d.cpp
+    im2d_api/src/im2d_log.cpp \
+    im2d_api/src/im2d_impl.cpp \
+    im2d_api/src/im2d.cpp
 
 LOCAL_MODULE := librga
 LOCAL_PROPRIETARY_MODULE := true
@@ -200,9 +202,9 @@ LOCAL_SRC_FILES += \
     drm/DrmmodeRga.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
-    im2d_api/im2d_log.cpp \
-    im2d_api/im2d_impl.cpp \
-    im2d_api/im2d.cpp
+    im2d_api/src/im2d_log.cpp \
+    im2d_api/src/im2d_impl.cpp \
+    im2d_api/src/im2d.cpp
 
 LOCAL_MODULE := librga
 
