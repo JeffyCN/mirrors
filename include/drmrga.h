@@ -195,7 +195,7 @@ typedef struct rga_info {
 
     union {
         int ctx_id;
-        int job_id;
+        int job_handle;
     };
 
     char reserve[402];

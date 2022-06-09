@@ -43,8 +43,6 @@ IM_EXPORT_API IM_STATUS imcancel(im_ctx_id_t id);
 /**
  * process for rockit-ko
  *
- * @param job_id
- *      Insert the job number of the task.
  * @param src
  *      The input source image and is also the foreground image in blend.
  * @param dst
@@ -64,6 +62,7 @@ IM_EXPORT_API IM_STATUS imcancel(im_ctx_id_t id);
  * @param usage
  *      The image processing usage.
  * @param ctx_id
+ *      ctx id
  *
  * @returns success or else negative error code.
  */

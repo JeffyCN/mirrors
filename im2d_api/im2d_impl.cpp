@@ -1145,7 +1145,7 @@ IM_STATUS rga_get_opt(im_opt_t *opt, void *ptr) {
     return IM_STATUS_SUCCESS;
 }
 
-static IM_STATUS rga_task_submit(im_job_handle_t job_id, rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                                  im_rect srect, im_rect drect, im_rect prect,
                                  int acquire_fence_fd, int *release_fence_fd,
                                  im_opt_t *opt_ptr, int usage) {
@@ -1531,7 +1531,7 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_id, rga_buffer_t src, rga_b
     dstinfo.core = opt.core ? opt.core : g_im2d_context.core;
     dstinfo.priority = opt.priority ? opt.priority : g_im2d_context.priority;
 
-    dstinfo.job_id = job_id;
+    dstinfo.job_handle = job_handle;
 
     if (usage & IM_COLOR_FILL) {
         dstinfo.color = opt.color;
@@ -1570,14 +1570,14 @@ IM_STATUS rga_single_task_submit(rga_buffer_t src, rga_buffer_t dst, rga_buffer_
     return rga_task_submit(0, src, dst, pat, srect, drect, prect, acquire_fence_fd, release_fence_fd, opt_ptr, usage);
 }
 
-IM_STATUS rga_task_submit(im_job_handle_t job_id, rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                           im_rect srect, im_rect drect, im_rect prect, im_opt_t *opt_ptr, int usage) {
-    return rga_task_submit(job_id, src, dst, pat, srect, drect, prect, 0, NULL, opt_ptr, usage);
+    return rga_task_submit(job_handle, src, dst, pat, srect, drect, prect, 0, NULL, opt_ptr, usage);
 }
 
 im_job_handle_t rga_job_create(uint32_t flags) {
     int ret;
-    im_job_handle_t job_id;
+    im_job_handle_t job_handle;
     im_rga_job_t *job = NULL;
 
     if (rga_get_context() != IM_STATUS_SUCCESS)
@@ -1588,13 +1588,13 @@ im_job_handle_t rga_job_create(uint32_t flags) {
         return IM_STATUS_FAILED;
     }
 
-    job_id = flags;
+    job_handle = flags;
 
     g_im2d_job_manager.mutex.lock();
 
-    if (g_im2d_job_manager.job_map.count(job_id) != 0) {
+    if (g_im2d_job_manager.job_map.count(job_handle) != 0) {
         IM_LOGE("job_map error! handle[%d] already exists[%lu]!\n",
-                job_id, (unsigned long)g_im2d_job_manager.job_map.count(job_id));
+                job_handle, (unsigned long)g_im2d_job_manager.job_map.count(job_handle));
         ret = IM_STATUS_FAILED;
         goto error_cancel_job;
     }
@@ -1608,22 +1608,22 @@ im_job_handle_t rga_job_create(uint32_t flags) {
 
     memset(job, 0x0, sizeof(*job));
 
-    job->id = job_id;
-    g_im2d_job_manager.job_map[job_id] = job;
+    job->id = job_handle;
+    g_im2d_job_manager.job_map[job_handle] = job;
     g_im2d_job_manager.job_count++;
 
     g_im2d_job_manager.mutex.unlock();
 
-    return job_id;
+    return job_handle;
 
 error_cancel_job:
     g_im2d_job_manager.mutex.unlock();
-    rga_job_cancel(job_id);
+    rga_job_cancel(job_handle);
 
     return ret;
 }
 
-IM_STATUS rga_job_cancel(im_job_handle_t job_id) {
+IM_STATUS rga_job_cancel(im_job_handle_t job_handle) {
     im_rga_job_t *job = NULL;
 
     if (rga_get_context() != IM_STATUS_SUCCESS)
@@ -1631,19 +1631,19 @@ IM_STATUS rga_job_cancel(im_job_handle_t job_id) {
 
     g_im2d_job_manager.mutex.lock();
 
-    if (g_im2d_job_manager.job_map.count(job_id) > 0) {
-        job = g_im2d_job_manager.job_map[job_id];
+    if (g_im2d_job_manager.job_map.count(job_handle) > 0) {
+        job = g_im2d_job_manager.job_map[job_handle];
         if (job != NULL)
             free(job);
 
-        g_im2d_job_manager.job_map.erase(job_id);
+        g_im2d_job_manager.job_map.erase(job_handle);
     }
 
     g_im2d_job_manager.job_count--;
 
     g_im2d_job_manager.mutex.unlock();
 
-    if (ioctl(rgaCtx->rgaFd, RGA_IOC_REQUEST_CANCEL, &job_id) < 0) {
+    if (ioctl(rgaCtx->rgaFd, RGA_IOC_REQUEST_CANCEL, &job_handle) < 0) {
         IM_LOGE(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
         return IM_STATUS_FAILED;
     }
@@ -1651,7 +1651,7 @@ IM_STATUS rga_job_cancel(im_job_handle_t job_id) {
     return IM_STATUS_SUCCESS;
 }
 
-IM_STATUS rga_job_submit(im_job_handle_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
+IM_STATUS rga_job_submit(im_job_handle_t job_handle, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
     int ret;
     im_rga_job_t *job = NULL;
     struct rga_user_request submit_request;
@@ -1661,14 +1661,14 @@ IM_STATUS rga_job_submit(im_job_handle_t job_id, int sync_mode, int acquire_fenc
 
     g_im2d_job_manager.mutex.lock();
 
-    if (g_im2d_job_manager.job_map.count(job_id) == 0) {
-        IM_LOGE("job_id[%d] is illegal!\n", job_id);
+    if (g_im2d_job_manager.job_map.count(job_handle) == 0) {
+        IM_LOGE("job_handle[%d] is illegal!\n", job_handle);
 
         g_im2d_job_manager.mutex.unlock();
         return IM_STATUS_ILLEGAL_PARAM;
     }
 
-    job = g_im2d_job_manager.job_map[job_id];
+    job = g_im2d_job_manager.job_map[job_handle];
     if (job == NULL) {
         IM_LOGE("job is NULL!\n");
 
@@ -1682,7 +1682,7 @@ IM_STATUS rga_job_submit(im_job_handle_t job_id, int sync_mode, int acquire_fenc
     submit_request.task_num = job->task_count;
     submit_request.id = job->id;
 
-    g_im2d_job_manager.job_map.erase(job_id);
+    g_im2d_job_manager.job_map.erase(job_handle);
     g_im2d_job_manager.job_count--;
 
     g_im2d_job_manager.mutex.unlock();
@@ -1713,7 +1713,7 @@ IM_STATUS rga_job_submit(im_job_handle_t job_id, int sync_mode, int acquire_fenc
     return IM_STATUS_SUCCESS;
 }
 
-IM_STATUS rga_job_config(im_job_handle_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
+IM_STATUS rga_job_config(im_job_handle_t job_handle, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
     int ret;
     im_rga_job_t *job = NULL;
     struct rga_user_request config_request;
@@ -1723,14 +1723,14 @@ IM_STATUS rga_job_config(im_job_handle_t job_id, int sync_mode, int acquire_fenc
 
     g_im2d_job_manager.mutex.lock();
 
-    if (g_im2d_job_manager.job_map.count(job_id) == 0) {
-        IM_LOGE("job_id[%d] is illegal!\n", job_id);
+    if (g_im2d_job_manager.job_map.count(job_handle) == 0) {
+        IM_LOGE("job_handle[%d] is illegal!\n", job_handle);
 
         g_im2d_job_manager.mutex.unlock();
         return IM_STATUS_ILLEGAL_PARAM;
     }
 
-    job = g_im2d_job_manager.job_map[job_id];
+    job = g_im2d_job_manager.job_map[job_handle];
     if (job == NULL) {
         IM_LOGE("job is NULL!\n");
 
