@@ -302,8 +302,9 @@ RGA_SINGLETON_STATIC_INSTANCE(RockchipRga)
         if (!rgaInfo)
             return -EINVAL;
 
-        ALOGE("fd-vir-phy-hnd-format[%d, %p, %p, %lx, %d]", rgaInfo->fd,
-              rgaInfo->virAddr, rgaInfo->phyAddr, (unsigned long)rgaInfo->hnd, rgaInfo->format);
+        ALOGE("handl-fd-vir-phy-hnd-format[%d, %p, %p, %lx, %d]",
+              rgaInfo->handle, rgaInfo->fd, rgaInfo->virAddr, rgaInfo->phyAddr,
+              (unsigned long)rgaInfo->hnd, rgaInfo->format);
         ALOGE("rect[%d, %d, %d, %d, %d, %d, %d, %d]",
               rgaInfo->rect.xoffset, rgaInfo->rect.yoffset,
               rgaInfo->rect.width,   rgaInfo->rect.height, rgaInfo->rect.wstride,

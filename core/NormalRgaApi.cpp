@@ -1063,8 +1063,8 @@ int NormalRgaInitTables() {
 }
 
 void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
-    ALOGE("render_mode = %d rotate_mode = %d in_fence_fd = %d",
-          rgaReg.render_mode, rgaReg.rotate_mode, rgaReg.in_fence_fd);
+    ALOGE("render_mode = %d rotate_mode = %d in_fence_fd = %d handle_flag = 0x%x",
+          rgaReg.render_mode, rgaReg.rotate_mode, rgaReg.in_fence_fd, rgaReg.handle_flag);
     ALOGE("src:[%lx,%lx,%lx],x-y[%d,%d],w-h[%d,%d],vw-vh[%d,%d],f=%d, rd_mode = %d",
           (unsigned long)rgaReg.src.yrgb_addr, (unsigned long)rgaReg.src.uv_addr, (unsigned long)rgaReg.src.v_addr,
           rgaReg.src.x_offset, rgaReg.src.y_offset,

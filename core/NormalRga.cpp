@@ -457,32 +457,32 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
     if (is_out_log()) {
         ALOGD("src->hnd = %p , dst->hnd = %p , src1->hnd = %p\n", src->hnd, dst->hnd, src1 ? src1->hnd : 0);
-        ALOGD("src: Fd = %.2d , phyAddr = %p , virAddr = %p\n",src->fd,src->phyAddr,src->virAddr);
+        ALOGD("src: handle = %d, Fd = %.2d ,phyAddr = %p ,virAddr = %p\n", src->handle, src->fd, src->phyAddr, src->virAddr);
         if (src1)
-            ALOGD("src1: Fd = %.2d , phyAddr = %p , virAddr = %p\n", src1->fd, src1->phyAddr, src1->virAddr);
-        ALOGD("dst: Fd = %.2d , phyAddr = %p , virAddr = %p\n",dst->fd,dst->phyAddr,dst->virAddr);
+            ALOGD("src1: handle = %d, Fd = %.2d , phyAddr = %p , virAddr = %p\n", src1->handle, src1->fd, src1->phyAddr, src1->virAddr);
+        ALOGD("dst: handle = %d, Fd = %.2d ,phyAddr = %p ,virAddr = %p\n", dst->handle, dst->fd, dst->phyAddr, dst->virAddr);
     }
 
     if (src1) {
         if (src->handle > 0 && dst->handle > 0 && src1->handle > 0) {
-            if (src->handle <= 0 || dst->handle <= 0 || src1->handle <= 0) {
-                ALOGE("librga only supports the use of handles only or no handles, [src,src1,dst] = [%d, %d, %d]\n",
-                      src->handle, src1->handle, dst->handle);
-                return -EINVAL;
-            }
-
             /* This will mark the use of handle */
             rgaReg.handle_flag |= 1;
+        } else if ((src->handle > 0 || dst->handle > 0 || src1->handle > 0) &&
+                   (src->handle <= 0 || dst->handle <= 0 || src1->handle <= 0)) {
+            ALOGE("librga only supports the use of handles only or no handles, [src,src1,dst] = [%d, %d, %d]\n",
+                  src->handle, src1->handle, dst->handle);
+            return -EINVAL;
         }
-    } else if (src->handle > 0 && dst->handle > 0) {
-        if (src->handle <= 0 || dst->handle <= 0) {
+    } else {
+        if (src->handle > 0 && dst->handle > 0) {
+            /* This will mark the use of handle */
+            rgaReg.handle_flag |= 1;
+        } else if ((src->handle > 0 || dst->handle > 0) &&
+                   (src->handle <= 0 || dst->handle <= 0)) {
             ALOGE("librga only supports the use of handles only or no handles, [src,dst] = [%d, %d]\n",
                   src->handle, dst->handle);
             return -EINVAL;
         }
-
-        /* This will mark the use of handle */
-        rgaReg.handle_flag |= 1;
     }
 
     /*********** get src addr *************/
@@ -672,10 +672,11 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
         dstFd = -1;
 
     if(is_out_log()) {
-        ALOGD("src: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", srcFd, srcBuf, src->mmuFlag, srcType);
+        ALOGD("handle_flag: 0x%x\n", rgaReg.handle_flag);
+        ALOGD("src: Fd/handle = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", srcFd, srcBuf, src->mmuFlag, srcType);
         if (src1)
-            ALOGD("src1: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", src1Fd, src1Buf, src1->mmuFlag, src1Type);
-        ALOGD("dst: Fd = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", dstFd, dstBuf, dst->mmuFlag, dstType);
+            ALOGD("src1: Fd/handle = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", src1Fd, src1Buf, src1->mmuFlag, src1Type);
+        ALOGD("dst: Fd/handle = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", dstFd, dstBuf, dst->mmuFlag, dstType);
     }
 
     relSrcRect.format = RkRgaCompatibleFormat(relSrcRect.format);
