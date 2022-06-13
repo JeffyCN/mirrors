@@ -1329,15 +1329,7 @@ IM_STATUS imrectangleArray(rga_buffer_t dst, im_rect *rect_array, int array_size
 
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                         im_rect srect, im_rect drect, im_rect prect, int usage) {
-    IM_STATUS ret = IM_STATUS_NOERROR;
-    int release_fence_fd;
-    im_opt_t opt;
-
-    memset(&opt, 0, sizeof(opt));
-
-    ret = improcess(src, dst, pat, srect, drect, prect, -1, &release_fence_fd, &opt, usage);
-
-    return ret;
+    return rga_single_task_submit(src, dst, pat, srect, drect, prect, -1, NULL, NULL, usage);
 }
 
 IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
