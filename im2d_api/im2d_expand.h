@@ -69,7 +69,7 @@ namespace rga {
 IM_API IM_STATUS immakeBorder(rga_buffer_t src, rga_buffer_t dst,
                               int top, int bottom, int left, int right,
                               int border_type, int value = 0,
-                              int sync = 1, int *release_fence_fd = NULL);
+                              int sync = 1, int acquir_fence_fd = -1, int *release_fence_fd = NULL);
 
 };
 
