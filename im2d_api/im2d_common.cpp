@@ -970,7 +970,7 @@ IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, im_handl
 
     buffers[0].type = type;
     buffers[0].memory = memory;
-    memcpy(&buffers[0].memory_info, param, sizeof(struct rga_memory_parm));
+    memcpy(&buffers[0].memory_info, param, sizeof(*param));
     buffers[0].memory_info.format = RkRgaGetRgaFormat(buffers[0].memory_info.format) >> 8;
 
     buffer_pool.buffers = (uint64_t)buffers;
