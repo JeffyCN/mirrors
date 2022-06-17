@@ -192,9 +192,8 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
 }
 
 IM_API rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t  handle,
-                                      int width, int height,
-                                      int wstride, int hstride,
-                                      int format) {
+                                      int width, int height, int format,
+                                      int wstride, int hstride) {
     rga_buffer_t buffer;
 
     memset(&buffer, 0, sizeof(rga_buffer_t));
@@ -212,7 +211,14 @@ IM_API rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t  handle,
 IM_API rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t  handle,
                                       int width, int height,
                                       int format) {
-    return wrapbuffer_handle(handle, width, height, width, height, format);
+    return wrapbuffer_handle(handle, width, height, format, width, height);
+}
+
+IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t  handle,
+                                        int width, int height,
+                                        int wstride, int hstride,
+                                        int format) {
+    return wrapbuffer_handle(handle, width, height, format, wstride, hstride);
 }
 
 #ifdef ANDROID
@@ -1788,13 +1794,6 @@ IM_API IM_STATUS imcancel(im_ctx_id_t id) {
 }
 
 /* For the C interface */
-IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t  handle,
-                                        int width, int height,
-                                        int wstride, int hstride,
-                                        int format) {
-    return wrapbuffer_handle(handle, width, height, wstride, hstride, format);
-}
-
 IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync) {
     return imresize(src, dst, fx, fy, interpolation, sync, NULL);
 }
