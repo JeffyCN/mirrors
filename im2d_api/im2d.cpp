@@ -1762,7 +1762,7 @@ IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
             }
             break;
         case IM_CONFIG_PRIORITY :
-            if (value >= 0 && value <= 6) {
+            if (value > 0 && value <= 6) {
                 g_im2d_context.priority = (int)value;
             } else {
                 ALOGE("IM2D: It's not legal priority, it needs to be a 'int', and it should be in the range of 0~6.");
