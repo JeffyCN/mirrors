@@ -1287,7 +1287,262 @@ IM_API IM_STATUS im_EndJob(im_job_id_t job_id, int sync_mode, int acquire_fence_
     return rga_job_submit(job_id, sync_mode, acquire_fence_fd, release_fence_fd);
 }
 
-IM_API IM_STATUS imfill(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, int color) {
+IM_API IM_STATUS im_AddCopyTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst) {
+    int usage = 0;
+    im_opt_t opt;
+    rga_buffer_t pat;
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    if ((src.width != dst.width) || (src.height != dst.height)) {
+        imSetErrorMsg("imcopy cannot support scale, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                      src.width, src.height, dst.width, dst.height);
+        return IM_STATUS_INVALID_PARAM;
+    }
+
+    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddResizeTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation) {
+    int usage = 0;
+    int width = 0, height = 0;
+    IM_STATUS ret = IM_STATUS_NOERROR;
+    im_opt_t opt;
+    rga_buffer_t pat;
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    if (fx > 0 || fy > 0) {
+        if (fx == 0) fx = 1;
+        if (fy == 0) fy = 1;
+
+        dst.width = (int)(src.width * fx);
+        dst.height = (int)(src.height * fy);
+
+        if(NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format))) {
+            width = dst.width;
+            height = dst.height;
+            dst.width = DOWN_ALIGN(dst.width, 2);
+            dst.height = DOWN_ALIGN(dst.height, 2);
+
+            ret = imcheck(src, dst, srect, drect, usage);
+            if (ret != IM_STATUS_NOERROR) {
+                ALOGE("imresize error, factor[fx,fy]=[%lf,%lf], ALIGN[dw,dh]=[%d,%d][%d,%d]", fx, fy, width, height, dst.width, dst.height);
+                return ret;
+            }
+        }
+    }
+    UNUSED(interpolation);
+
+    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddCropTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, im_rect rect) {
+    int usage = 0;
+    im_opt_t opt;
+    rga_buffer_t pat;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, NULL, &drect, &prect, &opt);
+
+    drect.width = rect.width;
+    drect.height = rect.height;
+
+    return im_AddProcessTask(job_id, src, dst, pat, rect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddCvtColorTask(im_job_id_t job_id, rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode) {
+    int usage = 0;
+    im_opt_t opt;
+    rga_buffer_t pat;
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    src.format = sfmt;
+    dst.format = dfmt;
+
+    dst.color_space_mode = mode;
+
+    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddTranslateTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int x, int y) {
+    int usage = 0;
+    im_opt_t opt;
+    rga_buffer_t pat;
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    if ((src.width != dst.width) || (src.height != dst.height)) {
+        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                      src.width, src.height, dst.width, dst.height);
+        return IM_STATUS_INVALID_PARAM;
+    }
+
+    srect.width = src.width - x;
+    srect.height = src.height - y;
+    drect.x = x;
+    drect.y = y;
+    drect.width = src.width - x;
+    drect.height = src.height - y;
+
+    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddRotateTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int rotation) {
+    int usage = 0;
+    im_opt_t opt;
+    rga_buffer_t pat;
+
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    usage |= rotation;
+
+    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddFlipTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int mode) {
+    int usage = 0;
+    im_opt_t opt;
+    rga_buffer_t pat;
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    usage |= mode;
+
+    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddCompositeTask(im_job_id_t job_id, const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode) {
+    int usage = 0;
+    im_opt_t opt;
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, NULL, &srect, &drect, &prect, &opt);
+
+    usage |= mode;
+
+    return im_AddProcessTask(job_id, srcA, dst, srcB, srect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddBlendTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int mode) {
+    rga_buffer_t pat;
+
+    memset(&pat, 0x0, sizeof(pat));
+
+    return im_AddCompositeTask(job_id, src, pat, dst, mode);
+}
+
+IM_API IM_STATUS im_AddColorKeyTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode) {
+    int usage = 0;
+    im_opt_t opt;
+    rga_buffer_t pat;
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    usage |= mode;
+
+    opt.colorkey_range = range;
+
+    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddOsdTask(im_job_id_t job_id,
+                               const rga_buffer_t osd,const rga_buffer_t bg_image,
+                               const im_rect osd_rect, im_osd_t *osd_config) {
+    int usage = 0;
+    im_opt_t opt;
+    im_rect tmp_rect;
+
+    memset(&opt, 0x0, sizeof(opt));
+    memset(&tmp_rect, 0x0, sizeof(tmp_rect));
+
+    opt.version = RGA_SET_CURRENT_API_VERISON;
+    memcpy(&opt.osd_config, osd_config, sizeof(im_osd_t));
+
+    usage |= IM_ALPHA_BLEND_DST_OVER | IM_OSD;
+
+    return im_AddProcessTask(job_id, bg_image, bg_image, osd, osd_rect, osd_rect, tmp_rect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddQuantizeTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn_info) {
+    int usage = 0;
+    im_opt_t opt;
+    rga_buffer_t pat;
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    usage |= IM_NN_QUANTIZE;
+
+    opt.nn = nn_info;
+
+    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddRopTask(im_job_id_t job_id, const rga_buffer_t src, rga_buffer_t dst, int rop_code) {
+    int usage = 0;
+    im_opt_t opt;
+    rga_buffer_t pat;
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    empty_structure(NULL, NULL, &pat, &srect, &drect, &prect, &opt);
+
+    usage |= IM_ROP;
+
+    opt.rop_code = rop_code;
+
+    return im_AddProcessTask(job_id, src, dst, pat, srect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddMosaicTask(im_job_id_t job_id, const rga_buffer_t image, im_rect rect, int mosaic_mode) {
+    int usage = 0;
+    im_opt_t opt;
+    rga_buffer_t tmp_image;
+    im_rect tmp_rect;
+
+    memset(&opt, 0x0, sizeof(opt));
+    memset(&tmp_image, 0x0, sizeof(tmp_image));
+    memset(&tmp_rect, 0x0, sizeof(tmp_rect));
+
+    usage |= IM_MOSAIC;
+
+    opt.version = RGA_SET_CURRENT_API_VERISON;
+    opt.mosaic_mode = mosaic_mode;
+
+    return im_AddProcessTask(job_id, image, image, tmp_image, rect, rect, tmp_rect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddFillTask(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, int color) {
     int usage = 0;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1303,13 +1558,35 @@ IM_API IM_STATUS imfill(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, int 
 
     opt.color = color;
 
-    return improcess(job_id, src, dst, pat, srect, rect, prect, &opt, usage);
+    return im_AddProcessTask(job_id, src, dst, pat, srect, rect, prect, &opt, usage);
 }
 
-IM_API IM_STATUS improcess(im_job_id_t job_id,
-                           rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
-                           im_rect srect, im_rect drect, im_rect prect,
-                           im_opt_t *opt_ptr, int usage) {
+IM_API IM_STATUS im_AddPaletteTask(im_job_id_t job_id, rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut) {
+    int usage = 0;
+    im_rect srect;
+    im_rect drect;
+    im_rect prect;
+
+    im_opt_t opt;
+
+    empty_structure(NULL, NULL, NULL, &srect, &drect, &prect, &opt);
+
+    /*Don't know if it supports zooming.*/
+    if ((src.width != dst.width) || (src.height != dst.height)) {
+        imSetErrorMsg("The width and height of src and dst need to be equal, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
+                      src.width, src.height, dst.width, dst.height);
+        return IM_STATUS_INVALID_PARAM;
+    }
+
+    usage |= IM_COLOR_PALETTE;
+
+    return im_AddProcessTask(job_id, src, dst, lut, srect, drect, prect, &opt, usage);
+}
+
+IM_API IM_STATUS im_AddProcessTask(im_job_id_t job_id,
+                                   rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                                   im_rect srect, im_rect drect, im_rect prect,
+                                   im_opt_t *opt_ptr, int usage) {
     return rga_task_submit(job_id, src, dst, pat, srect, drect, prect, opt_ptr, usage);
 }
 /* End task api */
