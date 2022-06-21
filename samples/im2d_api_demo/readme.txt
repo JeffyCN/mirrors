@@ -1,1 +1,0 @@
-编译脚本说明与librga的编译说明相同，需要额外指出独立编译demo时需要指定 LIBRGA_PATH 作为librga.so的绝对路径。
