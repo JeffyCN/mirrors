@@ -21,6 +21,11 @@
 
 #include <stdint.h>
 
+typedef uint32_t im_api_version_t;
+typedef uint32_t im_job_id_t;
+typedef uint32_t im_ctx_id_t;
+typedef uint32_t rga_buffer_handle_t;
+
 typedef enum {
     /* Rotation */
     IM_HAL_TRANSFORM_ROT_90     = 1 << 0,
@@ -228,11 +233,6 @@ typedef enum {
     IM_STATUS_ERROR_VERSION     = -5,
     IM_STATUS_FAILED            =  0,
 } IM_STATUS;
-
-typedef uint32_t im_api_version_t;
-typedef uint32_t im_job_id_t;
-typedef uint32_t im_ctx_id_t;
-typedef uint32_t rga_buffer_handle_t;
 
 /* Rectangle definition */
 typedef struct {

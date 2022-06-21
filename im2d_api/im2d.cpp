@@ -146,7 +146,10 @@ IM_API IM_STATUS releasebuffer_handle(rga_buffer_handle_t handle) {
     return rga_release_buffer(handle);
 }
 
-IM_API rga_buffer_t wrapbuffer_virtualaddr_t(void* vir_addr, int width, int height, int wstride, int hstride, int format) {
+#undef wrapbuffer_virtualaddr
+static rga_buffer_t wrapbuffer_virtualaddr(void* vir_addr,
+                                           int width, int height, int format,
+                                           int wstride, int hstride) {
     rga_buffer_t buffer;
 
     memset(&buffer, 0, sizeof(rga_buffer_t));
@@ -154,14 +157,17 @@ IM_API rga_buffer_t wrapbuffer_virtualaddr_t(void* vir_addr, int width, int heig
     buffer.vir_addr = vir_addr;
     buffer.width    = width;
     buffer.height   = height;
-    buffer.wstride  = wstride;
-    buffer.hstride  = hstride;
     buffer.format   = format;
+    buffer.wstride = wstride ? wstride : width;
+    buffer.hstride = hstride ? hstride : height;
 
     return buffer;
 }
 
-IM_API rga_buffer_t wrapbuffer_physicaladdr_t(void* phy_addr, int width, int height, int wstride, int hstride, int format) {
+#undef wrapbuffer_physicaladdr
+static rga_buffer_t wrapbuffer_physicaladdr(void* phy_addr,
+                                            int width, int height, int format,
+                                            int wstride, int hstride) {
     rga_buffer_t buffer;
 
     memset(&buffer, 0, sizeof(rga_buffer_t));
@@ -169,14 +175,17 @@ IM_API rga_buffer_t wrapbuffer_physicaladdr_t(void* phy_addr, int width, int hei
     buffer.phy_addr = phy_addr;
     buffer.width    = width;
     buffer.height   = height;
-    buffer.wstride  = wstride;
-    buffer.hstride  = hstride;
     buffer.format   = format;
+    buffer.wstride = wstride ? wstride : width;
+    buffer.hstride = hstride ? hstride : height;
 
     return buffer;
 }
 
-IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, int hstride, int format) {
+#undef wrapbuffer_fd
+static rga_buffer_t wrapbuffer_fd(int fd,
+                                  int width, int height, int format,
+                                  int wstride, int hstride) {
     rga_buffer_t buffer;
 
     memset(&buffer, 0, sizeof(rga_buffer_t));
@@ -184,13 +193,14 @@ IM_API rga_buffer_t wrapbuffer_fd_t(int fd, int width, int height, int wstride, 
     buffer.fd      = fd;
     buffer.width   = width;
     buffer.height  = height;
-    buffer.wstride = wstride;
-    buffer.hstride = hstride;
     buffer.format  = format;
+    buffer.wstride = wstride ? wstride : width;
+    buffer.hstride = hstride ? hstride : height;
 
     return buffer;
 }
 
+#undef wrapbuffer_handle
 IM_API rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t  handle,
                                       int width, int height, int format,
                                       int wstride, int hstride) {
@@ -201,9 +211,9 @@ IM_API rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t  handle,
     buffer.handle  = handle;
     buffer.width   = width;
     buffer.height  = height;
-    buffer.wstride = wstride;
-    buffer.hstride = hstride;
     buffer.format  = format;
+    buffer.wstride = wstride ? wstride : width;
+    buffer.hstride = hstride ? hstride : height;
 
     return buffer;
 }
@@ -212,13 +222,6 @@ IM_API rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t  handle,
                                       int width, int height,
                                       int format) {
     return wrapbuffer_handle(handle, width, height, format, width, height);
-}
-
-IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t  handle,
-                                        int width, int height,
-                                        int wstride, int hstride,
-                                        int format) {
-    return wrapbuffer_handle(handle, width, height, format, wstride, hstride);
 }
 
 #ifdef ANDROID
@@ -412,20 +415,6 @@ INVAILD:
 }
 #endif
 #endif
-
-IM_API void rga_check_perpare(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
-                              im_rect *src_rect, im_rect *dst_rect, im_rect *pat_rect, int mode_usage) {
-
-      if (mode_usage & IM_CROP) {
-          dst_rect->width = src_rect->width;
-          dst_rect->height = src_rect->height;
-      }
-
-      rga_apply_rect(src, src_rect);
-      rga_apply_rect(dst, dst_rect);
-      if (rga_is_buffer_valid(*pat))
-          rga_apply_rect(pat, pat_rect);
-}
 
 IM_API const char* querystring(int name) {
     bool all_output = 0, all_output_prepared = 0;
@@ -758,93 +747,67 @@ IM_API const char* querystring(int name) {
     return temp;
 }
 
-IM_API IM_STATUS imcheck_t(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
-                           const im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect, int mode_usage) {
-    bool pat_enable = 0;
-    IM_STATUS ret = IM_STATUS_NOERROR;
-    rga_info_table_entry rga_info;
+void rga_check_perpare(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
+                       im_rect *src_rect, im_rect *dst_rect, im_rect *pat_rect, int mode_usage) {
+    (void)(src);
+    (void)(dst);
+    (void)(pat);
+    (void)(src_rect);
+    (void)(dst_rect);
+    (void)(pat_rect);
+    (void)(mode_usage);
+}
 
-    memset(&rga_info, 0x0, sizeof(rga_info));
-    ret = rga_get_info(&rga_info);
-    if (IM_STATUS_FAILED == ret) {
-        ALOGE("rga im2d: rga2 get info failed!\n");
+IM_API IM_STATUS imsync(int fence_fd) {
+    int ret = 0;
+
+    ret = rga_sync_wait(fence_fd, -1);
+    if (ret) {
+        ALOGE("Failed to wait for out fence = %d, ret = %d", fence_fd, ret);
         return IM_STATUS_FAILED;
     }
 
-    /* check driver version. */
-    ret = rga_check_driver();
-    if (ret == IM_STATUS_ERROR_VERSION)
-        return ret;
+    close(fence_fd);
 
-    if (mode_usage & IM_ALPHA_BLEND_MASK) {
-        if (rga_is_buffer_valid(pat))
-            pat_enable = 1;
-    }
-
-    /**************** feature judgment ****************/
-    ret = rga_check_feature(src, pat, dst, pat_enable, mode_usage, rga_info.feature);
-    if (ret != IM_STATUS_NOERROR)
-        return ret;
-
-    /**************** info judgment ****************/
-    if (~mode_usage & IM_COLOR_FILL) {
-        ret = rga_check_info("src", src, src_rect, rga_info.input_resolution);
-        if (ret != IM_STATUS_NOERROR)
-            return ret;
-        ret = rga_check_format("src", src, src_rect, rga_info.input_format, mode_usage);
-        if (ret != IM_STATUS_NOERROR)
-            return ret;
-        ret = rga_check_align("src", src, rga_info.byte_stride);
-        if (ret != IM_STATUS_NOERROR)
-            return ret;
-    }
-    if (pat_enable) {
-        /* RGA1 cannot support src1. */
-        if (rga_info.version & (IM_RGA_HW_VERSION_RGA_1 | IM_RGA_HW_VERSION_RGA_1_PLUS)) {
-            imSetErrorMsg("RGA1/RGA1_PLUS cannot support src1.");
-            return IM_STATUS_NOT_SUPPORTED;
-        }
-
-
-        ret = rga_check_info("pat", pat, pat_rect, rga_info.input_resolution);
-        if (ret != IM_STATUS_NOERROR)
-            return ret;
-        ret = rga_check_format("pat", pat, pat_rect, rga_info.input_format, mode_usage);
-        if (ret != IM_STATUS_NOERROR)
-            return ret;
-        ret = rga_check_align("pat", pat, rga_info.byte_stride);
-        if (ret != IM_STATUS_NOERROR)
-            return ret;
-    }
-    ret = rga_check_info("dst", dst, dst_rect, rga_info.output_resolution);
-    if (ret != IM_STATUS_NOERROR)
-        return ret;
-    ret = rga_check_format("dst", dst, dst_rect, rga_info.output_format, mode_usage);
-    if (ret != IM_STATUS_NOERROR)
-        return ret;
-    ret = rga_check_align("dst", dst, rga_info.byte_stride);
-    if (ret != IM_STATUS_NOERROR)
-        return ret;
-
-    if ((~mode_usage & IM_COLOR_FILL)) {
-        ret = rga_check_limit(src, dst, rga_info.scale_limit, mode_usage);
-        if (ret != IM_STATUS_NOERROR)
-            return ret;
-    }
-
-    if (mode_usage & IM_ALPHA_BLEND_MASK) {
-        ret = rga_check_blend(src, pat, dst, pat_enable, mode_usage);
-        if (ret != IM_STATUS_NOERROR)
-            return ret;
-    }
-
-    ret = rga_check_rotate(mode_usage, rga_info);
-    if (ret != IM_STATUS_NOERROR)
-        return ret;
-
-    return IM_STATUS_NOERROR;
+    return IM_STATUS_SUCCESS;
 }
 
+IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
+
+    switch (name) {
+        case IM_CONFIG_SCHEDULER_CORE :
+            if (value & IM_SCHEDULER_MASK) {
+                g_im2d_context.core = (IM_SCHEDULER_CORE)value;
+            } else {
+                ALOGE("IM2D: It's not legal rga_core, it needs to be a 'IM_SCHEDULER_CORE'.");
+                return IM_STATUS_ILLEGAL_PARAM;
+            }
+            break;
+        case IM_CONFIG_PRIORITY :
+            if (value >= 0 && value <= 6) {
+                g_im2d_context.priority = (int)value;
+            } else {
+                ALOGE("IM2D: It's not legal priority, it needs to be a 'int', and it should be in the range of 0~6.");
+                return IM_STATUS_ILLEGAL_PARAM;
+            }
+            break;
+        case IM_CONFIG_CHECK :
+            if (value == false || value == true) {
+                g_im2d_context.check_mode = (bool)value;
+            } else {
+                ALOGE("IM2D: It's not legal check config, it needs to be a 'bool'.");
+                return IM_STATUS_ILLEGAL_PARAM;
+            }
+            break;
+        default :
+            ALOGE("IM2D: Unsupported config name!");
+            return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    return IM_STATUS_SUCCESS;
+}
+
+/* Start single task api */
 IM_API IM_STATUS imcopy(const rga_buffer_t src, rga_buffer_t dst, int sync, int *release_fence_fd) {
     int usage = 0;
     IM_STATUS ret = IM_STATUS_NOERROR;
@@ -1309,6 +1272,39 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                                   acquire_fence_fd, release_fence_fd,
                                   opt_ptr, usage);
 }
+/* End single task api */
+
+/* Start task api */
+IM_API im_job_id_t im_BeginJob(uint64_t flags) {
+    return rga_job_creat(flags);
+}
+
+IM_API IM_STATUS im_CancelJob(im_job_id_t id) {
+    return rga_job_cancel(id);
+}
+
+IM_API IM_STATUS im_EndJob(im_job_id_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
+    return rga_job_submit(job_id, sync_mode, acquire_fence_fd, release_fence_fd);
+}
+
+IM_API IM_STATUS imfill(im_job_id_t job_id, rga_buffer_t dst, im_rect rect, int color) {
+    int usage = 0;
+    im_opt_t opt;
+    rga_buffer_t pat;
+    rga_buffer_t src;
+    im_rect srect;
+    im_rect prect;
+
+    empty_structure(&src, NULL, &pat, &srect, NULL, &prect, &opt);
+
+    memset(&src, 0, sizeof(rga_buffer_t));
+
+    usage |= IM_COLOR_FILL;
+
+    opt.color = color;
+
+    return improcess(job_id, src, dst, pat, srect, rect, prect, &opt, usage);
+}
 
 IM_API IM_STATUS improcess(im_job_id_t job_id,
                            rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
@@ -1316,12 +1312,21 @@ IM_API IM_STATUS improcess(im_job_id_t job_id,
                            im_opt_t *opt_ptr, int usage) {
     return rga_task_submit(job_id, src, dst, pat, srect, drect, prect, opt_ptr, usage);
 }
+/* End task api */
 
 /* for rockit-ko */
-IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
-                           im_rect srect, im_rect drect, im_rect prect,
-                           int acquire_fence_fd, int *release_fence_fd,
-                           im_opt_t *opt_ptr, int usage, im_ctx_id_t ctx_id) {
+im_ctx_id_t imbegin(uint32_t flags) {
+    return rga_job_creat(flags);
+}
+
+IM_STATUS imcancel(im_ctx_id_t id) {
+    return rga_job_cancel((im_job_id_t)id);
+}
+
+IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                    im_rect srect, im_rect drect, im_rect prect,
+                    int acquire_fence_fd, int *release_fence_fd,
+                    im_opt_t *opt_ptr, int usage, im_ctx_id_t ctx_id) {
     int ret;
     int sync_mode;
 
@@ -1340,93 +1345,47 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
     return rga_job_config((im_job_id_t)ctx_id, sync_mode, acquire_fence_fd, release_fence_fd);
 }
 
-IM_API IM_STATUS imfill(im_job_id_t id, rga_buffer_t dst, im_rect rect, int color) {
-    int usage = 0;
-    IM_STATUS ret = IM_STATUS_NOERROR;
-
-    im_opt_t opt;
-
-    rga_buffer_t pat;
-    rga_buffer_t src;
-
-    im_rect srect;
-    im_rect prect;
-
-    empty_structure(&src, NULL, &pat, &srect, NULL, &prect, &opt);
-
-    memset(&src, 0, sizeof(rga_buffer_t));
-
-    opt.color = color;
-
-    usage = IM_SYNC | IM_COLOR_FILL;
-
-    ret = improcess(id, src, dst, pat, srect, rect, prect, &opt, usage);
-
-    return ret;
-}
-
-IM_API IM_STATUS imsync(int fence_fd) {
-    int ret = 0;
-
-    ret = rga_sync_wait(fence_fd, -1);
-    if (ret) {
-        ALOGE("Failed to wait for out fence = %d, ret = %d", fence_fd, ret);
-        return IM_STATUS_FAILED;
-    }
-
-    close(fence_fd);
-
-    return IM_STATUS_SUCCESS;
-}
-
-IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
-
-    switch (name) {
-        case IM_CONFIG_SCHEDULER_CORE :
-            if (value & IM_SCHEDULER_MASK) {
-                g_im2d_context.core = (IM_SCHEDULER_CORE)value;
-            } else {
-                ALOGE("IM2D: It's not legal rga_core, it needs to be a 'IM_SCHEDULER_CORE'.");
-                return IM_STATUS_ILLEGAL_PARAM;
-            }
-            break;
-        case IM_CONFIG_PRIORITY :
-            if (value > 0 && value <= 6) {
-                g_im2d_context.priority = (int)value;
-            } else {
-                ALOGE("IM2D: It's not legal priority, it needs to be a 'int', and it should be in the range of 0~6.");
-                return IM_STATUS_ILLEGAL_PARAM;
-            }
-            break;
-        case IM_CONFIG_CHECK :
-            if (value == false || value == true) {
-                g_im2d_context.check_mode = (bool)value;
-            } else {
-                ALOGE("IM2D: It's not legal check config, it needs to be a 'bool'.");
-                return IM_STATUS_ILLEGAL_PARAM;
-            }
-            break;
-        default :
-            ALOGE("IM2D: Unsupported config name!");
-            return IM_STATUS_NOT_SUPPORTED;
-    }
-
-    return IM_STATUS_SUCCESS;
-}
-
-IM_API im_job_id_t imbegin(uint32_t flags) {
-    return rga_job_creat(flags);
-}
-
-IM_API IM_STATUS imcancel(im_job_id_t id) {
-    return rga_job_cancel(id);
-}
-
-IM_API IM_STATUS imend(im_job_id_t job_id, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
-    return rga_job_submit(job_id, sync_mode, acquire_fence_fd, release_fence_fd);
+IM_STATUS improcess_ctx(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                        im_rect srect, im_rect drect, im_rect prect,
+                        int acquire_fence_fd, int *release_fence_fd,
+                        im_opt_t *opt_ptr, int usage, im_ctx_id_t ctx_id) {
+    return improcess(src, dst, pat, srect, drect, prect, acquire_fence_fd, release_fence_fd, opt_ptr, usage, ctx_id);
 }
 
 /* For the C interface */
+IM_API rga_buffer_t wrapbuffer_handle_t(rga_buffer_handle_t  handle,
+                                        int width, int height,
+                                        int wstride, int hstride,
+                                        int format) {
+    return wrapbuffer_handle(handle, width, height, format, wstride, hstride);
+}
+
+IM_API rga_buffer_t wrapbuffer_virtualaddr_t(void* vir_addr,
+                                             int width, int height,
+                                             int wstride, int hstride,
+                                             int format) {
+    return wrapbuffer_virtualaddr(vir_addr, width, height, format, wstride, hstride);
+}
+
+IM_API rga_buffer_t wrapbuffer_physicaladdr_t(void* phy_addr,
+                                              int width, int height,
+                                              int wstride, int hstride,
+                                              int format) {
+    return wrapbuffer_physicaladdr(phy_addr, width, height, format, wstride, hstride);
+}
+
+IM_API rga_buffer_t wrapbuffer_fd_t(int fd,
+                                    int width, int height,
+                                    int wstride, int hstride,
+                                    int format) {
+    return wrapbuffer_fd(fd, width, height, format, wstride, hstride);
+}
+
+IM_API IM_STATUS imcheck_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                           im_rect src_rect, im_rect dst_rect, im_rect pat_rect, int mode_usage) {
+    return rga_check_external(src, dst, pat, src_rect, dst_rect, pat_rect, mode_usage);
+}
+
 IM_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync) {
     return imresize(src, dst, fx, fy, interpolation, sync, NULL);
 }

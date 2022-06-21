@@ -75,7 +75,12 @@ set(IM2D_INCLUDE
 set(IM2D_PUBLIC_HEADER
 	im2d_api/im2d_version.h
 	im2d_api/im2d_type.h
-	im2d_api/im2d_hardware.h
+	im2d_api/im2d_symbol.h
+    im2d_api/im2d_buffer.h
+    im2d_api/im2d_common.h
+    im2d_api/im2d_single.h
+    im2d_api/im2d_mpi.h
+    im2d_api/im2d_expand.h
 	im2d_api/im2d.h
 	im2d_api/im2d.hpp
 	include/drmrga.h

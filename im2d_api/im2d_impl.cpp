@@ -946,6 +946,109 @@ IM_STATUS rga_check_feature(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst
     return IM_STATUS_NOERROR;
 }
 
+IM_STATUS rga_check(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
+                    const im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect, int mode_usage) {
+    bool pat_enable = 0;
+    IM_STATUS ret = IM_STATUS_NOERROR;
+    rga_info_table_entry rga_info;
+
+    memset(&rga_info, 0x0, sizeof(rga_info));
+    ret = rga_get_info(&rga_info);
+    if (IM_STATUS_FAILED == ret) {
+        ALOGE("rga im2d: rga2 get info failed!\n");
+        return IM_STATUS_FAILED;
+    }
+
+    /* check driver version. */
+    ret = rga_check_driver();
+    if (ret == IM_STATUS_ERROR_VERSION)
+        return ret;
+
+    if (mode_usage & IM_ALPHA_BLEND_MASK) {
+        if (rga_is_buffer_valid(pat))
+            pat_enable = 1;
+    }
+
+    /**************** feature judgment ****************/
+    ret = rga_check_feature(src, pat, dst, pat_enable, mode_usage, rga_info.feature);
+    if (ret != IM_STATUS_NOERROR)
+        return ret;
+
+    /**************** info judgment ****************/
+    if (~mode_usage & IM_COLOR_FILL) {
+        ret = rga_check_info("src", src, src_rect, rga_info.input_resolution);
+        if (ret != IM_STATUS_NOERROR)
+            return ret;
+        ret = rga_check_format("src", src, src_rect, rga_info.input_format, mode_usage);
+        if (ret != IM_STATUS_NOERROR)
+            return ret;
+        ret = rga_check_align("src", src, rga_info.byte_stride);
+        if (ret != IM_STATUS_NOERROR)
+            return ret;
+    }
+    if (pat_enable) {
+        /* RGA1 cannot support src1. */
+        if (rga_info.version & (IM_RGA_HW_VERSION_RGA_1 | IM_RGA_HW_VERSION_RGA_1_PLUS)) {
+            imSetErrorMsg("RGA1/RGA1_PLUS cannot support src1.");
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+
+
+        ret = rga_check_info("pat", pat, pat_rect, rga_info.input_resolution);
+        if (ret != IM_STATUS_NOERROR)
+            return ret;
+        ret = rga_check_format("pat", pat, pat_rect, rga_info.input_format, mode_usage);
+        if (ret != IM_STATUS_NOERROR)
+            return ret;
+        ret = rga_check_align("pat", pat, rga_info.byte_stride);
+        if (ret != IM_STATUS_NOERROR)
+            return ret;
+    }
+    ret = rga_check_info("dst", dst, dst_rect, rga_info.output_resolution);
+    if (ret != IM_STATUS_NOERROR)
+        return ret;
+    ret = rga_check_format("dst", dst, dst_rect, rga_info.output_format, mode_usage);
+    if (ret != IM_STATUS_NOERROR)
+        return ret;
+    ret = rga_check_align("dst", dst, rga_info.byte_stride);
+    if (ret != IM_STATUS_NOERROR)
+        return ret;
+
+    if ((~mode_usage & IM_COLOR_FILL)) {
+        ret = rga_check_limit(src, dst, rga_info.scale_limit, mode_usage);
+        if (ret != IM_STATUS_NOERROR)
+            return ret;
+    }
+
+    if (mode_usage & IM_ALPHA_BLEND_MASK) {
+        ret = rga_check_blend(src, pat, dst, pat_enable, mode_usage);
+        if (ret != IM_STATUS_NOERROR)
+            return ret;
+    }
+
+    ret = rga_check_rotate(mode_usage, rga_info);
+    if (ret != IM_STATUS_NOERROR)
+        return ret;
+
+    return IM_STATUS_NOERROR;
+}
+
+IM_STATUS rga_check_external(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                             im_rect src_rect, im_rect dst_rect, im_rect pat_rect,
+                             int mode_usage) {
+      if (mode_usage & IM_CROP) {
+          dst_rect.width = src_rect.width;
+          dst_rect.height = src_rect.height;
+      }
+
+      rga_apply_rect(&src, &src_rect);
+      rga_apply_rect(&dst, &dst_rect);
+      if (rga_is_buffer_valid(pat))
+          rga_apply_rect(&pat, &pat_rect);
+
+    return rga_check(src, dst, pat, src_rect, dst_rect, pat_rect, mode_usage);
+}
+
 IM_API IM_STATUS rga_import_buffers(struct rga_buffer_pool *buffer_pool) {
     int ret = 0;
 
@@ -1119,10 +1222,7 @@ static IM_STATUS rga_task_submit(im_job_id_t job_id, rga_buffer_t src, rga_buffe
         rga_set_rect(&patinfo.rect, prect.x, prect.y, pat.width, pat.height, pat.wstride, pat.hstride, pat.format);
     }
 
-    if ((usage & IM_ALPHA_BLEND_MASK) && rga_is_buffer_valid(pat)) /* A+B->C */
-        ret = imcheck_composite(src, dst, pat, srect, drect, prect, usage);
-    else
-        ret = imcheck(src, dst, srect, drect, usage);
+    ret = rga_check(src, dst, pat, srect, drect, prect, usage);
     if(ret != IM_STATUS_NOERROR)
         return (IM_STATUS)ret;
 

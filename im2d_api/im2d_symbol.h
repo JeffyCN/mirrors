@@ -1,7 +1,6 @@
 /*
- * Copyright (C) 2020 Rockchip Electronics Co., Ltd.
+ * Copyright (C) 2022 Rockchip Electronics Co., Ltd.
  * Authors:
- *  PutinLee <putin.lee@rock-chips.com>
  *  Cerf Yu <cerf.yu@rock-chips.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef _im2d_hpp_
-#define _im2d_hpp_
+#ifndef _im2d_symbol_h_
+#define _im2d_symbol_h_
 
-#include "im2d.h"
-#include "im2d_expand.h"
+#define IM_API /* define API export as needed */
 
-#endif /* #ifndef _im2d_hpp_ */
+#ifdef __cplusplus
+#define IM_C_API extern "C"
+#define IM_EXPORT_API extern "C"
+#else
+#define IM_C_API
+#define IM_EXPORT_API
+#endif
 
-
+#endif /* #ifndef _im2d_symbol_h_ */

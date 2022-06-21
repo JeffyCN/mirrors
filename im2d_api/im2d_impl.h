@@ -83,7 +83,10 @@ IM_STATUS rga_check_align(const char *name, rga_buffer_t info, int byte_stride);
 IM_STATUS rga_check_blend(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst, int pat_enable, int mode_usage);
 IM_STATUS rga_check_rotate(int mode_usage, rga_info_table_entry &table);
 IM_STATUS rga_check_feature(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst,
-                                   int pat_enable, int mode_usage, int feature_usage);
+                            int pat_enable, int mode_usage, int feature_usage);
+IM_STATUS rga_check_external(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
+                             const im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect,
+                             int mode_usage);
 
 IM_API IM_STATUS rga_import_buffers(struct rga_buffer_pool *buffer_pool);
 IM_API IM_STATUS rga_release_buffers(struct rga_buffer_pool *buffer_pool);
