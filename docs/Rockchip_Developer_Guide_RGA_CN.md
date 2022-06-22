@@ -2,9 +2,9 @@
 
 文件标识：RK-PC-YF-0002
 
-发布版本：V2.1.0
+发布版本：V2.1.1
 
-日期：2022-01-20
+日期：2022-06-22
 
 文件密级：□绝密   □秘密   □内部资料   ■公开
 
@@ -57,6 +57,7 @@ Rockchip Electronics Co., Ltd.
 | 2020/10/16 | 1.0.1    | 陈城，李煌，余乔伟 | 更新部分接口                                                 |
 | 2021/12/07 | 2.0.0    | 陈城，李煌，余乔伟 | 增加RGA3相关支持                                             |
 | 2022/01/20 | 2.1.0    | 陈城，李煌，余乔伟 | - 更新im2d api接口说明<br/>- 更新硬件指标说明，以及对齐限制<br/>- 增加数据结构介绍 |
+| 2022/06/22 | 2.1.1    | 陈城，李煌，余乔伟 | 完善格式支持/对齐说明                                        |
 
 
 
@@ -226,9 +227,12 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="1">3 (by pass)<br/>2 (scale)</td>
    </tr>
 </table>
+
 > 注：
 >
-> 预期性能为默认RGA频率下计算得出，实际运行性能表现与内存频率等相关，列表数据仅供参考。
+> 1). 单位时钟周期处理像素的能力为理论数据，实际运行性能表现与带宽、硬件频率等相关，列表数据仅供参考。
+>
+> 2). 除最小输入分辨率限制外，每个通道可设置的实际操作矩形的x、y、width、height参数必须大于等于2。
 
 
 
@@ -251,8 +255,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">RGA1</td>
       <td>Pagani</td>
       <td>RK3066</td>
-      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1</td>
-      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar, only for Blur/sharpness)<br/>YUV422 8bit (planar/semi-planar, only for Blur/sharpness)</td>
+      <td rowspan="4"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_BPP1<br/>RK_FORMAT_BPP2<br/>RK_FORMAT_BPP4<br/>RK_FORMAT_BPP8
+      </td>
+      <td rowspan="4"> 
+RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP (only for Blur/sharpness)<br/>RK_FORMAT_YCrCbr_420_SP (only for Blur/sharpness)<br/>RK_FORMAT_YCbCr_422_SP (only for Blur/sharpness)<br/>RK_FORMAT_YCrCbr_422_SP (only for Blur/sharpness)<br/>RK_FORMAT_YCbCr_420_P (only for Blur/sharpness)<br/>RK_FORMAT_YCrCbr_420_P (only for Blur/sharpness)<br/>RK_FORMAT_YCbCr_422_P (only for Blur/sharpness)<br/>RK_FORMAT_YCrCbr_422_P (only for Blur/sharpness)
+      </td>
    </tr>
    <tr>
       <td>Jaguar Plus</td>
@@ -270,8 +277,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA1_plus</td>
       <td>Audi</td>
       <td>RK3128</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar, only for normal Bitblt without alpha)<br/>YUV422 8bit (planar/semi-planar, only for normal Bitblt without alpha)</td>
+      <td rowspan="2"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_BPP1<br/>RK_FORMAT_BPP2<br/>RK_FORMAT_BPP4<br/>RK_FORMAT_BPP8
+      </td>
+      <td rowspan="2"> 
+RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP (only for normal Bitblt without alpha)<br/>RK_FORMAT_YCrCbr_420_SP (only for normal Bitblt without alpha)<br/>RK_FORMAT_YCbCr_422_SP (only for normal Bitblt without alpha)<br/>RK_FORMAT_YCrCbr_422_SP (only for normal Bitblt without alpha)<br/>RK_FORMAT_YCbCr_420_P (only for normal Bitblt without alpha)<br/>RK_FORMAT_YCrCbr_420_P (only for normal Bitblt without alpha)<br/>RK_FORMAT_YCbCr_422_P (only for normal Bitblt without alpha)<br/>RK_FORMAT_YCrCbr_422_P (only for normal Bitblt without alpha)
+      </td>
    </tr>
    <tr>
       <td>Granite</td>
@@ -281,8 +291,10 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA2</td>
       <td>Lincoln</td>
       <td>RK3288/3288w</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)</td>
+      <td rowspan="2"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_BPP1 (only for color palette)<br/>RK_FORMAT_BPP2 (only for color palette)<br/>RK_FORMAT_BPP4 (only for color palette)<br/>RK_FORMAT_BPP8 (only for color palette)
+      </td>
+      <td rowspan="2"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P
+      </td>
    </tr>
    <tr>
       <td>Capricorn</td>
@@ -292,8 +304,10 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">RGA2-Lite0</td>
       <td>Maybach</td>
       <td>RK3368</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)</td>
+      <td rowspan="2"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_BPP1 (only for color palette)<br/>RK_FORMAT_BPP2 (only for color palette)<br/>RK_FORMAT_BPP4 (only for color palette)<br/>RK_FORMAT_BPP8 (only for color palette)
+      </td>
+      <td rowspan="2"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P
+      </td>
    </tr>
    <tr>
       <td>BMW</td>
@@ -303,8 +317,10 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">RGA2-Lite1</td>
       <td>Benz</td>
       <td>RK3228</td>
-      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>YUV420 10bit (planar/semi-planar)<br/>YUV422 10bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
-      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)</td>
+      <td rowspan="4"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B<br/>RK_FORMAT_BPP1 (only for color palette)<br/>RK_FORMAT_BPP2 (only for color palette)<br/>RK_FORMAT_BPP4 (only for color palette)<br/>RK_FORMAT_BPP8 (only for color palette)
+      </td>
+      <td rowspan="4"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P
+      </td>
    </tr>
    <tr>
       <td>Infiniti</td>
@@ -322,8 +338,10 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="6">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)<br/>YUV420 10bit (planar/semi-planar)<br/>YUV422 10bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
-      <td rowspan="2">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar/packed)<br/>YUV422 8bit (planar/semi-planar/packed)</td>
+      <td rowspan="2"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B<br/>RK_FORMAT_BPP1 (only for color palette)<br/>RK_FORMAT_BPP2 (only for color palette)<br/>RK_FORMAT_BPP4 (only for color palette)<br/>RK_FORMAT_BPP8 (only for color palette)
+      </td>
+      <td rowspan="2"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YUYV_420<br/>RK_FORMAT_YVYU_420<br/>RK_FORMAT_UYVY_420<br/>RK_FORMAT_VYUY_420
+      </td>
    </tr>
    <tr>
       <td>Mercury</td>
@@ -332,8 +350,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
    <tr>
       <td>Puma</td>
       <td>RV1126/ RV1109</td>
-      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar/packed)<br/>YUV420 10bit (planar/semi-planar)<br/>YUV422 10bit (planar/semi-planar)<br/>BPP8/BPP4/BPP2/BPP1 (only for color palette)</td>
-      <td rowspan="4">RGBA/BGRA/ARGB/ABGR8888<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (planar/semi-planar/packed)<br/>YUV422 8bit (planar/semi-planar/packed)<br/>YUV400<br/>Y4/Y1</td>
+      <td rowspan="4"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B<br/>RK_FORMAT_BPP1 (only for color palette)<br/>RK_FORMAT_BPP2 (only for color palette)<br/>RK_FORMAT_BPP4 (only for color palette)<br/>RK_FORMAT_BPP8 (only for color palette)
+      </td>
+      <td rowspan="4">
+RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YUYV_420<br/>RK_FORMAT_YVYU_420<br/>RK_FORMAT_UYVY_420<br/>RK_FORMAT_VYUY_420<br/>RK_FORMAT_YCbCr_400<br/>RK_FORMAT_Y4
+   	  </td>
    </tr>
    <tr>
       <td>skylarkV2</td>
@@ -351,11 +372,14 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="1">RGA3</td>
       <td>Orion</td>
       <td>RK3588</td>
-      <td rowspan="1">RGBA/BGRA/ARGB/ABGR8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (semi-planar)<br/>YUV422 8bit (semi-planar/packed)<br/>YUV420 10bit (semi-planar)<br/>YUV422 10bit (semi-planar)</td>
-      <td rowspan="1">RGBA/BGRA8888<br/>RGB/BGR888<br/>RGB/BGR565<br/>YUV420 8bit (semi-planar)<br/>YUV422 8bit (semi-planar/packed)<br/>YUV420 10bit (semi-planar)<br/>YUV422 10bit (semi-planar)</td>
+      <td rowspan="1">
+RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B
+      </td>
+      <td rowspan="1">
+RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B
+      </td>
    </tr>
 </table>
-
 > 注：
 >
 > 1). Y4格式即2的4次方色阶灰度图，Y400格式即2的8次方色阶灰度图。
@@ -378,63 +402,103 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 	<tr>
         <td rowspan="4">RGA1<br/>RGA1_Plus</td>
         <td rowspan="4">4</td>
-        <td>RGBA/BGRA/ARGB/ABGR8888</td>
+        <td>
+RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888
+        </td>
         <td>width stride无对齐要求</td>
     </tr>
     <tr>
-        <td>RGB/BGR888</td>
-        <td>width stride须4对齐</td>
-    </tr>
-    <tr>
-        <td>RGB/BGR565<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551</td>
+        <td>
+RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565
+        </td>
         <td>width stride须2对齐</td>
     </tr>
     <tr>
-        <td>YUV420 8bit (planar/semi-planar)<br/>YUV422 8bit (planar/semi-planar)</td>
+        <td>
+RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888
+        </td>
+        <td>width stride须4对齐</td>
+    </tr>
+    <tr>
+        <td>
+RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P
+        </td>
         <td>width stride须4对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
     </tr>
     <tr>
-        <td rowspan="5">RGA2<br/>RGA2_Lite0<br/>RGA2_Lite1<br/>RGA2_Enhance</td>
-        <td rowspan="5">4</td>
-        <td>RGBA/BGRA/ARGB/ABGR8888</td>
+        <td rowspan="6">RGA2<br/>RGA2_Lite0<br/>RGA2_Lite1<br/>RGA2_Enhance</td>
+        <td rowspan="6">4</td>
+        <td>
+RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888
+        </td>
         <td>width stride无对齐要求</td>
     </tr>
     <tr>
-        <td>RGB/BGR888</td>
-        <td>width stride须4对齐</td>
-    </tr>
-    <tr>
-        <td>RGB/BGR565<br/>RGBA/BGRA/ARGB/ABGR4444<br/>RGBA/BGRA/ARGB/ABGR5551</td>
+        <td>
+RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565
+        </td>
         <td>width stride须2对齐</td>
     </tr>
     <tr>
-        <td>YUV420 8bit (planar/semi-planar/packed)<br/>YUV422 8bit (planar/semi-planar/packed)<br/>YUV400<br/>Y4/Y1</td>
+    	<td>
+RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YUYV_420<br/>RK_FORMAT_YVYU_420<br/>RK_FORMAT_UYVY_420<br/>RK_FORMAT_VYUY_420
+        </td>
+        <td>width stride须2对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
+    </tr>
+    <tr>
+        <td>
+RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888
+        </td>
+        <td>width stride须4对齐</td>
+    </tr>
+    <tr>
+        <td>
+RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YCbCr_400<br/>RK_FORMAT_Y4
+        </td>
         <td>width stride须4对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
     </tr>
     <tr>
-        <td>YUV420 10bit (planar/semi-planar)<br/>YUV422 10bit (planar/semi-planar)</td>
+        <td>
+RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B
+        </td>
         <td>width stride须16对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
     </tr>
 	<tr>
-		<td rowspan="6">RGA3</td>
-        <td rowspan="6">16</td>
-        <td>RGBA/BGRA/ARGB/ABGR8888</td>
+		<td rowspan="7">RGA3</td>
+        <td rowspan="7">16</td>
+        <td>
+RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888
+        </td>
         <td>width stride须4对齐</td>
     </tr>
     <tr>
-        <td>RGB/BGR888</td>
-        <td>width stride须16对齐</td>
-    </tr>
-    <tr>
-        <td>RGB/BGR565</td>
+        <td>
+RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565
+        </td>
         <td>width stride须8对齐</td>
     </tr>
+    <tr>
+    	<td>
+RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422
+        </td>
+        <td>width stride须8对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
+    </tr>
+    <tr>
+        <td>
+RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888
+        </td>
+        <td>width stride须16对齐</td>
+    </tr>
 	<tr>
-        <td>YUV420 8bit (semi-planar)<br/>YUV422 8bit (semi-planar/packed)</td>
+        <td>
+RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP
+        </td>
         <td>width stride须16对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
 	</tr>
     <tr>
-        <td>YUV420 10bit<br/>YUV422 10bit</td>
+        <td>
+RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B
+        </td>
         <td>width stride须64对齐，x_offset、y_offset、width、height、height stride均须2对齐</td>
     </tr>
     <tr>
@@ -442,14 +506,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
         <td>除上述格式对齐要求外，width、height须16对齐</td>
     </tr>
 </table>
-
 > 注：
 >
-> 1). x、y、width、height、width stride、height stride必须大于等于2。
+> 1). 对齐要求计算公式：lcm(bpp，byte_stride * 8) / pixel_stride。
 >
-> 2). 对齐要求计算公式：lcm(bpp，byte_stride * 8) / pixel_stride。
->
-> 3). 当芯片平台搭载多版本硬件时，为了保证硬件利用率，librga会按最严格的对齐要求进行约束。
+> 2). 当芯片平台搭载多版本硬件时，为了保证硬件利用率，librga会按最严格的对齐要求进行约束。
 
 
 
@@ -561,11 +622,13 @@ RGA模块支持库为librga.so，通过对图像缓冲区结构体struct rga_inf
 - **imcrop**： 调用RGA实现快速图像裁剪操作。
 - **imrotate**： 调用RGA实现快速图像旋转操作。
 - **imflip**： 调用RGA实现快速图像翻转操作。
-- **imfill**： 调用RGA实现快速图像填充操作。
 - **imtranslate**： 调用RGA实现快速图像平移操作。
+- **imfill**： 调用RGA实现快速图像填充操作。
+- **immosaic**：调用RGA实现快速图像马赛克遮盖。
 - **imblend**： 调用RGA实现双通道快速图像合成操作。
 - **imcomposite**： 调用RGA实现三通道快速图像合成操作。
 - **imcolorkey**： 调用RGA实现快速图像颜色键操作。
+- **imosd**：调用RGA实现快速图像OSD字幕叠加。
 - **imcvtcolor**： 调用RGA实现快速图像格式转换。
 - **imquantize**： 调用RGA实现快速图像运算点前处理（量化）操作。
 - **imrop**： 调用RGA实现快速图像光栅操作。
@@ -688,18 +751,18 @@ IM_API IM_STATUS releasebuffer_handle(rga_buffer_handle_t handle);
 rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t handle,
                                int width,
                                int height,
+                               int format，
                                int wstride = width,
-                               int hstride = height,
-                               int format);
+                               int hstride = height);
 ```
 | Parameter | **Description**                                              |
 | --------- | ------------------------------------------------------------ |
 | handle    | **[required]** RGA buffer handle                             |
 | width     | **[required]** pixel width of the image that needs to be processed |
 | height    | **[required]** pixel height of the image that needs to be processed |
+| format    | **[required]** pixel format                                  |
 | wtride    | **[optional]** pixel width stride of the image               |
 | hstride   | **[optional]** pixel width stride of the image               |
-| format    | **[required]** pixel format                                  |
 
  **Returns** a rga_buffer_t to desribe image information.
 
@@ -946,7 +1009,7 @@ IM_STATUS imdraw(rga_buffer_t buf,
 
 
 
-### Mosaic
+### 图像马赛克
 
 ----
 
@@ -1097,7 +1160,7 @@ IM_STATUS imcolorkey(const rga_buffer_t src,
 
 
 
-### OSD
+### 图像字幕叠加（OSD）
 
 ------
 
