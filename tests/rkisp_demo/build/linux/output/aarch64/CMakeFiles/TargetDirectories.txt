@@ -1,0 +1,3 @@
+/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64/CMakeFiles/edit_cache.dir
+/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64/CMakeFiles/rebuild_cache.dir
+/home/zyc/camera_engine_rkaiq/tests/rkisp_demo/build/linux/output/aarch64/CMakeFiles/rkisp_demo.dir

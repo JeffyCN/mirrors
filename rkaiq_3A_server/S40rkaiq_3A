@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# Start 3A daemon(Rockchip Auto Image Quality) for each /dev/mediaX device
+#
+
+# The xml db function is not ready yet
+# export CAMERA_ENGINE_RKISP_XML_DB=/etc/iqfiles-db
+
+case "$1" in
+  start)
+    start-stop-daemon -S -m -b -p /tmp/.rkaiq_3A --startas \
+      /bin/sh -- -c "/usr/bin/rkaiq_3A_server 2>&1 | logger -t rkaiq_3A"
+    ;;
+  stop)
+    killall rkaiq_3A_server
+    ;;
+  *)
+    echo "Usage: $0 {start|stop}"
+    exit 1
+    ;;
+esac
+exit 0
