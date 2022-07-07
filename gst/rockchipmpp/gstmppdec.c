@@ -369,6 +369,7 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoInfo *info = &self->info;
   GstVideoCodecState *output_state;
+  GstCaps *tmp_caps;
 
   g_return_val_if_fail (format != GST_VIDEO_FORMAT_UNKNOWN, FALSE);
 
@@ -390,6 +391,11 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
   } else {
     GST_VIDEO_INFO_UNSET_AFBC (&output_state->info);
   }
+
+  tmp_caps = gst_caps_copy (output_state->caps);
+  gst_caps_set_features (output_state->caps, 0,
+      gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
+  gst_caps_append (output_state->caps, tmp_caps);
 
   *info = output_state->info;
   gst_video_codec_state_unref (output_state);

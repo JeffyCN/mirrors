@@ -69,18 +69,15 @@ static GstStaticPadTemplate gst_mpp_jpeg_dec_sink_template =
     GST_STATIC_CAPS ("image/jpeg," "parsed = (boolean) true" ";")
     );
 
-#define MPP_JPEGD_FORMATS \
-    "NV12, " \
-    "BGR16, RGB16, " \
+#define MPP_JPEGDEC_FORMATS \
+    MPP_DEC_FORMATS ", BGR16, RGB16, " \
     "ABGR, ARGB, BGRA, RGBA, xBGR, xRGB, BGRx, RGBx"
 
 static GstStaticPadTemplate gst_mpp_jpeg_dec_src_template =
     GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("video/x-raw, "
-        "format = (string) { " MPP_DEC_FORMATS ", " MPP_JPEGD_FORMATS " }, "
-        "width = (int) [ 48, MAX ], height = (int) [ 48, MAX ]" ";")
+    GST_STATIC_CAPS (GST_MPP_CAPS_MAKE ("{" MPP_JPEGDEC_FORMATS "}") ";")
     );
 
 static const GstVideoFormat gst_mpp_jpeg_dec_pp_formats[] = {

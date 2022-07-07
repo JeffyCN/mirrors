@@ -23,6 +23,7 @@
 #define  __GST_MPP_H__
 
 #include <gst/video/video.h>
+#include <gst/allocators/gstdmabuf.h>
 
 #ifdef HAVE_RGA
 #include <rga/rga.h>
@@ -59,6 +60,15 @@ G_BEGIN_DECLS;
 #define GST_VIDEO_INFO_IS_AFBC(i) \
   GST_VIDEO_INFO_FLAG_IS_SET (i, GST_VIDEO_FLAG_ARM_AFBC)
 #endif
+
+#define GST_MPP_CAPS_MAKE(fmts) \
+    GST_VIDEO_CAPS_MAKE (fmts) ";" \
+    GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_DMABUF, fmts)
+
+#define GST_MPP_CAPS_MAKE_EXT(fmts, ext) \
+    GST_VIDEO_CAPS_MAKE (fmts) ", " ext ";" \
+    GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_DMABUF, fmts) \
+    ", " ext
 
 /* The MPP requires alignment 16 by default */
 #define GST_MPP_ALIGNMENT 16
