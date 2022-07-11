@@ -636,7 +636,7 @@ out:
     gst_video_codec_frame_ref (frame);
 
     /* Prefer using MPP PTS */
-    if (GST_CLOCK_TIME_IS_VALID (pts))
+    if (self->use_mpp_pts)
       frame->pts = pts;
   }
 
