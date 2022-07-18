@@ -28,7 +28,7 @@ libthreads_dep = dependency('threads')
 
 gen_version = vcs_tag(
 	command : ['./genversion.sh', 'meson'],
-	replace_string : ['$GIT_BUILD_VERSION'],
+	replace_string : '$GIT_BUILD_VERSION',
 	input : 'version.h.template', output : 'version.h',
  )
 add_project_arguments('-DLINUX=1', language : 'cpp')
