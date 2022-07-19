@@ -61,15 +61,6 @@ G_BEGIN_DECLS;
   GST_VIDEO_INFO_FLAG_IS_SET (i, GST_VIDEO_FLAG_ARM_AFBC)
 #endif
 
-#define GST_MPP_CAPS_MAKE(fmts) \
-    GST_VIDEO_CAPS_MAKE (fmts) ";" \
-    GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_DMABUF, fmts)
-
-#define GST_MPP_CAPS_MAKE_EXT(fmts, ext) \
-    GST_VIDEO_CAPS_MAKE (fmts) ", " ext ";" \
-    GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_DMABUF, fmts) \
-    ", " ext
-
 /* The MPP requires alignment 16 by default */
 #define GST_MPP_ALIGNMENT 16
 #define GST_MPP_ALIGN(v) GST_ROUND_UP_N (v, GST_MPP_ALIGNMENT)

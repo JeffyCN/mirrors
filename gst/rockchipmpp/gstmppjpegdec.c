@@ -77,7 +77,7 @@ static GstStaticPadTemplate gst_mpp_jpeg_dec_src_template =
     GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
-    GST_STATIC_CAPS (GST_MPP_CAPS_MAKE ("{" MPP_JPEGDEC_FORMATS "}") ";")
+    GST_STATIC_CAPS (MPP_DEC_CAPS_MAKE ("{" MPP_JPEGDEC_FORMATS "}") ";")
     );
 
 static const GstVideoFormat gst_mpp_jpeg_dec_pp_formats[] = {
