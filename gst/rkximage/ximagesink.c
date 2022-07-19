@@ -473,10 +473,12 @@ drm_ensure_allowed_caps (GstRkXImageSink * self, drmModePlane * plane,
       GstCaps *afbc_caps = gst_caps_copy (caps);
       gst_caps_set_simple (afbc_caps, "arm-afbc", G_TYPE_INT, 1, NULL);
 
-      if (linear)
+      if (linear) {
         gst_caps_append (caps, afbc_caps);
-      else
+      } else {
         gst_caps_replace (&caps, afbc_caps);
+        gst_caps_unref (afbc_caps);
+      }
     }
 
     out_caps = gst_caps_merge (out_caps, caps);

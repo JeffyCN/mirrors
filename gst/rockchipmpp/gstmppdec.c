@@ -801,6 +801,7 @@ gst_mpp_dec_update_interlace_mode (GstVideoDecoder * decoder,
       gst_caps_set_simple (caps, "interlace-mode", G_TYPE_STRING,
           gst_video_interlace_mode_to_string (interlace_mode), NULL);
       gst_caps_replace (&output_state->caps, caps);
+      gst_caps_unref (caps);
 
       GST_VIDEO_INFO_INTERLACE_MODE (&output_state->info) = interlace_mode;
       self->interlace_mode = interlace_mode;
