@@ -440,6 +440,12 @@ int wifibt_load_driver(void)
 		return -1;
 	}
 
+	if (strstr(recoginze_wifi_chip , "AP")) {
+		if (access("/system/lib/modules/dhd_static_buf.ko", F_OK) == 0)
+			system("insmod /system/lib/modules/dhd_static_buf.ko");
+	}
+
+	usleep(500 * 1000);
 	sprintf(temp, "insmod %s %s", wifi_ko_path, wifi_ko_arg);
 	pr_info("%s %s\n", __func__, temp);
 	if (system(temp)) {
