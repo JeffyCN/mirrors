@@ -737,9 +737,6 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
         GST_VIDEO_INFO_WIDTH (info), GST_VIDEO_INFO_HEIGHT (info));
   }
 
-  if (GST_VIDEO_INFO_IS_AFBC (info))
-    GST_MEMORY_FLAGS (mem) |= GST_MEMORY_FLAG_NOT_MAPPABLE;
-
   gst_buffer_append_memory (buffer, mem);
 
   gst_buffer_add_video_meta_full (buffer, GST_VIDEO_FRAME_FLAG_NONE,
