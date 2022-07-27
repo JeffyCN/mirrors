@@ -364,6 +364,7 @@ static int create_bt_test_file_for_brcm(void)
 		fclose(fp);
 		system("chmod 777 /userdata/bt_pcba_test");
 		system("mount --bind /userdata/bt_pcba_test /usr/bin/bt_pcba_test");
+		system("mount --bind /userdata/bt_pcba_test /usr/bin/bt_init.sh");
 		return 0;
 	}
 	return -1;
