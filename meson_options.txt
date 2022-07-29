@@ -1,6 +1,7 @@
 # Feature options for plugins
 option('rkximage', type : 'feature', value : 'auto', description : 'Rockchip X11 ximage + KMS sink plugin')
 option('rockchipmpp', type : 'feature', value : 'auto', description : 'Rockchip MPP encoder/decoder plugin')
+option('kmssrc', type : 'feature', value : 'auto', description : 'KMS src plugin')
 option('rga', type : 'feature', value : 'auto', description : 'Use Rockchip librga for conversions')
 option('vpxalphadec', type : 'feature', value : 'auto', description : 'VPX Alpha Decoder')
 
