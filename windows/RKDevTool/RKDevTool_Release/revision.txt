@@ -65,3 +65,17 @@ v2.91 revision(2021/11/10)
 v2.92 revision(2021/11/30)
 1.support 4 images for idblock
 2.support one single idblock for nor flash
+
+v2.93 revision(2021/12/31)
+1.support to parse efi partition flag on gpt parameter
+2.fix partsize update without downloading parameter
+
+v2.94 revision(2022/03/17)
+1.free rkimage resource when loading fw done
+2.reload rkimage fw before downloading
+
+v2.95 revision(2022/05/19)
+1.fix double download boot on upgrading update.img
+
+v2.96 revision(2022/05/26)
+1.support to upgrade env update.img
