@@ -26,7 +26,7 @@
 #define VOP_REG_MASK(off, _mask, s) \
 		_VOP_REG(off, _mask, s, true)
 
-static const uint32_t formats_win_full_10bit[] = {
+static const uint32_t formats_for_cluster[] = {
 	DRM_FORMAT_XRGB8888,
 	DRM_FORMAT_ARGB8888,
 	DRM_FORMAT_XBGR8888,
@@ -44,7 +44,7 @@ static const uint32_t formats_win_full_10bit[] = {
 	DRM_FORMAT_YUYV, /* yuv422_8bit non-Linear mode only*/
 };
 
-static const uint32_t formats_win_full_10bit_yuyv[] = {
+static const uint32_t formats_for_rk356x_esmart[] = {
 	DRM_FORMAT_XRGB8888,
 	DRM_FORMAT_ARGB8888,
 	DRM_FORMAT_XBGR8888,
@@ -63,7 +63,7 @@ static const uint32_t formats_win_full_10bit_yuyv[] = {
 	DRM_FORMAT_VYUY,
 };
 
-static const uint32_t formats_win_lite[] = {
+static const uint32_t formats_for_smart[] = {
 	DRM_FORMAT_XRGB8888,
 	DRM_FORMAT_ARGB8888,
 	DRM_FORMAT_XBGR8888,
@@ -1017,8 +1017,8 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .name = "Smart0-win0",
 	  .phys_id = ROCKCHIP_VOP2_SMART0,
 	  .base = 0x400,
-	  .formats = formats_win_lite,
-	  .nformats = ARRAY_SIZE(formats_win_lite),
+	  .formats = formats_for_smart,
+	  .nformats = ARRAY_SIZE(formats_for_smart),
 	  .format_modifiers = format_modifiers,
 	  .layer_sel_id = 3,
 	  .supported_rotations = DRM_MODE_REFLECT_Y,
@@ -1039,8 +1039,8 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	{
 	  .name = "Smart1-win0",
 	  .phys_id = ROCKCHIP_VOP2_SMART1,
-	  .formats = formats_win_lite,
-	  .nformats = ARRAY_SIZE(formats_win_lite),
+	  .formats = formats_for_smart,
+	  .nformats = ARRAY_SIZE(formats_for_smart),
 	  .format_modifiers = format_modifiers,
 	  .base = 0x600,
 	  .layer_sel_id = 7,
@@ -1062,8 +1062,8 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	{
 	  .name = "Esmart1-win0",
 	  .phys_id = ROCKCHIP_VOP2_ESMART1,
-	  .formats = formats_win_full_10bit_yuyv,
-	  .nformats = ARRAY_SIZE(formats_win_full_10bit_yuyv),
+	  .formats = formats_for_rk356x_esmart,
+	  .nformats = ARRAY_SIZE(formats_for_rk356x_esmart),
 	  .format_modifiers = format_modifiers,
 	  .base = 0x200,
 	  .layer_sel_id = 6,
@@ -1085,8 +1085,8 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	{
 	  .name = "Esmart0-win0",
 	  .phys_id = ROCKCHIP_VOP2_ESMART0,
-	  .formats = formats_win_full_10bit_yuyv,
-	  .nformats = ARRAY_SIZE(formats_win_full_10bit_yuyv),
+	  .formats = formats_for_rk356x_esmart,
+	  .nformats = ARRAY_SIZE(formats_for_rk356x_esmart),
 	  .format_modifiers = format_modifiers,
 	  .base = 0x0,
 	  .layer_sel_id = 2,
@@ -1109,8 +1109,8 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .name = "Cluster0-win0",
 	  .phys_id = ROCKCHIP_VOP2_CLUSTER0,
 	  .base = 0x00,
-	  .formats = formats_win_full_10bit,
-	  .nformats = ARRAY_SIZE(formats_win_full_10bit),
+	  .formats = formats_for_cluster,
+	  .nformats = ARRAY_SIZE(formats_for_cluster),
 	  .format_modifiers = format_modifiers_afbc,
 	  .layer_sel_id = 0,
 	  .supported_rotations = DRM_MODE_ROTATE_90 | DRM_MODE_ROTATE_270 |
@@ -1132,8 +1132,8 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .phys_id = ROCKCHIP_VOP2_CLUSTER0,
 	  .base = 0x80,
 	  .layer_sel_id = -1,
-	  .formats = formats_win_full_10bit,
-	  .nformats = ARRAY_SIZE(formats_win_full_10bit),
+	  .formats = formats_for_cluster,
+	  .nformats = ARRAY_SIZE(formats_for_cluster),
 	  .format_modifiers = format_modifiers_afbc,
 	  .supported_rotations = DRM_MODE_REFLECT_X | DRM_MODE_REFLECT_Y,
 	  .hsu_filter_mode = VOP2_SCALE_UP_BIC,
@@ -1151,8 +1151,8 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .name = "Cluster1-win0",
 	  .phys_id = ROCKCHIP_VOP2_CLUSTER1,
 	  .base = 0x00,
-	  .formats = formats_win_full_10bit,
-	  .nformats = ARRAY_SIZE(formats_win_full_10bit),
+	  .formats = formats_for_cluster,
+	  .nformats = ARRAY_SIZE(formats_for_cluster),
 	  .format_modifiers = format_modifiers_afbc,
 	  .layer_sel_id = 1,
 	  .supported_rotations = DRM_MODE_ROTATE_90 | DRM_MODE_ROTATE_270 |
@@ -1173,8 +1173,8 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .name = "Cluster1-win1",
 	  .phys_id = ROCKCHIP_VOP2_CLUSTER1,
 	  .layer_sel_id = -1,
-	  .formats = formats_win_full_10bit,
-	  .nformats = ARRAY_SIZE(formats_win_full_10bit),
+	  .formats = formats_for_cluster,
+	  .nformats = ARRAY_SIZE(formats_for_cluster),
 	  .format_modifiers = format_modifiers_afbc,
 	  .base = 0x80,
 	  .supported_rotations = DRM_MODE_REFLECT_X | DRM_MODE_REFLECT_Y,
