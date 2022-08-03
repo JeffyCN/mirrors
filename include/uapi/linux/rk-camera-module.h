@@ -12,7 +12,7 @@
 #define RKMODULE_API_VERSION		KERNEL_VERSION(0, 1, 0x2)
 
 /* using for rk3588 dual isp unite */
-#define RKMOUDLE_UNITE_EXTEND_PIXEL	128
+#define RKMOUDLE_UNITE_EXTEND_PIXEL	32
 /* using for rv1109 and rv1126 */
 #define RKMODULE_EXTEND_LINE		24
 
@@ -24,6 +24,8 @@
 #define RKMODULE_PADF_GAINMAP_LEN	1024
 #define RKMODULE_PDAF_DCCMAP_LEN	256
 #define RKMODULE_AF_OTP_MAX_LEN		3
+
+#define RKMODULE_MAX_SENSOR_NUM		8
 
 #define RKMODULE_CAMERA_MODULE_INDEX	"rockchip,camera-module-index"
 #define RKMODULE_CAMERA_MODULE_FACING	"rockchip,camera-module-facing"
@@ -53,6 +55,8 @@
 							 RKMODULE_CAMERA_BT656_CHANNEL_1 | \
 							 RKMODULE_CAMERA_BT656_CHANNEL_2 | \
 							 RKMODULE_CAMERA_BT656_CHANNEL_3)
+
+#define DPHY_MAX_LANE					4
 
 #define RKMODULE_GET_MODULE_INFO	\
 	_IOR('V', BASE_VIDIOC_PRIVATE + 0, struct rkmodule_inf)
@@ -124,7 +128,7 @@
 	_IOW('V', BASE_VIDIOC_PRIVATE + 22, __u32)
 
 #define RKMODULE_SET_MCLK       \
-	_IOW('V', BASE_VIDIOC_PRIVATE + 23, __u32)
+	_IOW('V', BASE_VIDIOC_PRIVATE + 23, struct rkmodule_mclk_data)
 
 #define RKMODULE_SET_LINK_FREQ       \
 	_IOW('V', BASE_VIDIOC_PRIVATE + 24, __s64)
@@ -144,8 +148,37 @@
 #define RKMODULE_SYNC_I2CDEV_COMPLETE       \
 	_IOW('V', BASE_VIDIOC_PRIVATE + 29, __u8)
 
-#define RKMODULE_GET_READOUT_LINE_CNT_PER_LINE  \
+#define RKMODULE_SET_DEV_INFO       \
+	_IOW('V', BASE_VIDIOC_PRIVATE + 30, struct rkmodule_dev_info)
+
+#define RKMODULE_SET_CSI_DPHY_PARAM       \
+	_IOW('V', BASE_VIDIOC_PRIVATE + 31, struct rkmodule_csi_dphy_param)
+
+#define RKMODULE_GET_CSI_DPHY_PARAM       \
+	_IOWR('V', BASE_VIDIOC_PRIVATE + 32, struct rkmodule_csi_dphy_param)
+
+#define RKMODULE_GET_CSI_DSI_INFO       \
+	_IOWR('V', BASE_VIDIOC_PRIVATE + 33, __u32)
+
+#define RKMODULE_GET_HDMI_MODE       \
 	_IOR('V', BASE_VIDIOC_PRIVATE + 34, __u32)
+
+#define RKMODULE_SET_SENSOR_INFOS       \
+	_IOWR('V', BASE_VIDIOC_PRIVATE + 35, struct rkmodule_sensor_infos)
+
+#define RKMODULE_GET_READOUT_LINE_CNT_PER_LINE  \
+	_IOR('V', BASE_VIDIOC_PRIVATE + 36, __u32)
+
+struct rkmodule_i2cdev_info {
+	u8 slave_addr;
+} __attribute__ ((packed));
+
+struct rkmodule_dev_info {
+	union {
+		struct rkmodule_i2cdev_info i2c_dev;
+		u32 reserved[8];
+	};
+} __attribute__ ((packed));
 
 /* csi0/csi1 phy support full/split mode */
 enum rkmodule_phy_mode {
@@ -399,6 +432,14 @@ enum hdr_esp_mode {
 	HDR_ID_CODE,
 };
 
+/*
+ * CSI/DSI input select IOCTL
+ */
+enum rkmodule_csi_dsi_seq {
+	RKMODULE_CSI_INPUT = 0,
+	RKMODULE_DSI_INPUT,
+};
+
 /**
  * lcnt: line counter
  *     padnum: the pixels of padding row
@@ -566,6 +607,13 @@ enum rkmodule_start_stream_seq {
 };
 
 /*
+ * HDMI to MIPI-CSI MODE IOCTL
+ */
+enum rkmodule_hdmiin_mode_seq {
+	RKMODULE_HDMIIN_DEFAULT = 0,
+	RKMODULE_HDMIIN_MODE,
+};
+/*
  * the causation to do cif reset work
  */
 enum rkmodule_reset_src {
@@ -613,4 +661,79 @@ enum rkmodule_sync_mode {
 	INTERNAL_MASTER_MODE,
 	SLAVE_MODE,
 };
+
+struct rkmodule_mclk_data {
+	u32 enable;
+	u32 mclk_index;
+	u32 mclk_rate;
+	u32 reserved[8];
+};
+
+/*
+ * csi dphy param
+ * lp_vol_ref -> Reference voltage-645mV for LP  Function control pin
+ * for rk3588 dcphy
+ * 3'b000 : 605mV
+ * 3'b001 : 625mV
+ * 3'b010 : 635mV
+ * 3'b011 : 645mV
+ * 3'b100 : 655mV
+ * 3'b101 : 665mV
+ * 3'b110 : 685mV
+ * 3'b111 : 725mV
+ *
+ * lp_hys_sw -> LP-RX Hysteresis Level Control
+ * for rk3588 dcphy
+ * 2'b00=45mV
+ * 2'b01=65mV
+ * 2'b10=85mV
+ * 2'b11=100mV
+ *
+ * lp_escclk_pol_sel -> LP ESCCLK Polarity sel
+ * for rk3588 dcphy
+ * 1'b0: normal
+ * 1'b1: swap ,Increase 1ns delay
+ *
+ * skew_data_cal_clk -> Skew Calibration Manual Data Fine Delay Control Register
+ * for rk3588 dcphy
+ * BIT[4:0] 30ps a step
+ *
+ * clk_hs_term_sel/data_hs_term_sel -> HS-RX Termination Impedance Control
+ * for rk3588 dcphy
+ * 3b'000 : 102Ω
+ * 3b'001 : 99.1Ω
+ * 3b'010 : 96.6Ω (default)
+ * 3b'011 : 94.1Ω
+ * 3b'100 : 113Ω
+ * 3b'101 : 110Ω
+ * 3b'110 : 107Ω
+ * 3b'111 : 104Ω
+ */
+
+enum csi2_dphy_vendor {
+	PHY_VENDOR_INNO = 0x0,
+	PHY_VENDOR_SAMSUNG = 0x01,
+};
+
+struct rkmodule_csi_dphy_param {
+	u32 vendor;
+	u32 lp_vol_ref;
+	u32 lp_hys_sw[DPHY_MAX_LANE];
+	u32 lp_escclk_pol_sel[DPHY_MAX_LANE];
+	u32 skew_data_cal_clk[DPHY_MAX_LANE];
+	u32 clk_hs_term_sel;
+	u32 data_hs_term_sel[DPHY_MAX_LANE];
+	u32 reserved[32];
+};
+
+struct rkmodule_sensor_fmt {
+	__u32 sensor_index;
+	__u32 sensor_width;
+	__u32 sensor_height;
+};
+
+struct rkmodule_sensor_infos {
+	struct rkmodule_sensor_fmt sensor_fmt[RKMODULE_MAX_SENSOR_NUM];
+};
+
 #endif /* _UAPI_RKMODULE_CAMERA_H */
