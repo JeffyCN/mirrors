@@ -2980,8 +2980,11 @@ static int rkcif_stream_start(struct rkcif_stream *stream)
 	val = stream->pixm.width;
 	if (stream->cif_fmt_in->fmt_type == CIF_FMT_TYPE_RAW) {
 		fmt = find_output_fmt(stream, stream->pixm.pixelformat);
-		if (fmt->fmt_type == CIF_FMT_TYPE_RAW &&
-		    fmt->csi_fmt_val == CSI_WRDDR_TYPE_RAW8)
+		if (fmt->fourcc == V4L2_PIX_FMT_GREY ||
+		    fmt->fourcc == V4L2_PIX_FMT_SRGGB8 ||
+		    fmt->fourcc == V4L2_PIX_FMT_SGRBG8 ||
+		    fmt->fourcc == V4L2_PIX_FMT_SGBRG8 ||
+		    fmt->fourcc == V4L2_PIX_FMT_SBGGR8)
 			val = ALIGN(stream->pixm.width * fmt->raw_bpp / 8, 256);
 		else
 			val = stream->pixm.width * rkcif_cal_raw_vir_line_ratio(stream, fmt);
@@ -3367,6 +3370,12 @@ static void rkcif_set_fmt(struct rkcif_stream *stream,
 		    (dev->active_sensor->mbus.type == V4L2_MBUS_CSI2 ||
 		     dev->active_sensor->mbus.type == V4L2_MBUS_CCP2) &&
 		     fmt->csi_fmt_val != CSI_WRDDR_TYPE_RGB888) {
+			bpl = ALIGN(width * fmt->raw_bpp / 8, 256);
+		} else if (fmt->fourcc == V4L2_PIX_FMT_GREY ||
+			   fmt->fourcc == V4L2_PIX_FMT_SRGGB8 ||
+			   fmt->fourcc == V4L2_PIX_FMT_SGRBG8 ||
+			   fmt->fourcc == V4L2_PIX_FMT_SGBRG8 ||
+			   fmt->fourcc == V4L2_PIX_FMT_SBGGR8) {
 			bpl = ALIGN(width * fmt->raw_bpp / 8, 256);
 		} else {
 			bpp = rkcif_align_bits_per_pixel(stream, fmt, i);
@@ -4920,7 +4929,14 @@ static void rkcif_dynamic_crop(struct rkcif_stream *stream)
 
 		if (stream->cif_fmt_in->fmt_type == CIF_FMT_TYPE_RAW) {
 			fmt = find_output_fmt(stream, stream->pixm.pixelformat);
-			crop_vwidth = raw_width * rkcif_cal_raw_vir_line_ratio(stream, fmt);
+			if (fmt->fourcc == V4L2_PIX_FMT_GREY ||
+			    fmt->fourcc == V4L2_PIX_FMT_SRGGB8 ||
+			    fmt->fourcc == V4L2_PIX_FMT_SGRBG8 ||
+			    fmt->fourcc == V4L2_PIX_FMT_SGBRG8 ||
+			    fmt->fourcc == V4L2_PIX_FMT_SBGGR8)
+				crop_vwidth = ALIGN(raw_width * fmt->raw_bpp / 8, 256);
+			else
+				crop_vwidth = raw_width * rkcif_cal_raw_vir_line_ratio(stream, fmt);
 		}
 		rkcif_write_register(cif_dev, CIF_REG_DVP_VIR_LINE_WIDTH, crop_vwidth);
 
