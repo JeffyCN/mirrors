@@ -84,6 +84,9 @@ static int rockchip_drm_fb_create_handle(struct drm_framebuffer *fb,
 {
 	struct rockchip_drm_fb *rockchip_fb = to_rockchip_fb(fb);
 
+	if (rockchip_fb_is_logo(fb))
+		return -EOPNOTSUPP;
+
 	return drm_gem_handle_create(file_priv,
 				     rockchip_fb->obj[0], handle);
 }
