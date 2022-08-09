@@ -662,6 +662,8 @@ static const struct reg_sequence gc2093_1080p_hdr_settings[] = {
 	{0x010e, 0x01},
 	{0x010f, 0x00},
 	{0x0158, 0x00},
+	{0x0183, 0x01},
+	{0x0187, 0x50},
 	/*dark sun*/
 	{0x0123, 0x08},
 	{0x0123, 0x00},
@@ -1105,7 +1107,8 @@ static long gc2093_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 			dev_info(gc2093->dev, "don't streaming, record hdrae\n");
 			break;
 		}
-
+		/* group hold start*/
+		gc2093_write_reg(gc2093, 0x031d, 0x2c);
 		ret = gc2093_set_gain(gc2093, hdrae_exp->short_gain_reg);
 		if (ret) {
 			dev_err(gc2093->dev, "Failed to set gain!)\n");
@@ -1168,6 +1171,8 @@ static long gc2093_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 					(short_exp >> 8) & 0x3f);
 		ret |= gc2093_write_reg(gc2093, GC2093_REG_EXP_SHORT_L,
 					short_exp & 0xff);
+		/* group hold end*/
+		gc2093_write_reg(gc2093, 0x031d, 0x28);
 		break;
 	case RKMODULE_GET_HDR_CFG:
 		hdr_cfg = (struct rkmodule_hdr_cfg *)arg;
