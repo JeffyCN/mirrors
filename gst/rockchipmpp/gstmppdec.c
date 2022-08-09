@@ -62,6 +62,7 @@ G_DEFINE_ABSTRACT_TYPE (GstMppDec, gst_mpp_dec, GST_TYPE_VIDEO_DECODER);
 
 static gboolean DEFAULT_PROP_IGNORE_ERROR = TRUE;
 static gboolean DEFAULT_PROP_FAST_MODE = TRUE;
+static gboolean DEFAULT_PROP_DMA_FEATURE = TRUE;
 
 enum
 {
@@ -72,6 +73,7 @@ enum
   PROP_CROP_RECTANGLE,
   PROP_IGNORE_ERROR,
   PROP_FAST_MODE,
+  PROP_DMA_FEATURE,
   PROP_LAST,
 };
 
@@ -145,6 +147,10 @@ gst_mpp_dec_set_property (GObject * object,
         self->fast_mode = g_value_get_boolean (value);
       break;
     }
+    case PROP_DMA_FEATURE:{
+      self->dma_feature = g_value_get_boolean (value);
+      break;
+    }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -173,6 +179,9 @@ gst_mpp_dec_get_property (GObject * object,
       break;
     case PROP_FAST_MODE:
       g_value_set_boolean (value, self->fast_mode);
+      break;
+    case PROP_DMA_FEATURE:
+      g_value_set_boolean (value, self->dma_feature);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -369,7 +378,6 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoInfo *info = &self->info;
   GstVideoCodecState *output_state;
-  GstCaps *tmp_caps;
 
   g_return_val_if_fail (format != GST_VIDEO_FORMAT_UNKNOWN, FALSE);
 
@@ -392,15 +400,17 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
     GST_VIDEO_INFO_UNSET_AFBC (&output_state->info);
   }
 
-  tmp_caps = gst_caps_copy (output_state->caps);
-  gst_caps_set_features (tmp_caps, 0,
-      gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
+  if (self->dma_feature) {
+    GstCaps *tmp_caps = gst_caps_copy (output_state->caps);
+    gst_caps_set_features (tmp_caps, 0,
+        gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
 
-  /* HACK: Expose dmabuf feature when the subset check is hacked */
-  if (gst_caps_is_subset (tmp_caps, output_state->caps))
-    gst_caps_replace (&output_state->caps, tmp_caps);
+    /* HACK: Expose dmabuf feature when the subset check is hacked */
+    if (gst_caps_is_subset (tmp_caps, output_state->caps))
+      gst_caps_replace (&output_state->caps, tmp_caps);
 
-  gst_caps_unref (tmp_caps);
+    gst_caps_unref (tmp_caps);
+  }
 
   *info = output_state->info;
   gst_video_codec_state_unref (output_state);
@@ -1037,6 +1047,7 @@ gst_mpp_dec_init (GstMppDec * self)
 
   self->ignore_error = DEFAULT_PROP_IGNORE_ERROR;
   self->fast_mode = DEFAULT_PROP_FAST_MODE;
+  self->dma_feature = DEFAULT_PROP_DMA_FEATURE;
 
   gst_video_decoder_set_packetized (decoder, TRUE);
 }
@@ -1068,7 +1079,7 @@ gst_mpp_dec_class_init (GstMppDecClass * klass)
   GstVideoDecoderClass *decoder_class = GST_VIDEO_DECODER_CLASS (klass);
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
-  const char *env;
+  const gchar *env;
 
   GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "mppdec", 0, "MPP decoder");
 
@@ -1132,6 +1143,15 @@ no_rga:
   g_object_class_install_property (gobject_class, PROP_FAST_MODE,
       g_param_spec_boolean ("fast-mode", "Fast mode",
           "Enable MPP fast decode mode", DEFAULT_PROP_FAST_MODE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  env = g_getenv ("GST_MPP_DEC_NO_DMA_FEATURE");
+  if (env && !strcmp (env, "1"))
+    DEFAULT_PROP_DMA_FEATURE = FALSE;
+
+  g_object_class_install_property (gobject_class, PROP_DMA_FEATURE,
+      g_param_spec_boolean ("dma-feature", "DMA feature",
+          "Enable GST DMA feature", DEFAULT_PROP_DMA_FEATURE,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   element_class->change_state = GST_DEBUG_FUNCPTR (gst_mpp_dec_change_state);
