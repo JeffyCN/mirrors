@@ -35,6 +35,9 @@ cc_library_shared {
         "liblog_headers",
     ],
     srcs: [
+        "core/utils/android_utils/src/android_utils.cpp",
+        "core/utils/drm_utils/src/drm_utils.cpp",
+        "core/utils/utils.cpp",
         "core/RockchipRga.cpp",
         "core/GrallocOps.cpp",
         "core/NormalRga.cpp",
@@ -56,6 +59,7 @@ cc_library_shared {
         "frameworks/native/libs/nativewindow/include",
         "system/core/libsync",
         "system/core/libsync/include",
+        "hardware/rockchip/librga/core/utils",
     ],
 
     shared_libs: [

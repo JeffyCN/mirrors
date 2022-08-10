@@ -28,6 +28,7 @@
 #include <sstream>
 
 #include "RgaUtils.h"
+#include "utils.h"
 #include "core/rga_sync.h"
 #include "core/NormalRga.h"
 #include "RockchipRga.h"
@@ -832,7 +833,7 @@ IM_API IM_STATUS imcopy(const rga_buffer_t src, rga_buffer_t dst, int sync, int 
 
 IM_API IM_STATUS imresize(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync, int *release_fence_fd) {
     int usage = 0;
-    int width = 0, height = 0;
+    int width = 0, height = 0, format;
     IM_STATUS ret = IM_STATUS_NOERROR;
 
     im_opt_t opt;
@@ -852,7 +853,13 @@ IM_API IM_STATUS imresize(const rga_buffer_t src, rga_buffer_t dst, double fx, d
         dst.width = (int)(src.width * fx);
         dst.height = (int)(src.height * fy);
 
-        if(NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format))) {
+        format = convert_to_rga_format(dst.format);
+        if (format == RK_FORMAT_UNKNOWN) {
+            IM_LOGE("Invaild dst format [0x%x]!\n", dst.format);
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+
+        if(NormalRgaIsYuvFormat(format)) {
             width = dst.width;
             height = dst.height;
             dst.width = DOWN_ALIGN(dst.width, 2);
@@ -1499,7 +1506,7 @@ IM_API IM_STATUS imcopyTask(im_job_handle_t job_handle, const rga_buffer_t src, 
 
 IM_API IM_STATUS imresizeTask(im_job_handle_t job_handle, const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation) {
     int usage = 0;
-    int width = 0, height = 0;
+    int width = 0, height = 0, format;
     IM_STATUS ret = IM_STATUS_NOERROR;
     im_opt_t opt;
     rga_buffer_t pat;
@@ -1516,7 +1523,13 @@ IM_API IM_STATUS imresizeTask(im_job_handle_t job_handle, const rga_buffer_t src
         dst.width = (int)(src.width * fx);
         dst.height = (int)(src.height * fy);
 
-        if(NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format))) {
+        format = convert_to_rga_format(dst.format);
+        if (format == RK_FORMAT_UNKNOWN) {
+            IM_LOGE("Invaild dst format [0x%x]!\n", dst.format);
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+
+        if(NormalRgaIsYuvFormat(format)) {
             width = dst.width;
             height = dst.height;
             dst.width = DOWN_ALIGN(dst.width, 2);

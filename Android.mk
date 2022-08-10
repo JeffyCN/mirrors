@@ -48,6 +48,9 @@ LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
 LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/im2d_api
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/utils
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/3rdparty/libdrm/include/drm
 
 LOCAL_CFLAGS := \
         -DLOG_TAG=\"librga\"
@@ -75,6 +78,9 @@ LOCAL_C_INCLUDES += bionic
 endif
 
 LOCAL_SRC_FILES:= \
+    core/utils/android_utils/src/android_utils.cpp \
+    core/utils/drm_utils/src/drm_utils.cpp \
+    core/utils/utils.cpp \
     core/RockchipRga.cpp \
     core/GrallocOps.cpp \
     core/NormalRga.cpp \
@@ -124,6 +130,9 @@ ifeq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES += \
+    core/utils/android_utils/src/android_utils.cpp \
+    core/utils/drm_utils/src/drm_utils.cpp \
+    core/utils/utils.cpp \
     core/RockchipRga.cpp \
     core/GrallocOps.cpp \
     core/NormalRga.cpp \
@@ -143,6 +152,9 @@ LOCAL_C_INCLUDES += hardware/libhardware/include/hardware
 LOCAL_C_INCLUDES += hardware/libhardware/modules/gralloc
 LOCAL_C_INCLUDES += frameworks/native/libs/nativewindow/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/im2d_api
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/utils
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/3rdparty/libdrm/include/drm
 
 LOCAL_SHARED_LIBRARIES := libdrm
 LOCAL_SHARED_LIBRARIES += \
@@ -197,6 +209,9 @@ ifeq ($(strip $(BOARD_USE_DRM)), true)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES += \
+    core/utils/android_utils/src/android_utils.cpp \
+    core/utils/drm_utils/src/drm_utils.cpp \
+    core/utils/utils.cpp \
     core/RockchipRga.cpp \
     core/GrallocOps.cpp \
     drm/DrmmodeRga.cpp \
@@ -212,6 +227,10 @@ LOCAL_C_INCLUDES += external/libdrm/rockchip
 LOCAL_C_INCLUDES += hardware/rockchip/libgralloc
 LOCAL_C_INCLUDES += hardware/rk29/libgralloc_ump
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/drm
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/im2d_api
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/utils
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/3rdparty/libdrm/include/drm
 
 LOCAL_SHARED_LIBRARIES := libdrm
 LOCAL_SHARED_LIBRARIES += \

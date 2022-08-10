@@ -57,6 +57,9 @@ if (BUILD_WITH_VERSION STREQUAL true)
 endif()
 
 set(IM2D_SRCS
+    core/utils/android_utils/src/android_utils.cpp
+    core/utils/drm_utils/src/drm_utils.cpp
+    core/utils/utils.cpp
     core/RockchipRga.cpp
     core/GrallocOps.cpp
     core/NormalRga.cpp
@@ -72,33 +75,33 @@ set(IM2D_INCLUDE
     ./
     ./im2d_api
     ./include
-    external/libdrm
-    external/libdrm/include/drm
+    ./core/utils
+    ./core/3rdparty/libdrm/include/drm
     hardware/libhardware/include/hardware
     hardware/libhardware/modules/gralloc
     system/core/liblog/includeNDROID_NDK_REVISION_REGEX
     system/core/libion/kernel-headers)
 
 set(IM2D_PUBLIC_HEADER
-	im2d_api/im2d_version.h
-	im2d_api/im2d_type.h
-	im2d_api/im2d_symbol.h
+    im2d_api/im2d_version.h
+    im2d_api/im2d_type.h
+    im2d_api/im2d_symbol.h
     im2d_api/im2d_buffer.h
     im2d_api/im2d_common.h
     im2d_api/im2d_single.h
     im2d_api/im2d_task.h
     im2d_api/im2d_mpi.h
     im2d_api/im2d_expand.h
-	im2d_api/im2d.h
-	im2d_api/im2d.hpp
-	include/drmrga.h
-	include/rga.h
-	include/RgaApi.h
-	include/RockchipRga.h
-	include/RgaUtils.h
-	include/RgaSingleton.h
-	include/RgaMutex.h
-	include/GrallocOps.h
+    im2d_api/im2d.h
+    im2d_api/im2d.hpp
+    include/drmrga.h
+    include/rga.h
+    include/RgaApi.h
+    include/RockchipRga.h
+    include/RgaUtils.h
+    include/RgaSingleton.h
+    include/RgaMutex.h
+    include/GrallocOps.h
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_EXT} -DUN_NEED_GL")

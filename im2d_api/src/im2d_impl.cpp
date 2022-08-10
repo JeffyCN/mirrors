@@ -37,6 +37,7 @@
 #include "RockchipRga.h"
 #include "core/NormalRga.h"
 #include "RgaUtils.h"
+#include "utils.h"
 
 #ifdef ANDROID
 using namespace android;
@@ -576,15 +577,7 @@ IM_STATUS rga_check_limit(rga_buffer_t src, rga_buffer_t dst, int scale_usage, i
 
 IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, int format_usage, int mode_usgae) {
     IM_STATUS ret;
-    int format = -1;
-
-    format = RkRgaGetRgaFormat(RkRgaCompatibleFormat(info.format));
-    if (-1 == format) {
-        IM_LOGW("illegal %s format, please query and fix, format = 0x%x(%s)\n%s",
-                name, info.format, translate_format_str(info.format),
-                querystring((strcmp("dst", name) == 0) ? RGA_OUTPUT_FORMAT : RGA_INPUT_FORMAT));
-        return IM_STATUS_NOT_SUPPORTED;
-    }
+    int format = info.format;
 
     if (format == RK_FORMAT_RGBA_8888 || format == RK_FORMAT_BGRA_8888 ||
         format == RK_FORMAT_RGBX_8888 || format == RK_FORMAT_BGRX_8888 ||
@@ -771,9 +764,9 @@ IM_STATUS rga_check_blend(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst, 
     int src_fmt, pat_fmt, dst_fmt;
     bool src_isRGB, pat_isRGB, dst_isRGB;
 
-    src_fmt = RkRgaGetRgaFormat(RkRgaCompatibleFormat(src.format));
-    pat_fmt = RkRgaGetRgaFormat(RkRgaCompatibleFormat(pat.format));
-    dst_fmt = RkRgaGetRgaFormat(RkRgaCompatibleFormat(dst.format));
+    src_fmt = src.format;
+    pat_fmt = pat.format;
+    dst_fmt = dst.format;
 
     src_isRGB = NormalRgaIsRgbFormat(src_fmt);
     pat_isRGB = NormalRgaIsRgbFormat(pat_fmt);
@@ -1007,15 +1000,39 @@ IM_STATUS rga_check(const rga_buffer_t src, const rga_buffer_t dst, const rga_bu
 IM_STATUS rga_check_external(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                              im_rect src_rect, im_rect dst_rect, im_rect pat_rect,
                              int mode_usage) {
-      if (mode_usage & IM_CROP) {
-          dst_rect.width = src_rect.width;
-          dst_rect.height = src_rect.height;
-      }
+    int ret;
+    int format;
 
-      rga_apply_rect(&src, &src_rect);
-      rga_apply_rect(&dst, &dst_rect);
-      if (rga_is_buffer_valid(pat))
-          rga_apply_rect(&pat, &pat_rect);
+    if (mode_usage & IM_CROP) {
+        dst_rect.width = src_rect.width;
+        dst_rect.height = src_rect.height;
+    }
+
+    rga_apply_rect(&src, &src_rect);
+    format = convert_to_rga_format(src.format);
+    if (format == RK_FORMAT_UNKNOWN) {
+        IM_LOGW("Invaild src format [0x%x]!\n", src.format);
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+    src.format = format;
+
+    rga_apply_rect(&dst, &dst_rect);
+    format = convert_to_rga_format(dst.format);
+    if (format == RK_FORMAT_UNKNOWN) {
+        IM_LOGW("Invaild dst format [0x%x]!\n", dst.format);
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+    dst.format = format;
+
+    if (rga_is_buffer_valid(pat)) {
+        rga_apply_rect(&pat, &pat_rect);
+        format = convert_to_rga_format(pat.format);
+        if (format == RK_FORMAT_UNKNOWN) {
+            IM_LOGW("Invaild pat format [0x%x]!\n", pat.format);
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+        pat.format = format;
+    }
 
     return rga_check(src, dst, pat, src_rect, dst_rect, pat_rect, mode_usage);
 }
@@ -1062,6 +1079,7 @@ IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, uint32_t
 }
 
 IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, im_handle_param_t *param) {
+    int format;
     struct rga_buffer_pool buffer_pool;
     struct rga_external_buffer buffers[1];
 
@@ -1071,13 +1089,18 @@ IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, im_handl
     buffers[0].type = type;
     buffers[0].memory = memory;
     memcpy(&buffers[0].memory_info, param, sizeof(*param));
-    buffers[0].memory_info.format = RkRgaGetRgaFormat(buffers[0].memory_info.format) >> 8;
+    format = convert_to_rga_format(buffers[0].memory_info.format);
+    if (format == RK_FORMAT_UNKNOWN) {
+        IM_LOGW("Invaild format [0x%x]!\n", buffers[0].memory_info.format);
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+    buffers[0].memory_info.format = format >> 8;
 
     buffer_pool.buffers = (uint64_t)buffers;
     buffer_pool.size = 1;
 
     if (rga_import_buffers(&buffer_pool) != IM_STATUS_SUCCESS)
-        return -1;
+        return 0;
 
     return buffers[0].handle;
 }
@@ -1150,6 +1173,7 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
                                  int acquire_fence_fd, int *release_fence_fd,
                                  im_opt_t *opt_ptr, int usage) {
     int ret;
+    int format;
     rga_info_t srcinfo;
     rga_info_t dstinfo;
     rga_info_t patinfo;
@@ -1158,10 +1182,6 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
 
     if (rga_get_opt(&opt, opt_ptr) == IM_STATUS_FAILED)
         memset(&opt, 0x0, sizeof(opt));
-
-    src.format = RkRgaCompatibleFormat(src.format);
-    dst.format = RkRgaCompatibleFormat(dst.format);
-    pat.format = RkRgaCompatibleFormat(pat.format);
 
     memset(&srcinfo, 0, sizeof(rga_info_t));
     memset(&dstinfo, 0, sizeof(rga_info_t));
@@ -1176,9 +1196,23 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
         return (IM_STATUS)ret;
 
     rga_apply_rect(&src, &srect);
-    rga_apply_rect(&dst, &drect);
+    format = convert_to_rga_format(src.format);
+    if (format == RK_FORMAT_UNKNOWN) {
+        IM_LOGW("Invaild src format [0x%x]!\n", src.format);
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+    src.format = format;
 
     rga_set_rect(&srcinfo.rect, srect.x, srect.y, src.width, src.height, src.wstride, src.hstride, src.format);
+
+    rga_apply_rect(&dst, &drect);
+    format = convert_to_rga_format(dst.format);
+    if (format == RK_FORMAT_UNKNOWN) {
+        IM_LOGW("Invaild dst format [0x%x]!\n", dst.format);
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+    dst.format = format;
+
     rga_set_rect(&dstinfo.rect, drect.x, drect.y, dst.width, dst.height, dst.wstride, dst.hstride, dst.format);
 
     if (((usage & IM_COLOR_PALETTE) || (usage & IM_ALPHA_BLEND_MASK)) &&
@@ -1189,6 +1223,12 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
             return (IM_STATUS)ret;
 
         rga_apply_rect(&pat, &prect);
+        format = convert_to_rga_format(pat.format);
+        if (format == RK_FORMAT_UNKNOWN) {
+            IM_LOGW("Invaild pat format [0x%x]!\n", pat.format);
+            return IM_STATUS_NOT_SUPPORTED;
+        }
+        pat.format = format;
 
         rga_set_rect(&patinfo.rect, prect.x, prect.y, pat.width, pat.height, pat.wstride, pat.hstride, pat.format);
     }
@@ -1396,9 +1436,9 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
     /* special config for color space convert */
     if ((dst.color_space_mode & IM_YUV_TO_RGB_MASK) && (dst.color_space_mode & IM_RGB_TO_YUV_MASK)) {
         if (rga_is_buffer_valid(pat) &&
-            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
-            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(pat.format)) &&
-            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
+            NormalRgaIsYuvFormat(src.format) &&
+            NormalRgaIsRgbFormat(pat.format) &&
+            NormalRgaIsYuvFormat(dst.format)) {
             dstinfo.color_space_mode = dst.color_space_mode;
         } else {
             IM_LOGW("Not yuv + rgb -> yuv does not need for color_sapce_mode R2Y & Y2R, please fix, "
@@ -1410,12 +1450,12 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
         }
     } else if (dst.color_space_mode & (IM_YUV_TO_RGB_MASK)) {
         if (rga_is_buffer_valid(pat) &&
-            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
-            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(pat.format)) &&
-            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format))) {
+            NormalRgaIsYuvFormat(src.format) &&
+            NormalRgaIsRgbFormat(pat.format) &&
+            NormalRgaIsRgbFormat(dst.format)) {
             dstinfo.color_space_mode = dst.color_space_mode;
-        } else if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format)) &&
-                   NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format))) {
+        } else if (NormalRgaIsYuvFormat(src.format) &&
+                   NormalRgaIsRgbFormat(dst.format)) {
             dstinfo.color_space_mode = dst.color_space_mode;
         } else {
             IM_LOGW("Not yuv to rgb does not need for color_sapce_mode, please fix, "
@@ -1427,12 +1467,12 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
         }
     } else if (dst.color_space_mode & (IM_RGB_TO_YUV_MASK)) {
         if (rga_is_buffer_valid(pat) &&
-            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format)) &&
-            NormalRgaIsRgbFormat(RkRgaGetRgaFormat(pat.format)) &&
-            NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
+            NormalRgaIsRgbFormat(src.format) &&
+            NormalRgaIsRgbFormat(pat.format) &&
+            NormalRgaIsYuvFormat(dst.format)) {
             dstinfo.color_space_mode = dst.color_space_mode;
-        } else if (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format)) &&
-                   NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
+        } else if (NormalRgaIsRgbFormat(src.format) &&
+                   NormalRgaIsYuvFormat(dst.format)) {
             dstinfo.color_space_mode = dst.color_space_mode;
         } else {
             IM_LOGW("Not rgb to yuv does not need for color_sapce_mode, please fix, "
@@ -1446,17 +1486,17 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
                dst.color_space_mode & IM_FULL_CSC_MASK) {
         /* Get default color space */
         if (src.color_space_mode == IM_COLOR_SPACE_DEFAULT) {
-            if  (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(src.format))) {
+            if  (NormalRgaIsRgbFormat(src.format)) {
                 src.color_space_mode = IM_RGB_FULL;
-            } else if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(src.format))) {
+            } else if (NormalRgaIsYuvFormat(src.format)) {
                 src.color_space_mode = IM_YUV_BT601_LIMIT_RANGE;
             }
         }
 
         if (dst.color_space_mode == IM_COLOR_SPACE_DEFAULT) {
-            if  (NormalRgaIsRgbFormat(RkRgaGetRgaFormat(dst.format))) {
+            if  (NormalRgaIsRgbFormat(dst.format)) {
                 src.color_space_mode = IM_RGB_FULL;
-            } else if (NormalRgaIsYuvFormat(RkRgaGetRgaFormat(dst.format))) {
+            } else if (NormalRgaIsYuvFormat(dst.format)) {
                 src.color_space_mode = IM_YUV_BT601_LIMIT_RANGE;
             }
         }
