@@ -174,15 +174,15 @@
 		/* not save the PMIC_POWER_EN register in uboot */
 		not-save-power-en = <1>;
 
-		vcc1-supply = <&vcc3v3_sys>;
-		vcc2-supply = <&vcc3v3_sys>;
-		vcc3-supply = <&vcc3v3_sys>;
-		vcc4-supply = <&vcc3v3_sys>;
+		vcc1-supply = <&vcc5v0_sys>;
+		vcc2-supply = <&vcc5v0_sys>;
+		vcc3-supply = <&vcc5v0_sys>;
+		vcc4-supply = <&vcc5v0_sys>;
 		vcc5-supply = <&vcc3v3_sys>;
 		vcc6-supply = <&vcc3v3_sys>;
 		vcc7-supply = <&vcc3v3_sys>;
 		vcc8-supply = <&vcc3v3_sys>;
-		vcc9-supply = <&vcc3v3_sys>;
+		vcc9-supply = <&vcc5v0_sys>;
 
 		pwrkey {
 			status = "okay";
@@ -429,10 +429,7 @@
 	vccio5-supply = <&vcc_3v3>;
 	vccio6-supply = <&vcc_3v3>;
 	vccio7-supply = <&vcc_3v3>;
-};
 
-&pwm0 {
-	status = "okay";
 };
 
 &pwm3 {
@@ -566,7 +563,14 @@
 };
 
 &usbdrd_dwc3 {
-	dr_mode = "otg";
 	extcon = <&usb2phy0>;
+	phys = <&u2phy0_otg>;
+	phy-names = "usb2-phy";
+	maximum-speed = "high-speed";
+	snps,dis_u2_susphy_quirk;
+	status = "okay";
+};
+
+&usbdrd30 {
 	status = "okay";
 };
