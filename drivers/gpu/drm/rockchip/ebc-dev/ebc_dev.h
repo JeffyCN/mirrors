@@ -54,6 +54,8 @@
 #define EBC_GET_OVERLAY_STATUS	(0x700b)
 #define EBC_ENABLE_BG_CONTROL (0x700c)
 #define EBC_DISABLE_BG_CONTROL (0x700d)
+#define EBC_ENABLE_RESUME_COUNT (0x700e)
+#define EBC_DISABLE_RESUME_COUNT (0x700f)
 
 /*
  * IMPORTANT: Those values is corresponding to android hardware program,
