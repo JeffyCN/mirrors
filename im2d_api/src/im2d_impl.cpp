@@ -1069,7 +1069,7 @@ IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, uint32_t
     buffers[0].memory = memory;
     buffers[0].memory_info.size = size;
 
-    buffer_pool.buffers = (uint64_t)buffers;
+    buffer_pool.buffers = ptr_to_u64(buffers);
     buffer_pool.size = 1;
 
     if (rga_import_buffers(&buffer_pool) != IM_STATUS_SUCCESS)
@@ -1096,7 +1096,7 @@ IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, im_handl
     }
     buffers[0].memory_info.format = format >> 8;
 
-    buffer_pool.buffers = (uint64_t)buffers;
+    buffer_pool.buffers = ptr_to_u64(buffers);
     buffer_pool.size = 1;
 
     if (rga_import_buffers(&buffer_pool) != IM_STATUS_SUCCESS)
@@ -1135,7 +1135,7 @@ IM_API IM_STATUS rga_release_buffer(int handle) {
 
     buffers[0].handle = handle;
 
-    buffer_pool.buffers = (uint64_t)buffers;
+    buffer_pool.buffers = ptr_to_u64(buffers);
     buffer_pool.size = 1;
 
     return rga_release_buffers(&buffer_pool);
@@ -1718,7 +1718,7 @@ IM_STATUS rga_job_submit(im_job_handle_t job_handle, int sync_mode, int acquire_
 
     memset(&submit_request, 0x0, sizeof(submit_request));
 
-    submit_request.task_ptr = (uint64_t)&job->req;
+    submit_request.task_ptr = ptr_to_u64(&job->req);
     submit_request.task_num = job->task_count;
     submit_request.id = job->id;
 
@@ -1780,7 +1780,7 @@ IM_STATUS rga_job_config(im_job_handle_t job_handle, int sync_mode, int acquire_
 
     memset(&config_request, 0x0, sizeof(config_request));
 
-    config_request.task_ptr = (uint64_t)&job->req;
+    config_request.task_ptr = ptr_to_u64(&job->req);
     config_request.task_num = job->task_count;
     config_request.id = job->id;
 

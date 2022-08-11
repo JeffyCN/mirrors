@@ -116,16 +116,16 @@ IM_API rga_buffer_handle_t importbuffer_fd(int fd, int width, int height, int fo
 }
 
 IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, im_handle_param_t *param) {
-    return rga_import_buffer((uint64_t)va, RGA_VIRTUAL_ADDRESS, param);
+    return rga_import_buffer(ptr_to_u64(va), RGA_VIRTUAL_ADDRESS, param);
 }
 
 IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int size) {
-    return rga_import_buffer((uint64_t)va, RGA_VIRTUAL_ADDRESS, (uint32_t)size);
+    return rga_import_buffer(ptr_to_u64(va), RGA_VIRTUAL_ADDRESS, (uint32_t)size);
 }
 
 IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int width, int height, int format) {
     im_handle_param_t param = {(uint32_t)width, (uint32_t)height, (uint32_t)format};
-    return rga_import_buffer((uint64_t)va, RGA_VIRTUAL_ADDRESS, &param);
+    return rga_import_buffer(ptr_to_u64(va), RGA_VIRTUAL_ADDRESS, &param);
 }
 
 IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, im_handle_param_t *param) {

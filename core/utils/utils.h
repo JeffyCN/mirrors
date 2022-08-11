@@ -19,6 +19,14 @@
 #include "android_utils/android_utils.h"
 #include "drm_utils/drm_utils.h"
 
+/*
+ * When a pointer is converted to uint64_t, it must first be assigned to
+ * an integer of the same size, and then converted to uint64_t. The opposite
+ * is true.
+ */
+#define ptr_to_u64(ptr) ((uint64_t)(uintptr_t)(ptr))
+#define u64_to_ptr(var) ((void *)(uintptr_t)(var))
+
 #define is_rga_format(format) ((format) & 0xff00 || (format) == 0)
 
 int convert_to_rga_format(int ex_format);
