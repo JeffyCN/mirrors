@@ -827,6 +827,10 @@ void arch_irq_work_raise(void)
  */
 static void ipi_cpu_stop(unsigned int cpu)
 {
+	if (system_state <= SYSTEM_RUNNING) {
+		pr_crit("CPU%u: stopping\n", cpu);
+		dump_stack();
+	}
 	set_cpu_online(cpu, false);
 
 	local_daif_mask();
