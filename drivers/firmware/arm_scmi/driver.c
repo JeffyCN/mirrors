@@ -24,6 +24,7 @@
 #include <linux/of_device.h>
 #include <linux/processor.h>
 #include <linux/slab.h>
+#include <linux/rockchip/cpu.h>
 
 #include "common.h"
 
@@ -688,6 +689,9 @@ static int scmi_probe(struct platform_device *pdev)
 	struct scmi_info *info;
 	struct device *dev = &pdev->dev;
 	struct device_node *child, *np = dev->of_node;
+
+	if (soc_is_px30())
+		return -ENODEV;
 
 	desc = of_device_get_match_data(dev);
 	if (!desc)
