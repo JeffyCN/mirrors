@@ -1,30 +1,33 @@
 #!/bin/bash
 
-BUILD_DIR=build_linux
-BINARY_DIR=$BUILD_DIR/bin
+SCRIPT_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
+SOURCE_PATH=${SCRIPT_DIR}
+BUILD_DIR=build/build_linux
+BUILD_TYPE=Release
 
-rm -rf $BUILD_DIR
-mkdir -p $BUILD_DIR
-mkdir -p $BINARY_DIR
-pushd $BUILD_DIR
+# Modify to the local toolchain path.
+TOOLCHAIN_PATH=toolchains/toolchain_linux.cmake
 
 if [ "$1" = "drm" ];then
 	echo "using drm"
-	cmake -DCMAKE_BUILD_TARGET=buildroot \
-		  -DBUILD_TOOlCHAINS_PATH=buildroot.cmake \
-		  -DBUILD_WITH_LIBDRM=true \
-		  -DCMAKE_INSTALL_PREFIX=install \
-		  ..
+	BUILD_WITH_LIBDRM=true
 else
 	echo "Default mode $1"
-	cmake -DCMAKE_BUILD_TARGET=buildroot \
-		  -DBUILD_TOOlCHAINS_PATH=buildroot.cmake \
-		  -DCMAKE_INSTALL_PREFIX=install \
-		  ..
+	BUILD_WITH_LIBDRM=false
 fi
 
-make
+rm -rf $BUILD_DIR
+mkdir -p $BUILD_DIR
+pushd $BUILD_DIR
+
+cmake ../.. \
+	-DCMAKE_BUILD_TARGET=buildroot \
+	-DBUILD_WITH_LIBDRM=${BUILD_WITH_LIBDRM} \
+	-DBUILD_TOOLCHAINS_PATH=${TOOLCHAIN_PATH} \
+	-DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+	-DCMAKE_INSTALL_PREFIX=install \
+
+make -j8
 make install
 
 popd
-

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 project(rgaImDemo)
 
@@ -11,6 +11,7 @@ endif()
 
 if(CMAKE_BUILD_TARGET STREQUAL android_ndk)
     message("set ndk toolchain")
+    include(${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error -DLOG_TAG=librga")
     add_compile_options(-DLINUX)
     add_compile_options(-DANDROID_VNDK)
@@ -18,10 +19,10 @@ if(CMAKE_BUILD_TARGET STREQUAL android_ndk)
 endif()
 
 if(CMAKE_BUILD_TARGET STREQUAL buildroot)
-    message("set ${BUILD_TOOlCHAINS_PATH} toolchain")
+    message("set ${BUILD_TOOLCHAINS_PATH} toolchain")
     set(CMAKE_TOOLCHAIN_FILE
-        ${CMAKE_SOURCE_DIR}/${BUILD_TOOlCHAINS_PATH})
-    include(${CMAKE_SOURCE_DIR}/${BUILD_TOOlCHAINS_PATH})
+        ${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
+    include(${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
     add_compile_options(-DLINUX)
     set(CMAKE_CXX_FLAGS "-std=c++11 -O2 -pthread")
 endif()
