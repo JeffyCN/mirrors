@@ -85,7 +85,7 @@ const static std::unordered_map<uint32_t, uint32_t> android_hal_table = {
     // { , RK_FORMAT_UNKNOWN },
 };
 #else
-const static std::unordered_map<uint32_t, uint32_t> android_hal_table = {};
+const static std::unordered_map<uint32_t, uint32_t> android_hal_table;
 #endif
 
 uint32_t get_format_from_android_hal(uint32_t android_hal_format) {
