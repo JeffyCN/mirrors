@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
 
-    message("test ${BUILD_TOOLCHAINS_PATH}")
-
 if (EXISTS ${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
     message("load ${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH}")
     include(${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
@@ -34,15 +32,13 @@ include_directories(${CMAKE_SOURCE_DIR}/../3rdparty/libdrm/include)
 include_directories(${CMAKE_SOURCE_DIR}/../3rdparty/libdrm/include/libdrm)
 include_directories(${CMAKE_SOURCE_DIR}/allocator/include/)
 
+add_subdirectory(${CMAKE_SOURCE_DIR}/../utils ./utils_obj)
+
 # allocator_obj
 add_library(allocator_obj OBJECT
     allocator/dma_alloc.cpp
     allocator/drm_alloc.cpp
 )
-
-# allocator demo utils_obj
-add_library(utils_obj OBJECT
-    ../utils/utils.cpp)
 
 # rga_malloc_demo
 add_executable(rga_malloc_demo
