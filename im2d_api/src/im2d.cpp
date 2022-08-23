@@ -772,15 +772,15 @@ IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
             if (value & IM_SCHEDULER_MASK) {
                 g_im2d_context.core = (IM_SCHEDULER_CORE)value;
             } else {
-                IM_LOGE("IM2D: It's not legal rga_core, it needs to be a 'IM_SCHEDULER_CORE'.");
+                IM_LOGE("IM2D: It's not legal rga_core[0x%lx], it needs to be a 'IM_SCHEDULER_CORE'.", (unsigned long)value);
                 return IM_STATUS_ILLEGAL_PARAM;
             }
             break;
         case IM_CONFIG_PRIORITY :
-            if (value >= 0 && value <= 6) {
+            if (value <= 6) {
                 g_im2d_context.priority = (int)value;
             } else {
-                IM_LOGE("IM2D: It's not legal priority, it needs to be a 'int', and it should be in the range of 0~6.");
+                IM_LOGE("IM2D: It's not legal priority[0x%lx], it needs to be a 'int', and it should be in the range of 0~6.", (unsigned long)value);
                 return IM_STATUS_ILLEGAL_PARAM;
             }
             break;
@@ -788,7 +788,7 @@ IM_API IM_STATUS imconfig(IM_CONFIG_NAME name, uint64_t value) {
             if (value == false || value == true) {
                 g_im2d_context.check_mode = (bool)value;
             } else {
-                IM_LOGE("IM2D: It's not legal check config, it needs to be a 'bool'.");
+                IM_LOGE("IM2D: It's not legal check config[0x%lx], it needs to be a 'bool'.", (unsigned long)value);
                 return IM_STATUS_ILLEGAL_PARAM;
             }
             break;

@@ -456,7 +456,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     srcFd = dstFd = src1Fd = -1;
 
     if (is_out_log()) {
-        ALOGD("src->hnd = %p , dst->hnd = %p , src1->hnd = %p\n", src->hnd, dst->hnd, src1 ? src1->hnd : 0);
+        ALOGD("src->hnd = 0x%lx , dst->hnd = 0x%lx , src1->hnd = 0x%lx\n",
+            (unsigned long)src->hnd, (unsigned long)dst->hnd, (unsigned long)(src1 ? src1->hnd : 0));
         ALOGD("src: handle = %d, Fd = %.2d ,phyAddr = %p ,virAddr = %p\n", src->handle, src->fd, src->phyAddr, src->virAddr);
         if (src1)
             ALOGD("src1: handle = %d, Fd = %.2d , phyAddr = %p , virAddr = %p\n", src1->handle, src1->fd, src1->phyAddr, src1->virAddr);
@@ -1785,7 +1786,8 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
     srcFd = dstFd = lutFd = -1;
 
     if(is_out_log()) {
-        ALOGD("src->hnd = %p , dst->hnd = %p, lut->hnd = %p \n",src->hnd,dst->hnd, lut->hnd);
+        ALOGD("src->hnd = 0x%lx , dst->hnd = 0x%lx, lut->hnd = 0x%lx \n",
+            (unsigned long)src->hnd, (unsigned long)dst->hnd, (unsigned long)lut->hnd);
         ALOGD("src: Fd = %.2d , phyAddr = %p , virAddr = %p\n",src->fd,src->phyAddr,src->virAddr);
         ALOGD("dst: Fd = %.2d , phyAddr = %p , virAddr = %p\n",dst->fd,dst->phyAddr,dst->virAddr);
         ALOGD("lut: Fd = %.2d , phyAddr = %p , virAddr = %p\n",lut->fd,lut->phyAddr,lut->virAddr);
