@@ -219,14 +219,15 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="1">RGA3</td>
       <td>Orion</td>
       <td>RK3588</td>
-      <td rowspan="1">128x128</td>
+      <td rowspan="1">68x2</td>
       <td rowspan="1">8176x8176</td>
-      <td rowspan="1">128x128</td>
+      <td rowspan="1">68x2</td>
       <td rowspan="1">8128x8128</td>
       <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>FBC</td>
       <td rowspan="1">3 (by pass)<br/>2 (scale)</td>
    </tr>
 </table>
+
 
 > 注：
 >
