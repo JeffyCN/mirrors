@@ -140,9 +140,12 @@ int main() {
     usage = IM_SYNC | IM_ALPHA_BLEND_DST_OVER;
 
     ret = improcess(fg_img, output_img, bg_img, fg_rect, output_rect, bg_rect, -1, NULL, NULL, usage);
-    printf("%s .... %s\n", LOG_TAG, imStrError(ret));
-    if (ret != IM_STATUS_SUCCESS)
+    if (ret == IM_STATUS_SUCCESS) {
+        printf("%s running success!\n", LOG_TAG);
+    } else {
+        printf("%s running failed, %s\n", LOG_TAG, imStrError((IM_STATUS)ret));
         goto release_buffer;
+    }
 
     output_buf_data_to_file(output_buf, output_format, output_width, output_height, 0);
 

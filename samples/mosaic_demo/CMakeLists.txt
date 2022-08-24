@@ -12,7 +12,7 @@ else ()
     set(RGA_LIB rga)
 endif()
 
-project(rga_async_demo)
+project(rga_mosaic_demo)
 
 #install path
 if (NOT DEFINED CMAKE_INSTALL_BINDIR)
@@ -31,12 +31,12 @@ include_directories(${CMAKE_SOURCE_DIR}/../utils)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/../utils ./utils_obj)
 
-# rga_async_demo
-add_executable(rga_async_demo
+# rga_mosaic_demo
+add_executable(rga_mosaic_demo
     $<TARGET_OBJECTS:utils_obj>
-    src/rga_async_demo.cpp
+    src/rga_mosaic_demo.cpp
 )
-target_link_libraries(rga_async_demo
+target_link_libraries(rga_mosaic_demo
 	${RGA_LIB}
 )
-install(TARGETS rga_async_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS rga_mosaic_demo DESTINATION ${CMAKE_INSTALL_BINDIR})

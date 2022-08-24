@@ -28,8 +28,34 @@ set(RGA_INCLUDE
 
 include_directories(${RGA_INCLUDE})
 include_directories(${CMAKE_SOURCE_DIR}/../utils)
+include_directories(${CMAKE_SOURCE_DIR}/allocator/include/)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/../utils ./utils_obj)
+
+# allocator_obj
+add_library(allocator_obj OBJECT
+    allocator/dma_alloc.cpp
+)
+
+# rga_alpha_demo
+add_executable(rga_alpha_demo
+    $<TARGET_OBJECTS:utils_obj>
+    src/rga_alpha_demo.cpp
+)
+target_link_libraries(rga_alpha_demo
+    ${RGA_LIB}
+)
+install(TARGETS rga_alpha_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# rga_alpha_3channel_demo
+add_executable(rga_alpha_3channel_demo
+    $<TARGET_OBJECTS:utils_obj>
+    src/rga_alpha_3channel_demo.cpp
+)
+target_link_libraries(rga_alpha_3channel_demo
+	${RGA_LIB}
+)
+install(TARGETS rga_alpha_3channel_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # rga_alpha_yuv_demo
 add_executable(rga_alpha_yuv_demo
@@ -41,12 +67,24 @@ target_link_libraries(rga_alpha_yuv_demo
 )
 install(TARGETS rga_alpha_yuv_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-# rga_alpha_demo
-add_executable(rga_alpha_demo
+# rga_alpha_colorkey_demo
+add_executable(rga_alpha_colorkey_demo
     $<TARGET_OBJECTS:utils_obj>
-    src/rga_alpha_demo.cpp
+    src/rga_alpha_colorkey_demo.cpp
 )
-target_link_libraries(rga_alpha_demo
+target_link_libraries(rga_alpha_colorkey_demo
 	${RGA_LIB}
 )
-install(TARGETS rga_alpha_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS rga_alpha_colorkey_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# rga_alpha_osd_demo
+add_executable(rga_alpha_osd_demo
+    $<TARGET_OBJECTS:utils_obj>
+    $<TARGET_OBJECTS:allocator_obj>
+    src/rga_alpha_osd_demo.cpp
+)
+target_link_libraries(rga_alpha_osd_demo
+	${RGA_LIB}
+)
+install(TARGETS rga_alpha_osd_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+

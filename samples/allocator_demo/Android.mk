@@ -1,7 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 #======================================================================
 #
-# rga_graphicbuffer_demo
+# rga_allocator_graphicbuffer_demo
 #
 #======================================================================
 include $(CLEAR_VARS)
@@ -31,10 +31,10 @@ LOCAL_HEADER_LIBRARIES += \
 
 LOCAL_SRC_FILES:= \
     ../utils/utils.cpp \
-    src/rga_graphicbuffer_demo.cpp
+    src/rga_allocator_graphicbuffer_demo.cpp
 
 LOCAL_MODULE:= \
-    rga_graphicbuffer_demo
+    rga_allocator_graphicbuffer_demo
 
 ifdef TARGET_32_BIT_SURFACEFLINGER
 LOCAL_32_BIT_ONLY := true

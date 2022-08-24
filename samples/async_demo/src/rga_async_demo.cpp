@@ -38,6 +38,8 @@
 #include "im2d.hpp"
 #include "rga.h"
 
+#include "utils.h"
+
 int main() {
     int ret = 0;
     int src_width, src_height, src_format;
@@ -77,7 +79,7 @@ int main() {
     /* fill image data */
     if (0 != get_buf_from_file(src_buf, src_format, src_width, src_height, 0)) {
         printf("foreground image write err\n");
-        memset(src_buf, 0xaa, src_buf_size);
+        draw_rgba(src_buf, src_width, src_height);
     }
     memset(tmp_buf, 0x40, tmp_buf_size);
     memset(dst_buf, 0x80, dst_buf_size);
@@ -110,13 +112,16 @@ int main() {
     ret = imcheck(src_img, tmp_img, {}, {});
     if (IM_STATUS_NOERROR != ret) {
         printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
-        return -1;
+        goto release_buffer;
     }
 
     ret = imcopy(src_img, tmp_img, 1, &release_fence_fd);
-    printf("%s src->tmp .... %s\n", LOG_TAG, imStrError(ret));
-    if (ret != IM_STATUS_SUCCESS)
+    if (ret == IM_STATUS_SUCCESS) {
+        printf("%s src->tmp running success!\n", LOG_TAG);
+    } else {
+        printf("%s src->tmp running failed, %s\n", LOG_TAG, imStrError((IM_STATUS)ret));
         goto release_buffer;
+    }
 
     if (release_fence_fd < 0) {
         printf("get release_fence_fd failed!\n");
@@ -133,23 +138,35 @@ int main() {
     ret = imcheck(tmp_img, dst_img, {}, {});
     if (IM_STATUS_NOERROR != ret) {
         printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
-        return -1;
+        goto release_buffer;
     }
 
     ret = improcess(tmp_img, dst_img, {}, {}, {}, {}, acquire_fence_fd, &release_fence_fd, NULL, IM_ASYNC);
-    printf("%s tmp->dst .... %s\n", LOG_TAG, imStrError(ret));
-    if (ret != IM_STATUS_SUCCESS || release_fence_fd < 0)
+    if (ret == IM_STATUS_SUCCESS) {
+        printf("%s tmp->dst running success!\n", LOG_TAG);
+    } else {
+        printf("%s tmp->dst running failed, %s\n", LOG_TAG, imStrError((IM_STATUS)ret));
         goto release_buffer;
+    }
+
+    if (release_fence_fd < 0) {
+        printf("get release_fence_fd failed!\n");
+        goto release_buffer;
+    }
 
     /*
      * (3). Will wait for the release_fence of the last operation, when it is
      * signed it indicates that all tasks are completed.
      */
     ret = imsync(release_fence_fd);
-    printf("%s waiting .... %s\n", LOG_TAG, imStrError(ret));
-    if (ret != IM_STATUS_SUCCESS)
+    if (ret == IM_STATUS_SUCCESS) {
+        printf("%s waiting success!\n", LOG_TAG);
+    } else {
+        printf("%s waiting failed, %s\n", LOG_TAG, imStrError((IM_STATUS)ret));
         goto release_buffer;
+    }
 
+    printf("output [0x%x, 0x%x, 0x%x, 0x%x]\n", dst_buf[0], dst_buf[1], dst_buf[2], dst_buf[3]);
     output_buf_data_to_file(dst_buf, dst_format, dst_width, dst_height, 0);
 
 release_buffer:

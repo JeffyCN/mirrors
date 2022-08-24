@@ -16,34 +16,42 @@
  * limitations under the License.
  */
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <cstddef>
-#include <cmath>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/time.h>
-#include <unistd.h>
+#define LOG_NDEBUG 0
+#define LOG_TAG "rga_rop_demo"
 
-#include "im2d.h"
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/mman.h>
+#include <math.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <unistd.h>
+#include <linux/stddef.h>
+
 #include "RgaUtils.h"
+#include "im2d.hpp"
 #include "rga.h"
 
 #include "utils.h"
 
-int main(void) {
+int main() {
     int ret = 0;
-    int64_t ts;
     int src_width, src_height, src_format;
     int dst_width, dst_height, dst_format;
-    int src_buf_size, dst_buf_size;
     char *src_buf, *dst_buf;
-    rga_buffer_t src = {};
-    rga_buffer_t dst = {};
-    im_rect src_rect = {};
-    im_rect dst_rect = {};
+    int src_buf_size, dst_buf_size;
+
+    rga_buffer_t src_img, dst_img;
     rga_buffer_handle_t src_handle, dst_handle;
+
+    memset(&src_img, 0, sizeof(src_img));
+    memset(&dst_img, 0, sizeof(dst_img));
 
     src_width = 1280;
     src_height = 720;
@@ -55,65 +63,63 @@ int main(void) {
 
     src_buf_size = src_width * src_height * get_bpp_from_format(src_format);
     dst_buf_size = dst_width * dst_height * get_bpp_from_format(dst_format);
+
     src_buf = (char *)malloc(src_buf_size);
     dst_buf = (char *)malloc(dst_buf_size);
-    if (src_buf == NULL || dst_buf == NULL) {
-        printf("malloc buffer failed!\n");
-        return -1;
-    }
 
-    ret = get_buf_from_file(src_buf, src_format, src_width, src_height, 0);
-    if (ret < 0) {
-        printf ("open file %s so memset!\n", "fault");
-        draw_rgba((char *)src_buf, src_width, src_height);
+    /* fill image data */
+    if (0 != get_buf_from_file(src_buf, src_format, src_width, src_height, 0)) {
+        printf("src image write err\n");
+        draw_rgba(src_buf, src_width, src_height);
     }
-    memset(dst_buf, 0x33, dst_buf_size);
+    memset(dst_buf, 0x80, dst_buf_size);
 
-    /*
-     * Import the allocated virtual address into RGA by calling
-     * importbuffer_virtualaddr, and use the returned buffer_handle
-     * to call RGA to process the image.
-     */
     src_handle = importbuffer_virtualaddr(src_buf, src_buf_size);
     dst_handle = importbuffer_virtualaddr(dst_buf, dst_buf_size);
     if (src_handle == 0 || dst_handle == 0) {
-        printf("import malloc virt_addr error!\n");
-        ret = -1;
-        goto free_buf;
+        printf("importbuffer failed!\n");
+        goto release_buffer;
     }
 
-    src = wrapbuffer_handle(src_handle, src_width, src_height, src_format);
-    dst = wrapbuffer_handle(dst_handle, dst_width, dst_height, dst_format);
+    src_img = wrapbuffer_handle(src_handle, src_width, src_height, src_format);
+    dst_img = wrapbuffer_handle(dst_handle, dst_width, dst_height, dst_format);
 
-    ret = imcheck(src, dst, src_rect, dst_rect);
+    /*
+     * src image and dst image for ROP calculation
+        src_img +(ROP) dst_img => dst_img
+        --------------     --------------    --------------
+        |            |     |            |    |            |
+        |  src_img   | ROP |  dst_img   | => |   dst_img  |
+        |            |     |            |    |  (result)  |
+        --------------     --------------    --------------
+     */
+
+    ret = imcheck(src_img, dst_img, {}, {});
     if (IM_STATUS_NOERROR != ret) {
         printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
-        goto release_buffer_handle;
+        return -1;
     }
 
-    ts = get_cur_us();
-
-    ret = imcopy(src, dst);
+    ret = imrop(src_img, dst_img, IM_ROP_AND);
     if (ret == IM_STATUS_SUCCESS) {
-        printf("imcopy success! cost %ld us\n", get_cur_us() - ts);
+        printf("%s running success!\n", LOG_TAG);
     } else {
-        printf("imcopy running failed, %s\n", imStrError((IM_STATUS)ret));
+        printf("%s running failed, %s\n", LOG_TAG, imStrError((IM_STATUS)ret));
+        goto release_buffer;
     }
 
-    printf("output [0x%x, 0x%x, 0x%x, 0x%x]\n", dst_buf[0], dst_buf[1], dst_buf[2], dst_buf[3]);
     output_buf_data_to_file(dst_buf, dst_format, dst_width, dst_height, 0);
 
-release_buffer_handle:
-    if (src_handle > 0)
+release_buffer:
+    if (src_handle)
         releasebuffer_handle(src_handle);
-    if (dst_handle > 0)
+    if (dst_handle)
         releasebuffer_handle(dst_handle);
 
-free_buf:
     if (src_buf)
         free(src_buf);
     if (dst_buf)
         free(dst_buf);
 
-    return 0;
+    return ret;
 }

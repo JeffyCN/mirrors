@@ -12,7 +12,7 @@ else ()
     set(RGA_LIB rga)
 endif()
 
-project(rga_async_demo)
+project(rga_resize_demo)
 
 #install path
 if (NOT DEFINED CMAKE_INSTALL_BINDIR)
@@ -31,12 +31,22 @@ include_directories(${CMAKE_SOURCE_DIR}/../utils)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/../utils ./utils_obj)
 
-# rga_async_demo
-add_executable(rga_async_demo
+# rga_resize_demo
+add_executable(rga_resize_demo
     $<TARGET_OBJECTS:utils_obj>
-    src/rga_async_demo.cpp
+    src/rga_resize_demo.cpp
 )
-target_link_libraries(rga_async_demo
+target_link_libraries(rga_resize_demo
 	${RGA_LIB}
 )
-install(TARGETS rga_async_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS rga_resize_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# rga_resize_rect_demo
+add_executable(rga_resize_rect_demo
+    $<TARGET_OBJECTS:utils_obj>
+    src/rga_resize_rect_demo.cpp
+)
+target_link_libraries(rga_resize_rect_demo
+	${RGA_LIB}
+)
+install(TARGETS rga_resize_rect_demo DESTINATION ${CMAKE_INSTALL_BINDIR})

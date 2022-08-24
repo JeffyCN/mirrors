@@ -40,80 +40,80 @@ add_library(allocator_obj OBJECT
     allocator/drm_alloc.cpp
 )
 
-# rga_malloc_demo
-add_executable(rga_malloc_demo
+# rga_allocator_malloc_demo
+add_executable(rga_allocator_malloc_demo
     $<TARGET_OBJECTS:utils_obj>
-    src/rga_malloc_demo.cpp
+    src/rga_allocator_malloc_demo.cpp
 )
-target_link_libraries(rga_malloc_demo
+target_link_libraries(rga_allocator_malloc_demo
 	${RGA_LIB}
 )
-install(TARGETS rga_malloc_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS rga_allocator_malloc_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 if (TARGET_SOC STREQUAL "RV1106")
-    # rga_dma32_demo
-    add_executable(rga_1106_cma_demo
+    # rga_allocator_dma32_demo
+    add_executable(rga_allocator_1106_cma_demo
         $<TARGET_OBJECTS:allocator_obj>
         $<TARGET_OBJECTS:utils_obj>
-        src/rga_1106_cma_demo.cpp
+        src/rga_allocator_1106_cma_demo.cpp
     )
-    target_link_libraries(rga_1106_cma_demo
+    target_link_libraries(rga_allocator_1106_cma_demo
         ${RGA_LIB}
     )
-    install(TARGETS rga_1106_cma_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS rga_allocator_1106_cma_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 else ()
-    # rga_drm_demo
-    add_executable(rga_drm_demo
+    # rga_allocator_drm_demo
+    add_executable(rga_allocator_drm_demo
     $<TARGET_OBJECTS:allocator_obj>
     $<TARGET_OBJECTS:utils_obj>
-    src/rga_drm_demo.cpp
+    src/rga_allocator_drm_demo.cpp
     )
-    target_link_libraries(rga_drm_demo
+    target_link_libraries(rga_allocator_drm_demo
     ${RGA_LIB}
     )
-    install(TARGETS rga_drm_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS rga_allocator_drm_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-    # rga_drm_phy_demo
-    add_executable(rga_drm_phy_demo
+    # rga_allocator_drm_phy_demo
+    add_executable(rga_allocator_drm_phy_demo
     $<TARGET_OBJECTS:allocator_obj>
     $<TARGET_OBJECTS:utils_obj>
-    src/rga_drm_phy_demo.cpp
+    src/rga_allocator_drm_phy_demo.cpp
     )
-    target_link_libraries(rga_drm_phy_demo
+    target_link_libraries(rga_allocator_drm_phy_demo
     ${RGA_LIB}
     )
-    install(TARGETS rga_drm_phy_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS rga_allocator_drm_phy_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-    # rga_dma_demo
-    add_executable(rga_dma_demo
+    # rga_allocator_dma_demo
+    add_executable(rga_allocator_dma_demo
     $<TARGET_OBJECTS:allocator_obj>
     $<TARGET_OBJECTS:utils_obj>
-    src/rga_dma_demo.cpp
+    src/rga_allocator_dma_demo.cpp
     )
-    target_link_libraries(rga_dma_demo
+    target_link_libraries(rga_allocator_dma_demo
     ${RGA_LIB}
     )
-    install(TARGETS rga_dma_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS rga_allocator_dma_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-    # rga_dma_cache_demo
-    add_executable(rga_dma_cache_demo
+    # rga_allocator_dma_cache_demo
+    add_executable(rga_allocator_dma_cache_demo
     $<TARGET_OBJECTS:allocator_obj>
     $<TARGET_OBJECTS:utils_obj>
-    src/rga_dma_cache_demo.cpp
+    src/rga_allocator_dma_cache_demo.cpp
     )
-    target_link_libraries(rga_dma_cache_demo
+    target_link_libraries(rga_allocator_dma_cache_demo
     ${RGA_LIB}
     )
-    install(TARGETS rga_dma_cache_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS rga_allocator_dma_cache_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-    # rga_dma32_demo
-    add_executable(rga_dma32_demo
+    # rga_allocator_dma32_demo
+    add_executable(rga_allocator_dma32_demo
     $<TARGET_OBJECTS:allocator_obj>
     $<TARGET_OBJECTS:utils_obj>
-    src/rga_dma32_demo.cpp
+    src/rga_allocator_dma32_demo.cpp
     )
-    target_link_libraries(rga_dma32_demo
+    target_link_libraries(rga_allocator_dma32_demo
     ${RGA_LIB}
     )
-    install(TARGETS rga_dma32_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS rga_allocator_dma32_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()

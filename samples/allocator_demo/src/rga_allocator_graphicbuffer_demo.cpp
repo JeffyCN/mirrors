@@ -16,6 +16,9 @@
  * limitations under the License.
  */
 
+#define LOG_NDEBUG 0
+#define LOG_TAG "rga_allocator_graphicbuffer_demo"
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -26,12 +29,15 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "im2d.h"
+#include "hardware/gralloc_rockchip.h"
+
+#include "im2d.hpp"
 #include "RgaUtils.h"
 #include "rga.h"
 
 #include "utils.h"
-#include "dma_alloc.h"
+
+using namespace android;
 
 int main(void) {
     int ret = 0;
@@ -40,35 +46,42 @@ int main(void) {
     int dst_width, dst_height, dst_format;
     int src_buf_size, dst_buf_size;
     char *src_buf, *dst_buf;
-    int src_dma_fd, dst_dma_fd;
     rga_buffer_t src = {};
     rga_buffer_t dst = {};
     im_rect src_rect = {};
     im_rect dst_rect = {};
     rga_buffer_handle_t src_handle, dst_handle;
+    uint64_t src_gb_flags = 0, dst_gb_flags = 0;
 
     src_width = 1280;
     src_height = 720;
-    src_format = RK_FORMAT_RGBA_8888;
+    src_format = HAL_PIXEL_FORMAT_RGBA_8888;
 
     dst_width = 1280;
     dst_height = 720;
-    dst_format = RK_FORMAT_RGBA_8888;
+    dst_format = HAL_PIXEL_FORMAT_RGBA_8888;
 
     src_buf_size = src_width * src_height * get_bpp_from_format(src_format);
     dst_buf_size = dst_width * dst_height * get_bpp_from_format(dst_format);
 
-    /* Allocate cacheable dma_buf, return dma_fd and virtual address. */
-    ret = dma_buf_alloc(DMA_HEAP_PATH, src_buf_size, &src_dma_fd, (void **)&src_buf);
-    if (ret < 0) {
-        printf("alloc src dma_heap buffer failed!\n");
+    /* allocate GraphicBuffer */
+    src_gb_flags |= RK_GRALLOC_USAGE_WITHIN_4G;
+    dst_gb_flags |= RK_GRALLOC_USAGE_WITHIN_4G;
+
+    sp<GraphicBuffer> src_gb(new GraphicBuffer(src_width, src_height, src_format, 0, src_gb_flags));
+    if (src_gb->initCheck()) {
+        printf("src GraphicBuffer check error : %s\n",strerror(errno));
+        return -1;
+    }
+    sp<GraphicBuffer> dst_gb(new GraphicBuffer(dst_width, dst_height, dst_format, 0, dst_gb_flags));
+    if (dst_gb->initCheck()) {
+        printf("dst GraphicBuffer check error : %s\n",strerror(errno));
         return -1;
     }
 
-    ret = dma_buf_alloc(DMA_HEAP_PATH, dst_buf_size, &dst_dma_fd, (void **)&dst_buf);
-    if (ret < 0) {
-        printf("alloc dst dma_heap buffer failed!\n");
-        dma_buf_free(src_buf_size, &src_dma_fd, src_buf);
+    ret = src_gb->lock(0, (void **)&src_buf);
+    if (ret) {
+        printf("lock buffer error : %s\n",strerror(errno));
         return -1;
     }
 
@@ -77,21 +90,36 @@ int main(void) {
         printf ("open file %s so memset!\n", "fault");
         draw_rgba((char *)src_buf, src_width, src_height);
     }
+
+    ret = src_gb->unlock();
+	if (ret) {
+        printf("unlock buffer error : %s\n",strerror(errno));
+        return -1;
+    }
+
+    ret = dst_gb->lock(0, (void **)&dst_buf);
+    if (ret) {
+        printf("lock buffer error : %s\n",strerror(errno));
+        return -1;
+    }
+
     memset(dst_buf, 0x33, dst_buf_size);
 
-    /* clear CPU cache */
-    dma_sync_cpu_to_device(src_dma_fd);
-    dma_sync_cpu_to_device(dst_dma_fd);
+    ret = dst_gb->unlock();
+	if (ret) {
+        printf("unlock buffer error : %s\n",strerror(errno));
+        return -1;
+    }
 
     /*
-     * Import the allocated dma_fd into RGA by calling
-     * importbuffer_fd, and use the returned buffer_handle
+     * Import the allocated GraphicBuffer into RGA by calling
+     * importbuffer_GraphicBuffer, and use the returned buffer_handle
      * to call RGA to process the image.
      */
-    src_handle = importbuffer_fd(src_dma_fd, src_buf_size);
-    dst_handle = importbuffer_fd(dst_dma_fd, dst_buf_size);
+    src_handle = importbuffer_GraphicBuffer(src_gb);
+    dst_handle = importbuffer_GraphicBuffer(dst_gb);
     if (src_handle == 0 || dst_handle == 0) {
-        printf("import dma_fd error!\n");
+        printf("import GraphicBuffer error!\n");
         ret = -1;
         goto free_buf;
     }
@@ -102,37 +130,43 @@ int main(void) {
     ret = imcheck(src, dst, src_rect, dst_rect);
     if (IM_STATUS_NOERROR != ret) {
         printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
-        goto release_buffer_handle;
+        goto release_buffer;
     }
 
     ts = get_cur_us();
 
     ret = imcopy(src, dst);
     if (ret == IM_STATUS_SUCCESS) {
-        printf("imcopy success! cost %ld us\n", get_cur_us() - ts);
+        printf("%s running success! cost %ld us\n", LOG_TAG, get_cur_us() - ts);
     } else {
-        printf("imcopy running failed, %s\n", imStrError((IM_STATUS)ret));
+        printf("%s running failed, %s\n", LOG_TAG, imStrError((IM_STATUS)ret));
+        goto release_buffer;
     }
 
-    printf("Before flushing the cache [0x%x, 0x%x, 0x%x, 0x%x]\n", dst_buf[0], dst_buf[1], dst_buf[2], dst_buf[3]);
+    ret = dst_gb->lock(0, (void **)&dst_buf);
+    if (ret) {
+        printf("lock buffer error : %s\n",strerror(errno));
+        return -1;
+    }
+
+    printf("output [0x%x, 0x%x, 0x%x, 0x%x]\n", dst_buf[0], dst_buf[1], dst_buf[2], dst_buf[3]);
     output_buf_data_to_file(dst_buf, dst_format, dst_width, dst_height, 0);
 
-    /* invalid CPU cache */
-    dma_sync_device_to_cpu(src_dma_fd);
-    dma_sync_device_to_cpu(dst_dma_fd);
+    ret = dst_gb->unlock();
+	if (ret) {
+        printf("unlock buffer error : %s\n",strerror(errno));
+        return -1;
+    }
 
-    printf("After flushing the cache [0x%x, 0x%x, 0x%x, 0x%x]\n", dst_buf[0], dst_buf[1], dst_buf[2], dst_buf[3]);
-    output_buf_data_to_file(dst_buf, dst_format, dst_width, dst_height, 1);
-
-release_buffer_handle:
+release_buffer:
     if (src_handle > 0)
         releasebuffer_handle(src_handle);
     if (dst_handle > 0)
         releasebuffer_handle(dst_handle);
 
 free_buf:
-    dma_buf_free(src_buf_size, &src_dma_fd, src_buf);
-    dma_buf_free(dst_buf_size, &dst_dma_fd, dst_buf);
+    src_gb = NULL;
+    dst_gb = NULL;
 
     return 0;
 }

@@ -12,7 +12,7 @@ else ()
     set(RGA_LIB rga)
 endif()
 
-project(rga_async_demo)
+project(rga_fill_demo)
 
 #install path
 if (NOT DEFINED CMAKE_INSTALL_BINDIR)
@@ -28,15 +28,22 @@ set(RGA_INCLUDE
 
 include_directories(${RGA_INCLUDE})
 include_directories(${CMAKE_SOURCE_DIR}/../utils)
+include_directories(${CMAKE_SOURCE_DIR}/allocator/include/)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/../utils ./utils_obj)
 
-# rga_async_demo
-add_executable(rga_async_demo
-    $<TARGET_OBJECTS:utils_obj>
-    src/rga_async_demo.cpp
+# allocator_obj
+add_library(allocator_obj OBJECT
+    allocator/dma_alloc.cpp
 )
-target_link_libraries(rga_async_demo
+
+# rga_fill_demo
+add_executable(rga_fill_demo
+    $<TARGET_OBJECTS:utils_obj>
+    $<TARGET_OBJECTS:allocator_obj>
+    src/rga_fill_demo.cpp
+)
+target_link_libraries(rga_fill_demo
 	${RGA_LIB}
 )
-install(TARGETS rga_async_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS rga_fill_demo DESTINATION ${CMAKE_INSTALL_BINDIR})

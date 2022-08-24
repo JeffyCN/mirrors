@@ -17,7 +17,7 @@
  */
 
 #define LOG_NDEBUG 0
-#define LOG_TAG "rga_alpha_demo"
+#define LOG_TAG "rga_alpha_colorkey_demo"
 
 #include <iostream>
 #include <fstream>
@@ -43,6 +43,7 @@ int main() {
     int usage = 0;
     rga_buffer_t fg_img, bg_img;
     rga_buffer_handle_t fg_handle, bg_handle;
+    im_colorkey_range range;
 
     memset(&fg_img, 0, sizeof(fg_img));
     memset(&bg_img, 0, sizeof(bg_img));
@@ -71,6 +72,34 @@ int main() {
         memset(bg_buf, 0x66, bg_buf_size);
     }
 
+    /* Fill color on foreground image. */
+    for (int i = 0; i < fg_height; i++) {
+        for (int j = 0; j < fg_width/8; j++) {
+            fg_buf[(i*fg_width*4) + j*4 + 0] = 0x11;   //R
+            fg_buf[(i*fg_width*4) + j*4 + 1] = 0x11;   //G
+            fg_buf[(i*fg_width*4) + j*4 + 2] = 0x11;   //B
+            fg_buf[(i*fg_width*4) + j*4 + 3] = 0xff;   //A
+        }
+        for (int j = fg_width/8; j < fg_width/4; j++) {
+            fg_buf[(i*fg_width*4) + j*4 + 0] = 0x66;
+            fg_buf[(i*fg_width*4) + j*4 + 1] = 0x66;
+            fg_buf[(i*fg_width*4) + j*4 + 2] = 0x66;
+            fg_buf[(i*fg_width*4) + j*4 + 3] = 0xff;
+        }
+        for (int j = fg_width/4; j < fg_width/8*3; j++) {
+            fg_buf[(i*fg_width*4) + j*4 + 0] = 0xaa;
+            fg_buf[(i*fg_width*4) + j*4 + 1] = 0xaa;
+            fg_buf[(i*fg_width*4) + j*4 + 2] = 0xaa;
+            fg_buf[(i*fg_width*4) + j*4 + 3] = 0xff;
+        }
+        for (int j = fg_width/8*3; j < fg_width/2; j++) {
+            fg_buf[(i*fg_width*4) + j*4 + 0] = 0xff;
+            fg_buf[(i*fg_width*4) + j*4 + 1] = 0xff;
+            fg_buf[(i*fg_width*4) + j*4 + 2] = 0xff;
+            fg_buf[(i*fg_width*4) + j*4 + 3] = 0xff;
+        }
+    }
+
     fg_handle = importbuffer_virtualaddr(fg_buf, fg_buf_size);
     bg_handle = importbuffer_virtualaddr(bg_buf, bg_buf_size);
     if (fg_handle == 0 || bg_handle == 0) {
@@ -82,7 +111,8 @@ int main() {
     bg_img = wrapbuffer_handle(bg_handle, bg_width, bg_height, bg_format);
 
     /*
-     * Here are two RGBA8888 images of the same size for src_over overlay.
+     * Overlays the background image after removing a specified
+     * range of colors in the foreground image.
         --------------        --------------      --------------
         |            |        |            |      |            |
         |   fg_img   |    +   |   bg_img   |  =>  | fg over bg |
@@ -96,13 +126,13 @@ int main() {
         return -1;
     }
 
-    ret = imblend(fg_img, bg_img, IM_ALPHA_BLEND_SRC_OVER);
-    if (ret == IM_STATUS_SUCCESS) {
-        printf("%s running success!\n", LOG_TAG);
-    } else {
-        printf("%s running failed, %s\n", LOG_TAG, imStrError((IM_STATUS)ret));
+    range.min = 0xFF666666;     //ABGR
+    range.max = 0xFFaaaaaa;
+
+    ret = imcolorkey(fg_img, bg_img, range, IM_ALPHA_COLORKEY_NORMAL);
+    printf("%s .... %s\n", LOG_TAG, imStrError(ret));
+    if (ret != IM_STATUS_SUCCESS)
         goto release_buffer;
-    }
 
     output_buf_data_to_file(bg_buf, bg_format, bg_width, bg_height, 0);
 

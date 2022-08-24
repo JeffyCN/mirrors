@@ -12,7 +12,7 @@ else ()
     set(RGA_LIB rga)
 endif()
 
-project(rga_async_demo)
+project(rga_copy_demo)
 
 #install path
 if (NOT DEFINED CMAKE_INSTALL_BINDIR)
@@ -31,12 +31,22 @@ include_directories(${CMAKE_SOURCE_DIR}/../utils)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/../utils ./utils_obj)
 
-# rga_async_demo
-add_executable(rga_async_demo
+# rga_copy_demo
+add_executable(rga_copy_demo
     $<TARGET_OBJECTS:utils_obj>
-    src/rga_async_demo.cpp
+    src/rga_copy_demo.cpp
 )
-target_link_libraries(rga_async_demo
+target_link_libraries(rga_copy_demo
 	${RGA_LIB}
 )
-install(TARGETS rga_async_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS rga_copy_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# rga_copy_splice_demo
+add_executable(rga_copy_splice_demo
+    $<TARGET_OBJECTS:utils_obj>
+    src/rga_copy_splice_demo.cpp
+)
+target_link_libraries(rga_copy_splice_demo
+	${RGA_LIB}
+)
+install(TARGETS rga_copy_splice_demo DESTINATION ${CMAKE_INSTALL_BINDIR})

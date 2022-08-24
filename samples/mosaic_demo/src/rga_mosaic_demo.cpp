@@ -16,6 +16,9 @@
  * limitations under the License.
  */
 
+#define LOG_NDEBUG 0
+#define LOG_TAG "rga_mosaic_demo"
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -31,7 +34,6 @@
 #include "rga.h"
 
 #include "utils.h"
-#include "dma_alloc.h"
 
 int main(void) {
     int ret = 0;
@@ -39,7 +41,6 @@ int main(void) {
     int dst_width, dst_height, dst_format;
     int dst_buf_size;
     char *dst_buf;
-    int dst_dma_fd;
     rga_buffer_t dst = {};
     im_rect dst_rect = {};
     rga_buffer_handle_t dst_handle;
@@ -50,61 +51,62 @@ int main(void) {
 
     dst_buf_size = dst_width * dst_height * get_bpp_from_format(dst_format);
 
-    /*
-     * Allocate dma_buf within 4G from dma32_heap,
-     * return dma_fd and virtual address.
-     */
-    ret = dma_buf_alloc(DMA_HEAP_DMA32_UNCACHE_PATCH, dst_buf_size, &dst_dma_fd, (void **)&dst_buf);
-    if (ret < 0) {
-        printf("alloc dma32_heap buffer failed!\n");
-        return -1;
+    dst_buf = (char *)malloc(dst_buf_size);
+
+    /* fill image data */
+    if (0 != get_buf_from_file(dst_buf, dst_format, dst_width, dst_height, 0)) {
+        printf("dst image write err\n");
+        draw_rgba(dst_buf, dst_width, dst_height);
     }
 
-    memset(dst_buf, 0x33, dst_buf_size);
-
-    /*
-     * Import the allocated dma_fd into RGA by calling
-     * importbuffer_fd, and use the returned buffer_handle
-     * to call RGA to process the image.
-     */
-    dst_handle = importbuffer_fd(dst_dma_fd, dst_buf_size);
+    dst_handle = importbuffer_virtualaddr(dst_buf, dst_buf_size);
     if (dst_handle == 0) {
-        printf("import dma_fd error!\n");
+        printf("importbuffer failed!\n");
         ret = -1;
         goto free_buf;
     }
 
     dst = wrapbuffer_handle(dst_handle, dst_width, dst_height, dst_format);
 
+    /*
+     * mosaic a rectangular area on the dst image.
+           dst_image
+        --------------
+        | --------   |
+        | |mosaic|   |
+        | --------   |
+        --------------
+     */
+
     dst_rect.x = 0;
     dst_rect.y = 0;
     dst_rect.width = 300;
     dst_rect.height = 200;
 
-    ret = imcheck({}, dst, {}, dst_rect, IM_COLOR_FILL);
+    ret = imcheck({}, dst, {}, dst_rect, IM_MOSAIC);
     if (IM_STATUS_NOERROR != ret) {
         printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
-        goto release_buffer_handle;
+        goto release_buffer;
     }
 
-    ts = get_cur_us();
-
-    ret = imfill(dst, dst_rect, 0xff00ff00);
+    ret = immosaic(dst, dst_rect, IM_MOSAIC_32);
     if (ret == IM_STATUS_SUCCESS) {
-        printf("imfill success! cost %ld us\n", get_cur_us() - ts);
+        printf("%s running success! cost %ld us\n", LOG_TAG, get_cur_us() - ts);
     } else {
-        printf("imfill running failed, %s\n", imStrError((IM_STATUS)ret));
+        printf("%s running failed, %s\n", LOG_TAG, imStrError((IM_STATUS)ret));
+        goto release_buffer;
     }
 
     printf("output [0x%x, 0x%x, 0x%x, 0x%x]\n", dst_buf[0], dst_buf[1], dst_buf[2], dst_buf[3]);
     output_buf_data_to_file(dst_buf, dst_format, dst_width, dst_height, 0);
 
-release_buffer_handle:
+release_buffer:
     if (dst_handle > 0)
         releasebuffer_handle(dst_handle);
 
 free_buf:
-    dma_buf_free(dst_buf_size, &dst_dma_fd, dst_buf);
+    if (dst_buf)
+        free(dst_buf);
 
     return 0;
 }
