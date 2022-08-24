@@ -17,7 +17,7 @@
  */
 
 #define LOG_NDEBUG 0
-#define LOG_TAG "rga_copy_splice_demo"
+#define LOG_TAG "rga_copy_splice_task_demo"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -40,6 +40,8 @@
 
 #include "utils.h"
 
+using namespace rga;
+
 int main() {
     int ret = 0;
     int left_width, left_height, left_format;
@@ -51,6 +53,7 @@ int main() {
     rga_buffer_t left_img, right_img, dst_img;
     im_rect left_rect, right_rect;
     rga_buffer_handle_t left_handle, right_handle, dst_handle;
+    im_job_handle_t job_handle;
 
     memset(&left_img, 0, sizeof(left_img));
     memset(&right_img, 0, sizeof(right_img));
@@ -111,7 +114,16 @@ int main() {
      */
 
     /*
-     * 1). copy left image.
+     * 1). Create a job handle.
+     */
+    job_handle = imbeginJob();
+    if (job_handle <= 0) {
+        printf("job begin failed![%d], %s\n", job_handle, imStrError());
+        goto release_buffer;
+    }
+
+    /*
+     * 2). Add a task of copying the left image.
                                     dst_img
         --------------    ---------------------------
         |            |    |            |            |
@@ -127,19 +139,19 @@ int main() {
     ret = imcheck(left_img, dst_img, {}, left_rect);
     if (IM_STATUS_NOERROR != ret) {
         printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
-        goto release_buffer;
+        goto cancel_job;
     }
 
-    ret = improcess(left_img, dst_img, {}, {}, left_rect, {}, IM_SYNC);
+    ret = improcessTask(job_handle, left_img, dst_img, {}, {}, left_rect, {}, NULL, IM_SYNC);
     if (ret == IM_STATUS_SUCCESS) {
-        printf("%s left running success!\n", LOG_TAG);
+        printf("%s job[%d] add left task success!\n", LOG_TAG, job_handle);
     } else {
-        printf("%s left running failed, %s\n", LOG_TAG, imStrError((IM_STATUS)ret));
-        goto release_buffer;
+        printf("%s job[%d] add left task failed, %s\n", LOG_TAG, job_handle, imStrError((IM_STATUS)ret));
+        goto cancel_job;
     }
 
     /*
-     * 2). copy right image.
+     * 3). Add a task of copying the right image.
                                     dst_img
         --------------    ---------------------------
         |            |    |            |            |
@@ -155,19 +167,33 @@ int main() {
     ret = imcheck(right_img, dst_img, {}, right_rect);
     if (IM_STATUS_NOERROR != ret) {
         printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
-        goto release_buffer;
+        goto cancel_job;
     }
 
-    ret = improcess(right_img, dst_img, {}, {}, right_rect, {}, IM_SYNC);
+    ret = improcessTask(job_handle, right_img, dst_img, {}, {}, right_rect, {}, NULL, IM_SYNC);
     if (ret == IM_STATUS_SUCCESS) {
-        printf("%s right running success!\n", LOG_TAG);
+        printf("%s job[%d] add right task success!\n", LOG_TAG, job_handle);
     } else {
-        printf("%s right running failed, %s\n", LOG_TAG, imStrError((IM_STATUS)ret));
+        printf("%s job[%d] add right task failed, %s\n", LOG_TAG, job_handle, imStrError((IM_STATUS)ret));
+        goto cancel_job;
+    }
+
+    /*
+     * 4). Submit and wait for the job to complete.
+     */
+    ret = imendJob(job_handle);
+    if (ret == IM_STATUS_SUCCESS) {
+        printf("%s job[%d] running success!\n", LOG_TAG, job_handle);
+    } else {
+        printf("%s job[%d] running failed, %s\n", LOG_TAG, job_handle, imStrError((IM_STATUS)ret));
         goto release_buffer;
     }
 
 	printf("output [0x%x, 0x%x, 0x%x, 0x%x]\n", dst_buf[0], dst_buf[1], dst_buf[2], dst_buf[3]);
     output_buf_data_to_file(dst_buf, dst_format, dst_width, dst_height, 0);
+
+cancel_job:
+    imcancelJob(job_handle);
 
 release_buffer:
     if (left_handle)

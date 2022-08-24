@@ -47,3 +47,47 @@ target_link_libraries(rga_fill_demo
 	${RGA_LIB}
 )
 install(TARGETS rga_fill_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# rga_fill_rectangle_demo
+add_executable(rga_fill_rectangle_demo
+    $<TARGET_OBJECTS:utils_obj>
+    $<TARGET_OBJECTS:allocator_obj>
+    src/rga_fill_rectangle_demo.cpp
+)
+target_link_libraries(rga_fill_rectangle_demo
+	${RGA_LIB}
+)
+install(TARGETS rga_fill_rectangle_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# rga_fill_rectangle_array_demo
+add_executable(rga_fill_rectangle_array_demo
+    $<TARGET_OBJECTS:utils_obj>
+    $<TARGET_OBJECTS:allocator_obj>
+    src/rga_fill_rectangle_array_demo.cpp
+)
+target_link_libraries(rga_fill_rectangle_array_demo
+	${RGA_LIB}
+)
+install(TARGETS rga_fill_rectangle_array_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# rga_fill_rectangle_task_demo
+add_executable(rga_fill_rectangle_task_demo
+    $<TARGET_OBJECTS:utils_obj>
+    $<TARGET_OBJECTS:allocator_obj>
+    src/rga_fill_rectangle_task_demo.cpp
+)
+target_link_libraries(rga_fill_rectangle_task_demo
+	${RGA_LIB}
+)
+install(TARGETS rga_fill_rectangle_task_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# rga_fill_rectangle_task_array_demo
+add_executable(rga_fill_rectangle_task_array_demo
+    $<TARGET_OBJECTS:utils_obj>
+    $<TARGET_OBJECTS:allocator_obj>
+    src/rga_fill_rectangle_task_array_demo.cpp
+)
+target_link_libraries(rga_fill_rectangle_task_array_demo
+	${RGA_LIB}
+)
+install(TARGETS rga_fill_rectangle_task_array_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
