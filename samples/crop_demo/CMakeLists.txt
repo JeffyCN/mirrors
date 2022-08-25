@@ -12,7 +12,9 @@ else ()
     set(RGA_LIB rga)
 endif()
 
-project(rga_crop_demo)
+get_filename_component(TARGET_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
+
+project(rga_${TARGET_NAME})
 
 #install path
 if (NOT DEFINED CMAKE_INSTALL_BINDIR)
@@ -23,30 +25,14 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,--allow-shlib-undefined -ldl")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wl,--allow-shlib-undefined -ldl")
 
 set(RGA_INCLUDE
-    ${CMAKE_SOURCE_DIR}/../../include
-    ${CMAKE_SOURCE_DIR}/../../im2d_api)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../im2d_api)
 
 include_directories(${RGA_INCLUDE})
-include_directories(${CMAKE_SOURCE_DIR}/../utils)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/../utils ./utils_obj)
+if (NOT DEFINED RGA_SAMPLES_UTILS_COMPILED)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../utils/CMakeLists.txt)
+endif()
 
-# rga_crop_demo
-add_executable(rga_crop_demo
-    $<TARGET_OBJECTS:utils_obj>
-    src/rga_crop_demo.cpp
-)
-target_link_libraries(rga_crop_demo
-	${RGA_LIB}
-)
-install(TARGETS rga_crop_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+add_subdirectory(src)
 
-# rga_crop_rect_demo
-add_executable(rga_crop_rect_demo
-    $<TARGET_OBJECTS:utils_obj>
-    src/rga_crop_rect_demo.cpp
-)
-target_link_libraries(rga_crop_rect_demo
-	${RGA_LIB}
-)
-install(TARGETS rga_crop_rect_demo DESTINATION ${CMAKE_INSTALL_BINDIR})

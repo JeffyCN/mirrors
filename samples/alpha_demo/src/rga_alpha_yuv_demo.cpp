@@ -17,6 +17,7 @@
  */
 
 #define LOG_NDEBUG 0
+#undef LOG_TAG
 #define LOG_TAG "rga_alpha_rgba_yuv_demo"
 
 #include <iostream>

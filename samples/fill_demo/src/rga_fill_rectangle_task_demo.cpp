@@ -17,6 +17,7 @@
  */
 
 #define LOG_NDEBUG 0
+#undef LOG_TAG
 #define LOG_TAG "rga_fill_rectangle_task_demo"
 
 #include <iostream>

@@ -106,6 +106,7 @@ void draw_gray256(char *buffer, int width, int height) {
 
 int read_image_from_fbc_file(void *buf, const char *path, int sw, int sh, int fmt, int index) {
     int size;
+    size_t read_size;
     char filePath[100];
     const char *inputFbcFilePath = "%s/in%dw%d-h%d-%s-fbc.bin";
 
@@ -120,7 +121,12 @@ int read_image_from_fbc_file(void *buf, const char *path, int sw, int sh, int fm
 
     size = sw * sh * get_bpp_from_format(fmt) * 1.5;
 
-    fread(buf, size, 1, file);
+    read_size = fread(buf, size, 1, file);
+    if (read_size != size) {
+        fprintf(stderr, "read %s failed! read_size = %lu, size = %d\n",
+                filePath, read_size, size);
+        return -EINVAL;
+    }
 
     fclose(file);
 
@@ -129,6 +135,7 @@ int read_image_from_fbc_file(void *buf, const char *path, int sw, int sh, int fm
 
 int read_image_from_file(void *buf, const char *path, int sw, int sh, int fmt, int index) {
     int size;
+    size_t read_size;
     char filePath[100];
     const char *inputFilePath = "%s/in%dw%d-h%d-%s.bin";
 
@@ -143,7 +150,12 @@ int read_image_from_file(void *buf, const char *path, int sw, int sh, int fmt, i
 
     size = sw * sh * get_bpp_from_format(fmt);
 
-    fread(buf, size, 1, file);
+    read_size = fread(buf, size, 1, file);
+    if (read_size != size) {
+        fprintf(stderr, "read %s failed! read_size = %lu, size = %d\n",
+                filePath, read_size, size);
+        return -EINVAL;
+    }
 
     fclose(file);
 

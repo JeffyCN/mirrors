@@ -12,7 +12,9 @@ else ()
     set(RGA_LIB rga)
 endif()
 
-project(rga_fill_demo)
+get_filename_component(TARGET_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
+
+project(rga_${TARGET_NAME})
 
 #install path
 if (NOT DEFINED CMAKE_INSTALL_BINDIR)
@@ -23,71 +25,14 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,--allow-shlib-undefined -ldl")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wl,--allow-shlib-undefined -ldl")
 
 set(RGA_INCLUDE
-    ${CMAKE_SOURCE_DIR}/../../include
-    ${CMAKE_SOURCE_DIR}/../../im2d_api)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../im2d_api)
 
 include_directories(${RGA_INCLUDE})
-include_directories(${CMAKE_SOURCE_DIR}/../utils)
-include_directories(${CMAKE_SOURCE_DIR}/allocator/include/)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/../utils ./utils_obj)
+if (NOT DEFINED RGA_SAMPLES_UTILS_COMPILED)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../utils/CMakeLists.txt)
+endif()
 
-# allocator_obj
-add_library(allocator_obj OBJECT
-    allocator/dma_alloc.cpp
-)
+add_subdirectory(src)
 
-# rga_fill_demo
-add_executable(rga_fill_demo
-    $<TARGET_OBJECTS:utils_obj>
-    $<TARGET_OBJECTS:allocator_obj>
-    src/rga_fill_demo.cpp
-)
-target_link_libraries(rga_fill_demo
-	${RGA_LIB}
-)
-install(TARGETS rga_fill_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-# rga_fill_rectangle_demo
-add_executable(rga_fill_rectangle_demo
-    $<TARGET_OBJECTS:utils_obj>
-    $<TARGET_OBJECTS:allocator_obj>
-    src/rga_fill_rectangle_demo.cpp
-)
-target_link_libraries(rga_fill_rectangle_demo
-	${RGA_LIB}
-)
-install(TARGETS rga_fill_rectangle_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-# rga_fill_rectangle_array_demo
-add_executable(rga_fill_rectangle_array_demo
-    $<TARGET_OBJECTS:utils_obj>
-    $<TARGET_OBJECTS:allocator_obj>
-    src/rga_fill_rectangle_array_demo.cpp
-)
-target_link_libraries(rga_fill_rectangle_array_demo
-	${RGA_LIB}
-)
-install(TARGETS rga_fill_rectangle_array_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-# rga_fill_rectangle_task_demo
-add_executable(rga_fill_rectangle_task_demo
-    $<TARGET_OBJECTS:utils_obj>
-    $<TARGET_OBJECTS:allocator_obj>
-    src/rga_fill_rectangle_task_demo.cpp
-)
-target_link_libraries(rga_fill_rectangle_task_demo
-	${RGA_LIB}
-)
-install(TARGETS rga_fill_rectangle_task_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-# rga_fill_rectangle_task_array_demo
-add_executable(rga_fill_rectangle_task_array_demo
-    $<TARGET_OBJECTS:utils_obj>
-    $<TARGET_OBJECTS:allocator_obj>
-    src/rga_fill_rectangle_task_array_demo.cpp
-)
-target_link_libraries(rga_fill_rectangle_task_array_demo
-	${RGA_LIB}
-)
-install(TARGETS rga_fill_rectangle_task_array_demo DESTINATION ${CMAKE_INSTALL_BINDIR})

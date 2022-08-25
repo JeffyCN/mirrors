@@ -171,3 +171,4 @@ install(TARGETS  ${STATIC_LIB_NAME}
 
 # build im2d api demo
 add_subdirectory(samples/im2d_api_demo)
+#add_subdirectory(samples)

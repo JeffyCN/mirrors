@@ -1,14 +1,18 @@
-cmake_minimum_required(VERSION 3.5)
+add_library(utils_obj OBJECT "")
 
-if (EXISTS ${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
-    message("load ${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH}")
-    include(${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
-endif()
+include(${CMAKE_CURRENT_LIST_DIR}/allocator/CMakeLists.txt)
 
-project(rga_samples_utils)
+target_sources(utils_obj
+    PRIVATE
+  	    ${CMAKE_CURRENT_LIST_DIR}/utils.cpp
+    PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/utils.h
+)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,--allow-shlib-undefined -ldl")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wl,--allow-shlib-undefined -ldl")
+target_include_directories(utils_obj
+    PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}
+)
 
-# allocator demo utils_obj
-add_library(utils_obj OBJECT utils.cpp)
+SET(RGA_SAMPLES_UTILS_COMPILED "true" CACHE STRING "")
+

@@ -17,8 +17,9 @@
  */
 
 #define LOG_NDEBUG 0
+#undef LOG_TAG
 #define LOG_TAG "rga_allocator_dma_demo"
- 
+
 #include <iostream>
 #include <fstream>
 #include <sstream>

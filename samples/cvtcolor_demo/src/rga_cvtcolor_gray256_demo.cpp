@@ -17,6 +17,7 @@
  */
 
 #define LOG_NDEBUG 0
+#undef LOG_TAG
 #define LOG_TAG "rga_cvtcolor_gray256_demo"
 
 #include <stdint.h>
@@ -70,7 +71,7 @@ int main() {
     /* fill image data */
     if (0 != get_buf_from_file(src_buf, src_format, src_width, src_height, 0)) {
         printf("src image write err\n");
-        draw_rgba(src_buf, src_widthm dst_width);
+        draw_rgba(src_buf, src_width, src_height);
     }
     memset(dst_buf, 0x80, dst_buf_size);
 

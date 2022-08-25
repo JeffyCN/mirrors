@@ -23,13 +23,13 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,--allow-shlib-undefined -ldl")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wl,--allow-shlib-undefined -ldl")
 
 set(RGA_INCLUDE
-    ${CMAKE_SOURCE_DIR}/../../include
-    ${CMAKE_SOURCE_DIR}/../../im2d_api)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../im2d_api)
 
 include_directories(${RGA_INCLUDE})
-include_directories(${CMAKE_SOURCE_DIR}/../utils)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../utils)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/../utils ./utils_obj)
+add_subdirectory(../utils ./utils_obj)
 
 # rga_async_demo
 add_executable(rga_async_demo
