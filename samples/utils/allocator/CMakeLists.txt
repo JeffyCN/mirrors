@@ -1,5 +1,3 @@
-SET(THIRD_PARTY_PATH ${CMAKE_CURRENT_LIST_DIR}/../../3rdparty)
-
 target_sources(utils_obj
     PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/dma_alloc.cpp

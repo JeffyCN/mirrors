@@ -1,5 +1,7 @@
 add_library(utils_obj OBJECT "")
 
+SET(THIRD_PARTY_PATH ${CMAKE_CURRENT_LIST_DIR}/3rdparty)
+
 include(${CMAKE_CURRENT_LIST_DIR}/allocator/CMakeLists.txt)
 
 target_sources(utils_obj
@@ -15,4 +17,3 @@ target_include_directories(utils_obj
 )
 
 SET(RGA_SAMPLES_UTILS_COMPILED "true" CACHE STRING "")
-
