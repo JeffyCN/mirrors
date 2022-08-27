@@ -28,11 +28,17 @@
 
 #include "rockchip_pdm.h"
 
-#define PDM_DMA_BURST_SIZE	(8) /* size * width: 8*4 = 32 bytes */
-#define PDM_SIGNOFF_CLK_RATE	(100000000)
-#define PDM_PATH_MAX		(4)
-#define CLK_PPM_MIN		(-1000)
-#define CLK_PPM_MAX		(1000)
+#define PDM_DMA_BURST_SIZE		(8) /* size * width: 8*4 = 32 bytes */
+#define PDM_SIGNOFF_CLK_RATE		(100000000)
+#define PDM_PATH_MAX			(4)
+#define CLK_PPM_MIN			(-1000)
+#define CLK_PPM_MAX			(1000)
+#define PDM_DEFAULT_RATE		(48000)
+#define PDM_START_DELAY_MS_DEFAULT	(20)
+#define PDM_START_DELAY_MS_MIN		(0)
+#define PDM_START_DELAY_MS_MAX		(1000)
+#define PDM_FILTER_DELAY_MS_MIN		(20)
+#define PDM_FILTER_DELAY_MS_MAX		(1000)
 
 enum rk_pdm_version {
 	RK_PDM_RK3308,
@@ -48,6 +54,8 @@ struct rk_pdm_dev {
 	struct regmap *regmap;
 	struct snd_dmaengine_dai_dma_data capture_dma_data;
 	struct reset_control *reset;
+	unsigned int start_delay_ms;
+	unsigned int filter_delay_ms;
 	enum rk_pdm_version version;
 	unsigned int clk_root_rate;
 	unsigned int clk_root_initial_rate;
@@ -199,13 +207,22 @@ static inline struct rk_pdm_dev *to_info(struct snd_soc_dai *dai)
 	return snd_soc_dai_get_drvdata(dai);
 }
 
+static void rockchip_pdm_drop_fifo(struct rk_pdm_dev *pdm)
+{
+	int cnt, val, i;
+
+	/* drop the dirty data */
+	regmap_read(pdm->regmap, PDM_FIFO_CTRL, &cnt);
+	for (i = 0; i < PDM_FIFO_CNT(cnt); i++)
+		regmap_read(pdm->regmap, PDM_RXFIFO_DATA, &val);
+}
+
 static void rockchip_pdm_rxctrl(struct rk_pdm_dev *pdm, int on)
 {
 	if (on) {
+		rockchip_pdm_drop_fifo(pdm);
 		regmap_update_bits(pdm->regmap, PDM_DMA_CTRL,
 				   PDM_DMA_RD_MSK, PDM_DMA_RD_EN);
-		regmap_update_bits(pdm->regmap, PDM_SYSCONFIG,
-				   PDM_RX_MASK, PDM_RX_START);
 	} else {
 		regmap_update_bits(pdm->regmap, PDM_DMA_CTRL,
 				   PDM_DMA_RD_MSK, PDM_DMA_RD_DIS);
@@ -334,6 +351,9 @@ static int rockchip_pdm_set_samplerate(struct rk_pdm_dev *pdm,
 		val = get_pdm_ds_ratio(samplerate);
 		regmap_update_bits(pdm->regmap, PDM_CLK_CTRL, PDM_DS_RATIO_MSK, val);
 	}
+	regmap_update_bits(pdm->regmap, PDM_HPF_CTRL, PDM_HPF_CF_MSK, PDM_HPF_60HZ);
+	regmap_update_bits(pdm->regmap, PDM_HPF_CTRL,
+			   PDM_HPF_LE | PDM_HPF_RE, PDM_HPF_LE | PDM_HPF_RE);
 
 	return 0;
 }
@@ -344,20 +364,12 @@ static int rockchip_pdm_hw_params(struct snd_pcm_substream *substream,
 {
 	struct rk_pdm_dev *pdm = to_info(dai);
 	unsigned int val = 0;
-	int ret;
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
 		return 0;
 
-	ret = rockchip_pdm_set_samplerate(pdm, params_rate(params));
-	if (ret)
-		return ret;
+	rockchip_pdm_set_samplerate(pdm, params_rate(params));
 
-	regmap_update_bits(pdm->regmap, PDM_HPF_CTRL,
-			   PDM_HPF_CF_MSK, PDM_HPF_60HZ);
-	regmap_update_bits(pdm->regmap, PDM_HPF_CTRL,
-			   PDM_HPF_LE | PDM_HPF_RE, PDM_HPF_LE | PDM_HPF_RE);
-	regmap_update_bits(pdm->regmap, PDM_CLK_CTRL, PDM_CLK_EN, PDM_CLK_EN);
 	if (pdm->version != RK_PDM_RK3328)
 		regmap_update_bits(pdm->regmap, PDM_CTRL0,
 				   PDM_MODE_MSK, PDM_MODE_LJ);
@@ -509,6 +521,100 @@ static struct snd_kcontrol_new rockchip_pdm_compensation_control = {
 	.put = rockchip_pdm_clk_compensation_put,
 };
 
+static int rockchip_pdm_start_delay_info(struct snd_kcontrol *kcontrol,
+					 struct snd_ctl_elem_info *uinfo)
+{
+	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
+	uinfo->count = 1;
+	uinfo->value.integer.min = PDM_START_DELAY_MS_MIN;
+	uinfo->value.integer.max = PDM_START_DELAY_MS_MAX;
+	uinfo->value.integer.step = 1;
+
+	return 0;
+
+}
+
+static int rockchip_pdm_start_delay_get(struct snd_kcontrol *kcontrol,
+					struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_dai *dai = snd_kcontrol_chip(kcontrol);
+	struct rk_pdm_dev *pdm = snd_soc_dai_get_drvdata(dai);
+
+	ucontrol->value.integer.value[0] = pdm->start_delay_ms;
+
+	return 0;
+}
+
+static int rockchip_pdm_start_delay_put(struct snd_kcontrol *kcontrol,
+					struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_dai *dai = snd_kcontrol_chip(kcontrol);
+	struct rk_pdm_dev *pdm = snd_soc_dai_get_drvdata(dai);
+
+	if ((ucontrol->value.integer.value[0] < PDM_START_DELAY_MS_MIN) ||
+	    (ucontrol->value.integer.value[0] > PDM_START_DELAY_MS_MAX))
+		return -EINVAL;
+
+	pdm->start_delay_ms = ucontrol->value.integer.value[0];
+
+	return 1;
+}
+
+static int rockchip_pdm_filter_delay_info(struct snd_kcontrol *kcontrol,
+					  struct snd_ctl_elem_info *uinfo)
+{
+	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
+	uinfo->count = 1;
+	uinfo->value.integer.min = PDM_FILTER_DELAY_MS_MIN;
+	uinfo->value.integer.max = PDM_FILTER_DELAY_MS_MAX;
+	uinfo->value.integer.step = 1;
+
+	return 0;
+}
+
+static int rockchip_pdm_filter_delay_get(struct snd_kcontrol *kcontrol,
+					 struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_dai *dai = snd_kcontrol_chip(kcontrol);
+	struct rk_pdm_dev *pdm = snd_soc_dai_get_drvdata(dai);
+
+	ucontrol->value.integer.value[0] = pdm->filter_delay_ms;
+
+	return 0;
+}
+
+static int rockchip_pdm_filter_delay_put(struct snd_kcontrol *kcontrol,
+					 struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_dai *dai = snd_kcontrol_chip(kcontrol);
+	struct rk_pdm_dev *pdm = snd_soc_dai_get_drvdata(dai);
+
+	if ((ucontrol->value.integer.value[0] < PDM_FILTER_DELAY_MS_MIN) ||
+	    (ucontrol->value.integer.value[0] > PDM_FILTER_DELAY_MS_MAX))
+		return -EINVAL;
+
+	pdm->filter_delay_ms = ucontrol->value.integer.value[0];
+
+	return 1;
+}
+
+static const struct snd_kcontrol_new rockchip_pdm_controls[] = {
+	{
+		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
+		.name = "PDM Start Delay Ms",
+		.info = rockchip_pdm_start_delay_info,
+		.get = rockchip_pdm_start_delay_get,
+		.put = rockchip_pdm_start_delay_put,
+	},
+	{
+		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
+		.name = "PDM Filter Delay Ms",
+		.info = rockchip_pdm_filter_delay_info,
+		.get = rockchip_pdm_filter_delay_get,
+		.put = rockchip_pdm_filter_delay_put,
+	},
+};
+
 static int rockchip_pdm_dai_probe(struct snd_soc_dai *dai)
 {
 	struct rk_pdm_dev *pdm = to_info(dai);
@@ -517,13 +623,64 @@ static int rockchip_pdm_dai_probe(struct snd_soc_dai *dai)
 
 	if (pdm->clk_calibrate)
 		snd_soc_add_dai_controls(dai, &rockchip_pdm_compensation_control, 1);
+	snd_soc_add_dai_controls(dai, rockchip_pdm_controls,
+				 ARRAY_SIZE(rockchip_pdm_controls));
+	return 0;
+}
+
+static void rockchip_pdm_shutdown(struct snd_pcm_substream *substream,
+				  struct snd_soc_dai *dai)
+{
+	struct rk_pdm_dev *pdm = to_info(dai);
+
+	if (substream->stream != SNDRV_PCM_STREAM_CAPTURE)
+		return;
+
+	regmap_update_bits(pdm->regmap, PDM_CLK_CTRL, PDM_CLK_MSK, PDM_CLK_DIS);
+}
+
+static int rockchip_pdm_prepare(struct snd_pcm_substream *substream,
+				struct snd_soc_dai *dai)
+{
+	struct rk_pdm_dev *pdm = to_info(dai);
+
+	if (substream->stream != SNDRV_PCM_STREAM_CAPTURE)
+		return 0;
+
+	regmap_update_bits(pdm->regmap, PDM_SYSCONFIG, PDM_RX_MASK, PDM_RX_START);
+	/*
+	 * after xfer start, a necessary delay for filter to init and will drop
+	 * the dirty data in the trigger-START late.
+	 */
+	usleep_range((pdm->filter_delay_ms) * 1000, (pdm->filter_delay_ms + 1) * 1000);
+
+	return 0;
+}
+
+static int rockchip_pdm_startup(struct snd_pcm_substream *substream,
+				struct snd_soc_dai *dai)
+{
+	struct rk_pdm_dev *pdm = to_info(dai);
+
+	if (substream->stream != SNDRV_PCM_STREAM_CAPTURE)
+		return 0;
+
+	regmap_update_bits(pdm->regmap, PDM_CLK_CTRL, PDM_CLK_MSK, PDM_CLK_EN);
+	/*
+	 * a necessary delay for dmics wake-up after clk enabled, and drop the
+	 * dirty data in this duration.
+	 */
+	usleep_range((pdm->start_delay_ms + 1) * 1000, (pdm->start_delay_ms + 2) * 1000);
 
 	return 0;
 }
 
 static const struct snd_soc_dai_ops rockchip_pdm_dai_ops = {
+	.startup = rockchip_pdm_startup,
+	.shutdown = rockchip_pdm_shutdown,
 	.set_fmt = rockchip_pdm_set_fmt,
 	.trigger = rockchip_pdm_trigger,
+	.prepare = rockchip_pdm_prepare,
 	.hw_params = rockchip_pdm_hw_params,
 };
 
@@ -773,6 +930,9 @@ static int rockchip_pdm_probe(struct platform_device *pdev)
 		pdm->clk_root_rate = pdm->clk_root_initial_rate;
 	}
 
+	pdm->start_delay_ms = PDM_START_DELAY_MS_DEFAULT;
+	pdm->filter_delay_ms = PDM_FILTER_DELAY_MS_MIN;
+
 	pdm->clk = devm_clk_get(&pdev->dev, "pdm_clk");
 	if (IS_ERR(pdm->clk))
 		return PTR_ERR(pdm->clk);
@@ -801,6 +961,7 @@ static int rockchip_pdm_probe(struct platform_device *pdev)
 		goto err_suspend;
 	}
 
+	rockchip_pdm_set_samplerate(pdm, PDM_DEFAULT_RATE);
 	rockchip_pdm_rxctrl(pdm, 0);
 
 	ret = rockchip_pdm_path_parse(pdm, node);
