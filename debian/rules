@@ -4,7 +4,7 @@
 #export DH_VERBOSE = 1
 
 override_dh_auto_configure:
-	dh_auto_configure -- -Drkximage=enabled -Drockchipmpp=enabled -Drga=enabled
+	dh_auto_configure -- -Drkximage=enabled -Drockchipmpp=enabled -Dkmssrc=enabled -Drga=enabled
 
 %:
 	dh $@ --buildsystem=meson
