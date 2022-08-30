@@ -291,6 +291,17 @@ gst_kms_src_get_next_fb_id (GstKmsSrc * self)
   return fb_id;
 }
 
+/* From libdrm 2.4.109 : xf86drm.c */
+static int
+_drmCloseBufferHandle(int fd, uint32_t handle)
+{
+  struct drm_gem_close args;
+
+  memset(&args, 0, sizeof(args));
+  args.handle = handle;
+  return drmIoctl(fd, DRM_IOCTL_GEM_CLOSE, &args);
+}
+
 static void
 gst_kms_src_free_fb (GstKmsSrc * self, drmModeFB2Ptr fb)
 {
@@ -298,7 +309,7 @@ gst_kms_src_free_fb (GstKmsSrc * self, drmModeFB2Ptr fb)
 
   for (i = 0; i < 4; i++) {
     if (fb->handles[i])
-      drmCloseBufferHandle (self->fd, fb->handles[i]);
+      _drmCloseBufferHandle (self->fd, fb->handles[i]);
   }
   drmModeFreeFB2 (fb);
 }
