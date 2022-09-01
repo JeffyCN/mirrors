@@ -127,7 +127,7 @@ int rcu_num_lvls __read_mostly = RCU_NUM_LVLS;
 int num_rcu_lvl[] = NUM_RCU_LVL_INIT;
 int rcu_num_nodes __read_mostly = NUM_RCU_NODES; /* Total # rcu_nodes in use. */
 /* panic() on RCU Stall sysctl. */
-int sysctl_panic_on_rcu_stall __read_mostly;
+int sysctl_panic_on_rcu_stall __read_mostly = CONFIG_BOOTPARAM_RCU_STALL_PANIC_VALUE;
 ATOMIC_NOTIFIER_HEAD(rcu_stall_notifier_list);
 
 /*
