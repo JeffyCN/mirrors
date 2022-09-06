@@ -1,25 +1,26 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 
-#if defined(WL_EXT_IAPSTA) || defined(USE_IW)
-#include <bcmendian.h>
 #include <wl_android.h>
+#ifdef WL_EVENT
+#include <bcmendian.h>
 #include <dhd_config.h>
 
 #define EVENT_ERROR(name, arg1, args...) \
 	do { \
 		if (android_msg_level & ANDROID_ERROR_LEVEL) { \
-			printk(KERN_ERR "[dhd-%s] EVENT-ERROR) %s : " arg1, name, __func__, ## args); \
+			printf("[%s] EVENT-ERROR) %s : " arg1, name, __func__, ## args); \
 		} \
 	} while (0)
 #define EVENT_TRACE(name, arg1, args...) \
 	do { \
 		if (android_msg_level & ANDROID_TRACE_LEVEL) { \
-			printk(KERN_ERR "[dhd-%s] EVENT-TRACE) %s : " arg1, name, __func__, ## args); \
+			printf("[%s] EVENT-TRACE) %s : " arg1, name, __func__, ## args); \
 		} \
 	} while (0)
 #define EVENT_DBG(name, arg1, args...) \
 	do { \
 		if (android_msg_level & ANDROID_DBG_LEVEL) { \
-			printk(KERN_ERR "[dhd-%s] EVENT-DBG) %s : " arg1, name, __func__, ## args); \
+			printf("[%s] EVENT-DBG) %s : " arg1, name, __func__, ## args); \
 		} \
 	} while (0)
 
@@ -46,12 +47,6 @@ entry = container_of((ptr), type, member); \
 
 #endif /* STRICT_GCC_WARNINGS */
 
-#ifdef DHD_MAX_IFS
-#define WL_MAX_IFS DHD_MAX_IFS
-#else
-#define WL_MAX_IFS 16
-#endif
-
 /* event queue for cfg80211 main event */
 struct wl_event_q {
 	struct list_head eq_list;
@@ -60,7 +55,7 @@ struct wl_event_q {
 	s8 edata[1];
 };
 
-typedef s32(*EXT_EVENT_HANDLER) (struct net_device *dev, void *cb_argu,
+typedef void(*EXT_EVENT_HANDLER) (struct net_device *dev, void *cb_argu,
 	const wl_event_msg_t *e, void *data);
 
 typedef struct event_handler_list {
@@ -78,12 +73,16 @@ typedef struct event_handler_head {
 
 typedef struct wl_event_params {
 	dhd_pub_t *pub;
-	struct net_device *dev[WL_MAX_IFS];
+	struct net_device *dev[DHD_MAX_IFS];
 	struct event_handler_head evt_head;
 	struct list_head eq_list;	/* used for event queue */
 	spinlock_t eq_lock;	/* for event queue synchronization */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0))
+	tsk_ctl_t thr_event_ctl;
+#else
 	struct workqueue_struct *event_workq;   /* workqueue for event */
 	struct work_struct event_work;		/* work item for event */
+#endif
 	struct mutex event_sync;
 } wl_event_params_t;
 
@@ -192,16 +191,37 @@ wl_ext_event_put_event(struct wl_event_q *e)
 	kfree(e);
 }
 
-static void
-wl_ext_event_handler(struct work_struct *work_data)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0))
+static int wl_ext_event_handler(void *data);
+#define WL_EXT_EVENT_HANDLER() static int wl_ext_event_handler(void *data)
+#else
+static void wl_ext_event_handler(struct work_struct *data);
+#define WL_EXT_EVENT_HANDLER() static void wl_ext_event_handler(struct work_struct *data)
+#endif
+
+WL_EXT_EVENT_HANDLER()
 {
 	struct wl_event_params *event_params = NULL;
 	struct wl_event_q *e;
 	struct net_device *dev = NULL;
 	struct event_handler_list *evt_node;
 	dhd_pub_t *dhd;
+	unsigned long flags = 0;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0))
+	tsk_ctl_t *tsk = (tsk_ctl_t *)data;
+	event_params = (struct wl_event_params *)tsk->parent;
+#else
+	BCM_SET_CONTAINER_OF(event_params, data, struct wl_event_params, event_work);
+#endif
 
-	BCM_SET_CONTAINER_OF(event_params, work_data, struct wl_event_params, event_work);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0))
+	while (1) {
+	if (down_interruptible(&tsk->sema) == 0) {
+		SMP_RD_BARRIER_DEPENDS();
+		if (tsk->terminated) {
+			break;
+		}
+#endif
 	DHD_EVENT_WAKE_LOCK(event_params->pub);
 	while ((e = wl_ext_event_deq_event(event_params))) {
 		if (e->emsg.ifidx >= DHD_MAX_IFS) {
@@ -218,10 +238,13 @@ wl_ext_event_handler(struct work_struct *work_data)
 			EVENT_TRACE(dev->name, "Unknown Event (%d): ignoring\n", e->etype);
 			goto fail;
 		}
-		if (dhd->busstate == DHD_BUS_DOWN) {
+		DHD_GENERAL_LOCK(dhd, flags);
+		if (DHD_BUS_CHECK_DOWN_OR_DOWN_IN_PROGRESS(dhd)) {
 			EVENT_ERROR(dev->name, "BUS is DOWN.\n");
+			DHD_GENERAL_UNLOCK(dhd, flags);
 			goto fail;
 		}
+		DHD_GENERAL_UNLOCK(dhd, flags);
 		EVENT_DBG(dev->name, "event type (%d)\n", e->etype);
 		mutex_lock(&event_params->event_sync);
 		evt_node = event_params->evt_head.evt_head;
@@ -236,6 +259,13 @@ fail:
 		wl_ext_event_put_event(e);
 	}
 	DHD_EVENT_WAKE_UNLOCK(event_params->pub);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0))
+	} else {
+		break;
+	}
+	}
+	complete_and_exit(&tsk->completed, 0);
+#endif
 }
 
 void
@@ -250,14 +280,22 @@ wl_ext_event_send(void *params, const wl_event_msg_t * e, void *data)
 		return;
 	}
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0))
 	if (event_params->event_workq == NULL) {
 		EVENT_ERROR("wlan", "Event handler is not created %d(%s)\n",
 			event_type, bcmevent_get_name(event_type));
 		return;
 	}
+#endif
 
 	if (likely(!wl_ext_event_enq_event(event_params, event_type, e, data))) {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0))
+		if (event_params->thr_event_ctl.thr_pid >= 0) {
+			up(&event_params->thr_event_ctl.sema);
+		}
+#else
 		queue_work(event_params->event_workq, &event_params->event_work);
+#endif
 	}
 }
 
@@ -267,9 +305,16 @@ wl_ext_event_create_handler(struct wl_event_params *event_params)
 	int ret = 0;
 	EVENT_TRACE("wlan", "Enter\n");
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0))
+	PROC_START(wl_ext_event_handler, event_params, &event_params->thr_event_ctl, 0, "ext_eventd");
+	if (event_params->thr_event_ctl.thr_pid < 0) {
+		ret = -ENOMEM;
+	}
+#else
 	/* Allocate workqueue for event */
 	if (!event_params->event_workq) {
-		event_params->event_workq = alloc_workqueue("ext_eventd", WQ_MEM_RECLAIM | WQ_HIGHPRI, 0);
+		event_params->event_workq = alloc_workqueue("ext_eventd",
+			WQ_MEM_RECLAIM | WQ_HIGHPRI | WQ_UNBOUND, 0);
 	}
 
 	if (!event_params->event_workq) {
@@ -278,6 +323,8 @@ wl_ext_event_create_handler(struct wl_event_params *event_params)
 	} else {
 		INIT_WORK(&event_params->event_work, wl_ext_event_handler);
 	}
+#endif
+
 	return ret;
 }
 
@@ -301,11 +348,17 @@ wl_ext_event_free(struct wl_event_params *event_params)
 static void
 wl_ext_event_destroy_handler(struct wl_event_params *event_params)
 {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 0, 0))
+	if (event_params->thr_event_ctl.thr_pid >= 0) {
+		PROC_STOP(&event_params->thr_event_ctl);
+	}
+#else
 	if (event_params && event_params->event_workq) {
 		cancel_work_sync(&event_params->event_work);
 		destroy_workqueue(event_params->event_workq);
 		event_params->event_workq = NULL;
 	}
+#endif
 }
 
 int
@@ -335,6 +388,7 @@ wl_ext_event_register(struct net_device *dev, dhd_pub_t *dhd, uint32 event,
 			mutex_unlock(&event_params->event_sync);
 			return -ENOMEM;
 		}
+		memset(leaf, 0, sizeof(event_handler_list_t));
 		leaf->next = NULL;
 		leaf->dev = dev;
 		leaf->etype = event;
@@ -440,8 +494,8 @@ wl_ext_event_attach_netdev(struct net_device *net, int ifidx, uint8 bssidx)
 	struct dhd_pub *dhd = dhd_get_pub(net);
 	struct wl_event_params *event_params = dhd->event_params;
 
-	EVENT_TRACE(net->name, "ifidx=%d, bssidx=%d\n", ifidx, bssidx);
-	if (event_params && ifidx < WL_MAX_IFS) {
+	if (event_params && ifidx < DHD_MAX_IFS) {
+		EVENT_TRACE(net->name, "ifidx=%d, bssidx=%d\n", ifidx, bssidx);
 		event_params->dev[ifidx] = net;
 	}
 
@@ -454,8 +508,8 @@ wl_ext_event_dettach_netdev(struct net_device *net, int ifidx)
 	struct dhd_pub *dhd = dhd_get_pub(net);
 	struct wl_event_params *event_params = dhd->event_params;
 
-	EVENT_TRACE(net->name, "ifidx=%d\n", ifidx);
-	if (event_params && ifidx < WL_MAX_IFS) {
+	if (event_params && ifidx < DHD_MAX_IFS) {
+		EVENT_TRACE(net->name, "ifidx=%d\n", ifidx);
 		event_params->dev[ifidx] = NULL;
 	}
 
@@ -463,14 +517,15 @@ wl_ext_event_dettach_netdev(struct net_device *net, int ifidx)
 }
 
 s32
-wl_ext_event_attach(struct net_device *dev, dhd_pub_t *dhdp)
+wl_ext_event_attach(struct net_device *net)
 {
+	struct dhd_pub *dhdp = dhd_get_pub(net);
 	struct wl_event_params *event_params = NULL;
 	s32 err = 0;
 
 	event_params = kmalloc(sizeof(wl_event_params_t), GFP_KERNEL);
 	if (!event_params) {
-		EVENT_ERROR(dev->name, "Failed to allocate memory (%zu)\n",
+		EVENT_ERROR(net->name, "Failed to allocate memory (%zu)\n",
 			sizeof(wl_event_params_t));
 		return -ENOMEM;
 	}
@@ -480,7 +535,7 @@ wl_ext_event_attach(struct net_device *dev, dhd_pub_t *dhdp)
 
 	err = wl_ext_event_init_priv(event_params);
 	if (err) {
-		EVENT_ERROR(dev->name, "Failed to wl_ext_event_init_priv (%d)\n", err);
+		EVENT_ERROR(net->name, "Failed to wl_ext_event_init_priv (%d)\n", err);
 		goto ext_attach_out;
 	}
 

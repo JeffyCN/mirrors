@@ -1,14 +1,14 @@
 /*
  * SD-SPI Protocol Conversion - BCMSDH->SPI Translation Layer
  *
- * Copyright (C) 1999-2017, Broadcom Corporation
- * 
+ * Copyright (C) 2020, Broadcom.
+ *
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
  * under the terms of the GNU General Public License version 2 (the "GPL"),
  * available at http://www.broadcom.com/licenses/GPLv2.php, with the
  * following added to such license:
- * 
+ *
  *      As a special exception, the copyright holders of this software give you
  * permission to link this software with independent modules, and to copy and
  * distribute the resulting executable under terms of your choice, provided that
@@ -16,29 +16,38 @@
  * the license of that module.  An independent module is a module which is not
  * derived from this software.  The special exception does not apply to any
  * modifications of the software.
- * 
- *      Notwithstanding the above, under no circumstances may you combine this
- * software in any way with any other Broadcom software provided under a license
- * other than the GPL, without Broadcom's express prior written consent.
  *
  *
  * <<Broadcom-WL-IPTag/Open:>>
  *
- * $Id: bcmsdspi.h 514727 2014-11-12 03:02:48Z $
+ * $Id: bcmsdspi.h 833013 2019-08-02 16:26:31Z jl904071 $
  */
 #ifndef	_BCM_SD_SPI_H
 #define	_BCM_SD_SPI_H
 
 /* global msglevel for debug messages - bitvals come from sdiovar.h */
 
+#ifdef BCMDBG
+#define sd_err(x)	do { if (sd_msglevel & SDH_ERROR_VAL) printf x; } while (0)
+#define sd_trace(x)	do { if (sd_msglevel & SDH_TRACE_VAL) printf x; } while (0)
+#define sd_info(x)	do { if (sd_msglevel & SDH_INFO_VAL)  printf x; } while (0)
+#define sd_debug(x)	do { if (sd_msglevel & SDH_DEBUG_VAL) printf x; } while (0)
+#define sd_data(x)	do { if (sd_msglevel & SDH_DATA_VAL)  printf x; } while (0)
+#define sd_ctrl(x)	do { if (sd_msglevel & SDH_CTRL_VAL)  printf x; } while (0)
+#else
 #define sd_err(x)
 #define sd_trace(x)
 #define sd_info(x)
 #define sd_debug(x)
 #define sd_data(x)
 #define sd_ctrl(x)
+#endif
 
+#ifdef BCMPERFSTATS
+#define sd_log(x)	do { if (sd_msglevel & SDH_LOG_VAL)	 bcmlog x; } while (0)
+#else
 #define sd_log(x)
+#endif
 
 #define SDIOH_ASSERT(exp) \
 	do { if (!(exp)) \

@@ -1,14 +1,14 @@
 /*
  * BCMSDH Function Driver for the native SDIO/MMC driver in the Linux Kernel
  *
- * Copyright (C) 1999-2017, Broadcom Corporation
- * 
+ * Copyright (C) 2020, Broadcom.
+ *
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
  * under the terms of the GNU General Public License version 2 (the "GPL"),
  * available at http://www.broadcom.com/licenses/GPLv2.php, with the
  * following added to such license:
- * 
+ *
  *      As a special exception, the copyright holders of this software give you
  * permission to link this software with independent modules, and to copy and
  * distribute the resulting executable under terms of your choice, provided that
@@ -16,15 +16,9 @@
  * the license of that module.  An independent module is a module which is not
  * derived from this software.  The special exception does not apply to any
  * modifications of the software.
- * 
- *      Notwithstanding the above, under no circumstances may you combine this
- * software in any way with any other Broadcom software provided under a license
- * other than the GPL, without Broadcom's express prior written consent.
  *
  *
- * <<Broadcom-WL-IPTag/Proprietary,Open:>>
- *
- * $Id: bcmsdh_sdmmc.h 687253 2017-02-28 09:33:36Z $
+ * <<Broadcom-WL-IPTag/Dual:>>
  */
 
 #ifndef __BCMSDH_SDMMC_H__
@@ -43,7 +37,11 @@
 #define sd_ack_intr(sd)
 #define sd_wakeup(sd);
 
+#ifdef BCMPERFSTATS
+#define sd_log(x)	do { if (sd_msglevel & SDH_LOG_VAL)	 bcmlog x; } while (0)
+#else
 #define sd_log(x)
+#endif
 
 #define SDIOH_ASSERT(exp) \
 	do { if (!(exp)) \
@@ -60,7 +58,7 @@
 /* private bus modes */
 #define SDIOH_MODE_SD4		2
 #define CLIENT_INTR			0x100	/* Get rid of this! */
-#define SDIOH_SDMMC_MAX_SG_ENTRIES	(SDPCM_MAXGLOM_SIZE + 2)
+#define SDIOH_SDMMC_MAX_SG_ENTRIES	64
 
 struct sdioh_info {
 	osl_t		*osh;			/* osh handler */
@@ -87,6 +85,15 @@ struct sdioh_info {
 	struct sdio_func	*func[SDIOD_MAX_IOFUNCS];
 	uint		sd_clk_rate;
 	uint	txglom_mode;		/* Txglom mode: 0 - copy, 1 - multi-descriptor */
+#if defined(BCMSDIOH_TXGLOM) && defined(BCMSDIOH_STATIC_COPY_BUF)
+	uint8	*copy_buf;
+#endif
+#ifdef PKT_STATICS
+	uint32	sdio_spent_time_us;
+#endif
+#if !defined(OOB_INTR_ONLY)
+	struct mutex claim_host_mutex; // terence 20140926: fix for claim host issue
+#endif
 };
 
 /************************************************************
@@ -102,7 +109,6 @@ extern bool check_client_intr(sdioh_info_t *sd);
 /* Core interrupt enable/disable of device interrupts */
 extern void sdioh_sdmmc_devintr_on(sdioh_info_t *sd);
 extern void sdioh_sdmmc_devintr_off(sdioh_info_t *sd);
-
 
 /**************************************************************
  * Internal interfaces: bcmsdh_sdmmc.c references to per-port code

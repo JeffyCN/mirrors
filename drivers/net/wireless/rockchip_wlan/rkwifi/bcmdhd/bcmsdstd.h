@@ -1,14 +1,14 @@
 /*
  *  'Standard' SDIO HOST CONTROLLER driver
  *
- * Copyright (C) 1999-2017, Broadcom Corporation
- * 
+ * Copyright (C) 2020, Broadcom.
+ *
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
  * under the terms of the GNU General Public License version 2 (the "GPL"),
  * available at http://www.broadcom.com/licenses/GPLv2.php, with the
  * following added to such license:
- * 
+ *
  *      As a special exception, the copyright holders of this software give you
  * permission to link this software with independent modules, and to copy and
  * distribute the resulting executable under terms of your choice, provided that
@@ -16,20 +16,25 @@
  * the license of that module.  An independent module is a module which is not
  * derived from this software.  The special exception does not apply to any
  * modifications of the software.
- * 
- *      Notwithstanding the above, under no circumstances may you combine this
- * software in any way with any other Broadcom software provided under a license
- * other than the GPL, without Broadcom's express prior written consent.
  *
  *
  * <<Broadcom-WL-IPTag/Open:>>
  *
- * $Id: bcmsdstd.h 514727 2014-11-12 03:02:48Z $
+ * $Id: bcmsdstd.h 833030 2019-08-02 17:22:42Z jl904071 $
  */
 #ifndef	_BCM_SD_STD_H
 #define	_BCM_SD_STD_H
 
 /* global msglevel for debug messages - bitvals come from sdiovar.h */
+#ifdef BCMDBG
+#define sd_err(x)	do { if (sd_msglevel & SDH_ERROR_VAL) printf x; } while (0)
+#define sd_trace(x)	do { if (sd_msglevel & SDH_TRACE_VAL) printf x; } while (0)
+#define sd_info(x)	do { if (sd_msglevel & SDH_INFO_VAL)  printf x; } while (0)
+#define sd_debug(x)	do { if (sd_msglevel & SDH_DEBUG_VAL) printf x; } while (0)
+#define sd_data(x)	do { if (sd_msglevel & SDH_DATA_VAL)  printf x; } while (0)
+#define sd_ctrl(x)	do { if (sd_msglevel & SDH_CTRL_VAL)  printf x; } while (0)
+#define sd_dma(x)	do { if (sd_msglevel & SDH_DMA_VAL)  printf x; } while (0)
+#else
 #define sd_err(x)	do { if (sd_msglevel & SDH_ERROR_VAL) printf x; } while (0)
 #define sd_trace(x)
 #define sd_info(x)
@@ -37,6 +42,7 @@
 #define sd_data(x)
 #define sd_ctrl(x)
 #define sd_dma(x)
+#endif /* BCMDBG */
 
 #define sd_sync_dma(sd, read, nbytes)
 #define sd_init_dma(sd)
@@ -46,7 +52,11 @@
 extern int sdstd_osinit(sdioh_info_t *sd);
 extern void sdstd_osfree(sdioh_info_t *sd);
 
+#ifdef BCMPERFSTATS
+#define sd_log(x)	do { if (sd_msglevel & SDH_LOG_VAL)	 bcmlog x; } while (0)
+#else
 #define sd_log(x)
+#endif
 
 #define SDIOH_ASSERT(exp) \
 	do { if (!(exp)) \
@@ -70,20 +80,29 @@ extern void sdstd_osfree(sdioh_info_t *sd);
 
 #define SDIOH_TYPE_ARASAN_HDK	1
 #define SDIOH_TYPE_BCM27XX	2
+#ifdef BCMINTERNAL
+#define SDIOH_TYPE_JINVANI_GOLD	3
+#endif
 #define SDIOH_TYPE_TI_PCIXX21	4	/* TI PCIxx21 Standard Host Controller */
 #define SDIOH_TYPE_RICOH_R5C822	5	/* Ricoh Co Ltd R5C822 SD/SDIO/MMC/MS/MSPro Host Adapter */
 #define SDIOH_TYPE_JMICRON	6	/* JMicron Standard SDIO Host Controller */
 
 /* For linux, allow yielding for dongle */
+#if defined(linux) && defined(BCMDONGLEHOST)
 #define BCMSDYIELD
+#endif
 
 /* Expected card status value for CMD7 */
 #define SDIOH_CMD7_EXP_STATUS   0x00001E00
 
 #define RETRIES_LARGE 100000
+#ifdef BCMQT
+extern void sdstd_os_yield(sdioh_info_t *sd);
+#define RETRIES_SMALL 10000
+#else
 #define sdstd_os_yield(sd)	do {} while (0)
 #define RETRIES_SMALL 100
-
+#endif
 
 #define USE_BLOCKMODE		0x2	/* Block mode can be single block or multi */
 #define USE_MULTIBLOCK		0x4
@@ -94,7 +113,6 @@ extern void sdstd_osfree(sdioh_info_t *sd);
 
 #define HC_INTR_RETUNING	0x1000
 
-
 #ifdef BCMSDIOH_TXGLOM
 /* Total glom pkt can not exceed 64K
  * need one more slot for glom padding packet
@@ -104,19 +122,19 @@ extern void sdstd_osfree(sdioh_info_t *sd);
 typedef struct glom_buf {
 	uint32 count;				/* Total number of pkts queued */
 	void *dma_buf_arr[SDIOH_MAXGLOM_SIZE];	/* Frame address */
-	ulong dma_phys_arr[SDIOH_MAXGLOM_SIZE]; /* DMA_MAPed address of frames */
+	dmaaddr_t dma_phys_arr[SDIOH_MAXGLOM_SIZE]; /* DMA_MAPed address of frames */
 	uint16 nbytes[SDIOH_MAXGLOM_SIZE];	/* Size of each frame */
 } glom_buf_t;
 #endif
 
 struct sdioh_info {
-	uint cfg_bar;                   	/* pci cfg address for bar */
-	uint32 caps;                    	/* cached value of capabilities reg */
-	uint32 curr_caps;                    	/* max current capabilities reg */
+	uint cfg_bar;				/* pci cfg address for bar */
+	uint32 caps;				/* cached value of capabilities reg */
+	uint32 curr_caps;			/* max current capabilities reg */
 
-	osl_t 		*osh;			/* osh handler */
-	volatile char 	*mem_space;		/* pci device memory va */
-	uint		lockcount; 		/* nest count of sdstd_lock() calls */
+	osl_t		*osh;			/* osh handler */
+	volatile char	*mem_space;		/* pci device memory va */
+	uint		lockcount;		/* nest count of sdstd_lock() calls */
 	bool		client_intr_enabled;	/* interrupt connnected flag */
 	bool		intr_handler_valid;	/* client driver interrupt handler valid */
 	sdioh_cb_fn_t	intr_handler;		/* registered interrupt handler */
@@ -150,24 +168,24 @@ struct sdioh_info {
 	uint32		com_cis_ptr;
 	uint32		func_cis_ptr[SDIOD_MAX_IOFUNCS];
 	void		*dma_buf;		/* DMA Buffer virtual address */
-	ulong		dma_phys;		/* DMA Buffer physical address */
+	dmaaddr_t	dma_phys;		/* DMA Buffer physical address */
 	void		*adma2_dscr_buf;	/* ADMA2 Descriptor Buffer virtual address */
-	ulong		adma2_dscr_phys;	/* ADMA2 Descriptor Buffer physical address */
+	dmaaddr_t	adma2_dscr_phys;	/* ADMA2 Descriptor Buffer physical address */
 
 	/* adjustments needed to make the dma align properly */
 	void		*dma_start_buf;
-	ulong		dma_start_phys;
+	dmaaddr_t	dma_start_phys;
 	uint		alloced_dma_size;
 	void		*adma2_dscr_start_buf;
-	ulong		adma2_dscr_start_phys;
+	dmaaddr_t	adma2_dscr_start_phys;
 	uint		alloced_adma2_dscr_size;
 
-	int 		r_cnt;			/* rx count */
-	int 		t_cnt;			/* tx_count */
+	int		r_cnt;			/* rx count */
+	int		t_cnt;			/* tx_count */
 	bool		got_hcint;		/* local interrupt flag */
 	uint16		last_intrstatus;	/* to cache intrstatus */
-	int 	host_UHSISupported;		/* whether UHSI is supported for HC. */
-	int 	card_UHSI_voltage_Supported; 	/* whether UHSI is supported for
+	int	host_UHSISupported;		/* whether UHSI is supported for HC. */
+	int	card_UHSI_voltage_Supported;	/* whether UHSI is supported for
 						 * Card in terms of Voltage [1.8 or 3.3].
 						 */
 	int	global_UHSI_Supp;	/* type of UHSI support in both host and card.
@@ -175,9 +193,10 @@ struct sdioh_info {
 					 * HOST_SDR_12_25: SDR12 and SDR25 supported
 					 * HOST_SDR_50_104_DDR: one of SDR50/SDR104 or DDR50 supptd
 					 */
-	volatile int	sd3_dat_state; 		/* data transfer state used for retuning check */
-	volatile int	sd3_tun_state; 		/* tuning state used for retuning check */
-	bool	sd3_tuning_reqd; 	/* tuning requirement parameter */
+	volatile int	sd3_dat_state;		/* data transfer state used for retuning check */
+	volatile int	sd3_tun_state;		/* tuning state used for retuning check */
+	bool	sd3_tuning_reqd;	/* tuning requirement parameter */
+	bool	sd3_tuning_disable;	/* tuning disable due to bus sleeping */
 	uint32	caps3;			/* cached value of 32 MSbits capabilities reg (SDIO 3.0) */
 #ifdef BCMSDIOH_TXGLOM
 	glom_buf_t glom_info;		/* pkt information used for glomming */
@@ -206,12 +225,10 @@ struct sdioh_info {
 #define CHECK_TUNING_PRE_DATA	1
 #define CHECK_TUNING_POST_DATA	2
 
-
 #ifdef DHD_DEBUG
 #define SD_DHD_DISABLE_PERIODIC_TUNING 0x01
 #define SD_DHD_ENABLE_PERIODIC_TUNING  0x00
 #endif
-
 
 /************************************************************
  * Internal interfaces: per-port references into bcmsdstd.c
@@ -234,14 +251,13 @@ extern void sdstd_intrs_off(sdioh_info_t *sd, uint16 norm, uint16 err);
 /* Wait for specified interrupt and error bits to be set */
 extern void sdstd_spinbits(sdioh_info_t *sd, uint16 norm, uint16 err);
 
-
 /**************************************************************
  * Internal interfaces: bcmsdstd.c references to per-port code
  */
 
 /* Register mapping routines */
-extern uint32 *sdstd_reg_map(osl_t *osh, ulong addr, int size);
-extern void sdstd_reg_unmap(osl_t *osh, ulong addr, int size);
+extern uint32 *sdstd_reg_map(osl_t *osh, dmaaddr_t addr, int size);
+extern void sdstd_reg_unmap(osl_t *osh, dmaaddr_t addr, int size);
 
 /* Interrupt (de)registration routines */
 extern int sdstd_register_irq(sdioh_info_t *sd, uint irq);
