@@ -41,7 +41,6 @@ int main() {
     char *fg_buf, *bg_buf;
     int fg_buf_size, bg_buf_size;
 
-    int usage = 0;
     rga_buffer_t fg_img, bg_img;
     rga_buffer_handle_t fg_handle, bg_handle;
 
@@ -97,7 +96,7 @@ int main() {
         return -1;
     }
 
-    ret = imblend(fg_img, bg_img, IM_ALPHA_BLEND_SRC_OVER);
+    ret = imblend(fg_img, bg_img, IM_ALPHA_BLEND_SRC_OVER | IM_ALPHA_BLEND_PRE_MUL);
     if (ret == IM_STATUS_SUCCESS) {
         printf("%s running success!\n", LOG_TAG);
     } else {

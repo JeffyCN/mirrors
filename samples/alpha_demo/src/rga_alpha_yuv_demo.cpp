@@ -138,7 +138,7 @@ int main() {
         return -1;
     }
 
-    usage = IM_SYNC | IM_ALPHA_BLEND_DST_OVER;
+    usage = IM_SYNC | IM_ALPHA_BLEND_DST_OVER | IM_ALPHA_BLEND_PRE_MUL;
 
     ret = improcess(fg_img, output_img, bg_img, fg_rect, output_rect, bg_rect, -1, NULL, NULL, usage);
     if (ret == IM_STATUS_SUCCESS) {

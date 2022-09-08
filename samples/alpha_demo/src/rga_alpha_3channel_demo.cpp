@@ -44,7 +44,6 @@ int main() {
     char *fg_buf, *bg_buf, *output_buf;
     int fg_buf_size, bg_buf_size, output_buf_size;
 
-    int usage = 0;
     rga_buffer_t fg_img, bg_img, output_img;
     rga_buffer_handle_t fg_handle, bg_handle, output_handle;
 
@@ -111,7 +110,7 @@ int main() {
         return -1;
     }
 
-    ret = imcomposite(fg_img, bg_img, output_img, IM_ALPHA_BLEND_SRC_OVER);
+    ret = imcomposite(fg_img, bg_img, output_img, IM_ALPHA_BLEND_SRC_OVER | IM_ALPHA_BLEND_PRE_MUL);
     if (ret == IM_STATUS_SUCCESS) {
         printf("%s running success!\n", LOG_TAG);
     } else {
