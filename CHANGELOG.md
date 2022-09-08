@@ -67,6 +67,7 @@
 
 - 驱动支持变更为 multi_rga。
 - improcess增加传参：input_fence_fd、output_fence_fd、im_opt_t结构体。
+- imsync增加传参：release_fence_fd。
 - im2d_api 中 color/colorkey/nn/rop 模式将通过 im_opt_t 结构体进行配置。
 - Linux平台暂时不支持Async模式。
 - 头文件的数据类型与驱动重新对齐。（头文件存在修改）
