@@ -128,6 +128,7 @@ int num_rcu_lvl[] = NUM_RCU_LVL_INIT;
 int rcu_num_nodes __read_mostly = NUM_RCU_NODES; /* Total # rcu_nodes in use. */
 /* panic() on RCU Stall sysctl. */
 int sysctl_panic_on_rcu_stall __read_mostly;
+ATOMIC_NOTIFIER_HEAD(rcu_stall_notifier_list);
 
 /*
  * The rcu_scheduler_active variable is initialized to the value
@@ -1436,6 +1437,8 @@ static void print_other_cpu_stall(struct rcu_state *rsp, unsigned long gp_seq)
 			   jiffies + 3 * rcu_jiffies_till_stall_check() + 3);
 
 	rcu_check_gp_kthread_starvation(rsp);
+
+	atomic_notifier_call_chain(&rcu_stall_notifier_list, 0, NULL);
 
 	panic_on_rcu_stall();
 
