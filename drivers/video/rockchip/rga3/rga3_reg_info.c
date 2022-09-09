@@ -9,6 +9,8 @@
 
 #include "rga3_reg_info.h"
 #include "rga_common.h"
+#include "rga_debugger.h"
+#include "rga_hw_config.h"
 
 #define FACTOR_MAX ((int)(2 << 15))
 
@@ -80,44 +82,9 @@ static void RGA3_set_reg_win0_info(u8 *base, struct rga3_req *msg)
 	bRGA3_WIN0_SCL_FAC = (u32 *) (base + RGA3_WIN0_SCL_FAC_OFFSET);
 
 	if (msg->win0.rotate_mode != 0) {
-		switch (msg->rotate_mode) {
-			/* rot 90 */
-		case 0x1:
-			rotate_mode = 1;
-			break;
-			/* rot 180 */
-		case 0x2:
-			xmirror = 1;
-			ymirror = 1;
-			break;
-			/* rot 270 or rot -90 */
-		case 0x3:
-			rotate_mode = 1;
-			xmirror = 1;
-			ymirror = 1;
-			break;
-			/* ymirror */
-		case 0x4:
-			ymirror = 1;
-			break;
-			/* xmirror */
-		case 0x5:
-			xmirror = 1;
-			break;
-			/* rot 90 + xmirror */
-		case 0x6:
-			rotate_mode = 1;
-			xmirror = 1;
-			break;
-			/* rot 90 + ymirror */
-		case 0x7:
-			rotate_mode = 1;
-			ymirror = 1;
-			break;
-			/* bypass */
-		default:
-			break;
-		};
+		rotate_mode = msg->rotate_mode & RGA3_ROT_BIT_ROT_90 ? 1 : 0;
+		xmirror = msg->rotate_mode & RGA3_ROT_BIT_X_MIRROR ? 1 : 0;
+		ymirror = msg->rotate_mode & RGA3_ROT_BIT_Y_MIRROR ? 1 : 0;
 	}
 
 	/* scale */
@@ -125,8 +92,7 @@ static void RGA3_set_reg_win0_info(u8 *base, struct rga3_req *msg)
 	dh = msg->win0.dst_act_h;
 
 	if (msg->win0.rotate_mode != 0) {
-		if (msg->rotate_mode == 1 || msg->rotate_mode == 3 ||
-			msg->rotate_mode == 6 || msg->rotate_mode == 7) {
+		if (rotate_mode) {
 			sh = msg->win0.src_act_w;
 			sw = msg->win0.src_act_h;
 		} else {
@@ -161,10 +127,9 @@ static void RGA3_set_reg_win0_info(u8 *base, struct rga3_req *msg)
 		param_x = 0;
 	else if (x_up == 1 && x_by == 0) {
 		param_x = FACTOR_MAX * (sw - 1) / (dw - 1);
-		if ((sw - 1) % (dw - 1) == 0) {
-			pr_err("hor_up_fac modify xxxx\n");
+		/* even multiples of 128 require a scaling factor -1 */
+		if ((FACTOR_MAX * (sw - 1)) % (dw - 1) == 0)
 			param_x = param_x - 1;
-		}
 	} else
 		param_x = FACTOR_MAX * (dw - 1) / (sw - 1) + 1;
 
@@ -172,10 +137,9 @@ static void RGA3_set_reg_win0_info(u8 *base, struct rga3_req *msg)
 		param_y = 0;
 	else if (y_up == 1 && y_by == 0) {
 		param_y = FACTOR_MAX * (sh - 1) / (dh - 1);
-		if ((sh - 1) % (dh - 1) == 0) {
-			pr_err("ver_up_fac modify yyyy\n");
+		/* even multiples of 128 require a scaling factor -1 */
+		if ((FACTOR_MAX * (sh - 1)) % (dh - 1) == 0)
 			param_y = param_y - 1;
-		}
 	} else
 		param_y = FACTOR_MAX * (dh - 1) / (sh - 1) + 1;
 
@@ -379,7 +343,7 @@ static void RGA3_set_reg_win0_info(u8 *base, struct rga3_req *msg)
 		((reg & (~m_RGA3_WIN0_RD_CTRL_SW_WIN0_YUV10B_COMPACT)) |
 		 (s_RGA3_WIN0_RD_CTRL_SW_WIN0_YUV10B_COMPACT(1)));
 
-	/* Only on roster mode, yuv 10bit can change to compact or set endian */
+	/* Only on raster mode, yuv 10bit can change to compact or set endian */
 	if (msg->win0.rd_mode == RGA_RASTER_MODE && yuv10 == 1) {
 		reg =
 			((reg & (~m_RGA3_WIN0_RD_CTRL_SW_WIN0_YUV10B_COMPACT)) |
@@ -499,50 +463,16 @@ static void RGA3_set_reg_win1_info(u8 *base, struct rga3_req *msg)
 	bRGA3_WIN1_SCL_FAC = (u32 *) (base + RGA3_WIN1_SCL_FAC_OFFSET);
 
 	if (msg->win1.rotate_mode != 0) {
-		switch (msg->rotate_mode) {
-			/* rot 90 */
-		case 0x1:
-			rotate_mode = 1;
-			break;
-			/* rot 180 */
-		case 0x2:
-			xmirror = 1;
-			ymirror = 1;
-			break;
-			/* rot 270 or rot -90 */
-		case 0x3:
-			rotate_mode = 1;
-			xmirror = 1;
-			ymirror = 1;
-			break;
-			/* ymirror */
-		case 0x4:
-			ymirror = 1;
-			break;
-			/* xmirror */
-		case 0x5:
-			xmirror = 1;
-			break;
-			/* rot 90 + xmirror */
-		case 0x6:
-			rotate_mode = 1;
-			xmirror = 1;
-			break;
-			/* rot 90 + ymirror */
-		case 0x7:
-			rotate_mode = 1;
-			ymirror = 1;
-			break;
-			/* bypass */
-		};
+		rotate_mode = msg->rotate_mode & RGA3_ROT_BIT_ROT_90 ? 1 : 0;
+		xmirror = msg->rotate_mode & RGA3_ROT_BIT_X_MIRROR ? 1 : 0;
+		ymirror = msg->rotate_mode & RGA3_ROT_BIT_Y_MIRROR ? 1 : 0;
 	}
 
 	/* scale */
 	dw = msg->win1.dst_act_w;
 	dh = msg->win1.dst_act_h;
 
-	if (msg->rotate_mode == 1 || msg->rotate_mode == 3 ||
-		msg->rotate_mode == 6 || msg->rotate_mode == 7) {
+	if (rotate_mode) {
 		sh = msg->win1.src_act_w;
 		sw = msg->win1.src_act_h;
 	} else {
@@ -576,10 +506,9 @@ static void RGA3_set_reg_win1_info(u8 *base, struct rga3_req *msg)
 		param_x = 0;
 	else if (x_up == 1) {
 		param_x = (FACTOR_MAX * (sw - 1)) / (dw - 1);
-		if ((sw - 1) % (dw - 1) == 0) {
-			pr_err("hor_up_fac modify xxxx\n");
+		/* even multiples of 128 require a scaling factor -1 */
+		if ((FACTOR_MAX * (sw - 1)) % (dw - 1) == 0)
 			param_x = param_x - 1;
-		}
 	} else
 		param_x = (FACTOR_MAX * (dw - 1)) / (sw - 1) + 1;
 
@@ -587,10 +516,9 @@ static void RGA3_set_reg_win1_info(u8 *base, struct rga3_req *msg)
 		param_y = 0;
 	else if (y_up == 1) {
 		param_y = (FACTOR_MAX * (sh - 1)) / (dh - 1);
-		if ((sh - 1) % (dh - 1) == 0) {
-			pr_err("ver_up_fac modify yyyy\n");
+		/* even multiples of 128 require a scaling factor -1 */
+		if ((FACTOR_MAX * (sh - 1)) % (dh - 1) == 0)
 			param_y = param_y - 1;
-		}
 	} else
 		param_y = (FACTOR_MAX * (dh - 1)) / (sh - 1) + 1;
 
@@ -1253,7 +1181,16 @@ static void set_win_info(struct rga_win_info_t *win, struct rga_img_info_t *img)
 	else if (img->rd_mode == RGA_TILE_MODE)
 		win->rd_mode = 2;
 
-	win->is_10b_compact = img->is_10b_compact;
+	switch (img->compact_mode) {
+	case RGA_10BIT_INCOMPACT:
+		win->is_10b_compact = 0;
+		break;
+	case RGA_10BIT_COMPACT:
+	default:
+		win->is_10b_compact = 1;
+		break;
+	}
+
 	win->is_10b_endian = img->is_10b_endian;
 }
 
@@ -1274,7 +1211,16 @@ static void set_wr_info(struct rga_req *req_rga, struct rga3_req *req)
 	else if (req_rga->dst.rd_mode == RGA_TILE_MODE)
 		req->wr.rd_mode = 2;
 
-	req->wr.is_10b_compact = req_rga->dst.is_10b_compact;
+	switch (req_rga->dst.compact_mode) {
+	case RGA_10BIT_INCOMPACT:
+		req->wr.is_10b_compact = 0;
+		break;
+	case RGA_10BIT_COMPACT:
+	default:
+		req->wr.is_10b_compact = 1;
+		break;
+	}
+
 	req->wr.is_10b_endian = req_rga->dst.is_10b_endian;
 }
 
@@ -1282,6 +1228,7 @@ static void set_wr_info(struct rga_req *req_rga, struct rga3_req *req)
 void rga_cmd_to_rga3_cmd(struct rga_req *req_rga, struct rga3_req *req)
 {
 	u16 alpha_mode_0, alpha_mode_1;
+	struct rga_img_info_t tmp;
 
 	req->render_mode = BITBLT_MODE;
 
@@ -1289,66 +1236,83 @@ void rga_cmd_to_rga3_cmd(struct rga_req *req_rga, struct rga3_req *req)
 	switch (req_rga->rotate_mode & 0x0f) {
 	case 0x1:
 		if (req_rga->sina == 65536 && req_rga->cosa == 0) {
-			/* rot 90 */
-			req->rotate_mode = 1;
+			/* rot-90 */
+			req->rotate_mode = RGA3_ROT_BIT_ROT_90;
 		} else if (req_rga->sina == 0 && req_rga->cosa == -65536) {
-			/* rot 180 */
-			req->rotate_mode = 2;
+			/* rot-180 = X-mirror + Y-mirror */
+			req->rotate_mode = RGA3_ROT_BIT_X_MIRROR | RGA3_ROT_BIT_Y_MIRROR;
 		} else if (req_rga->sina == -65536 && req_rga->cosa == 0) {
-			/* rot 270 or -90 */
-			req->rotate_mode = 3;
+			/* rot-270 or -90 = rot-90 + X-mirror + Y-mirror */
+			req->rotate_mode = RGA3_ROT_BIT_X_MIRROR | RGA3_ROT_BIT_Y_MIRROR |
+					   RGA3_ROT_BIT_ROT_90;
 		} else if (req_rga->sina == 0 && req_rga->cosa == 65536) {
 			/* bypass */
 			req->rotate_mode = 0;
 		}
 		break;
 	case 0x2:
-		/* xmirror */
-		req->rotate_mode = 5;
+		/* X-mirror */
+		req->rotate_mode = RGA3_ROT_BIT_X_MIRROR;
 		break;
 	case 0x3:
-		/* ymirror */
-		req->rotate_mode = 4;
+		/* Y-mirror */
+		req->rotate_mode = RGA3_ROT_BIT_Y_MIRROR;
 		break;
 	case 0x4:
-		/* x+y mirror = rot 180 */
-		req->rotate_mode = 2;
+		/* X-mirror + Y-mirror */
+		req->rotate_mode = RGA3_ROT_BIT_X_MIRROR | RGA3_ROT_BIT_Y_MIRROR;
 		break;
 	default:
 		req->rotate_mode = 0;
 		break;
 	}
 
+	/* The upper four bits are only allowed to configure the mirror. */
 	switch ((req_rga->rotate_mode & 0xf0) >> 4) {
-	/* xmirror */
 	case 2:
-		if (req->rotate_mode == 1) {
-			/* xmirror + rot 90 */
-			req->rotate_mode = 6;
-		}
+		/* X-mirror */
+		req->rotate_mode ^= RGA3_ROT_BIT_X_MIRROR;
 		break;
-	/* ymirror */
 	case 3:
-		if (req->rotate_mode == 1) {
-			/* ymirror + rot 90 */
-			req->rotate_mode = 7;
-		}
+		/* Y-mirror */
+		req->rotate_mode ^= RGA3_ROT_BIT_Y_MIRROR;
+		break;
+	case 0x4:
+		/* X-mirror + Y-mirror */
+		req->rotate_mode ^= RGA3_ROT_BIT_X_MIRROR | RGA3_ROT_BIT_Y_MIRROR;
 		break;
 	}
 
-	/* default use 2 reg, bot_blend_m1 && bot_alpha_cal_m1 */
-	if (rga_is_alpha_format(req_rga->src.format))
-		req->alpha_mode_1 = 0x0a00;
+	req->win0_a_global_val = req_rga->alpha_global_value;
+	req->win1_a_global_val = req_rga->alpha_global_value;
 
-	/*
-	 * Layer binding:
-	 *     src => win1
-	 *     src1/dst => win0
-	 *     dst => wr
-	 */
+	/* fixup yuv/rgb convert to rgba missing alpha channel */
+	if (!(req_rga->alpha_rop_flag & 1)) {
+		if (!rga_is_alpha_format(req_rga->src.format) &&
+		    rga_is_alpha_format(req_rga->dst.format)) {
+			req->win0_a_global_val = 0xff;
+			req->win1_a_global_val = 0xff;
+		}
+	}
+
 	/* simple win can not support dst offset */
 	if ((!((req_rga->alpha_rop_flag) & 1)) &&
-	    (req_rga->dst.x_offset == 0 && req_rga->dst.y_offset == 0)) {
+	    (req_rga->dst.x_offset == 0 && req_rga->dst.y_offset == 0) &&
+	    (req_rga->src.yrgb_addr != req_rga->dst.yrgb_addr)) {
+		/*
+		 * ABB mode Layer binding:
+		 *     src => win0
+		 *     dst => wr
+		 */
+
+		/*
+		 * enabled by default bot_blend_m1 && bot_alpha_cal_m1 for src channel(win0)
+		 * In ABB mode, the number will be fetched according to 16*16, so it needs to
+		 * be enabled top_blend_m1 && top_alpha_cal_m1 for dst channel(wr).
+		 */
+		if (rga_is_alpha_format(req_rga->src.format))
+			req->alpha_mode_1 = 0x0a0a;
+
 		set_win_info(&req->win0, &req_rga->src);
 
 		/* enable win0 rotate */
@@ -1364,6 +1328,42 @@ void rga_cmd_to_rga3_cmd(struct rga_req *req_rga, struct rga3_req *req)
 		req->win0.format = req_rga->src.format;
 		req->wr.format = req_rga->dst.format;
 	} else {
+		/*
+		 * ABC mode Layer binding:
+		 *     src => win1
+		 *     src1/dst => win0
+		 *     dst => wr
+		 */
+
+		/*
+		 * enabled by default top_blend_m1 && top_alpha_cal_m1 for src channel(win1)
+		 * In ABB mode, the number will be fetched according to 16*16, so it needs to
+		 * be enabled bot_blend_m1 && bot_alpha_cal_m1 for src1/dst channel(win0).
+		 */
+		if (rga_is_alpha_format(req_rga->src.format))
+			req->alpha_mode_1 = 0x0a0a;
+
+		if (req_rga->pat.yrgb_addr != 0) {
+			if (req_rga->src.yrgb_addr == req_rga->dst.yrgb_addr) {
+				/* Convert ABC mode to ABB mode. */
+				memcpy(&req_rga->src, &req_rga->pat, sizeof(req_rga->src));
+				memset(&req_rga->pat, 0x0, sizeof(req_rga->pat));
+				req_rga->bsfilter_flag = 0;
+
+				rga_swap_pd_mode(req_rga);
+			} else if ((req_rga->dst.x_offset + req_rga->src.act_w >
+				    req_rga->pat.act_w) ||
+				   (req_rga->dst.y_offset + req_rga->src.act_h >
+				    req_rga->pat.act_h)) {
+				/* wr_offset + win1.act_size need > win0.act_size */
+				memcpy(&tmp, &req_rga->src, sizeof(tmp));
+				memcpy(&req_rga->src, &req_rga->pat, sizeof(req_rga->src));
+				memcpy(&req_rga->pat, &tmp, sizeof(req_rga->pat));
+
+				rga_swap_pd_mode(req_rga);
+			}
+		}
+
 		set_win_info(&req->win1, &req_rga->src);
 
 		/* enable win1 rotate */
@@ -1382,8 +1382,18 @@ void rga_cmd_to_rga3_cmd(struct rga_req *req_rga, struct rga3_req *req)
 			req->win0.format = req_rga->pat.format;
 
 			/* set win0 dst size */
-			req->win0.dst_act_w = req_rga->pat.act_w;
-			req->win0.dst_act_h = req_rga->pat.act_h;
+			if (req->win0.x_offset || req->win0.y_offset) {
+				req->win0.src_act_w = req->win0.src_act_w + req->win0.x_offset;
+				req->win0.src_act_h = req->win0.src_act_h + req->win0.y_offset;
+				req->win0.dst_act_w = req_rga->pat.act_w + req->win0.x_offset;
+				req->win0.dst_act_h = req_rga->pat.act_h + req->win0.y_offset;
+
+				req->win0.x_offset = 0;
+				req->win0.y_offset = 0;
+			} else {
+				req->win0.dst_act_w = req_rga->pat.act_w;
+				req->win0.dst_act_h = req_rga->pat.act_h;
+			}
 			/* set win1 dst size */
 			req->win1.dst_act_w = req_rga->pat.act_w;
 			req->win1.dst_act_h = req_rga->pat.act_h;
@@ -1410,8 +1420,7 @@ void rga_cmd_to_rga3_cmd(struct rga_req *req_rga, struct rga3_req *req)
 	}
 	set_wr_info(req_rga, req);
 
-	if (req->rotate_mode == 1 || req->rotate_mode == 3 ||
-		req->rotate_mode == 6 || req->rotate_mode == 7) {
+	if (req->rotate_mode & RGA3_ROT_BIT_ROT_90) {
 		if (req->win1.yrgb_addr != 0) {
 			/* ABB */
 			if (req->win0.yrgb_addr == req->wr.yrgb_addr) {
@@ -1535,9 +1544,6 @@ void rga_cmd_to_rga3_cmd(struct rga_req *req_rga, struct rga3_req *req)
 		}
 	}
 
-	req->win0_a_global_val = req_rga->alpha_global_value;
-	req->win1_a_global_val = req_rga->alpha_global_value;
-
 	/* yuv to rgb */
 	/* 601 limit */
 	if (req_rga->yuv2rgb_mode == 1) {
@@ -1568,9 +1574,13 @@ void rga_cmd_to_rga3_cmd(struct rga_req *req_rga, struct rga3_req *req)
 		req->win1.r2y_mode = 1;
 	}
 
-	/* color key */
-	req->color_key_min = req_rga->color_key_min;
-	req->color_key_max = req_rga->color_key_max;
+	/* color key: 8bit->10bit */
+	req->color_key_min = (req_rga->color_key_min & 0xff) << 22 |
+			     ((req_rga->color_key_min >> 8) & 0xff) << 2 |
+			     ((req_rga->color_key_min >> 16) & 0xff) << 12;
+	req->color_key_max = (req_rga->color_key_max & 0xff) << 22 |
+			     ((req_rga->color_key_max >> 8) & 0xff) << 2 |
+			     ((req_rga->color_key_max >> 16) & 0xff) << 12;
 
 	if (req_rga->mmu_info.mmu_en && (req_rga->mmu_info.mmu_flag & 1) == 1) {
 		req->mmu_info.src0_mmu_flag = 1;
@@ -1667,80 +1677,78 @@ static int rga3_scale_check(const struct rga3_req *req)
 	return 0;
 }
 
-static int rga3_check_param(const struct rga3_req *req)
+static int rga3_check_param(const struct rga_hw_data *data, const struct rga3_req *req)
 {
-	if (!((req->render_mode == COLOR_FILL_MODE))) {
-		if (unlikely((req->win0.src_act_w <= 0) ||
-			(req->win0.src_act_w > 8176)
-			 || (req->win0.src_act_h <= 0)
-			 || (req->win0.src_act_h > 8176)
-			 || (req->win0.dst_act_w <= 0)
-			 || (req->win0.dst_act_w > 8128)
-			 || (req->win0.dst_act_h <= 0)
-			 || (req->win0.dst_act_h > 8128))) {
-			pr_err("invalid win0 act sw = %d, sh = %d, dw = %d, dh = %d\n",
-				 req->win0.src_act_w, req->win0.src_act_h,
-				 req->win0.dst_act_w, req->win0.dst_act_h);
-			return -EINVAL;
-		}
+	if (unlikely(rga_hw_out_of_range(&(data->input_range),
+					 req->win0.src_act_w, req->win0.src_act_h) ||
+		     rga_hw_out_of_range(&(data->input_range),
+					 req->win0.dst_act_w, req->win0.dst_act_h) ||
+		     rga_hw_out_of_range(&(data->input_range),
+					 req->win0.src_act_w + req->win0.x_offset,
+					 req->win0.src_act_h + req->win0.y_offset))) {
+		pr_err("invalid win0, src[w,h] = [%d, %d], dst[w,h] = [%d, %d], off[x,y] = [%d,%d]\n",
+		       req->win0.src_act_w, req->win0.src_act_h,
+		       req->win0.dst_act_w, req->win0.dst_act_h,
+		       req->win0.x_offset, req->win0.y_offset);
+		return -EINVAL;
+	}
+
+	if (unlikely(req->win0.vir_w * rga_get_pixel_stride_from_format(req->win0.format) >
+		     data->max_byte_stride * 8)) {
+		pr_err("invalid win0 stride, stride = %d, pixel_stride = %d, max_byte_stride = %d\n",
+		       req->win0.vir_w, rga_get_pixel_stride_from_format(req->win0.format),
+		       data->max_byte_stride);
+		return -EINVAL;
+	}
+
+	if (unlikely(rga_hw_out_of_range(&(data->output_range),
+					 req->wr.dst_act_w, req->wr.dst_act_h))) {
+		pr_err("invalid wr, [w,h] = [%d, %d]\n", req->wr.dst_act_w, req->wr.dst_act_h);
+		return -EINVAL;
+	}
+
+	if (unlikely(req->wr.vir_w * rga_get_pixel_stride_from_format(req->wr.format) >
+		     data->max_byte_stride * 8)) {
+		pr_err("invalid wr stride, stride = %d, pixel_stride = %d, max_byte_stride = %d\n",
+		       req->wr.vir_w, rga_get_pixel_stride_from_format(req->wr.format),
+		       data->max_byte_stride);
+		return -EINVAL;
 	}
 
 	if (req->win1.yrgb_addr != 0) {
-		if (unlikely((req->win1.src_act_w <= 0) ||
-			(req->win1.src_act_w > 8176)
-			 || (req->win1.src_act_h <= 0)
-			 || (req->win1.src_act_h > 8176)
-			 || (req->win1.dst_act_w <= 0)
-			 || (req->win1.dst_act_w > 8128)
-			 || (req->win1.dst_act_h <= 0)
-			 || (req->win1.dst_act_h > 8128))) {
-			pr_err("invalid win1 act sw = %d, sh = %d, dw = %d, dh = %d\n",
-				 req->win1.src_act_w, req->win1.src_act_h,
-				 req->win1.dst_act_w, req->win1.dst_act_h);
+		if (unlikely(rga_hw_out_of_range(&(data->input_range),
+						 req->win1.src_act_w, req->win1.src_act_h) ||
+			     rga_hw_out_of_range(&(data->input_range),
+						 req->win1.dst_act_w, req->win1.dst_act_h) ||
+			     rga_hw_out_of_range(&(data->input_range),
+						 req->win1.src_act_w + req->win1.x_offset,
+						 req->win1.src_act_h + req->win1.y_offset))) {
+			pr_err("invalid win1, src[w,h] = [%d, %d], dst[w,h] = [%d, %d], off[x,y] = [%d,%d]\n",
+			       req->win1.src_act_w, req->win1.src_act_h,
+			       req->win1.dst_act_w, req->win1.dst_act_h,
+			       req->win1.x_offset, req->win1.y_offset);
 			return -EINVAL;
 		}
 
-		if (unlikely
-			((req->win1.vir_w <= 0) || (req->win1.vir_w > 8192 * 2)
-			 || (req->win1.vir_h <= 0)
-			 || (req->win1.vir_h > 8192 * 2))) {
-			pr_err("invalid win1 stride vir_w = %d, vir_h = %d\n",
-				 req->win1.vir_w, req->win1.vir_h);
+		if (unlikely(req->win1.vir_w * rga_get_pixel_stride_from_format(req->win1.format) >
+			     data->max_byte_stride * 8)) {
+			pr_err("invalid win1 stride, stride = %d, pixel_stride = %d, max_byte_stride = %d\n",
+			       req->win1.vir_w, rga_get_pixel_stride_from_format(req->win1.format),
+			       data->max_byte_stride);
 			return -EINVAL;
 		}
 
 		/* warning: rotate mode skip this judge */
 		if (req->rotate_mode == 0) {
 			/* check win0 dst size > win1 dst size */
-			if (unlikely
-				((req->win1.dst_act_w > req->win0.dst_act_w)
-				|| (req->win1.dst_act_h > req->win0.dst_act_h))) {
-				pr_err("invalid win1.dst size = %d x %d\n",
-					req->win1.dst_act_w, req->win1.dst_act_h);
-				pr_err("invalid win0.dst size = %d x %d\n",
-					req->win0.dst_act_w, req->win0.dst_act_h);
+			if (unlikely((req->win1.dst_act_w > req->win0.dst_act_w) ||
+				     (req->win1.dst_act_h > req->win0.dst_act_h))) {
+				pr_err("invalid output param win0[w,h] = [%d, %d], win1[w,h] = [%d, %d]\n",
+				       req->win0.dst_act_w, req->win0.dst_act_h,
+				       req->win1.dst_act_w, req->win1.dst_act_h);
 				return -EINVAL;
 			}
 		}
-	}
-
-	if (!((req->render_mode == COLOR_FILL_MODE))) {
-		if (unlikely
-			((req->win0.vir_w <= 0) || (req->win0.vir_w > 8192)
-			 || (req->win0.vir_h <= 0)
-			 || (req->win0.vir_h > 8192))) {
-			pr_err("invalid win0 vir_w = %d, vir_h = %d\n",
-				 req->win0.vir_w, req->win0.vir_h);
-			return -EINVAL;
-		}
-	}
-
-	if (unlikely
-		((req->wr.vir_w <= 0) || (req->wr.vir_w > 8192 * 2)
-		 || (req->wr.vir_h <= 0) || (req->wr.vir_h > 8192 * 2))) {
-		pr_err("invalid wr vir_w = %d, vir_h = %d\n",
-			 req->wr.vir_w, req->wr.vir_h);
-		return -EINVAL;
 	}
 
 	if (rga3_scale_check(req) < 0)
@@ -1832,13 +1840,20 @@ int rga3_init_reg(struct rga_job *job)
 {
 	struct rga3_req req;
 	int ret = 0;
+	struct rga_scheduler_t *scheduler = NULL;
+
+	scheduler = job->scheduler;
+	if (unlikely(scheduler == NULL)) {
+		pr_err("failed to get scheduler, %s(%d)\n", __func__, __LINE__);
+		return -EINVAL;
+	}
 
 	memset(&req, 0x0, sizeof(req));
 
 	rga_cmd_to_rga3_cmd(&job->rga_command_base, &req);
 
 	/* check value if legal */
-	ret = rga3_check_param(&req);
+	ret = rga3_check_param(scheduler->data, &req);
 	if (ret == -EINVAL) {
 		pr_err("req argument is inval\n");
 		return ret;
@@ -1923,18 +1938,18 @@ int rga3_set_reg(struct rga_job *job, struct rga_scheduler_t *scheduler)
 	rga_write(1, RGA3_INT_EN, scheduler);
 
 	if (DEBUGGER_EN(MSG)) {
-		pr_err("sys_ctrl = %x, int_en = %x, int_raw = %x\n",
-			 rga_read(RGA3_SYS_CTRL, scheduler),
-			 rga_read(RGA3_INT_EN, scheduler),
-			 rga_read(RGA3_INT_RAW, scheduler));
+		pr_info("sys_ctrl = %x, int_en = %x, int_raw = %x\n",
+			rga_read(RGA3_SYS_CTRL, scheduler),
+			rga_read(RGA3_INT_EN, scheduler),
+			rga_read(RGA3_INT_RAW, scheduler));
 
-		pr_err("status0 = %x, status1 = %x\n",
-			 rga_read(RGA3_STATUS0, scheduler),
-			 rga_read(RGA3_STATUS1, scheduler));
+		pr_info("status0 = %x, status1 = %x\n",
+			rga_read(RGA3_STATUS0, scheduler),
+			rga_read(RGA3_STATUS1, scheduler));
 	}
 
 	if (DEBUGGER_EN(TIME))
-		pr_err("set cmd use time = %lld\n", ktime_us_delta(now, job->timestamp));
+		pr_info("set cmd use time = %lld\n", ktime_us_delta(now, job->timestamp));
 
 	job->hw_running_time = now;
 	job->hw_recoder_time = now;

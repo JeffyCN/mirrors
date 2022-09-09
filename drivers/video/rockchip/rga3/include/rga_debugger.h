@@ -10,14 +10,18 @@
 #ifndef _RGA_DEBUGGER_H_
 #define _RGA_DEBUGGER_H_
 
+#include "rga_drv.h"
+
 #ifdef CONFIG_ROCKCHIP_RGA_DEBUGGER
 
 extern int RGA_DEBUG_REG;
 extern int RGA_DEBUG_MSG;
 extern int RGA_DEBUG_TIME;
+extern int RGA_DEBUG_INT_FLAG;
+extern int RGA_DEBUG_MM;
 extern int RGA_DEBUG_CHECK_MODE;
 extern int RGA_DEBUG_NONUSE;
-extern int RGA_DEBUG_INT_FLAG;
+extern int RGA_DEBUG_DUMP_IMAGE;
 
 #define DEBUGGER_EN(name) (unlikely(RGA_DEBUG_##name ? true : false))
 
@@ -128,7 +132,15 @@ static inline int rga_procfs_init(void)
 #endif /* #ifdef CONFIG_ROCKCHIP_RGA_DEBUGGER */
 
 void rga_cmd_print_debug_info(struct rga_req *req);
-void rga_ctx_cache_cmd_debug_info(struct seq_file *m, struct rga_req *req);
+void rga_request_task_debug_info(struct seq_file *m, struct rga_req *req);
+void rga_dump_external_buffer(struct rga_external_buffer *buffer);
+#ifdef CONFIG_NO_GKI
+void rga_dump_job_image(struct rga_job *dump_job);
+#else
+static inline void rga_dump_job_image(struct rga_job *dump_job)
+{
+}
+#endif /* #ifdef CONFIG_NO_GKI */
 
 #endif /* #ifndef _RGA_DEBUGGER_H_ */
 
