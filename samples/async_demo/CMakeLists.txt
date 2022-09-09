@@ -12,7 +12,9 @@ else ()
     set(RGA_LIB rga)
 endif()
 
-project(rga_async_demo)
+get_filename_component(TARGET_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
+
+project(rga_${TARGET_NAME})
 
 #install path
 if (NOT DEFINED CMAKE_INSTALL_BINDIR)
@@ -27,16 +29,10 @@ set(RGA_INCLUDE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../im2d_api)
 
 include_directories(${RGA_INCLUDE})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../utils)
 
-add_subdirectory(../utils ./utils_obj)
+if (NOT DEFINED RGA_SAMPLES_UTILS_COMPILED)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../utils/CMakeLists.txt)
+endif()
 
-# rga_async_demo
-add_executable(rga_async_demo
-    $<TARGET_OBJECTS:utils_obj>
-    src/rga_async_demo.cpp
-)
-target_link_libraries(rga_async_demo
-	${RGA_LIB}
-)
-install(TARGETS rga_async_demo DESTINATION ${CMAKE_INSTALL_BINDIR})
+add_subdirectory(src)
+

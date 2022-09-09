@@ -10,6 +10,7 @@ project(rga_${TARGET_NAME})
 
 add_subdirectory(allocator_demo)
 add_subdirectory(alpha_demo)
+add_subdirectory(async_demo)
 add_subdirectory(config_demo)
 add_subdirectory(copy_demo)
 add_subdirectory(crop_demo)
