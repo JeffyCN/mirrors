@@ -34,24 +34,15 @@
 #include "xf86drm.h"
 #endif
 
-#include "dma_alloc.h"
-
 #include "rga.h"
 #include "RockchipRga.h"
 #include "im2d_api/im2d.hpp"
 #include "RgaUtils.h"
-#include "slt_config.h"
 
-/*
- *   In order to be compatible with different android versions,
- * some gralloc usage is defined here.
- *   The correct usage should be to refer to the corresponding header file:
- *   Android 12 and above: #include "hardware/gralloc_rockchip.h"
- *   Android 11 and below: #include "hardware/gralloc.h"
- */
-#define GRALLOC_USAGE_PRIVATE_11                (1ULL << 56)
-#define RK_GRALLOC_USAGE_WITHIN_4G              GRALLOC_USAGE_PRIVATE_11
-#define RK_GRALLOC_USAGE_RGA_ACCESS             RK_GRALLOC_USAGE_WITHIN_4G
+#include "dma_alloc.h"
+#include "drm_alloc.h"
+
+#include "slt_config.h"
 
 enum {
     FILL_BUFF  = 0,
@@ -133,18 +124,30 @@ static int write_image_to_path(void *buf, const char *path, int f, int sw, int s
     return 0;
 }
 
-/******************************************************************************/
 #if IM2D_SLT_GRAPHICBUFFER_EN
-sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format, bool use_rga2) {
-    uint64_t flag = 0;
+#include <ui/GraphicBuffer.h>
 
-#if IM2D_SLT_BUFFER_CACHEABLE
-    flag |= GRALLOC_USAGE_SW_READ_OFTEN;
-#else
+/*
+ *   In order to be compatible with different android versions,
+ * some gralloc usage is defined here.
+ *   The correct usage should be to refer to the corresponding header file:
+ *   Android 12 and above: #include "hardware/gralloc_rockchip.h"
+ *   Android 11 and below: #include "hardware/gralloc.h"
+ */
+#define GRALLOC_USAGE_PRIVATE_11                (1ULL << 56)
+#define RK_GRALLOC_USAGE_WITHIN_4G              GRALLOC_USAGE_PRIVATE_11
+#define RK_GRALLOC_USAGE_RGA_ACCESS             RK_GRALLOC_USAGE_WITHIN_4G
+
+sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format, bool use_rga2, bool cacheable) {
+    uint64_t usage = 0;
+
+    if (cacheable)
+        usage |= GRALLOC_USAGE_SW_READ_OFTEN;
+
     if (use_rga2)
-        flag |= RK_GRALLOC_USAGE_WITHIN_4G;
-#endif
-    sp<GraphicBuffer> gb(new GraphicBuffer(width,height,format, 0, flag));
+        usage |= RK_GRALLOC_USAGE_WITHIN_4G;
+
+    sp<GraphicBuffer> gb(new GraphicBuffer(width, height, format, 0, usage));
 
     if (gb->initCheck()) {
         /*
@@ -152,7 +155,7 @@ sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format, bool use_
          * so it needs to be truncated externally to 32-bit. And don't need 4G usage.
          */
         printf("graphicbuffer re-alloc 32-bit usage\n");
-        gb = sp<GraphicBuffer>(new GraphicBuffer(width, height, format, (int)flag));
+        gb = sp<GraphicBuffer>(new GraphicBuffer(width, height, format, (int)usage));
         if (gb->initCheck()) {
             printf("GraphicBuffer check error : %s\n",strerror(errno));
             return NULL;
@@ -163,49 +166,44 @@ sp<GraphicBuffer> GraphicBuffer_Init(int width, int height,int format, bool use_
 }
 
 /* Write data to buffer or init buffer. */
-int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int flag, int index, int mode) {
-    int ret;
-	char* buf = NULL;
-    ret = gb->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, (void**)&buf);
+int GraphicBuffer_Fill(sp<GraphicBuffer> gb, int width, int height,int format, int flag, int index, int mode) {
+    int ret = 0;
+       char* buf = NULL;
+    size_t buf_size;
+    ret = gb->lock(GRALLOC_USAGE_SW_READ_OFTEN, (void**)&buf);
     if (ret) {
         printf("lock buffer error : %s\n",strerror(errno));
         return -1;
     }
 
-    if(flag) {
-        memset(buf,index,gb->getWidth()*gb->getHeight()*get_bpp_from_format(gb->getPixelFormat()));
-    } else {
+    buf_size = width * height * get_bpp_from_format(format);
+    if (mode == IM_FBC_MODE)
+        buf_size = buf_size * 1.5;
 
-        if (mode == IM_FBC_MODE) {
-            ret = read_image_from_path(buf, IM2D_SLT_DEFAULT_INPUT_PATH,
-                                       gb->getPixelFormat(), gb->getWidth(), gb->getHeight()/1.5, index, mode);
-        } else {
-            ret = read_image_from_path(buf, IM2D_SLT_DEFAULT_INPUT_PATH,
-                                       gb->getPixelFormat(), gb->getWidth(), gb->getHeight(), index, mode);
-        }
+    if(flag) {
+        memset(buf, index, buf_size);
+    } else {
+        ret = read_image_from_path(buf, IM2D_SLT_DEFAULT_INPUT_PATH, format, width, height, index, mode);
         if (ret != 0) {
             printf ("open file %s \n", "fault");
-
-            ret = gb->unlock();
-            if (ret) {
-                printf("unlock buffer error : %s\n",strerror(errno));
-                return -1;
-            }
-
-            return -1;
+            memset(buf, index, buf_size);
+            ret = -1;
+            goto unlock;
         }
     }
 
+unlock:
     ret = gb->unlock();
-	if (ret) {
+       if (ret) {
         printf("unlock buffer error : %s\n",strerror(errno));
         return -1;
     }
 
-    return 0;
+    return ret;
 }
 #endif
 
+/******************************************************************************/
 void *pthread_rga_run(void *args) {
     int ret = 0, time = 0;
     unsigned int num;
@@ -298,25 +296,25 @@ void *pthread_rga_run(void *args) {
 #elif IM2D_SLT_GRAPHICBUFFER_EN
         if (data->rd_mode == IM_FBC_MODE) {
             src_buf = GraphicBuffer_Init(srcWidth, srcHeight * 1.5, srcFormat,
-                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false);
+                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false, IM2D_SLT_BUFFER_CACHEABLE);
             dst_buf = GraphicBuffer_Init(dstWidth, dstHeight * 1.5, dstFormat,
-                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false);
+                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false, IM2D_SLT_BUFFER_CACHEABLE);
         } else {
             src_buf = GraphicBuffer_Init(srcWidth, srcHeight, srcFormat,
-                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false);
+                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false, IM2D_SLT_BUFFER_CACHEABLE);
             dst_buf = GraphicBuffer_Init(dstWidth, dstHeight, dstFormat,
-                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false);
+                                         data->core == IM_SCHEDULER_RGA2_CORE0 ? true : false, IM2D_SLT_BUFFER_CACHEABLE);
         }
         if (src_buf == NULL || dst_buf == NULL) {
             printf("GraphicBuff init error!\n");
             goto NORMAL_ERR;
         }
 
-        if(-1 == GraphicBuffer_Fill(src_buf, FILL_BUFF, 0, data->rd_mode)) {
+        if(-1 == GraphicBuffer_Fill(src_buf, srcWidth, srcHeight, srcFormat, FILL_BUFF, 0, data->rd_mode)) {
             printf("%s, src write Graphicbuffer error!\n", __FUNCTION__);
             goto NORMAL_ERR;
         }
-        if(-1 == GraphicBuffer_Fill(dst_buf, EMPTY_BUFF, 0xff, data->rd_mode)) {
+        if(-1 == GraphicBuffer_Fill(dst_buf, dstWidth, dstHeight, dstFormat, EMPTY_BUFF, 0xff, data->rd_mode)) {
             printf("%s, dst write Graphicbuffer error!\n", __FUNCTION__);
             goto NORMAL_ERR;
         }
