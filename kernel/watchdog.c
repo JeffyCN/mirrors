@@ -50,6 +50,9 @@ struct cpumask watchdog_cpumask __read_mostly;
 unsigned long *watchdog_cpumask_bits = cpumask_bits(&watchdog_cpumask);
 
 #ifdef CONFIG_HARDLOCKUP_DETECTOR
+
+ATOMIC_NOTIFIER_HEAD(hardlock_notifier_list);
+
 /*
  * Should we panic when a soft-lockup or hard-lockup occurs:
  */
@@ -422,6 +425,8 @@ static void watchdog_check_hardlockup_other_cpu(void)
 		/* only warn once */
 		if (per_cpu(hard_watchdog_warn, next_cpu) == true)
 			return;
+
+		atomic_notifier_call_chain(&hardlock_notifier_list, 0, NULL);
 
 		if (hardlockup_panic)
 			panic("Watchdog detected hard LOCKUP on cpu %u", next_cpu);
