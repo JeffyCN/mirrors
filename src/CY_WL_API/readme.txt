@@ -1,1 +1,0 @@
-1.	Need to disable compile options "DHD_DONOT_FORWARD_BCMEVENT_AS_NETWORK_PKT" in CYWDHD makefile.

@@ -1,1 +1,0 @@
-../../AP6181/wifi/nvram_ap6181.txt

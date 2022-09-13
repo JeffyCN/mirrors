@@ -25,8 +25,7 @@ case "$1" in
 			sync
 		fi
 
-		if [ -f /system/lib/modules/dhd_static_buf.ko]
-		then
+		if [ -f "/system/lib/modules/dhd_static_buf.ko" ];then
 			insmod /system/lib/modules/dhd_static_buf.ko
 		fi
 		insmod WIFI_KO

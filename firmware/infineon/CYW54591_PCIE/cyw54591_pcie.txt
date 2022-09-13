@@ -1,0 +1,258 @@
+#For AW-CB511-BPF-V05 20220217
+# CYW954591 WLBGA iPA, iLNA board for bringup -
+NVRAMRev=$Rev: 727969 $
+cckdigfilttype=4
+#valid ofdm filter types are 0 and 1
+ofdmfilttype_2gbe=127
+ofdmfilttype_5gbe=127
+sromrev=11
+boardrev=0x1103
+boardtype=0x0863
+# JIRA:SW4349-945 MANDATORY! Update makefile in case you touch bfl
+# Two Range TSSI boardflag setting and LTE COEX
+boardflags=0x00480201
+boardflags2=0x00800000
+boardflags3=0x48700106
+wlbga5g80=1
+opt_89359B1=1
+macaddr=00:90:4c:31:10:e2
+ccode=0
+regrev=0
+antswitch=0
+pdgain5g=0
+pdgain2g=0
+# Two Range TSSI enable
+tworangetssi2g=1
+tworangetssi5g=1
+# Low power range TSSI cal enable
+lowpowerrange2g=0
+lowpowerrange5g=0
+# Low Power Range start value: 0dBm
+olpc_thresh2g=-10
+olpc_thresh5g=-10
+# Power detector parameters
+AvVmid_c0=2,130,2,130,2,130,2,130,2,130
+AvVmid_c1=2,130,2,130,2,130,2,130,2,130
+# JIRA:SW4349-945 MANDATORY! Update makefile in case you touch femctl
+#femctrl=14
+vendid=0x14e4
+# Spectrum mask parameter
+# 0: disabled /  1: mild shaping  /  2: moderate shaping  / 3: strong shaping  /  4: optimized for BCM4359
+fdss_level_2g=5,5
+fdss_level_5g=4,4
+fdss_interp_en=1
+#papd_optf=1
+#devid not been used now
+devid=0x4417
+manfid=0x2d0
+#prodid=0x052e
+nocrc=1
+sco_rssi_thresh=-75
+otpimagesize=502
+xtalfreq=37400
+rxgains2gelnagaina0=0
+rxgains2gtrisoa0=15
+rxgains2gtrelnabypa0=0
+rxgains5gelnagaina0=0
+rxgains5gtrisoa0=7
+rxgains5gtrelnabypa0=0
+rxgains5gmelnagaina0=0
+rxgains5gmtrisoa0=7
+rxgains5gmtrelnabypa0=0
+rxgains5ghelnagaina0=0
+rxgains5ghtrisoa0=7
+rxgains5ghtrelnabypa0=0
+rxgains2gelnagaina1=0
+rxgains2gtrisoa1=15
+rxgains2gtrelnabypa1=0
+rxgains5gelnagaina1=0
+rxgains5gtrisoa1=7
+rxgains5gtrelnabypa1=0
+rxgains5gmelnagaina1=0
+rxgains5gmtrisoa1=7
+rxgains5gmtrelnabypa1=0
+rxgains5ghelnagaina1=0
+rxgains5ghtrisoa1=7
+rxgains5ghtrelnabypa1=0
+rrcalphasel=1
+rxchain=3
+txchain=3
+aa2g=3
+aa5g=3
+agbg0=2
+agbg1=2
+aga0=2
+aga1=2
+tssipos2g=1
+extpagain2g=2
+tssipos5g=1
+extpagain5g=2
+tempthresh=110
+tempoffset=255
+rawtempsense=35
+
+# High power range for A0/A1 output
+pa2gccka0=0xFEE7,0x0E97,0xFE10
+pa2gccka1=0xFF2F,0x1BF6,0xFC96
+pa2ga0=0xFF30,0x19D6,0xFCE0
+pa2ga1=0xFF2A,0x190B,0xFCF4
+pa5ga0=0xFF24,0x16C0,0xFD1F,0xFF27,0x171B,0xFD19,0xFF29,0x1657,0xFD35,0xFF28,0x1627,0xFD3C
+pa5ga1=0xFF3D,0x18B6,0xFCF3,0xFF33,0x1797,0xFD0D,0xFF25,0x15DF,0xFD44,0xFF25,0x15FF,0xFD3F
+
+# No seperate paparam for 40/80 once 2-range TSSI is eabled
+pa5gbw4080a0=0xFF38,0x1E42,0xFC4B,0xFF3B,0x1EE5,0xFC38,0xFF3E,0x1E74,0xFC4F,0xFF33,0x1C95,0xFC7F
+pa5gbw4080a1=0xFF23,0x1E20,0xFC48,0xFF29,0x1C1F,0xFC82,0xFF2E,0x1CC4,0xFC79,0xFF28,0x1B49,0xFCA2
+
+
+# Low power range for A0/A1 output
+pa2ga2=0xFF1C,0x0FB5,0xFDF5
+pa2ga3=0xFF19,0x0FCF,0xFDF8
+pa5ga2=0xFF5F,0x15DA,0xFD09,0xFF62,0x1685,0xFCF3,0xFF5B,0x16A3,0xFCE9,0xFF5E,0x167B,0xFCEE
+pa5ga3=0xFF4F,0x15A8,0xFD01,0xFF83,0x1879,0xFC9F,0xFF77,0x17C6,0xFCBC,0xFF6C,0x16A9,0xFCE8
+
+
+
+maxp2ga0=76
+maxp2ga1=76
+maxp5ga0=64,64,64,64
+maxp5ga1=64,64,64,64
+subband5gver=0x4
+paparambwver=3
+cckpwroffset0=0x2
+cckpwroffset1=0x2
+pdoffset40ma0=0x0100
+pdoffset40ma1=0x0101
+pdoffset80ma0=0xEEEE
+pdoffset80ma1=0xEEEE
+cckbw202gpo=0
+cckbw20ul2gpo=0
+mcsbw202gpo=0x99665533
+mcsbw402gpo=0x99665533
+dot11agofdmhrbw202gpo=0x6622
+ofdmlrbw202gpo=0x0000
+mcsbw205glpo=0x77643331
+mcsbw405glpo=0x97655551
+mcsbw805glpo=0x97655553
+mcsbw1605glpo=0
+mcsbw205gmpo=0x77643331
+mcsbw405gmpo=0x99865551
+mcsbw805gmpo=0xc9865553
+mcsbw1605gmpo=0
+mcsbw205ghpo=0x88643331
+mcsbw405ghpo=0x99865551
+mcsbw805ghpo=0xc9865553
+mcsbw1605ghpo=0
+mcslr5glpo=0x0000
+mcslr5gmpo=0x0000
+mcslr5ghpo=0x0000
+sb20in40hrpo=0x0
+sb20in80and160hr5glpo=0x0
+sb40and80hr5glpo=0x0
+sb20in80and160hr5gmpo=0x0
+sb40and80hr5gmpo=0x0
+sb20in80and160hr5ghpo=0x0
+sb40and80hr5ghpo=0x0
+sb20in40lrpo=0x0
+sb20in80and160lr5glpo=0x0
+sb40and80lr5glpo=0x0
+sb20in80and160lr5gmpo=0x0
+sb40and80lr5gmpo=0x0
+sb20in80and160lr5ghpo=0x0
+sb40and80lr5ghpo=0x0
+dot11agduphrpo=0x0
+dot11agduplrpo=0x0
+phycal_tempdelta=15
+temps_period=15
+temps_hysteresis=5
+ltecxmux=0
+ltecxpadnum=0x0504
+ltecxfnsel=0x44
+ltecxgcigpio=0x04
+#OOB params
+#device_wake_opt=1
+#host_wake_opt=0
+swctrlmap_2g=0x00000008,0x00000810,0x00000008,0x000010,0x1ff
+#swctrlmap_2g=0x00000008,0x00000850,0x00000008,0x000010,0x1ff
+swctrlmapext_2g=0x00000000,0x00000000,0x00000000,0x000000,0x003
+swctrlmap_5g=0x00002000,0x00000040,0x00002000,0x000000,0x1ef
+swctrlmapext_5g=0x00000000,0x00000000,0x00000000,0x000000,0x003
+fem_table_init_val=0x00000008,0x00002000
+fem_table_init_val_ext=0x00000000,0x00000000
+rssi_delta_2g_c0=0,0,0,0
+rssi_delta_2g_c1=-1,0,-1,0
+rssi_delta_5gl_c0=-1,2,-2,2,0,0
+rssi_delta_5gl_c1=0,2,-2,2,1,1
+rssi_delta_5gml_c0=-1,2,-2,2,-2,5
+rssi_delta_5gmu_c0=-2,2,-3,2,0,5
+rssi_delta_5gh_c0=-2,-2,-3,0,0,2
+rssi_delta_5gh_c1=-1,1,-2,0,0,1
+rssi_delta_5gml_c1=-1,1,-2,2,-2,3
+rssi_delta_5gmu_c1=-1,1,-2,2,0,3
+fuart_pup_rx_cts=1
+seci_uart_gpios=0x08090a0b
+module_type=0x0
+muxenab=1
+adjpaldo=0x4
+
+#power per rate back off at high temperature
+#ppr_hitemp_offset=75
+#cckbw202gpo_ht=0x3344
+#ofdmbw202gpo_ht=0x24567777
+#mcsbw202gpo_ht=0x33666677
+#ofdmbw205gpo_ht=0x11122222
+#mcsbw205gpo_ht=0x55222222
+#mcsbw405gpo_ht=0x65444444
+#mcsbw805gpo_ht=0x66642211
+
+
+#avs_enab=1
+
+# 11b CDD mode
+# 0: enabled  /  1: disabled, Antenna diversity
+cck_onecore_tx=1
+
+# BTC setting
+btcdyn_flags=3
+btcdyn_dflt_dsns_level=0
+btcdyn_low_dsns_level=0
+btcdyn_mid_dsns_level=14
+btcdyn_high_dsns_level=11
+btcdyn_default_btc_mode=4
+btcdyn_dsns_rows=4
+btcdyn_dsns_row0=4,8,0,-61,-67
+btcdyn_dsns_row1=4,0,0,-65,-67
+btcdyn_dsns_row2=5,4,0,-63,-67
+btcdyn_dsns_row3=5,0,0,-65,-67
+btc_mode=4
+
+
+powoffstemprange=0,70
+powoffs2gtla0=-2,-2,-2,-2,-1,-1,-1,-1,-2,-2,-2,-2,-3,-3
+powoffs2gtla1=-3,-3,-3,-3,-3,-3,-3,-2,-2,-2,-1,-1,-1,-1
+powoffs2gtna0=0,0,0,0,0,0,-2,0,0,0,0,0,0,0
+powoffs2gtna1=0,0,0,0,0,0,0,0,0,0,0,0,0,0
+powoffs2gtha0=2,2,2,2,2,2,2,2,2,1,1,1,1,1
+powoffs2gtha1=2,2,2,2,1,1,1,1,1,1,1,1,0,0
+
+powoffstemprange5g=0,70
+powoffs5gtla0=0x2121
+powoffs5gtla1=0x2211
+powoffs5gtna0=0x0000
+powoffs5gtna1=0x0000
+powoffs5gtha0=0xfeff
+powoffs5gtha1=0xefff
+
+ed_thresh2g=-63
+ed_thresh5g=-63
+
+##### eps_offset #########
+eps_shift0=-2,-2,-3,-1,-2,-3,-1,-1
+eps_shift1=-2,-2,-2,-2,-2,-2,-1,-1
+eps_shift2=-1,-1,-1,-1,-1,-1
+
+## FCC power limit on ch12/13  FCC power limit in quarter dB
+#fccpwrch12=40
+#fccpwrch13=1
+#fccpwroverride=0
+#desense_mode=7	no corresponding code at DINGO & IGUANA
+#bphy_predet_en=2 no corresponding code at DINGO & IGUANA

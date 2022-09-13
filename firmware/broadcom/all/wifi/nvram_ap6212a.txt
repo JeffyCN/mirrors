@@ -1,1 +1,0 @@
-../../AP6212A1/wifi/nvram_ap6212a.txt

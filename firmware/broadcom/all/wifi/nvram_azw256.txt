@@ -1,1 +1,0 @@
-../../AW-CM256/wifi/nvram_azw256.txt

@@ -1,1 +1,0 @@
-../../AP6236/wifi/nvram_ap6236.txt

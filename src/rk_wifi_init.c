@@ -105,23 +105,22 @@ static wifi_device supported_wifi_devices[] = {
 
 // TODO: use new ANDROID_SOCKET mechanism, once support for multiple
 // sockets is in
-#define RTL8188EU_DRIVER_MODULE_PATH "/system/lib/modules/8188eu.ko"
-#define RTL8723BU_DRIVER_MODULE_PATH "/system/lib/modules/8723bu.ko"
-#define RTL8723BS_DRIVER_MODULE_PATH "/system/lib/modules/8723bs.ko"
-#define RTL8723BS_VQ0_DRIVER_MODULE_PATH "/system/lib/modules/8723bs-vq0.ko"
-#define RTL8723CS_DRIVER_MODULE_PATH "/system/lib/modules/8723cs.ko"
-#define RTL8723DS_DRIVER_MODULE_PATH "/system/lib/modules/8723ds.ko"
-#define RTL8188FU_DRIVER_MODULE_PATH "/system/lib/modules/8188fu.ko"
-#define RTL8822BU_DRIVER_MODULE_PATH "/system/lib/modules/8822bu.ko"
-#define RTL8822BS_DRIVER_MODULE_PATH "/system/lib/modules/8822bs.ko"
-#define RTL8189ES_DRIVER_MODULE_PATH "/system/lib/modules/8189es.ko"
-#define RTL8189FS_DRIVER_MODULE_PATH "/system/lib/modules/8189fs.ko"
-#define RTL8192DU_DRIVER_MODULE_PATH "/system/lib/modules/8192du.ko"
-#define RTL8812AU_DRIVER_MODULE_PATH "/system/lib/modules/8812au.ko"
-#define RTL8822BE_DRIVER_MODULE_PATH "/system/lib/modules/8822be.ko"
-#define RTL8822CE_DRIVER_MODULE_PATH "/system/lib/modules/8822ce.ko"
+#define RTL8188EU_DRIVER_MODULE_PATH "/system/lib/modules/RTL8188EU.ko"
+#define RTL8723BU_DRIVER_MODULE_PATH "/system/lib/modules/RTL8723BU.ko"
+#define RTL8723BS_DRIVER_MODULE_PATH "/system/lib/modules/RTL8723BS.ko"
+#define RTL8723CS_DRIVER_MODULE_PATH "/system/lib/modules/RTL8723CS.ko"
+#define RTL8723DS_DRIVER_MODULE_PATH "/system/lib/modules/RTL8723DS.ko"
+#define RTL8188FU_DRIVER_MODULE_PATH "/system/lib/modules/RTL8188FU.ko"
+#define RTL8822BU_DRIVER_MODULE_PATH "/system/lib/modules/RTL8822BU.ko"
+#define RTL8822BS_DRIVER_MODULE_PATH "/system/lib/modules/RTL8822BS.ko"
+#define RTL8189ES_DRIVER_MODULE_PATH "/system/lib/modules/RTL8189ES.ko"
+#define RTL8189FS_DRIVER_MODULE_PATH "/system/lib/modules/RTL8189FS.ko"
+#define RTL8192DU_DRIVER_MODULE_PATH "/system/lib/modules/RTL8192DU.ko"
+#define RTL8812AU_DRIVER_MODULE_PATH "/system/lib/modules/RTL8812AU.ko"
+#define RTL8822BE_DRIVER_MODULE_PATH "/system/lib/modules/RTL8822BE.ko"
+#define RTL8822CE_DRIVER_MODULE_PATH "/system/lib/modules/RTL8822CE.ko"
 #define BCM_DRIVER_MODULE_PATH       "/system/lib/modules/bcmdhd.ko"
-#define BCM_PCIE_DRIVER_MODULE_PATH   "/system/lib/modules/bcmdhd.ko"
+#define BCM_PCIE_DRIVER_MODULE_PATH   "/system/lib/modules/bcmdhd_pcie.ko"
 #define DRIVER_MODULE_PATH_UNKNOW    ""
 
 #define RTL8822BS_DRIVER_MODULE_NAME "8822bs"
@@ -354,6 +353,7 @@ static int create_bt_test_file_for_brcm(void)
 	fp = fopen(BT_TEST_FILE, "wt+");
 
 	if (fp != 0) {
+		fputs("killall brcm_patchram_plus1\n", fp);
 		fputs("echo 0 > /sys/class/rfkill/rfkill0/state\n", fp);
 		fputs("sleep 1\n", fp);
 		fputs("echo 1 > /sys/class/rfkill/rfkill0/state\n", fp);
@@ -466,6 +466,7 @@ int wifibt_load_driver(void)
 	//bt init
 	if (strstr(recoginze_wifi_chip , "AP")) {
 		create_bt_test_file_for_brcm();
+		system("killall brcm_patchram_plus1");
 		memset(temp, 0, 256);
 		system("echo 0 > /sys/class/rfkill/rfkill0/state");
 		usleep(5000);
@@ -504,7 +505,7 @@ int wifibt_load_driver(void)
 
 int main(int argc, char *argv[])
 {
-	pr_info("Rockchip Linux WifiBt init (ver 1.0)\n");
+	pr_info("Rockchip Linux WifiBt init (ver 2.0)\n");
 
 	strncpy(bt_tty_dev, argv[1], 10);
 	pr_info("BT TTY: %s \n", bt_tty_dev);
