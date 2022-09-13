@@ -35,9 +35,21 @@ config SW_SYNC
 	  WARNING: improper use of this can result in deadlocking kernel
 	  drivers from userspace. Intended for test and debug only.
 
+menuconfig DMABUF_HEAPS
+	bool "DMA-BUF Userland Memory Heaps"
+	select DMA_SHARED_BUFFER
+	help
+	  Choose this option to enable the DMA-BUF userland memory heaps.
+	  This options creates per heap chardevs in /dev/dma_heap/ which
+	  allows userspace to allocate dma-bufs that can be shared
+	  between drivers.
+
 config DMABUF_PAGE_POOL
 	bool "DMA-BUF page-pool library"
+	depends on !DMABUF_HEAPS
 	help
 	  Choose this option to enable the DMA-BUF page-pool library.
+
+source "drivers/dma-buf/heaps/Kconfig"
 
 endmenu
