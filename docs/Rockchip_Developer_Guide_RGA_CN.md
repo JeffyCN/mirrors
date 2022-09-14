@@ -627,12 +627,26 @@ RGA模块支持库为librga.so，通过对图像缓冲区结构体struct rga_inf
 - **impyramind**： 调用RGA实现快速图像金字塔操作。
 - **imcrop**： 调用RGA实现快速图像裁剪操作。
 - **imcropTask**： 向RGA图像任务中添加快速图像裁剪操作。
+- **imtranslate**： 调用RGA实现快速图像平移操作。
+- **imtranslateTask**： 向RGA图像任务中添加快速图像平移操作。
+- **imcvtcolor**： 调用RGA实现快速图像格式转换。
+- **imcvtcolorTask**： 向RGA图像任务中添加快速图像格式转换。
 - **imrotate**： 调用RGA实现快速图像旋转操作。
 - **imrotateTask**： 向RGA图像任务中添加快速图像旋转操作。
 - **imflip**： 调用RGA实现快速图像翻转操作。
 - **imflipTask**： 向RGA图像任务中添加快速图像翻转操作。
-- **imtranslate**： 调用RGA实现快速图像平移操作。
-- **imtranslateTask**： 向RGA图像任务中添加快速图像平移操作。
+- **imblend**： 调用RGA实现双通道快速图像合成操作。
+- **imblendTask**： 向RGA图像任务中添加双通道快速图像合成操作。
+- **imcomposite**： 调用RGA实现三通道快速图像合成操作。
+- **imcompositeTask**： 向RGA图像任务中添加三通道快速图像合成操作。
+- **imcolorkey**： 调用RGA实现快速图像颜色键操作。
+- **imcolorkeyTask**： 向RGA图像任务中添加快速图像颜色键操作。
+- **imosd**：调用RGA实现快速图像OSD字幕叠加。
+- **imosdTask**：向RGA图像任务中添加快速图像OSD字幕叠加。
+- **imquantize**： 调用RGA实现快速图像运算点前处理（量化）操作。
+- **imquantizeTask**： 向RGA图像任务中添加快速图像运算点前处理（量化）操作。
+- **imrop**： 调用RGA实现快速图像光栅操作。
+- **imropTask**： 向RGA图像任务中添加快速图像光栅操作。
 - **imfill**： 调用RGA实现快速图像填充操作。
 - **imfillArray**： 调用RGA实现多组快速图像填充操作。
 - **imfillTask**： 向RGA图像任务中添加快速图像填充操作。
@@ -646,20 +660,6 @@ RGA模块支持库为librga.so，通过对图像缓冲区结构体struct rga_inf
 - **immosaicArray**：调用RGA实现快速图像马赛克遮盖。
 - **immosaicTask**：向RGA图像任务中添加快速图像马赛克遮盖。
 - **immosaicTaskArray**：向RGA图像任务中添加快速图像马赛克遮盖。
-- **imblend**： 调用RGA实现双通道快速图像合成操作。
-- **imblendTask**： 向RGA图像任务中添加双通道快速图像合成操作。
-- **imcomposite**： 调用RGA实现三通道快速图像合成操作。
-- **imcompositeTask**： 向RGA图像任务中添加三通道快速图像合成操作。
-- **imcolorkey**： 调用RGA实现快速图像颜色键操作。
-- **imcolorkeyTask**： 向RGA图像任务中添加快速图像颜色键操作。
-- **imosd**：调用RGA实现快速图像OSD字幕叠加。
-- **imosdTask**：向RGA图像任务中添加快速图像OSD字幕叠加。
-- **imcvtcolor**： 调用RGA实现快速图像格式转换。
-- **imcvtcolorTask**： 向RGA图像任务中添加快速图像格式转换。
-- **imquantize**： 调用RGA实现快速图像运算点前处理（量化）操作。
-- **imquantizeTask**： 向RGA图像任务中添加快速图像运算点前处理（量化）操作。
-- **imrop**： 调用RGA实现快速图像光栅操作。
-- **imropTask**： 向RGA图像任务中添加快速图像光栅操作。
 - **improcess**： 调用RGA实现快速图像复合处理操作。
 - **improcessTask**： 向RGA图像任务中添加快速图像复合处理操作。
 - **imcheck**： 校验参数是否合法，以及当前硬件是否支持该操作。
@@ -1042,6 +1042,120 @@ IM_API IM_STATUS imcropTask(im_job_handle_t job_handle,
 
 
 
+### 图像平移
+
+------
+
+#### imtranslate
+
+```C++
+IM_STATUS imtranslate(const rga_buffer_t src,
+                      rga_buffer_t dst,
+                      int x,
+                      int y,
+                      int sync = 1,
+                      int *release_fence_fd = NULL);
+```
+
+> 对图像做平移操作，移动到（x, y）坐标位置，src和dst 宽高须一致，超出部分会被裁剪。
+
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]**input image                                    |
+| dst              | **[required]** output image                                  |
+| x                | **[required]** horizontal translation                        |
+| y                | **[required]** vertical translation                          |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+#### imtranslateTask
+
+```C++
+IM_API IM_STATUS imtranslateTask(im_job_handle_t job_handle,
+                                 const rga_buffer_t src,
+                                 rga_buffer_t dst,
+                                 int x,
+                                 int y);
+```
+
+> 通过job_handle向指定的任务中添加图像平移操作，用法和imtranslate一致。
+
+| Parameter  | Description                           |
+| ---------- | ------------------------------------- |
+| job_handle | **[required]** job handle             |
+| src        | **[required]**input image             |
+| dst        | **[required]** output image           |
+| x          | **[required]** horizontal translation |
+| y          | **[required]** vertical translation   |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+### 图像格式转换
+
+------
+
+#### imcvtcolor
+
+```C++
+IM_STATUS imcvtcolor(rga_buffer_t src,
+                     rga_buffer_t dst,
+                     int sfmt,
+                     int dfmt,
+                     int mode = IM_COLOR_SPACE_DEFAULT,
+                     int sync = 1,
+                     int *release_fence_fd = NULL);
+```
+
+> 格式转换功能，具体格式支持根据soc有不同请查阅**图像格式支持**章节。
+>
+> 格式可以通过rga_buffer_t 设置，也可以通过sfmt/dfmt分别配置源图像及输出图像格式，当涉及YUV/RGB色域转换时可以通过mode配置转换的色域，默认按照BT.601 limit range进行转换。
+
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| sfmt             | **[optional]** source image format                           |
+| dfmt             | **[optional]** destination image format                      |
+| Mode             | **[optional]** color space mode:<br/>IM_YUV_TO_RGB_BT601_LIMIT<br/>IM_YUV_TO_RGB_BT601_FULL<br/>IM_YUV_TO_RGB_BT709_LIMIT<br/>IM_RGB_TO_YUV_BT601_LIMIT<br/>IM_RGB_TO_YUV_BT601_FULL<br/>IM_RGB_TO_YUV_BT709_LIMIT |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
+#### imcvtcolorTask
+
+```C++
+IM_API IM_STATUS imcvtcolorTask(im_job_handle_t job_handle,
+                                rga_buffer_t src,
+                                rga_buffer_t dst,
+                                int sfmt,
+                                int dfmt,
+                                int mode = IM_COLOR_SPACE_DEFAULT);
+```
+
+> 通过job_handle向指定的任务中添加图像平移操作，用法和imcvtcolor一致。
+
+| parameter  | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| job_handle | **[required]** job handle                                    |
+| src        | **[required]** input image                                   |
+| dst        | **[required]** output image                                  |
+| sfmt       | **[optional]** source image format                           |
+| dfmt       | **[optional]** destination image format                      |
+| Mode       | **[optional]** color space mode:<br/>IM_YUV_TO_RGB_BT601_LIMIT<br/>IM_YUV_TO_RGB_BT601_FULL<br/>IM_YUV_TO_RGB_BT709_LIMIT<br/>IM_RGB_TO_YUV_BT601_LIMIT<br/>IM_RGB_TO_YUV_BT601_FULL<br/>IM_RGB_TO_YUV_BT709_LIMIT |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
 ### 图像旋转
 
 ------
@@ -1143,29 +1257,88 @@ IM_API IM_STATUS imflipTask(im_job_handle_t job_handle,
 
 
 
-### 图像平移
+### 图像合成
 
 ------
 
-#### imtranslate
+#### imblend/imcomposite
 
-```C++
-IM_STATUS imtranslate(const rga_buffer_t src,
-                      rga_buffer_t dst,
-                      int x,
-                      int y,
+```c++
+IM_STATUS imblend(const rga_buffer_t fg_image,
+                  rga_buffer_t bg_image,
+                  int mode = IM_ALPHA_BLEND_SRC_OVER,
+                  int sync = 1,
+                  int *release_fence_fd = NULL);
+```
+
+> RGA使用A+B -> B 的图像双通道合成模式， 将前景图像（srcA通道）与背景图像（dst通道）根据配置的混合模型执行对应的Alpha叠加计算，并将合成结果输出至dst通道上，当没有配置混合模式时则默认设置为src-over模式。
+
+```c++
+IM_STATUS imcomposite(const rga_buffer_t fg_image,
+                      const rga_buffer_t bg_image,
+                      rga_buffer_t output_image,
+                      int mode = IM_ALPHA_BLEND_SRC_OVER,
                       int sync = 1,
                       int *release_fence_fd = NULL);
 ```
 
-> 对图像做平移操作，移动到（x, y）坐标位置，src和dst 宽高须一致，超出部分会被裁剪。
+> RGA使用A+B -> C 的图像三通道合成模式，将前景图像（srcA通道）与背景图像（srcB通道）根据配置的混合模型执行对应的Alpha叠加计算，并将合成结果输出至dst通道上，当没有配置混合模式时则默认设置为src-over模式。
+
+两种图像合成模式中mode 可以配置不同的**Porter-Duff混合模型**：
+
+> 说明Porter-Duff混合模型前，先做出如下定义：
+>
+> - S -**标识两个混合图像中的源图像**，即前景图像，为souce的缩写。
+> - D -**标识两个混合图像中的目标图像**，即背景图像，为destination的缩写。
+> - R -**标识两个图像混合的结果**，为result的缩写。
+> - c -**标识像素的颜色**，即（RGBA）的RGB部分，描述图像本身色彩，为color的缩写。（**注意**，Porter-Duff混合模型中的色彩值（RGB）均为左乘后的结果，即原始色彩与透明度的乘积，如色彩值未左乘则需要进行预乘（Xc = Xc * Xa）操作。）
+> - a -**标识像素的透明度**，即（RGBA）的A部分，描述图像本身的透明度，为Alpha的缩写。
+> - f -**标识作用于C或者A上的因子**，为factor的缩写。
+>
+> Porter-Duff混合模型的核心公式如下：
+>
+> Rc = Sc * Sf + Dc * Df;
+>
+> 即： 结果色 = 源色彩 * 源因子 + 目标色彩 * 目标因子。
+>
+> Ra = Sa * Sf + Da * Df;
+>
+> 即： 结果透明度 = 源透明度 * 源因子 + 目标透明度 * 目标因子。
+
+RGA支持以下几种混合模型：
+
+> SRC:
+>
+> ​		Sf = 1， Df = 0；
+>
+> ​		[Rc，Ra] = [Sc，Sa]；
+>
+> DST:
+>
+> ​		Sf = 0， Df = 1；
+>
+> ​		[Rc，Ra] = [Dc，Da]；
+>
+> SRC_OVER：
+>
+> ​		Sf = 1， Df = （1 - Sa）；
+>
+> ​		[Rc，Ra] = [ Sc + (1 - Sa) * Dc， Sa + (1 - Sa) * Da ]；
+>
+> DST_OVER:
+>
+> ​		Sf = (1 - Da) ， Df = 1；
+>
+> ​		[Rc，Ra] = [ Sc * (1 - Da)  + Dc， Sa * (1 - Da) + Da ] ；
+
+【注意】图像合成模式不支持YUV格式之间合成，imblend函数dst图像不支持YUV格式，imcomposite函数srcB图像不支持YUV格式。
 
 | Parameter        | Description                                                  |
 | ---------------- | ------------------------------------------------------------ |
-| src              | **[required]**input image                                    |
-| dst              | **[required]** output image                                  |
-| x                | **[required]** horizontal translation                        |
-| y                | **[required]** vertical translation                          |
+| fg_image         | **[required]** foreground image                              |
+| bg_image         | **[required]** background image, when A+B->B it is also the output destination image. |
+| output_image     | **[required]** output destination image.                     |
+| mode             | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC —— SRC模式<br/>IM_ALPHA_BLEND_DST —— DST模式  <br/>IM_ALPHA_BLEND_SRC_OVER —— SRC OVER模式<br/>IM_ALPHA_BLEND_DST_OVER —— DST OVER模式<br />IM_ALPHA_BLEND_PRE_MUL —— 预乘使能，当需要预乘时须将该标识与其他模式标识进行或处理，再赋值给mode |
 | sync             | **[optional]** wait until operation complete                 |
 | release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
@@ -1173,25 +1346,271 @@ IM_STATUS imtranslate(const rga_buffer_t src,
 
 
 
-#### imtranslateTask
+#### imblendTask/imcompositeTask
 
-```C++
-IM_API IM_STATUS imtranslateTask(im_job_handle_t job_handle,
-                                 const rga_buffer_t src,
-                                 rga_buffer_t dst,
-                                 int x,
-                                 int y);
+```c++
+IM_API IM_STATUS imblendTask(im_job_handle_t job_handle,
+                             const rga_buffer_t fg_image,
+                             rga_buffer_t bg_image,
+                             int mode = IM_ALPHA_BLEND_SRC_OVER);
 ```
 
-> 通过job_handle向指定的任务中添加图像平移操作，用法和imtranslate一致。
+> 通过job_handle向指定的任务中添加A+B -> B模式的图像合成操作，用法和imblend一致，当没有配置混合模式时则默认设置为src-over模式。
 
-| Parameter  | Description                           |
-| ---------- | ------------------------------------- |
-| job_handle | **[required]** job handle             |
-| src        | **[required]**input image             |
-| dst        | **[required]** output image           |
-| x          | **[required]** horizontal translation |
-| y          | **[required]** vertical translation   |
+```c++
+IM_API IM_STATUS imcompositeTask(im_job_handle_t job_handle,
+                                 const rga_buffer_t fg_image,
+                                 const rga_buffer_t bg_image,
+                                 rga_buffer_t output_image,
+                                 int mode = IM_ALPHA_BLEND_SRC_OVER);
+```
+
+> 通过job_handle向指定的任务中添加A+B -> C模式的图像合成操作，用法和imcomposite一致，当没有配置混合模式时则默认设置为src-over模式。
+
+【注意】图像合成模式不支持YUV格式之间合成，imblend函数dst图像不支持YUV格式，imcomposite函数srcB图像不支持YUV格式。
+
+| Parameter    | Description                                                  |
+| ------------ | ------------------------------------------------------------ |
+| job_handle   | **[required]** job handle                                    |
+| fg_image     | **[required]** foreground image                              |
+| bg_image     | **[required]** background image, when A+B->B it is also the output destination image. |
+| output_image | **[required]** output destination image.                     |
+| mode         | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC —— SRC模式<br/>IM_ALPHA_BLEND_DST —— DST模式  <br/>IM_ALPHA_BLEND_SRC_OVER —— SRC OVER模式<br/>IM_ALPHA_BLEND_DST_OVER —— DST OVER模式<br />IM_ALPHA_BLEND_PRE_MUL —— 预乘使能，当需要预乘时须将该标识与其他模式标识进行或处理，再赋值给mode |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+### 色键（Color Key）
+
+------
+
+#### imcolorkey
+
+```C++
+IM_STATUS imcolorkey(const rga_buffer_t src,
+                     rga_buffer_t dst,
+                     im_colorkey_range range,
+                     int mode = IM_ALPHA_COLORKEY_NORMAL,
+                     int sync = 1,
+                     int *release_fence_fd = NULL);
+```
+
+> Color Key技术是对源图像进行预处理，将符合色键过滤条件的像素的alpha分量置零，其中所述色键过滤条件为非透明的颜色值，并将预处理后的源图像与目标图像进行alpha混合模式。
+>
+> 该模式仅支持在源图像（src）区域的图像上针对设定的颜色范围实现Color Key功能，并叠加在目标图像（dst）区域上。
+
+> IM_ALPHA_COLORKEY_NORMAL为正常模式，即在设定的颜色范围内的颜色作为过滤条件，在该色彩范围内的像素点Alpha分量清零，IM_ALPHA_COLORKEY_INVERTED则反之，当没有配置模式时则默认设置为IM_ALPHA_COLORKEY_NORMAL模式。
+
+| **Parameters** | **Range**        | **Description**                           |
+| -------------- | ---------------- | ----------------------------------------- |
+| max            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最大值，排列为ABGR |
+| min            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最小值，排列为ABGR |
+
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| range            | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
+| Mode             | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
+#### imcolorkeyTask
+
+```C++
+IM_API IM_STATUS imcolorkeyTask(im_job_handle_t job_handle,
+                                const rga_buffer_t fg_image,
+                                rga_buffer_t bg_image,
+                                im_colorkey_range range,
+                                int mode = IM_ALPHA_COLORKEY_NORMAL);
+```
+
+> 通过job_handle向指定的任务中添加图像Color Key操作，用法和imcolorkey一致，当没有配置模式时则默认设置为IM_ALPHA_COLORKEY_NORMAL模式。
+
+| **Parameters** | **Range**        | **Description**                           |
+| -------------- | ---------------- | ----------------------------------------- |
+| max            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最大值，排列为ABGR |
+| min            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最小值，排列为ABGR |
+
+| parameter  | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| job_handle | **[required]** job handle                                    |
+| src        | **[required]** input image                                   |
+| dst        | **[required]** output image                                  |
+| range      | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
+| Mode       | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
+### 图像字幕叠加（OSD）
+
+------
+
+#### imosd
+
+```c++
+IM_API IM_STATUS imosd(const rga_buffer_t osd,
+                       const rga_buffer_t bg_image,
+                       const im_rect osd_rect,
+                       im_osd_t *osd_config,
+                       int sync = 1,
+                       int *release_fence_fd = NULL);
+```
+
+> OSD（On-Screen-Display）功能，可以将文字信息叠加在视频图片上，并对字体进行亮度统计、自动反色功能。
+
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| OSD              | **[required]** osd block image                               |
+| bg_image         | **[required]** output image                                  |
+| osd_rect         | **[required]** image region to OSD                           |
+| osd_config       | **[required]** OSD function config                           |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
+#### imosdTask
+
+```c++
+IM_API IM_STATUS imosdTask(im_job_handle_t job_handle,
+                           const rga_buffer_t osd,
+                           const rga_buffer_t bg_image,
+                           const im_rect osd_rect,
+                           im_osd_t *osd_config);
+```
+
+> 通过job_handle向指定的任务中添加图像OSD操作，用法和imosd一致。
+
+| parameter  | Description                        |
+| ---------- | ---------------------------------- |
+| job_handle | **[required]** job handle          |
+| OSD        | **[required]** osd block image     |
+| dst        | **[required]** output image        |
+| osd_rect   | **[required]** image region to OSD |
+| osd_config | **[required]** OSD function config |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
+### NN运算点前处理（量化）
+
+------
+
+#### imquantize
+
+```c++
+IM_STATUS imquantize(const rga_buffer_t src,
+                     rga_buffer_t dst,
+                     rga_nn_t nn_info,
+                     int sync = 1,
+                     int *release_fence_fd = NULL);
+```
+
+> 目前仅RV1126 / RV1109上支持。NN运算点前处理，图像RGB 三个通道可以分开单独配置offset以及scale。
+
+公式：
+
+```
+dst = 【(src + offset) * scale 】
+```
+
+参数范围：
+
+| **Parameters** | **Range**  | **Description**                                              |
+| -------------- | ---------- | ------------------------------------------------------------ |
+| **scale**      | 0 ~ 3.99   | 10bit，从左往右，高位2个bit 表示整数部分，低位8bit表示小数部分 |
+| **offset**     | -255 ~ 255 | 9bit，从左往右，高位表示符号位，地位表示0～255的偏移量       |
+
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| nn_info          | **[required]** rga_nn_t结构体对RGB三个通道offset及scale进行单独配置<br />typedef struct rga_nn { <br/>  int nn_flag;<br/>  int scale_r;<br/>  int scale_g;<br/>  int scale_b;<br/>  int offset_r;<br/>  int offset_g;<br/>  int offset_b;<br/>} rga_nn_t; |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+#### imquantizeTask
+
+```c++
+IM_API IM_STATUS imquantizeTask(im_job_handle_t job_handle,
+                                const rga_buffer_t src,
+                                rga_buffer_t dst,
+                                im_nn_t nn_info);
+```
+
+> 通过job_handle向指定的任务中添加图像量化操作，用法和imquantize一致。
+
+| parameter  | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| job_handle | **[required]** job handle                                    |
+| src        | **[required]** input image                                   |
+| dst        | **[required]** output image                                  |
+| nn_info    | **[required]** rga_nn_t结构体对RGB三个通道offset及scale进行单独配置<br />typedef struct rga_nn { <br/>  int nn_flag;<br/>  int scale_r;<br/>  int scale_g;<br/>  int scale_b;<br/>  int offset_r;<br/>  int offset_g;<br/>  int offset_b;<br/>} rga_nn_t; |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+### 图像光栅操作 ROP
+
+------
+
+#### imrop
+
+```C++
+IM_STATUS imrop(const rga_buffer_t src,
+                rga_buffer_t dst,
+                int rop_code,
+                int sync = 1,
+                int *release_fence_fd = NULL);
+```
+
+> 对两个图形做ROP运算
+
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| rop_code         | **[required]** rop code mode <br /><br/> IM_ROP_AND : dst = dst **AND** src;<br/> IM_ROP_OR : dst = dst **OR** src <br/> IM_ROP_NOT_DST : dst = **NOT** dst<br/> IM_ROP_NOT_SRC : dst = **NOT** src<br/> IM_ROP_XOR : dst = dst **XOR** src<br/> IM_ROP_NOT_XOR : dst = **NOT** (dst **XOR** src)<br/> |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+#### imropTask
+
+```C++
+IM_API IM_STATUS imropTask(im_job_handle_t job_handle,
+                           const rga_buffer_t src,
+                           rga_buffer_t dst,
+                           int rop_code);
+```
+
+> 通过job_handle向指定的任务中添加图像ROP运算操作，用法和imrop一致。
+
+| parameter  | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| job_handle | **[required]** job handle                                    |
+| src        | **[required]** input image                                   |
+| dst        | **[required]** output image                                  |
+| rop_code   | **[required]** rop code mode <br /><br/> IM_ROP_AND : dst = dst **AND** src;<br/> IM_ROP_OR : dst = dst **OR** src <br/> IM_ROP_NOT_DST : dst = **NOT** dst<br/> IM_ROP_NOT_SRC : dst = **NOT** src<br/> IM_ROP_XOR : dst = dst **XOR** src<br/> IM_ROP_NOT_XOR : dst = **NOT** (dst **XOR** src) |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 
@@ -1558,426 +1977,6 @@ IM_API IM_STATUS immosaicTaskArray(im_job_handle_t job_handle,
 | rect_array  | **[required]** image region array_ptr to mosaic              |
 | array_size  | **[required]** size of region arrays.                        |
 | mosaic_mode | **[required]** set mosaic mode<br />    IM_MOSAIC_8<br/>    IM_MOSAIC_16<br/>    IM_MOSAIC_32<br/>    IM_MOSAIC_64<br/>    IM_MOSAIC_128 |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-### 图像合成
-
-------
-
-#### imblend/imcomposite
-
-```c++
-IM_STATUS imblend(const rga_buffer_t fg_image,
-                  rga_buffer_t bg_image,
-                  int mode = IM_ALPHA_BLEND_SRC_OVER,
-                  int sync = 1,
-                  int *release_fence_fd = NULL);
-```
-
-> RGA使用A+B -> B 的图像双通道合成模式， 将前景图像（srcA通道）与背景图像（dst通道）根据配置的混合模型执行对应的Alpha叠加计算，并将合成结果输出至dst通道上，当没有配置混合模式时则默认设置为src-over模式。
-
-```c++
-IM_STATUS imcomposite(const rga_buffer_t fg_image,
-                      const rga_buffer_t bg_image,
-                      rga_buffer_t output_image,
-                      int mode = IM_ALPHA_BLEND_SRC_OVER,
-                      int sync = 1,
-                      int *release_fence_fd = NULL);
-```
-
-> RGA使用A+B -> C 的图像三通道合成模式，将前景图像（srcA通道）与背景图像（srcB通道）根据配置的混合模型执行对应的Alpha叠加计算，并将合成结果输出至dst通道上，当没有配置混合模式时则默认设置为src-over模式。
-
-两种图像合成模式中mode 可以配置不同的**Porter-Duff混合模型**：
-
-> 说明Porter-Duff混合模型前，先做出如下定义：
->
-> - S -**标识两个混合图像中的源图像**，即前景图像，为souce的缩写。
-> - D -**标识两个混合图像中的目标图像**，即背景图像，为destination的缩写。
-> - R -**标识两个图像混合的结果**，为result的缩写。
-> - c -**标识像素的颜色**，即（RGBA）的RGB部分，描述图像本身色彩，为color的缩写。（**注意**，Porter-Duff混合模型中的色彩值（RGB）均为左乘后的结果，即原始色彩与透明度的乘积，如色彩值未左乘则需要进行预乘（Xc = Xc * Xa）操作。）
-> - a -**标识像素的透明度**，即（RGBA）的A部分，描述图像本身的透明度，为Alpha的缩写。
-> - f -**标识作用于C或者A上的因子**，为factor的缩写。
->
-> Porter-Duff混合模型的核心公式如下：
->
-> Rc = Sc * Sf + Dc * Df;
->
-> 即： 结果色 = 源色彩 * 源因子 + 目标色彩 * 目标因子。
->
-> Ra = Sa * Sf + Da * Df;
->
-> 即： 结果透明度 = 源透明度 * 源因子 + 目标透明度 * 目标因子。
-
-RGA支持以下几种混合模型：
-
-> SRC:
->
-> ​		Sf = 1， Df = 0；
->
-> ​		[Rc，Ra] = [Sc，Sa]；
->
-> DST:
->
-> ​		Sf = 0， Df = 1；
->
-> ​		[Rc，Ra] = [Dc，Da]；
->
-> SRC_OVER：
->
-> ​		Sf = 1， Df = （1 - Sa）；
->
-> ​		[Rc，Ra] = [ Sc + (1 - Sa) * Dc， Sa + (1 - Sa) * Da ]；
->
-> DST_OVER:
->
-> ​		Sf = (1 - Da) ， Df = 1；
->
-> ​		[Rc，Ra] = [ Sc * (1 - Da)  + Dc， Sa * (1 - Da) + Da ] ；
-
-【注意】图像合成模式不支持YUV格式之间合成，imblend函数dst图像不支持YUV格式，imcomposite函数srcB图像不支持YUV格式。
-
-| Parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| fg_image         | **[required]** foreground image                              |
-| bg_image         | **[required]** background image, when A+B->B it is also the output destination image. |
-| output_image     | **[required]** output destination image.                     |
-| mode             | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC —— SRC模式<br/>IM_ALPHA_BLEND_DST —— DST模式  <br/>IM_ALPHA_BLEND_SRC_OVER —— SRC OVER模式<br/>IM_ALPHA_BLEND_DST_OVER —— DST OVER模式<br />IM_ALPHA_BLEND_PRE_MUL —— 预乘使能，当需要预乘时须将该标识与其他模式标识进行或处理，再赋值给mode |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-#### imblendTask/imcompositeTask
-
-```c++
-IM_API IM_STATUS imblendTask(im_job_handle_t job_handle,
-                             const rga_buffer_t fg_image,
-                             rga_buffer_t bg_image,
-                             int mode = IM_ALPHA_BLEND_SRC_OVER);
-```
-
-> 通过job_handle向指定的任务中添加A+B -> B模式的图像合成操作，用法和imblend一致，当没有配置混合模式时则默认设置为src-over模式。
-
-```c++
-IM_API IM_STATUS imcompositeTask(im_job_handle_t job_handle,
-                                 const rga_buffer_t fg_image,
-                                 const rga_buffer_t bg_image,
-                                 rga_buffer_t output_image,
-                                 int mode = IM_ALPHA_BLEND_SRC_OVER);
-```
-
-> 通过job_handle向指定的任务中添加A+B -> C模式的图像合成操作，用法和imcomposite一致，当没有配置混合模式时则默认设置为src-over模式。
-
-【注意】图像合成模式不支持YUV格式之间合成，imblend函数dst图像不支持YUV格式，imcomposite函数srcB图像不支持YUV格式。
-
-| Parameter    | Description                                                  |
-| ------------ | ------------------------------------------------------------ |
-| job_handle   | **[required]** job handle                                    |
-| fg_image     | **[required]** foreground image                              |
-| bg_image     | **[required]** background image, when A+B->B it is also the output destination image. |
-| output_image | **[required]** output destination image.                     |
-| mode         | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC —— SRC模式<br/>IM_ALPHA_BLEND_DST —— DST模式  <br/>IM_ALPHA_BLEND_SRC_OVER —— SRC OVER模式<br/>IM_ALPHA_BLEND_DST_OVER —— DST OVER模式<br />IM_ALPHA_BLEND_PRE_MUL —— 预乘使能，当需要预乘时须将该标识与其他模式标识进行或处理，再赋值给mode |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-### 色键（Color Key）
-
-------
-
-#### imcolorkey
-
-```C++
-IM_STATUS imcolorkey(const rga_buffer_t src,
-                     rga_buffer_t dst,
-                     im_colorkey_range range,
-                     int mode = IM_ALPHA_COLORKEY_NORMAL,
-                     int sync = 1,
-                     int *release_fence_fd = NULL);
-```
-
-> Color Key技术是对源图像进行预处理，将符合色键过滤条件的像素的alpha分量置零，其中所述色键过滤条件为非透明的颜色值，并将预处理后的源图像与目标图像进行alpha混合模式。
->
-> 该模式仅支持在源图像（src）区域的图像上针对设定的颜色范围实现Color Key功能，并叠加在目标图像（dst）区域上。
-
-> IM_ALPHA_COLORKEY_NORMAL为正常模式，即在设定的颜色范围内的颜色作为过滤条件，在该色彩范围内的像素点Alpha分量清零，IM_ALPHA_COLORKEY_INVERTED则反之，当没有配置模式时则默认设置为IM_ALPHA_COLORKEY_NORMAL模式。
-
-| **Parameters** | **Range**        | **Description**                           |
-| -------------- | ---------------- | ----------------------------------------- |
-| max            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最大值，排列为ABGR |
-| min            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最小值，排列为ABGR |
-
-| parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| src              | **[required]** input image                                   |
-| dst              | **[required]** output image                                  |
-| range            | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
-| Mode             | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-#### imcolorkeyTask
-
-```C++
-IM_API IM_STATUS imcolorkeyTask(im_job_handle_t job_handle,
-                                const rga_buffer_t fg_image,
-                                rga_buffer_t bg_image,
-                                im_colorkey_range range,
-                                int mode = IM_ALPHA_COLORKEY_NORMAL);
-```
-
-> 通过job_handle向指定的任务中添加图像Color Key操作，用法和imcolorkey一致，当没有配置模式时则默认设置为IM_ALPHA_COLORKEY_NORMAL模式。
->
-
-| **Parameters** | **Range**        | **Description**                           |
-| -------------- | ---------------- | ----------------------------------------- |
-| max            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最大值，排列为ABGR |
-| min            | 0x0 ~ 0xFFFFFFFF | 需要消去/抠取的颜色范围最小值，排列为ABGR |
-
-| parameter  | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| job_handle | **[required]** job handle                                    |
-| src        | **[required]** input image                                   |
-| dst        | **[required]** output image                                  |
-| range      | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
-| Mode       | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-### 图像字幕叠加（OSD）
-
-------
-
-#### imosd
-
-```c++
-IM_API IM_STATUS imosd(const rga_buffer_t osd,
-                       const rga_buffer_t bg_image,
-                       const im_rect osd_rect,
-                       im_osd_t *osd_config,
-                       int sync = 1,
-                       int *release_fence_fd = NULL);
-```
-
-> OSD（On-Screen-Display）功能，可以将文字信息叠加在视频图片上，并对字体进行亮度统计、自动反色功能。
-
-| parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| OSD              | **[required]** osd block image                               |
-| bg_image         | **[required]** output image                                  |
-| osd_rect         | **[required]** image region to OSD                           |
-| osd_config       | **[required]** OSD function config                           |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-#### imosdTask
-
-```c++
-IM_API IM_STATUS imosdTask(im_job_handle_t job_handle,
-                           const rga_buffer_t osd,
-                           const rga_buffer_t bg_image,
-                           const im_rect osd_rect,
-                           im_osd_t *osd_config);
-```
-
-> 通过job_handle向指定的任务中添加图像OSD操作，用法和imosd一致。
-
-| parameter  | Description                        |
-| ---------- | ---------------------------------- |
-| job_handle | **[required]** job handle          |
-| OSD        | **[required]** osd block image     |
-| dst        | **[required]** output image        |
-| osd_rect   | **[required]** image region to OSD |
-| osd_config | **[required]** OSD function config |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-### 图像格式转换
-
-------
-
-#### imcvtcolor
-
-```C++
-IM_STATUS imcvtcolor(rga_buffer_t src,
-                     rga_buffer_t dst,
-                     int sfmt,
-                     int dfmt,
-                     int mode = IM_COLOR_SPACE_DEFAULT,
-                     int sync = 1,
-                     int *release_fence_fd = NULL);
-```
-
-> 格式转换功能，具体格式支持根据soc有不同请查阅**图像格式支持**章节。
->
-> 格式可以通过rga_buffer_t 设置，也可以通过sfmt/dfmt分别配置源图像及输出图像格式，当涉及YUV/RGB色域转换时可以通过mode配置转换的色域，默认按照BT.601 limit range进行转换。
-
-| parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| src              | **[required]** input image                                   |
-| dst              | **[required]** output image                                  |
-| sfmt             | **[optional]** source image format                           |
-| dfmt             | **[optional]** destination image format                      |
-| Mode             | **[optional]** color space mode:<br/>IM_YUV_TO_RGB_BT601_LIMIT<br/>IM_YUV_TO_RGB_BT601_FULL<br/>IM_YUV_TO_RGB_BT709_LIMIT<br/>IM_RGB_TO_YUV_BT601_LIMIT<br/>IM_RGB_TO_YUV_BT601_FULL<br/>IM_RGB_TO_YUV_BT709_LIMIT |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-#### imcvtcolorTask
-
-```C++
-IM_API IM_STATUS imcvtcolorTask(im_job_handle_t job_handle,
-                                rga_buffer_t src,
-                                rga_buffer_t dst,
-                                int sfmt,
-                                int dfmt,
-                                int mode = IM_COLOR_SPACE_DEFAULT);
-```
-
-> 通过job_handle向指定的任务中添加图像平移操作，用法和imcvtcolor一致。
-
-| parameter  | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| job_handle | **[required]** job handle                                    |
-| src        | **[required]** input image                                   |
-| dst        | **[required]** output image                                  |
-| sfmt       | **[optional]** source image format                           |
-| dfmt       | **[optional]** destination image format                      |
-| Mode       | **[optional]** color space mode:<br/>IM_YUV_TO_RGB_BT601_LIMIT<br/>IM_YUV_TO_RGB_BT601_FULL<br/>IM_YUV_TO_RGB_BT709_LIMIT<br/>IM_RGB_TO_YUV_BT601_LIMIT<br/>IM_RGB_TO_YUV_BT601_FULL<br/>IM_RGB_TO_YUV_BT709_LIMIT |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-### NN运算点前处理（量化）
-
-------
-
-#### imquantize
-
-```c++
-IM_STATUS imquantize(const rga_buffer_t src,
-                     rga_buffer_t dst,
-                     rga_nn_t nn_info,
-                     int sync = 1,
-                     int *release_fence_fd = NULL);
-```
-
-> 目前仅RV1126 / RV1109上支持。NN运算点前处理，图像RGB 三个通道可以分开单独配置offset以及scale。
-
-公式：
-
-```
-dst = 【(src + offset) * scale 】
-```
-
-参数范围：
-
-| **Parameters** | **Range**  | **Description**                                              |
-| -------------- | ---------- | ------------------------------------------------------------ |
-| **scale**      | 0 ~ 3.99   | 10bit，从左往右，高位2个bit 表示整数部分，低位8bit表示小数部分 |
-| **offset**     | -255 ~ 255 | 9bit，从左往右，高位表示符号位，地位表示0～255的偏移量       |
-
-| parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| src              | **[required]** input image                                   |
-| dst              | **[required]** output image                                  |
-| nn_info          | **[required]** rga_nn_t结构体对RGB三个通道offset及scale进行单独配置<br />typedef struct rga_nn { <br/>  int nn_flag;<br/>  int scale_r;<br/>  int scale_g;<br/>  int scale_b;<br/>  int offset_r;<br/>  int offset_g;<br/>  int offset_b;<br/>} rga_nn_t; |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-#### imquantizeTask
-
-```c++
-IM_API IM_STATUS imquantizeTask(im_job_handle_t job_handle,
-                                const rga_buffer_t src,
-                                rga_buffer_t dst,
-                                im_nn_t nn_info);
-```
-
-> 通过job_handle向指定的任务中添加图像量化操作，用法和imquantize一致。
-
-| parameter  | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| job_handle | **[required]** job handle                                    |
-| src        | **[required]** input image                                   |
-| dst        | **[required]** output image                                  |
-| nn_info    | **[required]** rga_nn_t结构体对RGB三个通道offset及scale进行单独配置<br />typedef struct rga_nn { <br/>  int nn_flag;<br/>  int scale_r;<br/>  int scale_g;<br/>  int scale_b;<br/>  int offset_r;<br/>  int offset_g;<br/>  int offset_b;<br/>} rga_nn_t; |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-### 图像光栅操作 ROP
-
-------
-
-#### imrop
-
-```C++
-IM_STATUS imrop(const rga_buffer_t src,
-                rga_buffer_t dst,
-                int rop_code,
-                int sync = 1,
-                int *release_fence_fd = NULL);
-```
-
-> 对两个图形做ROP运算
-
-| parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| src              | **[required]** input image                                   |
-| dst              | **[required]** output image                                  |
-| rop_code         | **[required]** rop code mode <br /><br/> IM_ROP_AND : dst = dst **AND** src;<br/> IM_ROP_OR : dst = dst **OR** src <br/> IM_ROP_NOT_DST : dst = **NOT** dst<br/> IM_ROP_NOT_SRC : dst = **NOT** src<br/> IM_ROP_XOR : dst = dst **XOR** src<br/> IM_ROP_NOT_XOR : dst = **NOT** (dst **XOR** src)<br/> |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-#### imropTask
-
-```C++
-IM_API IM_STATUS imropTask(im_job_handle_t job_handle,
-                           const rga_buffer_t src,
-                           rga_buffer_t dst,
-                           int rop_code);
-```
-
-> 通过job_handle向指定的任务中添加图像ROP运算操作，用法和imrop一致。
-
-| parameter  | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| job_handle | **[required]** job handle                                    |
-| src        | **[required]** input image                                   |
-| dst        | **[required]** output image                                  |
-| rop_code   | **[required]** rop code mode <br /><br/> IM_ROP_AND : dst = dst **AND** src;<br/> IM_ROP_OR : dst = dst **OR** src <br/> IM_ROP_NOT_DST : dst = **NOT** dst<br/> IM_ROP_NOT_SRC : dst = **NOT** src<br/> IM_ROP_XOR : dst = dst **XOR** src<br/> IM_ROP_NOT_XOR : dst = **NOT** (dst **XOR** src) |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 

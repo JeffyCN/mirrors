@@ -627,12 +627,26 @@ The software support library provides the following API, asynchronous mode only 
 - **impyramind**： Call RGA for fast image pyramid.
 - **imcrop**： Call RGA for fast image cropping.
 - **imcropTask**： Added fast image cropping operation to RGA image job.
+- **imtranslate**： Call RGA for fast image translation.
+- **imtranslateTask**： Added fast image translation operation to RGA image job.
+- **imcvtcolor**： Call RGA for fast image format conversion.
+- **imcvtcolorTask**： Added fast image format conversion operation to RGA image job.
 - **imrotate**： Call RGA for fast image rotation.
 - **imrotateTask**： Added fast image rotation operation to RGA image job.
 - **imflip**： Call RGA for fast image flipping.
 - **imflipTask**： Added fast image flipping operation to RGA image job.
-- **imtranslate**： Call RGA for fast image translation.
-- **imtranslateTask**： Added fast image translation operation to RGA image job.
+- **imblend**： Call RGA for double channel fast image blending.
+- **imblendTask**： Added double channel fast image blending operation to RGA image job.
+- **imcomposite**： Call RGA for three-channel fast image  composite.
+- **imcompositeTask**： Added three-channel fast image composite operation to RGA image job.
+- **imcolorkey**： Call RGA for fast image color key.
+- **imcolorkeyTask**： Added fast image color key operation to RGA image job.
+- **imosd**： Call RGA for fast  image OSD.
+- **imosdTask**：Added fast image OSD operation to RGA image job.
+- **imquantize**： Call RGA for fast image operation point preprocessing (quantization).
+- **imquantizeTask**： Added fast image operation point preprocessing (quantization) operation to RGA image job.
+- **imrop**： Call RGA for fast image ROP.
+- **imropTask**： Added fast image ROP operation to RGA image job.
 - **imfill**： Call RGA for fast image filling.
 - **imfillArray**： Call RGA to implement multiple groups of fast image filling.
 - **imfillTask**： Added fast image filling operation to RGA image job.
@@ -646,20 +660,6 @@ The software support library provides the following API, asynchronous mode only 
 - **immosaicArray**: call RGA for fast multiple groups of mosaic masking.
 - **immosaicTask**：Added fast mosaic masking operation to RGA image job.
 - **immosaicTaskArray**：Added fast multiple groups of mosaic masking operation to RGA image job.
-- **imblend**： Call RGA for double channel fast image blending.
-- **imblendTask**： Added double channel fast image blending operation to RGA image job.
-- **imcomposite**： Call RGA for three-channel fast image  composite.
-- **imcompositeTask**： Added three-channel fast image composite operation to RGA image job.
-- **imcolorkey**： Call RGA for fast image color key.
-- **imcolorkeyTask**： Added fast image color key operation to RGA image job.
-- **imosd**： Call RGA for fast  image OSD.
-- **imosdTask**：Added fast image OSD operation to RGA image job.
-- **imcvtcolor**： Call RGA for fast image format conversion.
-- **imcvtcolorTask**： Added fast image format conversion operation to RGA image job.
-- **imquantize**： Call RGA for fast image operation point preprocessing (quantization).
-- **imquantizeTask**： Added fast image operation point preprocessing (quantization) operation to RGA image job.
-- **imrop**： Call RGA for fast image ROP.
-- **imropTask**： Added fast image ROP operation to RGA image job.
 - **improcess**： Call RGA for fast image compound processing.
 - **improcessTask**： Added fast image compound processing operation to RGA image job.
 - **imcheck**： Verify whether the parameters are valid and whether the current hardware supports the operation.
@@ -1043,6 +1043,120 @@ IM_API IM_STATUS imcropTask(im_job_handle_t job_handle,
 
 
 
+### Image Translation
+
+------
+
+#### imtranslate
+
+```C++
+IM_STATUS imtranslate(const rga_buffer_t src,
+                      rga_buffer_t dst,
+                      int x,
+                      int y,
+                      int sync = 1,
+                      int *release_fence_fd = NULL);
+```
+
+> Image translation. Move to (x, y) position, the width and height of src and dst must be the same, the excess part will be clipped.
+
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]**input image                                    |
+| dst              | **[required]** output image                                  |
+| x                | **[optional]** horizontal translation                        |
+| y                | **[optional]** vertical translation                          |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+#### imtranslateTask
+
+```C++
+IM_API IM_STATUS imtranslateTask(im_job_handle_t job_handle,
+                                 const rga_buffer_t src,
+                                 rga_buffer_t dst,
+                                 int x,
+                                 int y);
+```
+
+> Add an image translation operation to the specified job through job_handle. The configuration parameters are the same as imtranslate.
+
+| Parameter  | Description                           |
+| ---------- | ------------------------------------- |
+| job_handle | **[required]** job handle             |
+| src        | **[required]**input image             |
+| dst        | **[required]** output image           |
+| x          | **[required]** horizontal translation |
+| y          | **[required]** vertical translation   |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+### Image Format Conversion
+
+------
+
+#### imcvtcolor
+
+```C++
+IM_STATUS imcvtcolor(rga_buffer_t src,
+                     rga_buffer_t dst,
+                     int sfmt,
+                     int dfmt,
+                     int mode = IM_COLOR_SPACE_DEFAULT,
+                     int sync = 1,
+                     int *release_fence_fd = NULL);
+```
+
+> Image format conversion，specific format support varies according to soc, please refer to the **Image Format Supported** section.
+>
+> The format can be set by rga_buffer_t, or configure the input image and output image formats respectively by sfmt/dfmt. When it comes to YUV/RGB color gamut conversion, you can configure the converted color gamut through mode, and the conversion is performed according to the BT.601 limit range by default.
+
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| sfmt             | **[optional]** source image format                           |
+| dfmt             | **[optional]** destination image format                      |
+| Mode             | **[optional]** color space mode:<br/>IM_YUV_TO_RGB_BT601_LIMIT<br/>IM_YUV_TO_RGB_BT601_FULL<br/>IM_YUV_TO_RGB_BT709_LIMIT<br/>IM_RGB_TO_YUV_BT601_LIMIT<br/>IM_RGB_TO_YUV_BT601_FULL<br/>IM_RGB_TO_YUV_BT709_LIMIT |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
+#### imcvtcolorTask
+
+```C++
+IM_API IM_STATUS imcvtcolorTask(im_job_handle_t job_handle,
+                                rga_buffer_t src,
+                                rga_buffer_t dst,
+                                int sfmt,
+                                int dfmt,
+                                int mode = IM_COLOR_SPACE_DEFAULT);
+```
+
+> Add an image format conversion operation to the specified job through job_handle. The configuration parameters are the same as imcvtcolor.
+
+| parameter  | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| job_handle | **[required]** job handle                                    |
+| src        | **[required]** input image                                   |
+| dst        | **[required]** output image                                  |
+| sfmt       | **[optional]** source image format                           |
+| dfmt       | **[optional]** destination image format                      |
+| Mode       | **[optional]** color space mode:<br/>IM_YUV_TO_RGB_BT601_LIMIT<br/>IM_YUV_TO_RGB_BT601_FULL<br/>IM_YUV_TO_RGB_BT709_LIMIT<br/>IM_RGB_TO_YUV_BT601_LIMIT<br/>IM_RGB_TO_YUV_BT601_FULL<br/>IM_RGB_TO_YUV_BT709_LIMIT |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
 ### Image Rotation
 
 ------
@@ -1144,29 +1258,88 @@ IM_API IM_STATUS imflipTask(im_job_handle_t job_handle,
 
 
 
-### Image Translation
+### Image Blending
 
 ------
 
-#### imtranslate
+#### imblend/imcomposite
 
-```C++
-IM_STATUS imtranslate(const rga_buffer_t src,
+```c++
+IM_STATUS imblend(const rga_buffer_t srcA,
+                  rga_buffer_t dst,
+                  int mode = IM_ALPHA_BLEND_SRC_OVER,
+                  int sync = 1,
+                  int *release_fence_fd = NULL);
+```
+
+> RGA uses A+B -> B image two-channel blending mode to perform Alpha superposition for foreground image (srcA channel) and background image (dst channel) according to the configured blending model, and output the blending result to dst channel. When no mode is configured, it is set to src-over mode by default.
+
+```c++
+IM_STATUS imcomposite(const rga_buffer_t srcA,
+                      const rga_buffer_t srcB,
                       rga_buffer_t dst,
-                      int x,
-                      int y,
+                      int mode = IM_ALPHA_BLEND_SRC_OVER,
                       int sync = 1,
                       int *release_fence_fd = NULL);
 ```
 
-> Image translation. Move to (x, y) position, the width and height of src and dst must be the same, the excess part will be clipped.
+> RGA uses A+B -> C image three-channel blending mode to perform Alpha superposition for foreground image (srcA channel) and background image (srcB channel) according to the configured blending model, and output the blending result to dst channel.
+
+mode in the two image blending modes can be configured with different **Porter-Duff blending model**：
+
+> Before describing the Porter-Duff blending model, give the following definitions:
+>
+> - S -**Marks the source image in two blended images**，namely the foreground image, short for source.
+> - D -**Marks the destination image in two blended images**，namely the background image, short for destination.
+> - R -**Marks the result of two images blending**，short for result.
+> - c -**Marks the color of the pixel**，the RGB part of RGBA, which describes the color of the image itself, short for color.（**Note**，Color values (RGB) in the Porter-Duff  blending model are all left-multiplied results, that is, the product of original color and transparency. If the color values are not left-multiplied, pre-multiplied operations（Xc = Xc * Xa） are required.）
+> - a -**Marks the Alpha of the pixel**，Namely the A part of RGBA, describe the transparency of the image itself, short for Alpha.
+> - f -**Marks factors acting on C or A**，short for factor.
+>
+> The core formula of Porter-Duff blending model is as follows:
+>
+> Rc = Sc * Sf + Dc * Df;
+>
+> that is： result color = source color * source factor + destination color * destination factor.
+>
+> Ra = Sa * Sf + Da * Df;
+>
+> that is： result Alpha = source Alpha * source factor + destination Alpha * destination factor.
+
+RGA supports following blending models:
+
+> SRC:
+>
+> ​		Sf = 1， Df = 0；
+>
+> ​		[Rc，Ra] = [Sc，Sa]；
+>
+> DST:
+>
+> ​		Sf = 0， Df = 1；
+>
+> ​		[Rc，Ra] = [Dc，Da]；
+>
+> SRC_OVER：
+>
+> ​		Sf = 1， Df = （1 - Sa）；
+>
+> ​		[Rc，Ra] = [ Sc + (1 - Sa) * Dc， Sa + (1 - Sa) * Da ]；
+>
+> DST_OVER:
+>
+> ​		Sf = (1 - Da) ， Df = 1；
+>
+> ​		[Rc，Ra] = [ Sc * (1 - Da)  + Dc， Sa * (1 - Da) + Da ] ；
+
+【Note】Image blending model does not support the YUV format image blending, the YUV format is not support in dst image of imblend , the YUV format is not support in srcB image of imcomposite.
 
 | Parameter        | Description                                                  |
 | ---------------- | ------------------------------------------------------------ |
-| src              | **[required]**input image                                    |
+| srcA             | **[required]** input image A                                 |
+| srcB             | **[required]** input image B                                 |
 | dst              | **[required]** output image                                  |
-| x                | **[optional]** horizontal translation                        |
-| y                | **[optional]** vertical translation                          |
+| mode             | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC —— SRC mode<br/>IM_ALPHA_BLEND_DST —— DST mode  <br/>IM_ALPHA_BLEND_SRC_OVER —— SRC OVER mode<br/>IM_ALPHA_BLEND_DST_OVER —— DST OVER mode<br />IM_ALPHA_BLEND_PRE_MUL —— Enable premultipling. When premultipling is required, this identifier must be processed with other mode identifiers, then assign to mode |
 | sync             | **[optional]** wait until operation complete                 |
 | release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
 
@@ -1174,25 +1347,271 @@ IM_STATUS imtranslate(const rga_buffer_t src,
 
 
 
-#### imtranslateTask
+#### imblendTask/imcompositeTask
 
-```C++
-IM_API IM_STATUS imtranslateTask(im_job_handle_t job_handle,
-                                 const rga_buffer_t src,
-                                 rga_buffer_t dst,
-                                 int x,
-                                 int y);
+```c++
+IM_API IM_STATUS imblendTask(im_job_handle_t job_handle,
+                             const rga_buffer_t fg_image,
+                             rga_buffer_t bg_image,
+                             int mode = IM_ALPHA_BLEND_SRC_OVER);
 ```
 
-> Add an image translation operation to the specified job through job_handle. The configuration parameters are the same as imtranslate.
+> Add an A+B -> B image two-channel blending operation to the specified job through job_handle. The configuration parameters are the same as imblend. When no mode is configured, it is set to src-over mode by default.
 
-| Parameter  | Description                           |
-| ---------- | ------------------------------------- |
-| job_handle | **[required]** job handle             |
-| src        | **[required]**input image             |
-| dst        | **[required]** output image           |
-| x          | **[required]** horizontal translation |
-| y          | **[required]** vertical translation   |
+```c++
+IM_API IM_STATUS imcompositeTask(im_job_handle_t job_handle,
+                                 const rga_buffer_t fg_image,
+                                 const rga_buffer_t bg_image,
+                                 rga_buffer_t output_image,
+                                 int mode = IM_ALPHA_BLEND_SRC_OVER);
+```
+
+> Add an A+B -> C image three-channel blending operation to the specified job through job_handle. The configuration parameters are the same as imcomposite.
+
+【Note】Image blending model does not support the YUV format image blending, the YUV format is not support in dst image of imblend , the YUV format is not support in srcB image of imcomposite.
+
+| Parameter    | Description                                                  |
+| ------------ | ------------------------------------------------------------ |
+| job_handle   | **[required]** job handle                                    |
+| fg_image     | **[required]** foreground image                              |
+| bg_image     | **[required]** background image, when A+B->B it is also the output destination image. |
+| output_image | **[required]** output destination image.                     |
+| mode         | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC —— SRC mode<br/>IM_ALPHA_BLEND_DST —— DST mode  <br/>IM_ALPHA_BLEND_SRC_OVER —— SRC OVER mode<br/>IM_ALPHA_BLEND_DST_OVER —— DST OVER mode<br />IM_ALPHA_BLEND_PRE_MUL —— Enable premultipling. When premultipling is required, this identifier must be processed with other mode identifiers, then assign to mode |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+### Color Key
+
+------
+
+#### imcolorkey
+
+```C++
+IM_STATUS imcolorkey(const rga_buffer_t src,
+                     rga_buffer_t dst,
+                     im_colorkey_range range,
+                     int mode = IM_ALPHA_COLORKEY_NORMAL,
+                     int sync = 1,
+                     int *release_fence_fd = NULL);
+```
+
+> Color Key is to preprocesses the source image, zeros the alpha component of pixels that meet the Color Key filtering conditions, wherein the Color Key filtering conditions are non-transparent color values, and performs the alpha blending mode between the preprocessed source image and the destination image.
+>
+> This mode only supports the Color Key operation on the source image (src) region of the image for the set Color range, and overlays on the destination image (dst) region.
+
+> IM_ALPHA_COLORKEY_NORMAL is the normal mode, that is, the colors in the set color range are used as the filtering condition. The Alpha components of pixels in this color range are set zero; IM_ALPHA_COLORKEY_INVERTED is inverted. When no mode is configured, it is set to IM_ALPHA_COLORKEY_NORMAL mode by default.
+
+| **Parameters** | **Range**        | **Description**                           |
+| -------------- | ---------------- | ----------------------------------------- |
+| max            | 0x0 ~ 0xFFFFFFFF | The max color range to cancel/scratch, arranged as ABGR |
+| min            | 0x0 ~ 0xFFFFFFFF | The min color range to cancel/scratch, arranged as ABGR |
+
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| range            | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
+| Mode             | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
+#### imcolorkeyTask
+
+```C++
+IM_API IM_STATUS imcolorkeyTask(im_job_handle_t job_handle,
+                                const rga_buffer_t fg_image,
+                                rga_buffer_t bg_image,
+                                im_colorkey_range range,
+                                int mode = IM_ALPHA_COLORKEY_NORMAL);
+```
+
+> Add an image Color Key operation to the specified job through job_handle. The configuration parameters are the same as imcolorkey.
+
+| **Parameters** | **Range**        | **Description**                                         |
+| -------------- | ---------------- | ------------------------------------------------------- |
+| max            | 0x0 ~ 0xFFFFFFFF | The max color range to cancel/scratch, arranged as ABGR |
+| min            | 0x0 ~ 0xFFFFFFFF | The min color range to cancel/scratch, arranged as ABGR |
+
+| parameter  | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| job_handle | **[required]** job handle                                    |
+| src        | **[required]** input image                                   |
+| dst        | **[required]** output image                                  |
+| range      | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
+| Mode       | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
+### OSD
+
+------
+
+#### imosd
+
+```c++
+IM_API IM_STATUS imosd(const rga_buffer_t osd,
+                       const rga_buffer_t bg_image,
+                       const im_rect osd_rect,
+                       im_osd_t *osd_config,
+                       int sync = 1,
+                       int *release_fence_fd = NULL);
+```
+
+> OSD (On-Screen-Display), can superimpose text information on video pictures, and perform brightness statistics and automatic color inversion functions for fonts.
+
+| parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| OSD              | **[required]** osd block image                               |
+| bg_image         | **[required]** output image                                  |
+| osd_rect         | **[required]** image region to OSD                           |
+| osd_config       | **[required]** OSD function config                           |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
+#### imosdTask
+
+```c++
+IM_API IM_STATUS imosdTask(im_job_handle_t job_handle,
+                           const rga_buffer_t osd,
+                           const rga_buffer_t bg_image,
+                           const im_rect osd_rect,
+                           im_osd_t *osd_config);
+```
+
+> Add an OSD operation to the specified job through job_handle. The configuration parameters are the same as imosd.
+
+| parameter  | Description                        |
+| ---------- | ---------------------------------- |
+| job_handle | **[required]** job handle          |
+| OSD        | **[required]** osd block image     |
+| dst        | **[required]** output image        |
+| osd_rect   | **[required]** image region to OSD |
+| osd_config | **[required]** OSD function config |
+
+**Return** IM_STATUS_SUCCESS  on success or else negative error code.
+
+
+
+### Pre-processing of NN Operation Points (Quantization)
+
+------
+
+#### imquantize
+
+```c++
+IM_STATUS imquantize(const rga_buffer_t src,
+                     rga_buffer_t dst,
+                     rga_nn_t nn_info,
+                     int sync = 1,
+                     int *release_fence_fd = NULL);
+```
+
+> Currently supported only on RV1126 / RV1109. NN operation point pre-processing, three channels of RGB of image can be separately configured with offset and scale.
+
+Formula:
+
+```
+dst = 【(src + offset) * scale 】
+```
+
+Parameters range:
+
+| **Parameters** | **Range**  | **Description**                                              |
+| -------------- | ---------- | ------------------------------------------------------------ |
+| **scale**      | 0 ~ 3.99   | 10bit，From left to right, the highest 2 bits indicate the integer part and the lowest 8 bits indicate the decimal part |
+| **offset**     | -255 ~ 255 | 9bit，From left to right, the high indicates the sign bit, and the low indicates the offset from 0 to 255       |
+
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| nn_info          | **[required]** rga_nn_t struct configures the offset and scale of the three RGB channels respectively<br />typedef struct rga_nn { <br/>  int nn_flag;<br/>  int scale_r;<br/>  int scale_g;<br/>  int scale_b;<br/>  int offset_r;<br/>  int offset_g;<br/>  int offset_b;<br/>} rga_nn_t; |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+#### imquantizeTask
+
+```c++
+IM_API IM_STATUS imquantizeTask(im_job_handle_t job_handle,
+                                const rga_buffer_t src,
+                                rga_buffer_t dst,
+                                im_nn_t nn_info);
+```
+
+> Add an image quantization conversion operation to the specified job through job_handle. The configuration parameters are the same as imquantize.
+
+| parameter  | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| job_handle | **[required]** job handle                                    |
+| src        | **[required]** input image                                   |
+| dst        | **[required]** output image                                  |
+| nn_info    | **[required]** rga_nn_t结构体对RGB三个通道offset及scale进行单独配置<br />typedef struct rga_nn { <br/>  int nn_flag;<br/>  int scale_r;<br/>  int scale_g;<br/>  int scale_b;<br/>  int offset_r;<br/>  int offset_g;<br/>  int offset_b;<br/>} rga_nn_t; |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
+
+
+
+### Image ROP
+
+------
+
+#### imrop
+
+```C++
+IM_STATUS imrop(const rga_buffer_t src,
+                rga_buffer_t dst,
+                int rop_code,
+                int sync = 1,
+                int *release_fence_fd = NULL);
+```
+
+> Perform ROP, and, or, not operations on two images
+
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| src              | **[required]** input image                                   |
+| dst              | **[required]** output image                                  |
+| rop_code         | **[required]** rop code mode <br /><br/> IM_ROP_AND : dst = dst **AND** src;<br/> IM_ROP_OR : dst = dst **OR** src <br/> IM_ROP_NOT_DST : dst = **NOT** dst<br/> IM_ROP_NOT_SRC : dst = **NOT** src<br/> IM_ROP_XOR : dst = dst **XOR** src<br/> IM_ROP_NOT_XOR : dst = **NOT** (dst **XOR** src)<br/> |
+| sync             | **[optional]** wait until operation complete                 |
+| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code
+
+
+
+#### imropTask
+
+```C++
+IM_API IM_STATUS imropTask(im_job_handle_t job_handle,
+                           const rga_buffer_t src,
+                           rga_buffer_t dst,
+                           int rop_code);
+```
+
+> Add an image ROP conversion operation to the specified job through job_handle. The configuration parameters are the same as imrop.
+
+| parameter  | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| job_handle | **[required]** job handle                                    |
+| src        | **[required]** input image                                   |
+| dst        | **[required]** output image                                  |
+| rop_code   | **[required]** rop code mode <br /><br/> IM_ROP_AND : dst = dst **AND** src;<br/> IM_ROP_OR : dst = dst **OR** src <br/> IM_ROP_NOT_DST : dst = **NOT** dst<br/> IM_ROP_NOT_SRC : dst = **NOT** src<br/> IM_ROP_XOR : dst = dst **XOR** src<br/> IM_ROP_NOT_XOR : dst = **NOT** (dst **XOR** src) |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 
@@ -1559,425 +1978,6 @@ IM_API IM_STATUS immosaicTaskArray(im_job_handle_t job_handle,
 | rect_array  | **[required]** image region array_ptr to mosaic              |
 | array_size  | **[required]** size of region arrays.                        |
 | mosaic_mode | **[required]** set mosaic mode<br />    IM_MOSAIC_8<br/>    IM_MOSAIC_16<br/>    IM_MOSAIC_32<br/>    IM_MOSAIC_64<br/>    IM_MOSAIC_128 |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-### Image Blending
-
-------
-
-#### imblend/imcomposite
-
-```c++
-IM_STATUS imblend(const rga_buffer_t srcA,
-                  rga_buffer_t dst,
-                  int mode = IM_ALPHA_BLEND_SRC_OVER,
-                  int sync = 1,
-                  int *release_fence_fd = NULL);
-```
-
-> RGA uses A+B -> B image two-channel blending mode to perform Alpha superposition for foreground image (srcA channel) and background image (dst channel) according to the configured blending model, and output the blending result to dst channel. When no mode is configured, it is set to src-over mode by default.
-
-```c++
-IM_STATUS imcomposite(const rga_buffer_t srcA,
-                      const rga_buffer_t srcB,
-                      rga_buffer_t dst,
-                      int mode = IM_ALPHA_BLEND_SRC_OVER,
-                      int sync = 1,
-                      int *release_fence_fd = NULL);
-```
-
-> RGA uses A+B -> C image three-channel blending mode to perform Alpha superposition for foreground image (srcA channel) and background image (srcB channel) according to the configured blending model, and output the blending result to dst channel.
-
-mode in the two image blending modes can be configured with different **Porter-Duff blending model**：
-
-> Before describing the Porter-Duff blending model, give the following definitions:
->
-> - S -**Marks the source image in two blended images**，namely the foreground image, short for source.
-> - D -**Marks the destination image in two blended images**，namely the background image, short for destination.
-> - R -**Marks the result of two images blending**，short for result.
-> - c -**Marks the color of the pixel**，the RGB part of RGBA, which describes the color of the image itself, short for color.（**Note**，Color values (RGB) in the Porter-Duff  blending model are all left-multiplied results, that is, the product of original color and transparency. If the color values are not left-multiplied, pre-multiplied operations（Xc = Xc * Xa） are required.）
-> - a -**Marks the Alpha of the pixel**，Namely the A part of RGBA, describe the transparency of the image itself, short for Alpha.
-> - f -**Marks factors acting on C or A**，short for factor.
->
-> The core formula of Porter-Duff blending model is as follows:
->
-> Rc = Sc * Sf + Dc * Df;
->
-> that is： result color = source color * source factor + destination color * destination factor.
->
-> Ra = Sa * Sf + Da * Df;
->
-> that is： result Alpha = source Alpha * source factor + destination Alpha * destination factor.
-
-RGA supports following blending models:
-
-> SRC:
->
-> ​		Sf = 1， Df = 0；
->
-> ​		[Rc，Ra] = [Sc，Sa]；
->
-> DST:
->
-> ​		Sf = 0， Df = 1；
->
-> ​		[Rc，Ra] = [Dc，Da]；
->
-> SRC_OVER：
->
-> ​		Sf = 1， Df = （1 - Sa）；
->
-> ​		[Rc，Ra] = [ Sc + (1 - Sa) * Dc， Sa + (1 - Sa) * Da ]；
->
-> DST_OVER:
->
-> ​		Sf = (1 - Da) ， Df = 1；
->
-> ​		[Rc，Ra] = [ Sc * (1 - Da)  + Dc， Sa * (1 - Da) + Da ] ；
-
-【Note】Image blending model does not support the YUV format image blending, the YUV format is not support in dst image of imblend , the YUV format is not support in srcB image of imcomposite.
-
-| Parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| srcA             | **[required]** input image A                                 |
-| srcB             | **[required]** input image B                                 |
-| dst              | **[required]** output image                                  |
-| mode             | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC —— SRC mode<br/>IM_ALPHA_BLEND_DST —— DST mode  <br/>IM_ALPHA_BLEND_SRC_OVER —— SRC OVER mode<br/>IM_ALPHA_BLEND_DST_OVER —— DST OVER mode<br />IM_ALPHA_BLEND_PRE_MUL —— Enable premultipling. When premultipling is required, this identifier must be processed with other mode identifiers, then assign to mode |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-#### imblendTask/imcompositeTask
-
-```c++
-IM_API IM_STATUS imblendTask(im_job_handle_t job_handle,
-                             const rga_buffer_t fg_image,
-                             rga_buffer_t bg_image,
-                             int mode = IM_ALPHA_BLEND_SRC_OVER);
-```
-
-> Add an A+B -> B image two-channel blending operation to the specified job through job_handle. The configuration parameters are the same as imblend. When no mode is configured, it is set to src-over mode by default.
-
-```c++
-IM_API IM_STATUS imcompositeTask(im_job_handle_t job_handle,
-                                 const rga_buffer_t fg_image,
-                                 const rga_buffer_t bg_image,
-                                 rga_buffer_t output_image,
-                                 int mode = IM_ALPHA_BLEND_SRC_OVER);
-```
-
-> Add an A+B -> C image three-channel blending operation to the specified job through job_handle. The configuration parameters are the same as imcomposite.
-
-【Note】Image blending model does not support the YUV format image blending, the YUV format is not support in dst image of imblend , the YUV format is not support in srcB image of imcomposite.
-
-| Parameter    | Description                                                  |
-| ------------ | ------------------------------------------------------------ |
-| job_handle   | **[required]** job handle                                    |
-| fg_image     | **[required]** foreground image                              |
-| bg_image     | **[required]** background image, when A+B->B it is also the output destination image. |
-| output_image | **[required]** output destination image.                     |
-| mode         | **[optional]** blending mode:<br/>IM_ALPHA_BLEND_SRC —— SRC mode<br/>IM_ALPHA_BLEND_DST —— DST mode  <br/>IM_ALPHA_BLEND_SRC_OVER —— SRC OVER mode<br/>IM_ALPHA_BLEND_DST_OVER —— DST OVER mode<br />IM_ALPHA_BLEND_PRE_MUL —— Enable premultipling. When premultipling is required, this identifier must be processed with other mode identifiers, then assign to mode |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-### Color Key
-
-------
-
-#### imcolorkey
-
-```C++
-IM_STATUS imcolorkey(const rga_buffer_t src,
-                     rga_buffer_t dst,
-                     im_colorkey_range range,
-                     int mode = IM_ALPHA_COLORKEY_NORMAL,
-                     int sync = 1,
-                     int *release_fence_fd = NULL);
-```
-
-> Color Key is to preprocesses the source image, zeros the alpha component of pixels that meet the Color Key filtering conditions, wherein the Color Key filtering conditions are non-transparent color values, and performs the alpha blending mode between the preprocessed source image and the destination image.
->
-> This mode only supports the Color Key operation on the source image (src) region of the image for the set Color range, and overlays on the destination image (dst) region.
-
-> IM_ALPHA_COLORKEY_NORMAL is the normal mode, that is, the colors in the set color range are used as the filtering condition. The Alpha components of pixels in this color range are set zero; IM_ALPHA_COLORKEY_INVERTED is inverted. When no mode is configured, it is set to IM_ALPHA_COLORKEY_NORMAL mode by default.
-
-| **Parameters** | **Range**        | **Description**                           |
-| -------------- | ---------------- | ----------------------------------------- |
-| max            | 0x0 ~ 0xFFFFFFFF | The max color range to cancel/scratch, arranged as ABGR |
-| min            | 0x0 ~ 0xFFFFFFFF | The min color range to cancel/scratch, arranged as ABGR |
-
-| parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| src              | **[required]** input image                                   |
-| dst              | **[required]** output image                                  |
-| range            | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
-| Mode             | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-#### imcolorkeyTask
-
-```C++
-IM_API IM_STATUS imcolorkeyTask(im_job_handle_t job_handle,
-                                const rga_buffer_t fg_image,
-                                rga_buffer_t bg_image,
-                                im_colorkey_range range,
-                                int mode = IM_ALPHA_COLORKEY_NORMAL);
-```
-
-> Add an image Color Key operation to the specified job through job_handle. The configuration parameters are the same as imcolorkey.
-
-| **Parameters** | **Range**        | **Description**                                         |
-| -------------- | ---------------- | ------------------------------------------------------- |
-| max            | 0x0 ~ 0xFFFFFFFF | The max color range to cancel/scratch, arranged as ABGR |
-| min            | 0x0 ~ 0xFFFFFFFF | The min color range to cancel/scratch, arranged as ABGR |
-
-| parameter  | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| job_handle | **[required]** job handle                                    |
-| src        | **[required]** input image                                   |
-| dst        | **[required]** output image                                  |
-| range      | **[required]** Target color range<br/>typedef struct im_colorkey_range {<br/>    int max;<br/>    int min;<br/>} im_colorkey_value; |
-| Mode       | **[required]** Color Key mode：<br/>IM_ALPHA_COLORKEY_NORMAL<br/>IM_ALPHA_COLORKEY_INVERTED |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-### OSD
-
-------
-
-#### imosd
-
-```c++
-IM_API IM_STATUS imosd(const rga_buffer_t osd,
-                       const rga_buffer_t bg_image,
-                       const im_rect osd_rect,
-                       im_osd_t *osd_config,
-                       int sync = 1,
-                       int *release_fence_fd = NULL);
-```
-
-> OSD (On-Screen-Display), can superimpose text information on video pictures, and perform brightness statistics and automatic color inversion functions for fonts.
-
-| parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| OSD              | **[required]** osd block image                               |
-| bg_image         | **[required]** output image                                  |
-| osd_rect         | **[required]** image region to OSD                           |
-| osd_config       | **[required]** OSD function config                           |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-#### imosdTask
-
-```c++
-IM_API IM_STATUS imosdTask(im_job_handle_t job_handle,
-                           const rga_buffer_t osd,
-                           const rga_buffer_t bg_image,
-                           const im_rect osd_rect,
-                           im_osd_t *osd_config);
-```
-
-> Add an OSD operation to the specified job through job_handle. The configuration parameters are the same as imosd.
-
-| parameter  | Description                        |
-| ---------- | ---------------------------------- |
-| job_handle | **[required]** job handle          |
-| OSD        | **[required]** osd block image     |
-| dst        | **[required]** output image        |
-| osd_rect   | **[required]** image region to OSD |
-| osd_config | **[required]** OSD function config |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-### Image Format Conversion
-
-------
-
-#### imcvtcolor
-
-```C++
-IM_STATUS imcvtcolor(rga_buffer_t src,
-                     rga_buffer_t dst,
-                     int sfmt,
-                     int dfmt,
-                     int mode = IM_COLOR_SPACE_DEFAULT,
-                     int sync = 1,
-                     int *release_fence_fd = NULL);
-```
-
-> Image format conversion，specific format support varies according to soc, please refer to the **Image Format Supported** section.
->
-> The format can be set by rga_buffer_t, or configure the input image and output image formats respectively by sfmt/dfmt. When it comes to YUV/RGB color gamut conversion, you can configure the converted color gamut through mode, and the conversion is performed according to the BT.601 limit range by default.
-
-| parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| src              | **[required]** input image                                   |
-| dst              | **[required]** output image                                  |
-| sfmt             | **[optional]** source image format                           |
-| dfmt             | **[optional]** destination image format                      |
-| Mode             | **[optional]** color space mode:<br/>IM_YUV_TO_RGB_BT601_LIMIT<br/>IM_YUV_TO_RGB_BT601_FULL<br/>IM_YUV_TO_RGB_BT709_LIMIT<br/>IM_RGB_TO_YUV_BT601_LIMIT<br/>IM_RGB_TO_YUV_BT601_FULL<br/>IM_RGB_TO_YUV_BT709_LIMIT |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-#### imcvtcolorTask
-
-```C++
-IM_API IM_STATUS imcvtcolorTask(im_job_handle_t job_handle,
-                                rga_buffer_t src,
-                                rga_buffer_t dst,
-                                int sfmt,
-                                int dfmt,
-                                int mode = IM_COLOR_SPACE_DEFAULT);
-```
-
-> Add an image format conversion operation to the specified job through job_handle. The configuration parameters are the same as imcvtcolor.
-
-| parameter  | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| job_handle | **[required]** job handle                                    |
-| src        | **[required]** input image                                   |
-| dst        | **[required]** output image                                  |
-| sfmt       | **[optional]** source image format                           |
-| dfmt       | **[optional]** destination image format                      |
-| Mode       | **[optional]** color space mode:<br/>IM_YUV_TO_RGB_BT601_LIMIT<br/>IM_YUV_TO_RGB_BT601_FULL<br/>IM_YUV_TO_RGB_BT709_LIMIT<br/>IM_RGB_TO_YUV_BT601_LIMIT<br/>IM_RGB_TO_YUV_BT601_FULL<br/>IM_RGB_TO_YUV_BT709_LIMIT |
-
-**Return** IM_STATUS_SUCCESS  on success or else negative error code.
-
-
-
-### Pre-processing of NN Operation Points (Quantization)
-
-------
-
-#### imquantize
-
-```c++
-IM_STATUS imquantize(const rga_buffer_t src,
-                     rga_buffer_t dst,
-                     rga_nn_t nn_info,
-                     int sync = 1,
-                     int *release_fence_fd = NULL);
-```
-
-> Currently supported only on RV1126 / RV1109. NN operation point pre-processing, three channels of RGB of image can be separately configured with offset and scale.
-
-Formula:
-
-```
-dst = 【(src + offset) * scale 】
-```
-
-Parameters range:
-
-| **Parameters** | **Range**  | **Description**                                              |
-| -------------- | ---------- | ------------------------------------------------------------ |
-| **scale**      | 0 ~ 3.99   | 10bit，From left to right, the highest 2 bits indicate the integer part and the lowest 8 bits indicate the decimal part |
-| **offset**     | -255 ~ 255 | 9bit，From left to right, the high indicates the sign bit, and the low indicates the offset from 0 to 255       |
-
-| Parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| src              | **[required]** input image                                   |
-| dst              | **[required]** output image                                  |
-| nn_info          | **[required]** rga_nn_t struct configures the offset and scale of the three RGB channels respectively<br />typedef struct rga_nn { <br/>  int nn_flag;<br/>  int scale_r;<br/>  int scale_g;<br/>  int scale_b;<br/>  int offset_r;<br/>  int offset_g;<br/>  int offset_b;<br/>} rga_nn_t; |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-#### imquantizeTask
-
-```c++
-IM_API IM_STATUS imquantizeTask(im_job_handle_t job_handle,
-                                const rga_buffer_t src,
-                                rga_buffer_t dst,
-                                im_nn_t nn_info);
-```
-
-> Add an image quantization conversion operation to the specified job through job_handle. The configuration parameters are the same as imquantize.
-
-| parameter  | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| job_handle | **[required]** job handle                                    |
-| src        | **[required]** input image                                   |
-| dst        | **[required]** output image                                  |
-| nn_info    | **[required]** rga_nn_t结构体对RGB三个通道offset及scale进行单独配置<br />typedef struct rga_nn { <br/>  int nn_flag;<br/>  int scale_r;<br/>  int scale_g;<br/>  int scale_b;<br/>  int offset_r;<br/>  int offset_g;<br/>  int offset_b;<br/>} rga_nn_t; |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code.
-
-
-
-### Image ROP
-
-------
-
-#### imrop
-
-```C++
-IM_STATUS imrop(const rga_buffer_t src,
-                rga_buffer_t dst,
-                int rop_code,
-                int sync = 1,
-                int *release_fence_fd = NULL);
-```
-
-> Perform ROP, and, or, not operations on two images
-
-| Parameter        | Description                                                  |
-| ---------------- | ------------------------------------------------------------ |
-| src              | **[required]** input image                                   |
-| dst              | **[required]** output image                                  |
-| rop_code         | **[required]** rop code mode <br /><br/> IM_ROP_AND : dst = dst **AND** src;<br/> IM_ROP_OR : dst = dst **OR** src <br/> IM_ROP_NOT_DST : dst = **NOT** dst<br/> IM_ROP_NOT_SRC : dst = **NOT** src<br/> IM_ROP_XOR : dst = dst **XOR** src<br/> IM_ROP_NOT_XOR : dst = **NOT** (dst **XOR** src)<br/> |
-| sync             | **[optional]** wait until operation complete                 |
-| release_fence_fd | **[optional]**Used in async mode, as a parameter of imsync() |
-
-**Return** IM_STATUS_SUCCESS on success or else negative error code
-
-
-
-#### imropTask
-
-```C++
-IM_API IM_STATUS imropTask(im_job_handle_t job_handle,
-                           const rga_buffer_t src,
-                           rga_buffer_t dst,
-                           int rop_code);
-```
-
-> Add an image ROP conversion operation to the specified job through job_handle. The configuration parameters are the same as imrop.
-
-| parameter  | Description                                                  |
-| ---------- | ------------------------------------------------------------ |
-| job_handle | **[required]** job handle                                    |
-| src        | **[required]** input image                                   |
-| dst        | **[required]** output image                                  |
-| rop_code   | **[required]** rop code mode <br /><br/> IM_ROP_AND : dst = dst **AND** src;<br/> IM_ROP_OR : dst = dst **OR** src <br/> IM_ROP_NOT_DST : dst = **NOT** dst<br/> IM_ROP_NOT_SRC : dst = **NOT** src<br/> IM_ROP_XOR : dst = dst **XOR** src<br/> IM_ROP_NOT_XOR : dst = **NOT** (dst **XOR** src) |
 
 **Return** IM_STATUS_SUCCESS on success or else negative error code.
 
