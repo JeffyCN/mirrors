@@ -47,7 +47,7 @@
 };
 
 &reserved_memory {
-	linux,cma {
+	cma {
 		compatible = "shared-dma-pool";
 		inactive;
 		reusable;
