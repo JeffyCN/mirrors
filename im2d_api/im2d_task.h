@@ -117,6 +117,25 @@ IM_API IM_STATUS imcropTask(im_job_handle_t job_handle,
                             const rga_buffer_t src, rga_buffer_t dst, im_rect rect);
 
 /**
+ * Add translate task
+ *
+ * @param job_handle
+ *      Insert the task into the job handle.
+ * @param src
+ *      The input source image.
+ * @param dst
+ *      The output destination image.
+ * @param x
+ *      Output the coordinates of the starting point in the X-direction of the destination image.
+ * @param y
+ *      Output the coordinates of the starting point in the Y-direction of the destination image.
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS imtranslateTask(im_job_handle_t job_handle,
+                                 const rga_buffer_t src, rga_buffer_t dst, int x, int y);
+
+/**
  * Add format convert task
  *
  * @param job_handle
@@ -143,25 +162,6 @@ IM_API IM_STATUS imcropTask(im_job_handle_t job_handle,
 IM_API IM_STATUS imcvtcolorTask(im_job_handle_t job_handle,
                                 rga_buffer_t src, rga_buffer_t dst,
                                 int sfmt, int dfmt, int mode = IM_COLOR_SPACE_DEFAULT);
-
-/**
- * Add translate task
- *
- * @param job_handle
- *      Insert the task into the job handle.
- * @param src
- *      The input source image.
- * @param dst
- *      The output destination image.
- * @param x
- *      Output the coordinates of the starting point in the X-direction of the destination image.
- * @param y
- *      Output the coordinates of the starting point in the Y-direction of the destination image.
- *
- * @returns success or else negative error code.
- */
-IM_API IM_STATUS imtranslateTask(im_job_handle_t job_handle,
-                                 const rga_buffer_t src, rga_buffer_t dst, int x, int y);
 
 /**
  * Add rotation task
@@ -320,53 +320,6 @@ IM_API IM_STATUS imropTask(im_job_handle_t job_handle,
                            const rga_buffer_t src, rga_buffer_t dst, int rop_code);
 
 /**
- * Add mosaic task
- *
- * @param job_handle
- *      Insert the task into the job handle.
- * @param image
- *      The output destination image.
- * @param rect
- *      The rectangle on the source image that needs to be mosaicked.
- * @param mosaic_mode
- *      mosaic block width configuration:
- *          IM_MOSAIC_8
- *          IM_MOSAIC_16
- *          IM_MOSAIC_32
- *          IM_MOSAIC_64
- *          IM_MOSAIC_128
- *
- * @returns success or else negative error code.
- */
-IM_API IM_STATUS immosaicTask(im_job_handle_t job_handle,
-                              const rga_buffer_t image, im_rect rect, int mosaic_mode);
-
-/**
- * Add mosaic task
- *
- * @param job_handle
- *      Insert the task into the job handle.
- * @param image
- *      The output destination image.
- * @param rect_array
- *      The rectangle arrays on the source image that needs to be filled with color.
- * @param array_size
- *      The size of rectangular area arrays.
- * @param mosaic_mode
- *      mosaic block width configuration:
- *          IM_MOSAIC_8
- *          IM_MOSAIC_16
- *          IM_MOSAIC_32
- *          IM_MOSAIC_64
- *          IM_MOSAIC_128
- *
- * @returns success or else negative error code.
- */
-IM_API IM_STATUS immosaicTaskArray(im_job_handle_t job_handle,
-                                   const rga_buffer_t image,
-                                   im_rect *rect_array, int array_size, int mosaic_mode);
-
-/**
  * Add color fill task
  *
  * @param job_handle
@@ -453,6 +406,53 @@ IM_API IM_STATUS imrectangleTaskArray(im_job_handle_t job_handle,
                                       uint32_t color, int thickness);
 
 /**
+ * Add mosaic task
+ *
+ * @param job_handle
+ *      Insert the task into the job handle.
+ * @param image
+ *      The output destination image.
+ * @param rect
+ *      The rectangle on the source image that needs to be mosaicked.
+ * @param mosaic_mode
+ *      mosaic block width configuration:
+ *          IM_MOSAIC_8
+ *          IM_MOSAIC_16
+ *          IM_MOSAIC_32
+ *          IM_MOSAIC_64
+ *          IM_MOSAIC_128
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS immosaicTask(im_job_handle_t job_handle,
+                              const rga_buffer_t image, im_rect rect, int mosaic_mode);
+
+/**
+ * Add mosaic task
+ *
+ * @param job_handle
+ *      Insert the task into the job handle.
+ * @param image
+ *      The output destination image.
+ * @param rect_array
+ *      The rectangle arrays on the source image that needs to be filled with color.
+ * @param array_size
+ *      The size of rectangular area arrays.
+ * @param mosaic_mode
+ *      mosaic block width configuration:
+ *          IM_MOSAIC_8
+ *          IM_MOSAIC_16
+ *          IM_MOSAIC_32
+ *          IM_MOSAIC_64
+ *          IM_MOSAIC_128
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS immosaicTaskArray(im_job_handle_t job_handle,
+                                   const rga_buffer_t image,
+                                   im_rect *rect_array, int array_size, int mosaic_mode);
+
+/**
  * Add palette task
  *
  * @param job_handle
@@ -497,7 +497,6 @@ IM_API IM_STATUS improcessTask(im_job_handle_t job_handle,
                                rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                                im_rect srect, im_rect drect, im_rect prect,
                                im_opt_t *opt_ptr, int usage);
-
 }; /* namespace rga */
 #endif /* #ifdef __cplusplus */
 

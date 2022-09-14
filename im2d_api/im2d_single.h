@@ -77,6 +77,22 @@ IM_API IM_STATUS imcrop(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, 
 IM_API IM_STATUS imtranslate(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync = 1, int *release_fence_fd = NULL);
 
 /**
+ * format convert
+ *
+ * @param src
+ * @param dst
+ * @param sfmt
+ * @param dfmt
+ * @param mode
+ *      color space mode: IM_COLOR_SPACE_MODE
+ * @param sync
+ *      wait until operation complete
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS imcvtcolor(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode = IM_COLOR_SPACE_DEFAULT, int sync = 1, int *release_fence_fd = NULL);
+
+/**
  * rotation
  *
  * @param src
@@ -139,20 +155,23 @@ IM_API IM_STATUS imcomposite(const rga_buffer_t srcA, const rga_buffer_t srcB, r
 IM_API IM_STATUS imcolorkey(const rga_buffer_t src, rga_buffer_t dst, im_colorkey_range range, int mode = IM_ALPHA_COLORKEY_NORMAL, int sync = 1, int *release_fence_fd = NULL);
 
 /**
- * format convert
+ * OSD
  *
- * @param src
+ * @param osd
+ *      osd block
  * @param dst
- * @param sfmt
- * @param dfmt
- * @param mode
- *      color space mode: IM_COLOR_SPACE_MODE
+ *      background image
+ * @param osd_rect
+ * @param osd_config
+ *      osd mode config
  * @param sync
  *      wait until operation complete
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS imcvtcolor(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode = IM_COLOR_SPACE_DEFAULT, int sync = 1, int *release_fence_fd = NULL);
+IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
+                       const im_rect osd_rect, im_osd_t *osd_config,
+                       int sync = 1, int *release_fence_fd = NULL);
 
 /**
  * nn quantize
@@ -256,19 +275,6 @@ IM_API IM_STATUS imrectangleArray(rga_buffer_t dst, im_rect *rect_array, int arr
                                    int sync = 1, int *release_fence_fd = NULL);
 
 /**
- * palette
- *
- * @param src
- * @param dst
- * @param lut
- * @param sync
- *      wait until operation complete
- *
- * @returns success or else negative error code.
- */
-IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut, int sync = 1, int *release_fence_fd = NULL);
-
-/**
  * MOSAIC
  *
  * @param src
@@ -305,23 +311,17 @@ IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mod
 IM_API IM_STATUS immosaicArray(const rga_buffer_t image, im_rect *rect_array, int array_size, int mosaic_mode, int sync = 1, int *release_fence_fd = NULL);
 
 /**
- * OSD
+ * palette
  *
- * @param osd
- *      osd block
+ * @param src
  * @param dst
- *      background image
- * @param osd_rect
- * @param osd_config
- *      osd mode config
+ * @param lut
  * @param sync
  *      wait until operation complete
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
-                       const im_rect osd_rect, im_osd_t *osd_config,
-                       int sync = 1, int *release_fence_fd = NULL);
+IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut, int sync = 1, int *release_fence_fd = NULL);
 
 /**
  * process for single task mode
@@ -344,20 +344,18 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                            int acquire_fence_fd, int *release_fence_fd,
                            im_opt_t *opt_ptr, int usage);
 #endif
-
-IM_C_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
-                             im_rect srect, im_rect drect, im_rect prect, int usage);
-
 IM_C_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mode, int sync);
 IM_C_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
                          const im_rect osd_rect, im_osd_t *osd_config, int sync);
+IM_C_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
+                             im_rect srect, im_rect drect, im_rect prect, int usage);
 
 /* Start: Symbols reserved for compatibility with macro functions */
 IM_C_API IM_STATUS imcopy_t(const rga_buffer_t src, rga_buffer_t dst, int sync);
 IM_C_API IM_STATUS imresize_t(const rga_buffer_t src, rga_buffer_t dst, double fx, double fy, int interpolation, int sync);
-IM_C_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync);
 IM_C_API IM_STATUS imcrop_t(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, int sync);
 IM_C_API IM_STATUS imtranslate_t(const rga_buffer_t src, rga_buffer_t dst, int x, int y, int sync);
+IM_C_API IM_STATUS imcvtcolor_t(rga_buffer_t src, rga_buffer_t dst, int sfmt, int dfmt, int mode, int sync);
 IM_C_API IM_STATUS imrotate_t(const rga_buffer_t src, rga_buffer_t dst, int rotation, int sync);
 IM_C_API IM_STATUS imflip_t (const rga_buffer_t src, rga_buffer_t dst, int mode, int sync);
 IM_C_API IM_STATUS imblend_t(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode, int sync);
