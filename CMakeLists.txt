@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
 
-INCLUDE(cmake/utils.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/utils.cmake)
+
+if (EXISTS ${BUILD_TOOLCHAINS_PATH})
+    message("load ${BUILD_TOOLCHAINS_PATH}")
+    include(${BUILD_TOOLCHAINS_PATH})
+endif()
+
+project(rga)
 
 if(NOT CMAKE_BUILD_TYPE)
     message("default to Release build for GCC builds")
@@ -10,20 +17,17 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(CMAKE_BUILD_TARGET STREQUAL android_ndk)
-    message("set ndk toolchain")
-    include(${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
+    message("cmake build android ndk")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-error -DLOG_TAG=librga")
     add_compile_options(-DLINUX)
     add_compile_options(-DANDROID_VNDK)
+    string(REPLACE "-DANDROID" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
 
 if(CMAKE_BUILD_TARGET STREQUAL buildroot)
-    message("set ${BUILD_TOOLCHAINS_PATH} toolchain")
-    set(CMAKE_TOOLCHAIN_FILE
-        ${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
-    include(${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
-    add_compile_options(-DLINUX)
+    message("cmake build buildroot")
     set(CMAKE_CXX_FLAGS "-std=c++11 -O2 -pthread")
+    add_compile_options(-DLINUX)
 endif()
 
 if(CMAKE_BUILD_TARGET STREQUAL cmake_linux)
@@ -41,8 +45,6 @@ if(CMAKE_BUILD_TARGET STREQUAL cmake_linux)
     endif()
 
 endif()
-
-project(rga)
 
 if (BUILD_WITH_LIBDRM STREQUAL true)
     message("RGA build with libdrm")
@@ -106,10 +108,6 @@ set(IM2D_PUBLIC_HEADER
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_EXT} -DUN_NEED_GL")
-
-if(CMAKE_BUILD_TARGET STREQUAL android_ndk)
-    string(REPLACE "-DANDROID" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-endif()
 
 #build object
 set(OBJECT_NAME ${PROJECT_NAME}-object)

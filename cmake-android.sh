@@ -2,11 +2,11 @@
 
 SCRIPT_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
 SOURCE_PATH=${SCRIPT_DIR}
-BUILD_DIR=build/build_android_ndk
-BUILD_TYPE=Release	
 
 # Modify to the local toolchain path.
-TOOLCHAIN_PATH=toolchains/toolchain_android_ndk.cmake
+TOOLCHAIN_PATH=${SOURCE_PATH}/toolchains/toolchain_android_ndk.cmake
+BUILD_DIR=build/build_android_ndk
+BUILD_TYPE=Release
 
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR

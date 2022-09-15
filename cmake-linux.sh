@@ -2,11 +2,11 @@
 
 SCRIPT_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
 SOURCE_PATH=${SCRIPT_DIR}
-BUILD_DIR=build/build_linux
-BUILD_TYPE=Release
 
 # Modify to the local toolchain path.
-TOOLCHAIN_PATH=toolchains/toolchain_linux.cmake
+TOOLCHAIN_PATH=${SOURCE_PATH}/toolchains/toolchain_linux.cmake
+BUILD_DIR=build/build_linux
+BUILD_TYPE=Release
 
 if [ "$1" = "drm" ];then
 	echo "using drm"
