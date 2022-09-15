@@ -31,8 +31,6 @@
 #define RKVDEC_LINK_BIT_CFG_DONE	BIT(0)
 
 #define RKVDEC_LINK_DEC_NUM_BASE	0x010
-#define RKVDEC_LINK_BIT_DEC_ERROR	BIT(31)
-#define	RKVDEC_LINK_GET_DEC_NUM(x)	((x) & 0x3fffffff)
 
 #define RKVDEC_LINK_TOTAL_NUM_BASE	0x014
 
@@ -40,6 +38,8 @@
 #define RKVDEC_LINK_BIT_EN		BIT(0)
 
 #define RKVDEC_LINK_NEXT_ADDR_BASE	0x01c
+
+#define RKVDEC_LINK_STA_BASE		0x024
 
 #define RKVDEC_LINK_REG_CYCLE_CNT	179
 
@@ -100,6 +100,9 @@ struct rkvdec_link_dev {
 	u64 stuff_cycle_sum;
 	u32 stuff_cnt;
 };
+
+extern struct rkvdec_link_info rkvdec_link_rk3568_hw_info;
+extern struct rkvdec_link_info rkvdec_link_v2_hw_info;
 
 int rkvdec_link_dump(struct mpp_dev *mpp);
 
