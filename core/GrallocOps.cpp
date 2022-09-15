@@ -120,7 +120,7 @@ int RkRgaGetHandleMapAddress(buffer_handle_t handle,
 }
 
 /* ========================================================================== */
-#else //old gralloc 0.3
+#else /* #if USE_GRALLOC_4, else is gralloc 0.3 */
 
 #ifndef RK3368
 
@@ -134,6 +134,16 @@ int RkRgaGetHandleMapAddress(buffer_handle_t handle,
 #include <hardware/gralloc.h>
 #include <hardware/img_gralloc_public.h>
 
+#endif /* #ifndef RK3368 */
+
+/*
+ *   Only these macros in rockchip's private gralloc-0.3 header are
+ * needed in librga, and these are defined in different paths for
+ * different Android versions.
+ *   So when librga refers to gralloc0.3, it will judge whether
+ * there is a reference to the corresponding path, and if not,
+ * define these macros by itself.
+ */
 #ifndef GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD
 #define GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD 0x08100002
 #endif
@@ -148,7 +158,6 @@ int RkRgaGetHandleMapAddress(buffer_handle_t handle,
 
 #ifndef GRALLOC_MODULE_PERFORM_GET_USAGE
 #define GRALLOC_MODULE_PERFORM_GET_USAGE 0x0feeff03
-#endif
 #endif
 
 gralloc_module_t const *mAllocMod = NULL;
