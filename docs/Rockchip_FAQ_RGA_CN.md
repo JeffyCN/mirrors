@@ -107,7 +107,7 @@ API版本号分为主版本号、次版本号、修订版本号、编译版本�
   cat /proc/rkrga/driver_version
   ```
 
-  
+
 
 ## 日志获取与说明
 
@@ -133,7 +133,7 @@ API版本号分为主版本号、次版本号、修订版本号、编译版本�
   logcat -s librga
   ```
 
-  
+
 
 - Linux平台
 
@@ -148,11 +148,11 @@ API版本号分为主版本号、次版本号、修订版本号、编译版本�
   +++ b/core/NormalRgaContext.h
   @@ -20,7 +20,7 @@
    #define _rockchip_normal_rga_context_h_
-   
+
    #ifdef LINUX
   -#define __DEBUG 0
   +#define __DEBUG 1
-   
+
    #define ALOGE(...) { printf(__VA_ARGS__); printf("\n"); }
    #endif
   ```
@@ -396,21 +396,22 @@ rga2: sync one cmd end time 2414						//打印本次工作RGA硬件的耗时，�
 
 ​						RGA2 ： 1920 × 1080 / （2 × 300000000） = 0.003456s
 
-​						RGA3 ： 1920 × 1080 / （4 × 300000000） = 0.001728s
+​						RGA3 ： 1920 × 1080 / （3 × 300000000） = 0.002304s
 
-​			而实际的耗时与使用的内存类型是相关的，不同的传入内存类型效率从高到低是：物理地址 > dma_fd > 虚拟地址。			
+​			而实际的耗时与使用的内存类型是相关的，不同的传入内存类型效率从高到低是：物理地址 > dma_fd > 虚拟地址。
 
 ​			在系统空载时，物理地址的实际耗时约为理论耗时的1.1-1.2倍，使用dma_fd的实际耗时约为理论耗时的1.3-1.5倍，而使用虚拟地址的实际耗时约为理论耗时的1.8-2.1倍，并且受CPU影响较大。通常我们比较建议开发者使用dma_fd作为传入的内存类型，在易获取和效率上得到了较好的平衡，虚拟地址仅用于学习阶段了解RGA时，作为简单易上手的内存类型来使用。下表为在RK3566上系统空载时不同的RGA频率的实际测试数据。
 
 ​			**测试环境：**
 
-| 芯片平台 | RK3566     |
-| -------- | ---------- |
-| 系统平台 | Android 11 |
-| RGA频率  | 300 M      |
-| CPU频率  | 1.8 Ghz    |
-| GPU频率  | 800 M      |
-| DDR频率  | 1056 M     |
+| 芯片平台    | RK3566      |
+| ----------- | ----------- |
+| RGA硬件版本 | RGA2-EHANCE |
+| 系统平台    | Android 11  |
+| RGA频率     | 300 M       |
+| CPU频率     | 1.8 Ghz     |
+| GPU频率     | 800 M       |
+| DDR频率     | 1056 M      |
 
 ​			**测试数据：**
 
@@ -588,7 +589,7 @@ Author: Yu Qiaowei <cerf.yu@rock-chips.com>
 Date:   Wed Dec 23 10:57:28 2020 +0800
 
     Color fill supports YUV format as input source.
-    
+
     Signed-off-by: Yu Qiaowei <cerf.yu@rock-chips.com>
     Change-Id: I0073c31d770da513f81b9b64e4c27fee2650f30b
 ```
@@ -607,7 +608,7 @@ Author: Yu Qiaowei <cerf.yu@rock-chips.com>
 Date:   Tue Nov 24 19:50:17 2020 +0800
 
     Add support for Y4/YUV400/YUYV in imcheck().
-    
+
     Signed-off-by: Yu Qiaowei <cerf.yu@rock-chips.com>
     Change-Id: I3cfea7c8bb331b65b5bc741956da47924eeda6e1
 ```
@@ -862,10 +863,10 @@ Author: Sandy Huang <hjc@rock-chips.com>
 Date:   Mon May 10 16:52:04 2021 +0800
 
     drm/rockchip: gem: add flag ROCKCHIP_BO_ALLOC_KMAP to assign kmap
-    
+
     RGA need to access CMA buffer at kernel space, so add this flag to keep kernel
     line mapping for RGA.
-    
+
     Change-Id: Ia59acee3c904a495792229a80c42f74ae34200e3
     Signed-off-by: Sandy Huang <hjc@rock-chips.com>
 ```
@@ -890,7 +891,7 @@ Date:   Mon May 10 16:52:04 2021 +0800
 
 ​			4). 确认当前RGA频率（可以参考 **Q1.4** 中RGA频率相关操作），某些场景可能会出现同一条总线上的模块降频后影响到RGA的频率，RGA频率下降从而导致整体的性能下降，无法在2000ms内完成工作，驱动便会异常返回并打印报错。
 
-​			5). 部分芯片RGA被超频到一个较高的频率，此时RGA频率上升但是电压没有提升，会导致RGA整体性能显著下降，导致无法在规定阈值内完成工作，从而驱动异常返回并打印报错。该场景建议开发者将RGA频率修改至正常频率，超频对整体芯片的稳定性与使用寿命均有影响，强烈不建议该种行为。			
+​			5). 部分芯片RGA被超频到一个较高的频率，此时RGA频率上升但是电压没有提升，会导致RGA整体性能显著下降，导致无法在规定阈值内完成工作，从而驱动异常返回并打印报错。该场景建议开发者将RGA频率修改至正常频率，超频对整体芯片的稳定性与使用寿命均有影响，强烈不建议该种行为。
 
 ​			6). 以上场景均没有发现问题，可以尝试在RGA超时报错返回后，将目标内存中的数据写到文件中，查看RGA是否有写入部分数据，如有写入部分数据，请重新确认1-5场景，该现象明显为RGA性能表现不足导致；如果目标内存没有被RGA写入数据，收集对应的日志信息以及相关实验过程，联系维护RGA模块的工程师。
 
