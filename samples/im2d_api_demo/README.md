@@ -1,26 +1,6 @@
-# librga IM2D API 示例代码说明
+# librga IM2D API快速演示DEMO
 
-​	该目录下为librga IM2D API示例代码，包含常见的图像缩放、裁剪、旋转、Blit、alpha混合等操作的示例代码。
-
-## 目录说明
-
-├── **im2d_api_demo**：IM2D API快速演示DEMO
-├── **im2d_slt**：slt测试工具
-├── **allocator_demo**：内存分配器相关示例代码
-├── **alpha_demo**：alpha混合、叠加相关示例代码
-├── **async_demo**：异步模式相关示例代码
-├── **config_demo**：线程全局配置相关示例代码
-├── **copy_demo**：图像搬运、拷贝相关示例代码
-├── **crop_demo**：图像裁剪、拼接相关示例代码
-├── **cvtcolor_demo**：图像格式转换、色域转换相关示例代码
-├── **fill_demo**：图像填充、画框相关示例代码
-├── **mosaic_demo**：马赛克遮盖相关示例代码
-├── **padding_demo**：padding相关示例代码
-├── **resize_demo**：图像缩放相关示例代码
-├── **rop_demo**：ROP运算相关示例代码
-├── **transform_demo**：图像变换相关示例代码
-├── **utils**：示例代码中使用的第三方引用、通用工具代码
-└── **sample_file**：演示代码使用图像数据文件
+​	librga IM2D API快速演示DEMO可以通过配置指令快速演示RGA功能。
 
 ## 编译说明
 
@@ -76,3 +56,7 @@ $ chmod +x ./cmake_linux.sh
 $ ./cmake_linux.sh
 ```
 
+### 使用说明
+
+
+见docs目录下《Rockchip_Developer_Guide_RGA_CN.md》——测试用例及调试方法 章节。
