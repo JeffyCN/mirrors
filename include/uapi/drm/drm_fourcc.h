@@ -199,6 +199,7 @@ extern "C" {
 #define DRM_FORMAT_MOD_VENDOR_VIVANTE 0x06
 #define DRM_FORMAT_MOD_VENDOR_BROADCOM 0x07
 #define DRM_FORMAT_MOD_VENDOR_ARM     0x08
+#define DRM_FORMAT_MOD_VENDOR_ROCKCHIP 0x0b
 /* add more to the end as needed */
 
 #define DRM_FORMAT_RESERVED	      ((1ULL << 56) - 1)
@@ -642,6 +643,15 @@ extern "C" {
  * Indicates that the buffer includes per-superblock content hints.
  */
 #define AFBC_FORMAT_MOD_BCH     (1ULL << 11)
+
+#define ROCKCHIP_TILED_BLOCK_SIZE_MASK	0xf
+#define ROCKCHIP_TILED_BLOCK_SIZE_8x8		(1ULL)
+#define ROCKCHIP_TILED_BLOCK_SIZE_4x4_MODE0	(2ULL)
+#define ROCKCHIP_TILED_BLOCK_SIZE_4x4_MODE1	(3ULL)
+
+#define DRM_FORMAT_MOD_ROCKCHIP_TILED(_mode) fourcc_mod_code(ROCKCHIP, _mode)
+
+#define IS_ROCKCHIP_TILED_MOD(val) (((val) >> 56) == DRM_FORMAT_MOD_VENDOR_ROCKCHIP)
 
 #if defined(__cplusplus)
 }
