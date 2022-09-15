@@ -1,13 +1,13 @@
 #!/bin/bash
 
 SCRIPT_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
-SAMPLES_DIR=${SCRIPT_DIR}/..
+SAMPLES_DIR=${SCRIPT_DIR}
+
+# The following options require configuration
+TOOLCHAIN_PATH=${SAMPLES_DIR}/../toolchains/toolchain_android_ndk.cmake
 LIBRGA_PATH=${SAMPLES_DIR}/../build/build_android_ndk/install/lib
 BUILD_DIR=build/build_android_ndk
 BUILD_TYPE=Release
-
-# Modify to the local toolchain path.
-TOOLCHAIN_PATH=../../toolchains/toolchain_android_ndk.cmake
 
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR

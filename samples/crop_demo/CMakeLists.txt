@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
-if (EXISTS ${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
-    message("load ${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH}")
-    include(${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
+if (EXISTS ${BUILD_TOOLCHAINS_PATH})
+    message("load ${BUILD_TOOLCHAINS_PATH}")
+    include(${BUILD_TOOLCHAINS_PATH})
 endif()
 
 if (EXISTS ${LIBRGA_FILE_LIB}/librga.so)
@@ -13,7 +13,6 @@ else ()
 endif()
 
 get_filename_component(TARGET_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
-
 project(rga_${TARGET_NAME})
 
 #install path
@@ -27,7 +26,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wl,--allow-shlib-undefined -
 set(RGA_INCLUDE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../im2d_api)
-
 include_directories(${RGA_INCLUDE})
 
 if (NOT DEFINED RGA_SAMPLES_UTILS_COMPILED)

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
-if (EXISTS ${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
-    message("load ${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH}")
-    include(${CMAKE_SOURCE_DIR}/${BUILD_TOOLCHAINS_PATH})
+if (EXISTS ${BUILD_TOOLCHAINS_PATH})
+    message("load ${BUILD_TOOLCHAINS_PATH}")
+    include(${BUILD_TOOLCHAINS_PATH})
 endif()
 
 get_filename_component(TARGET_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
