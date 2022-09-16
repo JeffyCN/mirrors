@@ -21,6 +21,16 @@
 
 #include <stdint.h>
 
+#define IM_API /* define API export as needed */
+
+#ifdef __cplusplus
+#define IM_C_API extern "C"
+#define IM_EXPORT_API extern "C"
+#else
+#define IM_C_API
+#define IM_EXPORT_API
+#endif
+
 typedef uint32_t im_api_version_t;
 typedef uint32_t im_job_handle_t;
 typedef uint32_t im_ctx_id_t;

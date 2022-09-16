@@ -25,14 +25,16 @@
  *
  * @param fd/va/pa
  *      Select dma_fd/virtual_address/physical_address by buffer type
- * @param param
- *      Configure buffer parameters
+ * @param size
+ *      Describes the size of the image buffer
  *
  * @return rga_buffer_handle_t
  */
-IM_EXPORT_API rga_buffer_handle_t importbuffer_fd(int fd, im_handle_param_t *param);
-IM_EXPORT_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, im_handle_param_t *param);
-IM_EXPORT_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, im_handle_param_t *param);
+#ifdef __cplusplus
+IM_API rga_buffer_handle_t importbuffer_fd(int fd, int size);
+IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int size);
+IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int size);
+#endif
 
 /**
  * Import external buffers into RGA driver.
@@ -59,16 +61,14 @@ IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int width, int
  *
  * @param fd/va/pa
  *      Select dma_fd/virtual_address/physical_address by buffer type
- * @param size
- *      Describes the size of the image buffer
+ * @param param
+ *      Configure buffer parameters
  *
  * @return rga_buffer_handle_t
  */
-#ifdef __cplusplus
-IM_API rga_buffer_handle_t importbuffer_fd(int fd, int size);
-IM_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, int size);
-IM_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, int size);
-#endif
+IM_EXPORT_API rga_buffer_handle_t importbuffer_fd(int fd, im_handle_param_t *param);
+IM_EXPORT_API rga_buffer_handle_t importbuffer_virtualaddr(void *va, im_handle_param_t *param);
+IM_EXPORT_API rga_buffer_handle_t importbuffer_physicaladdr(uint64_t pa, im_handle_param_t *param);
 
 /**
  * Import external buffers into RGA driver.

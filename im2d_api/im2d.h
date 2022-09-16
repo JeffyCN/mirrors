@@ -21,7 +21,6 @@
 #define _im2d_h_
 
 #include "im2d_version.h"
-#include "im2d_symbol.h"
 #include "im2d_type.h"
 
 #include "im2d_common.h"

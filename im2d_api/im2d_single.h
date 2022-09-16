@@ -343,7 +343,9 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                            im_rect srect, im_rect drect, im_rect prect,
                            int acquire_fence_fd, int *release_fence_fd,
                            im_opt_t *opt_ptr, int usage);
-#endif
+
+#endif /* #ifdef __cplusplus */
+
 IM_C_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mode, int sync);
 IM_C_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
                          const im_rect osd_rect, im_osd_t *osd_config, int sync);
@@ -364,6 +366,7 @@ IM_C_API IM_STATUS imquantize_t(const rga_buffer_t src, rga_buffer_t dst, im_nn_
 IM_C_API IM_STATUS imrop_t(const rga_buffer_t src, rga_buffer_t dst, int rop_code, int sync);
 IM_C_API IM_STATUS imfill_t(rga_buffer_t dst, im_rect rect, int color, int sync);
 IM_C_API IM_STATUS impalette_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut, int sync);
+/* End: Symbols reserved for compatibility with macro functions */
 
 #ifndef __cplusplus
 
@@ -804,8 +807,7 @@ IM_C_API IM_STATUS impalette_t(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t 
         } \
         __ret; \
     })
-/* End define IM2D C API */
+/* End define IM2D macro API */
 #endif
-/* End: Symbols reserved for compatibility with macro functions */
 
 #endif /* #ifndef _im2d_single_h_ */
