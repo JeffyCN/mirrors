@@ -3882,9 +3882,7 @@ static int rkcif_g_selection(struct file *file, void *fh,
 			s->r.width = stream->pixm.width;
 			s->r.height = stream->pixm.height;
 		}
-	}
-
-	if (s->target == V4L2_SEL_TGT_CROP) {
+	} else if (s->target == V4L2_SEL_TGT_CROP) {
 		if (stream->crop_mask & (CROP_SRC_USR_MASK | CROP_SRC_SENSOR_MASK)) {
 			s->r = stream->crop[CROP_SRC_ACT];
 		} else {
@@ -3893,6 +3891,8 @@ static int rkcif_g_selection(struct file *file, void *fh,
 			s->r.width = stream->pixm.width;
 			s->r.height = stream->pixm.height;
 		}
+	} else {
+		goto err;
 	}
 
 	return ret;
