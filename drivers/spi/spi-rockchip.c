@@ -17,6 +17,7 @@
 #include <linux/dmaengine.h>
 #include <linux/gpio.h>
 #include <linux/interrupt.h>
+#include <linux/miscdevice.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/pinctrl/consumer.h>
@@ -178,6 +179,8 @@
 #define ROCKCHIP_SPI_VER2_TYPE1			0x05EC0002
 #define ROCKCHIP_SPI_VER2_TYPE2			0x00110002
 
+#define ROCKCHIP_SPI_REGISTER_SIZE		0x1000
+
 struct rockchip_spi_quirks {
 	u32 max_baud_div_in_cpha;
 };
@@ -216,6 +219,8 @@ struct rockchip_spi {
 	bool gpio_requested;
 	bool cs_inactive; /* spi slave tansmition stop when cs inactive */
 	struct spi_transfer *xfer; /* Store xfer temporarily */
+	phys_addr_t base_addr_phy;
+	struct miscdevice miscdev;
 
 	/* quirks */
 	u32 max_baud_div_in_cpha;
@@ -813,6 +818,60 @@ static void rockchip_spi_cleanup(struct spi_device *spi)
 		gpio_free(spi->cs_gpio);
 }
 
+static int rockchip_spi_misc_open(struct inode *inode, struct file *filp)
+{
+	struct miscdevice *misc = filp->private_data;
+	struct spi_controller *ctlr = dev_get_drvdata(misc->parent);
+	struct rockchip_spi *rs = spi_controller_get_devdata(ctlr);
+
+	pm_runtime_get_sync(rs->dev);
+
+	return 0;
+}
+
+static int rockchip_spi_misc_release(struct inode *inode, struct file *filp)
+{
+	struct miscdevice *misc = filp->private_data;
+	struct spi_controller *ctlr = dev_get_drvdata(misc->parent);
+	struct rockchip_spi *rs = spi_controller_get_devdata(ctlr);
+
+	pm_runtime_put(rs->dev);
+
+	return 0;
+}
+
+static int rockchip_spi_mmap(struct file *filp, struct vm_area_struct *vma)
+{
+	struct miscdevice *misc = filp->private_data;
+	struct spi_controller *ctlr = dev_get_drvdata(misc->parent);
+	struct rockchip_spi *rs = spi_controller_get_devdata(ctlr);
+	size_t size = vma->vm_end - vma->vm_start;
+	int err;
+
+	if (size > ROCKCHIP_SPI_REGISTER_SIZE) {
+		dev_warn(misc->parent, "mmap size is out of limitation\n");
+		return -EINVAL;
+	}
+
+	vma->vm_flags |= VM_IO;
+	vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+
+	err = remap_pfn_range(vma, vma->vm_start,
+			      __phys_to_pfn(rs->base_addr_phy),
+			      size, vma->vm_page_prot);
+	if (err)
+		return -EAGAIN;
+
+	return 0;
+}
+
+static const struct file_operations rockchip_spi_misc_fops = {
+	.open		= rockchip_spi_misc_open,
+	.release	= rockchip_spi_misc_release,
+	.mmap		= rockchip_spi_mmap,
+};
+
 static int rockchip_spi_probe(struct platform_device *pdev)
 {
 	int ret;
@@ -849,6 +908,7 @@ static int rockchip_spi_probe(struct platform_device *pdev)
 		ret =  PTR_ERR(rs->regs);
 		goto err_put_ctlr;
 	}
+	rs->base_addr_phy = mem->start;
 
 	rs->apb_pclk = devm_clk_get(&pdev->dev, "apb_pclk");
 	if (IS_ERR(rs->apb_pclk)) {
@@ -997,6 +1057,22 @@ static int rockchip_spi_probe(struct platform_device *pdev)
 		goto err_free_dma_rx;
 	}
 
+	if (IS_ENABLED(CONFIG_SPI_ROCKCHIP_MISCDEV)) {
+		char misc_name[20];
+
+		snprintf(misc_name, sizeof(misc_name), "rkspi-dev%d", ctlr->bus_num);
+		rs->miscdev.minor = MISC_DYNAMIC_MINOR;
+		rs->miscdev.name = misc_name;
+		rs->miscdev.fops = &rockchip_spi_misc_fops;
+		rs->miscdev.parent = &pdev->dev;
+
+		ret = misc_register(&rs->miscdev);
+		if (ret)
+			dev_err(&pdev->dev, "failed to register misc device %s\n", misc_name);
+		else
+			dev_info(&pdev->dev, "register misc device %s\n", misc_name);
+	}
+
 	return 0;
 
 err_free_dma_rx:
@@ -1021,6 +1097,9 @@ static int rockchip_spi_remove(struct platform_device *pdev)
 {
 	struct spi_controller *ctlr = spi_controller_get(platform_get_drvdata(pdev));
 	struct rockchip_spi *rs = spi_controller_get_devdata(ctlr);
+
+	if (IS_ENABLED(CONFIG_SPI_ROCKCHIP_MISCDEV))
+		misc_deregister(&rs->miscdev);
 
 	pm_runtime_get_sync(&pdev->dev);
 
