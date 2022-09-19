@@ -30,12 +30,21 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "hardware/gralloc_rockchip.h"
-
 #include "im2d.hpp"
 #include "RgaUtils.h"
 
 #include "utils.h"
+
+/*
+ *   In order to be compatible with different android versions,
+ * some gralloc usage is defined here.
+ *   The correct usage should be to refer to the corresponding header file:
+ *   Android 12 and above: #include "hardware/gralloc_rockchip.h"
+ *   Android 11 and below: #include "hardware/gralloc.h"
+ */
+#define GRALLOC_USAGE_PRIVATE_11                (1ULL << 56)
+#define RK_GRALLOC_USAGE_WITHIN_4G              GRALLOC_USAGE_PRIVATE_11
+#define RK_GRALLOC_USAGE_RGA_ACCESS             RK_GRALLOC_USAGE_WITHIN_4G
 
 using namespace android;
 

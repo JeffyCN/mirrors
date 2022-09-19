@@ -54,12 +54,8 @@ cc_library_shared {
         "im2d_api",
     ],
     include_dirs: [
-        "external/libdrm",
-        "external/libdrm/include/drm",
-        "frameworks/native/libs/nativewindow/include",
-        "system/core/libsync",
-        "system/core/libsync/include",
         "hardware/rockchip/librga/core/utils",
+        "hardware/rockchip/librga/core/3rdparty/libdrm/include/drm",
     ],
 
     shared_libs: [
