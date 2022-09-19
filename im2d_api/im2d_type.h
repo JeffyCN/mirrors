@@ -21,6 +21,8 @@
 
 #include <stdint.h>
 
+#include "rga.h"
+
 #define IM_API /* define API export as needed */
 
 #ifdef __cplusplus

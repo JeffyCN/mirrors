@@ -34,7 +34,6 @@
 #include "xf86drm.h"
 #endif
 
-#include "rga.h"
 #include "RockchipRga.h"
 #include "im2d_api/im2d.hpp"
 #include "RgaUtils.h"

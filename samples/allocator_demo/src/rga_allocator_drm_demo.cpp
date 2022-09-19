@@ -32,7 +32,6 @@
 
 #include "im2d.h"
 #include "RgaUtils.h"
-#include "rga.h"
 
 #include "drm_alloc.h"
 #include "utils.h"

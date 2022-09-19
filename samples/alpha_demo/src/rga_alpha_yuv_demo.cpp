@@ -32,8 +32,6 @@
 
 #include "RgaUtils.h"
 #include "im2d.hpp"
-#include "rga.h"
-
 int main() {
     int ret = 0;
     int fg_width, fg_height, fg_format;

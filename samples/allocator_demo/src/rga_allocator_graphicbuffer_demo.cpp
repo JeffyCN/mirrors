@@ -34,7 +34,6 @@
 
 #include "im2d.hpp"
 #include "RgaUtils.h"
-#include "rga.h"
 
 #include "utils.h"
 

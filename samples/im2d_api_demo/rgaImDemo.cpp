@@ -34,7 +34,6 @@
 #include "im2d.hpp"
 #include "RockchipRga.h"
 #include "RgaUtils.h"
-#include "rga.h"
 #include "args.h"
 
 #define ERROR               -1
