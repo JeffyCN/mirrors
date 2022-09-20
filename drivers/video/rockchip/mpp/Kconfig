@@ -60,4 +60,9 @@ config ROCKCHIP_MPP_JPGDEC
 	help
 	  rockchip mpp rkv jpeg decoder.
 
+config ROCKCHIP_MPP_VDPP
+	bool "VDPP device driver"
+	help
+	  rockchip vdpp.
+
 endif
