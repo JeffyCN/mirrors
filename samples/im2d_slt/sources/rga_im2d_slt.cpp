@@ -28,10 +28,6 @@
 #include <memory.h>
 #include <pthread.h>
 
-#ifndef LINUX
-#include "hardware/gralloc_rockchip.h"
-#endif
-
 #if LIBDRM
 #include "drm_alloc.h"
 #include "xf86drm.h"
@@ -44,6 +40,17 @@
 #include "im2d_api/im2d.hpp"
 #include "RgaUtils.h"
 #include "slt_config.h"
+
+/*
+ *   In order to be compatible with different android versions,
+ * some gralloc usage is defined here.
+ *   The correct usage should be to refer to the corresponding header file:
+ *   Android 12 and above: #include "hardware/gralloc_rockchip.h"
+ *   Android 11 and below: #include "hardware/gralloc.h"
+ */
+#define GRALLOC_USAGE_PRIVATE_11                (1ULL << 56)
+#define RK_GRALLOC_USAGE_WITHIN_4G              GRALLOC_USAGE_PRIVATE_11
+#define RK_GRALLOC_USAGE_RGA_ACCESS             RK_GRALLOC_USAGE_WITHIN_4G
 
 enum {
     FILL_BUFF  = 0,
