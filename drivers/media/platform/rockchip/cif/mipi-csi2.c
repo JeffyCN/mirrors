@@ -19,7 +19,8 @@
 #include <media/v4l2-fwnode.h>
 #include <media/v4l2-subdev.h>
 #include <media/v4l2-event.h>
-
+#include <linux/rk-camera-module.h>
+#include <media/v4l2-ioctl.h>
 #include "mipi-csi2.h"
 
 static int csi2_debug;
@@ -125,6 +126,7 @@ struct csi2_dev {
 	int			num_sensors;
 	atomic_t		frm_sync_seq;
 	struct csi2_err_stats err_list[RK_CSI2_ERR_MAX];
+	int dsi_input_en;
 };
 
 #define DEVICE_NAME "rockchip-mipi-csi2"
@@ -209,9 +211,39 @@ static struct v4l2_subdev *get_remote_sensor(struct v4l2_subdev *sd)
 	return media_entity_to_v4l2_subdev(sensor_me);
 }
 
+static void get_remote_terminal_sensor(struct v4l2_subdev *sd,
+				       struct v4l2_subdev **sensor_sd)
+{
+	struct media_graph graph;
+	struct media_entity *entity = &sd->entity;
+	struct media_device *mdev = entity->graph_obj.mdev;
+	int ret;
+
+	/* Walk the graph to locate sensor nodes. */
+	mutex_lock(&mdev->graph_mutex);
+	ret = media_graph_walk_init(&graph, mdev);
+	if (ret) {
+		mutex_unlock(&mdev->graph_mutex);
+		*sensor_sd = NULL;
+		return;
+	}
+	media_graph_walk_start(&graph, entity);
+	while ((entity = media_graph_walk_next(&graph))) {
+		if (entity->function == MEDIA_ENT_F_CAM_SENSOR)
+			break;
+	}
+	mutex_unlock(&mdev->graph_mutex);
+	media_graph_walk_cleanup(&graph);
+	if (entity)
+		*sensor_sd = media_entity_to_v4l2_subdev(entity);
+	else
+		*sensor_sd = NULL;
+}
+
 static void csi2_update_sensor_info(struct csi2_dev *csi2)
 {
 	struct csi2_sensor *sensor = &csi2->sensors[0];
+	struct v4l2_subdev *terminal_sensor_sd = NULL;
 	struct v4l2_mbus_config mbus;
 	int ret = 0;
 
@@ -221,6 +253,13 @@ static void csi2_update_sensor_info(struct csi2_dev *csi2)
 		return;
 	}
 
+	get_remote_terminal_sensor(&csi2->sd, &terminal_sensor_sd);
+	if (terminal_sensor_sd) {
+		ret = v4l2_subdev_call(terminal_sensor_sd, core, ioctl,
+				       RKMODULE_GET_CSI_DSI_INFO, &csi2->dsi_input_en);
+		if (ret)
+			csi2->dsi_input_en = 0;
+	}
 	csi2->bus.flags = mbus.flags;
 	switch (csi2->bus.flags & V4L2_MBUS_CSI2_LANES) {
 	case V4L2_MBUS_CSI2_1_LANE:
@@ -319,7 +358,7 @@ static int csi2_start(struct csi2_dev *csi2)
 
 	csi2_update_sensor_info(csi2);
 
-	if (csi2->format_mbus.code == MEDIA_BUS_FMT_RGB888_1X24)
+	if (csi2->dsi_input_en == RKMODULE_DSI_INPUT)
 		host_type = RK_DSI_RXHOST;
 	else
 		host_type = RK_CSI_RXHOST;
