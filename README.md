@@ -12,13 +12,13 @@ Rockchip RK3066 | RK3188 | RK2926 | RK2928 | RK3026 | RK3028 | RK3128 | Sofia3gr
 
 ## 目录说明
 
-├── **im2d_api**：RGA API相关实现及头文件
-├── **include**：RGA硬件相关头文件
-├── **core**：RGA用户空间驱动实现
-├── **docs**：FAQ以及API说明文档
-├── **samples**：示例代码
-├── **toolchains**：示例工具链配置文件
-└──其余编译相关文件
+├── **im2d_api**：RGA API相关实现及头文件<br/>
+├── **include**：RGA硬件相关头文件<br/>
+├── **core**：RGA用户空间驱动实现<br/>
+├── **docs**：FAQ以及API说明文档<br/>
+├── **samples**：示例代码<br/>
+├── **toolchains**：示例工具链配置文件<br/>
+└──其余编译相关文件<br/>
 
 ## 编译说明
 

@@ -4,23 +4,23 @@
 
 ## 目录说明
 
-├── **im2d_api_demo**：IM2D API快速演示DEMO
-├── **im2d_slt**：slt测试工具
-├── **allocator_demo**：内存分配器相关示例代码
-├── **alpha_demo**：alpha混合、叠加相关示例代码
-├── **async_demo**：异步模式相关示例代码
-├── **config_demo**：线程全局配置相关示例代码
-├── **copy_demo**：图像搬运、拷贝相关示例代码
-├── **crop_demo**：图像裁剪、拼接相关示例代码
-├── **cvtcolor_demo**：图像格式转换、色域转换相关示例代码
-├── **fill_demo**：图像填充、画框相关示例代码
-├── **mosaic_demo**：马赛克遮盖相关示例代码
-├── **padding_demo**：padding相关示例代码
-├── **resize_demo**：图像缩放相关示例代码
-├── **rop_demo**：ROP运算相关示例代码
-├── **transform_demo**：图像变换相关示例代码
-├── **utils**：示例代码中使用的第三方引用、通用工具代码
-└── **sample_file**：演示代码使用图像数据文件
+├── **im2d_api_demo**：IM2D API快速演示DEMO<br/>
+├── **im2d_slt**：slt测试工具<br/>
+├── **allocator_demo**：内存分配器相关示例代码<br/>
+├── **alpha_demo**：alpha混合、叠加相关示例代码<br/>
+├── **async_demo**：异步模式相关示例代码<br/>
+├── **config_demo**：线程全局配置相关示例代码<br/>
+├── **copy_demo**：图像搬运、拷贝相关示例代码<br/>
+├── **crop_demo**：图像裁剪、拼接相关示例代码<br/>
+├── **cvtcolor_demo**：图像格式转换、色域转换相关示例代码<br/>
+├── **fill_demo**：图像填充、画框相关示例代码<br/>
+├── **mosaic_demo**：马赛克遮盖相关示例代码<br/>
+├── **padding_demo**：padding相关示例代码<br/>
+├── **resize_demo**：图像缩放相关示例代码<br/>
+├── **rop_demo**：ROP运算相关示例代码<br/>
+├── **transform_demo**：图像变换相关示例代码<br/>
+├── **utils**：示例代码中使用的第三方引用、通用工具代码<br/>
+└── **sample_file**：演示代码使用图像数据文件<br/>
 
 ## 编译说明
 
