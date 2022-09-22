@@ -886,7 +886,10 @@ not match our unaligned address for < 2.6.24
 
 #define KMALLOC_FLAG (CAN_SLEEP() ? GFP_KERNEL: GFP_ATOMIC)
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 170))
+#define RANDOM32	get_random_u32
+#define RANDOM_BYTES    get_random_bytes
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
 #define RANDOM32	prandom_u32
 #define RANDOM_BYTES    prandom_bytes
 #else
@@ -957,5 +960,12 @@ int kernel_read_compat(struct file *file, loff_t offset, char *addr, unsigned lo
 #define	PCI_DMA_FROMDEVICE	2
 #endif
 #endif
+
+#ifdef ANDROID_BKPORT
+#if (ANDROID_VERSION >= 13) && (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 41))
+#define ANDROID13_KERNEL515_BKPORT
+#define CFG80211_BKPORT_MLO
+#endif /* ANDROID_VERSION >= 13 && KERNEL >= 5.15.41 */
+#endif /* ANDROID_BKPORT */
 
 #endif /* _linuxver_h_ */

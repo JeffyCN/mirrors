@@ -84,7 +84,11 @@ static void IRQHandlerF2(struct sdio_func *func);
 static int sdioh_sdmmc_get_cisaddr(sdioh_info_t *sd, uint32 regaddr);
 #if defined(ENABLE_INSMOD_NO_FW_LOAD) && !defined(BUS_POWER_RESTORE)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0) && defined(MMC_SW_RESET)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+extern int mmc_sw_reset(struct mmc_card *card);
+#else
 extern int mmc_sw_reset(struct mmc_host *host);
+#endif
 #else
 extern int sdio_reset_comm(struct mmc_card *card);
 #endif
@@ -102,6 +106,8 @@ extern PBCMSDH_SDMMC_INSTANCE gInstance;
 #ifndef CUSTOM_SDIO_F1_BLKSIZE
 #define CUSTOM_SDIO_F1_BLKSIZE		DEFAULT_SDIO_F1_BLKSIZE
 #endif
+
+#define COPY_BUF_SIZE	(SDPCM_MAXGLOM_SIZE * 1600)
 
 #define MAX_IO_RW_EXTENDED_BLK		511
 
@@ -209,6 +215,14 @@ sdioh_attach(osl_t *osh, struct sdio_func *func)
 		return NULL;
 	}
 	bzero((char *)sd, sizeof(sdioh_info_t));
+#if defined(BCMSDIOH_TXGLOM) && defined(BCMSDIOH_STATIC_COPY_BUF)
+	sd->copy_buf = MALLOC(osh, COPY_BUF_SIZE);
+	if (sd->copy_buf == NULL) {
+		sd_err(("%s: MALLOC of %d-byte copy_buf failed\n",
+			__FUNCTION__, COPY_BUF_SIZE));
+		goto fail;
+	}
+#endif
 	sd->osh = osh;
 	sd->fake_func0.num = 0;
 	sd->fake_func0.card = func->card;
@@ -273,6 +287,9 @@ sdioh_attach(osl_t *osh, struct sdio_func *func)
 	return sd;
 
 fail:
+#if defined(BCMSDIOH_TXGLOM) && defined(BCMSDIOH_STATIC_COPY_BUF)
+	MFREE(sd->osh, sd->copy_buf, COPY_BUF_SIZE);
+#endif
 	MFREE(sd->osh, sd, sizeof(sdioh_info_t));
 	return NULL;
 }
@@ -301,6 +318,9 @@ sdioh_detach(osl_t *osh, sdioh_info_t *sd)
 		sd->func[1] = NULL;
 		sd->func[2] = NULL;
 
+#if defined(BCMSDIOH_TXGLOM) && defined(BCMSDIOH_STATIC_COPY_BUF)
+		MFREE(sd->osh, sd->copy_buf, COPY_BUF_SIZE);
+#endif
 		MFREE(sd->osh, sd, sizeof(sdioh_info_t));
 	}
 	return SDIOH_API_RC_SUCCESS;
@@ -1356,7 +1376,8 @@ sdioh_request_packet_chain(sdioh_info_t *sd, uint fix_inc, uint write, uint func
 			return SDIOH_API_RC_FAIL;
 		}
 	}
-	} else if(sd->txglom_mode == SDPCM_TXGLOM_CPY) {
+	}
+	else if(sd->txglom_mode == SDPCM_TXGLOM_CPY) {
 		for (pnext = pkt; pnext; pnext = PKTNEXT(sd->osh, pnext)) {
 			ttl_len += PKTLEN(sd->osh, pnext);
 		}
@@ -1365,16 +1386,20 @@ sdioh_request_packet_chain(sdioh_info_t *sd, uint fix_inc, uint write, uint func
 		for (pnext = pkt; pnext; pnext = PKTNEXT(sd->osh, pnext)) {
 			uint8 *buf = (uint8*)PKTDATA(sd->osh, pnext);
 			pkt_len = PKTLEN(sd->osh, pnext);
-
 			if (!localbuf) {
+#ifdef BCMSDIOH_STATIC_COPY_BUF
+				if (ttl_len <= COPY_BUF_SIZE)
+					localbuf = sd->copy_buf;
+#else
 				localbuf = (uint8 *)MALLOC(sd->osh, ttl_len);
+#endif
 				if (localbuf == NULL) {
-					sd_err(("%s: %s TXGLOM: localbuf malloc FAILED\n",
-						__FUNCTION__, (write) ? "TX" : "RX"));
+					sd_err(("%s: %s localbuf malloc FAILED ttl_len=%d\n",
+						__FUNCTION__, (write) ? "TX" : "RX", ttl_len));
+					ttl_len -= pkt_len;
 					goto txglomfail;
 				}
 			}
-
 			bcopy(buf, (localbuf + local_plen), pkt_len);
 			local_plen += pkt_len;
 			if (PKTNEXT(sd->osh, pnext))
@@ -1419,8 +1444,10 @@ txglomfail:
 		return SDIOH_API_RC_FAIL;
 	}
 
+#ifndef BCMSDIOH_STATIC_COPY_BUF
 	if (localbuf)
 		MFREE(sd->osh, localbuf, ttl_len);
+#endif
 
 #ifndef PKT_STATICS
 	if (sd_msglevel & SDH_COST_VAL)
@@ -1749,15 +1776,23 @@ sdioh_sdmmc_card_regwrite(sdioh_info_t *sd, int func, uint32 regaddr, int regsiz
 #if defined(ENABLE_INSMOD_NO_FW_LOAD) && !defined(BUS_POWER_RESTORE)
 static int sdio_sw_reset(sdioh_info_t *sd)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0) && defined(MMC_SW_RESET)
+#ifdef MMC_SW_RESET
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	struct mmc_card *card = sd->func[0]->card;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
 	struct mmc_host *host = sd->func[0]->card->host;
 #endif
+#endif /* MMC_SW_RESET */
 	int err = 0;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0) && defined(MMC_SW_RESET)
 	printf("%s: Enter\n", __FUNCTION__);
 	sdio_claim_host(sd->func[0]);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
+	err = mmc_sw_reset(card);
+#else
 	err = mmc_sw_reset(host);
+#endif
 	sdio_release_host(sd->func[0]);
 #else
 	err = sdio_reset_comm(sd->func[0]->card);

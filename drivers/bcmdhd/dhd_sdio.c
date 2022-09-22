@@ -69,6 +69,7 @@
 #include <dhd_dbg.h>
 #include <dhdioctl.h>
 #include <sdiovar.h>
+#include <wl_android.h>
 #include <dhd_config.h>
 #ifdef DHD_PKTDUMP_TOFW
 #include <dhd_linux_pktdump.h>
@@ -1200,7 +1201,7 @@ dhdsdio_clk_kso_enab(dhd_bus_t *bus, bool on)
 	int err = 0;
 	int try_cnt = 0, try_max = CUSTOM_MAX_KSO_ATTEMPTS;
 	struct dhd_conf *conf = bus->dhd->conf;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)) && !defined(ANDROID13_KERNEL515_BKPORT)
 	wifi_adapter_info_t *adapter = NULL;
 	uint32 bus_type = -1, bus_num = -1, slot_num = -1;
 #else
@@ -1211,7 +1212,7 @@ dhdsdio_clk_kso_enab(dhd_bus_t *bus, bool on)
 
 	KSO_DBG(("%s> op:%s\n", __FUNCTION__, (on ? "KSO_SET" : "KSO_CLR")));
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)) && !defined(ANDROID13_KERNEL515_BKPORT)
 	dhd_bus_get_ids(bus, &bus_type, &bus_num, &slot_num);
 	adapter = dhd_wifi_platform_get_adapter(bus_type, bus_num, slot_num);
 	sdio_retune_crc_disable(adapter->sdio_func);
@@ -1343,7 +1344,7 @@ dhdsdio_clk_kso_enab(dhd_bus_t *bus, bool on)
 #endif /* !defined(NDIS) */
 
 exit:
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)) && !defined(ANDROID13_KERNEL515_BKPORT)
 	if (on)
 		sdio_retune_release(adapter->sdio_func);
 	sdio_retune_crc_enable(adapter->sdio_func);
@@ -1979,6 +1980,9 @@ dhdsdio_bussleep(dhd_bus_t *bus, bool sleep)
 #if defined(BCMSDIOH_STD)
 	uint32 sd3_tuning_disable = FALSE;
 #endif /* BCMSDIOH_STD */
+#if defined(WL_EXT_IAPSTA) && defined(DHD_LOSSLESS_ROAMING)
+	int state;
+#endif /* WL_EXT_IAPSTA && DHD_LOSSLESS_ROAMING */
 
 	DHD_INFO(("dhdsdio_bussleep: request %s (currently %s)\n",
 	         (sleep ? "SLEEP" : "WAKE"),
@@ -2001,6 +2005,13 @@ dhdsdio_bussleep(dhd_bus_t *bus, bool sleep)
 		if (bus->dpc_sched || bus->rxskip || pktq_n_pkts_tot(&bus->txq))
 #endif /* DHD_USE_IDLECOUNT */
 			return BCME_BUSY;
+#if defined(WL_EXT_IAPSTA) && defined(DHD_LOSSLESS_ROAMING)
+		state = wl_ext_any_sta_handshaking(bus->dhd);
+		if (state) {
+			DHD_ERROR(("handshaking %d\n", state));
+			return BCME_BUSY;
+		}
+#endif /* WL_EXT_IAPSTA && DHD_LOSSLESS_ROAMING */
 
 #ifdef BT_OVER_SDIO
 		/*
@@ -2729,7 +2740,7 @@ static int dhdsdio_txpkt_postprocess(dhd_bus_t *bus, void *pkt)
 	/* restore pkt buffer pointer, but keeps the header pushed by dhd_prot_hdrpush */
 	frame = (uint8*)PKTDATA(osh, pkt);
 
-	DHD_INFO(("%s PKTLEN before postprocess %d",
+	DHD_INFO(("%s PKTLEN before postprocess %d\n",
 		__FUNCTION__, PKTLEN(osh, pkt)));
 
 	/* PKTLEN still includes tail_padding, so exclude it.
@@ -8053,7 +8064,11 @@ clkwait:
 	} else if (bus->clkstate == CLK_PENDING) {
 		/* Awaiting I_CHIPACTIVE; don't resched */
 	} else if (bus->intstatus || bus->ipend ||
-			(!bus->fcstate && pktq_mlen(&bus->txq, ~bus->flowcontrol) && DATAOK(bus)) ||
+			(!bus->fcstate && (pktq_mlen(&bus->txq, ((~bus->flowcontrol)
+#ifdef DHD_LOSSLESS_ROAMING
+			& bus->dhd->dequeue_prec_map
+#endif /* DHD_LOSSLESS_ROAMING */
+			))) && DATAOK(bus)) ||
 			PKT_AVAILABLE(bus, bus->intstatus)) {  /* Read multiple frames */
 		resched = TRUE;
 	}

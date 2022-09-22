@@ -1964,6 +1964,12 @@ struct bcm_cfg80211 {
 #endif /* WL_P2P_6G */
 	u32 halpid;
 	u8 country[WLC_CNTRY_BUF_SZ];
+#ifdef BCMDBUS
+	bool bus_resuming;
+#endif /* BCMDBUS */
+#ifdef WL_ROAM_WAR
+	struct ether_addr roaming_bssid;
+#endif /* WL_ROAM_WAR */
 #if defined(RSSIAVG)
 	wl_rssi_cache_ctrl_t g_rssi_cache_ctrl;
 	wl_rssi_cache_ctrl_t g_connected_rssi_cache_ctrl;
@@ -3088,6 +3094,14 @@ extern s32 wl_handle_auth_event(struct bcm_cfg80211 *cfg, struct net_device *nde
 extern bool wl_customer6_legacy_chip_check(struct bcm_cfg80211 *cfg,
 	struct net_device *ndev);
 #endif /* CUSTOMER_HW6 */
+#if !defined(WL_TWT) && defined(WL_TWT_HAL_IF)
+extern s32 wl_cfgvendor_notify_twt_event(struct bcm_cfg80211 *cfg,
+	bcm_struct_cfgdev *cfgdev, const wl_event_msg_t *e, void *data);
+#endif /* !WL_TWT && WL_TWT_HAL_IF */
+#ifdef BCMDBUS
+s32
+__wl_cfg80211_up_resume(dhd_pub_t *dhd);
+#endif /* BCMDBUS */
 void wl_wlfc_enable(struct bcm_cfg80211 *cfg, bool enable);
 s32 wl_handle_join(struct bcm_cfg80211 *cfg, struct net_device *dev,
 	wlcfg_assoc_info_t *assoc_info);

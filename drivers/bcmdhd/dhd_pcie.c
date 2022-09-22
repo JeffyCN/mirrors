@@ -2367,11 +2367,7 @@ dhdpcie_dongle_attach(dhd_bus_t *bus)
 	bus->deep_sleep = TRUE;
 #endif
 
-#ifdef CUSTOMER_HW_ROCKCHIP
-	bus->idma_enabled = FALSE;
-#else
 	bus->idma_enabled = TRUE;
-#endif
 	bus->ifrm_enabled = TRUE;
 #ifdef BCMINTERNAL
 	bus->dma_chan = 0;
@@ -3561,17 +3557,28 @@ dhd_bus_download_firmware(struct dhd_bus *bus, osl_t *osh,
 void
 dhd_set_bus_params(struct dhd_bus *bus)
 {
-	if (bus->dhd->conf->dhd_poll >= 0) {
-		bus->poll = bus->dhd->conf->dhd_poll;
+	struct dhd_conf *conf = bus->dhd->conf;
+
+	if (conf->dhd_poll >= 0) {
+		bus->poll = conf->dhd_poll;
 		if (!bus->pollrate)
 			bus->pollrate = 1;
-		printf("%s: set polling mode %d\n", __FUNCTION__, bus->dhd->conf->dhd_poll);
+		printf("%s: set polling mode %d\n", __FUNCTION__, conf->dhd_poll);
 	}
-	if (bus->dhd->conf->d2h_intr_control >= 0)
-		bus->d2h_intr_control = bus->dhd->conf->d2h_intr_control;
+	if (conf->d2h_intr_control >= 0)
+		bus->d2h_intr_control = conf->d2h_intr_control;
 	printf("d2h_intr_method -> %s(%d); d2h_intr_control -> %s(%d)\n",
 		bus->d2h_intr_method ? "PCIE_MSI" : "PCIE_INTX", bus->d2h_intr_method,
 		bus->d2h_intr_control ? "HOST_IRQ" : "D2H_INTMASK", bus->d2h_intr_control);
+
+	if (conf->aspm != -1) {
+		bool aspm = conf->aspm ? TRUE : FALSE;
+		dhd_bus_aspm_enable_rc_ep(bus, aspm);
+	}
+	if (conf->l1ss != -1) {
+		bool l1ss = conf->l1ss ? TRUE : FALSE;
+		dhd_bus_l1ss_enable_rc_ep(bus, l1ss);
+	}
 }
 
 /**
@@ -9706,7 +9713,7 @@ dhdpcie_bus_suspend(struct dhd_bus *bus, bool state)
 			/* Got D3 Ack. Suspend the bus */
 #ifdef OEM_ANDROID
 			if (active) {
-				DHD_ERROR(("%s():Suspend failed because of wakelock"
+				DHD_ERROR(("%s():Suspend failed because of wakelock "
 					"restoring Dongle to D0\n", __FUNCTION__));
 
 				if (bus->dhd->dhd_watchdog_ms_backup) {

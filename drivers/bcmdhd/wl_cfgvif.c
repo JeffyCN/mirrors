@@ -888,6 +888,7 @@ wl_release_vif_macaddr(struct bcm_cfg80211 *cfg, u8 *mac_addr, u16 wl_iftype)
 	WL_DBG(("%s:Mac addr" MACDBG "\n",
 			__FUNCTION__, MAC2STRDBG(mac_addr)));
 
+#if defined(SPECIFIC_MAC_GEN_SCHEME)
 	if ((wl_iftype == WL_IF_TYPE_P2P_DISC) || (wl_iftype == WL_IF_TYPE_AP) ||
 		(wl_iftype == WL_IF_TYPE_P2P_GO) || (wl_iftype == WL_IF_TYPE_P2P_GC)) {
 		/* Avoid invoking release mac addr code for interfaces using
@@ -895,6 +896,11 @@ wl_release_vif_macaddr(struct bcm_cfg80211 *cfg, u8 *mac_addr, u16 wl_iftype)
 		 */
 		return BCME_OK;
 	}
+#else
+	if (wl_iftype == WL_IF_TYPE_P2P_DISC) {
+		return BCME_OK;
+	}
+#endif /* SPECIFIC_MAC_GEN_SCHEME */
 
 	/* Fetch last two bytes of mac address */
 	org_toggle_bytes = ntoh16(*((u16 *)&ndev->dev_addr[4]));
@@ -951,7 +957,7 @@ wl_get_vif_macaddr(struct bcm_cfg80211 *cfg, u16 wl_iftype, u8 *mac_addr)
  * released. Ensure to call wl_release_vif_macaddress to free up
  * the mac address.
  */
-#if defined (SPECIFIC_MAC_GEN_SCHEME)
+#if defined(SPECIFIC_MAC_GEN_SCHEME)
 	if (wl_iftype == WL_IF_TYPE_P2P_DISC ||	wl_iftype == WL_IF_TYPE_AP) {
 		mac_addr[0] |= 0x02;
 	} else if ((wl_iftype == WL_IF_TYPE_P2P_GO) || (wl_iftype == WL_IF_TYPE_P2P_GC)) {
@@ -962,7 +968,7 @@ wl_get_vif_macaddr(struct bcm_cfg80211 *cfg, u16 wl_iftype, u8 *mac_addr)
 	if (wl_iftype == WL_IF_TYPE_P2P_DISC) {
 		mac_addr[0] |= 0x02;
 	}
-#endif /* SEPCIFIC_MAC_GEN_SCHEME */
+#endif /* SPECIFIC_MAC_GEN_SCHEME */
 	else {
 		/* For locally administered mac addresses, we keep the
 		 * OUI part constant and just work on the last two bytes.
@@ -1571,8 +1577,9 @@ wl_cfg80211_set_channel(struct wiphy *wiphy, struct net_device *dev,
 #endif
 	chspec = wl_freq_to_chanspec(center_freq);
 
-	WL_MSG(dev->name, "netdev_ifidx(%d), chan_type(%d) target channel(%s-%d) \n",
-		dev->ifindex, channel_type, CHSPEC2BANDSTR(chspec), CHSPEC_CHANNEL(chspec));
+	WL_MSG(dev->name, "netdev_ifidx(%d) chan_type(%d) target channel(%s-%d %sMHz)\n",
+		dev->ifindex, channel_type, CHSPEC2BANDSTR(chspec),
+		CHSPEC_CHANNEL(chspec), wf_chspec_to_bw_str(chspec));
 
 #ifdef WL_P2P_6G
 	if (!(cfg->p2p_6g_enabled)) {
@@ -2769,7 +2776,7 @@ wl_cfg80211_set_ap_role(
 	dhd_pub_t *dhd = (dhd_pub_t *)(cfg->pub);
 #endif /* WLEASYMESH */
 
-	new_chip = wl_new_chip_check(dev);
+	new_chip = dhd_conf_new_chip_check(cfg->pub);
 
 	if ((bssidx = wl_get_bssidx_by_wdev(cfg, dev->ieee80211_ptr)) < 0) {
 		WL_ERR(("Find p2p index from wdev(%p) failed\n", dev->ieee80211_ptr));
@@ -3678,14 +3685,23 @@ wl_cfg80211_start_ap(
  *      hardcoded values in 'wl_cfg80211_set_channel()'.
  */
 #if ((LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)) && !defined(WL_COMPAT_WIRELESS))
-	if (!dev->ieee80211_ptr->preset_chandef.chan) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2) || defined(CFG80211_BKPORT_MLO)
+	if (!dev->ieee80211_ptr->u.ap.preset_chandef.chan)
+#else
+	if (!dev->ieee80211_ptr->preset_chandef.chan)
+#endif
+	{
 		WL_ERR(("chan is NULL\n"));
 		err = -EINVAL;
 		goto fail;
 	}
 	if ((err = wl_cfg80211_set_channel(wiphy, dev,
-		dev->ieee80211_ptr->preset_chandef.chan,
-		NL80211_CHAN_HT20) < 0)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2) || defined(CFG80211_BKPORT_MLO)
+			dev->ieee80211_ptr->u.ap.preset_chandef.chan,
+#else
+			dev->ieee80211_ptr->preset_chandef.chan,
+#endif
+			NL80211_CHAN_HT20) < 0)) {
 		WL_ERR(("Set channel failed \n"));
 		goto fail;
 	}
@@ -3779,7 +3795,11 @@ fail:
 	if (err) {
 		WL_ERR(("ADD/SET beacon failed\n"));
 		wl_flush_fw_log_buffer(dev, FW_LOGSET_MASK_ALL);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2) || defined(CFG80211_BKPORT_MLO)
+		wl_cfg80211_stop_ap(wiphy, dev, 0);
+#else
 		wl_cfg80211_stop_ap(wiphy, dev);
+#endif
 		if (dev_role == NL80211_IFTYPE_AP) {
 #ifdef WL_EXT_IAPSTA
 		if (!wl_ext_iapsta_iftype_enabled(dev, WL_IF_TYPE_AP)) {
@@ -3820,7 +3840,11 @@ fail:
 s32
 wl_cfg80211_stop_ap(
 	struct wiphy *wiphy,
-	struct net_device *dev)
+	struct net_device *dev
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2) || defined(CFG80211_BKPORT_MLO)
+	, unsigned int link_id
+#endif
+	)
 {
 	int err = 0;
 	u32 dev_role = 0;
@@ -4504,8 +4528,10 @@ wl_notify_connect_status_ap(struct bcm_cfg80211 *cfg, struct net_device *ndev,
 		(reason == WLC_E_REASON_INITIAL_ASSOC) &&
 		(wl_get_mode_by_netdev(cfg, ndev) == WL_MODE_AP)) {
 		if (!wl_get_drv_status(cfg, AP_CREATED, ndev)) {
+			char chan_str[64];
 			/* AP/GO brought up successfull in firmware */
-			WL_MSG(ndev->name, "AP/GO Link up\n");
+			wl_ext_get_chan_str(ndev, chan_str, sizeof(chan_str));
+			WL_MSG(ndev->name, "AP/GO Link up (%s)\n", chan_str);
 			wl_set_drv_status(cfg, AP_CREATED, ndev);
 			if (delayed_work_pending(&cfg->ap_work)) {
 				cancel_delayed_work_sync(&cfg->ap_work);
@@ -5085,44 +5111,42 @@ wl_cfg80211_set_mac_acl(struct wiphy *wiphy, struct net_device *cfgdev,
 }
 #endif /* WL_CFG80211_ACL */
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0))
 int wl_chspec_chandef(chanspec_t chanspec,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
-	struct cfg80211_chan_def *chandef,
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 5, 0) && (LINUX_VERSION_CODE <= (3, 7, 0)))
-	struct chan_info *chaninfo,
-#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)) */
-	struct wiphy *wiphy)
+	struct cfg80211_chan_def *chandef, struct wiphy *wiphy)
 {
 	uint16 freq = 0;
-	int chan_type = 0;
-	int channel = 0;
 	struct ieee80211_channel *chan;
 
 	if (!chandef) {
 		return -1;
+	} else {
+		memset(chandef, 0, sizeof(*chandef));
 	}
-	channel = CHSPEC_CHANNEL(chanspec);
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 8, 0))
+	chandef->center_freq1 =  wl_channel_to_frequency(CHSPEC_CHANNEL(chanspec), CHSPEC_BAND(chanspec));
+	freq = wl_channel_to_frequency(wf_chspec_primary20_chan(chanspec), CHSPEC_BAND(chanspec));
+	chandef->chan = ieee80211_get_channel(wiphy, freq);
+	chandef->center_freq2 = 0;
 
 	switch (CHSPEC_BW(chanspec)) {
 		case WL_CHANSPEC_BW_20:
-			chan_type = NL80211_CHAN_HT20;
-			break;
-		case WL_CHANSPEC_BW_40:
-		{
-			if (CHSPEC_SB_UPPER(chanspec)) {
-				channel += CH_10MHZ_APART;
-			} else {
-				channel -= CH_10MHZ_APART;
-			}
-		}
-			chan_type = NL80211_CHAN_HT40PLUS;
+			chandef->width = NL80211_CHAN_WIDTH_20;
 			break;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 8, 0))
+		case WL_CHANSPEC_BW_40:
+			chandef->width = NL80211_CHAN_WIDTH_40;
+			break;
+
 		case WL_CHANSPEC_BW_80:
+			chandef->width = NL80211_CHAN_WIDTH_80;
+			break;
+
 		case WL_CHANSPEC_BW_8080:
 		{
+			/* XXX Left as is but need proper calculation for center_freq2 is used */
+			int chan_type = 0;
+			int channel = 0;
 			uint16 sb = CHSPEC_CTL_SB(chanspec);
 
 			if (sb == WL_CHANSPEC_CTL_SB_LL) {
@@ -5140,19 +5164,45 @@ int wl_chspec_chandef(chanspec_t chanspec,
 				chan_type = NL80211_CHAN_HT40MINUS;
 			else if (sb == WL_CHANSPEC_CTL_SB_UL || sb == WL_CHANSPEC_CTL_SB_UU)
 				chan_type = NL80211_CHAN_HT40PLUS;
-		}
+			freq = wl_channel_to_frequency(channel, CHSPEC_BAND(chanspec));
+			chan = ieee80211_get_channel(wiphy, freq);
+			cfg80211_chandef_create(chandef, chan, chan_type);
+			return 0;
 			break;
+		}
+
 		case WL_CHANSPEC_BW_160:
-			channel = wf_chspec_primary20_chan(chanspec);
-			/* Using base chan_type as kernel does not define chan_type for 160 MHz */
+			chandef->width = NL80211_CHAN_WIDTH_160;
+			break;
+		default:
+			chandef->width = NL80211_CHAN_WIDTH_20;
+			break;
+	}
+
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 5, 0) && \
+      (LINUX_VERSION_CODE <= KERNEL_VERSION (3, 7, 0)))
+
+	int chan_type = 0;
+	int channel = 0;
+	channel = CHSPEC_CHANNEL(chanspec);
+	switch (CHSPEC_BW(chanspec)) {
+		case WL_CHANSPEC_BW_20:
 			chan_type = NL80211_CHAN_HT20;
 			break;
-#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 8, 0)) */
+		case WL_CHANSPEC_BW_40:
+			if (CHSPEC_SB_UPPER(chanspec)) {
+				channel += CH_10MHZ_APART;
+			} else {
+				channel -= CH_10MHZ_APART;
+			}
+			chan_type = NL80211_CHAN_HT40PLUS;
+			break;
+
 		default:
 			chan_type = NL80211_CHAN_HT20;
 			break;
-
 	}
+
 	freq = wl_channel_to_frequency(channel, CHSPEC_BAND(chanspec));
 	chan = ieee80211_get_channel(wiphy, freq);
 	WL_DBG(("channel:%d freq:%d chan_type: %d chan_ptr:%p \n",
@@ -5164,24 +5214,19 @@ int wl_chspec_chandef(chanspec_t chanspec,
 		return -EINVAL;
 	}
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 8, 0))
-	cfg80211_chandef_create(chandef, chan, chan_type);
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 5, 0) && (LINUX_VERSION_CODE <= (3, 7, 0)))
-	chaninfo->freq = freq;
-	chaninfo->chan_type = chan_type;
+	chandef->freq = freq;
+	chandef->chan_type = chan_type;
 #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 8, 0)) */
+
 	return 0;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0))
 void
 wl_cfg80211_ch_switch_notify(struct net_device *dev, uint16 chanspec, struct wiphy *wiphy)
 {
 	u32 freq;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 8, 0))
 	struct cfg80211_chan_def chandef;
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 5, 0) && (LINUX_VERSION_CODE <= (3, 7, 0)))
-	struct chan_info chaninfo;
-#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 8, 0)) */
 
 	if (!wiphy) {
 		WL_ERR(("wiphy is null\n"));
@@ -5196,21 +5241,21 @@ wl_cfg80211_ch_switch_notify(struct net_device *dev, uint16 chanspec, struct wip
 	}
 #endif /* (LINUX_VERSION_CODE <= KERNEL_VERSION (3, 18, 0)) */
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 8, 0))
-	if (wl_chspec_chandef(chanspec, &chandef, wiphy))
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 5, 0) && (LINUX_VERSION_CODE <= (3, 7, 0)))
-	if (wl_chspec_chandef(chanspec, &chaninfo, wiphy))
-#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 8, 0)) */
-	{
+	if (wl_chspec_chandef(chanspec, &chandef, wiphy)) {
 		WL_ERR(("chspec_chandef failed\n"));
 		return;
 	}
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 8, 0))
 	freq = chandef.chan ? chandef.chan->center_freq : chandef.center_freq1;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2) || defined(CFG80211_BKPORT_MLO)
+	cfg80211_ch_switch_notify(dev, &chandef, 0);
+#else
 	cfg80211_ch_switch_notify(dev, &chandef);
+#endif
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 5, 0) && (LINUX_VERSION_CODE <= (3, 7, 0)))
-	freq = chan_info.freq;
-	cfg80211_ch_switch_notify(dev, freq, chan_info.chan_type);
+	freq = chandef.freq;
+	cfg80211_ch_switch_notify(dev, freq, chandef.chan_type);
 #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION (3, 8, 0)) */
 
 	WL_MSG(dev->name, "Channel switch notification for freq: %d chanspec: 0x%x\n",

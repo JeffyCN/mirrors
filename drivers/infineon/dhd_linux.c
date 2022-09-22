@@ -23007,6 +23007,8 @@ module_exit(rockchip_wifi_exit_module_rkwifi);
 module_init(rockchip_wifi_init_module_rkwifi);
 module_exit(rockchip_wifi_exit_module_rkwifi);
 #endif /* CONFIG_WIFI_LOAD_DRIVER_WHEN_KERNEL_BOOTUP */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
+#endif
 
 #endif /* CONFIG_DHD_PLAT_ROCKCHIP */
