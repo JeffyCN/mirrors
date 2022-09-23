@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
-SAMPLES_DIR=${SCRIPT_DIR}
+SAMPLES_DIR=${SCRIPT_DIR}/..
 
 # The following options require configuration
 TOOLCHAIN_PATH=${SAMPLES_DIR}/../toolchains/toolchain_android_ndk.cmake
