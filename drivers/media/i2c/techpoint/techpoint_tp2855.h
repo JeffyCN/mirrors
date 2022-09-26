@@ -32,11 +32,12 @@ enum tp2855_support_reso {
 };
 
 int tp2855_initialize(struct techpoint *techpoint);
-int tp2855_get_channel_input_status(struct i2c_client *client, u8 ch);
-int tp2855_get_all_input_status(struct i2c_client *client, u8 *detect_status);
+int tp2855_get_channel_input_status(struct techpoint *techpoint, u8 ch);
+int tp2855_get_all_input_status(struct techpoint *techpoint, u8 *detect_status);
+int tp2855_set_decoder_mode(struct i2c_client *client, int ch, int status);
 int tp2855_set_channel_reso(struct i2c_client *client, int ch,
 			    enum techpoint_support_reso reso);
 int tp2855_get_channel_reso(struct i2c_client *client, int ch);
-int tp2855_set_quick_stream(struct i2c_client *client, u32 stream);
+int tp2855_set_quick_stream(struct techpoint *techpoint, u32 stream);
 
 #endif // _TECHPOINT_TP2855_H

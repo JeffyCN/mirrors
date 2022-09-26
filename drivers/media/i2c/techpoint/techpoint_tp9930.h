@@ -40,7 +40,7 @@ int tp9930_set_decoder_mode(struct i2c_client *client, int ch, int status);
 int tp9930_set_channel_reso(struct i2c_client *client, int ch,
 			    enum techpoint_support_reso reso);
 int tp9930_get_channel_reso(struct i2c_client *client, int ch);
-int tp9930_get_channel_input_status(struct i2c_client *client, u8 index);
-int tp9930_get_all_input_status(struct i2c_client *client, u8 *detect_status);
+int tp9930_get_channel_input_status(struct techpoint *techpoint, u8 index);
+int tp9930_get_all_input_status(struct techpoint *techpoint, u8 *detect_status);
 
 #endif // _TECHPOINT_TP9930_H

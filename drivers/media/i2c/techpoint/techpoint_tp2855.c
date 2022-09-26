@@ -124,25 +124,29 @@ int tp2855_initialize(struct techpoint *techpoint)
 	return 0;
 }
 
-int tp2855_get_channel_input_status(struct i2c_client *client, u8 ch)
+int tp2855_get_channel_input_status(struct techpoint *techpoint, u8 ch)
 {
+	struct i2c_client *client = techpoint->client;
 	u8 val = 0;
 
+	mutex_lock(&techpoint->mutex);
 	techpoint_write_reg(client, PAGE_REG, ch);
 	techpoint_read_reg(client, INPUT_STATUS_REG, &val);
+	mutex_unlock(&techpoint->mutex);
 	dev_dbg(&client->dev, "input_status ch %d : %x\n", ch, val);
 
 	return (val & INPUT_STATUS_MASK) ? 0 : 1;
 }
 
-int tp2855_get_all_input_status(struct i2c_client *client, u8 *detect_status)
+int tp2855_get_all_input_status(struct techpoint *techpoint, u8 *detect_status)
 {
+	struct i2c_client *client = techpoint->client;
 	u8 val = 0, i;
 
 	for (i = 0; i < PAD_MAX; i++) {
 		techpoint_write_reg(client, PAGE_REG, i);
 		techpoint_read_reg(client, INPUT_STATUS_REG, &val);
-		detect_status[i] = tp2855_get_channel_input_status(client, i);
+		detect_status[i] = tp2855_get_channel_input_status(techpoint, i);
 	}
 
 	return 0;
@@ -488,8 +492,26 @@ int tp2855_get_channel_reso(struct i2c_client *client, int ch)
 	return reso;
 }
 
-int tp2855_set_quick_stream(struct i2c_client *client, u32 stream)
+int tp2855_set_decoder_mode(struct i2c_client *client, int ch, int status)
 {
+	u8 val = 0;
+
+	techpoint_write_reg(client, PAGE_REG, ch);
+	techpoint_read_reg(client, 0x26, &val);
+	if (status)
+		val |= 0x1;
+	else
+		val &= ~0x1;
+	techpoint_write_reg(client, 0x26, val);
+
+	return 0;
+}
+
+int tp2855_set_quick_stream(struct techpoint *techpoint, u32 stream)
+{
+	struct i2c_client *client = techpoint->client;
+
+	mutex_lock(&techpoint->mutex);
 	if (stream) {
 		techpoint_write_reg(client, 0x40, 0x8);
 		techpoint_write_reg(client, 0x23, 0x0);
@@ -498,6 +520,7 @@ int tp2855_set_quick_stream(struct i2c_client *client, u32 stream)
 		techpoint_write_reg(client, 0x23, 0x2);
 		usleep_range(40 * 1000, 50 * 1000);
 	}
+	mutex_unlock(&techpoint->mutex);
 
 	return 0;
 }
