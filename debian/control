@@ -20,7 +20,12 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: include the rkwifibt broadcom firmware for rockchip linux
 
-Package: rkwifibt-rockchip-firmware
+Package: rkwifibt-realtek-firmware
 Section: libdevel
 Architecture: any
-Description: include the rkwifibt rockchip firmware for rockchip linux
+Description: include the rkwifibt realtek firmware for rockchip linux
+
+Package: rkwifibt-infineon-firmware
+Section: libdevel
+Architecture: any
+Description: include the rkwifibt infineon firmware for rockchip linux

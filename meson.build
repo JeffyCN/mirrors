@@ -7,13 +7,13 @@ project(
 
 executable(
     'brcm_patchram_plus1',
-    [ 'brcm_tools/brcm_patchram_plus1.c' ],
+    [ 'tools/brcm_tools/brcm_patchram_plus1.c' ],
     install : true,
 )
 
 executable(
     'dhd_priv',
-    [ 'brcm_tools/dhd_priv.c' ],
+    [ 'tools/brcm_tools/dhd_priv.c' ],
     install : true,
 )
 
