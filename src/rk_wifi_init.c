@@ -355,8 +355,10 @@ static int create_bt_test_file_for_brcm(void)
 	if (fp != 0) {
 		fputs("killall brcm_patchram_plus1\n", fp);
 		fputs("echo 0 > /sys/class/rfkill/rfkill0/state\n", fp);
+		fputs("echo 0 > /proc/bluetooth/sleep/btwrite\n", fp);
 		fputs("sleep 1\n", fp);
 		fputs("echo 1 > /sys/class/rfkill/rfkill0/state\n", fp);
+		fputs("echo 1 > /proc/bluetooth/sleep/btwrite\n", fp);
 		fputs("sleep 1\n", fp);
 		sprintf(cmdline, "brcm_patchram_plus1 --enable_hci --no2bytes --use_baudrate_for_download  --tosleep  200000 --baudrate 1500000 --patchram  %s %s &\n", AP_BT_FIRMWARE_MODULE_PATH, bt_tty_dev);
 		fputs(cmdline, fp);
@@ -386,8 +388,10 @@ static int create_bt_test_file_for_rtl(void)
 
 	if (fp != 0) {
 		fputs("echo 0 > /sys/class/rfkill/rfkill0/state\n", fp);
+		fputs("echo 0 > /proc/bluetooth/sleep/btwrite\n", fp);
 		fputs("sleep 0.5\n", fp);
 		fputs("echo 1 > /sys/class/rfkill/rfkill0/state\n", fp);
+		fputs("echo 1 > /proc/bluetooth/sleep/btwrite\n", fp);
 		fputs("sleep 0.5\n", fp);
 
 		fputs("insmod /usr/lib/modules/hci_uart.ko\n", fp);
@@ -469,8 +473,10 @@ int wifibt_load_driver(void)
 		system("killall brcm_patchram_plus1");
 		memset(temp, 0, 256);
 		system("echo 0 > /sys/class/rfkill/rfkill0/state");
+		system("echo 0 > /proc/bluetooth/sleep/btwrite");
 		usleep(5000);
 		system("echo 1 > /sys/class/rfkill/rfkill0/state");
+		system("echo 1 > /proc/bluetooth/sleep/btwrite");
 		usleep(5000);
 
 		sprintf(temp, "brcm_patchram_plus1 --enable_hci --no2bytes --use_baudrate_for_download  --tosleep  200000 --baudrate 1500000 --patchram  %s %s &", AP_BT_FIRMWARE_MODULE_PATH, bt_tty_dev);
@@ -486,8 +492,10 @@ int wifibt_load_driver(void)
 			system("insmod /system/lib/modules/rtk_btusb.ko");
 		} else {
 			system("echo 0 > /sys/class/rfkill/rfkill0/state");
+			system("echo 0 > /proc/bluetooth/sleep/btwrite");
 			usleep(5000);
 			system("echo 1 > /sys/class/rfkill/rfkill0/state");
+			system("echo 1 > /proc/bluetooth/sleep/btwrite");
 			usleep(5000);
 
 			system("insmod /usr/lib/modules/hci_uart.ko");
