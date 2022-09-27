@@ -1779,6 +1779,9 @@ static int sdio_sw_reset(sdioh_info_t *sd)
 #ifdef MMC_SW_RESET
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	struct mmc_card *card = sd->func[0]->card;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+	struct mmc_card *card = sd->func[0]->card;
+	struct mmc_host *host = sd->func[0]->card->host;
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
 	struct mmc_host *host = sd->func[0]->card->host;
 #endif
@@ -1791,7 +1794,11 @@ static int sdio_sw_reset(sdioh_info_t *sd)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	err = mmc_sw_reset(card);
 #else
-	err = mmc_sw_reset(host);
+	printf("Call mmc_hw_reset for rk\n");
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+	atomic_dec(&card->sdio_funcs_probed);
+#endif
+	err = mmc_hw_reset(host);
 #endif
 	sdio_release_host(sd->func[0]);
 #else
