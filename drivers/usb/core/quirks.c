@@ -234,6 +234,7 @@ static const struct usb_device_id usb_quirk_list[] = {
 			USB_QUIRK_IGNORE_REMOTE_WAKEUP },
 
 	/* Sonix FaceBlack device */
+	{ USB_DEVICE(0x0c45, 0x636a), .driver_info = USB_QUIRK_AUTO_SUSPEND },
 	{ USB_DEVICE(0x0c45, 0x64ab), .driver_info = USB_QUIRK_AUTO_SUSPEND },
 	{ USB_DEVICE(0x0c45, 0x64ac), .driver_info = USB_QUIRK_AUTO_SUSPEND },
 
