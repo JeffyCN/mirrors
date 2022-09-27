@@ -378,13 +378,19 @@ static ssize_t utilisation_show(struct device *dev,
 	struct rk_context *platform = get_rk_context(kbdev);
 	ssize_t ret = 0;
 	unsigned long period_in_us = platform->utilisation_period * 1000;
-	unsigned long total_time;
-	unsigned long busy_time;
-	unsigned long utilisation;
+	unsigned long total_time = 0;
+	unsigned long busy_time = 0;
+	unsigned long utilisation = 0;
 
+#ifdef CONFIG_MALI_DEVFREQ
 	kbase_pm_reset_dvfs_utilisation(kbdev);
+#endif
 	usleep_range(period_in_us, period_in_us + 100);
+#ifdef CONFIG_MALI_DEVFREQ
 	kbase_pm_get_dvfs_utilisation(kbdev, &total_time, &busy_time);
+#else
+	dev_warn(dev, "can not get 'total_time' and 'busy_time', for CONFIG_MALI_DEVFREQ is disabled");
+#endif
 	/* 'devfreq_dev_profile' instance registered to devfreq
 	 * also uses kbase_pm_reset_dvfs_utilisation
 	 * and kbase_pm_get_dvfs_utilisation.
@@ -392,7 +398,8 @@ static ssize_t utilisation_show(struct device *dev,
 	 */
 	D("total_time : %lu, busy_time : %lu.", total_time, busy_time);
 
-	utilisation = busy_time * 100 / total_time;
+	if (total_time != 0)
+		utilisation = busy_time * 100 / total_time;
 	ret += snprintf(buf, PAGE_SIZE, "%ld\n", utilisation);
 
 	return ret;
