@@ -1,6 +1,6 @@
-# AP6275P_NVRAM_V1.1_20200702 
+# AP6275P_NVRAM_V1.2_20210918A
 # AP6271P_V00 board, iPA version.
-# nvram copied and edited from AP6271P_EVB_V01 EVB board //
+# nvram copied and edited from AP6271P_EVB_V02 EVB board //
 # SSID generated using Alberto's boardssid.py script:
 # ********************SUMMARY********************
 # Board Name: AP6271P_V00
@@ -130,54 +130,55 @@ AvVmid_c0=2,127,4,92,4,91,4,91,4,94
 AvVmid_c1=2,127,4,93,4,93,4,95,3,110
 
 # CCK in case of multi mode 2
-pa2gccka0=-137,7810,-928
-pa2gccka1=-139,7853,-929
+pa2gccka0=-51,9141,-1039
+pa2gccka1=-106,8172,-949
 # OFDM in case of multi_mode 2
-pa2ga0=-103,7727,-855
-pa2ga1=-126,7258,-826
-pa5ga0=-176,5703,-703,-180,5747,-708,-165,5994,-732,-146,6299,-757
-pa5ga1=-132,6132,-760,-107,6472,-769,-142,6184,-752,-108,7237,-858
+
+pa2ga0=-31,8047,-863
+pa2ga1=-3,8006,-803
+
+pa5ga0=-184,5375,-671,-174,5517,-677,-193,5122,-649,-177,5303,-666
+pa5ga1=-207,5022,-635,-168,5741,-695,-169,5544,-687,-182,5435,-687
+
 
 # Max power and offsets
-maxp2ga0=86
-maxp2ga1=86
-maxp5ga0=74,74,74,74
-maxp5ga1=68,68,68,70
+maxp2ga0=88
+maxp2ga1=88
+maxp5ga0=68,68,68,68
+maxp5ga1=69,69,66,66
 subband5gver=0x4
 paparambwver=3
 cckpwroffset0=0
 cckpwroffset1=0
-pdoffset40ma0=0x4433
-pdoffset80ma0=0x3232
-pdoffset40ma1=0x2333
-pdoffset80ma1=0x1222
-cckbw202gpo=0x2222
+pdoffset40ma0=0x4444
+pdoffset80ma0=0x4444
+pdoffset40ma1=0x4444
+pdoffset80ma1=0x4444
+cckbw202gpo=0x4444
 cckbw20ul2gpo=0
-mcsbw202gpo=0x98533221
-mcsbw402gpo=0x44000000
-dot11agofdmhrbw202gpo=0x4444
-ofdmlrbw202gpo=0x0033
-mcsbw205glpo=0x49533322
-mcsbw405glpo=0xE9443342
-mcsbw805glpo=0xEC665542
+mcsbw202gpo=0xBB977665
+mcsbw402gpo=0xBB977665
+dot11agofdmhrbw202gpo=0x7766
+ofdmlrbw202gpo=0x0055
+mcsbw205glpo=0x88331100
+mcsbw405glpo=0xC8332200
+mcsbw805glpo=0xCC443320
 mcsbw1605glpo=0
-mcsbw205gmpo=0x49200000
-mcsbw405gmpo=0xE9443342
-mcsbw805gmpo=0xEC665542
+mcsbw205gmpo=0x88331100
+mcsbw405gmpo=0xC8332200
+mcsbw805gmpo=0xCC443320
 mcsbw1605gmpo=0
-mcsbw205ghpo=0x49312220
-#mcsbw405ghpo=0x84-1-1-2-2-2-5
-mcsbw405ghpo=0xC8221110
-#mcsbw405ghpo=0x88555555
+mcsbw205ghpo=0x88331100
+mcsbw405ghpo=0xC8333300
 mcsbw805ghpo=0xCC443320
 powoffs2gtna0=0,0,0,0,0,0,0,0,0,0,0,0,0,0
 powoffs2gtna1=0,0,0,0,0,0,0,0,0,0,0,0,0,0
-mcs1024qam2gpo=0xDDDD
-mcs1024qam5glpo=0xFFFFCC
-mcs1024qam5gmpo=0xFFFFCC
-mcs1024qam5ghpo=0xFFFFCC
-mcs1024qam5gx1po=0xFFFFCC
-mcs1024qam5gx2po=0xFFFFCC
+mcs1024qam2gpo=0xEEEE
+mcs1024qam5glpo=0xFFFFDD
+mcs1024qam5gmpo=0xFFFFDD
+mcs1024qam5ghpo=0xFFFFDD
+mcs1024qam5gx1po=0xFFFFDD
+mcs1024qam5gx2po=0xFFFFDD
 mcs8poexp=0
 mcs9poexp=0
 mcs10poexp=0
@@ -234,9 +235,9 @@ nb_eps_stopidx=63
 epsilonoff_5g20_c0=0,0,0,0
 epsilonoff_5g40_c0=0,0,0,0
 epsilonoff_5g80_c0=0,0,0,0
-epsilonoff_5g20_c1=0,0,0,0
-epsilonoff_5g40_c1=0,0,0,0
-epsilonoff_5g80_c1=0,0,-1,-1
+epsilonoff_5g20_c1=0,0,-2,-3
+epsilonoff_5g40_c1=0,0,-2,-3
+epsilonoff_5g80_c1=0,0,-2,-3
 epsilonoff_2g20_c0=0
 epsilonoff_2g20_c1=0
 
@@ -282,54 +283,55 @@ paprrmcsgain5g80=0,0,0,0,0,0,0,0,0,0,0,0
 cckpapd_pwrthresh=64
 
 ## ULOFDMA Board limit PPRs for 2G20 ##
-ruppr2g20bpska0=0x0
-ruppr2g20bpska1=0x0
-ruppr2g20qpska0=0x0
-ruppr2g20qpska1=0x0
-ruppr2g20qam16a0=0x0
-ruppr2g20qam16a1=0x0
-ruppr2g20qam64a0=0x1
-ruppr2g20qam64a1=0x1
-ruppr2g20qam256a0=0x21084
-ruppr2g20qam256a1=0x21084
-ruppr2g20qam1024a0=0x0
-ruppr2g20qam1024a1=0x0
+ruppr2g20bpska0=0x00021084
+ruppr2g20bpska1=0x00021084
+ruppr2g20qpska0=0x00021084
+ruppr2g20qpska1=0x00021084
+ruppr2g20qam16a0=0x000294A5
+ruppr2g20qam16a1=0x000294A5
+ruppr2g20qam64a0=0x00039CE7
+ruppr2g20qam64a1=0x00039CE7
+ruppr2g20qam256a0=0x0005AD6B
+ruppr2g20qam256a1=0x0005AD6B
+ruppr2g20qam1024a0=0x0005AD6B
+ruppr2g20qam1024a1=0x0005AD6B
 ## ULOFDMA Board limit PPRs for 5G20 ##
-ruppr5g20bpska0=0x20000
-ruppr5g20bpska1=0x20000
-ruppr5g20qpska0=0x18000
-ruppr5g20qpska1=0x18000
-ruppr5g20qam16a0=0x28000
-ruppr5g20qam16a1=0x28000
-ruppr5g20qam64a0=0x29086
-ruppr5g20qam64a1=0x29086
-ruppr5g20qam256a0=0x62908
-ruppr5g20qam256a1=0x62908
-ruppr5g20qam1024a0=0x70000
-ruppr5g20qam1024a1=0x70000
+ruppr5g20bpska0=0x00008421
+ruppr5g20bpska1=0x00008421
+ruppr5g20qpska0=0x00008421
+ruppr5g20qpska1=0x00008421
+ruppr5g20qam16a0=0x00010842
+ruppr5g20qam16a1=0x00010842
+ruppr5g20qam64a0=0x00021084
+ruppr5g20qam64a1=0x00021084
+ruppr5g20qam256a0=0x00042108
+ruppr5g20qam256a1=0x00042108
+ruppr5g20qam1024a0=0x0006318C
+ruppr5g20qam1024a1=0x0006318C
 ## ULOFDMA Board limit PPRs for 5G40 ##
-ruppr5g40bpska0=0x638000
-ruppr5g40bpska1=0x638000
-ruppr5g40qpska0=0x840020
-ruppr5g40qpska1=0x840020
-ruppr5g40qam16a0=0x638001
-ruppr5g40qam16a1=0x638001
-ruppr5g40qam64a0=0x739085
-ruppr5g40qam64a1=0x739085
-ruppr5g40qam256a0=0x106a108
-ruppr5g40qam256a1=0x106a108
-ruppr5g40qam1024a0=0x1078000
-ruppr5g40qam1024a1=0x1078000
+ruppr5g40bpska0=0x00108421
+ruppr5g40bpska1=0x00108421
+ruppr5g40qpska0=0x00108421
+ruppr5g40qpska1=0x00108421
+ruppr5g40qam16a0=0x00210842
+ruppr5g40qam16a1=0x00210842
+ruppr5g40qam64a0=0x00421084
+ruppr5g40qam64a1=0x00421084
+ruppr5g40qam256a0=0x00C6318C
+ruppr5g40qam256a1=0x00C6318C
+ruppr5g40qam1024a0=0x01084210
+ruppr5g40qam1024a1=0x01084210
 ## ULOFDMA Board limit PPRs for 5G80 ##
-ruppr5g80bpska0=0x0
-ruppr5g80bpska1=0x0
-ruppr5g80qpska0=0x0
-ruppr5g80qpska1=0x0
-ruppr5g80qam16a0=0x0
-ruppr5g80qam16a1=0x0
-ruppr5g80qam64a0=0x187218e7
-ruppr5g80qam64a1=0x187218e7
-ruppr5g80qam256a0=0x3904254a
-ruppr5g80qam256a1=0x3904254a
-ruppr5g80qam1024a0=0x49068000
-ruppr5g80qam1024a1=0x49068000
+ruppr5g80bpska0=0x04108421
+ruppr5g80bpska1=0x04108421
+ruppr5g80qpska0=0x04108421
+ruppr5g80qpska1=0x04108421
+ruppr5g80qam16a0=0x0C318C63
+ruppr5g80qam16a1=0x0C318C63
+ruppr5g80qam64a0=0x10421084
+ruppr5g80qam64a1=0x10421084
+ruppr5g80qam256a0=0x30C6318C
+ruppr5g80qam256a1=0x30C6318C
+ruppr5g80qam1024a0=0x41084210
+ruppr5g80qam1024a1=0x41084210
+
