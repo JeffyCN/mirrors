@@ -4423,11 +4423,6 @@ static void vop2_crtc_atomic_enable(struct drm_crtc *crtc, struct drm_crtc_state
 	vcstate->mode_update = vop2_crtc_mode_update(crtc);
 	if (vcstate->mode_update)
 		vop2_disable_all_planes_for_crtc(crtc);
-	/*
-	 * restore the lut table.
-	 */
-	if (vp->gamma_lut_active)
-		vop2_crtc_load_lut(crtc);
 
 	dclk_inv = (vcstate->bus_flags & DRM_BUS_FLAG_PIXDATA_DRIVE_NEGEDGE) ? 1 : 0;
 	val = (adjusted_mode->flags & DRM_MODE_FLAG_NHSYNC) ? 0 : BIT(HSYNC_POSITIVE);
@@ -4640,6 +4635,12 @@ static void vop2_crtc_atomic_enable(struct drm_crtc *crtc, struct drm_crtc_state
 	VOP_MODULE_SET(vop2, vp, standby, 0);
 
 	drm_crtc_vblank_on(crtc);
+
+	/*
+	 * restore the lut table.
+	 */
+	if (vp->gamma_lut_active)
+		vop2_crtc_load_lut(crtc);
 
 	vop2_unlock(vop2);
 }
