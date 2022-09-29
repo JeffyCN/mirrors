@@ -1023,7 +1023,7 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .formats = formats_for_smart,
 	  .nformats = ARRAY_SIZE(formats_for_smart),
 	  .format_modifiers = format_modifiers,
-	  .layer_sel_id = 3,
+	  .layer_sel_id = { 3, 3, 3, 0xff },
 	  .supported_rotations = DRM_MODE_REFLECT_Y,
 	  .hsu_filter_mode = VOP2_SCALE_UP_BIC,
 	  .hsd_filter_mode = VOP2_SCALE_DOWN_BIL,
@@ -1046,7 +1046,7 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .nformats = ARRAY_SIZE(formats_for_smart),
 	  .format_modifiers = format_modifiers,
 	  .base = 0x600,
-	  .layer_sel_id = 7,
+	  .layer_sel_id = { 7, 7, 7, 0xff },
 	  .supported_rotations = DRM_MODE_REFLECT_Y,
 	  .hsu_filter_mode = VOP2_SCALE_UP_BIC,
 	  .hsd_filter_mode = VOP2_SCALE_DOWN_BIL,
@@ -1069,7 +1069,7 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .nformats = ARRAY_SIZE(formats_for_rk356x_esmart),
 	  .format_modifiers = format_modifiers,
 	  .base = 0x200,
-	  .layer_sel_id = 6,
+	  .layer_sel_id = { 6, 6, 6, 0xff },
 	  .supported_rotations = DRM_MODE_REFLECT_Y,
 	  .hsu_filter_mode = VOP2_SCALE_UP_BIC,
 	  .hsd_filter_mode = VOP2_SCALE_DOWN_BIL,
@@ -1092,7 +1092,7 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .nformats = ARRAY_SIZE(formats_for_rk356x_esmart),
 	  .format_modifiers = format_modifiers,
 	  .base = 0x0,
-	  .layer_sel_id = 2,
+	  .layer_sel_id = { 2, 2, 2, 0xff },
 	  .supported_rotations = DRM_MODE_REFLECT_Y,
 	  .hsu_filter_mode = VOP2_SCALE_UP_BIC,
 	  .hsd_filter_mode = VOP2_SCALE_DOWN_BIL,
@@ -1115,7 +1115,7 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .formats = formats_for_cluster,
 	  .nformats = ARRAY_SIZE(formats_for_cluster),
 	  .format_modifiers = format_modifiers_afbc,
-	  .layer_sel_id = 0,
+	  .layer_sel_id = { 0, 0, 0, 0xff },
 	  .supported_rotations = DRM_MODE_ROTATE_90 | DRM_MODE_ROTATE_270 |
 				 DRM_MODE_REFLECT_X | DRM_MODE_REFLECT_Y,
 	  .hsu_filter_mode = VOP2_SCALE_UP_BIC,
@@ -1134,7 +1134,7 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .name = "Cluster0-win1",
 	  .phys_id = ROCKCHIP_VOP2_CLUSTER0,
 	  .base = 0x80,
-	  .layer_sel_id = -1,
+	  .layer_sel_id = { 0xff, 0xff, 0xff, 0xff },
 	  .formats = formats_for_cluster,
 	  .nformats = ARRAY_SIZE(formats_for_cluster),
 	  .format_modifiers = format_modifiers_afbc,
@@ -1157,7 +1157,7 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	  .formats = formats_for_cluster,
 	  .nformats = ARRAY_SIZE(formats_for_cluster),
 	  .format_modifiers = format_modifiers_afbc,
-	  .layer_sel_id = 1,
+	  .layer_sel_id = { 1, 1, 1, 0xff },
 	  .supported_rotations = DRM_MODE_ROTATE_90 | DRM_MODE_ROTATE_270 |
 				 DRM_MODE_REFLECT_X | DRM_MODE_REFLECT_Y,
 	  .hsu_filter_mode = VOP2_SCALE_UP_BIC,
@@ -1175,7 +1175,7 @@ static const struct vop2_win_data rk3568_vop_win_data[] = {
 	{
 	  .name = "Cluster1-win1",
 	  .phys_id = ROCKCHIP_VOP2_CLUSTER1,
-	  .layer_sel_id = -1,
+	  .layer_sel_id = { 0xff, 0xff, 0xff, 0xff },
 	  .formats = formats_for_cluster,
 	  .nformats = ARRAY_SIZE(formats_for_cluster),
 	  .format_modifiers = format_modifiers_afbc,
@@ -1258,6 +1258,21 @@ static const struct vop2_ctrl rk3568_vop_ctrl = {
 	.otp_en = VOP_REG(RK3568_OTP_WIN_EN, 0x1, 0),
 };
 
+static const struct vop_dump_regs rk3568_dump_regs[] = {
+	{ RK3568_REG_CFG_DONE, "SYS" },
+	{ RK3568_OVL_CTRL, "OVL" },
+	{ RK3568_VP0_DSP_CTRL, "VP0" },
+	{ RK3568_VP1_DSP_CTRL, "VP1" },
+	{ RK3568_VP2_DSP_CTRL, "VP2" },
+	{ RK3568_CLUSTER0_WIN0_CTRL0, "Cluster0" },
+	{ RK3568_CLUSTER1_WIN0_CTRL0, "Cluster1" },
+	{ RK3568_ESMART0_CTRL0, "Esmart0" },
+	{ RK3568_ESMART1_CTRL0, "Esmart1" },
+	{ RK3568_SMART0_CTRL0, "Smart0" },
+	{ RK3568_SMART1_CTRL0, "Smart1" },
+	{ RK3568_HDR_LUT_CTRL, "HDR" },
+};
+
 static const struct vop2_data rk3568_vop = {
 	.version = VOP_VERSION(0x40, 0x15),
 	.nr_vps = 3,
@@ -1275,6 +1290,8 @@ static const struct vop2_data rk3568_vop = {
 	.nr_layers = ARRAY_SIZE(rk3568_vop_layers),
 	.win = rk3568_vop_win_data,
 	.win_size = ARRAY_SIZE(rk3568_vop_win_data),
+	.dump_regs = rk3568_dump_regs,
+	.dump_regs_size = ARRAY_SIZE(rk3568_dump_regs),
 };
 
 static const struct of_device_id vop2_dt_match[] = {
