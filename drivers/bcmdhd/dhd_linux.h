@@ -108,6 +108,9 @@ typedef struct wifi_adapter_info {
 	struct pci_dev *pci_dev;
 	struct pci_saved_state *pci_saved_state;
 #endif /* BCMPCIE */
+#ifdef BCMDHD_PLATDEV
+	struct platform_device *pdev;
+#endif /* BCMDHD_PLATDEV */
 } wifi_adapter_info_t;
 
 #if defined(CONFIG_WIFI_CONTROL_FUNC) || defined(CUSTOMER_HW4)

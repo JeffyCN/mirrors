@@ -678,14 +678,16 @@ wl_iw_get_freq(
 	struct dhd_pub *dhd = dhd_get_pub(dev);
 	struct iw_freq *fwrq = &wrqu->freq;
 	int error;
+	u32 val;
 	chanspec_t chanspec = 0;
 	int ctl_chan;
 
 	WL_TRACE(("%s: SIOCGIWFREQ\n", dev->name));
 
 	DHD_CHECK(dhd, dev);
-	if ((error = dev_wlc_intvar_get(dev, "chanspec", (s32 *)&chanspec)))
+	if ((error = dev_wlc_intvar_get(dev, "chanspec", &val)))
 		return error;
+	chanspec = val;
 	chanspec = wl_ext_chspec_driver_to_host(dhd, chanspec);
 	ctl_chan = wf_chspec_ctlchan(chanspec);
 

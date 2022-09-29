@@ -47,7 +47,7 @@
 #include<linux/of_gpio.h>
 #endif /* CONFIG_DTS */
 
-#if defined(CUSTOMER_HW)
+#if defined(CUSTOMER_HW) || defined(BCMDHD_PLATDEV)
 extern int dhd_wlan_init_plat_data(wifi_adapter_info_t *adapter);
 extern void dhd_wlan_deinit_plat_data(wifi_adapter_info_t *adapter);
 #endif /* CUSTOMER_HW */
@@ -85,7 +85,7 @@ static bool dts_enabled = FALSE;
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 struct resource dhd_wlan_resources = {0};
-struct wifi_platform_data dhd_wlan_control = {0};
+extern struct wifi_platform_data dhd_wlan_control;
 #if defined(STRICT_GCC_WARNINGS) && defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
@@ -378,6 +378,14 @@ static int wifi_plat_dev_drv_probe(struct platform_device *pdev)
 	adapter->wifi_plat_data = (void *)&dhd_wlan_control;
 #endif
 
+#ifdef BCMDHD_PLATDEV
+	adapter->pdev = pdev;
+	wifi_plat_dev_probe_ret = dhd_wlan_init_plat_data(adapter);
+	if (!wifi_plat_dev_probe_ret)
+		wifi_plat_dev_probe_ret = dhd_wifi_platform_load();
+	return wifi_plat_dev_probe_ret;
+#endif
+
 	resource = platform_get_resource_byname(pdev, IORESOURCE_IRQ, "bcmdhd_wlan_irq");
 	if (resource == NULL)
 		resource = platform_get_resource_byname(pdev, IORESOURCE_IRQ, "bcm4329_wlan_irq");
@@ -449,6 +457,9 @@ static int wifi_plat_dev_drv_remove(struct platform_device *pdev)
 #ifdef CONFIG_DTS
 	regulator_put(wifi_regulator);
 #endif /* CONFIG_DTS */
+#ifdef BCMDHD_PLATDEV
+	dhd_wlan_deinit_plat_data(adapter);
+#endif
 	return 0;
 }
 

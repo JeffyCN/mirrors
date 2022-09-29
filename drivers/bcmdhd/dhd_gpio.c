@@ -2,6 +2,12 @@
 #include <osl.h>
 #include <dhd_linux.h>
 #include <linux/gpio.h>
+#ifdef BCMDHD_DTS
+#include <linux/of_gpio.h>
+#endif
+#ifdef BCMDHD_PLATDEV
+#include <linux/platform_device.h>
+#endif
 #ifdef CUSTOMER_HW_ROCKCHIP
 #include <linux/rfkill-wlan.h>
 #endif
@@ -33,7 +39,7 @@ extern void *dhd_wlan_mem_prealloc(int section, unsigned long size);
 
 #ifdef BCMDHD_DTS
 /* This is sample code in dts file.
-bcmdhd {
+bcmdhd_wlan {
 	compatible = "android,bcmdhd_wlan";
 	gpio_wl_reg_on = <&gpio GPIOH_4 GPIO_ACTIVE_HIGH>;
 	gpio_wl_host_wake = <&gpio GPIOZ_15 GPIO_ACTIVE_HIGH>;
@@ -158,7 +164,7 @@ dhd_wlan_set_carddetect(int present)
 		err = sdhci_force_presence_change(&sdmmc_channel, 0);
 #endif /* CUSTOMER_HW_PLATFORM */
 #ifdef CUSTOMER_HW_ROCKCHIP
-	rockchip_wifi_set_carddetect(0);
+		rockchip_wifi_set_carddetect(0);
 #endif
 #elif defined(BCMPCIE)
 		printf("======== Card detection to remove PCIE card! ========\n");
@@ -276,9 +282,9 @@ dhd_wlan_init_gpio(wifi_adapter_info_t *adapter)
 	struct device_node *root_node = NULL;
 #endif
 	int err = 0;
-	int gpio_wl_reg_on;
+	int gpio_wl_reg_on = -1;
 #ifdef CUSTOMER_OOB
-	int gpio_wl_host_wake;
+	int gpio_wl_host_wake = -1;
 	int host_oob_irq = -1;
 	uint host_oob_irq_flags = 0;
 #ifdef CUSTOMER_HW_ROCKCHIP
@@ -292,9 +298,19 @@ dhd_wlan_init_gpio(wifi_adapter_info_t *adapter)
 	* WL_REG_ON and WL_HOST_WAKE.
 	*/
 #ifdef BCMDHD_DTS
+#ifdef BCMDHD_PLATDEV
+	if (adapter->pdev) {
+		root_node = adapter->pdev->dev.of_node;
+		strcpy(wlan_node, root_node->name);
+	} else {
+		printf("%s: adapter->pdev is NULL\n", __FUNCTION__);
+		return -1;
+	}
+#else
 	strcpy(wlan_node, DHD_DT_COMPAT_ENTRY);
-	printf("======== Get GPIO from DTS(%s) ========\n", wlan_node);
 	root_node = of_find_compatible_node(NULL, NULL, wlan_node);
+#endif
+	printf("======== Get GPIO from DTS(%s) ========\n", wlan_node);
 	if (root_node) {
 		gpio_wl_reg_on = of_get_named_gpio(root_node, GPIO_WL_REG_ON_PROPNAME, 0);
 #ifdef CUSTOMER_OOB

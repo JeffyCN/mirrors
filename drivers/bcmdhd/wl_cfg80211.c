@@ -19876,6 +19876,40 @@ wl_cfg80211_clear_mgmt_vndr_ies(struct bcm_cfg80211 *cfg)
 	return 0;
 }
 
+#ifdef GET_FW_IE_DATA
+static void
+wl_dump_ie_buf(vndr_ie_buf_t *ie_getbuf)
+{
+	uchar *iebuf;
+	uchar *data;
+	int tot_ie, pktflag, iecount, datalen;
+	vndr_ie_info_t *ie_info;
+	vndr_ie_t *ie;
+
+	memcpy(&tot_ie, (void *)&ie_getbuf->iecount, sizeof(int));
+	tot_ie = dtoh32(tot_ie);
+	iebuf = (uchar *)&ie_getbuf->vndr_ie_list[0];
+
+	printf("-----------------\n");
+	printf("Total IEs %d\n", tot_ie);
+	for (iecount = 0; iecount < tot_ie; iecount++) {
+		ie_info = (vndr_ie_info_t *) iebuf;
+		memcpy(&pktflag, (void *)&ie_info->pktflag, sizeof(uint32));
+		pktflag = dtoh32(pktflag);
+		iebuf += sizeof(uint32);
+		ie = &ie_info->vndr_ie_data;
+		data = &ie->data[0];
+		datalen = ie->len - VNDR_IE_MIN_LEN;
+		printf("index=%d, pktflag=0x%x\n", iecount, pktflag);
+		prhex("IE", (u8 *)ie, ie->len+VNDR_IE_HDR_LEN);
+
+		iebuf += ie->len + VNDR_IE_HDR_LEN;
+	}
+	printf("-----------------\n");
+	printf("\n");
+}
+#endif /* GET_FW_IE_DATA */
+
 static void
 wl_print_fw_ie_data(struct bcm_cfg80211 *cfg, struct net_device *ndev, s32 bssidx)
 {
@@ -19887,18 +19921,10 @@ wl_print_fw_ie_data(struct bcm_cfg80211 *cfg, struct net_device *ndev, s32 bssid
 		bssidx, &cfg->ioctl_buf_sync);
 	if (ret == BCME_OK) {
 		ies = (vndr_ie_buf_t *)cfg->ioctl_buf;
-		WL_INFORM_MEM(("FW IE count:%d\n", ies->iecount));
 #ifdef GET_FW_IE_DATA
-		if (wl_dbg_level & WL_DBG_DBG) {
-			int i = 0;
-			/* If debug enabled, print each IE */
-			for (i = 0; i < ies->iecount; i++) {
-				vndr_ie_info_t *info = &ies->vndr_ie_list[i];
-				WL_DBG_MEM(("pktflag:0x%x\n", info->pktflag));
-					prhex("IE:", (u8 *)&info->vndr_ie_data,
-						info->vndr_ie_data.len + TLV_HDR_LEN);
-			}
-		}
+		wl_dump_ie_buf((vndr_ie_buf_t *)cfg->ioctl_buf);
+#else
+		WL_MSG(ndev->name, "FW IE count:%d\n", ies->iecount);
 #endif /* GET_FW_IE_DATA */
 	} else {
 		WL_ERR(("IE retrieval failed! ret:%d\n", ret));
@@ -19922,6 +19948,7 @@ wl_cfg80211_set_mgmt_vndr_ies(struct bcm_cfg80211 *cfg, bcm_struct_cfgdev *cfgde
 	u32 parsed_ie_buf_len = 0;
 	struct parsed_vndr_ies old_vndr_ies;
 	struct parsed_vndr_ies new_vndr_ies;
+	int del_add_cnt = 0;
 	s32 i;
 	u8 *ptr;
 	s32 remained_buf_len;
@@ -20065,6 +20092,7 @@ wl_cfg80211_set_mgmt_vndr_ies(struct bcm_cfg80211 *cfg, bcm_struct_cfgdev *cfgde
 
 				curr_ie_buf += del_add_ie_buf_len;
 				total_ie_buf_len += del_add_ie_buf_len;
+				del_add_cnt++;
 			}
 		}
 
@@ -20114,13 +20142,32 @@ wl_cfg80211_set_mgmt_vndr_ies(struct bcm_cfg80211 *cfg, bcm_struct_cfgdev *cfgde
 				*mgmt_ie_len += vndrie_info->ie_len;
 				curr_ie_buf += del_add_ie_buf_len;
 				total_ie_buf_len += del_add_ie_buf_len;
+				del_add_cnt++;
 			}
 		}
 
 		if (total_ie_buf_len && cfg->ioctl_buf != NULL) {
-			ret  = wldev_iovar_setbuf_bsscfg(ndev, "vndr_ie", g_mgmt_ie_buf,
+#ifdef VNDR_IE_WAR
+			curr_ie_buf = g_mgmt_ie_buf;
+			for (i=0; i<del_add_cnt; i++) {
+				vndr_ie_setbuf_t *vndr_ie_setbuf = (vndr_ie_setbuf_t *)curr_ie_buf;
+				u32 curr_ie_buf_len;
+				curr_ie_buf_len =
+					(u8*)&vndr_ie_setbuf->vndr_ie_buffer.vndr_ie_list[0].vndr_ie_data.oui[0] -
+					(u8*)vndr_ie_setbuf;
+				curr_ie_buf_len += vndr_ie_setbuf->vndr_ie_buffer.vndr_ie_list[0].vndr_ie_data.len;
+				ret = wldev_iovar_setbuf_bsscfg(ndev, "vndr_ie", curr_ie_buf,
+					curr_ie_buf_len, cfg->ioctl_buf, WLC_IOCTL_MAXLEN,
+					bssidx, &cfg->ioctl_buf_sync);
+				if (ret)
+					break;
+				curr_ie_buf += curr_ie_buf_len;
+			}
+#else
+			ret = wldev_iovar_setbuf_bsscfg(ndev, "vndr_ie", g_mgmt_ie_buf,
 				total_ie_buf_len, cfg->ioctl_buf, WLC_IOCTL_MAXLEN,
 				bssidx, &cfg->ioctl_buf_sync);
+#endif
 			if (ret) {
 				WL_ERR(("vndr_ie set error :%d\n", ret));
 				if (ret == BCME_NOTFOUND) {

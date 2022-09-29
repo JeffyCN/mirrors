@@ -65,6 +65,9 @@
 #include <asm/uaccess.h>
 #include <asm/unaligned.h>
 #include <dhd_linux_priv.h>
+#if defined(CUSTOMER_HW_ROCKCHIP) && defined(BCMPCIE)
+#include <rk_dhd_pcie_linux.h>
+#endif /* CUSTOMER_HW_ROCKCHIP && BCMPCIE */
 
 #include <epivers.h>
 #include <bcmutils.h>
@@ -11745,11 +11748,7 @@ dhd_attach(osl_t *osh, struct dhd_bus *bus, uint bus_hdrlen
 	dhd_os_start_logging(&dhd->pub, BT_LOG_RING_NAME, 3, 0, 0, 0);
 #endif /* !OEM_ANDROID && BTLOG */
 #ifdef DBG_PKT_MON
-	dhd->pub.dbg->pkt_mon_lock = osl_mutex_lock_init(dhd->pub.osh);
-	if (!dhd->pub.dbg->pkt_mon_lock) {
-		DHD_ERROR(("%s: pkt_mon_lock init failed !\n", __FUNCTION__));
-		goto fail;
-	}
+	dhd->pub.dbg->pkt_mon_lock = osl_spin_lock_init(dhd->pub.osh);
 #ifdef DBG_PKT_MON_INIT_DEFAULT
 	dhd_os_dbg_attach_pkt_monitor(&dhd->pub);
 #endif /* DBG_PKT_MON_INIT_DEFAULT */
@@ -12778,6 +12777,11 @@ dhd_bus_start(dhd_pub_t *dhdp)
 	/* Enable L1SS of RC and EP */
 	dhd_bus_l1ss_enable_rc_ep(dhdp->bus, TRUE);
 #endif /* BT_OVER_PCIE */
+
+#if defined(CUSTOMER_HW_ROCKCHIP) && defined(BCMPCIE)
+	if (IS_ENABLED(CONFIG_PCIEASPM_ROCKCHIP_WIFI_EXTENSION))
+		rk_dhd_bus_l1ss_enable_rc_ep(dhdp->bus, TRUE);
+#endif /* CUSTOMER_HW_ROCKCHIP && BCMPCIE */
 
 #if defined(CONFIG_ARCH_EXYNOS) && defined(BCMPCIE)
 #if !defined(CONFIG_SOC_EXYNOS8890) && !defined(SUPPORT_EXYNOS7420)
@@ -17443,7 +17447,7 @@ void dhd_detach(dhd_pub_t *dhdp)
 	if (dhdp->dbg) {
 #ifdef DBG_PKT_MON
 		dhd_os_dbg_detach_pkt_monitor(dhdp);
-		osl_mutex_lock_deinit(dhd->pub.osh, dhd->pub.dbg->pkt_mon_lock);
+		osl_spin_lock_deinit(dhd->pub.osh, dhd->pub.dbg->pkt_mon_lock);
 #endif /* DBG_PKT_MON */
 	}
 #endif /* DEBUGABILITY */

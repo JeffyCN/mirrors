@@ -3703,8 +3703,8 @@ extern void dhd_os_general_spin_unlock(dhd_pub_t *pub, unsigned long flags);
 
 #ifdef DBG_PKT_MON
 /* Enable DHD PKT MON spin lock/unlock */
-#define DHD_PKT_MON_LOCK(lock, flags)     (flags) = osl_mutex_lock(lock)
-#define DHD_PKT_MON_UNLOCK(lock, flags)   osl_mutex_unlock(lock, (flags))
+#define DHD_PKT_MON_LOCK(lock, flags)     (flags) = osl_spin_lock(lock)
+#define DHD_PKT_MON_UNLOCK(lock, flags)   osl_spin_unlock(lock, (flags))
 #endif /* DBG_PKT_MON */
 
 #ifdef DHD_PKT_LOGGING

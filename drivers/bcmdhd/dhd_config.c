@@ -281,7 +281,7 @@ dhd_conf_extsae_chip(dhd_pub_t *dhd)
 #endif
 
 #ifdef BCMSDIO
-bool
+static void
 dhd_conf_disable_slpauto(dhd_pub_t *dhd)
 {
 	uint chip = dhd->conf->chip;
@@ -295,10 +295,9 @@ dhd_conf_disable_slpauto(dhd_pub_t *dhd)
 			chip == BCM43430_CHIP_ID ||
 			chip == BCM4345_CHIP_ID || chip == BCM43454_CHIP_ID ||
 			chip == BCM4359_CHIP_ID) {
-		return false;
+		dhd_slpauto = FALSE;
 	}
-
-	return true;
+	CONFIG_MSG("dhd_slpauto = %d\n", dhd_slpauto);
 }
 #endif
 
@@ -3973,9 +3972,9 @@ dhd_conf_read_sdio_params(dhd_pub_t *dhd, char *full_param, uint len_param)
 		CONFIG_MSG("dhd_doflow = %d\n", dhd_doflow);
 	}
 	else if (!strncmp("dhd_slpauto=", full_param, len_param)) {
-		if (!strncmp(data, "0", 1))
-			dhd_slpauto = FALSE;
-		else if (dhd_conf_disable_slpauto(dhd))
+		if (!strncmp(data, "0", 1)) {
+			dhd_conf_disable_slpauto(dhd);
+		} else
 			dhd_slpauto = TRUE;
 		CONFIG_MSG("dhd_slpauto = %d\n", dhd_slpauto);
 	}
@@ -4824,6 +4823,33 @@ dhd_conf_set_txglom_params(dhd_pub_t *dhd, bool enable)
 	}
 
 }
+
+static void
+dhd_conf_set_ampdu_mpdu(dhd_pub_t *dhd)
+{
+	uint chip = dhd->conf->chip;
+	char ampdu_mpdu[32] = "ampdu_mpdu=";
+	int val = -1;
+
+	if (chip == BCM43362_CHIP_ID || chip == BCM4330_CHIP_ID ||
+			chip == BCM4334_CHIP_ID || chip == BCM43340_CHIP_ID ||
+			chip == BCM43341_CHIP_ID || chip == BCM4324_CHIP_ID ||
+			chip == BCM4335_CHIP_ID || chip == BCM4339_CHIP_ID ||
+			chip == BCM4354_CHIP_ID || chip == BCM4356_CHIP_ID ||
+			chip == BCM4371_CHIP_ID ||
+			chip == BCM43430_CHIP_ID ||
+			chip == BCM4345_CHIP_ID || chip == BCM43454_CHIP_ID ||
+			chip == BCM4359_CHIP_ID || chip == BCM43012_CHIP_ID) {
+		val = 16;
+	} else if (chip == BCM43751_CHIP_ID || chip == BCM43752_CHIP_ID) {
+		val = 32;
+	}
+
+	if (val > 0) {
+		snprintf(ampdu_mpdu+strlen(ampdu_mpdu), sizeof(ampdu_mpdu), "%d", val);
+		dhd_conf_set_wl_cmd(dhd, ampdu_mpdu, TRUE);
+	}
+}
 #endif
 
 #ifdef UPDATE_MODULE_NAME
@@ -4920,13 +4946,7 @@ dhd_conf_postinit_ioctls(dhd_pub_t *dhd)
 	dhd_conf_preinit_ioctls_sta(dhd, 0);
 	dhd_conf_set_wl_cmd(dhd, wl_preinit, TRUE);
 #if defined(BCMSDIO)
-	if (conf->chip == BCM43751_CHIP_ID || conf->chip == BCM43752_CHIP_ID) {
-		char ampdu_mpdu[] = "ampdu_mpdu=32";
-		dhd_conf_set_wl_cmd(dhd, ampdu_mpdu, TRUE);
-	} else {
-		char ampdu_mpdu[] = "ampdu_mpdu=16";
-		dhd_conf_set_wl_cmd(dhd, ampdu_mpdu, TRUE);
-	}
+	dhd_conf_set_ampdu_mpdu(dhd);
 #endif
 
 #ifdef DHD_TPUT_PATCH
