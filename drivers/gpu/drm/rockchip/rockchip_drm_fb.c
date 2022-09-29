@@ -185,6 +185,14 @@ rockchip_user_fb_create(struct drm_device *dev, struct drm_file *file_priv,
 	num_planes = min(drm_format_num_planes(mode_cmd->pixel_format),
 			 ROCKCHIP_MAX_FB_BUFFER);
 
+	for (i = 0; i < num_planes; ++i) {
+		if (mode_cmd->pitches[i] % 4) {
+			DRM_DEV_ERROR_RATELIMITED(dev->dev,
+				"fb pitch[%d] must be 4 byte aligned: %d\n", i, mode_cmd->pitches[i]);
+			return ERR_PTR(-EINVAL);
+		}
+	}
+
 	for (i = 0; i < num_planes; i++) {
 		unsigned int width = mode_cmd->width / (i ? hsub : 1);
 		unsigned int height = mode_cmd->height / (i ? vsub : 1);
