@@ -135,9 +135,9 @@ typedef struct {
 } rga_info_table_entry;
 
 typedef struct {
-    struct rga_version_t user;
-    struct rga_version_t driver;
-} rga_dirver_bind_table_entry;
+    struct rga_version_t current;
+    struct rga_version_t minimum;
+} rga_version_bind_table_entry_t;
 
 const rga_info_table_entry hw_info_table[] = {
     { IM_RGA_HW_VERSION_RGA_V_ERR       ,    0,    0, 0, 0, 0,   0, 0, 0, {0} },
@@ -300,8 +300,13 @@ const rga_info_table_entry hw_info_table[] = {
                                         {0} },
 };
 
-/* The range of the version is [min, max), that is version >= min, version < max. */
-const rga_dirver_bind_table_entry driver_bind_table[] = {
+/*
+ * The range of the version is [min, max), that is version >= min, version < max.
+ *
+ *   current = librga version.
+ *   minimum = support minimum driver version.
+ */
+const rga_version_bind_table_entry_t user_driver_bind_table[] = {
     { { 0, 0, 0, "0.0.0" }, {0, 0, 0, "0.0.0" } },
     { { 1, 0, 3, "1.0.3" }, {0, 0, 0, "0.0.0" } },
     { { 1, 6, 0, "1.6.0" }, {1, 1, 5, "1.1.5" } },

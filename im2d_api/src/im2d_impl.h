@@ -56,6 +56,13 @@ struct im2d_job_manager {
     std::mutex mutex;
 };
 
+int rga_version_compare(struct rga_version_t version1, struct rga_version_t version2);
+int rga_version_table_get_current_index(rga_version_t &version, const rga_version_bind_table_entry_t *table, int table_size);
+int rga_version_table_get_minimum_index(rga_version_t &version, const rga_version_bind_table_entry_t *table, int table_size);
+int rga_version_table_check_minimum_range(rga_version_t &version,
+                                          const rga_version_bind_table_entry_t *table,
+                                          int table_size, int index);
+
 bool rga_is_buffer_valid(rga_buffer_t buf);
 bool rga_is_rect_valid(im_rect rect);
 void empty_structure(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
@@ -70,7 +77,6 @@ inline void rga_apply_rect(rga_buffer_t *image, im_rect *rect) {
 }
 
 IM_STATUS rga_get_info(rga_info_table_entry *return_table);
-IM_STATUS rga_check_driver(void);
 
 IM_STATUS rga_check_info(const char *name, const rga_buffer_t info, const im_rect rect, int resolution_usage);
 IM_STATUS rga_check_limit(rga_buffer_t src, rga_buffer_t dst, int scale_usage, int mode_usage);

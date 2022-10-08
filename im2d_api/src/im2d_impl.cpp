@@ -93,16 +93,17 @@ static IM_STATUS rga_support_info_merge_table(rga_info_table_entry *dst_table, r
     return IM_STATUS_SUCCESS;
 }
 
-/*
+/**
  * rga_version_compare() - Used to compare two struct rga_version_t.
- * @version1
- * @version2
+ * @param version1
+ * @param version2
  *
- * if version1 > version2, return >0;
- * if version1 = version2, return 0;
- * if version1 < version2, retunr <0.
+ * @returns
+ *   if version1 > version2, return >0;
+ *   if version1 = version2, return 0;
+ *   if version1 < version2, retunr <0.
  */
-static inline int rga_version_compare(struct rga_version_t version1, struct rga_version_t version2) {
+int rga_version_compare(struct rga_version_t version1, struct rga_version_t version2) {
     if (version1.major > version2.major)
         return 1;
     else if (version1.major == version2.major && version1.minor > version2.minor)
@@ -113,6 +114,88 @@ static inline int rga_version_compare(struct rga_version_t version1, struct rga_
         return 0;
 
     return -1;
+}
+
+/**
+ * rga_version_table_get_current_index() - Find the current version index in bind_table.
+ *
+ * @param version
+ * @param table
+ * @param table_size
+ *
+ * @returns if return value >= 0, then index is found, otherwise, the query fails.
+ */
+int rga_version_table_get_current_index(rga_version_t &version, const rga_version_bind_table_entry_t *table, int table_size) {
+    int index = -1;
+
+    for (int i = (table_size - 1); i >= 0; i--) {
+        if (rga_version_compare(version, table[i].current) >= 0) {
+            if (i == (table_size - 1)) {
+                index = i;
+                break;
+            } else if (rga_version_compare(table[i + 1].current, version) > 0) {
+                index = i;
+                break;
+            }
+        }
+    }
+
+    return index;
+}
+
+/**
+ * rga_version_table_get_minimum_index() - Find the current version index in bind_table.
+ *
+ * @param version
+ * @param table
+ * @param table_size
+ *
+ * @returns if return value >= 0, then index is found, otherwise, the query fails.
+ */
+int rga_version_table_get_minimum_index(rga_version_t &version, const rga_version_bind_table_entry_t *table, int table_size) {
+    int index = -1;
+
+    for (int i = (table_size - 1); i >= 0; i--) {
+        if (rga_version_compare(version, table[i].minimum) >= 0) {
+            if (i == (table_size - 1)) {
+                index = i;
+                break;
+            } else if (rga_version_compare(table[i + 1].minimum, version) > 0) {
+                index = i;
+                break;
+            }
+        }
+    }
+
+    return index;
+}
+
+/**
+ * rga_version_table_check_minimum_range() - Check if the minimum version is within the required range.
+ *
+ * @param version
+ * @param table
+ * @param index
+ *
+ * @returns
+ *   return value > 0, above range.
+ *   return value = 0, within range.
+ *   return value < 0, below range.
+ */
+int rga_version_table_check_minimum_range(rga_version_t &version,
+                                          const rga_version_bind_table_entry_t *table,
+                                          int table_size, int index) {
+    if (rga_version_compare(version, table[index].minimum) >= 0) {
+        if (index == (table_size - 1))
+            return 0;
+
+        if (rga_version_compare(version, table[index + 1].minimum) < 0)
+            return 0;
+        else
+            return 1;
+    } else {
+        return -1;
+    }
 }
 
 static IM_STATUS rga_yuv_legality_check(const char *name, rga_buffer_t info, im_rect rect) {
@@ -399,89 +482,61 @@ TRY_TO_COMPATIBLE:
     return IM_STATUS_SUCCESS;
 }
 
-IM_STATUS rga_check_driver(void) {
-    int table_size, bind_index, least_index;
-    bool user_bind = false;
+IM_STATUS rga_check_driver(rga_version_t &driver_version) {
+    int user_bind_index, least_index;
+    int table_size = sizeof(user_driver_bind_table) / sizeof(rga_version_bind_table_entry_t);
+    rga_version_t user_version = RGA_CURRENT_API_HEADER_VERSION;
 
-    if (rgaCtx == NULL) {
-        IM_LOGE("rga context is NULL!");
-        return IM_STATUS_FAILED;
+    user_bind_index = rga_version_table_get_current_index(user_version,
+                                                          user_driver_bind_table,
+                                                          table_size);
+    if (user_bind_index < 0) {
+        IM_LOGE("Failed to get the version binding table of librga, "
+                "current version: librga: %s, driver: %s",
+                RGA_API_VERSION, driver_version.str);
+
+        return IM_STATUS_ERROR_VERSION;
     }
 
-    table_size = sizeof(driver_bind_table) / sizeof(rga_dirver_bind_table_entry);
-
-    /* First, find the driver version corresponding to librga. */
-    for (int i = (table_size - 1); i >= 0; i--) {
-        if (rga_version_compare((struct rga_version_t)
-                                { RGA_API_MAJOR_VERSION,
-                                  RGA_API_MINOR_VERSION,
-                                  RGA_API_REVISION_VERSION,
-                                  RGA_API_VERSION },
-                                driver_bind_table[i].user) >= 0) {
-            if (i == (table_size - 1)) {
-                user_bind = true;
-                bind_index = i;
-
-                break;
-            } else if (rga_version_compare(driver_bind_table[i + 1].user,
-                                           (struct rga_version_t)
-                                           { RGA_API_MAJOR_VERSION,
-                                             RGA_API_MINOR_VERSION,
-                                             RGA_API_REVISION_VERSION,
-                                             RGA_API_VERSION }) > 0) {
-                user_bind = true;
-                bind_index = i;
-
-                break;
-            }
-        }
-    }
-
-    if (user_bind) {
-        /* Second, check whether the current driver version matches. */
-        if (rga_version_compare(rgaCtx->mDriverVersion, driver_bind_table[bind_index].driver) >= 0) {
-            if (bind_index == table_size - 1) {
-                return IM_STATUS_SUCCESS;
-            } else if (rga_version_compare(driver_bind_table[bind_index + 1].driver, rgaCtx->mDriverVersion) > 0) {
-                return IM_STATUS_SUCCESS;
-            } else {
-                /* find needs to be update version at least. */
-                least_index = table_size - 1;
-                for (int i = (table_size - 1); i >= 0; i--) {
-                    if (rga_version_compare(rgaCtx->mDriverVersion, driver_bind_table[i].driver) >= 0) {
-                        if (i == (table_size - 1)) {
-                            least_index = i;
-                            break;
-                        } else if (rga_version_compare(driver_bind_table[i + 1].driver, rgaCtx->mDriverVersion) > 0) {
-                            least_index = i;
-                            break;
-                        }
-                    }
-                }
-
-                IM_LOGE("The librga needs to be updated to version %s at least. "
-                        "current version: librga %s, driver %s.",
-                        driver_bind_table[least_index].user.str,
-                        RGA_API_VERSION, rgaCtx->mDriverVersion.str);
+    switch (rga_version_table_check_minimum_range(driver_version,
+                                                  user_driver_bind_table,
+                                                  table_size, user_bind_index)) {
+        case 0:
+            return IM_STATUS_SUCCESS;
+        case 1:
+            least_index = rga_version_table_get_minimum_index(driver_version,
+                                                              user_driver_bind_table,
+                                                              table_size);
+            if (least_index < 0) {
+                IM_LOGE("Failed to get the version binding table of rga_driver, "
+                        "current version: librga: %s, driver: %s",
+                        RGA_API_VERSION, driver_version.str);
 
                 return IM_STATUS_ERROR_VERSION;
             }
-        } else {
+
+            IM_LOGE("The librga must to be updated to version %s at least. "
+                    "You can try to update the SDK or update librga.so and header files "
+                    "through github(https://github.com/airockchip/librga/). "
+                    "current version: librga %s, driver %s.",
+                    user_driver_bind_table[least_index].current.str,
+                    RGA_API_VERSION, driver_version.str);
+
+            return IM_STATUS_ERROR_VERSION;
+        case -1:
             IM_LOGE("The driver may be compatible, "
                     "but it is best to update the driver to version %s. "
+                    "You can try to update the SDK or update the "
+                    "<SDK>/kernel/drivers/video/rockchip/rga3 directory individually. "
                     "current version: librga %s, driver %s.",
-                    driver_bind_table[bind_index].driver.str,
-                    RGA_API_VERSION, rgaCtx->mDriverVersion.str);
+                    user_driver_bind_table[user_bind_index].minimum.str,
+                    RGA_API_VERSION, driver_version.str);
 
             /* Sometimes it is possible to enter compatibility mode. */
             return IM_STATUS_NOERROR;
-        }
-    } else {
-        IM_LOGE("Failed to get the version binding table of librga, "
-            "current version: librga: %s, driver: %s",
-            RGA_API_VERSION, rgaCtx->mDriverVersion.str);
-
-        return IM_STATUS_ERROR_VERSION;
+        default:
+            IM_LOGE("This shouldn't happen!");
+            return IM_STATUS_FAILED;
     }
 }
 
@@ -924,7 +979,7 @@ IM_STATUS rga_check(const rga_buffer_t src, const rga_buffer_t dst, const rga_bu
     }
 
     /* check driver version. */
-    ret = rga_check_driver();
+    ret = rga_check_driver(rgaCtx->mDriverVersion);
     if (ret == IM_STATUS_ERROR_VERSION)
         return ret;
 
