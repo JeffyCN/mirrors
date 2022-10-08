@@ -556,7 +556,12 @@ static int dwmac_rk_rx_validate(struct stmmac_priv *priv,
 	}
 
 	frame_len -= ETH_FCS_LEN;
+	prefetch(skb->data - NET_IP_ALIGN);
 	skb_put(skb, frame_len);
+	dma_unmap_single(priv->device,
+			 lb_priv->rx_skbuff_dma,
+			 lb_priv->dma_buf_sz,
+			 DMA_FROM_DEVICE);
 
 	return dwmac_rk_loopback_validate(priv, lb_priv, skb);
 }
