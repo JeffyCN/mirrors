@@ -18,7 +18,7 @@
 #ifndef _im2d_log_hpp_
 #define _im2d_log_hpp_
 
-#define IM_ERR_MSG_LEN 300
+#define IM_ERR_MSG_LEN 512
 
 typedef enum {
     IM_LOG_UNKNOWN      = 0x0,
