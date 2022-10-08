@@ -33,6 +33,12 @@
 #define IM_EXPORT_API
 #endif
 
+#ifdef __cplusplus
+#define DEFAULT_INITIALIZER(x) = x
+#else
+#define DEFAULT_INITIALIZER(x)
+#endif
+
 typedef uint32_t im_api_version_t;
 typedef uint32_t im_job_handle_t;
 typedef uint32_t im_ctx_id_t;
@@ -402,7 +408,7 @@ typedef struct im_intr_config {
 } im_intr_config_t;
 
 typedef struct im_opt {
-    im_api_version_t version;
+    im_api_version_t version DEFAULT_INITIALIZER(RGA_SET_CURRENT_API_HEADER_VERISON);
 
     int color;                          /* color, used by color fill */
     im_colorkey_range colorkey_range;   /* range value of color key */
