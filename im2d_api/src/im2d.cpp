@@ -54,7 +54,7 @@ IM_API const char* imStrError_t(IM_STATUS status) {
         "Memory overflow",
         "Invalid parameters",
         "Illegal parameters",
-        "verify librga and driver version",
+        "Version verification failed",
         "Fatal error",
         "unkown status"
     };
