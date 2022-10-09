@@ -314,4 +314,16 @@ const rga_version_bind_table_entry_t user_driver_bind_table[] = {
     { { 1, 7, 3, "1.7.3" }, {1, 2, 4, "1.2.4" } },
 };
 
+/*
+ * The range of the version is [min, max), that is version >= min, version < max.
+ *
+ *   current = librga version.
+ *   minimum = support minimum librga header version.
+ */
+const rga_version_bind_table_entry_t user_header_bind_table[] = {
+    { { 0, 0, 0, "0.0.0" }, { 0, 0, 0, "0.0.0" } },
+    { { 1, 0, 3, "1.0.3" }, { 1, 0, 3, "1.0.3" } },
+    { { 1, 4, 0, "1.4.0" }, { 1, 4, 0, "1.4.0" } },
+};
+
 #endif

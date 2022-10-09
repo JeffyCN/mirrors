@@ -735,6 +735,10 @@ IM_API const char* querystring(int name) {
     return temp;
 }
 
+IM_API IM_STATUS imcheckHeader(rga_version_t header_version) {
+    return rga_check_header(header_version);
+}
+
 void rga_check_perpare(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
                        im_rect *src_rect, im_rect *dst_rect, im_rect *pat_rect, int mode_usage) {
     (void)(src);

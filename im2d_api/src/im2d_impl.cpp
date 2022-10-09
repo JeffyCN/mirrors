@@ -235,6 +235,44 @@ static IM_STATUS rga_version_below_minimun_range_default(rga_version_t &current,
     return IM_STATUS_ERROR_VERSION;
 }
 
+static IM_STATUS rga_version_get_current_index_failed_user_header(rga_version_t &user_version, rga_version_t &header_version) {
+    IM_LOGE("Failed to get the version binding table of librga, "
+            "current version: librga: %s, header: %s",
+            user_version.str, header_version.str);
+
+    return IM_STATUS_ERROR_VERSION;
+}
+
+static IM_STATUS rga_version_get_minimum_index_failed_user_header(rga_version_t &user_version, rga_version_t &header_version) {
+    IM_LOGE("Failed to get the version binding table of header file, "
+            "current version: librga: %s, header: %s",
+            user_version.str, header_version.str);
+
+    return IM_STATUS_ERROR_VERSION;
+}
+
+static IM_STATUS rga_version_above_minimun_range_user_header(rga_version_t &user_version, rga_version_t &header_version, const rga_version_bind_table_entry_t *least_version_table) {
+    IM_LOGE("The current referenced header_version is %s, but the running librga's version(%s) is too old, "
+            "The librga must to be updated to version %s at least. "
+            "You can try to update the SDK or update librga.so and header files "
+            "through github(https://github.com/airockchip/librga/). ",
+            header_version.str, user_version.str,
+            least_version_table->current.str);
+
+    return IM_STATUS_ERROR_VERSION;
+}
+
+static IM_STATUS rga_version_below_minimun_range_user_header(rga_version_t &user_version, rga_version_t &header_version, const rga_version_bind_table_entry_t *least_version_table) {
+    IM_LOGE("The current librga.so's verison is %s, but the referenced header_version(%s) is too old, "
+            "it is recommended to update the librga's header_version to %s and above."
+            "You can try to update the SDK or update librga.so and header files "
+            "through github(https://github.com/airockchip/librga/)",
+            user_version.str, header_version.str,
+            least_version_table->minimum.str);
+
+    return IM_STATUS_ERROR_VERSION;
+}
+
 static IM_STATUS rga_version_get_current_index_faile_user_driver(rga_version_t &user_version, rga_version_t &driver_version) {
     IM_LOGE("Failed to get the version binding table of librga, "
             "current version: librga: %s, driver: %s",
@@ -273,6 +311,14 @@ static IM_STATUS rga_version_below_minimun_range_user_driver(rga_version_t &user
 
     return IM_STATUS_ERROR_VERSION;
 }
+
+static const rga_version_check_ops_t rga_version_check_user_header_ops {
+    .get_current_index_failed = rga_version_get_current_index_failed_user_header,
+    .get_minimum_index_failed = rga_version_get_minimum_index_failed_user_header,
+    .witnin_minimun_range = rga_version_witnin_minimun_range_default,
+    .above_minimun_range = rga_version_above_minimun_range_user_header,
+    .below_minimun_range = rga_version_below_minimun_range_user_header,
+};
 
 static const rga_version_check_ops_t rga_version_check_user_driver_ops {
     .get_current_index_failed = rga_version_get_current_index_faile_user_driver,
@@ -600,6 +646,15 @@ TRY_TO_COMPATIBLE:
     }
 
     return IM_STATUS_SUCCESS;
+}
+
+IM_STATUS rga_check_header(rga_version_t header_version) {
+    int table_size = sizeof(user_header_bind_table) / sizeof(rga_version_bind_table_entry_t);
+    rga_version_t user_version = RGA_CURRENT_API_HEADER_VERSION;
+
+    return rga_version_check(user_version, header_version,
+                             user_header_bind_table, table_size,
+                             &rga_version_check_user_header_ops);
 }
 
 IM_STATUS rga_check_driver(rga_version_t &driver_version) {

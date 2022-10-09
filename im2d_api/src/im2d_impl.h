@@ -90,6 +90,7 @@ inline void rga_apply_rect(rga_buffer_t *image, im_rect *rect) {
 
 IM_STATUS rga_get_info(rga_info_table_entry *return_table);
 
+IM_STATUS rga_check_header(rga_version_t header_version);
 IM_STATUS rga_check_external(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
                              const im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect,
                              int mode_usage);

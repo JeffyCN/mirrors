@@ -63,6 +63,16 @@ IM_EXPORT_API const char* querystring(int name);
 IM_C_API const char* imStrError_t(IM_STATUS status);
 
 /**
+ * check im2d api header file
+ *
+ * @param header_version
+ *      Default is RGA_CURRENT_API_HEADER_VERSION, no need to change if there are no special cases.
+ *
+ * @returns no error or else negative error code.
+ */
+IM_API IM_STATUS imcheckHeader(rga_version_t header_version = RGA_CURRENT_API_HEADER_VERSION);
+
+/**
  * check RGA basic information, supported resolution, supported format, etc.
  *
  * @param src
