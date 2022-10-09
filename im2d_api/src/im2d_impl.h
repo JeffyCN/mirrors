@@ -78,14 +78,6 @@ inline void rga_apply_rect(rga_buffer_t *image, im_rect *rect) {
 
 IM_STATUS rga_get_info(rga_info_table_entry *return_table);
 
-IM_STATUS rga_check_info(const char *name, const rga_buffer_t info, const im_rect rect, int resolution_usage);
-IM_STATUS rga_check_limit(rga_buffer_t src, rga_buffer_t dst, int scale_usage, int mode_usage);
-IM_STATUS rga_check_format(const char *name, rga_buffer_t info, im_rect rect, int format_usage, int mode_usgae);
-IM_STATUS rga_check_align(const char *name, rga_buffer_t info, int byte_stride);
-IM_STATUS rga_check_blend(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst, int pat_enable, int mode_usage);
-IM_STATUS rga_check_rotate(int mode_usage, rga_info_table_entry &table);
-IM_STATUS rga_check_feature(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst,
-                            int pat_enable, int mode_usage, int feature_usage);
 IM_STATUS rga_check_external(const rga_buffer_t src, const rga_buffer_t dst, const rga_buffer_t pat,
                              const im_rect src_rect, const im_rect dst_rect, const im_rect pat_rect,
                              int mode_usage);
