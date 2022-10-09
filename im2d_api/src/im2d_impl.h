@@ -41,6 +41,18 @@
     (((v) >> 8) & 0xff), \
     {0}\
     }
+#define RGA_SET_VERSION(major, minor, revision) { \
+    (major), (minor), (revision),  \
+    RGA_VERSION_STR(major) "." RGA_VERSION_STR(minor) "." RGA_VERSION_STR(revision) \
+    }
+
+typedef struct rga_version_check_ops {
+    IM_STATUS (*get_current_index_failed)(rga_version_t &current, rga_version_t &minimum);
+    IM_STATUS (*get_minimum_index_failed)(rga_version_t &current, rga_version_t &minimum);
+    IM_STATUS (*witnin_minimun_range)(rga_version_t &current, rga_version_t &minimum);
+    IM_STATUS (*above_minimun_range)(rga_version_t &current, rga_version_t &minimum, const rga_version_bind_table_entry_t *least_version_table);
+    IM_STATUS (*below_minimun_range)(rga_version_t &current, rga_version_t &minimum, const rga_version_bind_table_entry_t *least_version_table);
+} rga_version_check_ops_t;
 
 typedef struct im_rga_job {
     struct rga_req req[RGA_TASK_NUM_MAX];
