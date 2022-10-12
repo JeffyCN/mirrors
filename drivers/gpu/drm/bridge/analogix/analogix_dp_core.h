@@ -180,6 +180,7 @@ struct analogix_dp_device {
 	bool			phy_enabled;
 	int			dpms_mode;
 	struct gpio_desc	*hpd_gpiod;
+	int			hpd_irq;
 	bool                    force_hpd;
 	bool			psr_enable;
 	bool			fast_train_enable;
