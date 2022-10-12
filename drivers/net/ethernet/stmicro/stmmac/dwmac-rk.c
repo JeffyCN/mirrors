@@ -64,6 +64,7 @@ struct rk_priv_data {
 	bool clk_enabled;
 	bool clock_input;
 	bool integrated_phy;
+	struct phy *comphy;
 
 	struct clk *clk_mac;
 	struct clk *gmac_clkin;
@@ -168,10 +169,10 @@ static int xpcs_setup(struct rk_priv_data *bsp_priv, int mode)
 	int ret, i, id = bsp_priv->bus_id;
 	u32 val;
 
-	if (mode == PHY_INTERFACE_MODE_QSGMII && id > 0)
+	if (mode == PHY_INTERFACE_MODE_QSGMII && !id)
 		return 0;
 
-	ret = xpcs_soft_reset(bsp_priv, id);
+	ret = xpcs_soft_reset(bsp_priv, 0);
 	if (ret) {
 		dev_err(&bsp_priv->pdev->dev, "xpcs_soft_reset fail %d\n", ret);
 		return ret;
@@ -1914,14 +1915,11 @@ static struct rk_priv_data *rk_gmac_setup(struct platform_device *pdev,
 	bsp_priv->xpcs = syscon_regmap_lookup_by_phandle(dev->of_node,
 							 "rockchip,xpcs");
 	if (!IS_ERR(bsp_priv->xpcs)) {
-		struct phy *comphy;
-
-		comphy = devm_of_phy_get(&pdev->dev, dev->of_node, NULL);
-		if (IS_ERR(comphy))
+		bsp_priv->comphy = devm_of_phy_get(&pdev->dev, dev->of_node, NULL);
+		if (IS_ERR(bsp_priv->comphy)) {
+			bsp_priv->comphy = NULL;
 			dev_err(dev, "devm_of_phy_get error\n");
-		ret = phy_init(comphy);
-		if (ret)
-			dev_err(dev, "phy_init error\n");
+		}
 	}
 
 	if (plat->phy_node) {
@@ -1982,11 +1980,23 @@ static int rk_gmac_powerup(struct rk_priv_data *bsp_priv)
 		break;
 	case PHY_INTERFACE_MODE_SGMII:
 		dev_info(dev, "init for SGMII\n");
+		ret = phy_init(bsp_priv->comphy);
+		if (ret) {
+			dev_err(dev, "phy_init error: %d\n", ret);
+			return ret;
+		}
+
 		if (bsp_priv->ops && bsp_priv->ops->set_to_sgmii)
 			bsp_priv->ops->set_to_sgmii(bsp_priv);
 		break;
 	case PHY_INTERFACE_MODE_QSGMII:
 		dev_info(dev, "init for QSGMII\n");
+		ret = phy_init(bsp_priv->comphy);
+		if (ret) {
+			dev_err(dev, "phy_init error: %d\n", ret);
+			return ret;
+		}
+
 		if (bsp_priv->ops && bsp_priv->ops->set_to_qsgmii)
 			bsp_priv->ops->set_to_qsgmii(bsp_priv);
 		break;
@@ -2009,6 +2019,10 @@ static int rk_gmac_powerup(struct rk_priv_data *bsp_priv)
 static void rk_gmac_powerdown(struct rk_priv_data *gmac)
 {
 	struct device *dev = &gmac->pdev->dev;
+
+	if (gmac->phy_iface == PHY_INTERFACE_MODE_SGMII ||
+	    gmac->phy_iface == PHY_INTERFACE_MODE_QSGMII)
+		phy_exit(gmac->comphy);
 
 	pm_runtime_put_sync(dev);
 	pm_runtime_disable(dev);
