@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0
+
+config UWE5621DS
+	tristate "UWE5621DS Wi-Fi Driver"
+	---help---
+		Sprd UWE5621DS Wi-Fi Driver.
+
+if UWE5621DS
+source "drivers/net/wireless/rockchip_wlan/uwe5621ds/unisocwcn/Kconfig"
+source "drivers/net/wireless/rockchip_wlan/uwe5621ds/tty-sdio/Kconfig"
+source "drivers/net/wireless/rockchip_wlan/uwe5621ds/unisocwifi/Kconfig"
+endif

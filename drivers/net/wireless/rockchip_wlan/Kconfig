@@ -52,5 +52,6 @@ endif
 
 source "drivers/net/wireless/rockchip_wlan/mvl88w8977/Kconfig"
 source "drivers/net/wireless/rockchip_wlan/cywdhd/Kconfig"
+source "drivers/net/wireless/rockchip_wlan/uwe5621ds/Kconfig"
 
 endif # WL_ROCKCHIP

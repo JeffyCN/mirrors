@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-2.0
+config WLAN_UWE5621
+	tristate "UWE5621 Wi-Fi Driver"
+	---help---
+	  Sprd UWE5621 Wi-Fi Driver.
+
+config WLAN_UWE5622
+	tristate "UWE5622 Wi-Fi Driver"
+	---help---
+	  Sprd UWE5622 Wi-Fi Driver.
+
+config SPRDWL_NG
+	tristate "SPRD Next Generation Wireless LAN Support"
+	depends on CFG80211
+	help
+	  This is a driver for the Spreadtrum IEEE802.11 WLAN devices.
+
+	  When compiled as a module, this driver will be called sprdwl_ng.
+
+
