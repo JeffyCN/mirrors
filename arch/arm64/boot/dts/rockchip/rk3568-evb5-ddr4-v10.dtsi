@@ -88,12 +88,8 @@
 	status = "okay";
 };
 
-&combphy1_usq {
-	rockchip,sgmii-mac-sel = <0>;
-	status = "okay";
-};
-
 &combphy2_psq {
+	rockchip,sgmii-mac-sel = <0>;
 	status = "okay";
 };
 
@@ -216,7 +212,7 @@
 	pinctrl-0 = <&gmac0_miim>;
 
 	power-domains = <&power RK3568_PD_PIPE>;
-	phys = <&combphy1_usq PHY_TYPE_SGMII>;
+	phys = <&combphy2_psq PHY_TYPE_SGMII>;
 	phy-handle = <&sgmii_phy>;
 
 	status = "okay";
@@ -471,10 +467,6 @@
 &route_dsi0 {
 	status = "okay";
 	connect = <&vp1_out_dsi0>;
-};
-
-&sata2 {
-	status = "okay";
 };
 
 &sdmmc2 {
