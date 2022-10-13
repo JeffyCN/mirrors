@@ -21,7 +21,7 @@
 #include "../../../devfreq/governor.h"
 #endif
 
-#define WAIT_TIMEOUT_MS		(500)
+#define WAIT_TIMEOUT_MS		(2000)
 
 #define RKVDEC_MAX_WRITE_PART	6
 #define RKVDEC_MAX_READ_PART	2
