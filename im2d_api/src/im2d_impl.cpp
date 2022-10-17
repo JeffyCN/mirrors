@@ -1853,6 +1853,8 @@ IM_STATUS rga_job_submit(im_job_handle_t job_handle, int sync_mode, int acquire_
 
     g_im2d_job_manager.mutex.unlock();
 
+    free(job);
+
     switch (sync_mode) {
         case IM_SYNC:
             submit_request.sync_mode = RGA_BLIT_SYNC;
