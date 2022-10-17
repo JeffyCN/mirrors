@@ -77,10 +77,10 @@ const static std::unordered_map<uint32_t, uint32_t> android_hal_table = {
     // { , RK_FORMAT_Y4 },
     // { , RK_FORMAT_YCbCr_400 },
 
-    { HAL_PIXEL_FORMAT_BPP_1, RK_FORMAT_BPP1 },
-    { HAL_PIXEL_FORMAT_BPP_2, RK_FORMAT_BPP2 },
-    { HAL_PIXEL_FORMAT_BPP_4, RK_FORMAT_BPP4 },
-    { HAL_PIXEL_FORMAT_BPP_8, RK_FORMAT_BPP8 },
+    // { , RK_FORMAT_BPP1 },
+    // { , RK_FORMAT_BPP2 },
+    // { , RK_FORMAT_BPP4 },
+    // { , RK_FORMAT_BPP8 },
     // { , RK_FORMAT_RGBA2BPP },
     // { , RK_FORMAT_UNKNOWN },
 };
