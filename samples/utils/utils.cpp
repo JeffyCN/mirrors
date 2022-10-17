@@ -122,7 +122,7 @@ int read_image_from_fbc_file(void *buf, const char *path, int sw, int sh, int fm
     size = sw * sh * get_bpp_from_format(fmt) * 1.5;
 
     read_size = fread(buf, size, 1, file);
-    if (read_size != size) {
+    if (read_size != (size_t)size) {
         fprintf(stderr, "read %s failed! read_size = %lu, size = %d\n",
                 filePath, read_size, size);
         return -EINVAL;
@@ -151,7 +151,7 @@ int read_image_from_file(void *buf, const char *path, int sw, int sh, int fmt, i
     size = sw * sh * get_bpp_from_format(fmt);
 
     read_size = fread(buf, size, 1, file);
-    if (read_size != size) {
+    if (read_size != (size_t)size) {
         fprintf(stderr, "read %s failed! read_size = %lu, size = %d\n",
                 filePath, read_size, size);
         return -EINVAL;
