@@ -455,13 +455,13 @@ static void inno_mipi_dphy_timing_init(struct inno_video_phy *inno)
 	unsigned int i;
 
 	txbyteclkhs = inno->pll.rate / 8;
-	t_txbyteclkhs = DIV_ROUND_CLOSEST_ULL(PSEC_PER_SEC, txbyteclkhs);
+	t_txbyteclkhs = div_u64(PSEC_PER_SEC, txbyteclkhs);
 	sys_clk = clk_get_rate(inno->pclk_phy);
-	esc_clk_div = DIV_ROUND_CLOSEST_ULL(txbyteclkhs, 20000000);
+	esc_clk_div = DIV_ROUND_UP(txbyteclkhs, 20000000);
 	txclkesc = txbyteclkhs / esc_clk_div;
 	t_txclkesc = div_u64(PSEC_PER_SEC, txclkesc);
 
-	ui = DIV_ROUND_CLOSEST_ULL(PSEC_PER_SEC, inno->pll.rate);
+	ui = div_u64(PSEC_PER_SEC, inno->pll.rate);
 
 	memset(&gotp, 0, sizeof(gotp));
 	mipi_dphy_timing_get_default(&gotp, ui);
@@ -470,17 +470,17 @@ static void inno_mipi_dphy_timing_init(struct inno_video_phy *inno)
 	 * The value of counter for HS Ths-exit
 	 * Ths-exit = Tpin_txbyteclkhs * value
 	 */
-	hs_exit = DIV_ROUND_CLOSEST_ULL(gotp.hsexit, t_txbyteclkhs);
+	hs_exit = DIV_ROUND_UP(gotp.hsexit, t_txbyteclkhs);
 	/*
 	 * The value of counter for HS Tclk-post
 	 * Tclk-post = Tpin_txbyteclkhs * value
 	 */
-	clk_post = DIV_ROUND_CLOSEST_ULL(gotp.clkpost, t_txbyteclkhs);
+	clk_post = DIV_ROUND_UP(gotp.clkpost, t_txbyteclkhs);
 	/*
 	 * The value of counter for HS Tclk-pre
 	 * Tclk-pre = Tpin_txbyteclkhs * value
 	 */
-	clk_pre = DIV_ROUND_CLOSEST_ULL(gotp.clkpre, t_txbyteclkhs);
+	clk_pre = DIV_ROUND_UP(gotp.clkpre, t_txbyteclkhs);
 
 	wakeup = DIV_ROUND_CLOSEST_ULL(gotp.wakeup * sys_clk, PSEC_PER_SEC);
 	if (wakeup > 0x3ff)
@@ -490,19 +490,19 @@ static void inno_mipi_dphy_timing_init(struct inno_video_phy *inno)
 	 * Tta-go for turnaround
 	 * Tta-go = Ttxclkesc * value
 	 */
-	ta_go = DIV_ROUND_CLOSEST_ULL(gotp.tago, t_txclkesc);
+	ta_go = DIV_ROUND_UP(gotp.tago, t_txclkesc);
 	/*
 	 * The value of counter for HS Tta-sure
 	 * Tta-sure for turnaround
 	 * Tta-sure = Ttxclkesc * value
 	 */
-	ta_sure = DIV_ROUND_CLOSEST_ULL(gotp.tasure, t_txclkesc);
+	ta_sure = DIV_ROUND_UP(gotp.tasure, t_txclkesc);
 	/*
 	 * The value of counter for HS Tta-wait
 	 * Tta-wait for turnaround
 	 * Tta-wait = Ttxclkesc * value
 	 */
-	ta_wait = DIV_ROUND_CLOSEST_ULL(gotp.taget, t_txclkesc);
+	ta_wait = DIV_ROUND_UP(gotp.taget, t_txclkesc);
 
 	timing = inno_mipi_dphy_get_timing(inno);
 
@@ -511,7 +511,7 @@ static void inno_mipi_dphy_timing_init(struct inno_video_phy *inno)
 	 * Tlpx = Tpin_txbyteclkhs * (2 + value)
 	 */
 	if (inno->pdata->max_rate == MAX_1GHZ) {
-		lpx = DIV_ROUND_CLOSEST_ULL(gotp.lpx, t_txbyteclkhs);
+		lpx = DIV_ROUND_UP(gotp.lpx, t_txbyteclkhs);
 		if (lpx >= 2)
 			lpx -= 2;
 	} else
