@@ -719,6 +719,7 @@ static int set_heap_dev_dma(struct device *heap_dev)
 			return err;
 		}
 	}
+	arch_setup_dma_ops(heap_dev, 0, 0, NULL, 0);
 
 	return 0;
 }
