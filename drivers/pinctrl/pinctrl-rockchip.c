@@ -2842,13 +2842,15 @@ static int rockchip_pinconf_set(struct pinctrl_dev *pctldev, unsigned int pin,
 				return rc;
 			break;
 		case PIN_CONFIG_OUTPUT:
-			rc = rockchip_get_mux(bank, pin - bank->pin_base);
-			if (rc != 0) {
-				dev_err(info->dev, "pin-%d has been mux to func%d\n", pin, rc);
+			rc = rockchip_set_mux(bank, pin - bank->pin_base,
+					      RK_FUNC_GPIO);
+			if (rc != RK_FUNC_GPIO) {
+				dev_err(info->dev, "pin-%d fail to mux to gpio, %d\n", pin, rc);
 				return -EINVAL;
 			}
 
-			rc = gpio->direction_output(gpio, pin - bank->pin_base, arg);
+			rc = gpio->direction_output(gpio, pin - bank->pin_base,
+						    arg);
 			if (rc)
 				return rc;
 			break;
