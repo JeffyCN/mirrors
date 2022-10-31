@@ -703,6 +703,9 @@ static int set_heap_dev_dma(struct device *heap_dev)
 	if (!heap_dev)
 		return -EINVAL;
 
+	/* Set a dma ops(swiotlb) for the heap device. */
+	arch_setup_dma_ops(heap_dev, 0, 0, NULL, 0);
+
 	dma_coerce_mask_and_coherent(heap_dev, DMA_BIT_MASK(64));
 
 	if (!heap_dev->dma_parms) {
@@ -719,7 +722,6 @@ static int set_heap_dev_dma(struct device *heap_dev)
 			return err;
 		}
 	}
-	arch_setup_dma_ops(heap_dev, 0, 0, NULL, 0);
 
 	return 0;
 }
