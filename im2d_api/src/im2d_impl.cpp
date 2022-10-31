@@ -1267,6 +1267,90 @@ IM_API IM_STATUS rga_release_buffer(int handle) {
     return rga_release_buffers(&buffer_pool);
 }
 
+static void rga_dump_channel_info(int log_level, const char *name, im_rect &rect, rga_buffer_t &image) {
+    log_level |= IM_LOG_FORCE;
+
+    IM_LOG(log_level,
+           "%s_channel: \n"
+           "  rect[x,y,w,h] = [%d, %d, %d, %d]\n"
+           "  image[w,h,ws,hs,f] = [%d, %d, %d, %d, %s]\n"
+           "  buffer[handle,fd,va,pa] = [%d, %d, %lx, %lx]\n"
+           "  color_space = 0x%x, global_alpha = 0x%x, rd_mode = 0x%x\n",
+           name,
+           rect.x, rect.y, rect.width, rect.height,
+           image.width, image.height, image.wstride, image.hstride, translate_format_str(image.format),
+           image.handle, image.fd, (unsigned long)image.vir_addr, (unsigned long)image.phy_addr,
+           image.color_space_mode, image.global_alpha, image.rd_mode);
+}
+
+static void rga_dump_osd_info(int log_level, im_osd_t &osd_info) {
+    IM_LOG(log_level, "osd_mode[0x%x]:\n", osd_info.osd_mode);
+
+    IM_LOG(log_level, "  block: \n"
+                      "    width_mode[0x%x], width/witdh_index[0x%x], block_count[%d]\n"
+                      "    background_config[0x%x], direction[0x%x], color_mode[0x%x]\n"
+                      "    normal_color[0x%x], invert_color[0x%x]\n",
+           osd_info.block_parm.width_mode, osd_info.block_parm.width, osd_info.block_parm.block_count,
+           osd_info.block_parm.background_config, osd_info.block_parm.direction, osd_info.block_parm.color_mode,
+           osd_info.block_parm.normal_color.value, osd_info.block_parm.invert_color.value);
+
+    IM_LOG(log_level, "  invert_config:\n"
+                      "    channel[0x%x], flags_mode[0x%x], flages_index[%d] threash[0x%x]\n"
+                      "    flages: invert[0x%llx], current[0x%llx]\n"
+                      "    invert_mode[%x]",
+           osd_info.invert_config.invert_channel, osd_info.invert_config.flags_mode,
+           osd_info.invert_config.flags_index, osd_info.invert_config.threash,
+           (unsigned long long)osd_info.invert_config.invert_flags,
+           (unsigned long long)osd_info.invert_config.current_flags,
+           osd_info.invert_config.invert_mode);
+    if (osd_info.invert_config.invert_mode == IM_OSD_INVERT_USE_FACTOR)
+        IM_LOG(log_level, "    factor[min,max] = alpha[0x%x, 0x%x], yg[0x%x, 0x%x], crb[0x%x, 0x%x]\n",
+               osd_info.invert_config.factor.alpha_min, osd_info.invert_config.factor.alpha_max,
+               osd_info.invert_config.factor.yg_min, osd_info.invert_config.factor.yg_max,
+               osd_info.invert_config.factor.crb_min, osd_info.invert_config.factor.crb_max);
+    else
+        IM_LOG(log_level, "\n");
+
+    IM_LOG(log_level, "  bpp2rgb info:\n"
+                      "    ac_swap[0x%x], endian_swap[0x%x], color0[0x%x], color1[0x%x]\n",
+           osd_info.bpp2_info.ac_swap, osd_info.bpp2_info.endian_swap,
+           osd_info.bpp2_info.color0.value, osd_info.bpp2_info.color1.value);
+}
+
+static void rga_dump_opt(int log_level, im_opt_t &opt, int usage) {
+    log_level |= IM_LOG_FORCE;
+
+    IM_LOG(log_level, "opt version[0x%x]:\n", opt.version);
+    IM_LOG(log_level, "set_core[0x%x], priority[%d]\n", opt.core, opt.priority);
+
+    if (usage & IM_COLOR_FILL)
+        IM_LOG(log_level, "color[0x%x] ", opt.color);
+    if (usage & IM_MOSAIC)
+        IM_LOG(log_level, "mosaic[%d] ", opt.mosaic_mode);
+    if (usage & IM_ROP)
+        IM_LOG(log_level, "rop[0x%x] ", opt.rop_code);
+    if (usage & IM_ALPHA_COLORKEY_MASK)
+        IM_LOG(log_level, "color_key[min,max] = [0x%x, 0x%x] ",
+               opt.colorkey_range.min, opt.colorkey_range.max);
+    if (usage & (IM_COLOR_FILL | IM_MOSAIC | IM_ROP | IM_ALPHA_COLORKEY_MASK))
+        IM_LOG(log_level, "\n");
+
+    if (usage & IM_NN_QUANTIZE)
+        IM_LOG(log_level, "nn:\n"
+                          "  scale[r,g,b] = [%d, %d, %d], offset[r,g,b] = [0x%x, 0x%x, 0x%x]\n",
+               opt.nn.scale_r, opt.nn.scale_g, opt.nn.scale_b,
+               opt.nn.offset_r, opt.nn.offset_g, opt.nn.offset_b);
+
+    if (usage & IM_OSD)
+        rga_dump_osd_info(log_level, opt.osd_config);
+
+    if (usage & IM_PRE_INTR)
+        IM_LOG(log_level, "pre_intr:\n"
+                          "  flags[0x%x], read_threshold[0x%x], write_start[0x%x], write_step[0x%x]\n",
+               opt.intr_config.flags, opt.intr_config.read_threshold,
+               opt.intr_config.write_start, opt.intr_config.write_step);
+}
+
 IM_STATUS rga_get_opt(im_opt_t *opt, void *ptr) {
     if (opt == NULL || ptr == NULL)
         return IM_STATUS_FAILED;
@@ -1711,15 +1795,18 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
     }
 
     if (ret) {
-        IM_LOGE("Failed to call RockChipRga interface, query log to find the cause of failure.");
-        IM_LOGFE("srect[x,y,w,h] = [%d, %d, %d, %d] src[w,h,ws,hs] = [%d, %d, %d, %d]\n",
-                 srect.x, srect.y, srect.width, srect.height, src.width, src.height, src.wstride, src.hstride);
+        IM_LOGE("Failed to call RockChipRga interface, please use 'dmesg' command to view driver error log.");
+        rga_dump_channel_info(IM_LOG_ERROR | IM_LOG_FORCE, "src", srect, src);
         if (rga_is_buffer_valid(pat))
-           IM_LOGFE("s1/prect[x,y,w,h] = [%d, %d, %d, %d] src1/pat[w,h,ws,hs] = [%d, %d, %d, %d]\n",
-                    prect.x, prect.y, prect.width, prect.height, pat.width, pat.height, pat.wstride, pat.hstride);
-        IM_LOGFE("drect[x,y,w,h] = [%d, %d, %d, %d] dst[w,h,ws,hs] = [%d, %d, %d, %d]\n",
-                 drect.x, drect.y, drect.width, drect.height, dst.width, dst.height, dst.wstride, dst.hstride);
-        IM_LOGFE("usage[0x%x]", usage);
+            rga_dump_channel_info(IM_LOG_ERROR | IM_LOG_FORCE, "src1/pat", prect, pat);
+        rga_dump_channel_info(IM_LOG_ERROR | IM_LOG_FORCE, "dst", drect, dst);
+
+        if (opt_ptr != NULL)
+            rga_dump_opt(IM_LOG_ERROR | IM_LOG_FORCE, *opt_ptr, usage);
+
+        IM_LOGFE("acquir_fence[%d], release_fence_ptr[0x%lx], usage[0x%x]\n",
+                 acquire_fence_fd, (unsigned long)release_fence_fd, usage);
+
         return IM_STATUS_FAILED;
     }
 
