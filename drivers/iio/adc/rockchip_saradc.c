@@ -81,6 +81,7 @@ struct rockchip_saradc {
 	struct reset_control	*reset;
 	const struct rockchip_saradc_data *data;
 	u16			last_val;
+	const struct iio_chan_spec *last_chan;
 	bool			suspended;
 #ifdef CONFIG_ROCKCHIP_SARADC_TEST_CHN
 	bool			test;
@@ -89,7 +90,6 @@ struct rockchip_saradc {
 	struct workqueue_struct *wq;
 	struct delayed_work	work;
 #endif
-	const struct iio_chan_spec *last_chan;
 };
 
 static void rockchip_saradc_reset_controller(struct reset_control *reset);
@@ -412,6 +412,46 @@ static void rockchip_saradc_regulator_disable(void *data)
 	regulator_disable(info->vref);
 }
 
+static irqreturn_t rockchip_saradc_trigger_handler(int irq, void *p)
+{
+	struct iio_poll_func *pf = p;
+	struct iio_dev *i_dev = pf->indio_dev;
+	struct rockchip_saradc *info = iio_priv(i_dev);
+	/*
+	 * @values: each channel takes an u16 value
+	 * @timestamp: will be 8-byte aligned automatically
+	 */
+	struct {
+		u16 values[SARADC_MAX_CHANNELS];
+		int64_t timestamp;
+	} data;
+	int ret;
+	int i, j = 0;
+
+	mutex_lock(&i_dev->mlock);
+
+	for_each_set_bit(i, i_dev->active_scan_mask, i_dev->masklength) {
+		const struct iio_chan_spec *chan = &i_dev->channels[i];
+
+		ret = rockchip_saradc_conversion(info, chan);
+		if (ret) {
+			rockchip_saradc_power_down(info);
+			goto out;
+		}
+
+		data.values[j] = info->last_val;
+		j++;
+	}
+
+	iio_push_to_buffers_with_timestamp(i_dev, &data, iio_get_time_ns(i_dev));
+out:
+	mutex_unlock(&i_dev->mlock);
+
+	iio_trigger_notify_done(i_dev->trig);
+
+	return IRQ_HANDLED;
+}
+
 #ifdef CONFIG_ROCKCHIP_SARADC_TEST_CHN
 static ssize_t saradc_test_chn_store(struct device *dev,
 			struct device_attribute *attr,
@@ -480,46 +520,6 @@ static void rockchip_saradc_test_work(struct work_struct *work)
 	rockchip_saradc_start(info, info->chn);
 }
 #endif
-
-static irqreturn_t rockchip_saradc_trigger_handler(int irq, void *p)
-{
-	struct iio_poll_func *pf = p;
-	struct iio_dev *i_dev = pf->indio_dev;
-	struct rockchip_saradc *info = iio_priv(i_dev);
-	/*
-	 * @values: each channel takes an u16 value
-	 * @timestamp: will be 8-byte aligned automatically
-	 */
-	struct {
-		u16 values[SARADC_MAX_CHANNELS];
-		int64_t timestamp;
-	} data;
-	int ret;
-	int i, j = 0;
-
-	mutex_lock(&i_dev->mlock);
-
-	for_each_set_bit(i, i_dev->active_scan_mask, i_dev->masklength) {
-		const struct iio_chan_spec *chan = &i_dev->channels[i];
-
-		ret = rockchip_saradc_conversion(info, chan);
-		if (ret) {
-			rockchip_saradc_power_down(info);
-			goto out;
-		}
-
-		data.values[j] = info->last_val;
-		j++;
-	}
-
-	iio_push_to_buffers_with_timestamp(i_dev, &data, iio_get_time_ns(i_dev));
-out:
-	mutex_unlock(&i_dev->mlock);
-
-	iio_trigger_notify_done(i_dev->trig);
-
-	return IRQ_HANDLED;
-}
 
 static int rockchip_saradc_probe(struct platform_device *pdev)
 {
@@ -725,7 +725,6 @@ static int rockchip_saradc_suspend(struct device *dev)
 	regulator_disable(info->vref);
 
 	info->suspended = true;
-
 	mutex_unlock(&indio_dev->mlock);
 
 	return 0;
