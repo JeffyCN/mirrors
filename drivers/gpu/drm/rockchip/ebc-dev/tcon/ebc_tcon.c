@@ -163,9 +163,23 @@ static inline void tcon_cfg_done(struct ebc_tcon *tcon)
 
 static int tcon_enable(struct ebc_tcon *tcon, struct ebc_panel *panel)
 {
+	u32 width, height, vir_width, vir_height;
+
 	clk_prepare_enable(tcon->hclk);
 	clk_prepare_enable(tcon->dclk);
 	pm_runtime_get_sync(tcon->dev);
+
+	if (panel->rearrange) {
+		width = panel->width * 2;
+		height = panel->height / 2;
+		vir_width = panel->vir_width * 2;
+		vir_height = panel->vir_height / 2;
+	} else {
+		width = panel->width;
+		height = panel->height;
+		vir_width = panel->vir_width;
+		vir_height = panel->vir_height;
+	}
 
 	/* panel timing and win info config */
 	tcon_write(tcon, EBC_DSP_HTIMING0,
@@ -176,10 +190,10 @@ static int tcon_enable(struct ebc_tcon *tcon, struct ebc_panel *panel)
 				DSP_VTOTAL(panel->fsl + panel->fbl + panel->fdl + panel->fel) | DSP_VS_END(panel->fsl));
 	tcon_write(tcon, EBC_DSP_VTIMING1,
 				DSP_VACT_END(panel->fsl + panel->fbl + panel->fdl) | DSP_VACT_ST(panel->fsl + panel->fbl));
-	tcon_write(tcon, EBC_DSP_ACT_INFO, DSP_HEIGHT(panel->height) | DSP_WIDTH(panel->width));
-	tcon_write(tcon, EBC_WIN_VIR, WIN_VIR_HEIGHT(panel->vir_height) | WIN_VIR_WIDTH(panel->vir_width));
-	tcon_write(tcon, EBC_WIN_ACT, WIN_ACT_HEIGHT(panel->height) | WIN_ACT_WIDTH(panel->width));
-	tcon_write(tcon, EBC_WIN_DSP, WIN_DSP_HEIGHT(panel->height) | WIN_DSP_WIDTH(panel->width));
+	tcon_write(tcon, EBC_DSP_ACT_INFO, DSP_HEIGHT(height) | DSP_WIDTH(width));
+	tcon_write(tcon, EBC_WIN_VIR, WIN_VIR_HEIGHT(vir_height) | WIN_VIR_WIDTH(vir_width));
+	tcon_write(tcon, EBC_WIN_ACT, WIN_ACT_HEIGHT(height) | WIN_ACT_WIDTH(width));
+	tcon_write(tcon, EBC_WIN_DSP, WIN_DSP_HEIGHT(height) | WIN_DSP_WIDTH(width));
 	tcon_write(tcon, EBC_WIN_DSP_ST, WIN_DSP_YST(panel->fsl + panel->fbl) | WIN_DSP_XST(panel->lsl + panel->lbl));
 
 	/* win2 fifo is 512x128, win fifo is 256x128, we set fifo almost value (fifo_size - 16)
