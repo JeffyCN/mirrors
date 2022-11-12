@@ -926,6 +926,8 @@ struct vop2_ctrl {
 struct vop_dump_regs {
 	uint32_t offset;
 	const char *name;
+	struct vop_reg state;
+	bool enable_state;
 };
 
 /**

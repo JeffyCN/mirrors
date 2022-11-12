@@ -56,6 +56,8 @@
 #define REG_SET_MASK(x, name, off, reg, mask, v, relaxed) \
 		_REG_SET(x, name, off, reg, reg.mask & mask, v, relaxed)
 
+#define REG_GET(vop2, reg) ((vop2_readl(vop2, reg.offset) >> reg.shift) & reg.mask)
+
 #define VOP_CLUSTER_SET(x, win, name, v) \
 	do { \
 		if (win->regs->cluster) \
@@ -4320,6 +4322,7 @@ static void vop2_crtc_regs_dump(struct drm_crtc *crtc, struct seq_file *s)
 {
 	struct vop2_video_port *vp = to_vop2_video_port(crtc);
 	struct vop2 *vop2 = vp->vop2;
+	const struct vop2_data *vop2_data = vop2->data;
 	struct drm_crtc_state *cstate = crtc->state;
 	const struct vop_dump_regs *regs = vop2->data->dump_regs;
 	uint32_t buf[68];
@@ -4327,19 +4330,80 @@ static void vop2_crtc_regs_dump(struct drm_crtc *crtc, struct seq_file *s)
 	unsigned int n, i, j;
 	resource_size_t offset_addr;
 	uint32_t base;
+	struct drm_crtc *first_active_crtc = NULL;
 
 	if (!cstate->active)
+		return;
+
+	/* only need to dump once at first active crtc for vop2 */
+	for (i = 0; i < vop2_data->nr_vps; i++) {
+		if (vop2->vps[i].crtc.state->active) {
+			first_active_crtc = &vop2->vps[i].crtc;
+			break;
+		}
+	}
+	if (first_active_crtc != crtc)
 		return;
 
 	n = vop2->data->dump_regs_size;
 	for (i = 0; i < n; i++) {
 		base = regs[i].offset;
 		offset_addr = vop2->res->start + base;
-		pr_info("%s[%pa]:\n", regs[i].name, &offset_addr);
-		for (j = 0; j < len; j++)
-			buf[j] = vop2_readl(vop2, base + (4 * j));
-		print_hex_dump(KERN_INFO, "", DUMP_PREFIX_OFFSET, 16, 4, buf,
-			       len << 2, 0);
+		DEBUG_PRINT("\n%s:\n", regs[i].name);
+		for (j = 0; j < len;) {
+			DEBUG_PRINT("%08x:  %08x %08x %08x %08x\n", (u32)offset_addr + j * 4,
+				    vop2_readl(vop2, base + (4 * j)),
+				    vop2_readl(vop2, base + (4 * (j + 1))),
+				    vop2_readl(vop2, base + (4 * (j + 2))),
+				    vop2_readl(vop2, base + (4 * (j + 3))));
+			j += 4;
+		}
+	}
+}
+
+static void vop2_crtc_active_regs_dump(struct drm_crtc *crtc, struct seq_file *s)
+{
+	struct vop2_video_port *vp = to_vop2_video_port(crtc);
+	struct vop2 *vop2 = vp->vop2;
+	const struct vop2_data *vop2_data = vop2->data;
+	struct drm_crtc_state *cstate = crtc->state;
+	const struct vop_dump_regs *regs = vop2->data->dump_regs;
+	uint32_t buf[68];
+	uint32_t len = ARRAY_SIZE(buf);
+	unsigned int n, i, j;
+	resource_size_t offset_addr;
+	uint32_t base;
+	struct drm_crtc *first_active_crtc = NULL;
+
+	if (!cstate->active)
+		return;
+
+	/* only need to dump once at first active crtc for vop2 */
+	for (i = 0; i < vop2_data->nr_vps; i++) {
+		if (vop2->vps[i].crtc.state->active) {
+			first_active_crtc = &vop2->vps[i].crtc;
+			break;
+		}
+	}
+	if (first_active_crtc != crtc)
+		return;
+
+	n = vop2->data->dump_regs_size;
+	for (i = 0; i < n; i++) {
+		if (regs[i].state.mask &&
+		    REG_GET(vop2, regs[i].state) != regs[i].enable_state)
+			continue;
+		base = regs[i].offset;
+		offset_addr = vop2->res->start + base;
+		DEBUG_PRINT("\n%s:\n", regs[i].name);
+		for (j = 0; j < len;) {
+			DEBUG_PRINT("%08x:  %08x %08x %08x %08x\n", (u32)offset_addr + j * 4,
+				    vop2_readl(vop2, base + (4 * j)),
+				    vop2_readl(vop2, base + (4 * (j + 1))),
+				    vop2_readl(vop2, base + (4 * (j + 2))),
+				    vop2_readl(vop2, base + (4 * (j + 3))));
+			j += 4;
+		}
 	}
 }
 
@@ -4660,6 +4724,7 @@ static const struct rockchip_crtc_funcs private_crtc_funcs = {
 	.debugfs_init = vop2_crtc_debugfs_init,
 	.debugfs_dump = vop2_crtc_debugfs_dump,
 	.regs_dump = vop2_crtc_regs_dump,
+	.active_regs_dump = vop2_crtc_active_regs_dump,
 	.mode_valid = vop2_crtc_mode_valid,
 	.bandwidth = vop2_crtc_bandwidth,
 	.crtc_close = vop2_crtc_close,
