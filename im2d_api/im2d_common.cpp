@@ -320,6 +320,28 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                 default :
                     goto TRY_TO_COMPATIBLE;
             }
+        } else if (rgaCtx->mHwVersions.version[i].major == 3 &&
+                   rgaCtx->mHwVersions.version[i].minor == 7) {
+            switch (rgaCtx->mHwVersions.version[i].revision) {
+                case 0x93215:
+                    rga_version = IM_RGA_HW_VERSION_RGA_2_ENHANCE_INDEX;
+                    memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
+
+                    merge_table.input_format |= IM_RGA_SUPPORT_FORMAT_YUYV_422 |
+                                                IM_RGA_SUPPORT_FORMAT_YUV_400 |
+                                                IM_RGA_SUPPORT_FORMAT_RGBA2BPP;
+                    merge_table.output_format |= IM_RGA_SUPPORT_FORMAT_YUV_400 |
+                                                 IM_RGA_SUPPORT_FORMAT_Y4;
+                    merge_table.feature |= IM_RGA_SUPPORT_FEATURE_QUANTIZE |
+                                           IM_RGA_SUPPORT_FEATURE_SRC1_R2Y_CSC |
+                                           IM_RGA_SUPPORT_FEATURE_DST_FULL_CSC |
+                                           IM_RGA_SUPPORT_FEATURE_MOSAIC |
+                                           IM_RGA_SUPPORT_FEATURE_OSD |
+                                           IM_RGA_SUPPORT_FEATURE_PRE_INTR;
+                    break;
+                default :
+                    goto TRY_TO_COMPATIBLE;
+            }
         } else if (rgaCtx->mHwVersions.version[i].major == 4 &&
                    rgaCtx->mHwVersions.version[i].minor == 0) {
             switch (rgaCtx->mHwVersions.version[i].revision) {
