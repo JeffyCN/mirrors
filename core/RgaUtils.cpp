@@ -111,7 +111,7 @@ const struct format_table_entry format_table[] = {
 const char *translate_format_str(int format) {
     format = RkRgaGetRgaFormat(format);
 
-    for (int i = 0; i < sizeof(format_table) / sizeof(format_table[0]); i++)
+    for (size_t i = 0; i < sizeof(format_table) / sizeof(format_table[0]); i++)
         if (format_table[i].format == format)
             return format_table[i].name;
 

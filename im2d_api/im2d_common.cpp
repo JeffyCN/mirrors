@@ -246,7 +246,7 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
 
     memset(&merge_table, 0x0, sizeof(merge_table));
 
-    for (int i = 0; i < rgaCtx->mHwVersions.size; i++) {
+    for (uint32_t i = 0; i < rgaCtx->mHwVersions.size; i++) {
         if (rgaCtx->mHwVersions.version[i].major == 2 &&
             rgaCtx->mHwVersions.version[i].minor == 0) {
             if (rgaCtx->mHwVersions.version[i].revision == 0) {
