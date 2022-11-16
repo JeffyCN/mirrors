@@ -406,7 +406,7 @@ ifeq ($(CONFIG_BCMDHD),m)
 EXTRA_LDFLAGS += --strip-debug
 endif
 
-obj-$(CONFIG_AP6XXX) += $(MODULE_NAME).o
+obj-m += $(MODULE_NAME).o
 $(MODULE_NAME)-objs += $(DHDOFILES)
 ccflags-y := $(EXTRA_CFLAGS)
 
