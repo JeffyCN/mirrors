@@ -58,27 +58,28 @@ int main() {
 
     block_witdh = 64;
     block_height = 96;
-    block_count = 10;
+    block_count = 6;
 
-    fg_width = block_witdh * block_count;
-    fg_height = 96;
+    fg_width = block_witdh;
+    fg_height = block_height * block_count;
     fg_format = RK_FORMAT_RGBA_8888;
 
-    bg_width = 1920;
-    bg_height = 1080;
+    bg_width = 1280;
+    bg_height = 720;
     bg_format = RK_FORMAT_RGBA_8888;
 
+    block_size = block_witdh * block_height * get_bpp_from_format(fg_format);
     fg_buf_size = fg_width * fg_height * get_bpp_from_format(fg_format);
     bg_buf_size = bg_width * bg_height * get_bpp_from_format(bg_format);
 
     /* Allocate dma_buf from CMA, return dma_fd and virtual address */
-    ret = dma_buf_alloc(RV1106_CMA_HEAP_PATH, fg_buf_size, &fg_dma_fd, (void **)&fg_buf);
+    ret = dma_buf_alloc(DMA_HEAP_UNCACHE_PATH, fg_buf_size, &fg_dma_fd, (void **)&fg_buf);
     if (ret < 0) {
         printf("alloc fg CMA buffer failed!\n");
         return -1;
     }
 
-    ret = dma_buf_alloc(RV1106_CMA_HEAP_PATH, bg_buf_size, &bg_dma_fd, (void **)&bg_buf);
+    ret = dma_buf_alloc(DMA_HEAP_UNCACHE_PATH, bg_buf_size, &bg_dma_fd, (void **)&bg_buf);
     if (ret < 0) {
         printf("alloc bg CMA buffer failed!\n");
         dma_buf_free(fg_buf_size, &fg_dma_fd, fg_buf);
@@ -86,12 +87,16 @@ int main() {
     }
 
     /* fill image data */
-    if (0 != get_buf_from_file(fg_buf, fg_format, fg_width, fg_height, 0)) {
-        printf("foreground image write err\n");
-        memset(fg_buf, 0xaa, fg_buf_size);
+    for (int i = 0; (i < block_count) && ((block_height * i) < fg_height); i++) {
+        if (0 != get_buf_from_file(fg_buf + i * block_size, fg_format, block_witdh, block_height, 0)) {
+            printf("block image read err\n");
+            memset(fg_buf, 0xaa, fg_buf_size);
+        }
     }
-    if (0 != get_buf_from_file(bg_buf, bg_format, bg_width, bg_height, 1)) {
-        printf("background image write err\n");
+    output_buf_data_to_file(fg_buf, fg_format, fg_width, fg_height, 0);
+
+    if (0 != get_buf_from_file(bg_buf, bg_format, bg_width, bg_height, 0)) {
+        printf("background image read err\n");
         memset(bg_buf, 0x66, bg_buf_size);
     }
 
@@ -108,13 +113,15 @@ int main() {
     /*
      * Overlay multiple blocks on the background image and guide the color of
      * the blocks according to the external inversion flag.
-        ----------------     ---------------------    ---------------------
-        |  |  |  |  |  |  +  |                   | => | ----------------  |
-        ----------------     |                   |    | |  |  |  |  |  |  |
-                             |                   |    | ----------------  |
-                             |                   |    |                   |
-                             |                   |    |                   |
-                             ---------------------    ---------------------
+        ----     ---------------------    ---------------------
+        |  |     |                   |    | ----              |
+        ----     |                   |    | |  |              |
+        |  |     |                   |    | ----              |
+        ----  +  |                   | => | |  |              |
+        |  |     |                   |    | ----              |
+        ----     |                   |    | |  |              |
+                 |                   |    | ----              |
+                 ---------------------    ---------------------
 
      */
 
@@ -126,20 +133,20 @@ int main() {
     osd_config.osd_mode = IM_OSD_MODE_STATISTICS | IM_OSD_MODE_AUTO_INVERT;
 
     osd_config.block_parm.width_mode = IM_OSD_BLOCK_MODE_NORMAL;
-    osd_config.block_parm.width = block_witdh;
+    osd_config.block_parm.width = block_height;
     osd_config.block_parm.block_count = block_count;
     osd_config.block_parm.background_config = IM_OSD_BACKGROUND_DEFAULT_BRIGHT;
-    osd_config.block_parm.direction = IM_OSD_MODE_HORIZONTAL;
+    osd_config.block_parm.direction = IM_OSD_MODE_VERTICAL;
     osd_config.block_parm.color_mode = IM_OSD_COLOR_PIXEL;
 
     osd_config.invert_config.invert_channel = IM_OSD_INVERT_CHANNEL_COLOR;
     osd_config.invert_config.flags_mode = IM_OSD_FLAGS_EXTERNAL;
-    osd_config.invert_config.invert_flags = 0x0000000000000001;
+    osd_config.invert_config.invert_flags = 0x000000000000002a;
     osd_config.invert_config.flags_index = 1;
     osd_config.invert_config.threash = 40;
     osd_config.invert_config.invert_mode = IM_OSD_INVERT_USE_SWAP;
 
-    ret = imcheck(fg_img, bg_img, {}, {});
+    ret = imcheck(fg_img, bg_img, {}, bg_rect);
     if (IM_STATUS_NOERROR != ret) {
         printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
         return -1;
@@ -158,10 +165,8 @@ release_buffer:
     if (bg_handle)
         releasebuffer_handle(bg_handle);
 
-    if (fg_buf)
-        free(fg_buf);
-    if (bg_buf)
-        free(bg_buf);
+    dma_buf_free(fg_buf_size, &fg_dma_fd, fg_buf);
+    dma_buf_free(bg_buf_size, &bg_dma_fd, bg_buf);
 
     return ret;
 }
