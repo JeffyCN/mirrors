@@ -85,6 +85,7 @@ struct dwmac_rk_lb_priv {
 	int rx;
 	int final_tx;
 	int final_rx;
+	int max_delay;
 };
 
 #define DMA_CONTROL_OSP		BIT(4)
@@ -776,9 +777,20 @@ static int dwmac_rk_loopback_with_identify(struct stmmac_priv *priv,
 	return __dwmac_rk_loopback_run(priv, lb_priv);
 }
 
-static inline bool dwmac_rk_delayline_is_valid(int tx, int rx)
+static inline bool dwmac_rk_delayline_is_txvalid(struct dwmac_rk_lb_priv *lb_priv,
+						 int tx)
 {
-	if ((tx > 0 && tx < MAX_DELAYLINE) && (rx > 0 && rx < MAX_DELAYLINE))
+	if (tx > 0 && tx < lb_priv->max_delay)
+		return true;
+	else
+		return false;
+}
+
+static inline bool dwmac_rk_delayline_is_valid(struct dwmac_rk_lb_priv *lb_priv,
+					       int tx, int rx)
+{
+	if ((tx > 0 && tx < lb_priv->max_delay) &&
+	    (rx > 0 && rx < lb_priv->max_delay))
 		return true;
 	else
 		return false;
@@ -789,7 +801,7 @@ static int dwmac_rk_delayline_scan_cross(struct stmmac_priv *priv,
 {
 	int tx_left, tx_right, rx_up, rx_down;
 	int i, j, tx_index, rx_index;
-	int tx_mid, rx_mid;
+	int tx_mid = 0, rx_mid = 0;
 
 	/* initiation */
 	tx_index = SCAN_STEP;
@@ -797,12 +809,12 @@ static int dwmac_rk_delayline_scan_cross(struct stmmac_priv *priv,
 
 re_scan:
 	/* start from rx based on the experience */
-	for (i = rx_index; i <= (MAX_DELAYLINE - SCAN_STEP); i += SCAN_STEP) {
+	for (i = rx_index; i <= (lb_priv->max_delay - SCAN_STEP); i += SCAN_STEP) {
 		tx_left = 0;
 		tx_right = 0;
 		tx_mid = 0;
 
-		for (j = tx_index; j <= (MAX_DELAYLINE - SCAN_STEP);
+		for (j = tx_index; j <= (lb_priv->max_delay - SCAN_STEP);
 		     j += SCAN_STEP) {
 			if (!dwmac_rk_loopback_with_identify(priv,
 			    lb_priv, j, i)) {
@@ -820,14 +832,14 @@ re_scan:
 	}
 
 	/* Worst case: reach the end */
-	if (i >= (MAX_DELAYLINE - SCAN_STEP))
+	if (i >= (lb_priv->max_delay - SCAN_STEP))
 		goto end;
 
 	rx_up = 0;
 	rx_down = 0;
 
 	/* look for rx_mid base on the tx_mid */
-	for (i = SCAN_STEP; i <= (MAX_DELAYLINE - SCAN_STEP);
+	for (i = SCAN_STEP; i <= (lb_priv->max_delay - SCAN_STEP);
 	     i += SCAN_STEP) {
 		if (!dwmac_rk_loopback_with_identify(priv, lb_priv,
 		    tx_mid, i)) {
@@ -846,23 +858,24 @@ re_scan:
 		goto re_scan;
 	}
 
-	if (dwmac_rk_delayline_is_valid(tx_mid, rx_mid)) {
+	if (dwmac_rk_delayline_is_valid(lb_priv, tx_mid, rx_mid)) {
 		lb_priv->final_tx = tx_mid;
 		lb_priv->final_rx = rx_mid;
 
-		pr_info("Find suitable tx_delay = 0x%02x, rx_delay = 0x%02x\n",
+		pr_info("Find available tx_delay = 0x%02x, rx_delay = 0x%02x\n",
 			lb_priv->final_tx, lb_priv->final_rx);
 
 		return 0;
 	}
 end:
-	pr_err("Can't find suitable delayline\n");
+	pr_err("Can't find available delayline\n");
 	return -ENXIO;
 }
 
 static int dwmac_rk_delayline_scan(struct stmmac_priv *priv,
 				   struct dwmac_rk_lb_priv *lb_priv)
 {
+	int phy_iface = dwmac_rk_get_phy_interface(priv);
 	int tx, rx, tx_sum, rx_sum, count;
 	int tx_mid, rx_mid;
 	int ret = -ENXIO;
@@ -871,9 +884,11 @@ static int dwmac_rk_delayline_scan(struct stmmac_priv *priv,
 	rx_sum = 0;
 	count = 0;
 
-	for (rx = 0x0; rx <= MAX_DELAYLINE; rx++) {
-		printk(KERN_CONT "RX(0x%02x):", rx);
-		for (tx = 0x0; tx <= MAX_DELAYLINE; tx++) {
+	for (rx = 0x0; rx <= lb_priv->max_delay; rx++) {
+		if (phy_iface == PHY_INTERFACE_MODE_RGMII_RXID)
+			rx = -1;
+		printk(KERN_CONT "RX(%03d):", rx);
+		for (tx = 0x0; tx <= lb_priv->max_delay; tx++) {
 			if (!dwmac_rk_loopback_with_identify(priv,
 			    lb_priv, tx, rx)) {
 				tx_sum += tx;
@@ -885,24 +900,40 @@ static int dwmac_rk_delayline_scan(struct stmmac_priv *priv,
 			}
 		}
 		printk(KERN_CONT "\n");
+
+		if (phy_iface == PHY_INTERFACE_MODE_RGMII_RXID)
+			break;
 	}
 
 	if (tx_sum && rx_sum && count) {
 		tx_mid = tx_sum / count;
 		rx_mid = rx_sum / count;
 
-		if (dwmac_rk_delayline_is_valid(tx_mid, rx_mid)) {
-			lb_priv->final_tx = tx_mid;
-			lb_priv->final_rx = rx_mid;
-			ret = 0;
+		if (phy_iface == PHY_INTERFACE_MODE_RGMII_RXID) {
+			if (dwmac_rk_delayline_is_txvalid(lb_priv, tx_mid)) {
+				lb_priv->final_tx = tx_mid;
+				lb_priv->final_rx = -1;
+				ret = 0;
+			}
+		} else {
+			if (dwmac_rk_delayline_is_valid(lb_priv, tx_mid, rx_mid)) {
+				lb_priv->final_tx = tx_mid;
+				lb_priv->final_rx = rx_mid;
+				ret = 0;
+			}
 		}
 	}
 
-	if (ret)
+	if (ret) {
 		pr_err("\nCan't find suitable delayline\n");
-	else
-		pr_info("\nFind suitable tx_delay = 0x%02x, rx_delay = 0x%02x\n",
-			lb_priv->final_tx, lb_priv->final_rx);
+	} else {
+		if (phy_iface == PHY_INTERFACE_MODE_RGMII_RXID)
+			pr_info("Find available tx_delay = 0x%02x, rx_delay = disable\n",
+				lb_priv->final_tx);
+		else
+			pr_info("\nFind suitable tx_delay = 0x%02x, rx_delay = 0x%02x\n",
+				lb_priv->final_tx, lb_priv->final_rx);
+	}
 
 	return ret;
 }
@@ -1178,6 +1209,11 @@ static void dwmac_rk_release(struct net_device *dev,
 	dwmac_rk_free_dma_desc_resources(priv, lb_priv);
 }
 
+static int dwmac_rk_get_max_delayline(struct stmmac_priv *priv)
+{
+	return MAX_DELAYLINE;
+}
+
 static int dwmac_rk_loopback_run(struct stmmac_priv *priv,
 				 struct dwmac_rk_lb_priv *lb_priv)
 {
@@ -1188,6 +1224,8 @@ static int dwmac_rk_loopback_run(struct stmmac_priv *priv,
 
 	if (!ndev || !priv->mii)
 		return -EINVAL;
+
+	lb_priv->max_delay = dwmac_rk_get_max_delayline(priv);
 
 	rtnl_lock();
 	/* check the netdevice up or not */
@@ -1229,7 +1267,9 @@ static int dwmac_rk_loopback_run(struct stmmac_priv *priv,
 	if (lb_priv->scan) {
 		/* scan only support for rgmii mode */
 		if (phy_iface != PHY_INTERFACE_MODE_RGMII &&
-		    phy_iface != PHY_INTERFACE_MODE_RGMII_ID) {
+		    phy_iface != PHY_INTERFACE_MODE_RGMII_ID &&
+		    phy_iface != PHY_INTERFACE_MODE_RGMII_RXID &&
+		    phy_iface != PHY_INTERFACE_MODE_RGMII_TXID) {
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1291,10 +1331,10 @@ static ssize_t rgmii_delayline_store(struct device *dev,
 	*data = 0;
 	data++;
 
-	if (kstrtoint(tmp, 0, &tx) || tx > MAX_DELAYLINE)
+	if (kstrtoint(tmp, 0, &tx) || tx > dwmac_rk_get_max_delayline(priv))
 		goto out;
 
-	if (kstrtoint(data, 0, &rx) || rx > MAX_DELAYLINE)
+	if (kstrtoint(data, 0, &rx) || rx > dwmac_rk_get_max_delayline(priv))
 		goto out;
 
 	dwmac_rk_set_rgmii_delayline(priv, tx, rx);
