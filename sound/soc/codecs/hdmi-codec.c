@@ -778,6 +778,10 @@ static void plugged_cb(struct device *dev, bool plugged)
 		hdmi_codec_jack_report(hcp, SND_JACK_LINEOUT);
 	else
 		hdmi_codec_jack_report(hcp, 0);
+	mutex_lock(&hcp->current_stream_lock);
+	if (hcp->current_stream && !plugged)
+		snd_pcm_stop(hcp->current_stream, SNDRV_PCM_STATE_DISCONNECTED);
+	mutex_unlock(&hcp->current_stream_lock);
 }
 
 static int hdmi_codec_set_jack(struct snd_soc_component *component,
