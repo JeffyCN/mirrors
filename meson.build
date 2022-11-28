@@ -22,5 +22,3 @@ executable(
     [ 'src/rk_wifi_init.c' ],
     install : true,
 )
-
-install_subdir('firmware', install_dir : '/system/etc/', install_mode : ['rw-r--r--', 'root'])

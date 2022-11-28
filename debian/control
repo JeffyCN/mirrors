@@ -14,18 +14,3 @@ Package: rkwifibt-dev-tools
 Section: libdevel
 Architecture: any
 Description: include the rkwifibt broadcom tools for rockchip linux
-
-Package: rkwifibt-broadcom-firmware
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: include the rkwifibt broadcom firmware for rockchip linux
-
-Package: rkwifibt-realtek-firmware
-Section: libdevel
-Architecture: any
-Description: include the rkwifibt realtek firmware for rockchip linux
-
-Package: rkwifibt-infineon-firmware
-Section: libdevel
-Architecture: any
-Description: include the rkwifibt infineon firmware for rockchip linux
