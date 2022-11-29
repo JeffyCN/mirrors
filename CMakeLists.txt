@@ -1,3 +1,8 @@
+cmake_minimum_required(VERSION 2.8)
+
+#project name
+project(librga)
+
 if(NOT CMAKE_BUILD_TYPE)
     message("default to Release build for GCC builds")
     set(CMAKE_BUILD_TYPE Release CACHE STRING
@@ -38,11 +43,6 @@ if (NOT DEFINED CMAKE_CXX_COMPILER)
     message(FATAL_ERROR "RGA: CMAKE_CXX_COMPILER not define")
 endif()
 
-cmake_minimum_required(VERSION 2.8)
-
-#project name
-project(librga)
-
 include_directories(
     ./
     ./include
@@ -74,7 +74,7 @@ set(IM2D_SRCS
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_EXT} -DUN_NEED_GL")
 
-if(CMAKE_BUILD_TARGET STREQUAL ndk)
+if(CMAKE_BUILD_TARGET STREQUAL android_ndk)
     string(REPLACE "-DANDROID" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
 
