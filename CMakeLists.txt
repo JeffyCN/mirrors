@@ -78,6 +78,8 @@ set(IM2D_INCLUDE
     ./
     ./im2d_api
     ./include
+    ./core
+    ./core/hardware
     ./core/utils
     ./core/3rdparty/libdrm/include/drm
     hardware/libhardware/include/hardware

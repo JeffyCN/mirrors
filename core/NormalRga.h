@@ -43,6 +43,7 @@
 
 #include "drmrga.h"
 #include "rga.h"
+#include "rga_ioctl.h"
 
 #include "NormalRgaContext.h"
 

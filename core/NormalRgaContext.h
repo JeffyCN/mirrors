@@ -19,7 +19,7 @@
 #ifndef _rockchip_normal_rga_context_h_
 #define _rockchip_normal_rga_context_h_
 
-#include "rga.h"
+#include "rga_ioctl.h"
 
 #ifndef ANDROID
 #define ALOGD(...) { printf(__VA_ARGS__); printf("\n"); }
