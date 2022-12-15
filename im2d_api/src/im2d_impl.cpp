@@ -650,7 +650,7 @@ TRY_TO_COMPATIBLE:
 
 IM_STATUS rga_check_header(rga_version_t header_version) {
     int table_size = sizeof(user_header_bind_table) / sizeof(rga_version_bind_table_entry_t);
-    rga_version_t user_version = RGA_CURRENT_API_HEADER_VERSION;
+    rga_version_t user_version = RGA_SET_CURRENT_API_VERSION;
 
     return rga_version_check(user_version, header_version,
                              user_header_bind_table, table_size,
@@ -659,7 +659,7 @@ IM_STATUS rga_check_header(rga_version_t header_version) {
 
 IM_STATUS rga_check_driver(rga_version_t &driver_version) {
     int table_size = sizeof(user_driver_bind_table) / sizeof(rga_version_bind_table_entry_t);
-    rga_version_t user_version = RGA_CURRENT_API_HEADER_VERSION;
+    rga_version_t user_version = RGA_SET_CURRENT_API_VERSION;
 
     return rga_version_check(user_version, driver_version,
                              user_driver_bind_table, table_size,

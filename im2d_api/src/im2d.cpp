@@ -735,8 +735,8 @@ IM_API const char* querystring(int name) {
     return temp;
 }
 
-IM_API IM_STATUS imcheckHeader(rga_version_t header_version) {
-    return rga_check_header(header_version);
+IM_API IM_STATUS imcheckHeader(im_api_version_t header_version) {
+    return rga_check_header(RGA_GET_API_VERSION(header_version));
 }
 
 void rga_check_perpare(rga_buffer_t *src, rga_buffer_t *dst, rga_buffer_t *pat,
@@ -1074,7 +1074,7 @@ IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
     memset(&opt, 0x0, sizeof(opt));
     memset(&tmp_rect, 0x0, sizeof(tmp_rect));
 
-    opt.version = RGA_SET_CURRENT_API_VERISON;
+    opt.version = RGA_CURRENT_API_VERSION;
     memcpy(&opt.osd_config, osd_info, sizeof(im_osd_t));
 
     usage |= IM_ALPHA_BLEND_DST_OVER | IM_OSD;
@@ -1184,7 +1184,7 @@ IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mod
 
     usage |= IM_MOSAIC;
 
-    opt.version = RGA_SET_CURRENT_API_VERISON;
+    opt.version = RGA_CURRENT_API_VERSION;
     opt.mosaic_mode = mosaic_mode;
 
     if (sync == 0)
@@ -1690,7 +1690,7 @@ IM_API IM_STATUS imosdTask(im_job_handle_t job_handle,
     memset(&opt, 0x0, sizeof(opt));
     memset(&tmp_rect, 0x0, sizeof(tmp_rect));
 
-    opt.version = RGA_SET_CURRENT_API_VERISON;
+    opt.version = RGA_CURRENT_API_VERSION;
     memcpy(&opt.osd_config, osd_config, sizeof(im_osd_t));
 
     usage |= IM_ALPHA_BLEND_DST_OVER | IM_OSD;
@@ -1744,7 +1744,7 @@ IM_API IM_STATUS immosaicTask(im_job_handle_t job_handle, const rga_buffer_t ima
 
     usage |= IM_MOSAIC;
 
-    opt.version = RGA_SET_CURRENT_API_VERISON;
+    opt.version = RGA_CURRENT_API_VERSION;
     opt.mosaic_mode = mosaic_mode;
 
     return improcessTask(job_handle, image, image, tmp_image, rect, rect, tmp_rect, &opt, usage);

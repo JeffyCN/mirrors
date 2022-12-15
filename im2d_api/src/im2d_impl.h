@@ -41,10 +41,15 @@
     (((v) >> 8) & 0xff), \
     {0}\
     }
-#define RGA_SET_VERSION(major, minor, revision) { \
+#define RGA_SET_VERSION(major, minor, revision) \
+    (struct rga_version_t) { \
     (major), (minor), (revision),  \
     RGA_VERSION_STR(major) "." RGA_VERSION_STR(minor) "." RGA_VERSION_STR(revision) \
     }
+#define RGA_SET_CURRENT_API_VERSION (\
+    RGA_SET_VERSION(RGA_API_MAJOR_VERSION, RGA_API_MINOR_VERSION, RGA_API_REVISION_VERSION) \
+    )
+
 
 typedef struct rga_version_check_ops {
     IM_STATUS (*get_current_index_failed)(rga_version_t &current, rga_version_t &minimum);

@@ -70,7 +70,7 @@ IM_C_API const char* imStrError_t(IM_STATUS status);
  *
  * @returns no error or else negative error code.
  */
-IM_API IM_STATUS imcheckHeader(rga_version_t header_version = RGA_CURRENT_API_HEADER_VERSION);
+IM_API IM_STATUS imcheckHeader(im_api_version_t header_version = RGA_CURRENT_API_HEADER_VERSION);
 
 /**
  * check RGA basic information, supported resolution, supported format, etc.
