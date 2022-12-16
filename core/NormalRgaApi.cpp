@@ -1096,3 +1096,127 @@ void NormalRgaLogOutRgaReq(struct rga_req rgaReg) {
 
     return;
 }
+
+static inline void NormalRgaCompatModeConvertRga2ImgeInfo(rga2_img_info_t *info, rga_img_info_t *orig_info) {
+    info->yrgb_addr = orig_info->yrgb_addr;
+    info->uv_addr = orig_info->uv_addr;
+    info->v_addr = orig_info->v_addr;
+    info->format = orig_info->format;
+    info->act_w = orig_info->act_w;
+    info->act_h = orig_info->act_h;
+    info->x_offset = orig_info->x_offset;
+    info->y_offset = orig_info->y_offset;
+    info->vir_w = orig_info->vir_w;
+    info->vir_h = orig_info->vir_h;
+    info->endian_mode = orig_info->endian_mode;
+    info->alpha_swap = orig_info->alpha_swap;
+}
+
+static inline void NormalRgaCompatModeConvertRga2Rect(rga2_rect_t *clip, RECT *orig_clip) {
+    clip->xmax = orig_clip->xmax;
+    clip->ymax = orig_clip->ymax;
+    clip->xmin = orig_clip->xmin;
+    clip->ymax = orig_clip->ymax;
+}
+
+static inline void NormalRgaCompatModeConvertRga2ColorFill(rga2_color_fill_t *color, COLOR_FILL *orig_color) {
+    color->gr_x_a = orig_color->gr_x_a;
+    color->gr_y_a = orig_color->gr_y_a;
+    color->gr_x_b = orig_color->gr_x_b;
+    color->gr_y_b = orig_color->gr_y_b;
+    color->gr_x_g = orig_color->gr_x_g;
+    color->gr_y_g = orig_color->gr_y_g;
+    color->gr_x_r = orig_color->gr_x_r;
+    color->gr_y_r = orig_color->gr_y_r;
+}
+
+static inline void NormalRgaCompatModeConvertRga2LineDrawInfo(rga2_line_draw_t *info, line_draw_t *orig_info) {
+    info->start_point.x = orig_info->start_point.x;
+    info->start_point.y = orig_info->start_point.y;
+    info->end_point.x = orig_info->end_point.x;
+    info->end_point.y = orig_info->end_point.y;
+    info->color = orig_info->color;
+    info->flag = orig_info->flag;
+    info->line_width = orig_info->line_width;
+}
+
+static inline void NormalRgaCompatModeConvertRga2Fading(rga2_fading_t *fading, FADING *orig_fading) {
+    fading->b = orig_fading->b;
+    fading->g = orig_fading->g;
+    fading->r = orig_fading->r;
+    fading->res = orig_fading->res;
+}
+
+static inline void NormalRgaCompatModeConvertRga2Mmu(rga2_mmu_t *mmu, MMU *orig_mmu) {
+    mmu->mmu_en = orig_mmu->mmu_en;
+#if defined(__arm64__) || defined(__aarch64__)
+    mmu->base_addr = (unsigned long)orig_mmu->base_addr;
+#else
+    mmu->base_addr = (unsigned int)orig_mmu->base_addr;
+#endif
+    mmu->mmu_flag = orig_mmu->mmu_flag;
+}
+
+static inline void NormalRgaCompatModeConvertRga2FullCscCoe(rga2_csc_coe_t *coe, csc_coe_t *orig_coe) {
+    coe->r_v = orig_coe->r_v;
+    coe->g_y = orig_coe->g_y;
+    coe->b_u = orig_coe->b_u;
+    coe->off = orig_coe->off;
+}
+
+static inline void NormalRgaCompatModeConvertRga2FullCsc(rga2_full_csc_t *csc, full_csc_t *orig_csc) {
+    csc->flag = orig_csc->flag;
+
+    NormalRgaCompatModeConvertRga2FullCscCoe(&csc->coe_y, &orig_csc->coe_y);
+    NormalRgaCompatModeConvertRga2FullCscCoe(&csc->coe_u, &orig_csc->coe_u);
+    NormalRgaCompatModeConvertRga2FullCscCoe(&csc->coe_v, &orig_csc->coe_v);
+}
+
+void NormalRgaCompatModeConvertRga2(rga2_req *req, rga_req *orig_req) {
+    req->render_mode = orig_req->render_mode;
+
+    NormalRgaCompatModeConvertRga2ImgeInfo(&req->src, &orig_req->src);
+    NormalRgaCompatModeConvertRga2ImgeInfo(&req->dst, &orig_req->dst);
+    NormalRgaCompatModeConvertRga2ImgeInfo(&req->pat, &orig_req->pat);
+
+#if defined(__arm64__) || defined(__aarch64__)
+    req->rop_mask_addr = (unsigned long)orig_req->rop_mask_addr;
+    req->LUT_addr = (unsigned long)orig_req->LUT_addr;
+#else
+    req->rop_mask_addr = (unsigned int)orig_req->rop_mask_addr;
+    req->LUT_addr = (unsigned int)orig_req->LUT_addr;
+#endif
+
+    NormalRgaCompatModeConvertRga2Rect(&req->clip, &orig_req->clip);
+
+    req->sina = orig_req->sina;
+    req->cosa = orig_req->cosa;
+    req->alpha_rop_flag = orig_req->alpha_rop_flag;
+    req->scale_mode = orig_req->scale_mode;
+    req->color_key_max = orig_req->color_key_max;
+    req->color_key_min = orig_req->color_key_min;
+    req->fg_color = orig_req->fg_color;
+    req->bg_color = orig_req->bg_color;
+
+    NormalRgaCompatModeConvertRga2ColorFill(&req->gr_color, &orig_req->gr_color);
+    NormalRgaCompatModeConvertRga2LineDrawInfo(&req->line_draw_info, &orig_req->line_draw_info);
+    NormalRgaCompatModeConvertRga2Fading(&req->fading, &orig_req->fading);
+
+    req->PD_mode = orig_req->PD_mode;
+    req->alpha_global_value = orig_req->alpha_global_value;
+    req->rop_code = orig_req->rop_code;
+    req->bsfilter_flag = orig_req->bsfilter_flag;
+    req->palette_mode = orig_req->palette_mode;
+    req->yuv2rgb_mode = orig_req->yuv2rgb_mode;
+    req->endian_mode = orig_req->endian_mode;
+    req->rotate_mode = orig_req->rotate_mode;
+    req->color_fill_mode = orig_req->color_fill_mode;
+
+    NormalRgaCompatModeConvertRga2Mmu(&req->mmu_info, &orig_req->mmu_info);
+
+    req->alpha_rop_mode = orig_req->alpha_rop_mode;
+    req->src_trans_mode = orig_req->src_trans_mode;
+    req->dither_mode = orig_req->dither_mode;
+
+    NormalRgaCompatModeConvertRga2FullCsc(&req->full_csc, &orig_req->full_csc);
+}

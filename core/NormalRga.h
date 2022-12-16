@@ -306,3 +306,5 @@ int         NormalRgaMmuFlag(struct rga_req *msg,
                              int  src_mmu_en,   int  dst_mmu_en);
 
 #endif
+
+void NormalRgaCompatModeConvertRga2(rga2_req *req, rga_req *orig_req);

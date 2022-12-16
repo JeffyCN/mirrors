@@ -22,6 +22,9 @@
 #include <asm/ioctl.h>
 #include <stdint.h>
 
+/* compatible */
+#include "rga2_driver.h"
+
 #ifdef __cplusplus
 extern "C"
 {

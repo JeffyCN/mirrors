@@ -114,9 +114,9 @@ int NormalRgaOpen(void **context) {
              *             than 2.0 to use rga2 normally.
              */
             ctx->mVersion = (float)3.2;
-        } else {
-            ALOGE("librga fail to get driver version! Legacy mode will be enabled.\n");
 
+            ctx->driver = RGA_DRIVER_IOC_MULTI_RGA;
+        } else {
             /* Choose legacy mode. */
             ctx->mHwVersions.size = 1;
             /* Try to get the version of RGA2 */
@@ -136,6 +136,9 @@ int NormalRgaOpen(void **context) {
                 &ctx->mHwVersions.version[0].revision);
 
             ctx->mVersion = atof((char *)ctx->mHwVersions.version[0].str);
+
+            ctx->driver = RGA_DRIVER_IOC_RGA2;
+            ALOGE("librga fail to get driver version! Compatibility mode will be enabled.\n");
         }
 
         NormalRgaInitTables();
@@ -1427,8 +1430,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     rgaReg.core = dst->core;
     rgaReg.priority = dst->priority;
 
-    if (dst->job_handle > 0)
-    {
+    if (dst->job_handle > 0) {
         im_rga_job_t *job = NULL;
 
         g_im2d_job_manager.mutex.lock();
@@ -1448,8 +1450,29 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
         return 0;
     } else {
+        void *ioc_req = NULL;
+
+        switch (ctx->driver) {
+            case RGA_DRIVER_IOC_RGA2:
+                rga2_req compat_req;
+
+                memset(&compat_req, 0x0, sizeof(compat_req));
+                NormalRgaCompatModeConvertRga2(&compat_req, &rgaReg);
+
+                ioc_req = &compat_req;
+                break;
+
+            case RGA_DRIVER_IOC_MULTI_RGA:
+                ioc_req = &rgaReg;
+                break;
+
+            default:
+                printf("unknow driver[0x%x]\n", ctx->driver);
+                return -errno;
+        }
+
         do {
-            ret = ioctl(ctx->rgaFd, sync_mode, &rgaReg);
+            ret = ioctl(ctx->rgaFd, sync_mode, ioc_req);
         } while (ret == -1 && (errno == EINTR || errno == 512));   /* ERESTARTSYS is 512. */
         if(ret) {
             printf(" %s(%d) RGA_BLIT fail: %s\n",__FUNCTION__, __LINE__,strerror(errno));
