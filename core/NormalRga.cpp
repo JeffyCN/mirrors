@@ -1749,8 +1749,29 @@ int RgaCollorFill(rga_info *dst) {
 
         return 0;
     } else {
+        void *ioc_req = NULL;
+
+        switch (ctx->driver) {
+            case RGA_DRIVER_IOC_RGA2:
+                rga2_req compat_req;
+
+                memset(&compat_req, 0x0, sizeof(compat_req));
+                NormalRgaCompatModeConvertRga2(&compat_req, &rgaReg);
+
+                ioc_req = &compat_req;
+                break;
+
+            case RGA_DRIVER_IOC_MULTI_RGA:
+                ioc_req = &rgaReg;
+                break;
+
+            default:
+                printf("unknow driver[0x%x]\n", ctx->driver);
+                return -errno;
+        }
+
         do {
-            ret = ioctl(ctx->rgaFd, sync_mode, &rgaReg);
+            ret = ioctl(ctx->rgaFd, sync_mode, ioc_req);
         } while (ret == -1 && (errno == EINTR || errno == 512));   /* ERESTARTSYS is 512. */
         if(ret) {
             printf(" %s(%d) RGA_COLORFILL fail: %s\n",__FUNCTION__, __LINE__,strerror(errno));
@@ -2347,8 +2368,29 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
     rgaReg.render_mode = color_palette_mode;
     rgaReg.endian_mode = 1;
 
+    void *ioc_req = NULL;
+
+    switch (ctx->driver) {
+        case RGA_DRIVER_IOC_RGA2:
+            rga2_req compat_req;
+
+            memset(&compat_req, 0x0, sizeof(compat_req));
+            NormalRgaCompatModeConvertRga2(&compat_req, &rgaReg);
+
+            ioc_req = &compat_req;
+            break;
+
+        case RGA_DRIVER_IOC_MULTI_RGA:
+            ioc_req = &rgaReg;
+            break;
+
+        default:
+            printf("unknow driver[0x%x]\n", ctx->driver);
+            return -errno;
+    }
+
     do {
-        ret = ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &rgaReg);
+        ret = ioctl(ctx->rgaFd, RGA_BLIT_SYNC, &ioc_req);
     } while (ret == -1 && (errno == EINTR || errno == 512));   /* ERESTARTSYS is 512. */
     if(ret) {
         printf(" %s(%d) RGA_COLOR_PALETTE fail: %s\n",__FUNCTION__, __LINE__,strerror(errno));
