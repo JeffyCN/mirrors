@@ -1219,4 +1219,17 @@ void NormalRgaCompatModeConvertRga2(rga2_req *req, rga_req *orig_req) {
     req->dither_mode = orig_req->dither_mode;
 
     NormalRgaCompatModeConvertRga2FullCsc(&req->full_csc, &orig_req->full_csc);
+
+    /* multi_rga moved this part of the processing to the driver. */
+    if (req->sina == 65536 && req->cosa == 0) {
+        /* rotate 90 */
+        req->dst.x_offset = req->dst.x_offset + req->dst.act_h - 1;
+    } else if (req->sina == 0 && req->cosa == -65536) {
+        /* rotate 180 */
+        req->dst.x_offset = req->dst.x_offset + req->dst.act_w - 1;
+        req->dst.y_offset = req->dst.y_offset + req->dst.act_h - 1;
+    } else if (req->sina == -65536 && req->cosa == 0) {
+        /* totate 270 */
+        req->dst.y_offset = req->dst.y_offset + req->dst.act_w - 1;
+    }
 }
