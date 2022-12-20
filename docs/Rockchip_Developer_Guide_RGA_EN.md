@@ -100,7 +100,7 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td rowspan="4">8192x8192</td>
       <td rowspan="4">2x2</td>
       <td rowspan="4">2048x2048</td>
-      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/2~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>ROP</td>
+      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/2~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>ROP<br/>IOMMU(32bit)</td>
       <td rowspan="4">1</td>
    </tr>
    <tr>
@@ -123,7 +123,7 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td rowspan="2">8192x8192</td>
       <td rowspan="2">2x2</td>
       <td rowspan="2">2048x2048</td>
-      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/2~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette</td>
+      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/2~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>IOMMU(32bit)</td>
       <td rowspan="2">1</td>
    </tr>
    <tr>
@@ -138,7 +138,7 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td rowspan="2">8192x8192</td>
       <td rowspan="2">2x2</td>
       <td rowspan="2">4096x4096</td>
-      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP</td>
+      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP<br/>IOMMU(32bit)</td>
       <td rowspan="2">2</td>
    </tr>
    <tr>
@@ -153,7 +153,7 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td rowspan="2">8192x8192</td>
       <td rowspan="2">2x2</td>
       <td rowspan="2">4096x4096</td>
-      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP</td>
+      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP<br/>IOMMU(32bit)</td>
       <td rowspan="2">2</td>
    </tr>
    <tr>
@@ -168,7 +168,7 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td rowspan="4">8192x8192</td>
       <td rowspan="4">2x2</td>
       <td rowspan="4">4096x4096</td>
-      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette</td>
+      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>IOMMU(32bit)</td>
       <td rowspan="4">2</td>
    </tr>
    <tr>
@@ -191,7 +191,7 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td rowspan="6">8192x8192</td>
       <td rowspan="6">2x2</td>
       <td rowspan="6">4096x4096</td>
-      <td rowspan="6">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for 1108/1109)<br/>NN quantize(NA for 3399/1108)<br/>osd(only 1106/1103)</td>
+      <td rowspan="6">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for 1108/1109)<br/>NN quantize(NA for 3399/1108)<br/>osd(only 1106/1103)<br/>IOMMU(32bit, RK3528为40bit，NA for RV1106/1103)</td>
       <td rowspan="6">2</td>
    </tr>
    <tr>
@@ -222,16 +222,19 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td rowspan="1">8176x8176</td>
       <td rowspan="1">68x2</td>
       <td rowspan="1">8128x8128</td>
-      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>FBC</td>
+      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>FBC<br/>IOMMU(40bit)</td>
       <td rowspan="1">3 (by pass)<br/>2 (scale)</td>
    </tr>
 </table>
+
 
 > Note:
 >
 > 1). The capabilities of Pixels/cycle are theoretical data, and the actual operating performance is related to bandwidth, hardware frequency, etc. The list data is for reference only.
 >
 > 2). In addition to the minimum input resolution limit, the x, y, width, and height parameters of the actual operation rectangle that can be set for each channel must be greater than or equal to 2.
+>
+> 3). The addressing capability of RGA is related to the number of bits of IOMMU. For example, the actual physical addressing capability of RGA equipped with 32bit IOMMU only supports 0~4G memory space.
 
 
 
@@ -350,7 +353,7 @@ RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMA
    <tr>
       <td>Puma</td>
       <td>RV1126/ RV1109</td>
-      <td rowspan="4"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B<br/>RK_FORMAT_BPP1 (only for color palette)<br/>RK_FORMAT_BPP2 (only for color palette)<br/>RK_FORMAT_BPP4 (only for color palette)<br/>RK_FORMAT_BPP8 (only for color palette)
+      <td rowspan="4"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YCbCr_400<br/>RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B<br/>RK_FORMAT_BPP1 (only for color palette)<br/>RK_FORMAT_BPP2 (only for color palette)<br/>RK_FORMAT_BPP4 (only for color palette)<br/>RK_FORMAT_BPP8 (only for color palette)
       </td>
       <td rowspan="4">
 RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YUYV_420<br/>RK_FORMAT_YVYU_420<br/>RK_FORMAT_UYVY_420<br/>RK_FORMAT_VYUY_420<br/>RK_FORMAT_YCbCr_400<br/>RK_FORMAT_Y4
@@ -381,11 +384,10 @@ RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMA
    </tr>
 </table>
 
+
 > Note:
 >
 > 1). Y4 format is 2 to the 4th power grayscale, Y400 format is 2 to the 8th power grayscale.
->
-> 2). The physical address addressing capability of RGA1/RGA2 only supports 32bit, that is, the memory space of 0~4G.
 
 
 
@@ -516,22 +518,22 @@ RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_42
 
 
 
-## API Version Description
+## Version Description
 
 RGA's support library librga.so updates the version number according to certain rules, indicating the submission of new features, compatibility, and bug fixes, and provides several ways to query the version number, so that developers can clearly determine whether the current library version is suitable for the current development environment when using librga.so. Detailed version update logs can be found in **CHANGLOG.md** in the root directory of source code.
 
-### Version Number Format and Update Rule
+### librga API Version Description
 
-#### API Version Number
+#### Version Number Format and Update Rule
 
-##### Format
+##### Version Number Format
 
 ```
 major.minor.revision_[build]
 ```
 
-> example：
->
+example：
+
 > 1.0.0_[0]
 
 
@@ -547,9 +549,9 @@ major.minor.revision_[build]
 
 
 
-### Version Number Query
+#### Version Number Query
 
-#### Query by Strings
+##### Query by Strings
 
 Take Android R 64bit as example:
 
@@ -560,7 +562,7 @@ rga_api version 1.0.0_[0]
 
 
 
-#### Log Print
+##### Log Print
 
 Version number is printed when each process first calls RGA API.
 
@@ -570,7 +572,7 @@ rockchiprga: rga_api version 1.0.0_[0]
 
 
 
-#### Query by API
+##### Query by API
 
 Call the following API to query the code version number, compilation version number, and RGA hardware version information. For details, see **API Description**.
 
@@ -585,7 +587,7 @@ querystring(RGA_VERSION);
 
 
 
-#### Query by Property
+##### Query by Property
 
 This method is supported only by Android system, and the property takes effect only after an existing process calls RGA.
 
@@ -593,6 +595,109 @@ This method is supported only by Android system, and the property takes effect o
 :/# getprop |grep rga
 [vendor.rga_api.version]: [1.0.0_[0]]
 ```
+
+
+
+### Driver Version Description
+
+librga calls the RGA hardware based on the driver, it must be ensured that the driver version is within the supported range of the used librga library.
+
+#### Version Number Format and Update Rule
+
+##### Version Number Format
+
+```
+<driver_name>: v major.minor.revision
+```
+
+example：
+
+> RGA2 Device Driver: v2.1.0
+>
+> RGA multicore Device Driver: v1.2.23
+
+
+
+##### Update Rule
+
+| Name     | Rule                                                         |
+| -------- | ------------------------------------------------------------ |
+| major    | Major version number, when submitting a version that is not backward compatible. |
+| minor    | Minor version number, when the functional API with backward compatibility is added. |
+| revision | Revision version number, when submitting backward compatible feature additions or fatal bug fixes. |
+
+
+
+#### Version Number Query
+
+##### Boot log query:
+
+Use the following command to query the RGA driver initialization log after booting. Some early drivers do not print the version number, and this method is only applicable to some drivers.
+
+```
+ dmesg |grep rga
+```
+
+example：
+
+> [    2.382393] rga3_core0 fdb60000.rga: Adding to iommu group 2
+> [    2.382651] rga: rga3_core0, irq = 33, match scheduler
+> [    2.383058] rga: rga3_core0 hardware loaded successfully, hw_version:3.0.76831.
+> [    2.383121] rga: rga3_core0 probe successfully
+> [    2.383687] rga3_core1 fdb70000.rga: Adding to iommu group 3
+> [    2.383917] rga: rga3_core1, irq = 34, match scheduler
+> [    2.384313] rga: rga3_core1 hardware loaded successfully, hw_version:3.0.76831.
+> [    2.384412] rga: rga3_core1 probe successfully
+> [    2.384893] rga: rga2, irq = 35, match scheduler
+> [    2.385238] rga: rga2 hardware loaded successfully, hw_version:3.2.63318.
+> [    2.385257] rga: rga2 probe successfully
+> [    2.385455] rga_iommu: IOMMU binding successfully, default mapping core[0x1]
+> [    2.385586] rga: Module initialized. v1.2.23
+
+Among them, “v1.2.23” is the driver version number.
+
+
+
+##### debug node query
+
+The version number can be queried through the driver debugging node. If there is no following node, it means that the driver version that does not support query is currently running.
+
+- Use the kernel with the CONFIG_ROCKCHIP_RGA_DEBUG_FS compile config enabled by default.
+
+```shell
+cat /sys/kernel/debug/rkrga/driver_version
+```
+
+- Use the kernel with the CONFIG_ROCKCHIP_RGA_PROC_FS compile config enabled.
+
+```shell
+cat /proc/rkrga/driver_version
+```
+
+example：
+
+> cat /sys/kernel/debug/rkrga/driver_version
+> RGA multicore Device Driver: v1.2.23
+
+Here "RGA multicore Device Driver" means that the driver name is RGA multicore Device Driver, and "v1.2.23" means that the version is 1.2.23, which means that the current driver is the RGA multicore Device Driver(usually referred to as multi_rga driver) of version 1.2.23  .
+
+> cat /sys/kernel/debug/rkrga/driver_version
+> RGA2 Device Driver: v2.1.0
+
+Here "RGA2 Device Driver" means that the driver name is RGA2 Device Driver, and "v2.1.0" means that the version number is 2.1.0, which means that the current driver is the RGA2 Device Driver (usually referred to as rga2 driver) of version 2.1.0.
+
+
+
+### Correspondence between versions
+
+When using RGA, you need to confirm that the current operating environment can work normally. The following table shows the correspondence between commonly used librga and driver versions.
+
+| librga version    | driver version                                               | hardware         |
+| ----------------- | ------------------------------------------------------------ | ---------------- |
+| no version number | Drivers in the SDK                                           | RGA1、RGA2       |
+| 1.0.0 ~ 1.3.2     | RGA Device Driver（kernel - 4.4 and above）<br/>RGA2 Device Driver（no version number or v2.1.0） | RGA1、RGA2       |
+| > 1.4.0           | RGA multicore Device Driver（v1.2.0and above）               | RGA2、RGA3       |
+| > 1.9.0           | RGA Device Driver（kernel-4.4 and above）<br/>RGA2 Device Driver（no version number or v2.1.0）<br/>RGA multicore Device Driver（v1.2.0and above） | RGA1、RGA2、RGA3 |
 
 
 
@@ -614,6 +719,7 @@ RGA library librga.so realizes 2D graphics operations  through the image buffer 
 The software support library provides the following API, asynchronous mode only supports C++ implementation.
 
 - **querystring**： Query information about the RGA hardware version and supported functions of chip platform, return a string.
+- **imcheckHeader**:   Verify the difference between the currently used header file version and the librga version.
 - **importbuffer_T**： Import external buffer into RGA driver to achieve hardware fast access to discontinuous physical addresses (dma_fd, virtual address).
 - **releasebuffer_handle**： Remove reference and map of the external buffer from inside the RGA driver.
 - **wrapbuffer_handle** Quickly encapsulate the image buffer structure (rga_buffer_t）.
@@ -685,6 +791,26 @@ const char* querystring(int name);
 | name           | RGA_VENDOR                 - vendor information<br/>RGA_VERSION                 - RGA version<br/>RGA_MAX_INPUT            - max input resolution<br/>RGA_MAX_OUTPUT        - max output resolution<br/>RGA_BYTE_STRIDE          - stride alignment requirements<br/>RGA_SCALE_LIMIT           - scale limit<br/>RGA_INPUT_FORMAT     - input formats supported<br/>RGA_OUTPUT_FORMAT - output formats supported<br/>RGA_EXPECTED               - expected performance<br/>RGA_ALL                           - print all information |
 
  **Returns** a string describing properties of RGA.
+
+
+
+### header version check
+
+------
+
+#### imcheckHeader
+
+```C++
+IM_API IM_STATUS imcheckHeader(im_api_version_t header_version = RGA_CURRENT_API_HEADER_VERSION);
+```
+
+> Verify the difference between the currently used header file version and the librga version.
+
+| **Parameters** | **Description**                                              |
+| -------------- | ------------------------------------------------------------ |
+| header_version | Header file version, usually use the macro RGA_CURRENT_API_HEADER_VERSION. |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -2175,7 +2301,7 @@ IM_STATUS  imconfig(IM_CONFIG_NAME name, uint64_t value);
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
 | name      | **[required]** context config name：<br/>IM_CONFIG_SCHEDULER_CORE —— Specify the task processing core<br/>IM_CONFIG_PRIORITY                  —— Specify the task priority<br/>IM_CHECK_CONFIG                      —— Check enable |
-| value     | **[required]** config value<br/>IM_CONFIG_SCHEDULER_CORE :<br/>    IM_SCHEDULER_RGA3_CORE0<br/>    IM_SCHEDULER_RGA3_CORE1<br/>    IM_SCHEDULER_RGA2_CORE0<br/>    IM_SCHEDULER_RGA3_DEFAULT<br/>    IM_SCHEDULER_RGA2_DEFAULT<br/>IM_CONFIG_PRIORITY:<br/>    0 ~ 6<br/>IM_CHECK_CONFIG:<br/>    TRUE<br/>    FALSE |
+| value     | **[required]** config value<br/>    IM_CONFIG_SCHEDULER_CORE :<br/>    IM_SCHEDULER_RGA3_CORE0<br/>    IM_SCHEDULER_RGA3_CORE1<br/>    IM_SCHEDULER_RGA2_CORE0<br/>    IM_SCHEDULER_RGA3_DEFAULT<br/>    IM_SCHEDULER_RGA2_DEFAULT<br/>IM_CONFIG_PRIORITY:<br/>    0 ~ 6<br/>IM_CHECK_CONFIG:<br/>    TRUE<br/>    FALSE |
 
 > Note：Permissions of priority and core are very high. Improper operations may cause system crash or deadlock. Therefore, users are advised to configure them only during development and debugging. Users are not advised to perform this configuration in actual product
 
@@ -2194,11 +2320,12 @@ This section describes the data structures involved in API in detail.
 | rga_buffer_t        | image buffer information       |
 | im_rect             | the actual operating area of the image     |
 | im_opt_t            | image manipulation options         |
-| rga_buffer_handle_t | RGA driver image buffer handle    |
+| im_job_handle_t     | RGA job handle                            |
+| rga_buffer_handle_t | RGA driver image buffer handle            |
 | im_handle_param_t   | buffer parameters of image to be imported |
-| im_context_t        | default context for the current thread       |
-| im_nn_t             | operation point preprocessing parameters     |
-| im_colorkey_range   | Colorkey range       |
+| im_context_t        | default context for the current thread    |
+| im_nn_t             | operation point preprocessing parameters  |
+| im_colorkey_range | Colorkey range |
 
 
 
@@ -2212,7 +2339,7 @@ Buffer information of image with single channel.
 
 - **path**
 
-im2d_api/im2d.h
+im2d_api/im2d_type.h
 
 - **definitions**
 
@@ -2264,7 +2391,7 @@ Describes the actual operation area of image with single channel.
 
 - **path**
 
-im2d_api/im2d.h
+im2d_api/im2d_type.h
 
 - **definitions**
 
@@ -2298,7 +2425,7 @@ Describes operation options of current image.
 
 - **path**
 
-im2d_api/im2d.h
+im2d_api/im2d_type.h
 
 - **definitions**
 
@@ -2329,6 +2456,28 @@ Permissions of priority and core are very high. Improper operations may cause sy
 
 
 
+#### im_job_handle_t
+
+- **说明**
+
+RGA jobhandle, used to identify the currently configured RGA job.
+
+- **路径**
+
+im2d_api/im2d_type.h
+
+- **定义**
+
+```c++
+typedef uint32_t im_job_handle_t;
+```
+
+- **注意事项**
+
+After the configuration fails, imcancelJob must be used to release the current task handle to avoid memory leaks.
+
+
+
 #### rga_buffer_handle_t
 
 - **description**
@@ -2337,7 +2486,7 @@ RGA driver image buffer handle.
 
 - **path**
 
-include/rga.h
+im2d_api/im2d_type.h
 
 - **definitions**
 
@@ -2347,7 +2496,7 @@ typedef int rga_buffer_handle_t;
 
 - **Note**
 
-null
+When the buffer is used up, releasebuffer_handle must be used to release the memory to avoid memory leaks.
 
 
 
@@ -2359,9 +2508,7 @@ Describe parameters of the image buffer to be imported.
 
 - **path**
 
-im2d_api/im2d.h
-
-include/rga.h
+im2d_api/im2d_type.h
 
 - **definitions**
 
@@ -2395,7 +2542,7 @@ Parameter of operation point preprocessing (quantization).
 
 - **path**
 
-im2d_api/im2d.h
+im2d_api/im2d_type.h
 
 - **definitions**
 
@@ -2433,7 +2580,7 @@ Colorkey range.
 
 - **path**
 
-im2d_api/im2d.h
+im2d_api/im2d_type.h
 
 - **definitions**
 

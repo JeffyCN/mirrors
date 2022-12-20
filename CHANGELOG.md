@@ -1,5 +1,59 @@
 # 更新日志
 
+## 1.9.0 （2022-12-20）
+
+该版本RGA驱动建议更新至1.2.22即以上版本，最低支持1.2.4。
+
+### 新增
+
+- 新增支持芯片RK3528。
+
+- 适配Android 12 gralloc 0.3
+- 新增头文件校验接口。
+- 新增批处理接口（im2d_task.h）。
+- 新增数组模式接口。
+- 新增padding接口。
+- 支持通过Android属性/环境变量动态的开启/关闭 librga 运行日志。
+- 增加对drm_fourcc格式支持。
+- 增加示例代码单独编译说明。
+- 增加多种常见场景示例代码。
+  - allocator_demo
+  - alpha_demo
+  - async_demo
+  - config_demo
+  - copy_demo
+  - crop_demo
+  - cvtcolor_demo
+  - fill_demo
+  - mosaic_demo
+  - resize_demo
+  - rop_demo
+  - transform_demo
+  - padding_demo
+
+### 优化
+
+- 兼容rga2 driver、multi_rga driver。
+- 优化librga与驱动之间版本校验机制。
+- 优化头文件结构。
+- 头文件添加更多描述信息。
+- 优化cmake编译脚本。
+
+### 修复
+
+- 修复RGA3 dst-over模式对YUV格式处理异常问题。
+
+
+
+## 1.8.1 （2022-06-20）
+
+### 修复
+
+- 更正wrapbuffer_handle宏函数与C++函数定义不同的问题，更正后与宏函数传参相同。。
+- 修复部分编译warning。
+
+
+
 ## 1.8.0 （2022-05-25）
 
 该版本RGA驱动须更新至1.2.6。

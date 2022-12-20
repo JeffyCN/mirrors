@@ -100,7 +100,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">8192x8192</td>
       <td rowspan="4">2x2</td>
       <td rowspan="4">2048x2048</td>
-      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/2~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>ROP</td>
+      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/2~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>ROP<br/>IOMMU(32bit)</td>
       <td rowspan="4">1</td>
    </tr>
    <tr>
@@ -123,7 +123,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">8192x8192</td>
       <td rowspan="2">2x2</td>
       <td rowspan="2">2048x2048</td>
-      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/2~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette</td>
+      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/2~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>IOMMU(32bit)</td>
       <td rowspan="2">1</td>
    </tr>
    <tr>
@@ -138,7 +138,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">8192x8192</td>
       <td rowspan="2">2x2</td>
       <td rowspan="2">4096x4096</td>
-      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP</td>
+      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP<br/>IOMMU(32bit)</td>
       <td rowspan="2">2</td>
    </tr>
    <tr>
@@ -153,7 +153,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="2">8192x8192</td>
       <td rowspan="2">2x2</td>
       <td rowspan="2">4096x4096</td>
-      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP</td>
+      <td rowspan="2">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP<br/>IOMMU(32bit)</td>
       <td rowspan="2">2</td>
    </tr>
    <tr>
@@ -168,7 +168,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="4">8192x8192</td>
       <td rowspan="4">2x2</td>
       <td rowspan="4">4096x4096</td>
-      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette</td>
+      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>IOMMU(32bit)</td>
       <td rowspan="4">2</td>
    </tr>
    <tr>
@@ -184,15 +184,15 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RK1808</td>
    </tr>
    <tr>
-      <td rowspan="6">RGA2-Enhance</td>
+      <td rowspan="7">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
-      <td rowspan="6">2x2</td>
-      <td rowspan="6">8192x8192</td>
-      <td rowspan="6">2x2</td>
-      <td rowspan="6">4096x4096</td>
-      <td rowspan="6">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for RV1108/RV1109/RK3566)<br/>NN quantize(NA for RK3399/RV1108)<br/>osd (only RV1106/RV1103)</td>
-      <td rowspan="6">2</td>
+      <td rowspan="7">2x2</td>
+      <td rowspan="7">8192x8192</td>
+      <td rowspan="7">2x2</td>
+      <td rowspan="7">4096x4096</td>
+      <td rowspan="7">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for RV1108/RV1109/RK3566)<br/>NN quantize(NA for RK3399/RV1108)<br/>osd (only RV1106/RV1103)<br/>IOMMU(32bit, RK3528为40bit，NA for RV1106/1103)</td>
+      <td rowspan="7">2</td>
    </tr>
    <tr>
       <td>Mercury</td>
@@ -215,6 +215,9 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RV1106/1103</td>
    </tr>
    <tr>
+       <td>Bull</td>
+       <td>RK3528</td>
+   <tr>
       <td rowspan="1">RGA3</td>
       <td>Orion</td>
       <td>RK3588</td>
@@ -222,7 +225,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="1">8176x8176</td>
       <td rowspan="1">68x2</td>
       <td rowspan="1">8128x8128</td>
-      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>FBC</td>
+      <td rowspan="4">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/8~8 scale<br/>Alpha blend<br/>Color key<br/>FBC<br/>IOMMU(40bit)</td>
       <td rowspan="1">3 (by pass)<br/>2 (scale)</td>
    </tr>
 </table>
@@ -233,6 +236,8 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 > 1). 单位时钟周期处理像素的能力为理论数据，实际运行性能表现与带宽、硬件频率等相关，列表数据仅供参考。
 >
 > 2). 除最小输入分辨率限制外，每个通道可设置的实际操作矩形的x、y、width、height参数必须大于等于2。
+>
+> 3). RGA的寻址能力和IOMMU的bit位数是相关联的，例如搭载支持32bit IOMMU的RGA实际的物理地址寻址能力仅支持0~4G的内存空间。
 
 
 
@@ -335,12 +340,12 @@ RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMA
       <td>RK1808</td>
    </tr>
    <tr>
-      <td rowspan="6">RGA2-Enhance</td>
+      <td rowspan="7">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
       <td rowspan="2"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B<br/>RK_FORMAT_BPP1 (only for color palette)<br/>RK_FORMAT_BPP2 (only for color palette)<br/>RK_FORMAT_BPP4 (only for color palette)<br/>RK_FORMAT_BPP8 (only for color palette)
       </td>
-      <td rowspan="2"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YUYV_420<br/>RK_FORMAT_YVYU_420<br/>RK_FORMAT_UYVY_420<br/>RK_FORMAT_VYUY_420
+      <td rowspan="2"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422
       </td>
    </tr>
    <tr>
@@ -350,10 +355,10 @@ RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMA
    <tr>
       <td>Puma</td>
       <td>RV1126/ RV1109</td>
-      <td rowspan="4"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B<br/>RK_FORMAT_BPP1 (only for color palette)<br/>RK_FORMAT_BPP2 (only for color palette)<br/>RK_FORMAT_BPP4 (only for color palette)<br/>RK_FORMAT_BPP8 (only for color palette)
+      <td rowspan="5"> RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YCbCr_400<br/>RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_422_SP_10B<br/>RK_FORMAT_YCrCb_422_SP_10B<br/>RK_FORMAT_BPP1 (only for color palette)<br/>RK_FORMAT_BPP2 (only for color palette)<br/>RK_FORMAT_BPP4 (only for color palette)<br/>RK_FORMAT_BPP8 (only for color palette)
       </td>
-      <td rowspan="4">
-RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YUYV_420<br/>RK_FORMAT_YVYU_420<br/>RK_FORMAT_UYVY_420<br/>RK_FORMAT_VYUY_420<br/>RK_FORMAT_YCbCr_400<br/>RK_FORMAT_Y4
+      <td rowspan="5">
+RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMAT_ABGR_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMAT_BGRX_8888<br/>RK_FORMAT_XRGB_8888<br/>RK_FORMAT_XBGR_8888<br/>RK_FORMAT_RGBA_4444<br/>RK_FORMAT_BGRA_4444<br/>RK_FORMAT_ARGB_4444<br/>RK_FORMAT_ABGR_4444<br/>RK_FORMAT_RGBA_5551<br/>RK_FORMAT_BGRA_5551<br/>RK_FORMAT_ARGB_5551<br/>RK_FORMAT_ABGR_5551<br/>RK_FORMAT_RGB_888<br/>RK_FORMAT_BGR_888<br/>RK_FORMAT_RGB_565<br/>RK_FORMAT_BGR_565<br>RK_FORMAT_YCbCr_420_SP<br/>RK_FORMAT_YCrCbr_420_SP<br/>RK_FORMAT_YCbCr_422_SP<br/>RK_FORMAT_YCrCbr_422_SP<br/>RK_FORMAT_YCbCr_420_P<br/>RK_FORMAT_YCrCbr_420_P<br/>RK_FORMAT_YCbCr_422_P<br/>RK_FORMAT_YCrCbr_422_P<br/>RK_FORMAT_YUYV_422<br/>RK_FORMAT_YVYU_422<br/>RK_FORMAT_UYVY_422<br/>RK_FORMAT_VYUY_422<br/>RK_FORMAT_YCbCr_400<br/>RK_FORMAT_Y4
    	  </td>
    </tr>
    <tr>
@@ -368,6 +373,9 @@ RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_ARGB_8888<br/>RK_FORMA
    <td>Otter</td>
       <td>RV1106/1103</td>
    </tr>
+   <td>Bull</td>
+      <td>RK3528</td>
+   </tr>
    <tr>
       <td rowspan="1">RGA3</td>
       <td>Orion</td>
@@ -380,11 +388,10 @@ RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMA
       </td>
    </tr>
 </table>
+
 > 注：
 >
 > 1). Y4格式即2的4次方色阶灰度图，Y400格式即2的8次方色阶灰度图。
->
-> 2). RGA1/RGA2物理地址寻址能力仅支持32bit，即0~4G的内存空间。
 
 
 
@@ -514,24 +521,24 @@ RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_42
 
 
 
-## API版本说明
+## 版本说明
 
 RGA的支持库librga.so按照一定规则更新版本号，标识着功能新增、兼容性、问题修正的更新提交，并提供几种方式查询版本号，方便开发者在使用librga.so时可以清楚的辨别当前的库文件版本是否适合于当前的开发环境。详细版本更新日志以及版本差异可以查阅源码根目录下**CHANGLOG.md**。
 
 
 
-### 版本号格式与递增规则
+### librga API版本说明
 
-#### API版本号
+#### 版本号格式与递增规则
 
-##### 格式
+##### 版本号格式
 
 ```
 major.minor.revision_[build]
 ```
 
-> 例：
->
+例如：
+
 > 1.0.0_[0]
 
 
@@ -547,9 +554,9 @@ major.minor.revision_[build]
 
 
 
-### 版本号查询
+#### 版本号查询
 
-#### strings命令查询：
+##### strings命令查询：
 
 以Android R 64位为例：
 
@@ -560,7 +567,7 @@ rga_api version 1.0.0_[0]
 
 
 
-#### 日志打印：
+##### 日志打印：
 
 当每个进程首次调用RGA API时，会打印版本号。
 
@@ -570,7 +577,7 @@ rockchiprga: rga_api version 1.0.0_[0]
 
 
 
-#### 函数接口查询
+##### 函数接口查询
 
 调用以下API，可以查询代码版本号、编译版本号、RGA硬件版本信息。具体使用说明可以查看 **应用接口说明** 章节。
 
@@ -585,7 +592,7 @@ querystring(RGA_VERSION);
 
 
 
-#### 属性查询
+##### 属性查询
 
 该方式查询版本号仅Android系统支持，并且须已有进程调用RGA后，属性设置方生效。
 
@@ -593,6 +600,110 @@ querystring(RGA_VERSION);
 :/# getprop |grep rga
 [vendor.rga_api.version]: [1.0.0_[0]]
 ```
+
+
+
+### 驱动版本说明
+
+librga是基于驱动调用RGA硬件的，必须要保证驱动版本在使用的librga库的支持范围内。
+
+#### 版本号格式与递增规则
+
+##### 版本号格式
+
+```
+<driver_name>: v major.minor.revision
+```
+
+例如：
+
+> RGA2 Device Driver: v2.1.0
+>
+> RGA multicore Device Driver: v1.2.23
+
+
+
+##### 递增规则
+
+| 名称     | 规则                                                   |
+| -------- | ------------------------------------------------------ |
+| major    | 主版本号，当提交不向下兼容的版本。                     |
+| minor    | 次版本号，当向下兼容的功能性API新增。                  |
+| revision | 修订版本号，当提交向下兼容的功能补充或致命的问题修正。 |
+
+
+
+#### 版本号查询
+
+##### 开机日志查询：
+
+开机后使用以下命令查询RGA驱动初始化日志，部分早期的驱动没有打印版本号，该方法仅适用部分驱动。
+
+```
+ dmesg |grep rga
+```
+
+例如：
+
+> [    2.382393] rga3_core0 fdb60000.rga: Adding to iommu group 2
+>[    2.382651] rga: rga3_core0, irq = 33, match scheduler
+> [    2.383058] rga: rga3_core0 hardware loaded successfully, hw_version:3.0.76831.
+> [    2.383121] rga: rga3_core0 probe successfully
+> [    2.383687] rga3_core1 fdb70000.rga: Adding to iommu group 3
+> [    2.383917] rga: rga3_core1, irq = 34, match scheduler
+> [    2.384313] rga: rga3_core1 hardware loaded successfully, hw_version:3.0.76831.
+> [    2.384412] rga: rga3_core1 probe successfully
+> [    2.384893] rga: rga2, irq = 35, match scheduler
+> [    2.385238] rga: rga2 hardware loaded successfully, hw_version:3.2.63318.
+> [    2.385257] rga: rga2 probe successfully
+> [    2.385455] rga_iommu: IOMMU binding successfully, default mapping core[0x1]
+> [    2.385586] rga: Module initialized. v1.2.23
+> 
+
+其中 “v1.2.23” 便是驱动版本号。
+
+
+
+##### 调试节点查询
+
+可以通过驱动调试节点查询版本号，如果没有以下节点则说明当前运行的是不支持查询的驱动版本。
+
+- 使用默认使能CONFIG_ROCKCHIP_RGA_DEBUG_FS编译选项的kernel。
+
+```shell
+cat /sys/kernel/debug/rkrga/driver_version
+```
+
+- 使能ROCKCHIP_RGA_PROC_FS编译选项的kernel。
+
+```shell
+cat /proc/rkrga/driver_version
+```
+
+例如：
+
+> cat /sys/kernel/debug/rkrga/driver_version
+>RGA multicore Device Driver: v1.2.23
+
+这里 “RGA multicore Device Driver”是指驱动名称为RGA multicore Device Driver，“v1.2.23” 是指版本为1.2.23，即说明当前驱动为1.2.23版本的RGA multicore Device Driver（通常简称multi_rga driver）驱动。
+
+> cat /sys/kernel/debug/rkrga/driver_version
+>RGA2 Device Driver: v2.1.0
+
+这里 “RGA2 Device Driver” 是指驱动名称为RGA2 Device Driver，“v2.1.0” 是指版本号为2.1.0，即说明当前驱动为2.1.0版本的RGA2 Device Driver（通常简称rga2 driver）驱动。
+
+
+
+### 版本对应关系
+
+使用RGA时需要确认保证当前的运行环境是可以正常工作的，下表为常用的librga与驱动版本对应关系。
+
+| librga版本    | 对应驱动                                                     | 硬件支持         |
+| ------------- | ------------------------------------------------------------ | ---------------- |
+| 无版本号      | 对应SDK内驱动                                                | RGA1、RGA2       |
+| 1.0.0 ~ 1.3.2 | RGA Device Driver（kernel - 4.4及以上）<br/>RGA2 Device Driver（无版本号或v2.1.0） | RGA1、RGA2       |
+| > 1.4.0       | RGA multicore Device Driver（v1.2.0及以上）                  | RGA2、RGA3       |
+| > 1.9.0       | RGA Device Driver（kernel-4.4及以上）<br/>RGA2 Device Driver（无版本号和v2.1.0）<br/>RGA multicore Device Driver（v1.2.0及以上） | RGA1、RGA2、RGA3 |
 
 
 
@@ -614,9 +725,10 @@ RGA模块支持库为librga.so，通过对图像缓冲区结构体struct rga_inf
 该软件支持库提供以下API，异步模式仅支持C++实现。
 
 - **querystring**： 查询获取当前芯片平台RGA硬件版本与功能支持信息，以字符串的形式返回。
+- **imcheckHeader**:  校验当前使用头文件版本与librga版本差异。
 - **importbuffer_T**： 将外部内存（dma_fd、虚拟地址、物理地址）导入RGA驱动内部，实现硬件快速访问物理连续/非物理连续的内存。
 - **releasebuffer_handle**： 将外部buffer从RGA驱动内部解除引用与映射。
-- **wrapbuffer_handle**速封装图像缓冲区结构（rga_buffer_t）。
+- **wrapbuffer_handle**： 快速封装图像缓冲区结构（rga_buffer_t）。
 - **imbeginJob**：创建RGA图像处理任务。
 - **imendJob**： 提交并执行RGA图像处理任务。
 - **imcancelJob**： 取消并删除RGA图像处理任务。
@@ -685,6 +797,26 @@ const char* querystring(int name);
 | name           | RGA_VENDOR                 - 厂商信息<br/>RGA_VERSION                 - 版本信息<br/>RGA_MAX_INPUT            - 支持的最大输入分辨率<br/>RGA_MAX_OUTPUT        - 支持的最大输出分辨率<br/>RGA_BYTE_STRIDE          - 支持的stride对齐要求<br/>RGA_SCALE_LIMIT           - 支持得缩放倍数<br/>RGA_INPUT_FORMAT     - 支持的输入格式<br/>RGA_OUTPUT_FORMAT - 支持的输出格式<br/>RGA_EXPECTED               - 预期性能<br/>RGA_ALL                           - 输出所有信息 |
 
  **Returns** a string describing properties of RGA.
+
+
+
+### 头文件版本校验
+
+------
+
+#### imcheckHeader
+
+```C++
+IM_API IM_STATUS imcheckHeader(im_api_version_t header_version = RGA_CURRENT_API_HEADER_VERSION);
+```
+
+> 校验当前使用头文件版本与librga版本差异。
+
+| **Parameters** | **Description**                                             |
+| -------------- | ----------------------------------------------------------- |
+| header_version | 头文件版本，通常使用宏 RGA_CURRENT_API_HEADER_VERSION即可。 |
+
+**Return** IM_STATUS_SUCCESS on success or else negative error code.
 
 
 
@@ -2193,6 +2325,7 @@ IM_STATUS  imconfig(IM_CONFIG_NAME name, uint64_t value);
 | rga_buffer_t        | 描述图像缓冲区信息       |
 | im_rect             | 描述图像实际操作区域     |
 | im_opt_t            | 描述图像操作选项         |
+| im_job_handle_t     | RGA任务句柄              |
 | rga_buffer_handle_t | RGA驱动图像缓冲区句柄    |
 | im_handle_param_t   | 描述待导入图像缓冲区属性 |
 | im_context_t        | 当前线程默认上下文       |
@@ -2211,7 +2344,7 @@ IM_STATUS  imconfig(IM_CONFIG_NAME name, uint64_t value);
 
 - **路径**
 
-im2d_api/im2d.h
+im2d_api/im2d_type.h
 
 - **定义**
 
@@ -2263,7 +2396,7 @@ vir_addr、phy_addr、fd、handle只需选择其一作为图像缓冲区的描�
 
 - **路径**
 
-im2d_api/im2d.h
+im2d_api/im2d_type.h
 
 - **定义**
 
@@ -2297,34 +2430,65 @@ typedef struct {
 
 - **路径**
 
-im2d_api/im2d.h
+im2d_api/im2d_type.h
 
 - **定义**
 
 ```c++
 typedef struct im_opt {
+    im_api_version_t version DEFAULT_INITIALIZER(RGA_CURRENT_API_HEADER_VERSION);
     int color;                          /* color, used by color fill */
     im_colorkey_range colorkey_range;   /* range value of color key */
     im_nn_t nn;
     int rop_code;
-
     int priority;
     int core;
+    int mosaic_mode;
+    im_osd_t osd_config;
+    im_intr_config_t intr_config;
+    char reserve[128];
 } im_opt_t;
 ```
 
 | 成员参数       | 描述                       |
 | -------------- | -------------------------- |
+| version        | 当前头文件版本             |
 | color          | 填充图像颜色配置。         |
 | colorkey_range | Colorkey关键色范围配置。   |
 | nn             | 运算点前处理（量化）配置。 |
 | rop_code       | 光栅操作ROP操作码配置。    |
 | priority       | 当前任务优先级配置。       |
 | core           | 当前任务指定硬件核心。     |
+| mosaic_mode    | 马赛克模式配置。           |
+| osd_config     | osd字幕叠加反色/统计配置。 |
+| intr_config    | 提前中断模式配置。         |
+| reserve        | 预留位。                   |
 
 - **注意事项**
 
 priority、core权限极高，操作不当可能导致系统崩溃或死锁，建议仅用于开发调试阶段，极度不建议在实际产品场景进行配置。
+
+
+
+#### im_job_handle_t
+
+- **说明**
+
+RGA任务句柄，用于标识当前配置的RGA任务。
+
+- **路径**
+
+im2d_api/im2d_type.h
+
+- **定义**
+
+```c++
+typedef uint32_t im_job_handle_t;
+```
+
+- **注意事项**
+
+配置失败后须使用 imcancelJob 释放当前任务句柄，避免内存泄漏。
 
 
 
@@ -2336,7 +2500,7 @@ RGA驱动图像缓冲区句柄。
 
 - **路径**
 
-include/rga.h
+im2d_api/im2d_type.h
 
 - **定义**
 
@@ -2346,7 +2510,7 @@ typedef int rga_buffer_handle_t;
 
 - **注意事项**
 
-无
+当该内存使用完毕后须使用 releasebuffer_handle 释放内存，避免内存泄漏。
 
 
 
@@ -2358,20 +2522,16 @@ typedef int rga_buffer_handle_t;
 
 - **路径**
 
-im2d_api/im2d.h
-
-include/rga.h
+im2d_api/im2d_type.h
 
 - **定义**
 
 ```c++
-typedef struct rga_memory_parm im_handle_param_t;
-
-struct rga_memory_parm {
-    uint32_t width_stride;
-    uint32_t height_stride;
+typedef struct im_handle_param {
+    uint32_t width;
+    uint32_t height;
     uint32_t format;
-};
+} im_handle_param_t;
 ```
 
 | 成员参数      | 描述                                               |
@@ -2394,7 +2554,7 @@ struct rga_memory_parm {
 
 - **路径**
 
-im2d_api/im2d.h
+im2d_api/im2d_type.h
 
 - **定义**
 
@@ -2432,7 +2592,7 @@ Colorkey关键色范围。
 
 - **路径**
 
-im2d_api/im2d.h
+im2d_api/im2d_type.h
 
 - **定义**
 
