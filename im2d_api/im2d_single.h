@@ -26,9 +26,13 @@
  * copy
  *
  * @param src
+ *      The input source image.
  * @param dst
+ *      The output destination image.
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
+ * @param release_fence_fd
+ *      When 'sync == 0', the fence_fd used to identify the current job state
  *
  * @returns success or else negative error code.
  */
@@ -38,12 +42,19 @@ IM_API IM_STATUS imcopy(const rga_buffer_t src, rga_buffer_t dst, int sync = 1, 
  * Resize
  *
  * @param src
+ *      The input source image.
  * @param dst
+ *      The output destination image.
  * @param fx
+ *      X-direction resize factor.
  * @param fy
+ *      X-direction resize factor.
  * @param interpolation
+ *      Interpolation formula(Only RGA1 support).
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
+ * @param release_fence_fd
+ *      When 'sync == 0', the fence_fd used to identify the current job state
  *
  * @returns success or else negative error code.
  */
@@ -53,10 +64,15 @@ IM_API IM_STATUS imresize(const rga_buffer_t src, rga_buffer_t dst, double fx = 
  * Crop
  *
  * @param src
+ *      The input source image.
  * @param dst
+ *      The output destination image.
  * @param rect
+ *      The rectangle on the source image that needs to be cropped.
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
+ * @param release_fence_fd
+ *      When 'sync == 0', the fence_fd used to identify the current job state
  *
  * @returns success or else negative error code.
  */
@@ -66,11 +82,17 @@ IM_API IM_STATUS imcrop(const rga_buffer_t src, rga_buffer_t dst, im_rect rect, 
  * translate
  *
  * @param src
+ *      The input source image.
  * @param dst
+ *      The output destination image.
  * @param x
+ *      Output the coordinates of the starting point in the X-direction of the destination image.
  * @param y
+ *      Output the coordinates of the starting point in the Y-direction of the destination image.
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
+ * @param release_fence_fd
+ *      When 'sync == 0', the fence_fd used to identify the current job state
  *
  * @returns success or else negative error code.
  */
@@ -80,13 +102,25 @@ IM_API IM_STATUS imtranslate(const rga_buffer_t src, rga_buffer_t dst, int x, in
  * format convert
  *
  * @param src
+ *      The input source image.
  * @param dst
+ *      The output destination image.
  * @param sfmt
+ *      The source image format.
  * @param dfmt
+ *      The destination image format.
  * @param mode
- *      color space mode: IM_COLOR_SPACE_MODE
+ *      color space mode:
+ *          IM_YUV_TO_RGB_BT601_LIMIT
+ *          IM_YUV_TO_RGB_BT601_FULL
+ *          IM_YUV_TO_RGB_BT709_LIMIT
+ *          IM_RGB_TO_YUV_BT601_FULL
+ *          IM_RGB_TO_YUV_BT601_LIMIT
+ *          IM_RGB_TO_YUV_BT709_LIMIT
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
+ * @param release_fence_fd
+ *      When 'sync == 0', the fence_fd used to identify the current job state
  *
  * @returns success or else negative error code.
  */
@@ -96,13 +130,17 @@ IM_API IM_STATUS imcvtcolor(rga_buffer_t src, rga_buffer_t dst, int sfmt, int df
  * rotation
  *
  * @param src
+ *      The input source image.
  * @param dst
+ *      The output destination image.
  * @param rotation
  *      IM_HAL_TRANSFORM_ROT_90
  *      IM_HAL_TRANSFORM_ROT_180
  *      IM_HAL_TRANSFORM_ROT_270
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
+ * @param release_fence_fd
+ *      When 'sync == 0', the fence_fd used to identify the current job state
  *
  * @returns success or else negative error code.
  */
@@ -112,43 +150,78 @@ IM_API IM_STATUS imrotate(const rga_buffer_t src, rga_buffer_t dst, int rotation
  * flip
  *
  * @param src
+ *      The input source image.
  * @param dst
+ *      The output destination image.
  * @param mode
  *      IM_HAL_TRANSFORM_FLIP_H
  *      IM_HAL_TRANSFORM_FLIP_V
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
+ * @param release_fence_fd
+ *      When 'sync == 0', the fence_fd used to identify the current job state
  *
  * @returns success or else negative error code.
  */
 IM_API IM_STATUS imflip(const rga_buffer_t src, rga_buffer_t dst, int mode, int sync = 1, int *release_fence_fd = NULL);
 
 /**
- * blend (SRC + DST -> DST or SRCA + SRCB -> DST)
+ * 2-channel blend (SRC + DST -> DST or SRCA + SRCB -> DST)
  *
- * @param srcA
- * @param srcB can be NULL.
- * @param dst
+ * @param fg_image
+ *      The foreground image.
+ * @param bg_image
+ *      The background image, which is also the output destination image.
  * @param mode
- *      IM_ALPHA_BLEND_MODE
+ *      Port-Duff mode:
+ *          IM_ALPHA_BLEND_SRC
+ *          IM_ALPHA_BLEND_DST
+ *          IM_ALPHA_BLEND_SRC_OVER
+ *          IM_ALPHA_BLEND_DST_OVER
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
+ * @param release_fence_fd
+ *      When 'sync == 0', the fence_fd used to identify the current job state
  *
  * @returns success or else negative error code.
  */
-IM_API IM_STATUS imblend(const rga_buffer_t src, rga_buffer_t dst, int mode = IM_ALPHA_BLEND_SRC_OVER, int sync = 1, int *release_fence_fd = NULL);
+IM_API IM_STATUS imblend(const rga_buffer_t fd_image, rga_buffer_t bg_image, int mode = IM_ALPHA_BLEND_SRC_OVER, int sync = 1, int *release_fence_fd = NULL);
+
+/**
+ * 3-channel blend (SRC + DST -> DST or SRCA + SRCB -> DST)
+ *
+ * @param fg_image
+ *      The foreground image.
+ * @param bg_image
+ *      The background image.
+ * @param output_image
+ *      The output destination image.
+ * @param mode
+ *      Port-Duff mode:
+ *          IM_ALPHA_BLEND_SRC
+ *          IM_ALPHA_BLEND_DST
+ *          IM_ALPHA_BLEND_SRC_OVER
+ *          IM_ALPHA_BLEND_DST_OVER
+ * @param sync
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
+ * @param release_fence_fd
+ *      When 'sync == 0', the fence_fd used to identify the current job state
+ *
+ * @returns success or else negative error code.
+ */
 IM_API IM_STATUS imcomposite(const rga_buffer_t srcA, const rga_buffer_t srcB, rga_buffer_t dst, int mode = IM_ALPHA_BLEND_SRC_OVER, int sync = 1, int *release_fence_fd = NULL);
 
 /**
  * color key
  *
- * @param src
- * @param dst
+ * @param fg_image
+ *      The foreground image.
+ * @param bg_image
+ *      The background image, which is also the output destination image.
  * @param colorkey_range
- *      max color
- *      min color
+ *      The range of color key.
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
  *
  * @returns success or else negative error code.
  */
@@ -158,14 +231,15 @@ IM_API IM_STATUS imcolorkey(const rga_buffer_t src, rga_buffer_t dst, im_colorke
  * OSD
  *
  * @param osd
- *      osd block
+ *      The osd text block.
  * @param dst
- *      background image
+ *      The background image.
  * @param osd_rect
+ *      The rectangle on the source image that needs to be OSD.
  * @param osd_config
- *      osd mode config
+ *      osd mode configuration.
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
  *
  * @returns success or else negative error code.
  */
@@ -177,10 +251,13 @@ IM_API IM_STATUS imosd(const rga_buffer_t osd,const rga_buffer_t dst,
  * nn quantize
  *
  * @param src
+ *      The input source image.
  * @param dst
+ *      The output destination image.
  * @param nninfo
+ *      nn configuration
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
  *
  * @returns success or else negative error code.
  */
@@ -190,10 +267,13 @@ IM_API IM_STATUS imquantize(const rga_buffer_t src, rga_buffer_t dst, im_nn_t nn
  * ROP
  *
  * @param src
+ *      The input source image.
  * @param dst
+ *      The output destination image.
  * @param rop_code
+ *      The ROP opcode.
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
  *
  * @returns success or else negative error code.
  */
@@ -203,10 +283,13 @@ IM_API IM_STATUS imrop(const rga_buffer_t src, rga_buffer_t dst, int rop_code, i
  * fill/reset/draw
  *
  * @param dst
+ *      The output destination image.
  * @param rect
+ *      The rectangle on the source image that needs to be filled with color.
  * @param color
+ *      The fill color value.
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
  *
  * @returns success or else negative error code.
  */
@@ -224,7 +307,7 @@ IM_API IM_STATUS imfill(rga_buffer_t dst, im_rect rect, int color, int sync = 1,
  * @param color
  *      The fill color value.
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
  *
  * @returns success or else negative error code.
  */
@@ -243,7 +326,7 @@ IM_API IM_STATUS imfillArray(rga_buffer_t dst, im_rect *rect_array, int array_si
  *      Thickness of lines that make up the rectangle. Negative values, like -1,
  *      mean that the function has to draw a filled rectangle.
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
  *
  * @returns success or else negative error code.
  */
@@ -266,7 +349,7 @@ IM_API IM_STATUS imrectangle(rga_buffer_t dst, im_rect rect,
  *      Thickness of lines that make up the rectangle. Negative values, like -1,
  *      mean that the function has to draw a filled rectangle.
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
  *
  * @returns success or else negative error code.
  */
@@ -277,11 +360,19 @@ IM_API IM_STATUS imrectangleArray(rga_buffer_t dst, im_rect *rect_array, int arr
 /**
  * MOSAIC
  *
- * @param src
- * @param dst
+ * @param image
+ *      The output destination image.
+ * @param rect
+ *      The rectangle on the source image that needs to be mosaicked.
  * @param mosaic_mode
+ *      mosaic block width configuration:
+ *          IM_MOSAIC_8
+ *          IM_MOSAIC_16
+ *          IM_MOSAIC_32
+ *          IM_MOSAIC_64
+ *          IM_MOSAIC_128
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
  *
  * @returns success or else negative error code.
  */
@@ -304,7 +395,7 @@ IM_API IM_STATUS immosaic(const rga_buffer_t image, im_rect rect, int mosaic_mod
  *          IM_MOSAIC_64
  *          IM_MOSAIC_128
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
  *
  * @returns success or else negative error code.
  */
@@ -314,10 +405,13 @@ IM_API IM_STATUS immosaicArray(const rga_buffer_t image, im_rect *rect_array, in
  * palette
  *
  * @param src
+ *      The input source image.
  * @param dst
+ *      The output destination image.
  * @param lut
+ *      The LUT table.
  * @param sync
- *      wait until operation complete
+ *      When 'sync == 1', wait for the operation to complete and return, otherwise return directly.
  *
  * @returns success or else negative error code.
  */
@@ -327,15 +421,21 @@ IM_API IM_STATUS impalette(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t lut,
  * process for single task mode
  *
  * @param src
+ *      The input source image and is also the foreground image in blend.
  * @param dst
+ *      The output destination image and is also the foreground image in blend.
  * @param pat
+ *      The foreground image, or a LUT table.
  * @param srect
+ *      The rectangle on the src channel image that needs to be processed.
  * @param drect
+ *      The rectangle on the dst channel image that needs to be processed.
  * @param prect
- * @param acquire_fence_fd
- * @param release_fence_fd
+ *      The rectangle on the pat channel image that needs to be processed.
  * @param opt
+ *      The image processing options configuration.
  * @param usage
+ *      The image processing usage.
  *
  * @returns success or else negative error code.
  */
@@ -343,6 +443,33 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
                            im_rect srect, im_rect drect, im_rect prect,
                            int acquire_fence_fd, int *release_fence_fd,
                            im_opt_t *opt_ptr, int usage);
+
+/**
+ * make border
+ *
+ * @param src
+ *      The input source image.
+ * @param dst
+ *      The output destination image.
+ * @param top
+ *      the top pixels
+ * @param bottom
+ *      the bottom pixels
+ * @param left
+ *      the left pixels
+ * @param right
+ *      the right pixels
+ * @param border_type
+ *      Border type.
+ * @param value
+ *      The pixel value at which the border is filled.
+ *
+ * @returns success or else negative error code.
+ */
+IM_API IM_STATUS immakeBorder(rga_buffer_t src, rga_buffer_t dst,
+                              int top, int bottom, int left, int right,
+                              int border_type, int value = 0,
+                              int sync = 1, int acquir_fence_fd = -1, int *release_fence_fd = NULL);
 
 #endif /* #ifdef __cplusplus */
 

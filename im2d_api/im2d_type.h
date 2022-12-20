@@ -427,16 +427,10 @@ typedef struct im_opt {
     char reserve[128];
 } im_opt_t;
 
-typedef struct im_context {
-    int priority;
-    IM_SCHEDULER_CORE core;
-    int check_mode;
-} im_context_t;
-
 typedef struct im_handle_param {
     uint32_t width;
     uint32_t height;
     uint32_t format;
-}im_handle_param_t;
+} im_handle_param_t;
 
 #endif /* _RGA_IM2D_TYPE_H_ */

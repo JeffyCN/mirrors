@@ -1357,8 +1357,6 @@ IM_API IM_STATUS improcess(rga_buffer_t src, rga_buffer_t dst, rga_buffer_t pat,
 }
 /* End single task api */
 
-namespace rga {
-
 IM_STATUS immakeBorder(rga_buffer_t src, rga_buffer_t dst,
                        int top, int bottom, int left, int right,
                        int border_type, int value,
@@ -1475,6 +1473,8 @@ cancel_job_handle:
     imcancelJob(job_handle);
     return ret;
 }
+
+namespace rga {
 
 /* Start task api */
 IM_API im_job_handle_t imbeginJob(uint64_t flags) {

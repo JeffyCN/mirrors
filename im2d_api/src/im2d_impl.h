@@ -59,6 +59,12 @@ typedef struct rga_version_check_ops {
     IM_STATUS (*below_minimun_range)(rga_version_t &current, rga_version_t &minimum, const rga_version_bind_table_entry_t *least_version_table);
 } rga_version_check_ops_t;
 
+typedef struct im_context {
+    int priority;
+    IM_SCHEDULER_CORE core;
+    int check_mode;
+} im_context_t;
+
 typedef struct im_rga_job {
     struct rga_req req[RGA_TASK_NUM_MAX];
     int task_count;

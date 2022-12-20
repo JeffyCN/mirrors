@@ -324,8 +324,6 @@ IM_API IM_STATUS imropTask(im_job_handle_t job_handle,
  *
  * @param job_handle
  *      Insert the task into the job handle.
- * @param src
- *      The input source image.
  * @param dst
  *      The output destination image.
  * @param rect
@@ -342,8 +340,6 @@ IM_API IM_STATUS imfillTask(im_job_handle_t job_handle, rga_buffer_t dst, im_rec
  *
  * @param job_handle
  *      Insert the task into the job handle.
- * @param src
- *      The input source image.
  * @param dst
  *      The output destination image.
  * @param rect_array
