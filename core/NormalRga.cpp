@@ -225,6 +225,11 @@ int RgaInit(void **ctx) {
     int ret = 0;
     ret = NormalRgaOpen(ctx);
 
+    /* check driver version. */
+    ret = rga_check_driver(rgaCtx->mDriverVersion);
+    if (ret == IM_STATUS_ERROR_VERSION)
+        return -1;
+
     return ret;
 }
 

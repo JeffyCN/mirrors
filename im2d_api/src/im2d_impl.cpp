@@ -328,9 +328,10 @@ static const rga_version_check_ops_t rga_version_check_user_driver_ops {
     .below_minimun_range = rga_version_below_minimun_range_user_driver,
 };
 
-IM_STATUS rga_version_check(rga_version_t &current_version, rga_version_t &minimum_version,
-                            const rga_version_bind_table_entry_t *table, int table_size,
-                            const rga_version_check_ops_t *ops) {
+static int rga_version_check(rga_version_t &current_version, rga_version_t &minimum_version,
+                             const rga_version_bind_table_entry_t *table, int table_size,
+                             const rga_version_check_ops_t *ops) {
+    int ret;
     int current_bind_index, least_index;
 
     current_bind_index = rga_version_table_get_current_index(current_version, table, table_size);
@@ -341,23 +342,31 @@ IM_STATUS rga_version_check(rga_version_t &current_version, rga_version_t &minim
 
     switch (rga_version_table_check_minimum_range(minimum_version, table, table_size, current_bind_index)) {
         case 0:
-            return ops->witnin_minimun_range ?
-                   ops->witnin_minimun_range(current_version, minimum_version) :
-                   rga_version_witnin_minimun_range_default(current_version, minimum_version);
+            ops->witnin_minimun_range ?
+                ops->witnin_minimun_range(current_version, minimum_version) :
+                rga_version_witnin_minimun_range_default(current_version, minimum_version);
+            return 0;
+
         case -1:
-            return ops->below_minimun_range ?
-                   ops->below_minimun_range(current_version, minimum_version, &(table[current_bind_index])) :
-                   rga_version_below_minimun_range_default(current_version, minimum_version, &(table[current_bind_index]));
+            ops->below_minimun_range ?
+                ops->below_minimun_range(current_version, minimum_version, &(table[current_bind_index])) :
+                rga_version_below_minimun_range_default(current_version, minimum_version, &(table[current_bind_index]));
+            return -1;
+
         case 1:
             least_index = rga_version_table_get_minimum_index(minimum_version, table, table_size);
-            if (least_index < 0)
-                return ops->get_minimum_index_failed ?
-                       ops->get_minimum_index_failed(current_version, minimum_version) :
-                       rga_version_get_minimum_index_failed_default(current_version, minimum_version);
+            if (least_index < 0) {
+                ops->get_minimum_index_failed ?
+                    ops->get_minimum_index_failed(current_version, minimum_version) :
+                    rga_version_get_minimum_index_failed_default(current_version, minimum_version);
+                return 1;
+            }
 
-            return ops->above_minimun_range ?
-                   ops->above_minimun_range(current_version, minimum_version, &(table[least_index])) :
-                   rga_version_above_minimun_range_default(current_version, minimum_version, &(table[least_index]));
+            ops->above_minimun_range ?
+                ops->above_minimun_range(current_version, minimum_version, &(table[least_index])) :
+                rga_version_above_minimun_range_default(current_version, minimum_version, &(table[least_index]));
+            return 1;
+
         default:
             IM_LOGE("This shouldn't happen!");
             return IM_STATUS_FAILED;
@@ -649,21 +658,39 @@ TRY_TO_COMPATIBLE:
 }
 
 IM_STATUS rga_check_header(rga_version_t header_version) {
+    int ret;
     int table_size = sizeof(user_header_bind_table) / sizeof(rga_version_bind_table_entry_t);
     rga_version_t user_version = RGA_SET_CURRENT_API_VERSION;
 
-    return rga_version_check(user_version, header_version,
-                             user_header_bind_table, table_size,
-                             &rga_version_check_user_header_ops);
+    ret = rga_version_check(user_version, header_version,
+                            user_header_bind_table, table_size,
+                            &rga_version_check_user_header_ops);
+    switch (ret) {
+        case 0:
+            return IM_STATUS_SUCCESS;
+        case 1:
+        case -1:
+        default:
+            return IM_STATUS_ERROR_VERSION;
+    }
 }
 
 IM_STATUS rga_check_driver(rga_version_t &driver_version) {
+    int ret;
     int table_size = sizeof(user_driver_bind_table) / sizeof(rga_version_bind_table_entry_t);
     rga_version_t user_version = RGA_SET_CURRENT_API_VERSION;
 
-    return rga_version_check(user_version, driver_version,
+    ret =  rga_version_check(user_version, driver_version,
                              user_driver_bind_table, table_size,
                              &rga_version_check_user_driver_ops);
+    switch (ret) {
+        case 0:
+        case -1:
+            return IM_STATUS_SUCCESS;
+        case 1:
+        default:
+            return IM_STATUS_ERROR_VERSION;
+    }
 }
 
 IM_STATUS rga_check_info(const char *name, const rga_buffer_t info, const im_rect rect, int resolution_usage) {
@@ -1103,11 +1130,6 @@ IM_STATUS rga_check(const rga_buffer_t src, const rga_buffer_t dst, const rga_bu
         IM_LOGE("rga im2d: rga2 get info failed!\n");
         return IM_STATUS_FAILED;
     }
-
-    /* check driver version. */
-    ret = rga_check_driver(rgaCtx->mDriverVersion);
-    if (ret == IM_STATUS_ERROR_VERSION)
-        return ret;
 
     if (mode_usage & IM_ALPHA_BLEND_MASK) {
         if (rga_is_buffer_valid(pat))
