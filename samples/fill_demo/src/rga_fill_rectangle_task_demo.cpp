@@ -36,8 +36,6 @@
 #include "utils.h"
 #include "dma_alloc.h"
 
-using namespace rga;
-
 int main(void) {
     int ret = 0;
     int64_t ts;

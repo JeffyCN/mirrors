@@ -40,8 +40,6 @@
 
 #include "utils.h"
 
-using namespace rga;
-
 int main() {
     int ret = 0;
     int left_width, left_height, left_format;
