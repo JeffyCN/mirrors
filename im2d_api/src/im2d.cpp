@@ -41,7 +41,6 @@
 using namespace android;
 #endif
 using namespace std;
-using namespace rga;
 
 extern __thread im_context_t g_im2d_context;
 extern __thread char g_rga_err_str[IM_ERR_MSG_LEN];
@@ -1474,8 +1473,6 @@ cancel_job_handle:
     return ret;
 }
 
-namespace rga {
-
 /* Start task api */
 IM_API im_job_handle_t imbeginJob(uint64_t flags) {
     return rga_job_create(flags);
@@ -1850,8 +1847,6 @@ IM_API IM_STATUS improcessTask(im_job_handle_t job_handle,
     return rga_task_submit(job_handle, src, dst, pat, srect, drect, prect, opt_ptr, usage);
 }
 /* End task api */
-
-}; /* namespace rga */
 
 /* for rockit-ko */
 im_ctx_id_t imbegin(uint32_t flags) {
