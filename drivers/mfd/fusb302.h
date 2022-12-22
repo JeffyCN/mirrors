@@ -525,10 +525,19 @@ struct fusb30x_chip {
 	int msg_id;
 	enum tx_state tx_state;
 	int hardrst_count;
-	u32 source_power_supply[7];
 	/* 50mv unit */
-	u32 source_max_current[7];
+	u32 source_power_supply[7];
 	/* 10ma uint*/
+	u32 source_max_current[7];
+	/* Fixed supply = 0, Battery supply = 1 */
+	u32 sink_supply_type;
+	/* Sink Fixed Supply */
+	u32 sink_volt;
+	u32 sink_opr_cur;
+	/* Sink Battery Supply */
+	u32 sink_max_volt;
+	u32 sink_min_volt;
+	u32 sink_opr_power;
 	int pos_power;
 	/*
 	 * if PartnerCap[0] == 0xffffffff

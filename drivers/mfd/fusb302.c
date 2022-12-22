@@ -929,6 +929,7 @@ static void set_state_unattached(struct fusb30x_chip *chip)
 static void set_mesg(struct fusb30x_chip *chip, int cmd, int is_DMT)
 {
 	int i;
+	uint32_t rec_load;
 	struct PD_CAP_INFO *pd_cap_info = &chip->pd_cap_info;
 
 	chip->send_head = ((chip->msg_id & 0x7) << 9) |
@@ -962,24 +963,62 @@ static void set_mesg(struct fusb30x_chip *chip, int cmd, int is_DMT)
 					    (0 << 25) |
 					    (0 << 24);
 
-			switch (CAP_POWER_TYPE(chip->rec_load[chip->pos_power - 1])) {
+			rec_load = chip->rec_load[chip->pos_power - 1];
+			switch (CAP_POWER_TYPE(rec_load)) {
 			case 0:
 				/* Fixed Supply */
-				chip->send_load[0] |= CAP_FPDO_VOLTAGE(chip->rec_load[chip->pos_power - 1]) << 10;
-				chip->send_load[0] |= CAP_FPDO_CURRENT(chip->rec_load[chip->pos_power - 1]);
+				chip->sink_supply_type = 0;
+				chip->sink_volt = CAP_FPDO_VOLTAGE(rec_load);
+				chip->sink_opr_cur = CAP_FPDO_CURRENT(rec_load);
+				chip->send_load[0] |= chip->sink_volt << 10;
+				chip->send_load[0] |= chip->sink_opr_cur;
 				break;
 			case 1:
-				/* Battery */
-				chip->send_load[0] |= CAP_VPDO_MAX_VOLTAGE(chip->rec_load[chip->pos_power - 1]) << 20;
-				chip->send_load[0] |= CAP_VPDO_MIN_VOLTAGE(chip->rec_load[chip->pos_power - 1]) << 10;
-				chip->send_load[0] |= CAP_VPDO_CURRENT(chip->rec_load[chip->pos_power - 1]);
+				/* Battery Supply */
+				chip->sink_supply_type = 1;
+				chip->sink_max_volt =
+					CAP_VPDO_MAX_VOLTAGE(rec_load);
+				chip->sink_min_volt =
+					CAP_VPDO_MIN_VOLTAGE(rec_load);
+				chip->sink_opr_power =
+					CAP_VPDO_CURRENT(rec_load);
+				chip->send_load[0] |= chip->sink_max_volt << 20;
+				chip->send_load[0] |= chip->sink_min_volt << 10;
+				chip->send_load[0] |= chip->sink_opr_power;
 				break;
 			default:
-				/* not meet battery caps */
+				dev_warn(chip->dev, "No support supply req type %d\n",
+					 CAP_POWER_TYPE(rec_load));
 				break;
 			}
 			break;
 		case DMT_SINKCAPABILITIES:
+			chip->send_head |= (1 << 12) | (cmd & 0xf);
+			switch (chip->sink_supply_type) {
+			case 0:
+				/*
+				 * Fixed Supply
+				 * bit26 for 'USB Communiications Capable'
+				 */
+				chip->send_load[0] =
+					(chip->sink_supply_type << 30) |
+					(1 << 26) |
+					(chip->sink_volt << 10) |
+					(chip->sink_opr_cur);
+				break;
+			case 1:
+				/* Battery Supply */
+				chip->send_load[0] =
+					(chip->sink_supply_type << 30) |
+					(chip->sink_max_volt << 20) |
+					(chip->sink_min_volt << 10) |
+					(chip->sink_opr_cur);
+				break;
+			default:
+				dev_warn(chip->dev, "No support sink supply type %d\n",
+					 chip->sink_supply_type);
+				break;
+			}
 			break;
 		case DMT_VENDERDEFINED:
 			break;
@@ -2621,6 +2660,14 @@ static void fusb_state_snk_transition_sink(struct fusb30x_chip *chip, u32 evt)
 			chip->notify.is_pd_connected = true;
 			dev_info(chip->dev,
 				 "PD connected as UFP, fetching 5V\n");
+			tcpm_get_message(chip);
+			if (PACKET_IS_CONTROL_MSG(chip->rec_head,
+						  CMT_GETSINKCAP)) {
+				set_mesg(chip, DMT_SINKCAPABILITIES,
+					 DATAMESSAGE);
+				chip->tx_state = tx_idle;
+				policy_send_data(chip);
+			}
 			set_state(chip, policy_snk_ready);
 		} else if (PACKET_IS_DATA_MSG(chip->rec_head,
 					      DMT_SOURCECAPABILITIES)) {
@@ -2672,7 +2719,12 @@ static void fusb_state_snk_transition_default(struct fusb30x_chip *chip,
 static void fusb_state_snk_ready(struct fusb30x_chip *chip, u32 evt)
 {
 	if (evt & EVENT_RX) {
-		if (PACKET_IS_DATA_MSG(chip->rec_head, DMT_VENDERDEFINED)) {
+		if (PACKET_IS_CONTROL_MSG(chip->rec_head, CMT_GETSINKCAP)) {
+			set_mesg(chip, DMT_SINKCAPABILITIES, DATAMESSAGE);
+			chip->tx_state = tx_idle;
+			policy_send_data(chip);
+		} else if (PACKET_IS_DATA_MSG(chip->rec_head,
+					      DMT_VENDERDEFINED)) {
 			process_vdm_msg(chip);
 			chip->work_continue |= EVENT_WORK_CONTINUE;
 			chip->timer_state = T_DISABLED;
@@ -3365,6 +3417,8 @@ static int fusb30x_probe(struct i2c_client *client,
 	chip->n_caps_used = 1;
 	chip->source_power_supply[0] = 0x64;
 	chip->source_max_current[0] = 0x96;
+	chip->sink_volt = 100;
+	chip->sink_opr_cur = 200;
 
 	pd_cap_info = &chip->pd_cap_info;
 	pd_cap_info->dual_role_power = 1;
@@ -3465,13 +3519,8 @@ static int fusb30x_probe(struct i2c_client *client,
 		goto IRQ_ERR;
 	}
 
-	ret = devm_request_threaded_irq(&client->dev,
-					chip->gpio_int_irq,
-					NULL,
-					cc_interrupt_handler,
-					IRQF_ONESHOT | IRQF_TRIGGER_LOW,
-					client->name,
-					chip);
+	ret = request_irq(chip->gpio_int_irq, cc_interrupt_handler,
+			  IRQF_TRIGGER_LOW, "fsc_interrupt_int_n", chip);
 	if (ret) {
 		dev_err(&client->dev, "irq request failed\n");
 		goto IRQ_ERR;
@@ -3508,6 +3557,7 @@ static int fusb30x_remove(struct i2c_client *client)
 {
 	struct fusb30x_chip *chip = i2c_get_clientdata(client);
 
+	free_irq(chip->gpio_int_irq, chip);
 	destroy_workqueue(chip->fusb30x_wq);
 	return 0;
 }
