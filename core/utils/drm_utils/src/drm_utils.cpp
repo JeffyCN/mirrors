@@ -17,6 +17,7 @@
  */
 
 #include <unordered_map>
+#include <stdint.h>
 #include "drm_fourcc.h"
 
 #include "rga.h"
