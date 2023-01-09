@@ -64,6 +64,7 @@ static GstStaticPadTemplate gst_mpp_video_dec_sink_template =
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-h264, parsed = (boolean) true;"
         "video/x-h265, parsed = (boolean) true;"
+        "video/x-av1, parsed = (boolean) true;"
         "video/x-vp8, parsed = (boolean) true;"
         "video/x-vp9, parsed = (boolean) true;"
         "video/mpeg, parsed = (boolean) true,"
@@ -80,14 +81,17 @@ static GstStaticPadTemplate gst_mpp_video_dec_src_template =
 static MppCodingType
 gst_mpp_video_dec_get_mpp_type (GstStructure * s)
 {
+  if (gst_structure_has_name (s, "video/x-h263"))
+    return MPP_VIDEO_CodingH263;
+
   if (gst_structure_has_name (s, "video/x-h264"))
     return MPP_VIDEO_CodingAVC;
 
   if (gst_structure_has_name (s, "video/x-h265"))
     return MPP_VIDEO_CodingHEVC;
 
-  if (gst_structure_has_name (s, "video/x-h263"))
-    return MPP_VIDEO_CodingH263;
+  if (gst_structure_has_name (s, "video/x-av1"))
+    return MPP_VIDEO_CodingAV1;
 
   if (gst_structure_has_name (s, "video/mpeg")) {
     gint mpegversion = 0;
