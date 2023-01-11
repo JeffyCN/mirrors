@@ -66,6 +66,8 @@ struct _GstKmsSrc {
   gboolean dma_feature;
 
   guint framerate_limit;
+  guint fps_n;
+  guint fps_d;
   gboolean sync_fb;
 
   guint last_fb_id;
@@ -264,31 +266,35 @@ gst_kms_src_get_fb_id (GstKmsSrc * self)
 static guint
 gst_kms_src_get_next_fb_id (GstKmsSrc * self)
 {
+  GstClockTimeDiff diff;
+  gboolean sync = self->sync_fb && !self->fb_id;
+  guint duration = 0;
   guint fb_id;
 
-  if (self->framerate_limit) {
-    GstClockTimeDiff diff =
-        GST_CLOCK_DIFF (self->last_frame_time, gst_util_get_timestamp ());
-    gint delta_ms = 1000 / self->framerate_limit - diff / GST_MSECOND;
+  if (self->fps_d && self->fps_n)
+    duration =
+        gst_util_uint64_scale (GST_SECOND, self->fps_d, self->fps_n);
+  else if (self->framerate_limit)
+    duration = GST_SECOND / self->framerate_limit;
 
-    if (delta_ms > 0)
-      g_usleep (delta_ms * 1000);
+  while (1) {
+    diff = GST_CLOCK_DIFF (self->last_frame_time, gst_util_get_timestamp ());
+
+    fb_id = gst_kms_src_get_fb_id (self);
+    if (!fb_id)
+      return 0;
+
+    if (!sync || fb_id != self->last_fb_id) {
+      sync = FALSE;
+
+      if (diff >= duration)
+        return fb_id;
+    }
+
+    g_usleep (1000);
   }
 
-  fb_id = gst_kms_src_get_fb_id (self);
-  if (!fb_id)
-    return 0;
-
-  if (self->sync_fb && !self->fb_id) {
-    while (fb_id == self->last_fb_id) {
-      g_usleep (1000);
-      fb_id = gst_kms_src_get_fb_id (self);
-      if (!fb_id)
-        return 0;
-    };
-  }
-
-  return fb_id;
+  return 0;
 }
 
 /* From libdrm 2.4.109 : xf86drm.c */
@@ -498,11 +504,42 @@ err:
   return GST_FLOW_ERROR;
 }
 
+/* Based on gst-plugins-good/sys/ximage/gstximagesrc.c */
+static gboolean
+gst_kms_src_set_caps (GstBaseSrc * basesrc, GstCaps * caps)
+{
+  GstKmsSrc *self = GST_KMS_SRC (basesrc);
+  GstVideoInfo *info = &self->info;
+  GstStructure *structure;
+  const GValue *new_fps;
+
+  /* The only thing that can change is the framerate downstream wants */
+  structure = gst_caps_get_structure (caps, 0);
+  new_fps = gst_structure_get_value (structure, "framerate");
+  if (!new_fps)
+    return FALSE;
+
+  /* Store this FPS for use when generating buffers */
+  info->fps_n = self->fps_n = gst_value_get_fraction_numerator (new_fps);
+  info->fps_d = self->fps_d = gst_value_get_fraction_denominator (new_fps);
+
+  GST_DEBUG_OBJECT (self, "peer wants %d/%d fps", self->fps_n, self->fps_d);
+
+  if (self->framerate_limit * self->fps_d > self->fps_n)
+    GST_WARNING_OBJECT (self, "framerate-limit ignored");
+
+  if (self->sync_fb)
+    GST_WARNING_OBJECT (self, "sync-fb enabled, framerate might be inaccurate");
+
+  return TRUE;
+}
+
 static GstCaps *
 gst_kms_src_get_caps (GstBaseSrc * basesrc, GstCaps * filter)
 {
   GstKmsSrc *self = GST_KMS_SRC (basesrc);
-  GstCaps *caps = NULL;
+  GstStructure *s;
+  GstCaps *caps;
   drmModeFB2Ptr fb;
   guint fb_id;
 
@@ -532,6 +569,10 @@ gst_kms_src_get_caps (GstBaseSrc * basesrc, GstCaps * filter)
   }
 
   gst_kms_src_free_fb (self, fb);
+
+  s = gst_caps_get_structure (caps, 0);
+  gst_structure_set (s, "framerate", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT,
+      1, NULL);
 
   GST_DEBUG_OBJECT (self, "returning caps: %" GST_PTR_FORMAT, caps);
   return caps;
@@ -628,6 +669,13 @@ gst_kms_src_init (GstKmsSrc * self)
 
   self->framerate_limit = DEFAULT_PROP_FRAMERATE_LIMIT;
   self->sync_fb = TRUE;
+  self->fps_n = 0;
+  self->fps_d = 1;
+
+  gst_video_info_init (&self->info);
+
+  gst_base_src_set_format (GST_BASE_SRC (self), GST_FORMAT_TIME);
+  gst_base_src_set_live (GST_BASE_SRC (self), TRUE);
 }
 
 static void
@@ -705,6 +753,7 @@ gst_kms_src_class_init (GstKmsSrcClass * klass)
 
   gst_element_class_add_static_pad_template (gstelement_class, &srctemplate);
 
+  gstbase_src_class->set_caps = GST_DEBUG_FUNCPTR (gst_kms_src_set_caps);
   gstbase_src_class->get_caps = GST_DEBUG_FUNCPTR (gst_kms_src_get_caps);
   gstbase_src_class->start = GST_DEBUG_FUNCPTR (gst_kms_src_start);
   gstbase_src_class->stop = GST_DEBUG_FUNCPTR (gst_kms_src_stop);
