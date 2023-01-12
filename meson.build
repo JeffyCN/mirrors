@@ -18,7 +18,7 @@ executable(
 )
 
 executable(
-    'rk_wifi_init',
-    [ 'src/rk_wifi_init.c' ],
+    'rk_wifibt_init',
+    [ 'src/rk_wifibt_init.c' ],
     install : true,
 )
