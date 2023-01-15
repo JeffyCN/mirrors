@@ -92,7 +92,6 @@ $ ./cmake_linux.sh
 
 ```bash
 $ ./meson.sh
-$ ninja -C build-rga install
 ```
 
 ## 使用说明

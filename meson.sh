@@ -1,15 +1,15 @@
-echo "# to rm ./build-rga/"
-rm -rf build-rga
+#!/bin/bash
 
-ORIGINAL_PATH=$PATH
-export PATH=/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/bin:$PATH
-#export PATH=/home/lee/rk3399_linux/output/rockchip_rk3399/host/bin:$PATH
+SCRIPT_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
+SOURCE_PATH=${SCRIPT_DIR}
 
-export PKG_CONFIG_PATH=/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/lib/pkgconfig:/home/lee/new_rk3399_linux/rk3399/buildroot/output/rockchip_rk3399/host/usr/aarch64-buildroot-linux-gnu/sysroot/usr/lib/pkgconfig
-#export PKG_CONFIG_PATH=/home/lee/rk3399_linux/output/rockchip_rk3399/host/lib/pkgconfig
+# Modify to the local toolchain path.
+TOOLCHAIN_PATH=cross/cross_file_aarch64.txt
+BUILD_PATH=build/meson_aarch64
+INSTALL_PATH="${SOURCE_PATH}/${BUILD_PATH}/install"
 
-meson --prefix=/home/lee/new_rk3399_linux/rk3399/external/rga/output build-rga --cross-file cross/cross_file_aarch64.txt
+rm -rf ${BUILD_PATH}
 
-export PATH=$ORIGINAL_PATH
+meson ${BUILD_PATH} --prefix=${INSTALL_PATH} --cross-file=${TOOLCHAIN_PATH}
 
-unset PKG_CONFIG_PATH
+ninja -C ${BUILD_PATH} install

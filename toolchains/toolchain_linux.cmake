@@ -1,5 +1,5 @@
-SET(TOOLCHAIN_HOME "/home1/yqw/linux/rk3588/prebuilts/gcc/linux-x86/aarch64/gcc-buildroot-9.3.0-2020.03-x86_64_aarch64-rockchip-linux-gnu")
-SET(TOOLCHAIN_NAME "aarch64-rockchip-linux-gnu")
+SET(TOOLCHAIN_HOME "/home1/yqw/linux/rk3588/prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu")
+SET(TOOLCHAIN_NAME "aarch64-rockchip1031-linux-gnu")
 
 # this is required
 #SET(CMAKE_SYSTEM_NAME Linux)
