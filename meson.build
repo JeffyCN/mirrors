@@ -8,22 +8,6 @@ project(
 
 pkgconfig = import('pkgconfig')
 
-libdrm_dep = dependency('', required : false)
-libdrm_option = get_option('libdrm')
-if libdrm_option != 'false'
-    libdrm_dep = dependency('libdrm', version : '>= 2.4.0')
-    if libdrm_option == 'true' and not libdrm_dep.found()
-        error('libdrm requested, but not found.')
-    endif
-endif
-
-if libdrm_dep.found()
-    message('Building with libdrm.')
-    add_project_arguments('-DLIBDRM=1', language : 'cpp')
-else
-    message('Building without libdrm.')
-endif
-
 libthreads_dep = dependency('threads')
 
 add_project_arguments('-DLINUX=1', language : 'cpp')
@@ -49,7 +33,7 @@ incdir = include_directories('include', 'im2d_api', 'core/hardware', 'core/utils
 librga = shared_library(
     'rga',
     librga_srcs,
-    dependencies : [libdrm_dep, libthreads_dep],
+    dependencies : [libthreads_dep],
 	include_directories : incdir,
     version : meson.project_version(),
     cpp_args : ['-w'],

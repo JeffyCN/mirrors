@@ -8,21 +8,12 @@ TOOLCHAIN_PATH=${SOURCE_PATH}/toolchains/toolchain_linux.cmake
 BUILD_DIR=build/build_linux
 BUILD_TYPE=Release
 
-if [ "$1" = "drm" ];then
-	echo "using drm"
-	BUILD_WITH_LIBDRM=true
-else
-	echo "Default mode $1"
-	BUILD_WITH_LIBDRM=false
-fi
-
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 pushd $BUILD_DIR
 
 cmake ../.. \
 	-DCMAKE_BUILD_TARGET=buildroot \
-	-DBUILD_WITH_LIBDRM=${BUILD_WITH_LIBDRM} \
 	-DBUILD_TOOLCHAINS_PATH=${TOOLCHAIN_PATH} \
 	-DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
 	-DCMAKE_INSTALL_PREFIX=install \

@@ -84,7 +84,7 @@ enum {
 };
 /*****************************************************************************/
 
-#ifndef ANDROID
+#ifndef ANDROID /* LINUX */
 /* memory type definitions. */
 enum drm_rockchip_gem_mem_type {
     /* Physically Continuous memory and used as default. */

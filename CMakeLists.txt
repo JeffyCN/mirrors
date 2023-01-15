@@ -46,15 +46,6 @@ if(CMAKE_BUILD_TARGET STREQUAL cmake_linux)
 
 endif()
 
-if (BUILD_WITH_LIBDRM STREQUAL true)
-    message("RGA build with libdrm")
-    add_compile_options(-DLIBDRM=1)
-    include_directories(
-        ${LIBDRM_FILE_INCLUDE}/
-        ${LIBDRM_FILE_INCLUDE}/libdrm
-    )
-endif()
-
 if (BUILD_WITH_VERSION STREQUAL true)
     im2d_api_extract_version()
 endif()
@@ -144,14 +135,6 @@ add_library(${STATIC_LIB_NAME} STATIC $<TARGET_OBJECTS:${OBJECT_NAME}>)
 
 target_include_directories(${STATIC_LIB_NAME} PUBLIC ${IM2D_INCLUDE})
 set_target_properties(${STATIC_LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
-
-if ((BUILD_WITH_LIBDRM STREQUAL true) AND (EXISTS ${LIBDRM_FILE_LIB}/libdrm.so))
-    target_link_libraries(${SHARED_LIB_NAME} ${LIBDRM_FILE_LIB}/libdrm.so)
-    target_link_libraries(${STATIC_LIB_NAME} ${LIBDRM_FILE_LIB}/libdrm.so)
-elseif (BUILD_WITH_LIBDRM STREQUAL true)
-    target_link_libraries(${SHARED_LIB_NAME} drm)
-    target_link_libraries(${STATIC_LIB_NAME} drm)
-endif()
 
 # If cmake version is 3.5.1, FIXIT
 if (NOT DEFINED CMAKE_INSTALL_LIBDIR)
