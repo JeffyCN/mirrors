@@ -48,7 +48,9 @@
 #include <dhd_pcie.h>
 #include <dhd_linux.h>
 #ifdef CUSTOMER_HW_ROCKCHIP
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 #include <rk_dhd_pcie_linux.h>
+#endif
 #endif /* CUSTOMER_HW_ROCKCHIP */
 #ifdef OEM_ANDROID
 #ifdef CONFIG_ARCH_MSM
@@ -621,8 +623,10 @@ dhd_bus_is_rc_ep_l1ss_capable(dhd_bus_t *bus)
 	uint32 ep_l1ss_cap;
 
 #ifdef CUSTOMER_HW_ROCKCHIP
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 	if (IS_ENABLED(CONFIG_PCIEASPM_ROCKCHIP_WIFI_EXTENSION))
 		return rk_dhd_bus_is_rc_ep_l1ss_capable(bus);
+#endif
 #endif
 	/* RC Extendend Capacility */
 	rc_l1ss_cap = dhdpcie_access_cap(bus->rc_dev, PCIE_EXTCAP_ID_L1SS,

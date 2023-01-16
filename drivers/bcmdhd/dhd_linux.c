@@ -66,7 +66,9 @@
 #include <asm/unaligned.h>
 #include <dhd_linux_priv.h>
 #if defined(CUSTOMER_HW_ROCKCHIP) && defined(BCMPCIE)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 #include <rk_dhd_pcie_linux.h>
+#endif
 #endif /* CUSTOMER_HW_ROCKCHIP && BCMPCIE */
 
 #include <epivers.h>
@@ -12779,8 +12781,10 @@ dhd_bus_start(dhd_pub_t *dhdp)
 #endif /* BT_OVER_PCIE */
 
 #if defined(CUSTOMER_HW_ROCKCHIP) && defined(BCMPCIE)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 	if (IS_ENABLED(CONFIG_PCIEASPM_ROCKCHIP_WIFI_EXTENSION))
 		rk_dhd_bus_l1ss_enable_rc_ep(dhdp->bus, TRUE);
+#endif
 #endif /* CUSTOMER_HW_ROCKCHIP && BCMPCIE */
 
 #if defined(CONFIG_ARCH_EXYNOS) && defined(BCMPCIE)
