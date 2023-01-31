@@ -78,6 +78,8 @@ struct _GstMppEnc
 
   gboolean zero_copy_pkt;
 
+  gboolean arm_afbc;
+
   gboolean prop_dirty;
 
   MppEncCfg mpp_cfg;

@@ -80,6 +80,9 @@ G_DEFINE_ABSTRACT_TYPE (GstMppEnc, gst_mpp_enc, GST_TYPE_VIDEO_ENCODER);
 #define DEFAULT_PROP_HEIGHT 0   /* Original */
 #define DEFAULT_PROP_ZERO_COPY_PKT TRUE
 
+/* Input isn't ARM AFBC by default */
+static GstVideoFormat DEFAULT_PROP_ARM_AFBC = FALSE;
+
 #define DEFAULT_FPS 30
 
 enum
@@ -97,6 +100,7 @@ enum
   PROP_WIDTH,
   PROP_HEIGHT,
   PROP_ZERO_COPY_PKT,
+  PROP_ARM_AFBC,
   PROP_LAST,
 };
 
@@ -282,6 +286,13 @@ gst_mpp_enc_set_property (GObject * object,
       self->zero_copy_pkt = g_value_get_boolean (value);
       return;
     }
+    case PROP_ARM_AFBC:{
+      if (self->input_state)
+        GST_WARNING_OBJECT (encoder, "unable to change ARM AFBC");
+      else
+        self->arm_afbc = g_value_get_boolean (value);
+      return;
+    }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       return;
@@ -333,6 +344,9 @@ gst_mpp_enc_get_property (GObject * object,
       break;
     case PROP_ZERO_COPY_PKT:
       g_value_set_boolean (value, self->zero_copy_pkt);
+      break;
+    case PROP_ARM_AFBC:
+      g_value_set_boolean (value, self->arm_afbc);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -580,7 +594,7 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   GstMppEnc *self = GST_MPP_ENC (encoder);
   GstVideoInfo *info = &self->info;
   MppFrameFormat format;
-  gint width, height;
+  gint width, height, hstride, vstride;
   gboolean convert = FALSE;
 
   GST_DEBUG_OBJECT (self, "setting format: %" GST_PTR_FORMAT, state->caps);
@@ -643,11 +657,28 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
         gst_mpp_video_format_to_string (GST_VIDEO_INFO_FORMAT (info)));
   }
 
+  hstride = GST_MPP_VIDEO_INFO_HSTRIDE (info);
+  vstride = GST_MPP_VIDEO_INFO_VSTRIDE (info);
+
+  GST_INFO_OBJECT (self, "applying %s%s %dx%d (%dx%d)",
+      gst_mpp_video_format_to_string (GST_VIDEO_INFO_FORMAT (info)),
+      self->arm_afbc ? "(AFBC)" : "", width, height, hstride, vstride);
+
+  if (self->arm_afbc) {
+    if (self->mpp_type != MPP_VIDEO_CodingAVC &&
+        self->mpp_type != MPP_VIDEO_CodingHEVC) {
+      GST_WARNING_OBJECT (self, "Only H.264 and H.265 support ARM AFBC");
+      self->arm_afbc = FALSE;
+    } else {
+      format |= MPP_FRAME_FBC_AFBC_V2;
+    }
+  }
+
   mpp_frame_set_fmt (self->mpp_frame, format);
   mpp_frame_set_width (self->mpp_frame, width);
   mpp_frame_set_height (self->mpp_frame, height);
-  mpp_frame_set_hor_stride (self->mpp_frame, GST_MPP_VIDEO_INFO_HSTRIDE (info));
-  mpp_frame_set_ver_stride (self->mpp_frame, GST_MPP_VIDEO_INFO_VSTRIDE (info));
+  mpp_frame_set_hor_stride (self->mpp_frame, hstride);
+  mpp_frame_set_ver_stride (self->mpp_frame, vstride);
 
   if (!GST_VIDEO_INFO_FPS_N (info) || GST_VIDEO_INFO_FPS_N (info) > 240) {
     GST_WARNING_OBJECT (self, "framerate (%d/%d) is insane!",
@@ -1071,6 +1102,7 @@ gst_mpp_enc_init (GstMppEnc * self)
   self->bps_min = DEFAULT_PROP_BPS_MIN;
   self->bps_max = DEFAULT_PROP_BPS_MAX;
   self->zero_copy_pkt = DEFAULT_PROP_ZERO_COPY_PKT;
+  self->arm_afbc = DEFAULT_PROP_ARM_AFBC;
   self->prop_dirty = TRUE;
 }
 
@@ -1246,6 +1278,14 @@ no_rga:
   g_object_class_install_property (gobject_class, PROP_ZERO_COPY_PKT,
       g_param_spec_boolean ("zero-copy-pkt", "Zero-copy encoded packet",
           "Zero-copy encoded packet", DEFAULT_PROP_ZERO_COPY_PKT,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  if (g_getenv ("GST_MPPENC_DEFAULT_ARM_AFBC"))
+    DEFAULT_PROP_ARM_AFBC = TRUE;
+
+  g_object_class_install_property (gobject_class, PROP_ARM_AFBC,
+      g_param_spec_boolean ("arm-afbc", "ARM AFBC",
+          "Input is ARM AFBC compressed format", DEFAULT_PROP_ARM_AFBC,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   element_class->change_state = GST_DEBUG_FUNCPTR (gst_mpp_enc_change_state);
