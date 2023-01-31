@@ -412,10 +412,10 @@ static void uac_cs_attr_sample_rate(struct usb_ep *ep, struct usb_request *req)
 
 	val = buf[0] | (buf[1] << 8) | (buf[2] << 16);
 
-	if (uac1->ctl_id == agdev->in_ep->address) {
+	if (EPIN_EN(opts) && uac1->ctl_id == agdev->in_ep->address) {
 		opts->p_srate_active = val;
 		u_audio_set_playback_srate(agdev, opts->p_srate_active);
-	} else if (uac1->ctl_id == agdev->out_ep->address) {
+	} else if (EPOUT_EN(opts) && uac1->ctl_id == agdev->out_ep->address) {
 		opts->c_srate_active = val;
 		u_audio_set_capture_srate(agdev, opts->c_srate_active);
 	}
@@ -560,9 +560,9 @@ static int audio_get_endpoint_req(struct usb_function *f,
 	switch (ctrl->bRequest) {
 	case UAC_GET_CUR: {
 		if (cs == UAC_EP_CS_ATTR_SAMPLE_RATE) {
-			if (ep == agdev->in_ep->address)
+			if (EPIN_EN(opts) && ep == agdev->in_ep->address)
 				val = opts->p_srate_active;
-			else if (ep == agdev->out_ep->address)
+			else if (EPOUT_EN(opts) && ep == agdev->out_ep->address)
 				val = opts->c_srate_active;
 			buf[2] = (val >> 16) & 0xff;
 			buf[1] = (val >> 8) & 0xff;
