@@ -65,8 +65,7 @@ static GstStaticPadTemplate gst_mpp_video_dec_sink_template =
     GST_STATIC_CAPS ("video/x-h264, parsed = (boolean) true;"
         "video/x-h265, parsed = (boolean) true;"
         "video/x-av1, parsed = (boolean) true;"
-        "video/x-vp8, parsed = (boolean) true;"
-        "video/x-vp9, parsed = (boolean) true;"
+        "video/x-vp8; video/x-vp9;"
         "video/mpeg, parsed = (boolean) true,"
         "mpegversion = (int) { 1, 2, 4 }, systemstream = (boolean) false;"));
 
