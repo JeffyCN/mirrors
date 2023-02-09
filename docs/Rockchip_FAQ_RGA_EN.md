@@ -1,50 +1,42 @@
 # RGA FAQ
 
-File No.：RK-PC-YF-0003
+File No.：RK-PC-YF-404
 
-Current Version：V1.1.0
+Release Version: V1.1.1
 
-Finish Date：2022-12-21
+Release Date: 2023-02-09
 
-Security Class：□Top-Secret   □Secret   □Internal   ■Public
+Security Level: □Top-Secret   □Secret   □Internal   ■Public
 
----
+**DISCLAIMER**
 
-**Disclaimer**
+THIS DOCUMENT IS PROVIDED “AS IS”. ROCKCHIP ELECTRONICS CO., LTD.(“ROCKCHIP”)DOES NOT PROVIDE ANY WARRANTY OF ANY KIND, EXPRESSED, IMPLIED OR OTHERWISE, WITH RESPECT TO THE ACCURACY, RELIABILITY, COMPLETENESS,MERCHANTABILITY, FITNESS FOR ANY PARTICULAR PURPOSE OR NON-INFRINGEMENT OF ANY REPRESENTATION, INFORMATION AND CONTENT IN THIS DOCUMENT. THIS DOCUMENT IS FOR REFERENCE ONLY. THIS DOCUMENT MAY BE UPDATED OR CHANGED WITHOUT ANY NOTICE AT ANY TIME DUE TO THE UPGRADES OF THE PRODUCT OR ANY OTHER REASONS.
 
-This document is provided “as is” and Fuzhou Rockchip Electronics Co. Ltd (“the company”) makes no express or implied statement or warranty as to the accuracy, reliability, completeness, merchantability, specific purpose and non-infringement of any statement, information and contents of the document. This document is for reference only.
+**Trademark Statement**
 
-This document may be updated without any notification due to product version upgrades or other reasons.
+"Rockchip", "瑞芯微", "瑞芯" shall be Rockchip’s registered trademarks and owned by Rockchip. All the other trademarks or registered trademarks mentioned in this document shall be owned by their respective owners.
 
-**Brand Statement**
+**All rights reserved. ©2022. Rockchip Electronics Co., Ltd.**
 
-Rockchip, RockchipTM icon, Rockchip and other Rockchip trademarks are trademarks of Fuzhou Rockchip Electronics Co., Ltd., and are owned by Fuzhou Rockchip Electronics Co., Ltd.
+Beyond the scope of fair use, neither any entity nor individual shall extract, copy, or distribute this document in any form in whole or in part without the written approval of Rockchip.
 
-All other trademarks or registered trademarks mentioned in this document are owned by their respective owners.
+Rockchip Electronics Co., Ltd.
 
-**Copyright © 2021 Fuzhou Rockchip Electronics Co., Ltd.**
+No.18 Building, A District, No.89, software Boulevard Fuzhou, Fujian,PRC
 
-Beyond reasonable use, without the written permission, any unit or individual shall not extract or copy part or all of the content of this document, and shall not spread in any form.
+Website:     [www.rock-chips.com](http://www.rock-chips.com)
 
+Customer service Tel:  +86-4007-700-590
 
+Customer service Fax:  +86-591-83951833
 
-Fuzhou Rockchip Electronics Co., Ltd.
-
-Address: No. 18 Building, A District, No.89,software Boulevard Fuzhou,Fujian,PRC
-
-Website: [www.rock-chips.com](http://www.rock-chips.com)
-
-Customer service tel.: +86-4007-700-590
-
-Customer service fax: +86-591-83951833
-
-Customer service e-mail: [fae@rock-chips.com](mailto:fae@rock-chips.com)
+Customer service e-Mail:  [fae@rock-chips.com](mailto:fae@rock-chips.com)
 
 ---
 
-**Readership**
+**Intended Audience**
 
-This document is intended for:
+This document (this guide) is mainly intended for:
 
 - Technical support engineers
 - Software development engineers
@@ -55,21 +47,23 @@ This document is intended for:
 | ---------- | -------- | -------- | ------------ |
 | 2021/06/28 | 1.0.0    | Yu Qiaowei | Initial version.     |
 | 2022/12/21 | 1.1.0 | Yu Qiaowei | Add multi_rga driver related cases. |
-| | | | |
+| 2023/02/09 | 1.1.1 | Yu Qiaowei | Format document. |
 
-
+---
 
 **Contents**
 
 [TOC]
 
-
+---
 
 ## Overview
 
 For RGA driver and user-mode API librga, this document summarizes some common problems occurred when RGA hardware is called on RK platform to realize graph drawing acceleration with OSD (On Screen Display) and GUI (Graphics User Interface).
 
 
+
+---
 
 ## Version Description
 
@@ -166,6 +160,8 @@ https://eyun.baidu.com/s/3i6sbsDR
   When the original driver is RGA Device Driver, use this update package to update the driver version and update the matching version of librga.
 
 
+
+---
 
 ## Debugging instructions
 
@@ -739,6 +735,8 @@ rga_debugger: dump image to: /data/rga_image/1_core1_dst_plane0_virt_addr_w1280_
 ```
 
 
+
+---
 
 ## Q & A
 

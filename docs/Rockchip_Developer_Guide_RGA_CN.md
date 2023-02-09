@@ -1,12 +1,12 @@
 # RGA IM2D API 开发指南
 
-发布版本：V2.2.0
+文件标识：RK-KF-YF-403
 
-日期：2022-09-15
+发布版本：V2.2.1
+
+日期：2023-02-09
 
 文件密级：□绝密   □秘密   □内部资料   ■公开
-
----
 
 **免责声明**
 
@@ -20,7 +20,7 @@
 
 本文档可能提及的其他所有注册商标或商标，由其各自拥有者所有。
 
-**版权所有** **© 2022 **瑞芯微电子股份有限公司**
+**版权所有 © 2022 瑞芯微电子股份有限公司**
 
 超越合理使用范畴，非经本公司书面许可，任何单位和个人不得擅自摘抄、复制本文档内容的部分或全部，并不得以任何形式传播。
 
@@ -42,7 +42,7 @@ Rockchip Electronics Co., Ltd.
 
 **读者对象**
 
-本文档主要适用于以下工程师：
+本文档（本指南）主要适用于以下工程师：
 
 - 技术支持工程师
 - 软件开发工程师
@@ -57,14 +57,15 @@ Rockchip Electronics Co., Ltd.
 | 2022/01/20 | 2.1.0    | 陈城，李煌，余乔伟 | - 更新im2d api接口说明<br/>- 更新硬件指标说明，以及对齐限制<br/>- 增加数据结构介绍 |
 | 2022/06/22 | 2.1.1    | 陈城，李煌，余乔伟 | 完善格式支持/对齐说明                                        |
 | 2022/09/15 | 2.2.0    | 陈城，李煌，余乔伟 | - 补充默认值相关说明<br/>- 新增array接口<br/>- 新增task接口<br/>- 新增矩形边框绘制接口 |
+| 2022/02/09 | 2.2.1    | 余乔伟             | 更正文档格式                                                 |
 
-
+---
 
 **目 录**
 
 [TOC]
 
-
+---
 
 ## 概述
 
@@ -73,8 +74,6 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 
 ### 设计指标
-
-------
 
 <table>
    <tr>
@@ -229,8 +228,6 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="1">3 (by pass)<br/>2 (scale)</td>
    </tr>
 </table>
-
-
 > 注：
 >
 > 1). 单位时钟周期处理像素的能力为理论数据，实际运行性能表现与带宽、硬件频率等相关，列表数据仅供参考。
@@ -242,8 +239,6 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
 
 
 ### 图像格式支持
-
-------
 
 - Pixel Format conversion, BT.601/BT.709/BT.2020(only RGA3)
 - Dither operation
@@ -397,8 +392,6 @@ RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMA
 
 ### 图像格式对齐说明
 
-------
-
 <table>
     <tr>
         <td>Version</td>
@@ -525,6 +518,8 @@ RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_42
 > 2). 当芯片平台搭载多版本硬件时，为了保证硬件利用率，librga会按最严格的对齐要求进行约束。
 
 
+
+---
 
 ## 版本说明
 
@@ -712,6 +707,8 @@ cat /proc/rkrga/driver_version
 
 
 
+---
+
 ## 应用接口
 
 RGA模块支持库为librga.so，通过对图像缓冲区结构体struct rga_info进行配置，实现相应的2D图形操作。为了获得更友好的开发体验，在此基础上进一步封装常用的2D图像操作接口。新的接口主要包含以下特点：
@@ -724,8 +721,6 @@ RGA模块支持库为librga.so，通过对图像缓冲区结构体struct rga_inf
 
 
 ### 概述
-
-------
 
 该软件支持库提供以下API，异步模式仅支持C++实现。
 
@@ -787,8 +782,6 @@ RGA模块支持库为librga.so，通过对图像缓冲区结构体struct rga_inf
 
 ### 获取RGA 版本及支持信息
 
-------
-
 #### querystring
 
 ```C++
@@ -807,8 +800,6 @@ const char* querystring(int name);
 
 ### 头文件版本校验
 
-------
-
 #### imcheckHeader
 
 ```C++
@@ -826,8 +817,6 @@ IM_API IM_STATUS imcheckHeader(im_api_version_t header_version = RGA_CURRENT_API
 
 
 ### 图像缓冲区预处理
-
-------
 
 #### importbuffer_T
 
@@ -936,8 +925,6 @@ rga_buffer_t wrapbuffer_handle(rga_buffer_handle_t handle,
 
 ### 图像处理任务创建
 
------
-
 #### imbeginJob
 
 ```c++
@@ -955,8 +942,6 @@ IM_API im_job_handle_t imbeginJob(uint64_t flags = 0);
 
 
 ### 图像处理任务提交
-
-----
 
 #### imendJob
 
@@ -982,8 +967,6 @@ IM_API IM_STATUS imendJob(im_job_handle_t job_handle,
 
 ### 图像处理任务取消
 
----
-
 #### imcancelJob
 
 ```c++
@@ -1001,8 +984,6 @@ IM_API IM_STATUS imcancelJob(im_job_handle_t job_handle);
 
 
 ### 图像拷贝
-
-------
 
 #### imcopy
 
@@ -1047,8 +1028,6 @@ IM_API IM_STATUS imcopyTask(im_job_handle_t job_handle,
 
 
 ### 图像缩放、图像金字塔
-
-------
 
 #### imresize
 
@@ -1131,8 +1110,6 @@ IM_API IM_STATUS imresizeTask(im_job_handle_t job_handle,
 
 ### 图像裁剪
 
-------
-
 #### imcrop
 
 ```C++
@@ -1180,8 +1157,6 @@ IM_API IM_STATUS imcropTask(im_job_handle_t job_handle,
 
 
 ### 图像平移
-
-------
 
 #### imtranslate
 
@@ -1234,8 +1209,6 @@ IM_API IM_STATUS imtranslateTask(im_job_handle_t job_handle,
 
 
 ### 图像格式转换
-
-------
 
 #### imcvtcolor
 
@@ -1295,8 +1268,6 @@ IM_API IM_STATUS imcvtcolorTask(im_job_handle_t job_handle,
 
 ### 图像旋转
 
-------
-
 #### imrotate
 
 ```c++
@@ -1346,8 +1317,6 @@ IM_API IM_STATUS imrotateTask(im_job_handle_t job_handle,
 
 ### 图像镜像翻转
 
-------
-
 #### imfilp
 
 ```c++
@@ -1395,8 +1364,6 @@ IM_API IM_STATUS imflipTask(im_job_handle_t job_handle,
 
 
 ### 图像合成
-
-------
 
 #### imblend/imcomposite
 
@@ -1520,8 +1487,6 @@ IM_API IM_STATUS imcompositeTask(im_job_handle_t job_handle,
 
 ### 色键（Color Key）
 
-------
-
 #### imcolorkey
 
 ```C++
@@ -1588,8 +1553,6 @@ IM_API IM_STATUS imcolorkeyTask(im_job_handle_t job_handle,
 
 ### 图像字幕叠加（OSD）
 
-------
-
 #### imosd
 
 ```c++
@@ -1641,8 +1604,6 @@ IM_API IM_STATUS imosdTask(im_job_handle_t job_handle,
 
 
 ### NN运算点前处理（量化）
-
-------
 
 #### imquantize
 
@@ -1705,8 +1666,6 @@ IM_API IM_STATUS imquantizeTask(im_job_handle_t job_handle,
 
 ### 图像光栅操作 ROP
 
-------
-
 #### imrop
 
 ```C++
@@ -1754,8 +1713,6 @@ IM_API IM_STATUS imropTask(im_job_handle_t job_handle,
 
 
 ### 图像颜色填充、边框绘制
-
-------
 
 #### imfill
 
@@ -2021,8 +1978,6 @@ IM_API IM_STATUS immakeBorder(rga_buffer_t src,
 
 ### 图像马赛克
 
-----
-
 #### immosaic
 
 ```c++
@@ -2120,8 +2075,6 @@ IM_API IM_STATUS immosaicTaskArray(im_job_handle_t job_handle,
 
 
 ### 图像处理
-
-------
 
 #### improcess
 
@@ -2241,8 +2194,6 @@ IM_API IM_STATUS improcessTask(im_job_handle_t job_handle,
 
 ### 参数校验
 
----
-
 #### imcheck
 
 ```c++
@@ -2274,8 +2225,6 @@ IM_API IM_STATUS imcheck_composite(const rga_buffer_t src, const rga_buffer_t ds
 
 ### 同步操作
 
-------
-
 #### imsync
 
 ```C++
@@ -2295,8 +2244,6 @@ IM_STATUS imsync(int fence_fd);
 
 
 ### 线程上下文配置
-
-------
 
 #### imconfig
 
@@ -2318,6 +2265,8 @@ IM_STATUS  imconfig(IM_CONFIG_NAME name, uint64_t value);
 **Return** IM_STATUS_SUCCESS on success or else negative error code
 
 
+
+---
 
 ## 数据结构
 
@@ -2838,6 +2787,8 @@ typedef struct im_osd {
 
 
 
+---
+
 ## 测试用例及调试方法
 
 > 为了让开发者更加快捷的上手上述的新接口，这里通过运行demo和对demo源码的解析以加速开发者对API的理解和运用。
@@ -2845,8 +2796,6 @@ typedef struct im_osd {
 
 
 ### 测试文件说明
-
-------
 
 > 用于测试的输入与输出二进制文件需提前准备好，在/sample/sample_file目录下，存放着默认的RGBA8888格式的源图像文件可以直接使用。
 >
@@ -2888,8 +2837,6 @@ out%dw%d-h%d-%s.bin
 
 
 ### 调试方法说明
-
-------
 
 > 运行demo后打印日志如下（以图像拷贝为例）：
 >
@@ -2989,8 +2936,6 @@ gr_color_x [0, 0, 0]
 
 ### 测试用例说明
 
-------
-
 - 测试路径位于librga源码目录下 sample/im2d_api_demo ，开发者可以根据需求修改demo的配置，建议第一次运行demo使用默认配置。
 - 测试用例的编译不同的平台编译是不同的，Android平台可以使用 ‘mm’ 命令进行编译，linux平台上在使用cmake编译librga.so时会在同目录下生成对应的测试用例。
 
@@ -3000,8 +2945,6 @@ gr_color_x [0, 0, 0]
 
 
 #### 申请图像缓冲
-
-------
 
 > demo中提供了两种buffer用于RGA合成——Graphicbuffer、AHardwareBuffer。这两种buffer通过宏USE_AHARDWAREBUFFER区分。
 
@@ -3065,8 +3008,6 @@ endif
 
 #### 查看帮助信息
 
-------
-
 > 使用如下命令获取测试用例帮助信息
 
 ```
@@ -3120,8 +3061,6 @@ ctx=0x7864d7c520,ctx->rgaFd=3
 
 #### 循环执行demo
 
-------
-
 > 使用如下命令循环执行示例demo，循环命令必须在所有参数之前，循环次数为int型，默认每次循环间隔200ms。
 
 ```
@@ -3132,8 +3071,6 @@ rgaImDemo --while=6 --copy
 
 
 #### 获取RGA版本及支持信息
-
-------
 
 > 使用如下命令获取版本及支持信息：
 
@@ -3171,8 +3108,6 @@ options：
 
 
 #### 图像缩放
-
-------
 
 > 使用如下命令进行图像缩放测试
 
@@ -3225,8 +3160,6 @@ options：
 
 #### 图像裁剪
 
-------
-
 > 使用如下命令测试图像裁剪
 
 ```
@@ -3255,8 +3188,6 @@ rgaImDemo --crop
 
 
 #### 图像旋转
-
-------
 
 > 使用如下命令测试图像旋转
 
@@ -3293,8 +3224,6 @@ options：
 
 #### 图像镜像翻转
 
-------
-
 > 使用如下命令测试镜像翻转
 
 ```
@@ -3327,8 +3256,6 @@ options：
 
 
 #### 图像颜色填充
-
-------
 
 > 使用如下命令测试颜色填充
 
@@ -3371,8 +3298,6 @@ options：
 
 #### 图像平移
 
-------
-
 > 使用如下命令测试图像平移操作
 
 ```
@@ -3400,8 +3325,6 @@ rgaImDemo --translate
 
 #### 图像拷贝
 
-------
-
 > 使用如下命令测试图像拷贝
 
 ```
@@ -3425,8 +3348,6 @@ rgaImDemo --copy
 
 #### 图像合成
 
-------
-
 > 使用如下命令测试图像合成
 
 ```
@@ -3449,8 +3370,6 @@ rgaImDemo --blend
 
 
 #### 图像格式转换
-
-------
 
 > 使用如下命令测试图像格式转换
 
