@@ -44,7 +44,7 @@
 
 #define DEFAULT_PROP_FRAMERATE_LIMIT 120
 
-static gboolean DEFAULT_PROP_DMA_FEATURE = TRUE;
+static gboolean DEFAULT_PROP_DMA_FEATURE = FALSE;
 
 #define GST_TYPE_KMS_SRC (gst_kms_src_get_type())
 G_DECLARE_FINAL_TYPE (GstKmsSrc, gst_kms_src, GST, KMS_SRC, GstPushSrc);
@@ -725,9 +725,9 @@ gst_kms_src_class_init (GstKmsSrcClass * klass)
           0, G_MAXINT, 0,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  env = g_getenv ("GST_KMSSRC_NO_DMA_FEATURE");
+  env = g_getenv ("GST_KMSSRC_DMA_FEATURE");
   if (env && !strcmp (env, "1"))
-    DEFAULT_PROP_DMA_FEATURE = FALSE;
+    DEFAULT_PROP_DMA_FEATURE = TRUE;
 
   g_object_class_install_property (gobject_class, PROP_DMA_FEATURE,
       g_param_spec_boolean ("dma-feature", "DMA feature",

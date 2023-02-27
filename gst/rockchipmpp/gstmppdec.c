@@ -62,7 +62,7 @@ G_DEFINE_ABSTRACT_TYPE (GstMppDec, gst_mpp_dec, GST_TYPE_VIDEO_DECODER);
 
 static gboolean DEFAULT_PROP_IGNORE_ERROR = TRUE;
 static gboolean DEFAULT_PROP_FAST_MODE = TRUE;
-static gboolean DEFAULT_PROP_DMA_FEATURE = TRUE;
+static gboolean DEFAULT_PROP_DMA_FEATURE = FALSE;
 
 enum
 {
@@ -1145,9 +1145,9 @@ no_rga:
           "Enable MPP fast decode mode", DEFAULT_PROP_FAST_MODE,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  env = g_getenv ("GST_MPP_DEC_NO_DMA_FEATURE");
+  env = g_getenv ("GST_MPP_DEC_DMA_FEATURE");
   if (env && !strcmp (env, "1"))
-    DEFAULT_PROP_DMA_FEATURE = FALSE;
+    DEFAULT_PROP_DMA_FEATURE = TRUE;
 
   g_object_class_install_property (gobject_class, PROP_DMA_FEATURE,
       g_param_spec_boolean ("dma-feature", "DMA feature",
