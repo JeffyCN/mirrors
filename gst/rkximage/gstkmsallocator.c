@@ -564,6 +564,7 @@ gst_kms_allocator_dmabuf_import (GstAllocator * allocator, gint * prime_fds,
   GstKMSMemory *kmsmem;
   GstMemory *mem;
   gint i, ret;
+  guint32 handle = 0;
 
   g_return_val_if_fail (n_planes <= GST_VIDEO_MAX_PLANES, FALSE);
 
@@ -589,6 +590,11 @@ gst_kms_allocator_dmabuf_import (GstAllocator * allocator, gint * prime_fds,
   for (i = 0; i < n_planes; i++) {
     struct drm_gem_close arg = { kmsmem->gem_handle[i], };
     gint err;
+
+    if (handle == arg.handle)
+      break;
+
+    handle = arg.handle;
 
     err = drmIoctl (alloc->priv->fd, DRM_IOCTL_GEM_CLOSE, &arg);
     if (err)
