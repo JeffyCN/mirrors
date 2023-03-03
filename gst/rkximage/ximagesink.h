@@ -156,6 +156,7 @@ struct _GstRkXImageSink
   gint fps_d;
   gint par_n;
   gint par_d;
+  gboolean keep_aspect;
 
   GMutex x_lock;
   GMutex flow_lock;

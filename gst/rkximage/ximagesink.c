@@ -83,7 +83,8 @@ enum
   PROP_WINDOW_HEIGHT,
   PROP_DRIVER_NAME,
   PROP_CONNECTOR_ID,
-  PROP_PLANE_ID
+  PROP_PLANE_ID,
+  PROP_FORCE_ASPECT_RATIO,
 };
 
 /* ============================================================= */
@@ -1001,6 +1002,12 @@ xwindow_calculate_display_ratio (GstRkXImageSink * self, int *x, int *y,
   video_par_n = self->par_n;
   video_par_d = self->par_d;
 
+  if (self->keep_aspect) {
+    *window_width = video_width;
+    *window_height = video_height;
+    goto out;
+  }
+
   gst_video_calculate_device_ratio (self->hdisplay, self->vdisplay,
       self->mm_width, self->mm_height, &dpy_par_n, &dpy_par_d);
 
@@ -1029,6 +1036,7 @@ xwindow_calculate_display_ratio (GstRkXImageSink * self, int *x, int *y,
     *window_width = self->xwindow->width;
   }
 
+out:
   GST_DEBUG_OBJECT (self, "scaling to %dx%d", *window_width, *window_height);
 
   return TRUE;
@@ -2367,6 +2375,9 @@ gst_x_image_sink_set_property (GObject * object, guint prop_id,
     case PROP_PLANE_ID:
       ximagesink->plane_id = g_value_get_int (value);
       break;
+    case PROP_FORCE_ASPECT_RATIO:
+      ximagesink->keep_aspect = g_value_get_boolean (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -2416,6 +2427,9 @@ gst_x_image_sink_get_property (GObject * object, guint prop_id,
       break;
     case PROP_PLANE_ID:
       g_value_set_int (value, ximagesink->plane_id);
+      break;
+    case PROP_FORCE_ASPECT_RATIO:
+      g_value_set_boolean (value, ximagesink->keep_aspect);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2489,6 +2503,8 @@ gst_x_image_sink_init (GstRkXImageSink * ximagesink)
 
   ximagesink->fps_n = 0;
   ximagesink->fps_d = 1;
+
+  ximagesink->keep_aspect = TRUE;
 
   g_mutex_init (&ximagesink->x_lock);
   g_mutex_init (&ximagesink->flow_lock);
@@ -2787,6 +2803,11 @@ gst_x_image_sink_class_init (GstRkXImageSinkClass * klass)
   g_object_class_install_property (gobject_class, PROP_PLANE_ID,
       g_param_spec_int ("plane-id", "Plane ID", "DRM plane id", -1, G_MAXINT32,
           -1, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT));
+
+  g_object_class_install_property (gobject_class, PROP_FORCE_ASPECT_RATIO,
+      g_param_spec_boolean ("force-aspect-ratio", "Force aspect ratio",
+      "When enabled, scaling will respect original aspect ratio", TRUE,
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   gst_element_class_set_static_metadata (gstelement_class,
       "Video sink", "Sink/Video",
