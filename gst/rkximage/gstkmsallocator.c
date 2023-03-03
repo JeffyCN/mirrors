@@ -472,21 +472,6 @@ gst_kms_allocator_add_fb (GstKMSAllocator * alloc, GstKMSMemory * kmsmem,
   if (GST_VIDEO_INFO_IS_AFBC (vinfo)) {
     guint64 modifiers[4] = { 0 };
 
-    /*
-     * HACK:
-     * When importing AFBC dma-bufs, the Rockchip VOP driver would calculate
-     * the pixel stride from pitch. But the pitch aligning algorithms are
-     * different between MPP and VOP driver:
-     *
-     * MPP uses round_up_64(round_up_64(width) * bpp / 8)
-     * VOP driver expects (pixel_stride * bpp / 8)
-     *
-     * So let's fake the pitch of NV12_10 for VOP driver to get the correct
-     * pixel stride.
-     */
-    if (fmt == DRM_FORMAT_NV12_10)
-      pitches[0] = GST_ROUND_UP_64 (GST_VIDEO_INFO_WIDTH (vinfo)) * 10 / 8;
-
     for (i = 0; i < num_planes; i++)
       modifiers[i] = DRM_AFBC_MODIFIER;
 
