@@ -834,14 +834,14 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
 
   GST_VIDEO_DECODER_STREAM_LOCK (decoder);
 
-  if (mpp_frame_get_eos (mframe))
-    goto eos;
-
   if (mpp_frame_get_info_change (mframe)) {
     self->mpi->control (self->mpp_ctx, MPP_DEC_SET_INFO_CHANGE_READY, NULL);
     self->task_ret = gst_mpp_dec_apply_info_change (decoder, mframe);
     goto info_change;
   }
+
+  if (!mpp_frame_get_buffer (mframe))
+    goto out;
 
   /* Apply info change when video info not unavaliable (no info-change event) */
   if (!self->info.size)
@@ -894,6 +894,11 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
   gst_video_decoder_finish_frame (decoder, frame);
 
 out:
+  if (mpp_frame_get_eos (mframe)) {
+    GST_INFO_OBJECT (self, "got eos");
+    self->task_ret = GST_FLOW_EOS;
+  }
+
   mpp_frame_deinit (&mframe);
 
   if (self->task_ret != GST_FLOW_OK) {
@@ -905,10 +910,6 @@ out:
 
   GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
   return;
-eos:
-  GST_INFO_OBJECT (self, "got eos");
-  self->task_ret = GST_FLOW_EOS;
-  goto out;
 info_change:
   GST_INFO_OBJECT (self, "video info changed");
   goto out;
