@@ -915,6 +915,28 @@ out:
 	return ret;
 }
 
+static int rockchip_i2s_tdm_mclk_reparent(struct rk_i2s_tdm_dev *i2s_tdm)
+{
+	struct clk *parent;
+	int ret = 0;
+
+	/* reparent to the same clk on TRCM mode */
+	switch (i2s_tdm->clk_trcm) {
+	case I2S_CKR_TRCM_TXONLY:
+		parent = clk_get_parent(i2s_tdm->mclk_tx);
+		if (clk_has_parent(i2s_tdm->mclk_rx, parent))
+			ret = clk_set_parent(i2s_tdm->mclk_rx, parent);
+		break;
+	case I2S_CKR_TRCM_RXONLY:
+		parent = clk_get_parent(i2s_tdm->mclk_rx);
+		if (clk_has_parent(i2s_tdm->mclk_tx, parent))
+			ret = clk_set_parent(i2s_tdm->mclk_tx, parent);
+		break;
+	}
+
+	return ret;
+}
+
 static int rockchip_i2s_tdm_set_mclk(struct rk_i2s_tdm_dev *i2s_tdm,
 				     struct snd_pcm_substream *substream,
 				     struct clk **mclk)
@@ -937,6 +959,10 @@ static int rockchip_i2s_tdm_set_mclk(struct rk_i2s_tdm_dev *i2s_tdm,
 			goto err;
 
 		ret = clk_set_rate(i2s_tdm->mclk_rx, i2s_tdm->mclk_rx_freq);
+		if (ret)
+			goto err;
+
+		ret = rockchip_i2s_tdm_mclk_reparent(i2s_tdm);
 		if (ret)
 			goto err;
 
@@ -2070,6 +2096,10 @@ static int rockchip_i2s_tdm_probe(struct platform_device *pdev)
 		/* assign generic freq */
 		clk_set_rate(i2s_tdm->mclk_rx, rate);
 		clk_set_rate(i2s_tdm->mclk_tx, rate);
+
+		ret = rockchip_i2s_tdm_mclk_reparent(i2s_tdm);
+		if (ret)
+			goto err_pm_disable;
 
 		regmap_update_bits(i2s_tdm->regmap, I2S_CLKDIV,
 				   I2S_CLKDIV_RXM_MASK | I2S_CLKDIV_TXM_MASK,
