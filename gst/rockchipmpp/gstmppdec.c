@@ -486,7 +486,6 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
 
   mpp_format = mpp_frame_get_fmt (mframe);
   afbc = !!MPP_FRAME_FMT_IS_FBC (mpp_format);
-  mpp_format &= ~MPP_FRAME_FBC_MASK;
   src_format = gst_mpp_mpp_format_to_gst_format (mpp_format);
 
   GST_INFO_OBJECT (self, "applying %s%s %dx%d (%dx%d)",

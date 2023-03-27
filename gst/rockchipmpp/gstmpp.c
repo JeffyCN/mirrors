@@ -96,7 +96,7 @@ struct gst_mpp_format gst_mpp_formats[] = {
   struct gst_mpp_format *_tmp; \
   for (guint i = 0; i < ARRAY_SIZE (gst_mpp_formats) || (_tmp = NULL); i++) { \
     _tmp = &gst_mpp_formats[i]; \
-    if (_tmp->type ## _format == format) break;\
+    if (_tmp->type ## _format == (format)) break;\
   }; _tmp; \
 })
 
@@ -130,7 +130,8 @@ gst_mpp_video_format_to_string (GstVideoFormat format)
 GstVideoFormat
 gst_mpp_mpp_format_to_gst_format (MppFrameFormat mpp_format)
 {
-  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (mpp, mpp_format);
+  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (mpp,
+      mpp_format & MPP_FRAME_FMT_MASK);
   return format ? format->gst_format : GST_VIDEO_FORMAT_UNKNOWN;
 }
 
@@ -145,7 +146,8 @@ gst_mpp_gst_format_to_mpp_format (GstVideoFormat gst_format)
 static RgaSURF_FORMAT
 gst_mpp_mpp_format_to_rga_format (MppFrameFormat mpp_format)
 {
-  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (mpp, mpp_format);
+  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (mpp,
+      mpp_format & MPP_FRAME_FMT_MASK);
   return format ? format->rga_format : RK_FORMAT_UNKNOWN;
 }
 
