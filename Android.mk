@@ -51,6 +51,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/im2d_api
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/utils
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/3rdparty/libdrm/include/drm
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/hardware
 
 LOCAL_CFLAGS := \
         -DLOG_TAG=\"librga\"
@@ -87,6 +88,7 @@ LOCAL_SRC_FILES:= \
     core/NormalRgaApi.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
+    core/rga_sync.cpp \
     im2d_api/src/im2d_log.cpp \
     im2d_api/src/im2d_impl.cpp \
     im2d_api/src/im2d.cpp
@@ -139,6 +141,7 @@ LOCAL_SRC_FILES += \
     core/NormalRgaApi.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
+    core/rga_sync.cpp \
     im2d_api/src/im2d_log.cpp \
     im2d_api/src/im2d_impl.cpp \
     im2d_api/src/im2d.cpp
@@ -155,6 +158,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/im2d_api
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/utils
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/3rdparty/libdrm/include/drm
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/hardware
 
 LOCAL_SHARED_LIBRARIES := libdrm
 LOCAL_SHARED_LIBRARIES += \
@@ -217,6 +221,7 @@ LOCAL_SRC_FILES += \
     drm/DrmmodeRga.cpp \
     core/RgaApi.cpp \
     core/RgaUtils.cpp \
+    core/rga_sync.cpp \
     im2d_api/src/im2d_log.cpp \
     im2d_api/src/im2d_impl.cpp \
     im2d_api/src/im2d.cpp
@@ -231,6 +236,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/im2d_api
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/utils
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/3rdparty/libdrm/include/drm
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/core/hardware
 
 LOCAL_SHARED_LIBRARIES := libdrm
 LOCAL_SHARED_LIBRARIES += \
