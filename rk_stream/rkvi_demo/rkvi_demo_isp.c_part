@@ -1,0 +1,333 @@
+
+
+#define BUFFER_COUNT 4
+#define CLEAR(x) memset(&(x), 0, sizeof(x))
+#define FMT_NUM_PLANES 1
+
+struct buffer {
+    void *start;
+    size_t length;
+    int export_fd;
+    int sequence;
+};
+
+
+enum v4l2_buf_type g_buf_type;
+struct buffer *g_buffers;
+unsigned int g_n_buffers;
+
+static int g_ispfd = -1;
+
+static int xioctl(int fh, int request, void *arg)
+{
+        int r;
+        do {
+                r = ioctl(fh, request, arg);
+        } while (-1 == r && EINTR == errno && g_aiq_quit == 0);
+        return r;
+}
+
+static void errno_exit(const char *s)
+{
+        printf("%s: %s error %d, %s\n", g_sns_name, s, errno, strerror(errno));
+}
+
+static void init_mmap(void)
+{
+    struct v4l2_requestbuffers req;
+    CLEAR(req);
+
+    req.count = BUFFER_COUNT;
+    req.type = g_buf_type;
+    req.memory = V4L2_MEMORY_MMAP;
+
+    struct buffer *tmp_buffers = NULL;
+
+    if (-1 == xioctl(g_ispfd, VIDIOC_REQBUFS, &req)) {
+        if (EINVAL == errno) {
+            printf("%s: %s does not support "
+                     "memory mapping\n" ,g_sns_name ,VIDEO_DEVNAME);
+        } else {
+            errno_exit("VIDIOC_REQBUFS");
+        }
+    }
+
+    if (req.count < 2) {
+        printf("%s: Insufficient buffer memory on %s\n",g_sns_name,
+                 VIDEO_DEVNAME);
+    }
+
+    tmp_buffers = (struct buffer*)calloc(req.count, sizeof(struct buffer));
+
+    if (!tmp_buffers) {
+            printf("%s: Out of memory\n",g_sns_name);
+    }
+
+    g_buffers = tmp_buffers;
+    unsigned int n_buffers;
+
+    for (n_buffers = 0; n_buffers < req.count; n_buffers++ ) {
+        struct v4l2_buffer buf;
+        struct v4l2_plane planes[FMT_NUM_PLANES];
+        CLEAR(buf);
+        CLEAR(planes);
+
+        buf.type = g_buf_type;
+        buf.memory = V4L2_MEMORY_MMAP;
+        buf.index = n_buffers;
+
+        if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == g_buf_type) {
+            buf.m.planes = planes;
+            buf.length = FMT_NUM_PLANES;
+        }
+
+        if (-1 == xioctl(g_ispfd, VIDIOC_QUERYBUF, &buf))
+                errno_exit("VIDIOC_QUERYBUF");
+
+        if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == g_buf_type) {
+            tmp_buffers[n_buffers].length = buf.m.planes[0].length;
+            tmp_buffers[n_buffers].start =
+                mmap(NULL /* start anywhere */,
+                      buf.m.planes[0].length,
+                      PROT_READ | PROT_WRITE /* required */,
+                      MAP_SHARED /* recommended */,
+                      g_ispfd, buf.m.planes[0].m.mem_offset);
+        } else {
+            tmp_buffers[n_buffers].length = buf.length;
+            tmp_buffers[n_buffers].start =
+                mmap(NULL /* start anywhere */,
+                      buf.length,
+                      PROT_READ | PROT_WRITE /* required */,
+                      MAP_SHARED /* recommended */,
+                      g_ispfd, buf.m.offset);
+        }
+
+        if (MAP_FAILED == tmp_buffers[n_buffers].start)
+                errno_exit("mmap");
+
+        // export buf dma fd
+        struct v4l2_exportbuffer expbuf;
+        xcam_mem_clear (expbuf);
+        expbuf.type = g_buf_type;
+        expbuf.index = n_buffers;
+        expbuf.flags = O_CLOEXEC;
+        if (xioctl(g_ispfd, VIDIOC_EXPBUF, &expbuf) < 0) {
+            errno_exit("get dma buf failed\n");
+        } else {
+            printf("%s: get dma buf(%d)-fd: %d\n",g_sns_name, n_buffers, expbuf.fd);
+        }
+        tmp_buffers[n_buffers].export_fd = expbuf.fd;
+    }
+    g_n_buffers = n_buffers;
+}
+
+void rkisp_init_device(int w, int h)
+{
+    struct v4l2_capability cap;
+    struct v4l2_format fmt;
+    struct v4l2_selection selection;
+
+    if (-1 == xioctl(g_ispfd, VIDIOC_QUERYCAP, &cap)) {
+            if (EINVAL == errno) {
+                    printf("%s: %s is no V4L2 device\n",g_sns_name, VIDEO_DEVNAME);
+            } else {
+                    errno_exit("VIDIOC_QUERYCAP");
+            }
+    }
+
+    if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) &&
+            !(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE_MPLANE)) {
+        printf("%s: %s is not a video capture device, capabilities: %x\n",
+                     g_sns_name, VIDEO_DEVNAME, cap.capabilities);
+    }
+
+    if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
+            printf("%s: %s does not support streaming i/o\n",g_sns_name,
+                VIDEO_DEVNAME);
+    }
+
+    if (cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) {
+        g_buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        CLEAR(fmt);
+        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        fmt.fmt.pix.width = w;
+        fmt.fmt.pix.height = h;
+        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_NV12;
+        fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
+        fmt.fmt.pix.quantization = V4L2_QUANTIZATION_FULL_RANGE;
+    } else if (cap.capabilities & V4L2_CAP_VIDEO_CAPTURE_MPLANE) {
+        g_buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+        CLEAR(fmt);
+        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+        fmt.fmt.pix_mp.width = w;
+        fmt.fmt.pix_mp.height = h;
+        fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12;
+        fmt.fmt.pix_mp.field = V4L2_FIELD_INTERLACED;
+        fmt.fmt.pix_mp.quantization = V4L2_QUANTIZATION_FULL_RANGE;
+    }
+
+    if (-1 == xioctl(g_ispfd, VIDIOC_S_FMT, &fmt))
+            errno_exit("VIDIOC_S_FMT");
+
+    memset(&selection, 0, sizeof(selection));
+
+    selection.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    selection.target = V4L2_SEL_TGT_CROP;
+    selection.flags = 0;
+    selection.r.left = 0;
+    selection.r.top = 0;
+    selection.r.width = w;
+    selection.r.height = h;
+
+    if (-1 == xioctl(g_ispfd, VIDIOC_S_SELECTION, &selection))
+            errno_exit("VIDIOC_S_SELECTION");
+
+    init_mmap();
+}
+
+void rkisp_uninit_device(void)
+{
+        unsigned int i;
+
+        for (i = 0; i < g_n_buffers; ++i) {
+            if (-1 == munmap(g_buffers[i].start, g_buffers[i].length))
+                    errno_exit("munmap");
+
+            close(g_buffers[i].export_fd);
+        }
+
+        free(g_buffers);
+}
+
+void rkisp_start_capturing(void)
+{
+        unsigned int i;
+        enum v4l2_buf_type type;
+
+        for (i = 0; i < g_n_buffers; ++i) {
+                struct v4l2_buffer buf;
+
+                CLEAR(buf);
+                buf.type = g_buf_type;
+                buf.memory = V4L2_MEMORY_MMAP;
+                buf.index = i;
+
+                if (V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE == g_buf_type) {
+                    struct v4l2_plane planes[FMT_NUM_PLANES];
+
+                    buf.m.planes = planes;
+                    buf.length = FMT_NUM_PLANES;
+                }
+                if (-1 == xioctl(g_ispfd, VIDIOC_QBUF, &buf))
+                        errno_exit("VIDIOC_QBUF");
+        }
+        type = g_buf_type;
+        printf("%s:-------- stream on output -------------\n",g_sns_name);
+        if (-1 == xioctl(g_ispfd, VIDIOC_STREAMON, &type))
+                errno_exit("VIDIOC_STREAMON");
+}
+
+void rkisp_stop_capturing(void)
+{
+        enum v4l2_buf_type type;
+
+        type = g_buf_type;
+        if (-1 == xioctl(g_ispfd, VIDIOC_STREAMOFF, &type))
+            errno_exit("VIDIOC_STREAMOFF");
+}
+
+static int write_yuv_to_file(const void *p,
+                             int size, int sequence)
+{
+    char file_name[64] = {0};
+
+    snprintf(file_name, sizeof(file_name),
+             "/tmp/frame%d.yuv", sequence);
+    FILE *fp = fopen(file_name, "wb");
+    if (fp == NULL) {
+        printf("fopen yuv file %s failed!\n", file_name);
+        return -1;
+    }
+
+    fwrite(p, size, 1, fp);
+    fflush(fp);
+
+    if (fp) {
+        fclose(fp);
+        fp = NULL;
+    }
+    printf("write_yuv_to_file %s %d!\n", file_name, size);
+    return 0;
+}
+
+
+static void* isp_thread(void* args) {
+    struct v4l2_buffer buf = {0};
+    int i, bytesused;
+    int cnt = 0;
+
+/*
+    rk_aiq_gamma_attr_t gama_attr;
+    gama_attr.atrrV30.mode = RK_AIQ_GAMMA_MODE_OFF;
+    gama_attr.atrrV21.mode = RK_AIQ_GAMMA_MODE_OFF;
+    rk_aiq_user_api2_agamma_SetAttrib(g_aiq_ctx, gama_attr);
+
+    aeMeasAreaType_t aeMeasArea;
+    memset(&aeMeasArea, 0, sizeof(aeMeasAreaType_t));
+    rk_aiq_uapi2_setBLCMode(g_aiq_ctx, false, aeMeasArea);
+
+
+    rk_aiq_dpcc_attrib_V20_t dpcc_attr;
+    memset(&dpcc_attr, 0, sizeof(rk_aiq_dpcc_attrib_V20_t));
+    rk_aiq_user_api2_adpcc_SetAttrib(g_aiq_ctx, &dpcc_attr);
+
+    rk_aiq_cpsl_cfg_t cpsl_cfg;
+    memset(&cpsl_cfg, 0, sizeof(rk_aiq_cpsl_cfg_t));
+    rk_aiq_uapi2_sysctl_setCpsLtCfg(g_aiq_ctx, &cpsl_cfg);
+
+    //acp_attrib_t acp_addr;
+    //memset(&acp_addr, 0, sizeof(acp_attrib_t));
+    //rk_aiq_user_api2_acp_SetAttrib(g_aiq_ctx, acp_addr);
+
+    rk_aiq_lsc_attrib_t lsc_attr;
+    memset(&lsc_attr, 0, sizeof(rk_aiq_lsc_attrib_t));
+    rk_aiq_user_api2_alsc_SetAttrib(g_aiq_ctx, lsc_attr);
+
+    //adebayer_attrib_t debayer_attr;
+    //memset(&debayer_attr, 0, sizeof(adebayer_attrib_t));
+    //rk_aiq_user_api2_adebayer_SetAttrib(g_aiq_ctx, debayer_attr);
+*/
+
+    while(g_aiq_quit == 0){
+        if(g_aiq_pause == 0){
+            CLEAR(buf);
+
+            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+            buf.memory = V4L2_MEMORY_MMAP;
+
+            struct v4l2_plane planes[FMT_NUM_PLANES];
+            memset(planes, 0, sizeof(struct v4l2_plane)*FMT_NUM_PLANES);
+            buf.m.planes = planes;
+            buf.length = FMT_NUM_PLANES;
+
+            if (-1 == xioctl(g_ispfd, VIDIOC_DQBUF, &buf))
+                    errno_exit( "VIDIOC_DQBUF");
+
+            printf("********* DQBUF sucess! buf.sequence %d\n", buf.sequence);
+            i = buf.index;
+            bytesused = buf.m.planes[0].bytesused;
+
+            if(bytesused > 0){
+                write_yuv_to_file(g_buffers[i].start,  bytesused, cnt);
+            }
+
+            if (-1 == xioctl(g_ispfd, VIDIOC_QBUF, &buf))
+                errno_exit("VIDIOC_QBUF");
+            usleep(1000);
+            cnt++;
+       }
+        usleep(10000);
+    }
+
+    return 0;
+}
