@@ -1780,6 +1780,8 @@ int RgaCollorFill(rga_info *dst) {
         }
     }
 
+    dst->out_fence_fd = rgaReg.out_fence_fd;
+
     return 0;
 }
 
@@ -2397,6 +2399,8 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
         ALOGE(" %s(%d) RGA_COLOR_PALETTE fail: %s",__FUNCTION__, __LINE__,strerror(errno));
         return -errno;
     }
+
+    dst->out_fence_fd = rgaReg.out_fence_fd;
 
     return 0;
 }
