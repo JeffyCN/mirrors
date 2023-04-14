@@ -1638,24 +1638,36 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
                 srcinfo.blend = 0x2;
                 break;
             case IM_ALPHA_BLEND_SRC_OVER:
-                srcinfo.blend = (usage & IM_ALPHA_BLEND_PRE_MUL) ? 0x405 : 0x105;
-                break;
-            case IM_ALPHA_BLEND_SRC_IN:
-                break;
-            case IM_ALPHA_BLEND_DST_IN:
-                break;
-            case IM_ALPHA_BLEND_SRC_OUT:
+                srcinfo.blend = 0x3;
                 break;
             case IM_ALPHA_BLEND_DST_OVER:
-                srcinfo.blend = (usage & IM_ALPHA_BLEND_PRE_MUL) ? 0x504 : 0x501;
+                srcinfo.blend = 0x4;
                 break;
-            case IM_ALPHA_BLEND_SRC_ATOP:
+            case IM_ALPHA_BLEND_SRC_IN:
+                srcinfo.blend = 0x5;
+                break;
+            case IM_ALPHA_BLEND_DST_IN:
+                srcinfo.blend = 0x6;
+                break;
+            case IM_ALPHA_BLEND_SRC_OUT:
+                srcinfo.blend = 0x7;
                 break;
             case IM_ALPHA_BLEND_DST_OUT:
+                srcinfo.blend = 0x8;
+                break;
+            case IM_ALPHA_BLEND_SRC_ATOP:
+                srcinfo.blend = 0x9;
+                break;
+            case IM_ALPHA_BLEND_DST_ATOP:
+                srcinfo.blend = 0xa;
                 break;
             case IM_ALPHA_BLEND_XOR:
+                srcinfo.blend = 0xb;
                 break;
         }
+
+        if (usage & IM_ALPHA_BLEND_PRE_MUL)
+            srcinfo.blend |= (1 << 12);
 
         if(srcinfo.blend == 0)
             IM_LOGE("rga_im2d: Could not find blend usage : 0x%x \n", usage);

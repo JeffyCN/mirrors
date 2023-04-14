@@ -695,64 +695,67 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     if(is_out_log())
         ALOGE("blend = %x , perpixelAlpha = %d",blend,perpixelAlpha);
 
-    /* blend bit[0:15] is to set which way to blend,such as whether need glabal alpha,and so on. */
-    switch ((blend & 0xFFFF)) {
-        case 0x0001:/* src */
-            NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 1, 0);
-            break;
+    /* Compatible with legacy blend mode. */
+    if (blend == 0x405 || blend == 0x504 ||
+        blend == 0x105 || blend == 0x501 ||
+        blend == 0x100) {
+        /* blend bit[0:15] is to set which way to blend, such as whether need glabal alpha, and so on. */
+        switch ((blend & 0xFFFF)) {
+            case 0x0105:/* src over , no need to Premultiplied. */
+                if (perpixelAlpha && planeAlpha < 255) {
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha, 1, 9, 0);
+                } else if (perpixelAlpha)
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0, 1, 3, 0);
+                else
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
+                break;
 
-        case 0x0002:/* dst */
-            NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 2, 0);
-            break;
+            case 0x0405:/* src over , need to Premultiplied. */
+                if (perpixelAlpha && planeAlpha < 255)
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha, 1, 9, 0);
+                else if (perpixelAlpha)
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0, 1, 3, 0);
+                else
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
 
-        case 0x0105:/* src over , no need to Premultiplied. */
-            if (perpixelAlpha && planeAlpha < 255) {
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha, 1, 9, 0);
-            } else if (perpixelAlpha)
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0, 1, 3, 0);
-            else
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
-            break;
+                rgaReg.alpha_rop_flag |= (1 << 9);  //real color mode
 
-        case 0x0405:/* src over , need to Premultiplied. */
-            if (perpixelAlpha && planeAlpha < 255)
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha, 1, 9, 0);
-            else if (perpixelAlpha)
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0, 1, 3, 0);
-            else
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
+                break;
 
-            rgaReg.alpha_rop_flag |= (1 << 9);  //real color mode
+            case 0x0501:/* dst over , no need premultiplied. */
+                if (perpixelAlpha && planeAlpha < 255)
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 4, 0);
+                else if (perpixelAlpha)
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, planeAlpha , 1, 4, 0);
+                else
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 3, planeAlpha , 1, 4, 0);
+                break;
 
-            break;
+            case 0x0504:/* dst over, need premultiplied. */
+                if (perpixelAlpha && planeAlpha < 255)
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 4, 0);
+                else if (perpixelAlpha)
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, planeAlpha , 1, 4, 0);
+                else
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 3, planeAlpha , 1, 4, 0);
 
-        case 0x0501:/* dst over , no need premultiplied. */
-            if (perpixelAlpha && planeAlpha < 255)
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 4, 0);
-            else if (perpixelAlpha)
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, planeAlpha , 1, 4, 0);
-            else
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 3, planeAlpha , 1, 4, 0);
-            break;
+                rgaReg.alpha_rop_flag |= (1 << 9);  //real color mode
+                break;
+            case 0x0100:
+            default:
+                /* Tips: BLENDING_NONE is non-zero value, handle zero value as
+                * BLENDING_NONE. */
+                /* C = Cs
+                * A = As */
+                break;
+        }
+    } else if (blend > 0) {
+        /* botn not use global alpha. */
+        NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, planeAlpha , 1, blend & 0xfff, 0);
 
-        case 0x0504:/* dst over, need premultiplied. */
-            if (perpixelAlpha && planeAlpha < 255)
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 4, 0);
-            else if (perpixelAlpha)
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, planeAlpha , 1, 4, 0);
-            else
-                NormalRgaSetAlphaEnInfo(&rgaReg, 1, 3, planeAlpha , 1, 4, 0);
-
-            rgaReg.alpha_rop_flag |= (1 << 9);  //real color mode
-            break;
-
-        case 0x0100:
-        default:
-            /* Tips: BLENDING_NONE is non-zero value, handle zero value as
-             * BLENDING_NONE. */
-            /* C = Cs
-             * A = As */
-            break;
+        /* need to pre-multiply. */
+        if ((blend >> 12) & 1)
+            rgaReg.alpha_rop_flag |= (1 << 9);
     }
 
     /* discripe a picture need high stride.If high stride not to be set, need use height as high stride. */
