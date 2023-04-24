@@ -298,7 +298,7 @@ static int rk_nandc_hw_syndrome_ecc_read_page(struct mtd_info *mtd,
 		if (bch_st & NANDC_V9_BCH0_ST_ERR ||
 		    bch_st & NANDC_V9_BCH1_ST_ERR) {
 			mtd->ecc_stats.failed++;
-			max_bitflips = -1;
+			max_bitflips = 0;
 		} else {
 			ret = NANDC_V9_ECC_ERR_CNT0(bch_st);
 			mtd->ecc_stats.corrected += ret;
