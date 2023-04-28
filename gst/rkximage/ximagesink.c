@@ -82,6 +82,7 @@ enum
   PROP_WINDOW_WIDTH,
   PROP_WINDOW_HEIGHT,
   PROP_DRIVER_NAME,
+  PROP_BUS_ID,
   PROP_CONNECTOR_ID,
   PROP_PLANE_ID,
   PROP_FORCE_ASPECT_RATIO,
@@ -2367,7 +2368,12 @@ gst_x_image_sink_set_property (GObject * object, guint prop_id,
       gst_x_image_sink_manage_event_thread (ximagesink);
       break;
     case PROP_DRIVER_NAME:
+      g_free (ximagesink->devname);
       ximagesink->devname = g_value_dup_string (value);
+      break;
+    case PROP_BUS_ID:
+      g_free (ximagesink->bus_id);
+      ximagesink->bus_id = g_value_dup_string (value);
       break;
     case PROP_CONNECTOR_ID:
       ximagesink->conn_id = g_value_get_int (value);
@@ -2420,7 +2426,10 @@ gst_x_image_sink_get_property (GObject * object, guint prop_id,
         g_value_set_uint64 (value, 0);
       break;
     case PROP_DRIVER_NAME:
-      g_value_take_string (value, ximagesink->devname);
+      g_value_set_string (value, ximagesink->devname);
+      break;
+    case PROP_BUS_ID:
+      g_value_set_string (value, ximagesink->bus_id);
       break;
     case PROP_CONNECTOR_ID:
       g_value_set_int (value, ximagesink->conn_id);
@@ -2487,6 +2496,9 @@ gst_x_image_sink_finalize (GObject * object)
 
   gst_poll_free (ximagesink->poll);
 
+  g_clear_pointer (&ximagesink->devname, g_free);
+  g_clear_pointer (&ximagesink->bus_id, g_free);
+
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
@@ -2526,6 +2538,8 @@ gst_x_image_sink_init (GstRkXImageSink * ximagesink)
   ximagesink->save_rect.h = 0;
 
   ximagesink->paused = FALSE;
+
+  ximagesink->devname = g_strdup ("rockchip");
 }
 
 static gboolean
@@ -2547,7 +2561,11 @@ gst_x_image_sink_start (GstBaseSink * bsink)
   pres = NULL;
   plane = NULL;
 
-  self->fd = open ("/dev/dri/card0", O_RDWR);
+  if (self->devname || self->bus_id)
+    self->fd = drmOpen (self->devname, self->bus_id);
+
+  if (self->fd < 0)
+    self->fd = open ("/dev/dri/card0", O_RDWR | O_CLOEXEC);
 
   if (self->fd < 0)
     goto open_failed;
@@ -2780,6 +2798,17 @@ gst_x_image_sink_class_init (GstRkXImageSinkClass * klass)
       g_param_spec_string ("driver-name", "device name",
           "DRM device driver name", NULL,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT));
+
+  /**
+   * kmssink:bus-id:
+   *
+   * If you have a system with multiple displays for the same driver-name,
+   * you can choose which display to use by setting the DRM bus ID. Otherwise,
+   * the driver decides which one.
+   */
+  g_object_class_install_property (gobject_class, PROP_BUS_ID,
+      g_param_spec_string ("bus-id", "Bus ID", "DRM bus ID", NULL,
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT));
 
   /**
    * kmssink:connector-id:

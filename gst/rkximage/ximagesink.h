@@ -176,6 +176,7 @@ struct _GstRkXImageSink
   GstBuffer *last_buffer;
 
   gchar *devname;
+  gchar *bus_id;
 
   guint32 mm_width, mm_height;
 
