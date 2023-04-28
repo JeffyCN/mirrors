@@ -55,6 +55,9 @@ struct _GstKmsSrc {
   GstAllocator *allocator;
   GstVideoInfo info;
 
+  gchar *devname;
+  gchar *bus_id;
+
   gint fd;
 
   guint crtc_id;
@@ -92,7 +95,8 @@ static GstStaticPadTemplate srctemplate = GST_STATIC_PAD_TEMPLATE ("src",
 
 enum
 {
-  PROP_0,
+  PROP_DRIVER_NAME = 1,
+  PROP_BUS_ID,
   PROP_CRTC_ID,
   PROP_ENCODER_ID,
   PROP_CONNECTOR_ID,
@@ -111,6 +115,14 @@ gst_kms_src_set_property (GObject * object, guint prop_id,
   GstKmsSrc *self = GST_KMS_SRC (object);
 
   switch (prop_id) {
+    case PROP_DRIVER_NAME:
+      g_free (self->devname);
+      self->devname = g_value_dup_string (value);
+      break;
+    case PROP_BUS_ID:
+      g_free (self->bus_id);
+      self->bus_id = g_value_dup_string (value);
+      break;
     case PROP_CRTC_ID:
       self->crtc_id = g_value_get_uint (value);
       break;
@@ -148,6 +160,12 @@ gst_kms_src_get_property (GObject * object, guint prop_id, GValue * value,
   GstKmsSrc *self = GST_KMS_SRC (object);
 
   switch (prop_id) {
+    case PROP_DRIVER_NAME:
+      g_value_set_string (value, self->devname);
+      break;
+    case PROP_BUS_ID:
+      g_value_set_string (value, self->bus_id);
+      break;
     case PROP_CRTC_ID:
       g_value_set_uint (value, self->crtc_id);
       break;
@@ -630,12 +648,16 @@ gst_kms_src_start (GstBaseSrc * basesrc)
   if (!self->allocator)
     return FALSE;
 
-  self->fd = drmOpen ("rockchip", NULL);
+	if (self->devname || self->bus_id)
+		self->fd = drmOpen (self->devname, self->bus_id);
+
   if (self->fd < 0)
     self->fd = open ("/dev/dri/card0", O_RDWR | O_CLOEXEC);
 
   if (self->fd < 0) {
-    GST_ERROR_OBJECT (self, "could not open DRM device");
+    GST_ELEMENT_ERROR (self, RESOURCE, OPEN_READ_WRITE,
+        ("Could not open DRM module %s", GST_STR_NULL (self->devname)),
+        ("reason: %s (%d)", g_strerror (errno), errno));
     gst_kms_src_stop (basesrc);
     return FALSE;
   }
@@ -657,8 +679,22 @@ gst_kms_src_start (GstBaseSrc * basesrc)
 }
 
 static void
+gst_kms_src_finalize (GObject * object)
+{
+  GstKmsSrc *self;
+
+  self = GST_KMS_SRC (object);
+  g_clear_pointer (&self->devname, g_free);
+  g_clear_pointer (&self->bus_id, g_free);
+
+  G_OBJECT_CLASS (parent_class)->finalize (object);
+}
+
+static void
 gst_kms_src_init (GstKmsSrc * self)
 {
+  self->devname = g_strdup ("rockchip");
+
   self->fd = -1;
 
   self->crtc_id = 0;
@@ -692,8 +728,18 @@ gst_kms_src_class_init (GstKmsSrcClass * klass)
   gstbase_src_class = GST_BASE_SRC_CLASS (klass);
   gstpush_src_class = GST_PUSH_SRC_CLASS (klass);
 
+  gobject_class->finalize = gst_kms_src_finalize;
   gobject_class->set_property = gst_kms_src_set_property;
   gobject_class->get_property = gst_kms_src_get_property;
+
+  g_object_class_install_property (gobject_class, PROP_DRIVER_NAME,
+      g_param_spec_string ("driver-name",
+      "device name", "DRM device driver name", NULL,
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT));
+
+  g_object_class_install_property (gobject_class, PROP_BUS_ID,
+      g_param_spec_string ("bus-id", "Bus ID", "DRM bus ID", NULL,
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT));
 
   g_object_class_install_property (gobject_class, PROP_CRTC_ID,
       g_param_spec_uint ("crtc-id", "DRM crtc ID",
