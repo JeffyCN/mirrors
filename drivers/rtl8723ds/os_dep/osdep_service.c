@@ -1280,7 +1280,7 @@ u32 _rtw_down_sema(_sema *sema)
 
 #ifdef PLATFORM_LINUX
 
-	if (down_interruptible(sema))
+	if (down_killable(sema))
 		return _FAIL;
 	else
 		return _SUCCESS;
