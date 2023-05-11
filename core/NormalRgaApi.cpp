@@ -1116,7 +1116,7 @@ static inline void NormalRgaCompatModeConvertRga2Rect(rga2_rect_t *clip, RECT *o
     clip->xmax = orig_clip->xmax;
     clip->ymax = orig_clip->ymax;
     clip->xmin = orig_clip->xmin;
-    clip->ymax = orig_clip->ymax;
+    clip->ymin = orig_clip->ymin;
 }
 
 static inline void NormalRgaCompatModeConvertRga2ColorFill(rga2_color_fill_t *color, COLOR_FILL *orig_color) {
