@@ -60,18 +60,9 @@ struct dma_heap_allocation_data {
 	__u64 heap_flags;
 };
 
-struct dma_heap_import_data {
-	__u64 len;
-	__u32 fd;
-	__u32 fd_flags;
-	__u64 heap_flags;
-};
-
 #define DMA_HEAP_IOC_MAGIC		'H'
 #define DMA_HEAP_IOCTL_ALLOC	_IOWR(DMA_HEAP_IOC_MAGIC, 0x0,\
 				      struct dma_heap_allocation_data)
-#define DMA_HEAP_IOCTL_IMPORT	_IOWR(DMA_HEAP_IOC_MAGIC, 0x1,\
-				      struct dma_heap_import_data)
 
 #define DMA_BUF_SYNC_READ      (1 << 0)
 #define DMA_BUF_SYNC_WRITE     (2 << 0)

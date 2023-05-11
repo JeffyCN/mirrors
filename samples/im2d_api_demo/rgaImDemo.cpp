@@ -699,8 +699,16 @@ int main(int argc, char*  argv[]) {
     sp<GraphicBuffer> gbuffer = reinterpret_cast<GraphicBuffer*>(dst_buf);
     if (gbuffer != NULL) {
         ret = gbuffer->lock(GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN, (void**)&outbuf);
+        if (ret != 0) {
+            printf("%s, %d, lock buffer failed!\n", __FUNCTION__, __LINE__);
+            return -1;
+        }
         output_buf_data_to_file(outbuf, dst.format, dst.wstride, dst.hstride, 0);
         ret = gbuffer->unlock();
+        if (ret != 0) {
+            printf("%s, %d, unlock buffer failed!\n", __FUNCTION__, __LINE__);
+            return -1;
+        }
     }
 
     AHardwareBuffer_Deinit(src_buf);
@@ -708,8 +716,16 @@ int main(int argc, char*  argv[]) {
 #else
     if (dst_buf != NULL) {
         ret = dst_buf->lock(GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN, (void**)&outbuf);
+        if (ret != 0) {
+            printf("%s, %d, lock buffer failed!\n", __FUNCTION__, __LINE__);
+            return -1;
+        }
         output_buf_data_to_file(outbuf, dst.format, dst.wstride, dst.hstride, 0);
         ret = dst_buf->unlock();
+        if (ret != 0) {
+            printf("%s, %d, unlock buffer failed!\n", __FUNCTION__, __LINE__);
+            return -1;
+        }
     }
 #endif
 #endif
