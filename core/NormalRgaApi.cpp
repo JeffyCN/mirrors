@@ -258,7 +258,7 @@ int NormalRgaGetMmuType(buffer_handle_t hnd, int *mmuType) {
         return ret;
     }
 
-    if (mmuType && dstAttrs.size() >= 5) {
+    if (dstAttrs.size() >= 5) {
 #ifdef ANDROID_8
         *mmuType = dstAttrs.at(ASIZE);
 #else
@@ -830,7 +830,7 @@ int NormalRgaMmuInfo(struct rga_req *msg,
 int NormalRgaMmuFlag(struct rga_req *msg,
                      int  src_mmu_en,   int  dst_mmu_en) {
     if (src_mmu_en || dst_mmu_en)
-        msg->mmu_info.mmu_flag |= (0x1 << 31);
+        msg->mmu_info.mmu_flag |= (0x1u << 31);
 
     if (src_mmu_en)
         msg->mmu_info.mmu_flag |= (0x1 << 8);
