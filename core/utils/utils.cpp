@@ -34,8 +34,6 @@ static int get_compatible_format(int format) {
 }
 
 int convert_to_rga_format(int ex_format) {
-    int fmt;
-
     if (is_drm_fourcc(ex_format))
         return get_format_from_drm_fourcc(ex_format);
 
