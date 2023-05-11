@@ -424,6 +424,10 @@ void freeBuffer(buffer_handle_t handle)
     auto ret = mapper.freeBuffer(buffer);
 
     auto error = (ret.isOk()) ? static_cast<Error>(ret) : kTransactionError;
+    if (error != Error::NONE)
+    {
+        ALOGE("freeBuffer(%p) failed: %d", handle, error);
+    }
 }
 
 status_t lock(buffer_handle_t bufferHandle,
@@ -466,7 +470,6 @@ void unlock(buffer_handle_t bufferHandle)
     auto &mapper = get_service();
     auto buffer = const_cast<native_handle_t*>(bufferHandle);
 
-    int releaseFence = -1;
     Error error;
     auto ret = mapper.unlock(buffer,
                              [&](const auto& tmpError, const auto& tmpReleaseFence)
@@ -482,9 +485,7 @@ void unlock(buffer_handle_t bufferHandle)
             ALOGE("got unexpected valid fd of release_fence : %d", fenceHandle->data[0]);
 
             int fd = dup(fenceHandle->data[0]);
-            if (fd >= 0) {
-                releaseFence = fd;
-            } else {
+            if (fd < 0) {
                 ALOGD("failed to dup unlock release fence");
                 sync_wait(fenceHandle->data[0], -1);
             }
