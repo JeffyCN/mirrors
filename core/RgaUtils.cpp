@@ -346,7 +346,6 @@ int get_buf_from_file(void *buf, int f, int sw, int sh, int index) {
 #endif
 
     char filePath[100];
-    int ret = 0;
 
     snprintf(filePath, 100, inputFilePath, index, sw, sh, translate_format_str(f));
 
@@ -372,9 +371,8 @@ int get_buf_from_file_FBC(void *buf, int f, int sw, int sh, int index) {
 
     char filePath[100];
     char fstring[30];
-    int ret = 0;
 
-    ret = get_string_by_format(fstring, f);
+    get_string_by_format(fstring, f);
     snprintf(filePath, 100, inputFilePath, index, sw, sh, fstring);
 
     FILE *file = fopen(filePath, "rb");
@@ -398,7 +396,6 @@ int output_buf_data_to_file(void *buf, int f, int sw, int sh, int index) {
 #endif
 
     char filePath[100];
-    int ret = 0;
 
     snprintf(filePath, 100, outputFilePath, index, sw, sh, translate_format_str(f));
 
@@ -425,9 +422,8 @@ int output_buf_data_to_file_FBC(void *buf, int f, int sw, int sh, int index) {
 
     char filePath[100];
     char fstring[30];
-    int ret = 0;
 
-    ret = get_string_by_format(fstring, f);
+    get_string_by_format(fstring, f);
     snprintf(filePath, 100, outputFilePath, index, sw, sh, fstring);
 
     FILE *file = fopen(filePath, "wb+");
