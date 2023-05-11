@@ -22,18 +22,6 @@
 
 #include "rga.h"
 
-enum format_colormodel
-{
-    rgb,
-    yuv,
-};
-
-struct table_entry
-{
-    uint32_t fourcc;
-    format_colormodel colormodel;
-};
-
 const static std::unordered_map<uint32_t, uint32_t> drm_fourcc_table = {
     { DRM_FORMAT_RGBA8888, RK_FORMAT_ABGR_8888 },
     { DRM_FORMAT_BGRA8888, RK_FORMAT_ARGB_8888 },
