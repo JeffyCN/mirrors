@@ -238,10 +238,9 @@ int RkRgaGetHandleFd(buffer_handle_t handle, int *fd) {
 #ifdef ANDROID_7_DRM
 
 #ifndef RK3368
-
-    int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD;
-    if (mAllocMod->perform)
-        mAllocMod->perform(mAllocMod, op, handle, fd);
+    if (mAllocMod->perform) {
+        mAllocMod->perform(mAllocMod, GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD, handle, fd);
+	}
     else
         return -ENODEV;
 #else

@@ -85,8 +85,7 @@ int         isRectValid(rga_rect_t rect);
 
 int         NormalRgaSetRect(rga_rect_t *rect, int x, int y,
                              int w, int h, int s, int f);
-void        NormalRgaSetLogOnceFlag(int log);
-void        NormalRgaSetAlwaysLogFlag(bool log);
+
 void        NormalRgaLogOutRgaReq(struct rga_req rgaReg);
 
 void        is_debug_log(void);
