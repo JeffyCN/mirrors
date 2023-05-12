@@ -108,6 +108,15 @@ enum
   PROP_LAST,
 };
 
+struct kmssrc_fb {
+  guint handles[4];
+  guint pitches[4];
+  guint offsets[4];
+  guint width;
+  guint height;
+  guint fourcc;
+};
+
 static void
 gst_kms_src_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
@@ -315,9 +324,10 @@ gst_kms_src_get_next_fb_id (GstKmsSrc * self)
   return 0;
 }
 
+#ifndef HAS_DRM_CLOSE_HANDLE
 /* From libdrm 2.4.109 : xf86drm.c */
 static int
-_drmCloseBufferHandle(int fd, uint32_t handle)
+drmCloseBufferHandle(int fd, uint32_t handle)
 {
   struct drm_gem_close args;
 
@@ -325,39 +335,32 @@ _drmCloseBufferHandle(int fd, uint32_t handle)
   args.handle = handle;
   return drmIoctl(fd, DRM_IOCTL_GEM_CLOSE, &args);
 }
+#endif
 
 static void
-gst_kms_src_free_fb (GstKmsSrc * self, drmModeFB2Ptr fb)
+gst_kms_src_free_fb (GstKmsSrc * self, struct kmssrc_fb * fb)
 {
   guint i;
 
   for (i = 0; i < 4; i++) {
     if (fb->handles[i])
-      _drmCloseBufferHandle (self->fd, fb->handles[i]);
+      drmCloseBufferHandle (self->fd, fb->handles[i]);
+
+    fb->handles[i] = 0;
   }
-  drmModeFreeFB2 (fb);
 }
 
-static drmModeFB2Ptr
-gst_kms_src_get_fb (GstKmsSrc * self, guint fb_id)
+static gboolean
+gst_kms_src_update_info (GstKmsSrc * self, struct kmssrc_fb * fb)
 {
   GstVideoInfo *info = &self->info;
   GstVideoFormat format;
-  drmModeFB2Ptr fb;
-  guint i, width, height, fourcc;
-
-  fb = drmModeGetFB2 (self->fd, fb_id);
-  if (!fb)
-    return NULL;
-
-  fourcc = fb->pixel_format;
-  width = fb->width;
-  height = fb->height;
+  guint i;
 
 #define KMSSRC_CASE_FOURCC(fourcc, gst) \
   case DRM_FORMAT_ ## fourcc: format = GST_VIDEO_FORMAT_ ## gst; break;
 
-  switch (fourcc) {
+  switch (fb->fourcc) {
     KMSSRC_CASE_FOURCC (ARGB8888, BGRA);
     KMSSRC_CASE_FOURCC (XRGB8888, BGRx);
     KMSSRC_CASE_FOURCC (ABGR8888, RGBA);
@@ -381,11 +384,11 @@ gst_kms_src_get_fb (GstKmsSrc * self, guint fb_id)
     KMSSRC_CASE_FOURCC (NV12_10, NV12_10LE40);
 #endif
   default:
-    GST_ERROR_OBJECT (self, "format not supported %x", fourcc);
-    goto err;
+    GST_ERROR_OBJECT (self, "format not supported %x", fb->fourcc);
+    return FALSE;
   }
 
-  gst_video_info_set_format (info, format, width, height);
+  gst_video_info_set_format (info, format, fb->width, fb->height);
 
   GST_VIDEO_INFO_SIZE (info) = 0;
   for (i = 0; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
@@ -396,48 +399,104 @@ gst_kms_src_get_fb (GstKmsSrc * self, guint fb_id)
         GST_VIDEO_INFO_PLANE_STRIDE (info, i),
         GST_VIDEO_INFO_PLANE_OFFSET (info, i));
 
-    GST_VIDEO_INFO_SIZE (info) += fb->pitches[i] * height;
+    GST_VIDEO_INFO_SIZE (info) += fb->pitches[i] * fb->height;
   }
   GST_DEBUG_OBJECT (self, "size %" G_GSIZE_FORMAT, GST_VIDEO_INFO_SIZE (info));
 
-  return fb;
-err:
-  gst_kms_src_free_fb (self, fb);
-  return NULL;
+  return TRUE;
+}
+
+static gboolean
+gst_kms_src_get_fb (GstKmsSrc * self, guint fb_id, struct kmssrc_fb * kmssrc_fb)
+{
+  drmModeFBPtr fb;
+#ifdef HAS_DRM_MODE_FB2
+  drmModeFB2Ptr fb2;
+  guint i;
+#endif
+
+  memset (kmssrc_fb, 0, sizeof (*kmssrc_fb));
+
+#ifdef HAS_DRM_MODE_FB2
+  fb2 = drmModeGetFB2 (self->fd, fb_id);
+  if (fb2) {
+    for (i = 0; i < 4; i++) {
+      kmssrc_fb->handles[i] = fb2->handles[i];
+      kmssrc_fb->pitches[i] = fb2->pitches[i];
+      kmssrc_fb->offsets[i] = fb2->offsets[i];
+    }
+    kmssrc_fb->fourcc = fb2->pixel_format;
+    kmssrc_fb->width = fb2->width;
+    kmssrc_fb->height = fb2->height;
+    drmModeFreeFB2 (fb2);
+    return TRUE;
+  }
+#endif
+
+  fb = drmModeGetFB (self->fd, fb_id);
+  if (!fb)
+    return FALSE;
+
+  kmssrc_fb->handles[0] = fb->handle;
+  kmssrc_fb->pitches[0] = fb->pitch;
+
+  switch (fb->bpp) {
+  case 32:
+    if (fb->depth == 32)
+      kmssrc_fb->fourcc = DRM_FORMAT_ARGB8888;
+    else
+      kmssrc_fb->fourcc = DRM_FORMAT_XRGB8888;
+    break;
+  case 16:
+    kmssrc_fb->fourcc = DRM_FORMAT_RGB565;
+    break;
+  default:
+    GST_ERROR_OBJECT (self, "FB format unsupported");
+    gst_kms_src_free_fb (self, kmssrc_fb);
+    drmModeFreeFB (fb);
+    return FALSE;
+  }
+
+  kmssrc_fb->width = fb->width;
+  kmssrc_fb->height = fb->height;
+  drmModeFreeFB (fb);
+  return TRUE;
 }
 
 static GstBuffer *
 gst_kms_src_import_drm_fb (GstKmsSrc * self, guint fb_id)
 {
   GstVideoInfo *info = &self->info;
-  GstBuffer *buf;
+  GstBuffer *buf = NULL;
   GstMemory *mem;
-  drmModeFB2Ptr fb;
+  struct kmssrc_fb fb;
   struct stat st[4];
   gint i, dmafd[4], size[4];
 
-  fb = gst_kms_src_get_fb (self, fb_id);
-  if (!fb) {
+  if (!gst_kms_src_get_fb (self, fb_id, &fb)) {
     GST_ERROR_OBJECT (self, "could not get DRM FB %d", fb_id);
     return NULL;
   }
+
+  if (!gst_kms_src_update_info (self, &fb))
+    goto err;
 
   buf = gst_buffer_new ();
   if (!buf)
     goto err;
 
   for (i = 0; i < 4; i++) {
-    if (!fb->handles[i])
+    if (!fb.handles[i])
       break;
 
-    size[i] = fb->pitches[i] * fb->height;
+    size[i] = fb.pitches[i] * fb.height;
 
     GST_DEBUG_OBJECT (self, "importing DRM handle %d(%d) for %dx%d",
-        fb->handles[i], i, fb->pitches[i], fb->height);
+        fb.handles[i], i, fb.pitches[i], fb.height);
 
-    if (drmPrimeHandleToFD (self->fd, fb->handles[i], DRM_CLOEXEC | DRM_RDWR,
+    if (drmPrimeHandleToFD (self->fd, fb.handles[i], DRM_CLOEXEC | DRM_RDWR,
           &dmafd[i]) < 0) {
-      GST_ERROR_OBJECT (self, "could not import DRM handle %d", fb->handles[i]);
+      GST_ERROR_OBJECT (self, "could not import DRM handle %d", fb.handles[i]);
       goto err;
     }
 
@@ -448,7 +507,7 @@ gst_kms_src_import_drm_fb (GstKmsSrc * self, guint fb_id)
       dmafd[i] = dmafd[i - 1];
 
       /* Check for contig planes */
-      if (fb->offsets[i] == fb->offsets[i - 1] + size[i - 1]) {
+      if (fb.offsets[i] == fb.offsets[i - 1] + size[i - 1]) {
         gsize mem_size, mem_offset;
 
         mem_size = gst_memory_get_sizes (mem, &mem_offset, NULL);
@@ -464,7 +523,7 @@ gst_kms_src_import_drm_fb (GstKmsSrc * self, guint fb_id)
       goto err;
     }
 
-    gst_memory_resize (mem, fb->offsets[i], size[i]);
+    gst_memory_resize (mem, fb.offsets[i], size[i]);
     gst_buffer_append_memory (buf, mem);
   }
 
@@ -473,13 +532,14 @@ gst_kms_src_import_drm_fb (GstKmsSrc * self, guint fb_id)
       GST_VIDEO_INFO_WIDTH (info), GST_VIDEO_INFO_HEIGHT (info),
       GST_VIDEO_INFO_N_PLANES (info), info->offset, info->stride);
 
-out:
-  gst_kms_src_free_fb (self, fb);
+  gst_kms_src_free_fb (self, &fb);
   return buf;
 err:
-  gst_buffer_unref (buf);
-  buf = NULL;
-  goto out;
+  if (buf)
+    gst_buffer_unref (buf);
+
+  gst_kms_src_free_fb (self, &fb);
+  return NULL;
 }
 
 static GstFlowReturn
@@ -558,18 +618,24 @@ gst_kms_src_get_caps (GstBaseSrc * basesrc, GstCaps * filter)
   GstKmsSrc *self = GST_KMS_SRC (basesrc);
   GstStructure *s;
   GstCaps *caps;
-  drmModeFB2Ptr fb;
+  struct kmssrc_fb fb;
   guint fb_id;
 
   fb_id = gst_kms_src_get_fb_id (self);
   if (!fb_id)
     return gst_pad_get_pad_template_caps (GST_BASE_SRC_PAD (basesrc));
 
-  fb = gst_kms_src_get_fb (self, fb_id);
-  if (!fb) {
+  if (!gst_kms_src_get_fb (self, fb_id, &fb)) {
     GST_ERROR_OBJECT (self, "could not get DRM FB %d", fb_id);
     return NULL;
   }
+
+  if (!gst_kms_src_update_info (self, &fb)) {
+    gst_kms_src_free_fb (self, &fb);
+    return NULL;
+  }
+
+  gst_kms_src_free_fb (self, &fb);
 
   caps = gst_video_info_to_caps (&self->info);
 
@@ -585,8 +651,6 @@ gst_kms_src_get_caps (GstBaseSrc * basesrc, GstCaps * filter)
     gst_caps_unref (caps);
     caps = intersection;
   }
-
-  gst_kms_src_free_fb (self, fb);
 
   s = gst_caps_get_structure (caps, 0);
   gst_structure_set (s, "framerate", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT,
