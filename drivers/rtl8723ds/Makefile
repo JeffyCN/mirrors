@@ -2341,6 +2341,8 @@ endif
 
 ifneq ($(KERNELRELEASE),)
 
+export CONFIG_RTL8723DS = m
+
 ########### this part for *.mk ############################
 include $(src)/hal/phydm/phydm.mk
 
