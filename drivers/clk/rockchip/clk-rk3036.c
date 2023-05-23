@@ -441,6 +441,7 @@ static struct rockchip_clk_branch rk3036_clk_branches[] __initdata = {
 };
 
 static const char *const rk3036_critical_clocks[] __initconst = {
+	"dpll",
 	"armclk",
 	"aclk_cpu",
 	"aclk_peri",
