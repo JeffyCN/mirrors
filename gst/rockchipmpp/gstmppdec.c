@@ -824,9 +824,11 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
   GstVideoCodecFrame *frame;
   GstBuffer *buffer;
   MppFrame mframe;
-  int mode;
+  int timeout, mode;
 
-  mframe = klass->poll_mpp_frame (decoder, MPP_OUTPUT_TIMEOUT_MS);
+  timeout = self->flushing ? MPP_TIMEOUT_NON_BLOCK : MPP_OUTPUT_TIMEOUT_MS;
+
+  mframe = klass->poll_mpp_frame (decoder, timeout);
   /* Likely due to timeout */
   if (!mframe)
     return;
