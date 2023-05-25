@@ -327,6 +327,22 @@ gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
 }
 #endif
 
+void
+gst_mpp_video_info_update_format (GstVideoInfo * info, GstVideoFormat format,
+    guint width, guint height)
+{
+  GstCaps *caps;
+  const gchar *fmt = gst_mpp_video_format_to_string (format);
+
+  GST_DEBUG ("update format to %s (%dx%d)", fmt, width, height);
+
+  caps = gst_video_info_to_caps (info);
+  gst_caps_set_simple (caps, "format", G_TYPE_STRING, fmt,
+      "width", G_TYPE_INT, width, "height", G_TYPE_INT, height, NULL);
+  gst_video_info_from_caps (info, caps);
+  gst_caps_unref (caps);
+}
+
 gboolean
 gst_mpp_video_info_align (GstVideoInfo * info, gint hstride, gint vstride)
 {

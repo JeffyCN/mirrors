@@ -647,8 +647,8 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
     if (gst_mpp_use_rga ())
       format = MPP_FMT_YUV420SP;
 
-    gst_video_info_set_format (info, gst_mpp_mpp_format_to_gst_format (format),
-        width, height);
+    gst_mpp_video_info_update_format (info,
+        gst_mpp_mpp_format_to_gst_format (format), width, height);
 
     if (!gst_mpp_enc_video_info_align (info))
       return FALSE;

@@ -87,6 +87,11 @@ gboolean gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
     GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation);
 #endif
 
+/* Apply new format and size without reinit the video info */
+void
+gst_mpp_video_info_update_format (GstVideoInfo * info, GstVideoFormat format,
+    guint width, guint height);
+
 gboolean gst_mpp_video_info_align (GstVideoInfo * info,
     gint hstride, gint vstride);
 

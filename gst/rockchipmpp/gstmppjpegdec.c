@@ -301,7 +301,7 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   }
 
   /* Original output buffer size calculation */
-  gst_video_info_set_format (info, src_format, width, height);
+  gst_mpp_video_info_update_format (info, src_format, width, height);
   if (!gst_mpp_video_info_align (info, 0, 0))
     return FALSE;
 

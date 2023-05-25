@@ -461,7 +461,7 @@ gst_mpp_dec_fixup_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
     format = GST_VIDEO_FORMAT_NV12;
 #endif
 
-  gst_video_info_set_format (info, format,
+  gst_mpp_video_info_update_format (info, format,
       self->width ? : width, self->height ? : height);
 }
 
