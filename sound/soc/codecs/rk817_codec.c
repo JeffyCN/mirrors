@@ -83,6 +83,7 @@ struct rk817_codec_priv {
 	bool pdmdata_out_enable;
 	bool use_ext_amplifier;
 	bool adc_for_loopback;
+	bool resume_path;
 
 	long int playback_path;
 	long int capture_path;
@@ -497,6 +498,8 @@ static const char * const rk817_call_path_mode[] = {
 
 static const char * const rk817_modem_input_mode[] = {"OFF", "ON"};
 
+static const char * const rk817_binary_mode[] = {"OFF", "ON"};
+
 static SOC_ENUM_SINGLE_DECL(rk817_playback_path_type,
 	0, 0, rk817_playback_path_mode);
 
@@ -508,6 +511,9 @@ static SOC_ENUM_SINGLE_DECL(rk817_call_path_type,
 
 static SOC_ENUM_SINGLE_DECL(rk817_modem_input_type,
 	0, 0, rk817_modem_input_mode);
+
+static SOC_ENUM_SINGLE_DECL(rk817_resume_path_type,
+	0, 0, rk817_binary_mode);
 
 static int rk817_playback_path_config(struct snd_soc_codec *codec,
 				      long pre_path, long target_path)
@@ -752,12 +758,39 @@ static int rk817_capture_path_put(struct snd_kcontrol *kcontrol,
 					 ucontrol->value.integer.value[0]);
 }
 
+static int rk817_resume_path_get(struct snd_kcontrol *kcontrol,
+				 struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
+	struct rk817_codec_priv *rk817 = snd_soc_codec_get_drvdata(codec);
+
+	DBG("%s : resume_path %d\n", __func__, rk817->resume_path);
+
+	ucontrol->value.integer.value[0] = rk817->resume_path;
+
+	return 0;
+}
+
+static int rk817_resume_path_put(struct snd_kcontrol *kcontrol,
+				 struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
+	struct rk817_codec_priv *rk817 = snd_soc_codec_get_drvdata(codec);
+
+	rk817->resume_path = ucontrol->value.integer.value[0];
+
+	return 0;
+}
+
 static struct snd_kcontrol_new rk817_snd_path_controls[] = {
 	SOC_ENUM_EXT("Playback Path", rk817_playback_path_type,
 		     rk817_playback_path_get, rk817_playback_path_put),
 
 	SOC_ENUM_EXT("Capture MIC Path", rk817_capture_path_type,
 		     rk817_capture_path_get, rk817_capture_path_put),
+
+	SOC_ENUM_EXT("Resume Path", rk817_resume_path_type,
+		     rk817_resume_path_get, rk817_resume_path_put),
 };
 
 static int rk817_set_dai_sysclk(struct snd_soc_dai *codec_dai,
@@ -1056,6 +1089,15 @@ static int rk817_suspend(struct snd_soc_codec *codec)
 
 static int rk817_resume(struct snd_soc_codec *codec)
 {
+	struct rk817_codec_priv *rk817 = snd_soc_codec_get_drvdata(codec);
+
+	if (rk817->resume_path) {
+		if (rk817->capture_path != MIC_OFF)
+			rk817_capture_path_config(codec, OFF, rk817->capture_path);
+		if (rk817->playback_path != OFF)
+			rk817_playback_path_config(codec, OFF, rk817->playback_path);
+	}
+
 	return 0;
 }
 
