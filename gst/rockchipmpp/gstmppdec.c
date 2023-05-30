@@ -246,6 +246,8 @@ gst_mpp_dec_start (GstVideoDecoder * decoder)
 
   GST_DEBUG_OBJECT (self, "starting");
 
+  gst_video_info_init (&self->info);
+
   self->allocator = gst_mpp_allocator_new ();
   if (!self->allocator)
     return FALSE;
