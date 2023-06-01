@@ -336,6 +336,11 @@ gst_mpp_video_info_update_format (GstVideoInfo * info, GstVideoFormat format,
 
   GST_DEBUG ("update format to %s (%dx%d)", fmt, width, height);
 
+  if (GST_VIDEO_INFO_FORMAT (info) == GST_VIDEO_FORMAT_UNKNOWN) {
+    gst_video_info_set_format (info, format, width, height);
+    return;
+  }
+
   caps = gst_video_info_to_caps (info);
   gst_caps_set_simple (caps, "format", G_TYPE_STRING, fmt,
       "width", G_TYPE_INT, width, "height", G_TYPE_INT, height, NULL);
