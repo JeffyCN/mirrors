@@ -722,6 +722,9 @@ struct dwc2_hregs_backup {
  *                      - USB_DR_MODE_PERIPHERAL
  *                      - USB_DR_MODE_HOST
  *                      - USB_DR_MODE_OTG
+ * @set_linestate:	set usb dp/dm linestate.
+ * @wait_enum_count	The count used for check_linestate_timer to wait
+ *                      enumeration done.
  * @hcd_enabled		Host mode sub-driver initialization indicator.
  * @gadget_enabled	Peripheral mode sub-driver initialization indicator.
  * @ll_hw_enabled	Status of low-level hardware resources.
@@ -747,6 +750,7 @@ struct dwc2_hregs_backup {
  *                      interrupt
  * @wkp_timer:          Timer object for handling Wakeup Detected interrupt
  * @rst_complete_timer  Timer object for a reset is detected on the USB
+ * @check_linestate_timer Timer used to check usb dp/dm linestate.
  * @lx_state:           Lx state of connected device
  * @gregs_backup: Backup of global registers during suspend
  * @dregs_backup: Backup of device registers during suspend
@@ -823,6 +827,8 @@ struct dwc2_hregs_backup {
  * @status_buf_dma:     DMA address for status_buf
  * @start_work:         Delayed work for handling host A-cable connection
  * @reset_work:         Delayed work for handling a port reset
+ * @hs_reset_work:      Delayed work for handling force DP high and DM low and
+ *                      do a port reset at the same time similar to hs reset.
  * @otg_port:           OTG port number
  * @frame_list:         Frame list
  * @frame_list_dma:     Frame list DMA address
@@ -861,6 +867,8 @@ struct dwc2_hsotg {
 	struct dwc2_core_params *core_params;
 	enum usb_otg_state op_state;
 	enum usb_dr_mode dr_mode;
+	enum usb_linestate set_linestate;
+	u8 wait_enum_count;
 	unsigned int hcd_enabled:1;
 	unsigned int gadget_enabled:1;
 	unsigned int ll_hw_enabled:1;
@@ -888,6 +896,7 @@ struct dwc2_hsotg {
 	struct work_struct wf_otg;
 	struct timer_list wkp_timer;
 	struct timer_list rst_complete_timer;
+	struct hrtimer check_linestate_timer;
 	enum dwc2_lx_state lx_state;
 	struct dwc2_gregs_backup gr_backup;
 	struct dwc2_dregs_backup dr_backup;
@@ -957,6 +966,7 @@ struct dwc2_hsotg {
 
 	struct delayed_work start_work;
 	struct delayed_work reset_work;
+	struct delayed_work hs_reset_work;
 	u8 otg_port;
 	u32 *frame_list;
 	dma_addr_t frame_list_dma;

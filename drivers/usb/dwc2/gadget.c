@@ -31,6 +31,7 @@
 #include <linux/usb/ch9.h>
 #include <linux/usb/gadget.h>
 #include <linux/usb/phy.h>
+#include <linux/rockchip/cpu.h>
 
 #include "core.h"
 #include "hw.h"
@@ -2531,8 +2532,17 @@ static void dwc2_hsotg_irq_enumdone(struct dwc2_hsotg *hsotg)
 		 */
 		break;
 	}
-	dev_info(hsotg->dev, "new device is %s\n",
-		 usb_speed_string(hsotg->gadget.speed));
+
+	if ((hsotg->set_linestate != PHY_SET_USB_NONE) &&
+	    (hsotg->gadget.speed == USB_SPEED_FULL)) {
+		dev_dbg(hsotg->dev, "EnumDone FS in linestate %d\n",
+			hsotg->set_linestate);
+		hsotg->gadget.speed = USB_SPEED_UNKNOWN;
+		goto out;
+	} else {
+		dev_dbg(hsotg->dev, "new device is %s\n",
+			usb_speed_string(hsotg->gadget.speed));
+	}
 
 	/*
 	 * we should now know the maximum packet size for an
@@ -2556,6 +2566,7 @@ static void dwc2_hsotg_irq_enumdone(struct dwc2_hsotg *hsotg)
 
 	dwc2_hsotg_enqueue_setup(hsotg);
 
+out:
 	dev_dbg(hsotg->dev, "EP0: DIEPCTL0=0x%08x, DOEPCTL0=0x%08x\n",
 		dwc2_readl(hsotg->regs + DIEPCTL0),
 		dwc2_readl(hsotg->regs + DOEPCTL0));
@@ -2622,6 +2633,7 @@ void dwc2_hsotg_disconnect(struct dwc2_hsotg *hsotg)
 
 	call_gadget(hsotg, disconnect);
 	hsotg->lx_state = DWC2_L3;
+	hsotg->gadget.speed = USB_SPEED_UNKNOWN;
 
 	usb_gadget_set_state(&hsotg->gadget, USB_STATE_NOTATTACHED);
 }
@@ -2826,8 +2838,20 @@ static void dwc2_hsotg_core_disconnect(struct dwc2_hsotg *hsotg)
 
 void dwc2_hsotg_core_connect(struct dwc2_hsotg *hsotg)
 {
+	ktime_t delay;
+
 	/* remove the soft-disconnect and let's go */
 	__bic32(hsotg->regs + DCTL, DCTL_SFTDISCON);
+
+	if (usb_linestate_is_enabled()) {
+		/* Disable software to own the fs transceiver */
+		phy_set_linestate(hsotg->phy, PHY_SET_USB_DONE);
+		hsotg->set_linestate = PHY_SET_USB_NONE;
+		hsotg->wait_enum_count = 0;
+		delay = ktime_set(0, 5 * NSEC_PER_MSEC);
+		hrtimer_start(&hsotg->check_linestate_timer, delay,
+			      HRTIMER_MODE_REL);
+	}
 }
 
 /**
@@ -4019,6 +4043,152 @@ static void dwc2_wait_reset_watchdog(unsigned long data)
 	spin_unlock_irqrestore(&hsotg->lock, flags);
 }
 
+#define DM_IS_HIGH			0x2
+#define DP_DM_IS_HIGH			0x3
+#define RETRY_CNT			20
+#define DWC2_HRTIMER_WAIT_SE0		(5 * NSEC_PER_MSEC)
+#define DWC2_HRTIMER_LS_RESUME		(10 * NSEC_PER_MSEC)
+#define DWC2_HRTIMER_DIS		(15 * NSEC_PER_MSEC)
+#define DWC2_HRTIMER_FORCE_DP_H(ms)	(ms * NSEC_PER_MSEC)
+#define DWC2_HRTIMER_POLL		(2000 * NSEC_PER_MSEC)
+
+static enum hrtimer_restart dwc2_check_linestate_timer_fn(struct hrtimer *t)
+{
+	enum hrtimer_restart ret;
+	struct dwc2_hsotg *hsotg = container_of(t, struct dwc2_hsotg,
+						check_linestate_timer);
+	int linestate, enum_speed, max_speed;
+	ktime_t delay;
+	u32 dsts, dcfg, dctl;
+	static int retry = RETRY_CNT;
+	static unsigned long wait_conn_delay = DWC2_HRTIMER_FORCE_DP_H(100);
+
+	if (!dwc2_is_device_mode(hsotg)) {
+		dev_dbg(hsotg->dev, "currently in Host mode, do nothing in device hrtimer\n");
+		return HRTIMER_NORESTART;
+	}
+
+	dsts = dwc2_readl(hsotg->regs + DSTS);
+	dcfg = dwc2_readl(hsotg->regs + DCFG);
+	dctl = dwc2_readl(hsotg->regs + DCTL);
+	enum_speed = (dsts & DSTS_ENUMSPD_MASK) >> DSTS_ENUMSPD_SHIFT;
+	max_speed = (dcfg & DCFG_DEVSPD_MASK) >> DCFG_DEVSPD_SHIFT;
+
+	switch (hsotg->set_linestate) {
+	case PHY_SET_USB_NONE:
+		linestate = phy_get_linestate(hsotg->phy);
+		dev_dbg(hsotg->dev, "linestate 0x%08x dsts 0x%08x, dcfg 0x%08x\n",
+			linestate, dsts, dcfg);
+		if ((!(dctl & DCTL_SFTDISCON)) &&
+		    (max_speed == DCFG_DEVSPD_HS) &&
+		    ((enum_speed != DSTS_ENUMSPD_HS) ||
+		     (linestate == DP_DM_IS_HIGH))) {
+			if (((linestate & DM_IS_HIGH) && (!hsotg->connected)) ||
+			    (hsotg->wait_enum_count >= 2)) {
+				pr_warn_once("usb linestate error!\n");
+				phy_set_linestate(hsotg->phy,
+						  PHY_SET_USB_DP_H_DM_L);
+				hsotg->set_linestate = PHY_SET_USB_DP_H_DM_L;
+				hsotg->wait_enum_count = 0;
+				retry = RETRY_CNT;
+				wait_conn_delay = DWC2_HRTIMER_FORCE_DP_H(100);
+				delay = ktime_set(0, DWC2_HRTIMER_LS_RESUME);
+			} else if (!(linestate & DM_IS_HIGH) &&
+				   (!hsotg->connected) &&
+				   (hsotg->gadget.speed != USB_SPEED_UNKNOWN)) {
+				/* Maybe DM Voltage in unexpected high level */
+				pr_warn_once("Maybe DM Volt in high level\n");
+				hsotg->wait_enum_count++;
+				delay = ktime_set(0, DWC2_HRTIMER_POLL);
+			} else {
+				delay = ktime_set(0, DWC2_HRTIMER_POLL);
+			}
+		} else {
+			delay = ktime_set(0, DWC2_HRTIMER_POLL);
+		}
+
+		break;
+	case PHY_SET_USB_DP_H_DM_L:
+		phy_set_linestate(hsotg->phy, PHY_SET_USB_DISC);
+		hsotg->set_linestate = PHY_SET_USB_DISC;
+		/*
+		 * Delay at least 15ms to wait phy hardware to
+		 * complete the operation that remove 1.5K DP
+		 * pullup and enable 45ohm pulldown on DP/DM.
+		 */
+		delay = ktime_set(0, DWC2_HRTIMER_DIS);
+		break;
+	case PHY_SET_USB_DISC:
+		phy_set_linestate(hsotg->phy, PHY_SET_USB_CONNECT);
+		hsotg->set_linestate = PHY_SET_USB_CONNECT;
+		delay = ktime_set(0, wait_conn_delay);
+		break;
+	case PHY_SET_USB_CONNECT:
+		if (retry--) {
+			phy_set_linestate(hsotg->phy, PHY_SET_USB_DONE);
+			linestate = phy_get_linestate(hsotg->phy);
+			if ((linestate & DP_DM_IS_HIGH)) {
+				phy_set_linestate(hsotg->phy,
+						  PHY_SET_USB_DP_H_DM_L);
+				hsotg->set_linestate = PHY_SET_USB_CONNECT;
+				delay = ktime_set(0, DWC2_HRTIMER_WAIT_SE0);
+				goto restart;
+			} else {
+				dev_dbg(hsotg->dev, "rcv se0 at retry %d delay %ld\n",
+					retry, wait_conn_delay);
+			}
+		} else {
+			dev_dbg(hsotg->dev, "retry timeout at delay %ld\n",
+				wait_conn_delay);
+
+			switch (wait_conn_delay) {
+			case DWC2_HRTIMER_FORCE_DP_H(100):
+				wait_conn_delay = DWC2_HRTIMER_FORCE_DP_H(105);
+				break;
+			case DWC2_HRTIMER_FORCE_DP_H(105):
+				wait_conn_delay = DWC2_HRTIMER_FORCE_DP_H(150);
+				break;
+			case DWC2_HRTIMER_FORCE_DP_H(150):
+				wait_conn_delay = DWC2_HRTIMER_FORCE_DP_H(200);
+				break;
+			case DWC2_HRTIMER_FORCE_DP_H(200):
+				wait_conn_delay = DWC2_HRTIMER_FORCE_DP_H(300);
+				break;
+			case DWC2_HRTIMER_FORCE_DP_H(300):
+				wait_conn_delay = DWC2_HRTIMER_FORCE_DP_H(100);
+				break;
+			default:
+				wait_conn_delay = DWC2_HRTIMER_FORCE_DP_H(100);
+				break;
+			}
+
+			if (wait_conn_delay != DWC2_HRTIMER_FORCE_DP_H(100)) {
+				retry = RETRY_CNT;
+				phy_set_linestate(hsotg->phy,
+						  PHY_SET_USB_DP_H_DM_L);
+				hsotg->set_linestate = PHY_SET_USB_DISC;
+				dev_dbg(hsotg->dev, "retry at delay %ld\n",
+					wait_conn_delay);
+				delay = ktime_set(0, DWC2_HRTIMER_WAIT_SE0);
+				goto restart;
+			}
+		}
+
+		phy_set_linestate(hsotg->phy, PHY_SET_USB_DONE);
+		hsotg->set_linestate = PHY_SET_USB_NONE;
+		delay = ktime_set(0, DWC2_HRTIMER_POLL);
+		break;
+	default:
+		delay = ktime_set(0, DWC2_HRTIMER_POLL);
+		break;
+	}
+
+restart:
+	hrtimer_forward_now(&hsotg->check_linestate_timer, delay);
+	ret = HRTIMER_RESTART;
+	return ret;
+}
+
 /**
  * dwc2_hsotg_dump - dump state of the udc
  * @param: The device state
@@ -4224,6 +4394,11 @@ int dwc2_gadget_init(struct dwc2_hsotg *hsotg, int irq)
 	setup_timer(&hsotg->rst_complete_timer, dwc2_wait_reset_watchdog,
 		    (unsigned long)hsotg);
 
+	hrtimer_init(&hsotg->check_linestate_timer,
+		     CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	hsotg->check_linestate_timer.function = &dwc2_check_linestate_timer_fn;
+	hsotg->wait_enum_count = 0;
+
 	ret = usb_add_gadget_udc(dev, &hsotg->gadget);
 	if (ret) {
 		dwc2_hsotg_ep_free_request(&hsotg->eps_out[0]->ep,
@@ -4244,6 +4419,8 @@ int dwc2_hsotg_remove(struct dwc2_hsotg *hsotg)
 	usb_del_gadget_udc(&hsotg->gadget);
 	dwc2_hsotg_ep_free_request(&hsotg->eps_out[0]->ep, hsotg->ctrl_req);
 	del_timer_sync(&hsotg->rst_complete_timer);
+	if (usb_linestate_is_enabled())
+		hrtimer_cancel(&hsotg->check_linestate_timer);
 
 	return 0;
 }

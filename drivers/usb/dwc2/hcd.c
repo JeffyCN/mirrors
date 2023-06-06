@@ -51,9 +51,11 @@
 
 #include <linux/usb/hcd.h>
 #include <linux/usb/ch11.h>
+#include <linux/rockchip/cpu.h>
 
 #include "core.h"
 #include "hcd.h"
+#include "../core/hub.h"
 
 static void dwc2_port_resume(struct dwc2_hsotg *hsotg);
 
@@ -3513,6 +3515,7 @@ static int dwc2_hcd_hub_control(struct dwc2_hsotg *hsotg, u16 typereq,
 				u16 wvalue, u16 windex, char *buf, u16 wlength)
 {
 	struct usb_hub_descriptor *hub_desc;
+	struct usb_hcd *hcd = dwc2_hsotg_to_hcd(hsotg);
 	int retval = 0;
 	u32 hprt0;
 	u32 port_status;
@@ -3750,7 +3753,8 @@ static int dwc2_hcd_hub_control(struct dwc2_hsotg *hsotg, u16 typereq,
 		if (wvalue != USB_PORT_FEAT_TEST && (!windex || windex > 1))
 			goto error;
 
-		if (!hsotg->flags.b.port_connect_status) {
+		if (!hsotg->flags.b.port_connect_status &&
+		    (!HCD_POWER_ON(hcd))) {
 			/*
 			 * The port is disconnected, which means the core is
 			 * either in device mode or it soon will be. Just
@@ -3777,6 +3781,7 @@ static int dwc2_hcd_hub_control(struct dwc2_hsotg *hsotg, u16 typereq,
 			pwr = hprt0 & HPRT0_PWR;
 			hprt0 |= HPRT0_PWR;
 			dwc2_writel(hprt0, hsotg->regs + HPRT0);
+			clear_bit(HCD_FLAG_POWER_ON, &hcd->flags);
 			if (!pwr)
 				dwc2_vbus_supply_init(hsotg);
 			break;
@@ -4433,6 +4438,77 @@ static void dwc2_hcd_reset_func(struct work_struct *work)
 }
 
 /*
+ * High speed reset work queue function
+ */
+static void _dwc2_hcd_hs_reset_work(struct work_struct *work)
+{
+	struct dwc2_hsotg *hsotg = container_of(work, struct dwc2_hsotg,
+						hs_reset_work.work);
+	struct usb_device *rhdev;
+	struct usb_hub *hub;
+	struct usb_hcd *hcd;
+	u32 hprt0, speed;
+	int i;
+
+	if (dwc2_is_device_mode(hsotg))
+		return;
+
+	hcd = dwc2_hsotg_to_hcd(hsotg);
+	if (!hcd) {
+		dev_err(hsotg->dev, "%s: hcd is NULL\n", __func__);
+		return;
+	}
+
+	rhdev = hcd->self.root_hub;
+	hub = usb_hub_to_struct_hub(rhdev);
+
+	for (i = 0; i < rhdev->maxchild; i++) {
+		if ((hub->ports[i]->child) &&
+		    ((hub->ports[i]->child->state) >= USB_STATE_CONFIGURED))
+			return;
+	}
+
+	pr_warn_once("%s start hs handshake\n", __func__);
+	dwc2_disable_host_interrupts(hsotg);
+
+	/* Force both DP and DM low to trigger disconnect */
+	phy_set_linestate(hsotg->phy, PHY_SET_USB_DISC);
+	usleep_range(10000, 11000);
+
+	/* Force DP high and DM low likes high speed connecting */
+	phy_set_linestate(hsotg->phy, PHY_SET_USB_DP_H_DM_L);
+	usleep_range(10000, 11000);
+
+	/* Put port in rest */
+	hprt0 = dwc2_read_hprt0(hsotg);
+	hprt0 &= ~HPRT0_SUSP;
+	hprt0 |= HPRT0_PWR | HPRT0_RST;
+	dwc2_writel(hprt0, hsotg->regs + HPRT0);
+
+	/* Clear reset bit in 50ms (HS) */
+	msleep(50);
+	hprt0 &= ~HPRT0_RST;
+	dwc2_writel(hprt0, hsotg->regs + HPRT0);
+
+	/* Check the device attached or not */
+	hprt0 = dwc2_read_hprt0(hsotg);
+	dev_dbg(hsotg->dev, "after reset, hprt0=%08x\n", hprt0);
+	speed = (hprt0 & HPRT0_SPD_MASK) >> HPRT0_SPD_SHIFT;
+
+	if ((hprt0 & HPRT0_CONNSTS) && (speed == HPRT0_SPD_HIGH_SPEED)) {
+		dev_dbg(hsotg->dev, "hs device is present\n");
+		dwc2_hcd_connect(hsotg);
+	} else {
+		dev_dbg(hsotg->dev, "no device is present\n");
+	}
+
+	/* Reset is done, disable software to set DP and DM voltage */
+	phy_set_linestate(hsotg->phy, PHY_SET_USB_DONE);
+
+	dwc2_enable_host_interrupts(hsotg);
+}
+
+/*
  * =========================================================================
  *  Linux HC Driver Functions
  * =========================================================================
@@ -5024,6 +5100,7 @@ static irqreturn_t _dwc2_hcd_irq(struct usb_hcd *hcd)
 	return dwc2_handle_hcd_intr(hsotg);
 }
 
+#define DWC2_HS_RST_SCHED_DELAY	(5 * HZ)
 /*
  * Creates Status Change bitmap for the root hub and root port. The bitmap is
  * returned in buf. Bit 0 is the status change indicator for the root hub. Bit 1
@@ -5033,6 +5110,30 @@ static irqreturn_t _dwc2_hcd_irq(struct usb_hcd *hcd)
 static int _dwc2_hcd_hub_status_data(struct usb_hcd *hcd, char *buf)
 {
 	struct dwc2_hsotg *hsotg = dwc2_hcd_to_hsotg(hcd);
+	struct usb_device *rhdev;
+	struct usb_hub *hub;
+	int linestate, i;
+	bool sch_work = true;
+
+	if (dwc2_is_host_mode(hsotg) && usb_linestate_is_enabled()) {
+		linestate = phy_get_linestate(hsotg->phy);
+
+		if ((linestate & 0x3) != 0) {
+			rhdev = hcd->self.root_hub;
+			hub = usb_hub_to_struct_hub(rhdev);
+
+			for (i = 0; i < rhdev->maxchild; i++) {
+				if (hub->ports[i]->child &&
+				    (hub->ports[i]->child->state >=
+				     USB_STATE_CONFIGURED))
+					sch_work = false;
+			}
+
+			if (sch_work)
+				schedule_delayed_work(&hsotg->hs_reset_work,
+						      DWC2_HS_RST_SCHED_DELAY);
+		}
+	}
 
 	buf[0] = dwc2_hcd_is_status_changed(hsotg, 1) << 1;
 	return buf[0] != 0;
@@ -5158,6 +5259,8 @@ static void dwc2_hcd_free(struct dwc2_hsotg *hsotg)
 			flush_workqueue(hsotg->wq_otg);
 		destroy_workqueue(hsotg->wq_otg);
 	}
+
+	cancel_delayed_work_sync(&hsotg->hs_reset_work);
 
 	del_timer(&hsotg->wkp_timer);
 }
@@ -5301,6 +5404,9 @@ int dwc2_hcd_init(struct dwc2_hsotg *hsotg, int irq)
 
 	/* Initialize port reset work */
 	INIT_DELAYED_WORK(&hsotg->reset_work, dwc2_hcd_reset_func);
+
+	/* Initialize high speed reset work */
+	INIT_DELAYED_WORK(&hsotg->hs_reset_work, _dwc2_hcd_hs_reset_work);
 
 	/*
 	 * Allocate space for storing data on status transactions. Normally no
