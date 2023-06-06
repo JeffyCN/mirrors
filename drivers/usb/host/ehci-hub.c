@@ -28,6 +28,9 @@
 
 /*-------------------------------------------------------------------------*/
 #include <linux/usb/otg.h>
+#include <linux/rockchip/cpu.h>
+#include <linux/usb/of.h>
+#include "../core/hub.h"
 
 #define	PORT_WAKE_BITS	(PORT_WKOC_E|PORT_WKDISC_E|PORT_WKCONN_E)
 
@@ -149,7 +152,8 @@ static int ehci_port_change(struct ehci_hcd *ehci)
 	 */
 
 	while (i--)
-		if (ehci_readl(ehci, &ehci->regs->port_status[i]) & PORT_CSC)
+		if (ehci->port_connect_status_change ||
+		    (ehci_readl(ehci, &ehci->regs->port_status[i]) & PORT_CSC))
 			return 1;
 
 	return 0;
@@ -195,7 +199,7 @@ void ehci_adjust_port_wakeup_flags(struct ehci_hcd *ehci,
 		 * If we are resuming the controller, set the wakeup flags.
 		 */
 		if (!suspending) {
-			if (t1 & PORT_CONNECT)
+			if ((t1 & PORT_CONNECT) || ehci->port_connect_status)
 				t2 |= PORT_WKOC_E | PORT_WKDISC_E;
 			else
 				t2 |= PORT_WKOC_E | PORT_WKCONN_E;
@@ -285,7 +289,7 @@ static int ehci_bus_suspend (struct usb_hcd *hcd)
 			 * condition happens here(connection change during bits
 			 * set), the port change detection will finally fix it.
 			 */
-			if (t1 & PORT_CONNECT)
+			if ((t1 & PORT_CONNECT) || ehci->port_connect_status)
 				t2 |= PORT_WKOC_E | PORT_WKDISC_E;
 			else
 				t2 |= PORT_WKOC_E | PORT_WKCONN_E;
@@ -604,6 +608,63 @@ static int check_reset_complete (
 
 /*-------------------------------------------------------------------------*/
 
+#define EHCI_HS_RESET_SCHED_DELAY	(5 * HZ)
+static void ehci_check_port_status(struct usb_hcd *hcd)
+{
+	struct ehci_hcd		*ehci = hcd_to_ehci(hcd);
+	struct usb_device	*rhdev;
+	struct usb_hub		*hub;
+	struct usb_hcd		*companion_hcd = NULL;
+	struct device		*dev;
+	struct device		*companion_dev;
+	bool			sch_work = true;
+	u32			temp;
+	int			i;
+
+	temp = ehci_readl(ehci, &ehci->regs->port_status[0]);
+
+	if ((temp & (3 << 10)) != 0) {
+		rhdev = hcd->self.root_hub;
+		hub = usb_hub_to_struct_hub(rhdev);
+
+		/* check if ehci root hub has configured child */
+		for (i = 0; i < rhdev->maxchild; i++) {
+			if (hub->ports[i]->child &&
+			    (hub->ports[i]->child->state >=
+			     USB_STATE_CONFIGURED))
+				sch_work = false;
+		}
+
+		/* check if ohci root hub has configured child */
+		if (temp & PORT_OWNER) {
+			dev = hcd->self.controller;
+			companion_dev = usb_of_get_companion_dev(dev);
+			if (companion_dev) {
+				companion_hcd = dev_get_drvdata(companion_dev);
+				put_device(companion_dev);
+			}
+
+			if (companion_hcd) {
+				rhdev = companion_hcd->self.root_hub;
+				hub = usb_hub_to_struct_hub(rhdev);
+
+				for (i = 0; i < rhdev->maxchild; i++) {
+					if (hub->ports[i]->child &&
+					    (hub->ports[i]->child->state >=
+					     USB_STATE_CONFIGURED))
+						sch_work = false;
+				}
+			}
+		}
+
+		if (sch_work) {
+			ehci->port_connect_status = 0;
+			ehci_dbg(ehci, "%s: portsc=%04x\n", __func__, temp);
+			schedule_delayed_work(&ehci->hs_reset_work,
+					      EHCI_HS_RESET_SCHED_DELAY);
+		}
+	}
+}
 
 /* build "status change" packet (one or two bytes) from HC registers */
 
@@ -651,6 +712,9 @@ ehci_hub_status_data (struct usb_hcd *hcd, char *buf)
 	if (ehci->has_ppcd)
 		ppcd = ehci_readl(ehci, &ehci->regs->status) >> 16;
 
+	if (usb_linestate_is_enabled())
+		ehci_check_port_status(hcd);
+
 	for (i = 0; i < ports; i++) {
 		/* leverage per-port change bits feature */
 		if (ppcd & (1 << i))
@@ -666,6 +730,7 @@ ehci_hub_status_data (struct usb_hcd *hcd, char *buf)
 		 */
 
 		if ((temp & mask) != 0 || test_bit(i, &ehci->port_c_suspend)
+				|| ehci->port_connect_status_change
 				|| (ehci->reset_done[i] && time_after_eq(
 					jiffies, ehci->reset_done[i]))) {
 			if (i < 7)
@@ -963,6 +1028,7 @@ int ehci_hub_control(
 			}
 			break;
 		case USB_PORT_FEAT_C_CONNECTION:
+			ehci->port_connect_status_change = 0;
 			ehci_writel(ehci, temp | PORT_CSC, status_reg);
 			break;
 		case USB_PORT_FEAT_C_OVER_CURRENT:
@@ -993,7 +1059,7 @@ int ehci_hub_control(
 		temp = ehci_readl(ehci, status_reg);
 
 		// wPortChange bits
-		if (temp & PORT_CSC)
+		if ((temp & PORT_CSC) || ehci->port_connect_status_change)
 			status |= USB_PORT_STAT_C_CONNECTION << 16;
 		if (temp & PORT_PEC)
 			status |= USB_PORT_STAT_C_ENABLE << 16;
@@ -1096,7 +1162,7 @@ int ehci_hub_control(
 		 * for PORT_POWER anyway).
 		 */
 
-		if (temp & PORT_CONNECT) {
+		if ((temp & PORT_CONNECT) || ehci->port_connect_status) {
 			status |= USB_PORT_STAT_CONNECTION;
 			// status may be from integrated TT
 			if (ehci->has_hostpc) {

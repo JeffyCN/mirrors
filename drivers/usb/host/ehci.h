@@ -127,6 +127,7 @@ struct ehci_hcd {			/* one per controller */
 	unsigned		enabled_hrtimer_events;
 	ktime_t			hr_timeouts[EHCI_HRTIMER_NUM_EVENTS];
 	struct hrtimer		hrtimer;
+	struct delayed_work	hs_reset_work;	/* Port reset for HS device */
 
 	int			PSS_poll_count;
 	int			ASS_poll_count;
@@ -231,6 +232,8 @@ struct ehci_hcd {			/* one per controller */
 	unsigned		need_oc_pp_cycle:1; /* MPC834X port power */
 	unsigned		imx28_write_fix:1; /* For Freescale i.MX28 */
 	unsigned		has_usic:1;
+	unsigned		port_connect_status_change:1;
+	unsigned		port_connect_status:1;
 	#define	USIC_MICROFRAME_OFFSET	0x90
 	#define USIC_SCALE_DOWN_OFFSET	0xa0
 	#define USIC_ENABLE_OFFSET	0xb0

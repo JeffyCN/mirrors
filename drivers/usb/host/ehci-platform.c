@@ -35,12 +35,15 @@
 #include <linux/usb.h>
 #include <linux/usb/hcd.h>
 #include <linux/usb/ehci_pdriver.h>
+#include <linux/usb/of.h>
 
 #include "ehci.h"
+#include "../core/hub.h"
 
 #define DRIVER_DESC "EHCI generic platform driver"
 #define EHCI_MAX_CLKS 3
 #define hcd_to_ehci_priv(h) ((struct ehci_platform_priv *)hcd_to_ehci(h)->priv)
+#define EHCI_INTR_MASK (STS_IAA | STS_FATAL | STS_PCD | STS_ERR | STS_INT)
 
 struct ehci_platform_priv {
 	struct clk *clks[EHCI_MAX_CLKS];
@@ -154,6 +157,156 @@ static void ehci_platform_power_off(struct platform_device *dev)
 			clk_disable_unprepare(priv->clks[clk]);
 }
 
+static void ehci_hs_reset_work(struct work_struct *work)
+{
+	struct ehci_hcd *ehci;
+	struct usb_hcd *hcd;
+	struct usb_device *rhdev;
+	struct usb_hub *hub;
+	struct usb_hcd *companion_hcd = NULL;
+	struct device *dev;
+	struct device *companion_dev;
+	u32 __iomem *status_reg;
+	u32 temp;
+	int i, ret;
+
+	ehci = container_of(work, struct ehci_hcd, hs_reset_work.work);
+	hcd = ehci_to_hcd(ehci);
+
+	if (!hcd) {
+		ehci_err(ehci, "%s: hcd is NULL\n", __func__);
+		return;
+	}
+
+	rhdev = hcd->self.root_hub;
+	if (!rhdev) {
+		ehci_err(ehci, "%s: rhdev is NULL\n", __func__);
+		return;
+	}
+
+	hub = usb_hub_to_struct_hub(rhdev);
+
+	/* check if ehci root hub has configured child */
+	for (i = 0; i < rhdev->maxchild; i++) {
+		if (hub->ports[i]->child &&
+		    (hub->ports[i]->child->state >= USB_STATE_CONFIGURED))
+			return;
+	}
+
+	status_reg = &ehci->regs->port_status[0];
+	temp = ehci_readl(ehci, status_reg);
+
+	/* check if ohci root hub has configured child */
+	if (temp & PORT_OWNER) {
+		dev = hcd->self.controller;
+		companion_dev = usb_of_get_companion_dev(dev);
+		if (companion_dev) {
+			companion_hcd = dev_get_drvdata(companion_dev);
+			put_device(companion_dev);
+		}
+
+		if (companion_hcd) {
+			rhdev = companion_hcd->self.root_hub;
+			hub = usb_hub_to_struct_hub(rhdev);
+
+			for (i = 0; i < rhdev->maxchild; i++) {
+				if (hub->ports[i]->child &&
+				    (hub->ports[i]->child->state >=
+				     USB_STATE_CONFIGURED))
+					return;
+			}
+		}
+	}
+
+	pr_warn_once("%s start hs handshake\n", __func__);
+
+	/* Force DP high and DM low */
+	temp = ehci_readl(ehci, status_reg);
+	ehci_dbg(ehci, "before set J_STATE, portsc=0x%08x\n", temp);
+	if (temp & PORT_OWNER)
+		ehci_writel(ehci, temp & ~PORT_OWNER, status_reg);
+	temp &= ~PORT_TEST(0xf);
+	temp |= PORT_TEST(0x1); /* Test J_STATE */
+	ehci_writel(ehci, temp, status_reg);
+	ehci_readl(ehci, status_reg);
+
+	phy_set_linestate(hcd->phy, PHY_SET_USB_FS_ENC_DIS);
+	usleep_range(10000, 11000);
+
+	/* ehci halt */
+	ehci_writel(ehci, 0, &ehci->regs->intr_enable);
+	ehci->command &= ~CMD_RUN;
+	temp = ehci_readl(ehci, &ehci->regs->command);
+	temp &= ~(CMD_RUN | CMD_IAAD);
+	ehci_writel(ehci, temp, &ehci->regs->command);
+
+	ret = ehci_handshake(ehci, &ehci->regs->status,
+			  STS_HALT, STS_HALT, 16 * 125);
+	if (ret) {
+		ehci_err(ehci, "wait halt timeout\n");
+		return;
+	}
+
+	/* ehci reset */
+	ret = ehci_reset(ehci);
+	if (ret) {
+		ehci_err(ehci, "wait reset complete timeout\n");
+		return;
+	}
+
+	ehci_writel(ehci, ehci->command, &ehci->regs->command);
+	ehci_writel(ehci, FLAG_CF, &ehci->regs->configured_flag);
+	ehci_readl(ehci, &ehci->regs->command); /* unblock posted writes */
+
+	/* re-init operational registers */
+	ehci_writel(ehci, 0, &ehci->regs->segment);
+	ehci_writel(ehci, ehci->periodic_dma, &ehci->regs->frame_list);
+	ehci_writel(ehci, (u32) ehci->async->qh_dma, &ehci->regs->async_next);
+
+	/* restore CMD_RUN */
+	ehci->command |= CMD_RUN;
+	ehci_writel(ehci, ehci->command, &ehci->regs->command);
+
+	temp = ehci_readl(ehci, status_reg);
+	ehci_writel(ehci, temp | PORT_POWER, status_reg);
+
+	ehci->rh_state = EHCI_RH_RUNNING;
+
+	ehci_writel(ehci, EHCI_INTR_MASK, &ehci->regs->intr_enable);
+	ehci_readl(ehci, &ehci->regs->intr_enable);
+
+	temp = ehci_readl(ehci, status_reg);
+	ehci_dbg(ehci, "before reset, portsc=0x%08x\n", temp);
+	if (temp & PORT_OWNER)
+		ehci_writel(ehci, temp & ~PORT_OWNER, status_reg);
+
+	phy_set_linestate(hcd->phy, PHY_SET_USB_DONE);
+
+	temp = ehci_readl(ehci, status_reg);
+	/* Put port in reset */
+	ehci_writel(ehci, temp | PORT_RESET, status_reg);
+	msleep(50);
+	/* Terminate the reset */
+	ehci_writel(ehci, temp & ~PORT_RESET, status_reg);
+
+	/* Try to wait for HS device attached */
+	ret = ehci_handshake(ehci, status_reg, PORT_PE, 0x4,
+			     50 * 1000 /* 50msec */);
+	temp = ehci_readl(ehci, status_reg);
+	ehci_dbg(ehci, "after reset, portsc=%04x\n", temp);
+
+	if (ret) {
+		ehci_dbg(ehci, "no device is present\n");
+		ehci->port_connect_status_change = 0;
+		ehci->port_connect_status = 0;
+	} else {
+		ehci->port_connect_status_change = 1;
+		ehci->port_connect_status = 1;
+		ehci_dbg(ehci, "hs device is present, reset_done[0] %ld\n",
+				ehci->reset_done[0]);
+	}
+}
+
 static struct hc_driver __read_mostly ehci_platform_hc_driver;
 
 static const struct ehci_driver_overrides platform_overrides __initconst = {
@@ -208,6 +361,9 @@ static int ehci_platform_probe(struct platform_device *dev)
 	dev->dev.platform_data = pdata;
 	priv = hcd_to_ehci_priv(hcd);
 	ehci = hcd_to_ehci(hcd);
+
+	/* Initialize reset work for high speed device */
+	INIT_DELAYED_WORK(&ehci->hs_reset_work, ehci_hs_reset_work);
 
 	if (pdata == &ehci_platform_defaults && dev->dev.of_node) {
 		if (of_property_read_bool(dev->dev.of_node, "big-endian-regs"))
@@ -366,9 +522,12 @@ static int ehci_platform_remove(struct platform_device *dev)
 	struct usb_hcd *hcd = platform_get_drvdata(dev);
 	struct usb_ehci_pdata *pdata = dev_get_platdata(&dev->dev);
 	struct ehci_platform_priv *priv = hcd_to_ehci_priv(hcd);
+	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
 	int clk;
 
 	usb_remove_hcd(hcd);
+
+	cancel_delayed_work_sync(&ehci->hs_reset_work);
 
 	if (pdata->power_off)
 		pdata->power_off(dev);

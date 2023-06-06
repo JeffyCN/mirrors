@@ -370,6 +370,8 @@ static void ehci_shutdown(struct usb_hcd *hcd)
 	struct ehci_hcd	*ehci = hcd_to_ehci(hcd);
 
 	spin_lock_irq(&ehci->lock);
+	/* Don't poll the roothubs after shutdown. */
+	clear_bit(HCD_FLAG_POLL_RH, &hcd->flags);
 	ehci->shutdown = true;
 	ehci->rh_state = EHCI_RH_STOPPING;
 	ehci->enabled_hrtimer_events = 0;
@@ -579,6 +581,8 @@ static int ehci_run (struct usb_hcd *hcd)
 	u32			temp;
 	u32			hcc_params;
 
+	/* use rhsc irqs after hub_wq is allocated */
+	set_bit(HCD_FLAG_POLL_RH, &hcd->flags);
 	hcd->uses_new_polling = 1;
 
 	/* EHCI spec section 4.1 */
@@ -1104,6 +1108,8 @@ int ehci_suspend(struct usb_hcd *hcd, bool do_wakeup)
 	ehci_writel(ehci, 0, &ehci->regs->intr_enable);
 	(void) ehci_readl(ehci, &ehci->regs->intr_enable);
 
+	/* Don't poll the roothubs on bus suspend. */
+	clear_bit(HCD_FLAG_POLL_RH, &hcd->flags);
 	clear_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
 	spin_unlock_irq(&ehci->lock);
 
@@ -1174,6 +1180,10 @@ int ehci_resume(struct usb_hcd *hcd, bool force_reset)
 	ehci_readl(ehci, &ehci->regs->command);	/* unblock posted writes */
 
 	ehci->rh_state = EHCI_RH_SUSPENDED;
+
+	/* Re-enable port polling. */
+	set_bit(HCD_FLAG_POLL_RH, &hcd->flags);
+	usb_hcd_poll_rh_status(hcd);
 	spin_unlock_irq(&ehci->lock);
 
 	return 1;
