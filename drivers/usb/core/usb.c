@@ -41,6 +41,7 @@
 #include <linux/scatterlist.h>
 #include <linux/mm.h>
 #include <linux/dma-mapping.h>
+#include <linux/rockchip/cpu.h>
 
 #include "usb.h"
 
@@ -502,6 +503,10 @@ struct usb_device *usb_alloc_dev(struct usb_device *parent,
 	dev->bus = bus;
 	dev->parent = parent;
 	INIT_LIST_HEAD(&dev->filelist);
+
+	/* Prevent runtime suspend if usb linestate is enabled */
+	if (usb_linestate_is_enabled())
+		usb_autosuspend_delay = -1;
 
 #ifdef	CONFIG_PM
 	pm_runtime_set_autosuspend_delay(&dev->dev,
