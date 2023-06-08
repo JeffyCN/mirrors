@@ -72,6 +72,10 @@ struct _GstKmsSrc {
   guint fps_n;
   guint fps_d;
   gboolean sync_fb;
+  gboolean sync_vblank;
+
+  GstPoll *poll;
+  GstPollFD pollfd;
 
   guint last_fb_id;
   GstClockTime last_frame_time;
@@ -105,6 +109,7 @@ enum
   PROP_DMA_FEATURE,
   PROP_FRAMERATE_LIMIT,
   PROP_SYNC_FB,
+  PROP_SYNC_VBLANK,
   PROP_LAST,
 };
 
@@ -156,6 +161,9 @@ gst_kms_src_set_property (GObject * object, guint prop_id,
     case PROP_SYNC_FB:
       self->sync_fb = g_value_get_boolean (value);
       break;
+    case PROP_SYNC_VBLANK:
+      self->sync_vblank = g_value_get_boolean (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -198,6 +206,9 @@ gst_kms_src_get_property (GObject * object, guint prop_id, GValue * value,
       break;
     case PROP_SYNC_FB:
       g_value_set_boolean (value, self->sync_fb);
+      break;
+    case PROP_SYNC_VBLANK:
+      g_value_set_boolean (value, self->sync_vblank);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -291,12 +302,162 @@ gst_kms_src_get_fb_id (GstKmsSrc * self)
 }
 
 static guint
+gst_kms_src_get_encoder_crtc (GstKmsSrc * self, guint encoder_id)
+{
+  drmModeEncoderPtr encoder;
+  guint crtc_id;
+
+  encoder = drmModeGetEncoder (self->fd, encoder_id);
+  if (!encoder)
+      return 0;
+
+  crtc_id = encoder->crtc_id;
+
+  drmModeFreeEncoder (encoder);
+  return crtc_id;
+}
+
+static guint
+gst_kms_src_get_connector_crtc (GstKmsSrc * self, guint connector_id)
+{
+  drmModeConnectorPtr connector;
+  guint crtc_id;
+
+  connector = drmModeGetConnector (self->fd, connector_id);
+  if (!connector)
+    return 0;
+
+  crtc_id = gst_kms_src_get_encoder_crtc (self, connector->encoder_id);
+
+  drmModeFreeConnector (connector);
+  return crtc_id;
+}
+
+static guint
+gst_kms_src_get_plane_crtc (GstKmsSrc * self, guint plane_id)
+{
+  drmModePlanePtr plane;
+  guint crtc_id;
+
+  plane = drmModeGetPlane (self->fd, plane_id);
+  if (!plane)
+    return 0;
+
+  crtc_id = plane->crtc_id;
+
+  drmModeFreePlane (plane);
+  return crtc_id;
+}
+
+static guint
+gst_kms_src_get_crtc_id (GstKmsSrc * self)
+{
+  if (self->crtc_id)
+    return self->crtc_id;
+
+  if (self->plane_id)
+    return gst_kms_src_get_plane_crtc (self, self->plane_id);
+
+  if (self->connector_id)
+    return gst_kms_src_get_connector_crtc (self, self->connector_id);
+
+  if (self->encoder_id)
+    return gst_kms_src_get_encoder_crtc (self, self->encoder_id);
+
+  return 0;
+}
+
+static guint
+gst_kms_src_get_crtc_pipe (GstKmsSrc * self, guint crtc_id)
+{
+  drmModeResPtr res;
+  guint crtc_pipe = 0;
+  gint i;
+
+  if (!crtc_id)
+    return 0;
+
+  res = drmModeGetResources (self->fd);
+  if (!res)
+    return 0;
+
+  for (i = 0; i < res->count_crtcs; i++) {
+    if (res->crtcs[i] == crtc_id) {
+      crtc_pipe = i;
+      break;
+    }
+  }
+  drmModeFreeResources (res);
+  return crtc_pipe;
+}
+
+static void
+sync_handler (gint fd, guint frame, guint sec, guint usec, gpointer data)
+{
+  gboolean *waiting;
+
+  (void) fd;
+  (void) frame;
+  (void) sec;
+  (void) usec;
+
+  waiting = data;
+  *waiting = FALSE;
+}
+
+static gboolean
+gst_kms_src_sync_vblank (GstKmsSrc * self)
+{
+  gboolean waiting;
+  drmEventContext evctxt = {
+    .version = DRM_EVENT_CONTEXT_VERSION,
+    .vblank_handler = sync_handler,
+  };
+  drmVBlank vbl = {
+    .request = {
+          .type = DRM_VBLANK_RELATIVE | DRM_VBLANK_EVENT,
+          .sequence = 1,
+          .signal = (gulong) & waiting,
+        },
+  };
+  guint crtc_id = gst_kms_src_get_crtc_id (self);
+  guint crtc_pipe = gst_kms_src_get_crtc_pipe (self, crtc_id);
+  gint ret;
+
+  if (crtc_pipe == 1)
+    vbl.request.type |= DRM_VBLANK_SECONDARY;
+  else if (crtc_pipe > 1)
+    vbl.request.type |= crtc_pipe << DRM_VBLANK_HIGH_CRTC_SHIFT;
+
+  waiting = TRUE;
+  ret = drmWaitVBlank (self->fd, &vbl);
+  if (ret)
+    return FALSE;
+
+  while (waiting) {
+    do {
+      ret = gst_poll_wait (self->poll, 3 * GST_SECOND);
+    } while (ret == -1 && (errno == EAGAIN || errno == EINTR));
+
+    ret = drmHandleEvent (self->fd, &evctxt);
+    if (ret)
+      return FALSE;
+  }
+
+  GST_DEBUG_OBJECT (self, "sync vblank with CRTC: %d(%d)", crtc_id, crtc_pipe);
+  return TRUE;
+}
+
+static guint
 gst_kms_src_get_next_fb_id (GstKmsSrc * self)
 {
   GstClockTimeDiff diff;
-  gboolean sync = self->sync_fb && !self->fb_id;
+  gboolean sync_fb = self->sync_fb && !self->fb_id;
   guint duration = 0;
   guint fb_id;
+
+  if (self->sync_vblank)
+    gst_kms_src_sync_vblank (self);
 
   if (self->fps_d && self->fps_n)
     duration =
@@ -311,8 +472,8 @@ gst_kms_src_get_next_fb_id (GstKmsSrc * self)
     if (!fb_id)
       return 0;
 
-    if (!sync || fb_id != self->last_fb_id) {
-      sync = FALSE;
+    if (!sync_fb || fb_id != self->last_fb_id) {
+      sync_fb = FALSE;
 
       if (diff >= duration)
         return fb_id;
@@ -665,6 +826,10 @@ gst_kms_src_stop (GstBaseSrc * basesrc)
 {
   GstKmsSrc *self = GST_KMS_SRC (basesrc);
 
+  gst_poll_remove_fd (self->poll, &self->pollfd);
+  gst_poll_restart (self->poll);
+  gst_poll_fd_init (&self->pollfd);
+
   if (self->allocator)
     g_object_unref (self->allocator);
 
@@ -712,8 +877,8 @@ gst_kms_src_start (GstBaseSrc * basesrc)
   if (!self->allocator)
     return FALSE;
 
-	if (self->devname || self->bus_id)
-		self->fd = drmOpen (self->devname, self->bus_id);
+  if (self->devname || self->bus_id)
+    self->fd = drmOpen (self->devname, self->bus_id);
 
   if (self->fd < 0)
     self->fd = open ("/dev/dri/card0", O_RDWR | O_CLOEXEC);
@@ -739,6 +904,11 @@ gst_kms_src_start (GstBaseSrc * basesrc)
   self->last_fb_id = 0;
   self->last_frame_time = gst_util_get_timestamp ();
   self->start_time = gst_util_get_timestamp ();
+
+  self->pollfd.fd = self->fd;
+  gst_poll_add_fd (self->poll, &self->pollfd);
+  gst_poll_fd_ctl_read (self->poll, &self->pollfd, TRUE);
+
   return TRUE;
 }
 
@@ -750,6 +920,8 @@ gst_kms_src_finalize (GObject * object)
   self = GST_KMS_SRC (object);
   g_clear_pointer (&self->devname, g_free);
   g_clear_pointer (&self->bus_id, g_free);
+
+  gst_poll_free (self->poll);
 
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
@@ -769,6 +941,7 @@ gst_kms_src_init (GstKmsSrc * self)
 
   self->framerate_limit = DEFAULT_PROP_FRAMERATE_LIMIT;
   self->sync_fb = TRUE;
+  self->sync_vblank = TRUE;
   self->fps_n = 0;
   self->fps_d = 1;
 
@@ -776,6 +949,9 @@ gst_kms_src_init (GstKmsSrc * self)
 
   gst_base_src_set_format (GST_BASE_SRC (self), GST_FORMAT_TIME);
   gst_base_src_set_live (GST_BASE_SRC (self), TRUE);
+
+  gst_poll_fd_init (&self->pollfd);
+  self->poll = gst_poll_new (TRUE);
 }
 
 static void
@@ -853,6 +1029,11 @@ gst_kms_src_class_init (GstKmsSrcClass * klass)
   g_object_class_install_property (gobject_class, PROP_SYNC_FB,
       g_param_spec_boolean ("sync-fb", "Sync with FB flip",
           "Sync with FB flip", TRUE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_SYNC_VBLANK,
+      g_param_spec_boolean ("sync-vblank", "Sync with vblank",
+          "Sync with vblank", TRUE,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   gst_element_class_set_static_metadata (gstelement_class,
