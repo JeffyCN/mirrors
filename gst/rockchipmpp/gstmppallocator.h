@@ -30,6 +30,9 @@ G_BEGIN_DECLS;
 
 GstAllocator *gst_mpp_allocator_new (void);
 
+void gst_mpp_allocator_set_cacheable (GstAllocator * allocator,
+    gboolean cacheable);
+
 gint gst_mpp_allocator_get_index (GstAllocator * allocator);
 
 MppBufferGroup gst_mpp_allocator_get_mpp_group (GstAllocator * allocator);

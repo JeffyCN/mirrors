@@ -53,6 +53,9 @@ struct _GstMppAllocator
 
   /* unique group ID */
   gint index;
+
+  /* cache buffers */
+  gboolean cacheable;
 };
 
 #define gst_mpp_allocator_parent_class parent_class
@@ -76,6 +79,17 @@ gst_mpp_ext_buffer_quark (void)
     quark = g_quark_from_string ("mpp-ext-buf");
 
   return quark;
+}
+
+void
+gst_mpp_allocator_set_cacheable (GstAllocator * allocator, gboolean cacheable)
+{
+  GstMppAllocator *self = GST_MPP_ALLOCATOR (allocator);
+  self->cacheable = cacheable;
+
+  /* Clear cached buffers */
+  if (!cacheable)
+    mpp_buffer_group_clear (self->group);
 }
 
 gint
@@ -123,9 +137,6 @@ gst_mpp_allocator_import_dmafd (GstAllocator * allocator, gint fd, guint size)
   info.type = MPP_BUFFER_TYPE_DRM;
   info.size = size;
   info.fd = fd;
-
-  /* Avoid caching too much external buffers */
-  mpp_buffer_group_clear (self->ext_group);
 
   mpp_buffer_import_with_tag (self->ext_group, &info, &mbuf, NULL, __func__);
   if (!mbuf)
@@ -249,6 +260,21 @@ gst_mpp_mem_map_full (GstMemory * mem, GstMapInfo * info, gsize size)
   return mem->allocator->mem_map (mem, size, info->flags);
 }
 
+static void
+gst_mpp_allocator_free (GstAllocator * allocator, GstMemory * gmem)
+{
+  GstMppAllocator *self = GST_MPP_ALLOCATOR (allocator);
+
+  /* Avoid caching external buffers */
+  mpp_buffer_group_clear (self->ext_group);
+
+  /* Clear cached buffers */
+  if (!self->cacheable)
+    mpp_buffer_group_clear (self->group);
+
+  GST_ALLOCATOR_CLASS (parent_class)->free (allocator, gmem);
+}
+
 GstAllocator *
 gst_mpp_allocator_new (void)
 {
@@ -271,6 +297,7 @@ gst_mpp_allocator_new (void)
   alloc->group = group;
   alloc->ext_group = ext_group;
   alloc->index = num_mpp_alloc++;
+  alloc->cacheable = TRUE;
 
   return GST_ALLOCATOR_CAST (alloc);
 }
@@ -295,6 +322,7 @@ gst_mpp_allocator_class_init (GstMppAllocatorClass * klass)
   GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "mppallocator", 0, "MPP allocator");
 
   allocator_class->alloc = GST_DEBUG_FUNCPTR (gst_mpp_allocator_alloc);
+  allocator_class->free = GST_DEBUG_FUNCPTR (gst_mpp_allocator_free);
 
   gobject_class->finalize = GST_DEBUG_FUNCPTR (gst_mpp_allocator_finalize);
 }

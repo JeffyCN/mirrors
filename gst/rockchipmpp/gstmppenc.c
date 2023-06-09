@@ -503,6 +503,8 @@ gst_mpp_enc_start (GstVideoEncoder * encoder)
   if (!self->allocator)
     return FALSE;
 
+  gst_mpp_allocator_set_cacheable (self->allocator, FALSE);
+
   if (mpp_create (&self->mpp_ctx, &self->mpi))
     goto err_unref_alloc;
 

@@ -248,14 +248,8 @@ gst_mpp_dec_start (GstVideoDecoder * decoder)
 
   gst_video_info_init (&self->info);
 
-  self->allocator = gst_mpp_allocator_new ();
-  if (!self->allocator)
+  if (mpp_create (&self->mpp_ctx, &self->mpi))
     return FALSE;
-
-  if (mpp_create (&self->mpp_ctx, &self->mpi)) {
-    gst_object_unref (self->allocator);
-    return FALSE;
-  }
 
   self->interlace_mode = GST_VIDEO_INTERLACE_MODE_PROGRESSIVE;
   self->mpp_type = MPP_VIDEO_CodingUnused;
@@ -279,6 +273,17 @@ gst_mpp_dec_start (GstVideoDecoder * decoder)
   return TRUE;
 }
 
+static void
+gst_mpp_dec_clear_allocator (GstVideoDecoder * decoder)
+{
+  GstMppDec *self = GST_MPP_DEC (decoder);
+  if (self->allocator) {
+    gst_mpp_allocator_set_cacheable (self->allocator, FALSE);
+    gst_object_unref (self->allocator);
+    self->allocator = NULL;
+  }
+}
+
 static gboolean
 gst_mpp_dec_stop (GstVideoDecoder * decoder)
 {
@@ -294,12 +299,12 @@ gst_mpp_dec_stop (GstVideoDecoder * decoder)
 
   mpp_destroy (self->mpp_ctx);
 
-  gst_object_unref (self->allocator);
-
   if (self->input_state) {
     gst_video_codec_state_unref (self->input_state);
     self->input_state = NULL;
   }
+
+  gst_mpp_dec_clear_allocator (decoder);
 
   GST_DEBUG_OBJECT (self, "stopped");
 
@@ -327,6 +332,10 @@ gst_mpp_dec_finish (GstVideoDecoder * decoder)
 {
   GST_DEBUG_OBJECT (decoder, "finishing");
   gst_mpp_dec_reset (decoder, TRUE, FALSE);
+
+  /* No need to caching buffers after finished */
+  gst_mpp_dec_clear_allocator (decoder);
+
   return GST_FLOW_OK;
 }
 
@@ -347,11 +356,12 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
 
     gst_mpp_dec_reset (decoder, TRUE, FALSE);
 
+    /* Clear cached buffers when format info changed */
+    gst_mpp_dec_clear_allocator (decoder);
+
     gst_video_codec_state_unref (self->input_state);
     self->input_state = NULL;
   } else {
-    MppBufferGroup group;
-
     /* NOTE: MPP fast mode must be applied before mpp_init() */
     self->mpi->control (self->mpp_ctx, MPP_DEC_SET_PARSER_FAST_MODE,
         &self->fast_mode);
@@ -360,13 +370,23 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
       GST_ERROR_OBJECT (self, "failed to init mpp ctx");
       return FALSE;
     }
-
-    group = gst_mpp_allocator_get_mpp_group (self->allocator);
-    self->mpi->control (self->mpp_ctx, MPP_DEC_SET_EXT_BUF_GROUP, group);
   }
 
   if (self->ignore_error)
     self->mpi->control (self->mpp_ctx, MPP_DEC_SET_DISABLE_ERROR, NULL);
+
+  if (!self->allocator) {
+    MppBufferGroup group;
+
+    self->allocator = gst_mpp_allocator_new ();
+    if (!self->allocator) {
+      GST_ERROR_OBJECT (self, "failed to create mpp allocator");
+      return FALSE;
+    }
+
+    group = gst_mpp_allocator_get_mpp_group (self->allocator);
+    self->mpi->control (self->mpp_ctx, MPP_DEC_SET_EXT_BUF_GROUP, group);
+  }
 
   self->input_state = gst_video_codec_state_ref (state);
   return TRUE;
