@@ -107,6 +107,10 @@ if cc.has_header_symbol('gst/video/video-format.h', 'GST_VIDEO_FORMAT_NV12_10LE4
   cdata.set10('HAVE_NV12_10LE40', 1)
 endif
 
+if cc.has_header_symbol('gst/video/video-format.h', 'GST_VIDEO_FORMAT_NV16_10LE40', dependencies : gstvideo_dep)
+  cdata.set10('HAVE_NV16_10LE40', 1)
+endif
+
 gst_rockchip_args = ['-DHAVE_CONFIG_H']
 configinc = include_directories('.')
 

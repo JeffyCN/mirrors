@@ -483,6 +483,12 @@ gst_mpp_dec_fixup_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
     format = GST_VIDEO_FORMAT_NV12;
 #endif
 
+#ifdef HAVE_NV16_10LE40
+  if (format == GST_VIDEO_FORMAT_NV16_10LE40 &&
+      g_getenv ("GST_MPP_DEC_DISABLE_NV16_10"))
+    format = GST_VIDEO_FORMAT_NV12;
+#endif
+
   gst_mpp_video_info_update_format (info, format,
       self->width ? : width, self->height ? : height);
 }
