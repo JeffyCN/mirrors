@@ -357,6 +357,28 @@ int phy_set_mode(struct phy *phy, enum phy_mode mode)
 }
 EXPORT_SYMBOL_GPL(phy_set_mode);
 
+void phy_set_linestate(struct phy *phy, enum usb_linestate linestate)
+{
+	if (!phy || !phy->ops->set_linestate)
+		return;
+
+	phy->ops->set_linestate(phy, linestate);
+}
+EXPORT_SYMBOL_GPL(phy_set_linestate);
+
+int phy_get_linestate(struct phy *phy)
+{
+	int ret;
+
+	if (!phy || !phy->ops->get_linestate)
+		return 0;
+
+	ret = phy->ops->get_linestate(phy);
+
+	return ret;
+}
+EXPORT_SYMBOL_GPL(phy_get_linestate);
+
 int phy_reset(struct phy *phy)
 {
 	int ret;

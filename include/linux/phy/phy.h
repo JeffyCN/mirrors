@@ -36,6 +36,15 @@ enum phy_mode {
 	PHY_MODE_HDMI,
 };
 
+enum usb_linestate {
+	PHY_SET_USB_NONE,
+	PHY_SET_USB_DP_H_DM_L,
+	PHY_SET_USB_DISC,
+	PHY_SET_USB_CONNECT,
+	PHY_SET_USB_DONE,
+	PHY_SET_USB_FS_ENC_DIS,
+};
+
 /**
  * struct phy_ops - set of function pointers for performing phy operations
  * @init: operation to be performed for initializing phy
@@ -55,6 +64,8 @@ struct phy_ops {
 	int	(*set_mode)(struct phy *phy, enum phy_mode mode);
 	int	(*reset)(struct phy *phy);
 	int	(*cp_test)(struct phy *phy);
+	int	(*get_linestate)(struct phy *phy);
+	void	(*set_linestate)(struct phy *phy, enum usb_linestate linestate);
 	struct module *owner;
 };
 
@@ -142,6 +153,8 @@ int phy_power_off(struct phy *phy);
 int phy_set_mode(struct phy *phy, enum phy_mode mode);
 int phy_reset(struct phy *phy);
 int phy_cp_test(struct phy *phy);
+int phy_get_linestate(struct phy *phy);
+void phy_set_linestate(struct phy *phy, enum usb_linestate linestate);
 static inline int phy_get_bus_width(struct phy *phy)
 {
 	return phy->attrs.bus_width;
@@ -266,6 +279,16 @@ static inline int phy_cp_test(struct phy *phy)
 	if (!phy)
 		return 0;
 	return -ENOSYS;
+}
+
+static inline void phy_set_linestate(struct phy *phy,
+				     enum usb_linestate linestate)
+{
+}
+
+static inline int phy_get_linestate(struct phy *phy)
+{
+	return -EINVAL;
 }
 
 static inline int phy_get_bus_width(struct phy *phy)
