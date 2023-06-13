@@ -38,6 +38,10 @@ G_BEGIN_DECLS
 #define DRM_FORMAT_NV15 fourcc_code('N', 'V', '1', '5')
 #endif
 
+#ifndef DRM_FORMAT_NV20
+#define DRM_FORMAT_NV20 fourcc_code('N', 'V', '2', '0')
+#endif
+
 #ifndef DRM_FORMAT_YUV420_8BIT
 #define DRM_FORMAT_YUV420_8BIT fourcc_code('Y', 'U', '0', '8')
 #endif

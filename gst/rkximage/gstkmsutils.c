@@ -51,6 +51,9 @@ static const struct
   DEF_FMT (NV12_10, NV12_10LE40),
   DEF_FMT (NV15, NV12_10LE40),
 #endif
+#ifdef HAVE_NV16_10LE40
+  DEF_FMT (NV20, NV16_10LE40),
+#endif
 #else
   DEF_FMT (ARGB8888, ARGB),
   DEF_FMT (XRGB8888, xRGB),
@@ -113,6 +116,7 @@ gst_drm_bpp_from_drm (guint32 drmfmt)
       break;
     case DRM_FORMAT_NV12_10:
     case DRM_FORMAT_NV15:
+    case DRM_FORMAT_NV20:
       bpp = 10;
       break;
     case DRM_FORMAT_UYVY:
@@ -144,6 +148,7 @@ gst_drm_height_from_drm (guint32 drmfmt, guint32 height)
       ret = height * 3 / 2;
       break;
     case DRM_FORMAT_NV16:
+    case DRM_FORMAT_NV20:
       ret = height * 2;
       break;
     default:
