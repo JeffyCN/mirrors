@@ -1229,6 +1229,7 @@
 		interrupts = <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&cru HCLK_HOST>, <&cru HCLK_HOST_ARB>, <&u2phy>;
 		clock-names = "usbhost", "arbiter", "utmi";
+		companion = <&usb_host0_ohci>;
 		phys = <&u2phy_host>;
 		phy-names = "usb";
 		status = "disabled";
