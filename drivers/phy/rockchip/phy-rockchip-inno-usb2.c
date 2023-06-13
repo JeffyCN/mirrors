@@ -129,6 +129,9 @@ struct rockchip_chg_det_reg {
 /**
  * struct rockchip_usb2phy_port_cfg: usb-phy port configuration.
  * @phy_sus: phy suspend register.
+ * @phy_pd_en: usb dp/dm 45ohm pulldown enable register.
+ * @phy_fs_xver_en: fs transceiver own and data bit enable register.
+ * @phy_fs_enc_dis: fs transceiver with opmode disable NRZI encoding.
  * @bvalid_det_en: vbus valid rise detection enable register.
  * @bvalid_det_st: vbus valid rise detection status register.
  * @bvalid_det_clr: vbus valid rise detection clear register.
@@ -159,6 +162,9 @@ struct rockchip_chg_det_reg {
  */
 struct rockchip_usb2phy_port_cfg {
 	struct usb2phy_reg	phy_sus;
+	struct usb2phy_reg	phy_pd_en;
+	struct usb2phy_reg	phy_fs_xver_en;
+	struct usb2phy_reg	phy_fs_enc_dis;
 	struct usb2phy_reg	bvalid_det_en;
 	struct usb2phy_reg	bvalid_det_st;
 	struct usb2phy_reg	bvalid_det_clr;
@@ -235,6 +241,7 @@ struct rockchip_usb2phy_cfg {
  *	      when USB is active.
  * @state: define OTG enumeration states before device reset.
  * @mode: the dr_mode of the controller.
+ * @linestate: the usb linestate controlled by software.
  */
 struct rockchip_usb2phy_port {
 	struct phy	*phy;
@@ -263,6 +270,7 @@ struct rockchip_usb2phy_port {
 	struct wake_lock	wakelock;
 	enum usb_otg_state	state;
 	enum usb_dr_mode	mode;
+	enum usb_linestate	linestate;
 };
 
 /**
@@ -843,12 +851,100 @@ static int rockchip_usb2phy_set_mode(struct phy *phy, enum phy_mode mode)
 	return ret;
 }
 
+static void rockchip_usb2phy_set_linestate(struct phy *phy,
+					   enum usb_linestate set_linestate)
+{
+	struct rockchip_usb2phy_port *rport = phy_get_drvdata(phy);
+	struct rockchip_usb2phy *rphy = dev_get_drvdata(phy->dev.parent);
+
+	dev_dbg(&rport->phy->dev, "set linestate %d\n", set_linestate);
+
+	rport->linestate = set_linestate;
+
+	switch (set_linestate) {
+	case PHY_SET_USB_DP_H_DM_L:
+		/*
+		 * Set DP HIGH and DM LOW state.
+		 * For Low-speed, it's Resume state.
+		 * Driver low speed differential "1" (data K state)
+		 * to resume state, and later, we can set linestate
+		 * in PHY_SET_USB_DISC, it aims to make a disconnect
+		 * condition for low speed: Resume state -> SE0.
+		 */
+		property_enable(rphy->grf, &rport->port_cfg->phy_pd_en, false);
+
+		if (rport->port_id == USB2PHY_PORT_OTG)
+			property_enable(rphy->grf,
+					&rport->port_cfg->phy_fs_xver_en, true);
+		break;
+	case PHY_SET_USB_DISC:
+		/*
+		 * Set SE0 state.
+		 * Remove 1.5K DP pullup and enable 45ohm pulldown
+		 * on DP/DM to force DP/DM Voltage to low level to
+		 * force Host detect disconnect.
+		 */
+		property_enable(rphy->grf, &rport->port_cfg->phy_pd_en, true);
+
+		/*
+		 * Prepare software to own the fs transceiver and
+		 * driver full speed differential "1", aka, DP high
+		 * and DM low.
+		 */
+		if (rport->port_id == USB2PHY_PORT_OTG)
+			property_enable(rphy->grf,
+					&rport->port_cfg->phy_fs_xver_en, true);
+		break;
+	case PHY_SET_USB_CONNECT:
+		/*
+		 * Full speed Connect (IDLE) state:
+		 * Now we have make sure that Host can detect the
+		 * disconnect with DP/DM 45ohm pulldown, then we can
+		 * remove DP/DM 45ohm pulldown, and DP becomes high,
+		 * DM becomes low to wait for connection.
+		 */
+		property_enable(rphy->grf, &rport->port_cfg->phy_pd_en, false);
+		break;
+	case PHY_SET_USB_DONE:
+		/* Remove DP/DM 45ohm pulldown */
+		property_enable(rphy->grf, &rport->port_cfg->phy_pd_en, false);
+
+		/* Disable software to own the fs transceiver */
+		if (rport->port_id == USB2PHY_PORT_OTG)
+			property_enable(rphy->grf,
+					&rport->port_cfg->phy_fs_xver_en,
+					false);
+		break;
+	case PHY_SET_USB_FS_ENC_DIS:
+		/* Select FS transceiver and disable NRZI encoding */
+		property_enable(rphy->grf, &rport->port_cfg->phy_fs_enc_dis,
+				true);
+		break;
+	default:
+		break;
+	}
+}
+
+static int rockchip_usb2phy_get_linestate(struct phy *phy)
+{
+	struct rockchip_usb2phy_port *rport = phy_get_drvdata(phy);
+	struct rockchip_usb2phy *rphy = dev_get_drvdata(phy->dev.parent);
+	unsigned int ul, ul_mask;
+
+	regmap_read(rphy->grf, rport->port_cfg->utmi_ls.offset, &ul);
+	ul_mask = GENMASK(rport->port_cfg->utmi_ls.bitend,
+			  rport->port_cfg->utmi_ls.bitstart);
+	return ((ul & ul_mask) >> rport->port_cfg->utmi_ls.bitstart);
+}
+
 static const struct phy_ops rockchip_usb2phy_ops = {
 	.init		= rockchip_usb2phy_init,
 	.exit		= rockchip_usb2phy_exit,
 	.power_on	= rockchip_usb2phy_power_on,
 	.power_off	= rockchip_usb2phy_power_off,
 	.set_mode	= rockchip_usb2phy_set_mode,
+	.set_linestate	= rockchip_usb2phy_set_linestate,
+	.get_linestate	= rockchip_usb2phy_get_linestate,
 	.owner		= THIS_MODULE,
 };
 
@@ -1017,6 +1113,7 @@ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
 					    EXTCON_USB_VBUS_EN) > 0) {
 			dev_dbg(&rport->phy->dev, "usb otg host connect\n");
 			rport->state = OTG_STATE_A_HOST;
+			rport->linestate = PHY_SET_USB_NONE;
 			rphy->chg_state = USB_CHG_STATE_UNDEFINED;
 			rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
 			mutex_unlock(&rport->mutex);
@@ -1074,6 +1171,7 @@ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
 		} else {
 			rphy->chg_state = USB_CHG_STATE_UNDEFINED;
 			rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
+			rport->linestate = PHY_SET_USB_NONE;
 			mutex_unlock(&rport->mutex);
 			rockchip_usb2phy_power_off(rport->phy);
 			mutex_lock(&rport->mutex);
@@ -1090,12 +1188,14 @@ static void rockchip_usb2phy_otg_sm_work(struct work_struct *work)
 			rphy->chg_state = USB_CHG_STATE_UNDEFINED;
 			rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
 			rport->perip_connected = false;
+			rport->linestate = PHY_SET_USB_NONE;
 			sch_work = false;
 			wake_unlock(&rport->wakelock);
 		} else if (!rport->vbus_attached) {
 			dev_dbg(&rport->phy->dev, "usb disconnect\n");
 			rport->state = OTG_STATE_B_IDLE;
 			rport->perip_connected = false;
+			rport->linestate = PHY_SET_USB_NONE;
 			rphy->chg_state = USB_CHG_STATE_UNDEFINED;
 			rphy->chg_type = POWER_SUPPLY_TYPE_UNKNOWN;
 			delay = OTG_SCHEDULE_DELAY;
@@ -1319,6 +1419,7 @@ static void rockchip_chg_detect_work(struct work_struct *work)
 			dev_err(&rport->phy->dev,
 				"Fail to set phy_sus reg offset 0x%x, ret %d\n",
 				phy_sus_reg->offset, ret);
+
 		mutex_unlock(&rport->mutex);
 		rockchip_usb2phy_otg_sm_work(&rport->otg_sm_work.work);
 		dev_info(&rport->phy->dev, "charger = %s\n",
@@ -1566,6 +1667,7 @@ static int rockchip_usb2phy_host_port_init(struct rockchip_usb2phy *rphy,
 
 	rport->port_id = USB2PHY_PORT_HOST;
 	rport->port_cfg = &rphy->phy_cfg->port_cfgs[USB2PHY_PORT_HOST];
+	rport->linestate = PHY_SET_USB_NONE;
 
 	/* enter lower power state when suspend */
 	rport->low_power_en =
@@ -1633,6 +1735,7 @@ static int rockchip_usb2phy_otg_port_init(struct rockchip_usb2phy *rphy,
 	rport->vbus_enabled = false;
 	rport->perip_connected = false;
 	rport->prev_iddig = true;
+	rport->linestate = PHY_SET_USB_NONE;
 
 	mutex_init(&rport->mutex);
 
@@ -2573,6 +2676,8 @@ static const struct rockchip_usb2phy_cfg rk3308_phy_cfgs[] = {
 		.port_cfgs	= {
 			[USB2PHY_PORT_OTG] = {
 				.phy_sus	= { 0x0100, 8, 0, 0, 0x1d1 },
+				.phy_pd_en	= { 0x0100, 8, 0, 0, 0x003 },
+				.phy_fs_xver_en = { 0x010c, 11, 0, 0x019, 0x159 },
 				.bvalid_det_en	= { 0x3020, 2, 2, 0, 1 },
 				.bvalid_det_st	= { 0x3024, 2, 2, 0, 1 },
 				.bvalid_det_clr = { 0x3028, 2, 2, 0, 1 },
@@ -2595,6 +2700,8 @@ static const struct rockchip_usb2phy_cfg rk3308_phy_cfgs[] = {
 			},
 			[USB2PHY_PORT_HOST] = {
 				.phy_sus	= { 0x0104, 8, 0, 0, 0x1d1 },
+				.phy_pd_en	= { 0x0104, 8, 0, 0, 0x003 },
+				.phy_fs_enc_dis	= { 0x0104, 8, 0, 0, 0x1db },
 				.ls_det_en	= { 0x3020, 1, 1, 0, 1 },
 				.ls_det_st	= { 0x3024, 1, 1, 0, 1 },
 				.ls_det_clr	= { 0x3028, 1, 1, 0, 1 },
