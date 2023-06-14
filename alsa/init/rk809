@@ -7,4 +7,7 @@ CTL{name}="Playback Path", CTL{value}="SPK_HP"
 #record
 CTL{name}="Capture MIC Path", CTL{value}="Main Mic"
 
+#resume recovery
+CTL{name}="Resume Path", CTL{value}="ON"
+
 RESULT="true", EXIT="return"
