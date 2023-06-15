@@ -977,14 +977,14 @@ IM_STATUS rga_check_align(const char *name, rga_buffer_t info, int byte_stride, 
     /* data mode align */
     switch (info.rd_mode) {
         case IM_FBC_MODE:
-            if (info.width % 16) {
-                IM_LOGE("%s FBC mode does not support width[%d] is non-16 aligned\n",
+            if (info.wstride % 16) {
+                IM_LOGE("%s FBC mode does not support width_stride[%d] is non-16 aligned\n",
                         name, info.width);
                 return IM_STATUS_NOT_SUPPORTED;
             }
 
-            if (info.height % 16) {
-                IM_LOGE("%s FBC mode does not support height[%d] is non-16 aligned\n",
+            if (info.hstride % 16) {
+                IM_LOGE("%s FBC mode does not support height_stride[%d] is non-16 aligned\n",
                         name, info.height);
                 return IM_STATUS_NOT_SUPPORTED;
             }
