@@ -1249,7 +1249,7 @@ E rockchiprga: f-blend-size-rotation-col-log-mmu[0, 0, 0, 0, 0, 0, 1]		//Represe
 E rockchiprga: fd-vir-phy-hnd-format[0, 0xb400006eb2ea6040, 0x0, 0x0, 0]	//Parameters of corresponding dst channel.
 E rockchiprga: rect[0, 0, 1920, 1080, 1920, 1080, 1, 0]
 E rockchiprga: f-blend-size-rotation-col-log-mmu[0, 0, 0, 0, 0, 0, 1]
-E rockchiprga: This output the user patamaters when rga call blit fail		//Error information.
+E rockchiprga: This output the user parameters when rga call blit fail		//Error information.
 ```
 
 
