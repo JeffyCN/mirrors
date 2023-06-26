@@ -281,6 +281,7 @@ gst_mpp_dec_clear_allocator (GstVideoDecoder * decoder)
     gst_mpp_allocator_set_cacheable (self->allocator, FALSE);
     gst_object_unref (self->allocator);
     self->allocator = NULL;
+    self->mpi->control (self->mpp_ctx, MPP_DEC_SET_EXT_BUF_GROUP, NULL);
   }
 }
 
@@ -374,19 +375,6 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
 
   if (self->ignore_error)
     self->mpi->control (self->mpp_ctx, MPP_DEC_SET_DISABLE_ERROR, NULL);
-
-  if (!self->allocator) {
-    MppBufferGroup group;
-
-    self->allocator = gst_mpp_allocator_new ();
-    if (!self->allocator) {
-      GST_ERROR_OBJECT (self, "failed to create mpp allocator");
-      return FALSE;
-    }
-
-    group = gst_mpp_allocator_get_mpp_group (self->allocator);
-    self->mpi->control (self->mpp_ctx, MPP_DEC_SET_EXT_BUF_GROUP, group);
-  }
 
   self->input_state = gst_video_codec_state_ref (state);
   return TRUE;
@@ -731,6 +719,9 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
   guint crop_h = self->crop_h;
   gboolean afbc = !!MPP_FRAME_FMT_IS_FBC (mpp_frame_get_fmt (mframe));
 
+  if (!self->allocator)
+    return NULL;
+
   mbuf = mpp_frame_get_buffer (mframe);
   if (!mbuf)
     return NULL;
@@ -973,6 +964,17 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   if (G_UNLIKELY (self->flushing))
     goto flushing;
 
+  if (!self->allocator) {
+    MppBufferGroup group;
+
+    self->allocator = gst_mpp_allocator_new ();
+    if (!self->allocator)
+      goto no_allocator;
+
+    group = gst_mpp_allocator_get_mpp_group (self->allocator);
+    self->mpi->control (self->mpp_ctx, MPP_DEC_SET_EXT_BUF_GROUP, group);
+  }
+
   if (G_UNLIKELY (!GST_MPP_DEC_TASK_STARTED (decoder))) {
     if (klass->startup && !klass->startup (decoder))
       goto not_negotiated;
@@ -1029,6 +1031,10 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
 flushing:
   GST_WARNING_OBJECT (self, "flushing");
   ret = GST_FLOW_FLUSHING;
+  goto drop;
+no_allocator:
+  GST_ERROR_OBJECT (self, "failed to create mpp allocator");
+  ret = GST_FLOW_ERROR;
   goto drop;
 not_negotiated:
   GST_ERROR_OBJECT (self, "not negotiated");
