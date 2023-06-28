@@ -2,9 +2,9 @@
 
 文件标识：RK-KF-YF-403
 
-发布版本：V2.2.1
+发布版本：V2.2.2
 
-日期：2023-02-09
+日期：2023-06-28
 
 文件密级：□绝密   □秘密   □内部资料   ■公开
 
@@ -58,6 +58,7 @@ Rockchip Electronics Co., Ltd.
 | 2022/06/22 | 2.1.1    | 陈城，李煌，余乔伟 | 完善格式支持/对齐说明                                        |
 | 2022/09/15 | 2.2.0    | 陈城，李煌，余乔伟 | - 补充默认值相关说明<br/>- 新增array接口<br/>- 新增task接口<br/>- 新增矩形边框绘制接口 |
 | 2022/02/09 | 2.2.1    | 余乔伟             | 更正文档格式                                                 |
+| 2022/06/28 | 2.2.2    | 余乔伟             | - 增加芯片RK3562介绍<br/>- 完善针对灰度图的注意事项          |
 
 ---
 
@@ -183,15 +184,15 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td>RK1808</td>
    </tr>
    <tr>
-      <td rowspan="7">RGA2-Enhance</td>
+      <td rowspan="8">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
-      <td rowspan="7">2x2</td>
-      <td rowspan="7">8192x8192</td>
-      <td rowspan="7">2x2</td>
-      <td rowspan="7">4096x4096</td>
-      <td rowspan="7">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for RV1108/RV1109/RK3566)<br/>NN quantize(NA for RK3399/RV1108)<br/>osd (only RV1106/RV1103)<br/>IOMMU(32bit, RK3528为40bit，NA for RV1106/1103)</td>
-      <td rowspan="7">2</td>
+      <td rowspan="8">2x2</td>
+      <td rowspan="8">8192x8192</td>
+      <td rowspan="8">2x2</td>
+      <td rowspan="8">4096x4096</td>
+      <td rowspan="8">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for RV1108/RV1109/RK3566)<br/>NN quantize(NA for RK3399/RV1108)<br/>osd (only RV1106/RV1103)<br/>IOMMU(32bit, RK3528为40bit，NA for RV1106/1103)</td>
+      <td rowspan="8">2</td>
    </tr>
    <tr>
       <td>Mercury</td>
@@ -216,7 +217,11 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
    <tr>
        <td>Bull</td>
        <td>RK3528</td>
+    </tr>
    <tr>
+       <td>Snipe</td>
+       <td>RK3562</td>
+    </tr>
       <td rowspan="1">RGA3</td>
       <td>Orion</td>
       <td>RK3588</td>
@@ -228,6 +233,7 @@ RGA (Raster Graphic Acceleration Unit)是一个独立的2D硬件加速器，可�
       <td rowspan="1">3 (by pass)<br/>2 (scale)</td>
    </tr>
 </table>
+
 > 注：
 >
 > 1). 单位时钟周期处理像素的能力为理论数据，实际运行性能表现与带宽、硬件频率等相关，列表数据仅供参考。
@@ -386,7 +392,9 @@ RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMA
 
 > 注：
 >
-> 1). Y4格式即2的4次方色阶灰度图，Y400格式即2的8次方色阶灰度图。
+> 1). ”RK_FORMAT_YCbCr_400“格式即YUV格式仅取Y通道，常用于256（2的8次方）阶灰度图，这里需要注意由于是YUV格式存在RGB/YUV色域转换时需要留意色域配置，例如需要完整的256阶灰度图需要在转换时配置为full range。
+>
+> 2). “RK_FORMAT_Y4”格式即YUV格式仅取Y通道，并dither至4bit，常用于16（2的4次方）阶灰度图，涉及色域转换时配置的注意事项同“RK_FORMAT_YCbCr_400”。
 
 
 
@@ -503,13 +511,14 @@ RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_42
     </tr>
     <tr>
         <td>FBC mode</td>
-        <td>除上述格式对齐要求外，width、height须16对齐</td>
+        <td>除上述格式对齐要求外，width stride、height stride须16对齐</td>
     </tr>
     <tr>
         <td>TILE8*8 mode</td>
         <td>除上述格式对齐要求外，width、height须8对齐，输入通道width stride、height stride须16对齐。</td>
     </tr>
 </table>
+
 
 > 注：
 >
@@ -658,7 +667,7 @@ librga是基于驱动调用RGA硬件的，必须要保证驱动版本在使用�
 > [    2.385257] rga: rga2 probe successfully
 > [    2.385455] rga_iommu: IOMMU binding successfully, default mapping core[0x1]
 > [    2.385586] rga: Module initialized. v1.2.23
-> 
+>
 
 其中 “v1.2.23” 便是驱动版本号。
 

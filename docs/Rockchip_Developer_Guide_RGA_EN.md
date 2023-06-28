@@ -2,9 +2,9 @@
 
 ID: RK-KF-YF-403
 
-Release Version: V2.2.1
+Release Version: V2.2.2
 
-Release Date: 2023-02-09
+Release Date: 2023-06-28
 
 Security Level: □Top-Secret   □Secret   □Internal   ■Public
 
@@ -52,6 +52,7 @@ This document (this guide) is mainly intended for:
 | 2022/01/20 | 2.1.1 | Chen Cheng, Li Huang, Yu Qiaowei | Supplemental formatting support/alignment instructions. |
 | 2022/09/15 | 2.2.0 | Chen Cheng, Li Huang, Yu Qiaowei | - Supplementary default value description<br/>- New array api<br/>- New task api<br/>- New rectangle border drawing api |
 | 2023/02/09 | 2.2.1 | Yu Qiaowei | Format document. |
+| 2022/06/28 | 2.2.2 | Yu Qiaowei | - Add chip RK3562 introduction<br/>- Improve the precautions for grayscale images |
 
 ---
 
@@ -177,15 +178,15 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td>RK1808</td>
    </tr>
    <tr>
-      <td rowspan="6">RGA2-Enhance</td>
+      <td rowspan="8">RGA2-Enhance</td>
       <td>Mclaren</td>
       <td>RK3399</td>
-      <td rowspan="6">2x2</td>
-      <td rowspan="6">8192x8192</td>
-      <td rowspan="6">2x2</td>
-      <td rowspan="6">4096x4096</td>
-      <td rowspan="6">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for 1108/1109)<br/>NN quantize(NA for 3399/1108)<br/>osd(only 1106/1103)<br/>IOMMU(32bit, RK3528为40bit，NA for RV1106/1103)</td>
-      <td rowspan="6">2</td>
+      <td rowspan="8">2x2</td>
+      <td rowspan="8">8192x8192</td>
+      <td rowspan="8">2x2</td>
+      <td rowspan="8">4096x4096</td>
+      <td rowspan="8">90/180/270 Rotate<br/>X/Y Mirror<br/>Crop<br/>1/16~16 scale<br/>Alpha blend<br/>Color key<br/>Color fill<br/>Color palette<br/>ROP(NA for 1108/1109)<br/>NN quantize(NA for 3399/1108)<br/>osd(only 1106/1103)<br/>IOMMU(32bit, RK3528/RK3562 is 40bit，NA for RV1106/1103)</td>
+      <td rowspan="8">2</td>
    </tr>
    <tr>
       <td>Mercury</td>
@@ -208,6 +209,14 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td>RV1106/1103</td>
    </tr>
    <tr>
+      <td>Bull</td>
+      <td>RK3528</td>
+   </tr>
+   <tr>
+      <td>Snipe</td>
+      <td>RK3562</td>
+   </tr>
+   <tr>
       <td rowspan="1">RGA3</td>
       <td>Orion</td>
       <td>RK3588</td>
@@ -219,6 +228,7 @@ RGA (Raster Graphic Acceleration Unit) is an independent 2D hardware accelerator
       <td rowspan="1">3 (by pass)<br/>2 (scale)</td>
    </tr>
 </table>
+
 
 
 > Note:
@@ -378,7 +388,9 @@ RK_FORMAT_RGBA_8888<br/>RK_FORMAT_BGRA_8888<br/>RK_FORMAT_RGBX_8888<br/>RK_FORMA
 
 > Note:
 >
-> 1). Y4 format is 2 to the 4th power grayscale, Y400 format is 2 to the 8th power grayscale.
+> 1). The "RK_FORMAT_YCbCr_400" format means that the YUV format only takes the Y channel, and is often used in 256 (2 to the 8th power) grayscale images. Here, it should be noted that since the YUV format exists in the RGB/YUV color space conversion, you need to pay attention to the color space configuration , for example, a full 256-level grayscale image needs to be configured as full range during conversion.
+>
+> 2). The "RK_FORMAT_Y4" format means that the YUV format only takes the Y channel and dithers to 4 bits. It is often used in 16 (2 to the 4th power) grayscale images. The precautions involved in the configuration of the color space conversion are the same as “RK_FORMAT_YCbCr_400”.
 
 
 
@@ -495,13 +507,14 @@ RK_FORMAT_YCbCr_420_SP_10B<br/>RK_FORMAT_YCrCb_420_SP_10B<br/>RK_FORMAT_YCbCr_42
     </tr>
     <tr>
         <td>FBC mode</td>
-        <td>In addition to the format alignment requirements above，width、height must be 16-aligned</td>
+        <td>In addition to the format alignment requirements above，width stride、height stride must be 16-aligned</td>
     </tr>
     <tr>
         <td>TILE8*8 mode</td>
         <td>In addition to the format alignment requirements above，width、height must be 8-aligned，input channel width stride、height stride must be 16-aligned。</td>
     </tr>
 </table>
+
 
 > Note:
 >
