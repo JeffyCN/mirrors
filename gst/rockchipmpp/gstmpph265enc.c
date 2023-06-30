@@ -27,6 +27,9 @@
 
 #include "gstmpph265enc.h"
 
+/* FIXME: Not all chips support NV24 and Y444. */
+#define MPP_H265_ENC_FORMATS MPP_ENC_FORMATS ", NV24, Y444"
+
 #define GST_MPP_H265_ENC(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
     GST_TYPE_MPP_H265_ENC, GstMppH265Enc))
 
@@ -79,7 +82,7 @@ static GstStaticPadTemplate gst_mpp_h265_enc_sink_template =
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw,"
-        "format = (string) { " MPP_ENC_FORMATS " }, "
+        "format = (string) { " MPP_H265_ENC_FORMATS " }, "
         GST_MPP_H265_ENC_SIZE_CAPS ";"));
 
 static void
