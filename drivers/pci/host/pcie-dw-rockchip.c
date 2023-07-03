@@ -1053,10 +1053,10 @@ static irqreturn_t rk_pcie_sys_irq_handler(int irq, void *arg)
 					   PCIE_DMA_WR_INT_STATUS);
 
 	if (status.donesta & BIT(0)) {
-		rk_pcie_handle_dma_interrupt(rk_pcie);
 		clears.doneclr = 0x1 << chn;
 		rk_pcie_writel_dbi(rk_pcie, PCIE_DMA_OFFSET +
 				   PCIE_DMA_WR_INT_CLEAR, clears.asdword);
+		rk_pcie_handle_dma_interrupt(rk_pcie);
 	}
 
 	if (status.abortsta & BIT(0)) {
