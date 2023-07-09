@@ -4674,6 +4674,8 @@ skip_power_saving:
 unlock:
 	spin_unlock_irqrestore(&hsotg->lock, flags);
 
+	cancel_delayed_work_sync(&hsotg->hs_reset_work);
+
 	return ret;
 }
 

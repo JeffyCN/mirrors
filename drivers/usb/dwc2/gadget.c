@@ -2834,6 +2834,9 @@ static void dwc2_hsotg_core_disconnect(struct dwc2_hsotg *hsotg)
 {
 	/* set the soft-disconnect bit */
 	__orr32(hsotg->regs + DCTL, DCTL_SFTDISCON);
+
+	if (usb_linestate_is_enabled())
+		hrtimer_cancel(&hsotg->check_linestate_timer);
 }
 
 void dwc2_hsotg_core_connect(struct dwc2_hsotg *hsotg)
