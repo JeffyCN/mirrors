@@ -379,6 +379,7 @@ static void ehci_shutdown(struct usb_hcd *hcd)
 
 	ehci_silence_controller(ehci);
 
+	del_timer_sync(&hcd->rh_timer);
 	hrtimer_cancel(&ehci->hrtimer);
 }
 
@@ -1113,6 +1114,8 @@ int ehci_suspend(struct usb_hcd *hcd, bool do_wakeup)
 	clear_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
 	spin_unlock_irq(&ehci->lock);
 
+	del_timer_sync(&hcd->rh_timer);
+	cancel_delayed_work_sync(&ehci->hs_reset_work);
 	synchronize_irq(hcd->irq);
 
 	/* Check for race with a wakeup request */
@@ -1183,8 +1186,9 @@ int ehci_resume(struct usb_hcd *hcd, bool force_reset)
 
 	/* Re-enable port polling. */
 	set_bit(HCD_FLAG_POLL_RH, &hcd->flags);
-	usb_hcd_poll_rh_status(hcd);
 	spin_unlock_irq(&ehci->lock);
+
+	usb_hcd_poll_rh_status(hcd);
 
 	return 1;
 }

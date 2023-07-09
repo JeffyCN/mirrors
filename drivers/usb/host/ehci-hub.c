@@ -742,7 +742,7 @@ ehci_hub_status_data (struct usb_hcd *hcd, char *buf)
 	}
 
 	/* If a resume is in progress, make sure it can finish */
-	if (ehci->resuming_ports)
+	if (ehci->resuming_ports && HCD_POLL_RH(hcd))
 		mod_timer(&hcd->rh_timer, jiffies + msecs_to_jiffies(25));
 
 	spin_unlock_irqrestore (&ehci->lock, flags);
