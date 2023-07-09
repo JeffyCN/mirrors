@@ -150,6 +150,6 @@ ROCKCHIP_SOC(rk3308, RK3308)
 ROCKCHIP_SOC(rk3308b, RK3308B)
 ROCKCHIP_SOC(rk3308bs, RK3308BS)
 
-#define usb_linestate_is_enabled()	soc_is_rk3308bs()
+#define usb_linestate_is_enabled()	(soc_is_rk3308bs() || soc_is_px30s())
 
 #endif
