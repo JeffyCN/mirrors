@@ -298,14 +298,14 @@ gst_mpp_dec_stop (GstVideoDecoder * decoder)
 
   g_mutex_clear (&self->mutex);
 
-  mpp_destroy (self->mpp_ctx);
-
   if (self->input_state) {
     gst_video_codec_state_unref (self->input_state);
     self->input_state = NULL;
   }
 
   gst_mpp_dec_clear_allocator (decoder);
+
+  mpp_destroy (self->mpp_ctx);
 
   GST_DEBUG_OBJECT (self, "stopped");
 
