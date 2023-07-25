@@ -297,6 +297,7 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
         gst_mpp_video_format_to_string (src_format), width, height,
         gst_mpp_video_format_to_string (dst_format), dst_width, dst_height);
 
+    mppdec->convert = TRUE;
     align = 0;
   }
 
