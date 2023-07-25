@@ -405,6 +405,66 @@ gst_mpp_video_info_align (GstVideoInfo * info, gint hstride, gint vstride)
   return TRUE;
 }
 
+gboolean
+gst_mpp_video_info_matched (GstVideoInfo * info, GstVideoInfo * other)
+{
+  guint i;
+
+  if (GST_VIDEO_INFO_FORMAT (info) != GST_VIDEO_INFO_FORMAT (other))
+    return FALSE;
+
+  if (GST_VIDEO_INFO_SIZE (info) != GST_VIDEO_INFO_SIZE (other))
+    return FALSE;
+
+  if (GST_VIDEO_INFO_WIDTH (info) != GST_VIDEO_INFO_WIDTH (other))
+    return FALSE;
+
+  if (GST_VIDEO_INFO_HEIGHT (info) != GST_VIDEO_INFO_HEIGHT (other))
+    return FALSE;
+
+  for (i = 0; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
+    if (GST_VIDEO_INFO_PLANE_STRIDE (info,
+            i) != GST_VIDEO_INFO_PLANE_STRIDE (other, i))
+      return FALSE;
+    if (GST_VIDEO_INFO_PLANE_OFFSET (info,
+            i) != GST_VIDEO_INFO_PLANE_OFFSET (other, i))
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
+gboolean
+gst_mpp_info_changed (GstVideoInfo * info, MppFrame * mframe)
+{
+  MppFrameFormat mpp_format = mpp_frame_get_fmt (mframe);
+  gint width = mpp_frame_get_width (mframe);
+  gint height = mpp_frame_get_height (mframe);
+  gint hstride = mpp_frame_get_hor_stride (mframe);
+  gint vstride = mpp_frame_get_ver_stride (mframe);
+  GstVideoFormat format = gst_mpp_mpp_format_to_gst_format (mpp_format);
+
+  if (GST_VIDEO_INFO_FORMAT (info) != format)
+    return FALSE;
+
+  if (GST_VIDEO_INFO_WIDTH (info) != width)
+    return FALSE;
+
+  if (GST_VIDEO_INFO_HEIGHT (info) != height)
+    return FALSE;
+
+  if (GST_MPP_VIDEO_INFO_HSTRIDE (info) != hstride)
+    return FALSE;
+
+  if (GST_VIDEO_INFO_N_PLANES (info) == 1)
+    return TRUE;
+
+  if (GST_MPP_VIDEO_INFO_VSTRIDE (info) != vstride)
+    return FALSE;
+
+  return TRUE;
+}
+
 guint
 gst_mpp_get_pixel_stride (GstVideoInfo * info)
 {

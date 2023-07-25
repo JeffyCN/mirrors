@@ -150,35 +150,6 @@ gst_mpp_enc_supported (MppCodingType mpp_type)
   return TRUE;
 }
 
-static gboolean
-gst_mpp_enc_video_info_matched (GstVideoInfo * info, GstVideoInfo * other)
-{
-  guint i;
-
-  if (GST_VIDEO_INFO_FORMAT (info) != GST_VIDEO_INFO_FORMAT (other))
-    return FALSE;
-
-  if (GST_VIDEO_INFO_SIZE (info) != GST_VIDEO_INFO_SIZE (other))
-    return FALSE;
-
-  if (GST_VIDEO_INFO_WIDTH (info) != GST_VIDEO_INFO_WIDTH (other))
-    return FALSE;
-
-  if (GST_VIDEO_INFO_HEIGHT (info) != GST_VIDEO_INFO_HEIGHT (other))
-    return FALSE;
-
-  for (i = 0; i < GST_VIDEO_INFO_N_PLANES (info); i++) {
-    if (GST_VIDEO_INFO_PLANE_STRIDE (info,
-            i) != GST_VIDEO_INFO_PLANE_STRIDE (other, i))
-      return FALSE;
-    if (GST_VIDEO_INFO_PLANE_OFFSET (info,
-            i) != GST_VIDEO_INFO_PLANE_OFFSET (other, i))
-      return FALSE;
-  }
-
-  return TRUE;
-}
-
 gboolean
 gst_mpp_enc_video_info_align (GstVideoInfo * info)
 {
@@ -645,7 +616,7 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   }
 
   /* Check for alignment */
-  if (!gst_mpp_enc_video_info_matched (info, &state->info))
+  if (!gst_mpp_video_info_matched (info, &state->info))
     convert = TRUE;
 
   if (convert) {
@@ -816,7 +787,7 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
       GST_VIDEO_INFO_WIDTH (dst_info), GST_VIDEO_INFO_HEIGHT (dst_info),
       GST_VIDEO_INFO_N_PLANES (dst_info), dst_info->offset, dst_info->stride);
 
-  if (self->rotation || !gst_mpp_enc_video_info_matched (&src_info, dst_info))
+  if (self->rotation || !gst_mpp_video_info_matched (&src_info, dst_info))
     goto convert;
 
   if (gst_buffer_n_memory (inbuf) != 1)
