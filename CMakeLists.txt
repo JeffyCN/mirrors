@@ -154,3 +154,7 @@ install(TARGETS  ${STATIC_LIB_NAME}
 # build im2d api demo
 add_subdirectory(samples/im2d_api_demo)
 #add_subdirectory(samples)
+
+if (DEFINED RGA_ENABLE_INSTALL_SAMPLES)
+install(DIRECTORY samples DESTINATION ${CMAKE_INSTALL_PREFIX})
+endif()
