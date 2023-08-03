@@ -954,8 +954,8 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstMapInfo mapinfo = { 0, };
   GstBuffer *tmp;
+  GstClockTime start_time, deadline_time;
   GstFlowReturn ret;
-  gint timeout_ms = MPP_INPUT_TIMEOUT_MS;
   gint interval_ms = 5;
   MppPacket mpkt = NULL;
 
@@ -999,6 +999,8 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   if (GST_CLOCK_TIME_IS_VALID (frame->pts))
     self->seen_valid_pts = TRUE;
 
+  start_time = gst_util_get_timestamp ();
+  deadline_time = start_time + MPP_INPUT_TIMEOUT_MS * GST_MSECOND;
   while (1) {
     GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
     if (klass->send_mpp_packet (decoder, mpkt, interval_ms)) {
@@ -1007,8 +1009,7 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
     }
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
 
-    timeout_ms -= interval_ms;
-    if (timeout_ms <= 0)
+    if (gst_util_get_timestamp () > deadline_time)
       goto send_error;
   }
 
