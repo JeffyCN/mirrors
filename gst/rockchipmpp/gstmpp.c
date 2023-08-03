@@ -196,7 +196,7 @@ gst_mpp_rga_info_from_mpp_frame (rga_info_t * info, MppFrame mframe)
   MppBuffer mbuf = mpp_frame_get_buffer (mframe);
   guint width = mpp_frame_get_width (mframe);
   guint height = mpp_frame_get_height (mframe);
-  guint hstride = mpp_frame_get_hor_stride (mframe);
+  guint hstride = mpp_frame_get_hor_stride_pixel (mframe);
   guint vstride = mpp_frame_get_ver_stride (mframe);
   RgaSURF_FORMAT rga_format = gst_mpp_mpp_format_to_rga_format (mpp_format);
 
@@ -214,7 +214,7 @@ gst_mpp_rga_info_from_video_info (rga_info_t * info, GstVideoInfo * vinfo)
   GstVideoFormat format = GST_VIDEO_INFO_FORMAT (vinfo);
   guint width = GST_VIDEO_INFO_WIDTH (vinfo);
   guint height = GST_VIDEO_INFO_HEIGHT (vinfo);
-  guint hstride = GST_MPP_VIDEO_INFO_HSTRIDE (vinfo);
+  guint hstride = gst_mpp_get_pixel_stride (vinfo);
   guint vstride = GST_MPP_VIDEO_INFO_VSTRIDE (vinfo);
   RgaSURF_FORMAT rga_format = gst_mpp_gst_format_to_rga_format (format);
 
