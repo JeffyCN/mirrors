@@ -165,13 +165,13 @@ typedef struct {
 
 #define FW_TABLE_VERSION "v1.1 20161117"
 static const fw_auto_detection_entry_t fw_auto_detection_table[] = {
-	{"4343A0","bcm43438a0"},    //AP6212
-	{"BCM43430A1","BCM43430A1"}, //AP6212A
+	//{"4343A0","BCM43430"},    //AP6212
+	{"BCM43430A1","BCM4343A1"}, //AP6212A
 	{"BCM20702A","BCM20710A1"}, //AP6210B
-	{"BCM4335C0","bcm4339a0"}, //AP6335
+	{"BCM4335C0","BCM4335C0"}, //AP6335
 	{"BCM4330B1","BCM40183B2"}, //AP6330
 	{"BCM4324B3","BCM43241B4"}, //AP62X2
-	{"BCM4350C0","bcm4354a1"}, //AP6354
+	{"BCM4350C0","BCM4350C0"}, //AP6354
 	{"BCM4345C5","BCM4345C5"}, //AP6256
 	{"BCM4354A2","BCM4356A2"}, //AP6356
 	{"BCM4345C0","BCM4345C0"}, //AP6255
@@ -181,6 +181,11 @@ static const fw_auto_detection_entry_t fw_auto_detection_table[] = {
 	{"BCM4359C0","BCM4359C0"},  //AP6359
 	{"BCM4349B1","BCM4359B1"},  //AP6359
 	{"BCM4359C0","BCM4359C0"},	//AP6398s
+	//add
+	{"BCM4362A2","BCM4362A2"},  //AP6275S/PCIE
+	{"BCM4381A1","BCM4381A1"},  //AP6281S
+	{"BCM43013A0","BCM43013A0"},  //AP6203BM
+	{"SYN43756B0","SYN43756B0"},  //AP6276S
 	{(char *) NULL, NULL}
 };
 int uart_fd = -1;
