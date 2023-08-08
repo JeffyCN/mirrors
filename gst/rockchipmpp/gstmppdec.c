@@ -627,7 +627,7 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
 
     if (GST_CLOCK_TIME_IS_VALID (f->pts)) {
       /* Prefer frame with close PTS */
-      if (abs ((gint) f->pts - (gint) pts) < 3 * GST_MSECOND) {
+      if (abs ((gint) (f->pts - pts)) < 3 * GST_MSECOND) {
         frame = f;
 
         GST_DEBUG_OBJECT (self, "using matched frame (#%d)",
