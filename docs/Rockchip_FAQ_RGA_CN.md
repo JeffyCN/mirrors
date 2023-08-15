@@ -193,7 +193,7 @@ https://eyun.baidu.com/s/3i6sbsDR
   setprop vendor.rga.log_level 6
   ```
 
-  
+
 
 - Linux平台
 
@@ -213,7 +213,7 @@ https://eyun.baidu.com/s/3i6sbsDR
   export ROCKCHIP_RGA_LOG_LEVEL=6
   ```
 
-   
+
 
 #### 日志说明
 
@@ -453,7 +453,7 @@ help:
 
 - msg模式
   - RGA Device Driver、RGA2 Device Driver
-  
+
   ```
   rga2: open rga2 test MSG!								//msg日志开启打印。
   rga2: cmd is RGA2_GET_VERSION							//获取版本号功能，每个进程第一次调用librga时会查询硬件版本。
@@ -467,11 +467,11 @@ help:
   rga2: yuv2rgb mode is 0									//csc模式
   rga2: *** rga2_blit_sync proc ***
   ```
-  
+
   - RGA multicore Device Driver
-  
+
     - 内存管理器日志
-  
+
     ```
     rga: import buffer info:
     rga_common: external: memory = 0xb400007458406000, type = virt_addr
@@ -480,9 +480,9 @@ help:
     													//w/h/f：以图像画布的形式描述内存大小，size：内存大小
     rga_dma_buf: iova_align size = 3686400				//iova对齐后的大小
     ```
-  
+
     - 任务请求日志
-  
+
     ```
     rga: Blit mode: request id = 192732					//运行模式以及request id
     rga_debugger: render_mode = 0, bitblit_mode=0, rotate_mode = 0
@@ -500,9 +500,9 @@ help:
     rga_debugger: set core = 0, priority = 0, in_fence_fd = -1
         												//set_core：用户态指定的核心，priority：用户态指定的优先级，in_fence_fd：用户态传递的acquire_fence fd
     ```
-  
+
     - 硬件匹配日志
-  
+
     ```
     rga_policy: start policy on core = 1
     rga_policy: start policy on core = 2
@@ -511,9 +511,9 @@ help:
     rga_policy: optional_cores = 3						//当前请求可匹配的硬件核心合集
     rga_policy: assign core: 1							//匹配后绑定的硬件核心标识
     ```
-  
+
     - 对应硬件参数日志
-  
+
     ```
     rga3_reg: render_mode:bitblt, bitblit_mode=0, rotate_mode:0
     rga3_reg: win0: y = ffc70000 uv = ffd51000 v = ffd89400 src_w = 1280 src_h = 720
@@ -868,9 +868,21 @@ index 02938b0..10a1dc4 100644
 
 
 
-**Q1.8**：为什么当搭载8G DDR时，RGA效率较于4G时性能下降严重？
+**Q1.8**：调用RGA时为什么会有较高的CPU负载？
 
-**A1.8**：由于部分RGA1/RGA2的IOMMU仅支持最大32位的物理地址，而RGA Device Driver、RGA2 Device Driver中对于不满足硬件内存要求的调用申请，默认是通过swiotlb机制进行访问访问受限制的内存（原理上相当于通过CPU将高位内存拷贝至复合硬件要求的低位内存中，再交由硬件进行处理，处理完毕后再通过CPU将低位内存搬运回目标的高位内存上。）因此效率十分低下，通常在正常耗时的3-4倍之间浮动，并且引入受CPU负载影响。
+**A1.8**：调用RGA时除了基础必要的CPU负载外，有以下几种情况会导致增加较高的额外CPU负载：
+
+​			1). 当使用虚拟地址调用RGA时，虚拟地址本身是CPU的访问地址，要通过当前进程的映射表转换为硬件可识别的离散的物理地址表是通过CPU查询、计算的，因此会引入额外的CPU负载。通常不建议在实际的产品场景中使用虚拟地址调用RGA，更建议使用dma-buf fd来调用RGA，除非业务逻辑上仅存在虚拟地址并不在意这部分CPU负载损耗。
+
+​			2). 当使用的虚拟地址是cacheable的，由于使能了cache，RGA驱动会在硬件访问内存前后强制同步cache数据，因此会增加CPU同步cache和内存的负载。由于常见的虚拟地址分配器并不是设计用于给其他硬件访问的，并存在同步cache的接口，因此驱动针对虚拟地址强制同步cache也是必要的。
+
+​			3). 当时用dma-buf fd调用RGA时，有些分配器默认分配的是cacheable的buffer，并且kernel中dma-buf的处理会强制同步cache的情况，这是也会存在每次调用RGA时会有较大的CPU负载，也是因为CPU同步cache和内存引入的负载。该种情况下建议分配禁用cache的dma-buf。
+
+
+
+**Q1.9**：为什么当搭载8G DDR时，RGA效率较于4G时性能下降严重？
+
+**A1.9**：由于部分RGA1/RGA2的IOMMU仅支持最大32位的物理地址，而RGA Device Driver、RGA2 Device Driver中对于不满足硬件内存要求的调用申请，默认是通过swiotlb机制进行访问访问受限制的内存（原理上相当于通过CPU将高位内存拷贝至复合硬件要求的低位内存中，再交由硬件进行处理，处理完毕后再通过CPU将低位内存搬运回目标的高位内存上。）因此效率十分低下，通常在正常耗时的3-4倍之间浮动，并且引入受CPU负载影响。
 
 RGA Multicore Device Driver中针对访问受限制的内存会禁用swiotlb机制，直接通过调用失败的方式显示的通知调用者申请合理的内存再调用，来保证RGA的高效。通常伴随着以下日志：
 
@@ -1189,11 +1201,23 @@ Date:   Tue Nov 24 19:50:17 2020 +0800
 
 
 
-**A2.21**：调用RGA处理图像后出现黑色或绿色的小条纹，这是什么原因？
+**Q2.21**：调用RGA处理图像后出现黑色或绿色的小条纹，这是什么原因？
 
 ​			![image-cache-abnormal](RGA_FAQ.assets/image-cache-abnormal.png)
 
-**Q2.21**：这是使用非虚拟地址调用时，buffer使能了cache，并且在CPU操作前后没有同步cache导致的。如果不了解如何同步cache可以参考samples/allocator_demo/src/rga_allocator_dma_cache_demo.cpp中的用法。
+**A2.21**：这是使用非虚拟地址调用时，buffer使能了cache，并且在CPU操作前后没有同步cache导致的。如果不了解如何同步cache可以参考samples/allocator_demo/src/rga_allocator_dma_cache_demo.cpp中的用法。
+
+
+
+**Q2.22**：在RK3588上出现同一显示区域使用RGA缩放后画面抖动，这是什么原因导致的？
+
+**A2.22**：由于RK3588比较特殊，搭载有两种RGA核心（一颗RGA2，两颗RGA3），它们在缩放算法上存在一些取数行为的差异导致结果会出现整体左上移/右下移的现象，因为在这种对显示效果有要求的场景上，建议指定核心的方式来避免出现算法差异引入的抖动问题。
+
+​			指定核心可以参考以下示例代码：
+
+​			**<librga_souce_path>/samples/config_demo/src/rga_config_single_core_demo.cpp**
+
+​			**<librga_souce_path>/samples/config_demo/src/rga_config_thread_core_demo.cpp**
 
 
 
@@ -1238,15 +1262,15 @@ Fatal error: Failed to call RockChipRga interface, please use 'dmesg' command to
 
 **A3.2.2**：出现该标头报错说明当前RGA任务在驱动运行失败返回，具体原因需要通过dmesg查看驱动日志。
 
-​				**Q3.2.2.1**：“RgaBlit(1027) RGA_BLIT fail: Not a typewriter” 
+​				**Q3.2.2.1**：“RgaBlit(1027) RGA_BLIT fail: Not a typewriter”
 
 ​				**A3.2.2.1**：该报错通常为参数错误导致，建议检查一下缩放倍数、虚宽是否小于实宽与对应方向的偏移的和、对齐是否符合要求。建议新开发项目使用IM2D API，拥有更全面的检测报错机制，方便开发者节省大量的调试时间。
 
-​				**Q3.2.2.2**：“RgaBlit(1349) RGA_BLIT fail: Bad file descriptor” 
+​				**Q3.2.2.2**：“RgaBlit(1349) RGA_BLIT fail: Bad file descriptor”
 
 ​				**A3.2.2.2**：该报错为ioctl报错，标识当前传入的设备节点的fd无效，请尝试更新librga或确认RGA的初始化流程是否有被修改。
 
-​				**Q3.2.2.3**：“RgaBlit(1360) RGA_BLIT fail: Bad address” 
+​				**Q3.2.2.3**：“RgaBlit(1360) RGA_BLIT fail: Bad address”
 
 ​				**A3.2.2.4**：该报错通常为传入内核的src/src1/dst通道的内存地址存在问题导致（常见为越界），可以参照本文档 “日志获取与说明” —— “驱动调试节点” 小节，开启驱动日志，并定位出错的内存。
 
@@ -1278,7 +1302,7 @@ E rockchiprga: This output the user parameters when rga call blit fail		//报错
 
 ### kernel层报错
 
-**Q4.1**：“RGA2 failed to get vma, result = 32769, pageCount = 65537”报错是什么导致的？
+**Q4.1**：“RGA2 failed to get pte, result = -14, pageCount = 112”、“RGA2 failed to get vma, result = 32769, pageCount = 65537”报错是什么导致的？
 
 **A4.1**：该报错通常为使用虚拟地址调用RGA时，虚拟地址的实际内存小于实际需要的内存大小（即根据图像参数计算出当前通道的图像需要多大的内存），只需检查buffer的大小即可，在一些申请和调用不是在同一处的场景下，可以在调用RGA前执行一遍memset对应图像的大小，确认是否为内存大小不足导致的问题。
 
@@ -1366,6 +1390,10 @@ Failed to call RockChipRga interface, please use 'dmesg' command to view driver 
 3. 仅搭载一种RGA的芯片平台（例如仅搭载RGA2的RK3399、RK3568、Rk3566）上：
 
    当芯片平台上仅搭载内存访问受限制的核心时，则调用RGA时必须申请符合搭载核心对内存要求的内存，解决方案同上场景2。
+
+4. 当使用DRM、malloc、new等不支持指定分配4G以内内存空间的内存的内存分配器时，也可以通过修改uboot的内存映射范围来解决。
+
+   uboot相关修改可以参考SDK文档中 **uboot开发文档->Chapter-8 调试手段->修改DDR容量** ，将内存映射范围全局限制在0~4G内存空间以内即可。
 
 
 
