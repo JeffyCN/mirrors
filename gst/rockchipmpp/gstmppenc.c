@@ -366,7 +366,8 @@ gst_mpp_enc_apply_properties (GstVideoEncoder * encoder)
         self->bps_max ? : self->bps * 17 / 16);
     mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_min",
         self->bps_min ? : self->bps * 15 / 16);
-  } else if (self->rc_mode == MPP_ENC_RC_MODE_VBR) {
+  } else {
+    /* MPP_ENC_RC_MODE_VBR/MPP_ENC_RC_MODE_AVBR */
     /* VBR mode has wide bound */
     mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_target", self->bps);
     mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:bps_max",
