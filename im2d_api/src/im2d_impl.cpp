@@ -2052,10 +2052,22 @@ IM_STATUS rga_job_cancel(im_job_handle_t job_handle) {
 IM_STATUS rga_job_submit(im_job_handle_t job_handle, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
     int ret;
     im_rga_job_t *job = NULL;
-    struct rga_user_request submit_request;
+    struct rga_user_request submit_request = {0};
 
     if (rga_get_context() != IM_STATUS_SUCCESS)
         return IM_STATUS_FAILED;
+
+    switch (sync_mode) {
+        case IM_SYNC:
+            submit_request.sync_mode = RGA_BLIT_SYNC;
+            break;
+        case IM_ASYNC:
+            submit_request.sync_mode = RGA_BLIT_ASYNC;
+            break;
+        default:
+            IM_LOGE("illegal sync mode!\n");
+            return IM_STATUS_ILLEGAL_PARAM;
+    }
 
     g_im2d_job_manager.mutex.lock();
 
@@ -2074,43 +2086,32 @@ IM_STATUS rga_job_submit(im_job_handle_t job_handle, int sync_mode, int acquire_
         return IM_STATUS_FAILED;
     }
 
-    memset(&submit_request, 0x0, sizeof(submit_request));
-
-    submit_request.task_ptr = ptr_to_u64(&job->req);
-    submit_request.task_num = job->task_count;
-    submit_request.id = job->id;
-
     g_im2d_job_manager.job_map.erase(job_handle);
     g_im2d_job_manager.job_count--;
 
     g_im2d_job_manager.mutex.unlock();
 
-    free(job);
-
-    switch (sync_mode) {
-        case IM_SYNC:
-            submit_request.sync_mode = RGA_BLIT_SYNC;
-            break;
-        case IM_ASYNC:
-            submit_request.sync_mode = RGA_BLIT_ASYNC;
-            break;
-        default:
-            IM_LOGE("illegal sync mode!\n");
-            return IM_STATUS_ILLEGAL_PARAM;
-    }
-
+    submit_request.task_ptr = ptr_to_u64(job->req);
+    submit_request.task_num = job->task_count;
+    submit_request.id = job->id;
     submit_request.acquire_fence_fd = acquire_fence_fd;
 
     ret = ioctl(rgaCtx->rgaFd, RGA_IOC_REQUEST_SUBMIT, &submit_request);
     if (ret < 0) {
         IM_LOGE(" %s(%d) start config fail: %s",__FUNCTION__, __LINE__,strerror(errno));
-        return IM_STATUS_FAILED;
+        ret = IM_STATUS_FAILED;
+        goto free_job;
+    } else {
+        ret = IM_STATUS_SUCCESS;
     }
 
     if ((sync_mode == IM_ASYNC) && release_fence_fd)
         *release_fence_fd = submit_request.release_fence_fd;
 
-    return IM_STATUS_SUCCESS;
+free_job:
+    free(job);
+
+    return (IM_STATUS)ret;
 }
 
 IM_STATUS rga_job_config(im_job_handle_t job_handle, int sync_mode, int acquire_fence_fd, int *release_fence_fd) {
