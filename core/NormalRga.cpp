@@ -1512,6 +1512,14 @@ int RgaCollorFill(rga_info *dst) {
         return -ENODEV;
     }
 
+    /* print debug log by setting property vendor.rga.log as 1 */
+    is_debug_log();
+    if(is_out_log()) {
+        ALOGD("<<<<-------- print rgaLog -------->>>>");
+        ALOGD("dst->hnd = 0x%lx\n", (unsigned long)dst->hnd);
+        ALOGD("dst: handle = %d, Fd = %.2d ,phyAddr = %p ,virAddr = %p\n", dst->handle, dst->fd, dst->phyAddr, dst->virAddr);
+    }
+
     memset(&rgaReg, 0, sizeof(struct rga_req));
 
     dstType = dstMmuFlag = 0;
@@ -1569,6 +1577,11 @@ int RgaCollorFill(rga_info *dst) {
     if (dstFd == 0 && !dstBuf) {
         ALOGE("dstFd is zero, now driver not support");
         return -EINVAL;
+    }
+
+    if(is_out_log()) {
+        ALOGD("handle_flag: 0x%x\n", rgaReg.handle_flag);
+        ALOGD("dst: Fd/handle = %.2d , buf = %p, mmuFlag = %d, mmuType = %d\n", dstFd, dstBuf, dst->mmuFlag, dstType);
     }
 
     relDstRect.format = RkRgaCompatibleFormat(relDstRect.format);
@@ -1685,11 +1698,11 @@ int RgaCollorFill(rga_info *dst) {
         NormalRgaMmuFlag(&rgaReg, dstMmuFlag, dstMmuFlag);
     }
 
-#ifdef LINUX
-#if __DEBUG
-    NormalRgaLogOutRgaReq(rgaReg);
-#endif
-#endif
+    if(is_out_log()) {
+        ALOGD("dstMmuFlag = %d\n", dstMmuFlag);
+        ALOGD("<<<<-------- rgaReg -------->>>>\n");
+        NormalRgaLogOutRgaReq(rgaReg);
+    }
 
     if(dst->sync_mode == RGA_BLIT_ASYNC) {
         sync_mode = dst->sync_mode;
