@@ -121,3 +121,55 @@ $ chmod +x ./cmake_linux.sh
 $ ./cmake_linux.sh
 ```
 
+
+
+## 测试文件说明
+
+### 示例文件
+
+​    用于测试的输入与输出二进制文件需提前准备好，在/sample/sample_file目录下，存放着默认的RGBA8888格式的源图像文件可以直接使用。
+
+### 路径说明
+
+​    在示例代码中，可以通过配置以下宏定义来修改读取图像文件的路径：
+
+| 宏定义          | 描述                                                         |
+| --------------- | ------------------------------------------------------------ |
+| LOCAL_FILE_PATH | read_image_from_file/write_image_to_file函数第二个传参，用于描述当前读/写示例文件的路径，默认路径为"/data" |
+
+### 示例文件名说明
+
+​    文件命名规则如下：
+
+```
+in%dw%d-h%d-%s.bin
+out%dw%d-h%d-%s.bin
+
+示例：
+1280×720 RGBA8888的输入图像： in0w1280-h720-rgba8888.bin
+1280×720 RGBA8888的输出图像： out0w1280-h720-rgba8888.bin
+```
+
+​    参数解释如下：
+
+> 输入文件为 in ， 输出文件为 out
+> --->第一个%d 是文件的索引， 一般为 0， 用于区别格式及宽高完全相同的文件
+> --->第二个%d 是宽的意思， 这里的宽一般指虚宽
+> --->第三个%d 是高的意思， 这里的高一般指虚高
+> --->第四个%s 是格式的名字。
+>
+> 预置测试的部分常用图像格式如下，其他格式对应字符串名可以查看rgaUtils.cpp中查看：
+
+| format（Android）                 | format（Linux）            | name        |
+| :-------------------------------- | -------------------------- | ----------- |
+| HAL_PIXEL_FORMAT_RGB_565          | RK_FORMAT_RGB_565          | "rgb565"    |
+| HAL_PIXEL_FORMAT_RGB_888          | RK_FORMAT_RGB_888          | "rgb888"    |
+| HAL_PIXEL_FORMAT_RGBA_8888        | RK_FORMAT_RGBA_8888        | "rgba8888"  |
+| HAL_PIXEL_FORMAT_RGBX_8888        | RK_FORMAT_RGBX_8888        | "rgbx8888"  |
+| HAL_PIXEL_FORMAT_BGRA_8888        | RK_FORMAT_BGRA_8888        | "bgra8888"  |
+| HAL_PIXEL_FORMAT_YCrCb_420_SP     | RK_FORMAT_YCrCb_420_SP     | "crcb420sp" |
+| HAL_PIXEL_FORMAT_YCrCb_NV12       | RK_FORMAT_YCbCr_420_SP     | "nv12"      |
+| HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO | /                          | "nv12"      |
+| HAL_PIXEL_FORMAT_YCrCb_NV12_10    | RK_FORMAT_YCbCr_420_SP_10B | "nv12_10"   |
+
+> 通常demo中默认配置的输入图像分辨率为1280x720，格式为RGBA8888。因此需在对应配置的读文件路径下提前准备好in0w1280-h720-rgba8888.bin的源图像文件，图像合成模式还需额外准备好名为in1w1280-h720-rgba8888.bin的源图像文件。
