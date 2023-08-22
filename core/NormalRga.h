@@ -172,10 +172,11 @@ int         NormalRgaSetRopMaskInfo(struct rga_req *msg,
 
 /* use dst alpha  */
 
-int         NormalRgaSetAlphaEnInfo(struct rga_req *msg,
-                                    unsigned int alpha_cal_mode, unsigned int alpha_mode,
-                                    unsigned int global_a_value, unsigned int PD_en,
-                                    unsigned int PD_mode,        unsigned int dst_alpha_en );
+int NormalRgaSetAlphaEnInfo(struct rga_req *msg,
+                            unsigned int alpha_cal_mode, unsigned int alpha_mode,
+                            unsigned int fg_global_alpha, unsigned int bg_global_alpha,
+                            unsigned int PD_en, unsigned int PD_mode,
+                            unsigned int dst_alpha_en);
 
 
 

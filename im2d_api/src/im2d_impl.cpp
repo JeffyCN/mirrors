@@ -1673,16 +1673,14 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
             IM_LOGE("rga_im2d: Could not find blend usage : 0x%x \n", usage);
 
         /* set global alpha */
-        if (src.global_alpha > 0)
-            srcinfo.blend ^= src.global_alpha << 16;
-        else {
-            srcinfo.blend ^= 0xFF << 16;
-        }
+        srcinfo.blend |= (src.global_alpha & 0xff) << 16;
+        srcinfo.blend |= (dst.global_alpha & 0xff) << 24;
     }
 
     /* color key */
     if (usage & IM_ALPHA_COLORKEY_MASK) {
-        srcinfo.blend = 0xff0105;
+        if (!(srcinfo.blend & 0xfff))
+            srcinfo.blend |= 0xffff1001;
 
         srcinfo.colorkey_en = 1;
         srcinfo.colorkey_min = opt.colorkey_range.min;

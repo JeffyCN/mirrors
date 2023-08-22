@@ -374,7 +374,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     int src1VirW,src1VirH,src1ActW,src1ActH,src1XPos,src1YPos;
     int scaleMode,rotateMode,orientation,ditherEn;
     int srcType,dstType,src1Type,srcMmuFlag,dstMmuFlag,src1MmuFlag;
-    int planeAlpha;
+    int fg_global_alpha, bg_global_alpha;
     int dstFd = -1;
     int srcFd = -1;
     int src1Fd = -1;
@@ -687,7 +687,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 #endif
 
     /* blend bit[16:23] is to set global alpha. */
-    planeAlpha = (blend & 0xFF0000) >> 16;
+    fg_global_alpha = (blend >> 16) & 0xff;
+    bg_global_alpha = (blend >> 24) & 0xff;
 
     /* determined by format, need pixel alpha or not. */
     perpixelAlpha = NormalRgaFormatHasAlpha(RkRgaGetRgaFormat(relSrcRect.format));
@@ -702,42 +703,42 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
         /* blend bit[0:15] is to set which way to blend, such as whether need glabal alpha, and so on. */
         switch ((blend & 0xFFFF)) {
             case 0x0105:/* src over , no need to Premultiplied. */
-                if (perpixelAlpha && planeAlpha < 255) {
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha, 1, 9, 0);
+                if (perpixelAlpha && fg_global_alpha < 0xff) {
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, fg_global_alpha, 0xff, 1, 9, 0);
                 } else if (perpixelAlpha)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0, 1, 3, 0);
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0xff, 0xff, 1, 3, 0);
                 else
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, fg_global_alpha, 0xff, 0, 0, 0);
                 break;
 
             case 0x0405:/* src over , need to Premultiplied. */
-                if (perpixelAlpha && planeAlpha < 255)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha, 1, 9, 0);
+                if (perpixelAlpha && fg_global_alpha < 0xff)
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, fg_global_alpha, 0xff, 1, 9, 0);
                 else if (perpixelAlpha)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0, 1, 3, 0);
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0xff, 0xff, 1, 3, 0);
                 else
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, planeAlpha, 0, 0, 0);
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, fg_global_alpha, 0xff, 0, 0, 0);
 
                 rgaReg.alpha_rop_flag |= (1 << 9);  //real color mode
 
                 break;
 
             case 0x0501:/* dst over , no need premultiplied. */
-                if (perpixelAlpha && planeAlpha < 255)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 4, 0);
+                if (perpixelAlpha && bg_global_alpha < 0xff)
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, 0xff, bg_global_alpha , 1, 4, 0);
                 else if (perpixelAlpha)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, planeAlpha , 1, 4, 0);
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0xff, 0xff , 1, 4, 0);
                 else
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 3, planeAlpha , 1, 4, 0);
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 3, 0xff, bg_global_alpha , 1, 4, 0);
                 break;
 
             case 0x0504:/* dst over, need premultiplied. */
-                if (perpixelAlpha && planeAlpha < 255)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, planeAlpha , 1, 4, 0);
+                if (perpixelAlpha && bg_global_alpha < 0xff)
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, 0xff, bg_global_alpha , 1, 4, 0);
                 else if (perpixelAlpha)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, planeAlpha , 1, 4, 0);
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0xff, 0xff , 1, 4, 0);
                 else
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 3, planeAlpha , 1, 4, 0);
+                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 3, 0xff, bg_global_alpha , 1, 4, 0);
 
                 rgaReg.alpha_rop_flag |= (1 << 9);  //real color mode
                 break;
@@ -749,12 +750,12 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
                 * A = As */
                 break;
         }
-    } else if (blend > 0) {
+    } else if ((blend & 0xfff) > 0) {
         /* botn not use global alpha. */
-        NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, planeAlpha , 1, blend & 0xfff, 0);
+        NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, fg_global_alpha, bg_global_alpha , 1, blend & 0xfff, 0);
 
         /* need to pre-multiply. */
-        if ((blend >> 12) & 1)
+        if ((blend >> 12) & 0x1)
             rgaReg.alpha_rop_flag |= (1 << 9);
     }
 

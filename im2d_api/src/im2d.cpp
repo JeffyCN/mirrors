@@ -154,6 +154,9 @@ static inline void set_default_rga_buffer(rga_buffer_t *buffer,
     buffer->hstride = hstride;
     buffer->format = format;
 
+    buffer->global_alpha = 0xff;
+    buffer->color_space_mode = IM_COLOR_SPACE_DEFAULT;
+    buffer->rd_mode = IM_RASTER_MODE;
 }
 
 #undef wrapbuffer_virtualaddr
@@ -328,6 +331,11 @@ IM_API rga_buffer_t wrapbuffer_AHardwareBuffer(AHardwareBuffer *buf) {
 }
 #endif
 #endif
+
+void imsetOpacity(rga_buffer_t *buf, uint8_t alpha) {
+    buf->global_alpha = alpha;
+}
+
 
 IM_API const char* querystring(int name) {
     bool all_output = 0, all_output_prepared = 0;

@@ -446,18 +446,21 @@ int NormalRgaSetRopMaskInfo(struct rga_req *msg,
 
 int NormalRgaSetAlphaEnInfo(struct rga_req *msg,
                             unsigned int alpha_cal_mode, unsigned int alpha_mode,
-                            unsigned int global_a_value, unsigned int PD_en,
-                            unsigned int PD_mode,        unsigned int dst_alpha_en ) {
+                            unsigned int fg_global_alpha, unsigned int bg_global_alpha,
+                            unsigned int PD_en, unsigned int PD_mode,
+                            unsigned int dst_alpha_en) {
     msg->alpha_rop_flag |= 1;
     msg->alpha_rop_flag |= ((PD_en & 1) << 3);
     msg->alpha_rop_flag |= ((alpha_cal_mode & 1) << 4);
 
-    msg->alpha_global_value = global_a_value;
+    // msg->alpha_global_value = global_a_value;
+    msg->fg_global_alpha = fg_global_alpha;
+    msg->bg_global_alpha = bg_global_alpha;
+
     msg->alpha_rop_mode |= (alpha_mode & 3);
     msg->alpha_rop_mode |= (dst_alpha_en << 5);
 
     msg->PD_mode = PD_mode;
-
 
     return 1;
 }

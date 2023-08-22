@@ -453,7 +453,11 @@ struct rga_req {
 
     rga_pre_intr_info_t pre_intr_info;
 
-    uint8_t reservr[59];
+	/* global alpha */
+	uint8_t fg_global_alpha;
+	uint8_t bg_global_alpha;
+
+	uint8_t reservr[57];
 };
 
 struct rga_user_request {
