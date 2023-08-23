@@ -1632,37 +1632,37 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
     if (usage & IM_ALPHA_BLEND_MASK) {
         switch(usage & IM_ALPHA_BLEND_MASK) {
             case IM_ALPHA_BLEND_SRC:
-                srcinfo.blend = 0x1;
+                srcinfo.blend = RGA_ALPHA_BLEND_SRC;
                 break;
             case IM_ALPHA_BLEND_DST:
-                srcinfo.blend = 0x2;
+                srcinfo.blend = RGA_ALPHA_BLEND_DST;
                 break;
             case IM_ALPHA_BLEND_SRC_OVER:
-                srcinfo.blend = 0x3;
+                srcinfo.blend = RGA_ALPHA_BLEND_SRC_OVER;
                 break;
             case IM_ALPHA_BLEND_DST_OVER:
-                srcinfo.blend = 0x4;
+                srcinfo.blend = RGA_ALPHA_BLEND_DST_OVER;
                 break;
             case IM_ALPHA_BLEND_SRC_IN:
-                srcinfo.blend = 0x5;
+                srcinfo.blend = RGA_ALPHA_BLEND_SRC_IN;
                 break;
             case IM_ALPHA_BLEND_DST_IN:
-                srcinfo.blend = 0x6;
+                srcinfo.blend = RGA_ALPHA_BLEND_DST_IN;
                 break;
             case IM_ALPHA_BLEND_SRC_OUT:
-                srcinfo.blend = 0x7;
+                srcinfo.blend = RGA_ALPHA_BLEND_SRC_OUT;
                 break;
             case IM_ALPHA_BLEND_DST_OUT:
-                srcinfo.blend = 0x8;
+                srcinfo.blend = RGA_ALPHA_BLEND_DST_OUT;
                 break;
             case IM_ALPHA_BLEND_SRC_ATOP:
-                srcinfo.blend = 0x9;
+                srcinfo.blend = RGA_ALPHA_BLEND_SRC_ATOP;
                 break;
             case IM_ALPHA_BLEND_DST_ATOP:
-                srcinfo.blend = 0xa;
+                srcinfo.blend = RGA_ALPHA_BLEND_DST_ATOP;
                 break;
             case IM_ALPHA_BLEND_XOR:
-                srcinfo.blend = 0xb;
+                srcinfo.blend = RGA_ALPHA_BLEND_XOR;
                 break;
         }
 

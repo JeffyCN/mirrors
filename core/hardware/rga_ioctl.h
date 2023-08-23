@@ -125,6 +125,22 @@ enum {
     rotate_mode3             = 0x3,     /* y_mirror  */
 };
 
+enum rga_alpha_blend_mode {
+	RGA_ALPHA_NONE			= 0,
+	RGA_ALPHA_BLEND_SRC,
+	RGA_ALPHA_BLEND_DST,
+	RGA_ALPHA_BLEND_SRC_OVER,
+	RGA_ALPHA_BLEND_DST_OVER,
+	RGA_ALPHA_BLEND_SRC_IN,
+	RGA_ALPHA_BLEND_DST_IN,
+	RGA_ALPHA_BLEND_SRC_OUT,
+	RGA_ALPHA_BLEND_DST_OUT,
+	RGA_ALPHA_BLEND_SRC_ATOP,
+	RGA_ALPHA_BLEND_DST_ATOP,
+	RGA_ALPHA_BLEND_XOR,
+	RGA_ALPHA_BLEND_CLEAR,
+};
+
 typedef struct rga_img_info_t {
     uint64_t yrgb_addr;          /* yrgb    mem addr         */
     uint64_t uv_addr;            /* cb/cr   mem addr         */

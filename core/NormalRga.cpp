@@ -686,72 +686,37 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
     }
 #endif
 
-    /* blend bit[16:23] is to set global alpha. */
-    fg_global_alpha = (blend >> 16) & 0xff;
-    bg_global_alpha = (blend >> 24) & 0xff;
-
     /* determined by format, need pixel alpha or not. */
     perpixelAlpha = NormalRgaFormatHasAlpha(RkRgaGetRgaFormat(relSrcRect.format));
 
     if(is_out_log())
         ALOGE("blend = %x , perpixelAlpha = %d",blend,perpixelAlpha);
 
-    /* Compatible with legacy blend mode. */
-    if (blend == 0x405 || blend == 0x504 ||
-        blend == 0x105 || blend == 0x501 ||
-        blend == 0x100) {
-        /* blend bit[0:15] is to set which way to blend, such as whether need glabal alpha, and so on. */
-        switch ((blend & 0xFFFF)) {
-            case 0x0105:/* src over , no need to Premultiplied. */
-                if (perpixelAlpha && fg_global_alpha < 0xff) {
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, fg_global_alpha, 0xff, 1, 9, 0);
-                } else if (perpixelAlpha)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0xff, 0xff, 1, 3, 0);
-                else
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, fg_global_alpha, 0xff, 0, 0, 0);
+    if (blend & 0xfff) {
+        /* blend bit[16:23] is to set global alpha. */
+        fg_global_alpha = (blend >> 16) & 0xff;
+        bg_global_alpha = (blend >> 24) & 0xff;
+
+        switch (blend) {
+            case 0x405:
+                blend = RGA_ALPHA_BLEND_SRC_OVER;
+                blend |= 0x1 << 12;
                 break;
-
-            case 0x0405:/* src over , need to Premultiplied. */
-                if (perpixelAlpha && fg_global_alpha < 0xff)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, fg_global_alpha, 0xff, 1, 9, 0);
-                else if (perpixelAlpha)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0xff, 0xff, 1, 3, 0);
-                else
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 0, fg_global_alpha, 0xff, 0, 0, 0);
-
-                rgaReg.alpha_rop_flag |= (1 << 9);  //real color mode
-
+            case 0x504:
+                blend = RGA_ALPHA_BLEND_DST_OVER;
+                blend |= 0x1 << 12;
                 break;
-
-            case 0x0501:/* dst over , no need premultiplied. */
-                if (perpixelAlpha && bg_global_alpha < 0xff)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, 0xff, bg_global_alpha , 1, 4, 0);
-                else if (perpixelAlpha)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0xff, 0xff , 1, 4, 0);
-                else
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 3, 0xff, bg_global_alpha , 1, 4, 0);
+            case 0x105:
+                blend = RGA_ALPHA_BLEND_SRC_OVER;
                 break;
-
-            case 0x0504:/* dst over, need premultiplied. */
-                if (perpixelAlpha && bg_global_alpha < 0xff)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 2, 0xff, bg_global_alpha , 1, 4, 0);
-                else if (perpixelAlpha)
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, 0xff, 0xff , 1, 4, 0);
-                else
-                    NormalRgaSetAlphaEnInfo(&rgaReg, 1, 3, 0xff, bg_global_alpha , 1, 4, 0);
-
-                rgaReg.alpha_rop_flag |= (1 << 9);  //real color mode
+            case 0x501:
+                blend = RGA_ALPHA_BLEND_DST_OVER;
                 break;
-            case 0x0100:
-            default:
-                /* Tips: BLENDING_NONE is non-zero value, handle zero value as
-                * BLENDING_NONE. */
-                /* C = Cs
-                * A = As */
+            case 0x100:
+                blend = RGA_ALPHA_BLEND_SRC;
                 break;
         }
-    } else if ((blend & 0xfff) > 0) {
-        /* botn not use global alpha. */
+
         NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, fg_global_alpha, bg_global_alpha , 1, blend & 0xfff, 0);
 
         /* need to pre-multiply. */
