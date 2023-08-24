@@ -368,6 +368,10 @@ gst_mpp_video_info_align (GstVideoInfo * info, gint hstride, gint vstride)
   if (!vstride)
     vstride = GST_MPP_ALIGN (GST_MPP_VIDEO_INFO_VSTRIDE (info));
 
+  if (hstride == GST_MPP_VIDEO_INFO_HSTRIDE (info) &&
+      vstride == GST_MPP_VIDEO_INFO_VSTRIDE (info))
+    return TRUE;
+
   GST_DEBUG ("aligning %dx%d to %dx%d", GST_VIDEO_INFO_WIDTH (info),
       GST_VIDEO_INFO_HEIGHT (info), hstride, vstride);
 
@@ -411,9 +415,6 @@ gst_mpp_video_info_matched (GstVideoInfo * info, GstVideoInfo * other)
   guint i;
 
   if (GST_VIDEO_INFO_FORMAT (info) != GST_VIDEO_INFO_FORMAT (other))
-    return FALSE;
-
-  if (GST_VIDEO_INFO_SIZE (info) != GST_VIDEO_INFO_SIZE (other))
     return FALSE;
 
   if (GST_VIDEO_INFO_WIDTH (info) != GST_VIDEO_INFO_WIDTH (other))

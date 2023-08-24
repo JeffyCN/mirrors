@@ -567,6 +567,26 @@ gst_mpp_enc_finish (GstVideoEncoder * encoder)
 }
 
 static gboolean
+gst_mpp_enc_apply_strides (GstVideoEncoder * encoder, gint hstride,
+    gint vstride)
+{
+  GstMppEnc *self = GST_MPP_ENC (encoder);
+  GstVideoInfo *info = &self->info;
+
+  mpp_frame_set_hor_stride (self->mpp_frame, hstride);
+  mpp_frame_set_ver_stride (self->mpp_frame, vstride);
+  mpp_enc_cfg_set_s32 (self->mpp_cfg, "prep:hor_stride", hstride);
+  mpp_enc_cfg_set_s32 (self->mpp_cfg, "prep:ver_stride", vstride);
+
+  if (hstride == GST_MPP_VIDEO_INFO_HSTRIDE (info) &&
+      vstride == GST_MPP_VIDEO_INFO_VSTRIDE (info))
+    return TRUE;
+
+  self->prop_dirty = TRUE;
+  return gst_mpp_video_info_align (info, hstride, vstride);
+}
+
+static gboolean
 gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
 {
   GstMppEnc *self = GST_MPP_ENC (encoder);
@@ -616,10 +636,6 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
     convert = TRUE;
   }
 
-  /* Check for alignment */
-  if (!gst_mpp_video_info_matched (info, &state->info))
-    convert = TRUE;
-
   if (convert) {
     /* Prefer NV12 when using RGA conversion */
     if (gst_mpp_use_rga ())
@@ -655,8 +671,6 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   mpp_frame_set_fmt (self->mpp_frame, format);
   mpp_frame_set_width (self->mpp_frame, width);
   mpp_frame_set_height (self->mpp_frame, height);
-  mpp_frame_set_hor_stride (self->mpp_frame, hstride);
-  mpp_frame_set_ver_stride (self->mpp_frame, vstride);
 
   if (!GST_VIDEO_INFO_FPS_N (info) || GST_VIDEO_INFO_FPS_N (info) > 240) {
     GST_WARNING_OBJECT (self, "framerate (%d/%d) is insane!",
@@ -667,10 +681,6 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   mpp_enc_cfg_set_s32 (self->mpp_cfg, "prep:format", format);
   mpp_enc_cfg_set_s32 (self->mpp_cfg, "prep:width", width);
   mpp_enc_cfg_set_s32 (self->mpp_cfg, "prep:height", height);
-  mpp_enc_cfg_set_s32 (self->mpp_cfg, "prep:hor_stride",
-      GST_MPP_VIDEO_INFO_HSTRIDE (info));
-  mpp_enc_cfg_set_s32 (self->mpp_cfg, "prep:ver_stride",
-      GST_MPP_VIDEO_INFO_VSTRIDE (info));
 
   mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:fps_in_flex", 0);
   mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:fps_in_num",
@@ -683,7 +693,7 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:fps_out_denorm",
       GST_VIDEO_INFO_FPS_D (info));
 
-  return TRUE;
+  return gst_mpp_enc_apply_strides (encoder, hstride, vstride);
 }
 
 static gboolean
@@ -751,12 +761,13 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
 {
   GstMppEnc *self = GST_MPP_ENC (encoder);
   GstVideoInfo src_info = self->input_state->info;
-  GstVideoInfo *dst_info = &self->info;
+  GstVideoInfo dst_info = self->info;
   GstVideoFrame src_frame, dst_frame;
   GstBuffer *outbuf, *inbuf;
   GstMemory *in_mem, *out_mem;
   GstVideoMeta *meta;
   gsize size, maxsize, offset;
+  gint src_hstride, src_vstride;
   guint i;
 
   inbuf = frame->input_buffer;
@@ -769,12 +780,25 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
     }
   }
 
+  src_hstride = GST_MPP_VIDEO_INFO_HSTRIDE (&src_info);
+  src_vstride = GST_MPP_VIDEO_INFO_VSTRIDE (&src_info);
+
   size = gst_buffer_get_sizes (inbuf, &offset, &maxsize);
   if (size < GST_VIDEO_INFO_SIZE (&src_info)) {
     GST_ERROR_OBJECT (self, "input buffer too small (%" G_GSIZE_FORMAT
         " < %" G_GSIZE_FORMAT ")", size, GST_VIDEO_INFO_SIZE (&src_info));
     return NULL;
   }
+
+  if (gst_mpp_video_info_align (&dst_info, src_hstride, src_vstride) &&
+      gst_mpp_video_info_matched (&dst_info, &src_info)) {
+    gst_mpp_enc_apply_strides (encoder, src_hstride, src_vstride);
+
+    if (!gst_mpp_enc_apply_properties (encoder))
+      return NULL;
+  }
+
+  dst_info = self->info;
 
   outbuf = gst_buffer_new ();
   if (!outbuf)
@@ -784,11 +808,11 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
       GST_BUFFER_COPY_FLAGS | GST_BUFFER_COPY_TIMESTAMPS, 0, 0);
 
   gst_buffer_add_video_meta_full (outbuf, GST_VIDEO_FRAME_FLAG_NONE,
-      GST_VIDEO_INFO_FORMAT (dst_info),
-      GST_VIDEO_INFO_WIDTH (dst_info), GST_VIDEO_INFO_HEIGHT (dst_info),
-      GST_VIDEO_INFO_N_PLANES (dst_info), dst_info->offset, dst_info->stride);
+      GST_VIDEO_INFO_FORMAT (&dst_info),
+      GST_VIDEO_INFO_WIDTH (&dst_info), GST_VIDEO_INFO_HEIGHT (&dst_info),
+      GST_VIDEO_INFO_N_PLANES (&dst_info), dst_info.offset, dst_info.stride);
 
-  if (self->rotation || !gst_mpp_video_info_matched (&src_info, dst_info))
+  if (self->rotation || !gst_mpp_video_info_matched (&src_info, &dst_info))
     goto convert;
 
   if (gst_buffer_n_memory (inbuf) != 1)
@@ -810,7 +834,7 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
 
 convert:
   out_mem = gst_allocator_alloc (self->allocator,
-      GST_VIDEO_INFO_SIZE (dst_info), NULL);
+      GST_VIDEO_INFO_SIZE (&dst_info), NULL);
   if (!out_mem)
     goto err;
 
@@ -818,7 +842,7 @@ convert:
 
 #ifdef HAVE_RGA
   if (gst_mpp_use_rga () &&
-      gst_mpp_rga_convert (inbuf, &src_info, out_mem, dst_info,
+      gst_mpp_rga_convert (inbuf, &src_info, out_mem, &dst_info,
           self->rotation)) {
     GST_DEBUG_OBJECT (self, "using RGA converted buffer");
     return outbuf;
@@ -826,11 +850,11 @@ convert:
 #endif
 
   if (self->rotation ||
-      GST_VIDEO_INFO_FORMAT (&src_info) != GST_VIDEO_INFO_FORMAT (dst_info))
+      GST_VIDEO_INFO_FORMAT (&src_info) != GST_VIDEO_INFO_FORMAT (&dst_info))
     goto err;
 
   if (gst_video_frame_map (&src_frame, &src_info, inbuf, GST_MAP_READ)) {
-    if (gst_video_frame_map (&dst_frame, dst_info, outbuf, GST_MAP_WRITE)) {
+    if (gst_video_frame_map (&dst_frame, &dst_info, outbuf, GST_MAP_WRITE)) {
       if (!gst_video_frame_copy (&dst_frame, &src_frame)) {
         gst_video_frame_unmap (&dst_frame);
         gst_video_frame_unmap (&src_frame);

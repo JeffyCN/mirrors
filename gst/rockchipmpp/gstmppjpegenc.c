@@ -149,7 +149,7 @@ gst_mpp_jpeg_enc_apply_properties (GstVideoEncoder * encoder)
   GstMppJpegEnc *self = GST_MPP_JPEG_ENC (encoder);
   GstMppEnc *mppenc = GST_MPP_ENC (encoder);
 
-  if (!mppenc->prop_dirty)
+  if (G_LIKELY (!mppenc->prop_dirty))
     return TRUE;
 
   mpp_enc_cfg_set_s32 (mppenc->mpp_cfg, "jpeg:q_factor", self->q_factor);
