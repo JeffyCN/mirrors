@@ -882,6 +882,7 @@ int NormalRgaFullColorSpaceConvert(struct rga_req *msg, int color_space_mode) {
     static full_csc_float_t default_csc_float_table[] = {
         /* coe_00 * R + coe_01 * G + coe_02 * B + coe_off */
         { { 0.299, 0.587, 0.114, 0 }, { -0.169, -0.331, 0.5, 128 }, { 0.5, -0.419, -0.081, 128 } }, //R2Y 601 full
+        { { 0.183, 0.614, 0.062, 16 }, { -0.101, -0.339, 0.439, 128 }, { 0.439, -0.399, -0.040, 128 } }, //R2Y 709 limit
         { { 0.213, 0.715, 0.072, 0 }, { -0.115, -0.385, 0.5, 128 }, { 0.5, -0.454, -0.046, 128 } }, //R2Y 709 full
         /* coe_00 * V + coe_01 * Y + coe_02 * U + coe_off */
         { { -0.1826, 0.8588, -0.1014, 52.3554 }, { 0.1007, -0.0004, 0.8948, 0.5781 }, { 0.9005, 0, 0.0653, 4.3855 } },    //601 full range => 709 limit range
@@ -897,24 +898,28 @@ int NormalRgaFullColorSpaceConvert(struct rga_req *msg, int color_space_mode) {
             fptr = &(default_csc_float_table[0]);
             break;
 
-        case rgb2yuv_709_full :
+        case rgb2yuv_709_limit:
             fptr = &(default_csc_float_table[1]);
             break;
 
-        case yuv2yuv_709_limit_2_601_limit :
-            fptr = &(default_csc_float_table[3]);
-            break;
-
-        case yuv2yuv_601_full_2_709_limit :
+        case rgb2yuv_709_full :
             fptr = &(default_csc_float_table[2]);
             break;
 
-        case yuv2yuv_709_full_2_601_limit :
+        case yuv2yuv_709_limit_2_601_limit :
             fptr = &(default_csc_float_table[4]);
             break;
 
-        case yuv2yuv_709_full_2_601_full :
+        case yuv2yuv_601_full_2_709_limit :
+            fptr = &(default_csc_float_table[3]);
+            break;
+
+        case yuv2yuv_709_full_2_601_limit :
             fptr = &(default_csc_float_table[5]);
+            break;
+
+        case yuv2yuv_709_full_2_601_full :
+            fptr = &(default_csc_float_table[6]);
             break;
 
         case yuv2yuv_601_limit_2_709_limit :
@@ -946,7 +951,6 @@ int NormalRgaFullColorSpaceConvert(struct rga_req *msg, int color_space_mode) {
     default_csc_table.coe_v.off = (int)(fptr->coe_v.off * factor +0.5);
 
     if (color_space_mode >> 8) {
-        msg->full_csc.flag = 1;
         memcpy(&msg->full_csc, &default_csc_table, sizeof(full_csc_t));
     }
 

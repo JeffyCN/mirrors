@@ -155,6 +155,7 @@ enum {
     yuv2yuv_601_full_2_709_full     = 0x8 << 8,     //not support
     yuv2yuv_709_full_2_601_limit    = 0x9 << 8,     //not support
     yuv2yuv_709_full_2_601_full     = 0xa << 8,     //not support
+    rgb2yuv_709_limit               = 0xb << 8,
     full_csc_mask = 0xf00,
 };
 

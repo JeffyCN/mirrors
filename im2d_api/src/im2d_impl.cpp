@@ -1869,6 +1869,9 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
         if (src.color_space_mode == IM_RGB_FULL &&
             dst.color_space_mode == IM_YUV_BT709_FULL_RANGE) {
             dstinfo.color_space_mode = rgb2yuv_709_full;
+        } else if (src.color_space_mode == IM_RGB_FULL &&
+                   dst.color_space_mode == IM_YUV_BT709_LIMIT_RANGE) {
+            dstinfo.color_space_mode = rgb2yuv_709_limit;
         } else if (src.color_space_mode == IM_YUV_BT601_FULL_RANGE &&
                    dst.color_space_mode == IM_YUV_BT709_LIMIT_RANGE) {
             dstinfo.color_space_mode = yuv2yuv_601_full_2_709_limit;
