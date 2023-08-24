@@ -446,24 +446,24 @@ gst_mpp_info_changed (GstVideoInfo * info, MppFrame * mframe)
   GstVideoFormat format = gst_mpp_mpp_format_to_gst_format (mpp_format);
 
   if (GST_VIDEO_INFO_FORMAT (info) != format)
-    return FALSE;
-
-  if (GST_VIDEO_INFO_WIDTH (info) != width)
-    return FALSE;
-
-  if (GST_VIDEO_INFO_HEIGHT (info) != height)
-    return FALSE;
-
-  if (GST_MPP_VIDEO_INFO_HSTRIDE (info) != hstride)
-    return FALSE;
-
-  if (GST_VIDEO_INFO_N_PLANES (info) == 1)
     return TRUE;
 
-  if (GST_MPP_VIDEO_INFO_VSTRIDE (info) != vstride)
+  if (GST_VIDEO_INFO_WIDTH (info) != width)
+    return TRUE;
+
+  if (GST_VIDEO_INFO_HEIGHT (info) != height)
+    return TRUE;
+
+  if (GST_MPP_VIDEO_INFO_HSTRIDE (info) != hstride)
+    return TRUE;
+
+  if (GST_VIDEO_INFO_N_PLANES (info) == 1)
     return FALSE;
 
-  return TRUE;
+  if (GST_MPP_VIDEO_INFO_VSTRIDE (info) != vstride)
+    return TRUE;
+
+  return FALSE;
 }
 
 guint
