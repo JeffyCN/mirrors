@@ -1265,7 +1265,11 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
         NormalRgaSetPatActiveInfo(&rgaReg, src1ActW, src1ActH, src1XPos, src1YPos);
 
     if (dst->color_space_mode & full_csc_mask) {
-        NormalRgaFullColorSpaceConvert(&rgaReg, dst->color_space_mode);
+        ret = NormalRgaFullColorSpaceConvert(&rgaReg, dst->color_space_mode);
+        if (ret < 0) {
+            ALOGE("Not support full csc mode [%x]\n", dst->color_space_mode);
+            return -EINVAL;
+        }
     } else {
         if (src1) {
             /* special config for yuv + rgb => rgb */

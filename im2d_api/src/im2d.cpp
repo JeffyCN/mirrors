@@ -336,6 +336,9 @@ void imsetOpacity(rga_buffer_t *buf, uint8_t alpha) {
     buf->global_alpha = alpha;
 }
 
+void imsetColorSpace(rga_buffer_t *buf, IM_COLOR_SPACE_MODE mode) {
+    buf->color_space_mode = mode;
+}
 
 IM_API const char* querystring(int name) {
     bool all_output = 0, all_output_prepared = 0;

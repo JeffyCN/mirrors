@@ -927,7 +927,6 @@ int NormalRgaFullColorSpaceConvert(struct rga_req *msg, int color_space_mode) {
         case yuv2yuv_601_full_2_709_full :
         case yuv2yuv_709_limit_2_601_full :
         default :
-            printf("Not support full csc mode [%x]\n", color_space_mode);
             return -1;
     }
 
