@@ -717,6 +717,7 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
                 break;
         }
 
+        rgaReg.feature.global_alpha_en = true;
         NormalRgaSetAlphaEnInfo(&rgaReg, 1, 1, fg_global_alpha, bg_global_alpha , 1, blend & 0xfff, 0);
 
         /* need to pre-multiply. */
