@@ -1,0 +1,12 @@
+[Unit]
+Description=Init Rockchip Wifi/BT
+DefaultDependencies=no
+After=local-fs.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/wifibt-init.sh start
+ExecStop=/usr/bin/wifibt-init.sh stop
+
+[Install]
+WantedBy=sysinit.target

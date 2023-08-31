@@ -18,12 +18,6 @@ executable(
 )
 
 executable(
-    'rk_wifibt_init',
-    [ 'src/rk_wifibt_init.c' ],
-    install : true,
-)
-
-executable(
     'rtk_hciattach',
     [ 'tools/rtk_hciattach/hciattach_rtk.c', 'tools/rtk_hciattach/hciattach.c', 'tools/rtk_hciattach/hciattach_h4.c', 'tools/rtk_hciattach/rtb_fwc.c'],
     install : true,
