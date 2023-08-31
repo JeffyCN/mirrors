@@ -228,6 +228,16 @@ typedef struct full_csc_t {
     csc_coe_t coe_v;
 } full_csc_t;
 
+struct rga_csc_range {
+	uint8_t max;
+	uint8_t min;
+};
+
+struct rga_csc_clip {
+	struct rga_csc_range y;
+	struct rga_csc_range uv;
+};
+
 typedef struct rga_mosaic_info_ioctl {
     uint8_t enable;
     uint8_t mode;
@@ -475,9 +485,12 @@ struct rga_req {
 
 	struct {
 		uint32_t global_alpha_en:1;
+		uint32_t full_csc_clip_en:1;
 	} feature;
 
-	uint8_t reservr[53];
+	struct rga_csc_clip full_csc_clip;
+
+	uint8_t reservr[49];
 };
 
 struct rga_user_request {

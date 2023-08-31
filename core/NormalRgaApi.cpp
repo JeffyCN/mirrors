@@ -877,6 +877,7 @@ int NormalRgaFullColorSpaceConvert(struct rga_req *msg, int color_space_mode) {
     int factor = 0;
     full_csc_float_t *fptr = NULL;
     full_csc_t default_csc_table;
+    struct rga_csc_clip *clip_ptr = NULL;
 
     /* ABGR => AUYV */
     static full_csc_float_t default_csc_float_table[] = {
@@ -891,35 +892,48 @@ int NormalRgaFullColorSpaceConvert(struct rga_req *msg, int color_space_mode) {
         { { 0.1955, 1, 0.1019, -38.0729 }, { -0.1104, 0, 0.9899, 15.4218 }, { 0.9836, 0, -0.0716, 11.2587 } },            //709  full range => 601 full range
     };
 
+    static struct rga_csc_clip default_csc_clip_table[] = {
+        { { 0xff, 0x0}, { 0xff, 0x0} },     //yuv full range Y[255,0] UV[255,0], rgb full range RGB[255,0]
+        { { 0xeb, 0x10}, { 0xf0, 0x10} },   //yuv limit range Y[235,16] UV[240,16]
+        { { 0xeb, 0x10}, { 0xeb, 0x10} },   //rga limit range RGB[235,0]
+    };
+
     factor = 0x3ff;
 
     switch (color_space_mode) {
         case rgb2yuv_601_full :
             fptr = &(default_csc_float_table[0]);
+            clip_ptr = &(default_csc_clip_table[0]);
             break;
 
         case rgb2yuv_709_limit:
             fptr = &(default_csc_float_table[1]);
+            clip_ptr = &(default_csc_clip_table[1]);
             break;
 
         case rgb2yuv_709_full :
             fptr = &(default_csc_float_table[2]);
+            clip_ptr = &(default_csc_clip_table[0]);
             break;
 
         case yuv2yuv_709_limit_2_601_limit :
             fptr = &(default_csc_float_table[4]);
+            clip_ptr = &(default_csc_clip_table[1]);
             break;
 
         case yuv2yuv_601_full_2_709_limit :
             fptr = &(default_csc_float_table[3]);
+            clip_ptr = &(default_csc_clip_table[1]);
             break;
 
         case yuv2yuv_709_full_2_601_limit :
             fptr = &(default_csc_float_table[5]);
+            clip_ptr = &(default_csc_clip_table[1]);
             break;
 
         case yuv2yuv_709_full_2_601_full :
             fptr = &(default_csc_float_table[6]);
+            clip_ptr = &(default_csc_clip_table[0]);
             break;
 
         case yuv2yuv_601_limit_2_709_limit :
@@ -951,6 +965,8 @@ int NormalRgaFullColorSpaceConvert(struct rga_req *msg, int color_space_mode) {
 
     if (color_space_mode >> 8) {
         memcpy(&msg->full_csc, &default_csc_table, sizeof(full_csc_t));
+        memcpy(&msg->full_csc_clip, clip_ptr, sizeof(full_csc_t));
+        msg->feature.full_csc_clip_en = true;
     }
 
     return 0;
