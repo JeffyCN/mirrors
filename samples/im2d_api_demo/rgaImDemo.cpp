@@ -29,6 +29,9 @@
 
 #ifdef ANDROID
 #include <ui/GraphicBuffer.h>
+#if defined(ANDROID_12) || defined(USE_HARDWARE_ROCKCHIP)
+#include <hardware/hardware_rockchip.h>
+#endif
 #endif
 
 #include "im2d.hpp"

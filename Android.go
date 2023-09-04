@@ -97,6 +97,11 @@ func getCflags(ctx android.BaseContext, sdkVersion int) ([]string) {
         }
     }
 
+    //Android 12开始使用libhardware_rockchip存放RK私有定义
+    if (sdkVersion >= 31 ) {
+        cppflags = append(cppflags,"-DUSE_HARDWARE_ROCKCHIP")
+    }
+
     //将需要区分的环境变量在此区域添加 //....
     return cppflags
 }

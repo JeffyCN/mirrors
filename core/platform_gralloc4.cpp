@@ -61,7 +61,7 @@
 
 #include <drm_fourcc.h>
 
-#ifdef ANDROID_12
+#ifdef USE_HARDWARE_ROCKCHIP
 #include <hardware/hardware_rockchip.h>
 #endif
 
