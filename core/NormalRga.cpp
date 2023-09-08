@@ -1271,6 +1271,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
             ALOGE("Not support full csc mode [%x]\n", dst->color_space_mode);
             return -EINVAL;
         }
+
+        if (dst->color_space_mode == rgb2yuv_709_limit)
+            yuvToRgbMode |= 0x3 << 2;
     } else {
         if (src1) {
             /* special config for yuv + rgb => rgb */
