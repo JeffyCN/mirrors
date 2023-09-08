@@ -840,7 +840,8 @@ IM_API IM_STATUS imcvtcolor(rga_buffer_t src, rga_buffer_t dst, int sfmt, int df
     src.format = sfmt;
     dst.format = dfmt;
 
-    dst.color_space_mode = mode;
+    if (dst.color_space_mode == 0)
+        dst.color_space_mode = mode;
 
     if (sync == 0)
         usage |= IM_ASYNC;

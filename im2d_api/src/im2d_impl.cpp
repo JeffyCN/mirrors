@@ -1860,9 +1860,9 @@ static IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, r
 
         if (dst.color_space_mode == IM_COLOR_SPACE_DEFAULT) {
             if  (NormalRgaIsRgbFormat(dst.format)) {
-                src.color_space_mode = IM_RGB_FULL;
+                dst.color_space_mode = IM_RGB_FULL;
             } else if (NormalRgaIsYuvFormat(dst.format)) {
-                src.color_space_mode = IM_YUV_BT601_LIMIT_RANGE;
+                dst.color_space_mode = IM_YUV_BT601_LIMIT_RANGE;
             }
         }
 
