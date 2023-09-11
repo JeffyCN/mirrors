@@ -486,6 +486,7 @@ struct rga_req {
 	struct {
 		uint32_t global_alpha_en:1;
 		uint32_t full_csc_clip_en:1;
+        uint32_t user_close_fence:1;
 	} feature;
 
 	struct rga_csc_clip full_csc_clip;

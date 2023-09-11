@@ -60,6 +60,11 @@ int get_int_property(void) {
     return atoi(level);
 }
 
+static void rga_set_driver_feature(struct rgaContext *ctx) {
+    if (rga_version_compare(ctx->mDriverVersion, (struct rga_version_t){ 1, 3, 0, {0} }) > 0)
+        ctx->driver_feature |= RGA_DRIVER_FEATURE_USER_CLOSE_FENCE;
+}
+
 int NormalRgaOpen(void **context) {
     struct rgaContext *ctx = NULL;
     int fd = -1;
@@ -125,6 +130,8 @@ int NormalRgaOpen(void **context) {
             ctx->driver = RGA_DRIVER_IOC_RGA2;
             ALOGE("librga fail to get driver version! Compatibility mode will be enabled.\n");
         }
+
+        rga_set_driver_feature(ctx);
 
         NormalRgaInitTables();
 
@@ -403,6 +410,8 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
     //init
     memset(&rgaReg, 0, sizeof(struct rga_req));
+    if (rgaCtx->driver_feature & RGA_DRIVER_FEATURE_USER_CLOSE_FENCE)
+        rgaReg.feature.user_close_fence = true;
 
     srcType = dstType = srcMmuFlag = dstMmuFlag = 0;
     src1Type = src1MmuFlag = 0;
@@ -1447,6 +1456,10 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
     dst->out_fence_fd = rgaReg.out_fence_fd;
 
+    if ((rgaCtx->driver_feature & RGA_DRIVER_FEATURE_USER_CLOSE_FENCE) &&
+        (dst->in_fence_fd >= 0))
+        close(dst->in_fence_fd);
+
     return 0;
 }
 
@@ -1498,6 +1511,7 @@ int RgaCollorFill(rga_info *dst) {
     }
 
     memset(&rgaReg, 0, sizeof(struct rga_req));
+    rgaReg.feature.user_close_fence = true;
 
     dstType = dstMmuFlag = 0;
 
@@ -1747,6 +1761,10 @@ int RgaCollorFill(rga_info *dst) {
 
     dst->out_fence_fd = rgaReg.out_fence_fd;
 
+    if ((rgaCtx->driver_feature & RGA_DRIVER_FEATURE_USER_CLOSE_FENCE) &&
+        (dst->in_fence_fd >= 0))
+        close(dst->in_fence_fd);
+
     return 0;
 }
 
@@ -1778,6 +1796,7 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
 
     //init
     memset(&rgaReg, 0, sizeof(struct rga_req));
+    rgaReg.feature.user_close_fence = true;
 
     srcType = dstType = lutType = srcMmuFlag = dstMmuFlag = lutMmuFlag = 0;
 
@@ -2363,6 +2382,10 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
     }
 
     dst->out_fence_fd = rgaReg.out_fence_fd;
+
+    if ((rgaCtx->driver_feature & RGA_DRIVER_FEATURE_USER_CLOSE_FENCE) &&
+        (dst->in_fence_fd >= 0))
+        close(dst->in_fence_fd);
 
     return 0;
 }
