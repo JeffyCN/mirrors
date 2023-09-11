@@ -385,6 +385,12 @@ struct rga_buffer_pool {
     uint32_t size;
 };
 
+struct rga_feature {
+    uint32_t global_alpha_en:1;
+    uint32_t full_csc_clip_en:1;
+    uint32_t user_close_fence:1;
+};
+
 struct rga_req {
     uint8_t render_mode;                  /* (enum) process mode sel */
 
@@ -479,19 +485,15 @@ struct rga_req {
 
     rga_pre_intr_info_t pre_intr_info;
 
-	/* global alpha */
-	uint8_t fg_global_alpha;
-	uint8_t bg_global_alpha;
+    /* global alpha */
+    uint8_t fg_global_alpha;
+    uint8_t bg_global_alpha;
 
-	struct {
-		uint32_t global_alpha_en:1;
-		uint32_t full_csc_clip_en:1;
-        uint32_t user_close_fence:1;
-	} feature;
+    struct rga_feature feature;
 
-	struct rga_csc_clip full_csc_clip;
+    struct rga_csc_clip full_csc_clip;
 
-	uint8_t reservr[49];
+    uint8_t reservr[49];
 };
 
 struct rga_user_request {
