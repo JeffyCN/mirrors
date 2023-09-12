@@ -1,5 +1,36 @@
 # 更新日志
 
+## 1.10.0 （2023-09-12）
+
+该版本RGA驱动建议更新至1.3.0及以上版本，最低支持1.2.4。
+
+### 新增
+
+- 支持更多Porter-Duff混合模型，src-in/dst-in/src-out/dst-out/src-atop/dst-atop/xor。（驱动须更新至1.3.0）
+- 新增配置单独通道透明度API imsetOpacity()。
+- 新增配置单独通道色域空间API imsetColorSpace()。
+- 新增配置全局alpha示例代码。
+- 支持GKI。（驱动须更新至1.3.0）
+
+### 优化
+
+- 补充FAQ中对于常见RGA2 不支持大于4G内存空间问题的Q&A。
+
+### 变更
+
+- samples/padding_demo使用dma32分配内存。
+- 配置色域转换方式更改为通过imsetColorSpace()配置对应通道的色域空间。
+
+### 修复
+
+- RGA2可以支持 RGB2YUV模式下BT 709 limit range。（驱动须更新至1.3.0）
+- 修复一些条件下调用task API参数会丢失的异常。
+- 修复部分示例代码的笔误。
+
+### 移除
+
+- 移除对SDK环境变量ANDROID_12的依赖。
+
 ## 1.9.3 （2023-06-28）
 
 该版本RGA驱动建议更新至1.2.27及以上版本，最低支持1.2.4。
