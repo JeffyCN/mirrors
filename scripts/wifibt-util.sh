@@ -27,10 +27,10 @@ wifibt_info()
 		VID="$(cat "$VENDOR" | sed 's/^0x//')"
 
 		IDS="$(grep -v "^#" "$CHIPS_FILE" | grep "\b$VID:" | \
-			cut -f3 | tr ':' '.')"
+			cut -f3 | sort | uniq | tr ':' '.')"
 		for ID in $IDS; do
 			grep -iqE "$ID" "$UEVENT" || continue
-			grep -iw "$ID" "$CHIPS_FILE" | tee "$CHIP_FILE"
+			grep -iw -m 1 "$ID" "$CHIPS_FILE" | tee "$CHIP_FILE"
 			return
 		done
 	done
