@@ -527,14 +527,17 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                    rgaCtx->mHwVersions.version[i].minor == 0) {
             switch (rgaCtx->mHwVersions.version[i].revision) {
                 case 0x16445 :
+                    // RK3288
                     rga_version = IM_RGA_HW_VERSION_RGA_2_INDEX;
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
                     break;
                 case 0x22245 :
+                    // RK1108
                     rga_version = IM_RGA_HW_VERSION_RGA_2_ENHANCE_INDEX;
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
                     break;
                 case 0x76831 :
+                    // RK3588
                     rga_version = IM_RGA_HW_VERSION_RGA_3_INDEX;
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
                     break;
@@ -545,13 +548,16 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                    rgaCtx->mHwVersions.version[i].minor == 2) {
             switch (rgaCtx->mHwVersions.version[i].revision) {
                 case 0x18218 :
+                    // RK3399
                     rga_version = IM_RGA_HW_VERSION_RGA_2_ENHANCE_INDEX;
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
 
                     merge_table.feature |= IM_RGA_SUPPORT_FEATURE_ROP;
                     break;
                 case 0x56726 :
+                    // RV1109
                 case 0x63318 :
+                    // RK3566/RK3568/RK3588
                     rga_version = IM_RGA_HW_VERSION_RGA_2_ENHANCE_INDEX;
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
 
@@ -570,6 +576,7 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                    rgaCtx->mHwVersions.version[i].minor == 3) {
             switch (rgaCtx->mHwVersions.version[i].revision) {
                 case 0x87975:
+                    // RV1106
                     rga_version = IM_RGA_HW_VERSION_RGA_2_ENHANCE_INDEX;
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
 
@@ -592,6 +599,7 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                    rgaCtx->mHwVersions.version[i].minor == 6) {
             switch (rgaCtx->mHwVersions.version[i].revision) {
                 case 0x92812:
+                    // RK3562
                     rga_version = IM_RGA_HW_VERSION_RGA_2_ENHANCE_INDEX;
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
 
@@ -614,6 +622,7 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                    rgaCtx->mHwVersions.version[i].minor == 7) {
             switch (rgaCtx->mHwVersions.version[i].revision) {
                 case 0x93215:
+                    // RK3528
                     rga_version = IM_RGA_HW_VERSION_RGA_2_ENHANCE_INDEX;
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
 
@@ -636,11 +645,16 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
                    rgaCtx->mHwVersions.version[i].minor == 0) {
             switch (rgaCtx->mHwVersions.version[i].revision) {
                 case 0x18632 :
+                    // RK3366/RK3368
                     rga_version = IM_RGA_HW_VERSION_RGA_2_LITE0_INDEX;
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
                     break;
                 case 0x23998 :
+                    // RK3228H
+                case 0x27615 :
+                    // RK1808
                 case 0x28610 :
+                    // RK3326
                     rga_version = IM_RGA_HW_VERSION_RGA_2_LITE1_INDEX;
                     memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
 
@@ -652,6 +666,7 @@ IM_STATUS rga_get_info(rga_info_table_entry *return_table) {
         } else if (rgaCtx->mHwVersions.version[i].major == 42 &&
                    rgaCtx->mHwVersions.version[i].minor == 0) {
             if (rgaCtx->mHwVersions.version[i].revision == 0x17760) {
+                // RK3228
                 rga_version = IM_RGA_HW_VERSION_RGA_2_LITE1_INDEX;
                 memcpy(&merge_table, &hw_info_table[rga_version], sizeof(merge_table));
             } else {
