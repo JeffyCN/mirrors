@@ -74,14 +74,13 @@ Realtek	RTL8192DU	0bda:8194	RTL8192DU.ko
 Realtek	RTL8812AU	0bda:8812	RTL8812AU.ko
 Realtek	RTL8822BE	10ec:b822	RTL8822BE.ko
 Realtek	RTL8822CE	10ec:c822	RTL8822CE.ko
-Broadcom	AP6354	02d0:4354	bcmdhd.ko
 Broadcom	AP6330	02d0:4330	bcmdhd.ko
+Broadcom	AP6335	02d0:4335	bcmdhd.ko
+Broadcom	AP6354	02d0:4354	bcmdhd.ko
 Broadcom	AP6356S	02d0:4356	bcmdhd.ko
 Broadcom	AP6398S	02d0:4359	bcmdhd.ko
-Broadcom	AP6335	02d0:4335	bcmdhd.ko
-Broadcom	AP6255	02d0:a9bf	bcmdhd.ko
-Broadcom	AP6256	02d0:a9bf	bcmdhd.ko
 Broadcom	AP6212A	02d0:a9a6	bcmdhd.ko
+Broadcom	AP625X	02d0:a9bf	bcmdhd.ko	# AP6255/AP6256
 Broadcom	AP6275S	02d0:aae8	bcmdhd.ko
 Broadcom	AP6275P	14e4:449d	bcmdhd_pcie.ko
 EOF
