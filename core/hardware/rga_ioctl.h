@@ -493,7 +493,7 @@ struct rga_req {
 
     struct rga_csc_clip full_csc_clip;
 
-    uint8_t reservr[49];
+    uint8_t reservr[43];
 };
 
 struct rga_user_request {
