@@ -23,8 +23,8 @@ wifibt_info()
 
 	VIDS="$(grep -v "^#" "$CHIPS_FILE" | cut -f3 | cut -d":" -f1 | \
 		sort | uniq | xargs | tr ' ' '|')"
-	VENDORS="$(find /sys/devices/platform/ -type f -name vendor | \
-		xargs grep -El "$VIDS" || true)"
+	VENDORS="$(find /sys/bus/{usb,pci,sdio}/devices/*/ -type f \
+		-name vendor 2>/dev/null | xargs grep -El "$VIDS" || true)"
 	for VENDOR in $VENDORS; do
 		UEVENT="$(echo $VENDOR | sed 's~\(/id\)\?/vendor~/uevent~')"
 		VID="$(cat "$VENDOR" | sed 's/^0x//')"
@@ -33,7 +33,12 @@ wifibt_info()
 			cut -f3 | sort | uniq | tr ':' '.')"
 		for ID in $IDS; do
 			grep -iqE "$ID" "$UEVENT" || continue
-			grep -iw -m 1 "$ID" "$CHIPS_FILE" | tee "$CHIP_FILE"
+
+			grep -iw -m 1 "$ID" "$CHIPS_FILE" > "$CHIP_FILE"
+			BUS=$(echo "$VENDOR" | cut -d'/' -f4)
+			sed -i "s/\($ID\)/$BUS\t\1/" "$CHIP_FILE"
+
+			cat "$CHIP_FILE"
 			return
 		done
 	done
@@ -49,9 +54,19 @@ wifibt_chip()
 	wifibt_info | cut -f 2
 }
 
-wifibt_module()
+wifibt_bus()
+{
+	wifibt_info | cut -f 3
+}
+
+wifibt_id()
 {
 	wifibt_info | cut -f 4
+}
+
+wifibt_module()
+{
+	wifibt_info | cut -f 5
 }
 
 if [ ! -r "$CHIPS_FILE" ]; then
@@ -111,10 +126,12 @@ for cmd in "$(basename "$0")" "$1"; do
 		info | wifibt-info) wifibt_info; exit ;;
 		vendor | wifibt-vendor) wifibt_vendor; exit ;;
 		chip | wifibt-chip) wifibt_chip; exit ;;
+		id | wifibt-id) wifibt_id; exit ;;
+		bus | wifibt-bus) wifibt_bus; exit ;;
 		module | wifibt-module) wifibt_module; exit ;;
 	esac
 
 	[ -z "$1" ] || shift
 done
 
-echo "$(basename "$0") <tty|info|vendor|chip|module> [-f|--force-reload]"
+echo "$(basename "$0") <tty|info|vendor|id|bus|chip|module> [-f|--force-reload]"

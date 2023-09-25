@@ -79,8 +79,8 @@ start_bt()
 	case "$WIFIBT_VENDOR" in
 		Broadcom) start_bt_brcm ;;
 		Realtek)
-			case "$WIFIBT_CHIP" in
-				*[UE]*) start_bt_rtk_usb ;;
+			case "$WIFIBT_BUS" in
+				usb) start_bt_rtk_usb ;;
 				*) start_bt_rtk_uart ;;
 			esac
 			;;
@@ -98,6 +98,7 @@ if [ -z "$WIFIBT_CHIP" ]; then
 fi
 
 WIFIBT_VENDOR="$(wifibt-util.sh vendor)"
+WIFIBT_BUS="$(wifibt-util.sh bus)"
 WIFIBT_MODULE="$(wifibt-util.sh module)"
 
 echo "Handling ${1:-start} for Wi-Fi/BT chip: $(wifibt-util.sh info)"
