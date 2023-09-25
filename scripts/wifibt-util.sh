@@ -6,9 +6,12 @@ CHIP_FILE="/var/run/wifibt-info.txt"
 
 bt_tty()
 {
-	[ -d "$BT_PINCTRL_DIR" ] || return
-	UART_DIR=$(find "$BT_PINCTRL_DIR/" -name "uart[0-9]*" | head -n 1)
-	echo "$UART_DIR" | sed 's~.*uart\([0-9]\+\).*~/dev/ttyS\1~'
+	if [ ! -d "$BT_PINCTRL_DIR" ]; then
+		echo "/dev/ttyS1"
+	else
+		UART_DIR=$(find "$BT_PINCTRL_DIR/" -name "uart*" | head -n 1)
+		echo "$UART_DIR" | sed 's~.*uart\([0-9]\+\).*~/dev/ttyS\1~'
+	fi
 }
 
 wifibt_info()
