@@ -2,7 +2,7 @@
 
 wifi_ready()
 {
-	ifconfig -a | grep -wqE "^(wlan0|p2p0)"
+	grep -wqE "wlan0|p2p0" /proc/net/dev
 }
 
 start_bt_brcm()
@@ -46,25 +46,34 @@ start_bt_rtk_usb()
 	insmod rtk_btusb.ko
 }
 
+start_wifi()
+{
+	! wifi_ready || return
+
+	if [ "$WIFIBT_VENDOR" = Broadcom -a -f dhd_static_buf.ko ]; then
+		insmod dhd_static_buf.ko
+	fi
+
+	insmod "$WIFIBT_MODULE"
+
+	for i in `seq 100`; do
+		if wifi_ready; then
+			if grep -wqE "wlan0" /proc/net/dev; then
+				ifup wlan0&
+			fi
+			return
+		fi
+		sleep .2
+	done
+	echo "Failed to init Wi-Fi for $WIFIBT_CHIP!"
+}
+
 start_wifibt()
 {
 	cd "${WIFIBT_MODULE_DIR:-/lib/modules}"
 
-	# Start Wifi
-	if ! wifi_ready; then
-		if [ "$WIFIBT_VENDOR" = Broadcom -a -f dhd_static_buf.ko ];then
-			insmod dhd_static_buf.ko
-		fi
+	start_wifi
 
-		insmod "$WIFIBT_MODULE"
-
-		for i in `seq 100`;do
-			! wifi_ready || break
-			sleep .2
-		done
-	fi
-
-	# Start BT
 	case "$WIFIBT_VENDOR" in
 		Broadcom) start_bt_brcm ;;
 		Realtek)
@@ -77,7 +86,10 @@ start_wifibt()
 }
 
 WIFIBT_CHIP=$(wifibt-util.sh chip)
-[ "$WIFIBT_CHIP" ] || exit 0
+if [ -z "$WIFIBT_CHIP" ]; then
+	echo "Failed to detect Wi-Fi/BT chip!"
+	exit 0
+fi
 
 WIFIBT_VENDOR="$(wifibt-util.sh vendor)"
 WIFIBT_MODULE="$(wifibt-util.sh module)"
