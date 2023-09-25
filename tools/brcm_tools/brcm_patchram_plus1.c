@@ -231,6 +231,10 @@ uchar hci_write_pcm_data_format[] =
 uchar hci_write_i2spcm_interface_param[] =
 	{ 0x01, 0x6d, 0xFC, 0x04, 0x00, 0x00, 0x00, 0x00 };
 
+uchar hci_enable_wbs[]= {
+0x01,0x7e,0xfc,0x03,0x01,0x02,0x00
+}
+
 int
 parse_patchram(char *optarg)
 {
@@ -912,6 +916,11 @@ proc_scopcm()
 void
 proc_i2s()
 {
+	hci_send_cmd(hci_enable_wbs,
+		sizeof(hci_enable_wbs));
+
+	read_event(uart_fd, buffer);
+
 	hci_send_cmd(hci_write_i2spcm_interface_param,
 		sizeof(hci_write_i2spcm_interface_param));
 

@@ -7,7 +7,7 @@ wifi_ready()
 
 start_bt_brcm()
 {
-	killall -q brcm_patchram_plus1
+	killall -q -9 brcm_patchram_plus1
 
 	echo 0 > /sys/class/rfkill/rfkill0/state
 	echo 0 > /proc/bluetooth/sleep/btwrite
@@ -25,7 +25,7 @@ start_bt_brcm()
 
 start_bt_rtk_uart()
 {
-	killall -q rtk_hciattach
+	killall -q -9 rtk_hciattach
 
 	echo 0 > /sys/class/rfkill/rfkill0/state
 	echo 0 > /proc/bluetooth/sleep/btwrite
@@ -50,10 +50,13 @@ start_wifi()
 {
 	! wifi_ready || return
 
+	cd "${WIFIBT_MODULE_DIR:-/lib/modules}"
+
 	if [ "$WIFIBT_VENDOR" = Broadcom -a -f dhd_static_buf.ko ]; then
 		insmod dhd_static_buf.ko
 	fi
 
+	echo "Installing WiFi/BT module: $WIFIBT_MODULE"
 	insmod "$WIFIBT_MODULE"
 
 	for i in `seq 100`; do
@@ -68,19 +71,22 @@ start_wifi()
 	echo "Failed to init Wi-Fi for $WIFIBT_CHIP!"
 }
 
-start_wifibt()
+
+start_bt()
 {
 	cd "${WIFIBT_MODULE_DIR:-/lib/modules}"
-
-	start_wifi
 
 	case "$WIFIBT_VENDOR" in
 		Broadcom) start_bt_brcm ;;
 		Realtek)
 			case "$WIFIBT_CHIP" in
-				*E*) start_bt_rtk_usb ;;
+				*[UE]*) start_bt_rtk_usb ;;
 				*) start_bt_rtk_uart ;;
 			esac
+			;;
+		*)
+			echo "Unknow Wi-Fi/BT chip, fallback to Broadcom..."
+			start_bt_brcm
 			;;
 	esac
 }
@@ -94,19 +100,28 @@ fi
 WIFIBT_VENDOR="$(wifibt-util.sh vendor)"
 WIFIBT_MODULE="$(wifibt-util.sh module)"
 
+echo "Handling ${1:-start} for Wi-Fi/BT chip: $(wifibt-util.sh info)"
+
 case "${1:-start}" in
-        start|restart)
+	start|restart)
 		echo "Starting Wifi/BT..."
-		start_wifibt&
+		start_wifi&
+		start_bt&
+		;;
+	start_wifi)
+		start_wifi&
+		;;
+	start_bt)
+		start_bt&
 		;;
 	stop)
-		echo "Stopping Wifi/BT..."
-		killall -q brcm_patchram_plus1 rtk_hciattach || true
-                ;;
-        *)
-                echo "Usage: [start|stop|restart]" >&2
-                exit 3
-                ;;
+		echo "Stopping Wi-Fi/BT..."
+		killall -q -9 brcm_patchram_plus1 rtk_hciattach || true
+		;;
+	*)
+		echo "Usage: [start|stop|start_wifi|start_bt|restart]" >&2
+		exit 3
+		;;
 esac
 
 :
