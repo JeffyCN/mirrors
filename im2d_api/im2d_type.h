@@ -294,7 +294,7 @@ typedef struct {
     int format;                         /* format */
 
     int color_space_mode;               /* color_space_mode */
-    int global_alpha;                   /* global_alpha */
+    int global_alpha;                   /* global_alpha, the default should be 0xff */
     int rd_mode;
 
     /* legarcy */

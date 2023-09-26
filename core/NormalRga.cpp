@@ -706,22 +706,42 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
         fg_global_alpha = (blend >> 16) & 0xff;
         bg_global_alpha = (blend >> 24) & 0xff;
 
+        /*
+         * In the legacy interface, the src-over mode supports globalAlpha
+         * configuration for the src channel, while the other modes do not
+         * support globalAlpha configuration.
+         */
         switch (blend) {
             case 0x405:
+                fg_global_alpha = (blend >> 16) & 0xff;
+                bg_global_alpha = 0xff;
+
                 blend = RGA_ALPHA_BLEND_SRC_OVER;
                 blend |= 0x1 << 12;
                 break;
             case 0x504:
+                fg_global_alpha = 0xff;
+                bg_global_alpha = 0xff;
+
                 blend = RGA_ALPHA_BLEND_DST_OVER;
                 blend |= 0x1 << 12;
                 break;
             case 0x105:
+                fg_global_alpha = (blend >> 16) & 0xff;
+                bg_global_alpha = 0xff;
+
                 blend = RGA_ALPHA_BLEND_SRC_OVER;
                 break;
             case 0x501:
+                fg_global_alpha = 0xff;
+                bg_global_alpha = 0xff;
+
                 blend = RGA_ALPHA_BLEND_DST_OVER;
                 break;
             case 0x100:
+                fg_global_alpha = 0xff;
+                bg_global_alpha = 0xff;
+
                 blend = RGA_ALPHA_BLEND_SRC;
                 break;
         }
