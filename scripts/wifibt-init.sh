@@ -16,11 +16,10 @@ start_bt_brcm()
 	echo 1 > /proc/bluetooth/sleep/btwrite
 	sleep .5
 
-	BT_TTY=$(wifibt-util.sh tty)
 	brcm_patchram_plus1 --bd_addr_rand --enable_hci --no2bytes \
 		--use_baudrate_for_download --tosleep 200000 \
 		--baudrate 1500000 \
-		--patchram ${WIFIBT_FIRMWARE_DIR:-/lib/firmware}/ $BT_TTY
+		--patchram ${WIFIBT_FIRMWARE_DIR:-/lib/firmware}/ $WIFIBT_TTY
 }
 
 start_bt_rtk_uart()
@@ -37,8 +36,7 @@ start_bt_rtk_uart()
 	insmod hci_uart.ko
 	sleep .5
 
-	BT_TTY=$(wifibt-util.sh tty)
-	rtk_hciattach -n -s 115200 $BT_TTY rtk_h5
+	rtk_hciattach -n -s 115200 $WIFIBT_TTY rtk_h5
 }
 
 start_bt_rtk_usb()
@@ -100,6 +98,7 @@ fi
 WIFIBT_VENDOR="$(wifibt-util.sh vendor)"
 WIFIBT_BUS="$(wifibt-util.sh bus)"
 WIFIBT_MODULE="$(wifibt-util.sh module)"
+WIFIBT_TTY=$(wifibt-util.sh tty)
 
 echo "Handling ${1:-start} for Wi-Fi/BT chip: $(wifibt-util.sh info)"
 

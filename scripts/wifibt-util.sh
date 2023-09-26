@@ -7,7 +7,14 @@ CHIP_FILE="/var/run/wifibt-info.txt"
 bt_tty()
 {
 	if [ ! -d "$BT_PINCTRL_DIR" ]; then
-		echo "/dev/ttyS1"
+		# No uart BT
+		case "$(wifibt_bus)" in
+			usb | "") return ;;
+		esac
+
+		# Fallback to the first uart device
+		find /dev/ -name "ttyS*" | sort | head -n 1
+		echo "# Missing $(basename "$BT_PINCTRL_DIR") in kernel dts" >&2
 	else
 		UART_DIR=$(find "$BT_PINCTRL_DIR/" -name "uart*" | head -n 1)
 		echo "$UART_DIR" | sed 's~.*uart\([0-9]\+\).*~/dev/ttyS\1~'
