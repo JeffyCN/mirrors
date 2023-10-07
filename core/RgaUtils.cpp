@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <time.h>

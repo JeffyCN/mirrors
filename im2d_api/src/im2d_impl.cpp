@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <math.h>
 #include <sys/ioctl.h>
 
 #include "im2d.h"
@@ -810,8 +809,8 @@ IM_STATUS rga_check_info(const char *name, const rga_buffer_t info, const im_rec
 }
 
 IM_STATUS rga_check_limit(rga_buffer_t src, rga_buffer_t dst, int scale_usage, int mode_usage) {
-    int src_width = 0, src_height = 0;
-    int dst_width = 0, dst_height = 0;
+    float src_width = 0, src_height = 0;
+    float dst_width = 0, dst_height = 0;
 
     src_width = src.width;
     src_height = src.height;
@@ -823,14 +822,11 @@ IM_STATUS rga_check_limit(rga_buffer_t src, rga_buffer_t dst, int scale_usage, i
         dst_width = dst.width;
         dst_height = dst.height;
     }
-    if (((src_width >> (int)(log(scale_usage)/log(2))) > dst_width) ||
-       ((src_height >> (int)(log(scale_usage)/log(2))) > dst_height)) {
-        IM_LOGW("Unsupported to scaling less than 1/%d ~ %d times, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
-                scale_usage, scale_usage, src.width, src.height, dst.width, dst.height);
-        return IM_STATUS_NOT_SUPPORTED;
-    }
-    if (((dst_width >> (int)(log(scale_usage)/log(2))) > src_width) ||
-       ((dst_height >> (int)(log(scale_usage)/log(2))) > src_height)) {
+
+    if (src_width / dst_width > (float)scale_usage ||
+        src_height / dst_height > (float)scale_usage ||
+        dst_width / src_width > (float)scale_usage ||
+        dst_height / src_height > (float)scale_usage) {
         IM_LOGW("Unsupported to scaling more than 1/%d ~ %d times, src[w,h] = [%d, %d], dst[w,h] = [%d, %d]",
                 scale_usage, scale_usage, src.width, src.height, dst.width, dst.height);
         return IM_STATUS_NOT_SUPPORTED;

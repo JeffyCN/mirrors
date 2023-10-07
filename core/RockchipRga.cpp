@@ -25,7 +25,6 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <math.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <time.h>

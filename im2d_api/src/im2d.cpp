@@ -24,7 +24,6 @@
 #define LOG_TAG "im2d_rga"
 #endif
 
-#include <math.h>
 #include <sstream>
 
 #include "RgaUtils.h"
