@@ -297,7 +297,7 @@ typedef struct {
     int global_alpha;                   /* global_alpha, the default should be 0xff */
     int rd_mode;
 
-    /* legarcy */
+    /* legacy */
     int color;                          /* color, used by color fill */
     im_colorkey_range colorkey_range;   /* range value of color key */
     im_nn_t nn;
