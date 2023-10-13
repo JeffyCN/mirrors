@@ -444,6 +444,7 @@ gst_mpp_info_changed (GstVideoInfo * info, MppFrame * mframe)
   gint hstride = mpp_frame_get_hor_stride (mframe);
   gint vstride = mpp_frame_get_ver_stride (mframe);
   GstVideoFormat format = gst_mpp_mpp_format_to_gst_format (mpp_format);
+  gboolean afbc = !!MPP_FRAME_FMT_IS_FBC (mpp_format);
 
   if (GST_VIDEO_INFO_FORMAT (info) != format)
     return TRUE;
@@ -457,7 +458,7 @@ gst_mpp_info_changed (GstVideoInfo * info, MppFrame * mframe)
   if (GST_MPP_VIDEO_INFO_HSTRIDE (info) != hstride)
     return TRUE;
 
-  if (GST_VIDEO_INFO_N_PLANES (info) == 1)
+  if (GST_VIDEO_INFO_N_PLANES (info) == 1 || afbc)
     return FALSE;
 
   if (GST_MPP_VIDEO_INFO_VSTRIDE (info) != vstride)

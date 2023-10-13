@@ -539,7 +539,9 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
 
     /* HACK: MPP might have extra offsets for AFBC */
     dst_height += offset_y;
-    vstride = dst_height;
+
+    if (vstride < dst_height)
+      vstride = dst_height;
 
     /* HACK: Fake hstride for Rockchip VOP driver */
     hstride = 0;
