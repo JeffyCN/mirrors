@@ -229,8 +229,8 @@ typedef struct full_csc_t {
 } full_csc_t;
 
 struct rga_csc_range {
-	uint8_t max;
-	uint8_t min;
+	uint16_t max;
+	uint16_t min;
 };
 
 struct rga_csc_clip {
