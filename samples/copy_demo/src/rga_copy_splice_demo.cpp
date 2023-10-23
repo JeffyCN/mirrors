@@ -172,11 +172,15 @@ int main() {
 release_buffer:
     if (left_handle)
         releasebuffer_handle(left_handle);
+    if (right_handle)
+        releasebuffer_handle(right_handle);
     if (dst_handle)
         releasebuffer_handle(dst_handle);
 
     if (left_buf)
         free(left_buf);
+    if (right_buf)
+        free(right_buf);
     if (dst_buf)
         free(dst_buf);
 
