@@ -764,7 +764,7 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
   GstVideoInfo dst_info = self->info;
   GstVideoFrame src_frame, dst_frame;
   GstBuffer *outbuf, *inbuf;
-  GstMemory *in_mem, *out_mem;
+  GstMemory *in_mem, *out_mem = NULL;
   GstVideoMeta *meta;
   gsize size, maxsize, offset;
   gint src_hstride, src_vstride;
@@ -780,9 +780,6 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
     }
   }
 
-  src_hstride = GST_MPP_VIDEO_INFO_HSTRIDE (&src_info);
-  src_vstride = GST_MPP_VIDEO_INFO_VSTRIDE (&src_info);
-
   size = gst_buffer_get_sizes (inbuf, &offset, &maxsize);
   if (size < GST_VIDEO_INFO_SIZE (&src_info)) {
     GST_ERROR_OBJECT (self, "input buffer too small (%" G_GSIZE_FORMAT
@@ -790,29 +787,11 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
     return NULL;
   }
 
-  if (gst_mpp_video_info_align (&dst_info, src_hstride, src_vstride) &&
-      gst_mpp_video_info_matched (&dst_info, &src_info)) {
-    gst_mpp_enc_apply_strides (encoder, src_hstride, src_vstride);
-
-    if (!gst_mpp_enc_apply_properties (encoder))
-      return NULL;
-  }
-
-  dst_info = self->info;
-
   outbuf = gst_buffer_new ();
   if (!outbuf)
     goto err;
 
-  gst_buffer_copy_into (outbuf, inbuf,
-      GST_BUFFER_COPY_FLAGS | GST_BUFFER_COPY_TIMESTAMPS, 0, 0);
-
-  gst_buffer_add_video_meta_full (outbuf, GST_VIDEO_FRAME_FLAG_NONE,
-      GST_VIDEO_INFO_FORMAT (&dst_info),
-      GST_VIDEO_INFO_WIDTH (&dst_info), GST_VIDEO_INFO_HEIGHT (&dst_info),
-      GST_VIDEO_INFO_N_PLANES (&dst_info), dst_info.offset, dst_info.stride);
-
-  if (self->rotation || !gst_mpp_video_info_matched (&src_info, &dst_info))
+  if (self->rotation)
     goto convert;
 
   if (gst_buffer_n_memory (inbuf) != 1)
@@ -824,15 +803,30 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
   if (!out_mem)
     goto convert;
 
+  src_hstride = GST_MPP_VIDEO_INFO_HSTRIDE (&src_info);
+  src_vstride = GST_MPP_VIDEO_INFO_VSTRIDE (&src_info);
+
+  if (!gst_mpp_video_info_align (&dst_info, src_hstride, src_vstride) ||
+      !gst_mpp_enc_video_info_align (&dst_info) ||
+      !gst_mpp_video_info_matched (&src_info, &dst_info))
+    goto convert;
+
+  gst_mpp_enc_apply_strides (encoder, src_hstride, src_vstride);
+  if (!gst_mpp_enc_apply_properties (encoder))
+    goto err;
+
   gst_buffer_append_memory (outbuf, out_mem);
 
   /* Keep a ref of the original memory */
   gst_buffer_append_memory (outbuf, gst_memory_ref (in_mem));
 
   GST_DEBUG_OBJECT (self, "using imported buffer");
-  return outbuf;
+  goto out;
 
 convert:
+  if (out_mem)
+    gst_memory_unref (out_mem);
+
   out_mem = gst_allocator_alloc (self->allocator,
       GST_VIDEO_INFO_SIZE (&dst_info), NULL);
   if (!out_mem)
@@ -845,7 +839,7 @@ convert:
       gst_mpp_rga_convert (inbuf, &src_info, out_mem, &dst_info,
           self->rotation)) {
     GST_DEBUG_OBJECT (self, "using RGA converted buffer");
-    return outbuf;
+    goto out;
   }
 #endif
 
@@ -866,8 +860,22 @@ convert:
   }
 
   GST_DEBUG_OBJECT (self, "using software converted buffer");
+
+out:
+  gst_buffer_copy_into (outbuf, inbuf,
+      GST_BUFFER_COPY_FLAGS | GST_BUFFER_COPY_TIMESTAMPS, 0, 0);
+
+  dst_info = self->info;
+  gst_buffer_add_video_meta_full (outbuf, GST_VIDEO_FRAME_FLAG_NONE,
+      GST_VIDEO_INFO_FORMAT (&dst_info),
+      GST_VIDEO_INFO_WIDTH (&dst_info), GST_VIDEO_INFO_HEIGHT (&dst_info),
+      GST_VIDEO_INFO_N_PLANES (&dst_info), dst_info.offset, dst_info.stride);
+
   return outbuf;
 err:
+  if (out_mem)
+    gst_memory_unref (out_mem);
+
   if (outbuf)
     gst_buffer_unref (outbuf);
 

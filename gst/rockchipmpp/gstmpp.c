@@ -375,6 +375,13 @@ gst_mpp_video_info_align (GstVideoInfo * info, gint hstride, gint vstride)
   GST_DEBUG ("aligning %dx%d to %dx%d", GST_VIDEO_INFO_WIDTH (info),
       GST_VIDEO_INFO_HEIGHT (info), hstride, vstride);
 
+  if (hstride < GST_VIDEO_INFO_WIDTH (info) ||
+      vstride < GST_VIDEO_INFO_HEIGHT (info)) {
+    GST_ERROR ("unable to align %dx%d to %dx%d", GST_VIDEO_INFO_WIDTH (info),
+        GST_VIDEO_INFO_HEIGHT (info), hstride, vstride);
+    return FALSE;
+  }
+
   gst_video_alignment_reset (&align);
 
   /* Apply vstride */
