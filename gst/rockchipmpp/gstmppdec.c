@@ -640,17 +640,25 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
       /* Filter out future frames */
       if (GST_CLOCK_TIME_IS_VALID (pts) && f->pts > pts)
         continue;
-    } else if (self->interlace_mode == GST_VIDEO_INTERLACE_MODE_MIXED) {
-      /* Consider frames with invalid PTS are decode-only when deinterlaced */
+    } else {
+      /* Prefer frame with invalid PTS */
+      if (!GST_CLOCK_TIME_IS_VALID (pts)) {
+        frame = f;
+        break;
+      }
 
-      /* Delay discarding frames for some broken videos */
-      if (i >= 16) {
-        GST_WARNING_OBJECT (self, "discarding decode-only frame (#%d)",
-            f->system_frame_number);
+      if (self->interlace_mode == GST_VIDEO_INTERLACE_MODE_MIXED) {
+        /* Consider frames with invalid PTS are decode-only when deinterlaced */
 
-        gst_video_codec_frame_ref (f);
-        gst_video_decoder_release_frame (decoder, f);
-        continue;
+        /* Delay discarding frames for some broken videos */
+        if (i >= 16) {
+          GST_WARNING_OBJECT (self, "discarding decode-only frame (#%d)",
+              f->system_frame_number);
+
+          gst_video_codec_frame_ref (f);
+          gst_video_decoder_release_frame (decoder, f);
+          continue;
+        }
       }
     }
 
