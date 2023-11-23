@@ -573,7 +573,18 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
 
   /* Choose PTS source when getting the first frame */
   if (is_first_frame) {
-    frame = frames->data;
+    /* Find the frame with earliest PTS (including invalid PTS) */
+    for (frame = NULL, l = frames, i = 0; l != NULL; l = l->next, i++) {
+      GstVideoCodecFrame *f = l->data;
+
+      if (!GST_CLOCK_TIME_IS_VALID (f->pts)) {
+        frame = f;
+        break;
+      }
+
+      if (!frame || frame->pts > f->pts)
+        frame = f;
+    }
 
     if (self->use_mpp_pts) {
       if (!GST_CLOCK_TIME_IS_VALID (pts)) {
