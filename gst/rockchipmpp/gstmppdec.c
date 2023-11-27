@@ -881,14 +881,14 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
     goto info_change;
   }
 
+  if (!mpp_frame_get_buffer (mframe))
+    goto out;
+
   if (!self->convert && gst_mpp_info_changed (&self->info, mframe)) {
     self->task_ret = gst_mpp_dec_apply_info_change (decoder, mframe);
     if (self->task_ret != GST_FLOW_OK)
       goto info_change;
   }
-
-  if (!mpp_frame_get_buffer (mframe))
-    goto out;
 
   mode = mpp_frame_get_mode (mframe);
 #ifdef MPP_FRAME_FLAG_IEP_DEI_MASK
