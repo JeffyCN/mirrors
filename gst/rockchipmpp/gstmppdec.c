@@ -640,11 +640,25 @@ gst_mpp_dec_get_frame (GstVideoDecoder * decoder, GstClockTime pts)
 
     if (GST_CLOCK_TIME_IS_VALID (f->pts)) {
       /* Prefer frame with close PTS */
-      if (ABS (GST_CLOCK_DIFF (f->pts, pts)) < 3 * GST_MSECOND) {
+      if (ABS (GST_CLOCK_DIFF (f->pts, pts)) < 5 * GST_MSECOND) {
         frame = f;
 
         GST_DEBUG_OBJECT (self, "using matched frame (#%d)",
             frame->system_frame_number);
+
+        /* Discard out-dated frames for some broken videos */
+        for (l = frames; l != NULL; l = l->next) {
+          GstVideoCodecFrame *f = l->data;
+
+          if (GST_CLOCK_TIME_IS_VALID (f->pts) && f->pts < frame->pts) {
+            GST_WARNING_OBJECT (self, "discarding out-dated frame (#%d)",
+                f->system_frame_number);
+
+            gst_video_codec_frame_ref (f);
+            gst_video_decoder_release_frame (decoder, f);
+          }
+        }
+
         goto out;
       }
 
