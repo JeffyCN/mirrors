@@ -893,19 +893,8 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
   mode = mpp_frame_get_mode (mframe);
 #ifdef MPP_FRAME_FLAG_IEP_DEI_MASK
   /* IEP deinterlaced */
-  if (mode & MPP_FRAME_FLAG_IEP_DEI_MASK) {
-#ifdef MPP_FRAME_FLAG_IEP_DEI_I4O2
-    if (mode & MPP_FRAME_FLAG_IEP_DEI_I4O2) {
-      /* 1 input frame generates 2 deinterlaced MPP frames */
-      static int mpp_i4o2_frames = 0;
-      if (mpp_i4o2_frames++ % 2) {
-        GST_DEBUG_OBJECT (self, "ignore extra MPP frame");
-        goto out;
-      }
-    }
-#endif
+  if (mode & MPP_FRAME_FLAG_IEP_DEI_MASK)
     mode = MPP_FRAME_FLAG_DEINTERLACED;
-  }
 #endif
 
   frame = gst_mpp_dec_get_frame (decoder, mpp_frame_get_pts (mframe));
