@@ -65,8 +65,12 @@ set(IM2D_DEMO_INCLUDE
     ../../include
     ../../im2d_api)
 
+if (NOT DEFINED RGA_SAMPLES_UTILS_COMPILED)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../utils/CMakeLists.txt)
+endif()
+
 add_executable(${IM2D_DEMO_NAME} ${IM2D_DEMO_SRCS})
 target_include_directories(${IM2D_DEMO_NAME} PUBLIC ${IM2D_DEMO_INCLUDE})
-target_link_libraries(${IM2D_DEMO_NAME} ${RGA_LIB})
+target_link_libraries(${IM2D_DEMO_NAME} ${RGA_LIB} utils_obj)
 
 install(TARGETS ${IM2D_DEMO_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
