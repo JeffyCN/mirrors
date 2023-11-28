@@ -1374,7 +1374,7 @@ IM_API rga_buffer_handle_t rga_import_buffer(uint64_t memory, int type, uint32_t
     buffer_pool.size = 1;
 
     if (rga_import_buffers(&buffer_pool) != IM_STATUS_SUCCESS)
-        return -1;
+        return 0;
 
     return buffers[0].handle;
 }
