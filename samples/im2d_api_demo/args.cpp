@@ -72,8 +72,8 @@ int readArguments(int argc, char *argv[], int* parm) {
         {       "blend",       no_argument, NULL, MODE_BLEND_CHAR         },
         {    "cvtcolor",       no_argument, NULL, MODE_CVTCOLOR_CHAR      },
         {        "fill", required_argument, NULL, MODE_FILL_CHAR          },
-        {        "help",       no_argument, NULL, 'h'                     },
-        {		"while", required_argument, NULL, 'w'                     },
+        {		"while", required_argument, NULL, MODE_WHILE_CHAR         },
+        {        "help",       no_argument, NULL, MODE_HELP_CHAR          },
         {         NULL ,                 0, NULL, 0                       },
     };
 
@@ -164,12 +164,12 @@ int readArguments(int argc, char *argv[], int* parm) {
                 mode_code |= MODE_FILL;
                 return mode_code;
 
-            case 'h' :
+            case MODE_HELP_CHAR :
                 help_function();
-                mode_code |= MODE_NONE;
+                mode_code |= MODE_HELP;
                 return mode_code;
 
-            case 'w' :
+            case MODE_WHILE_CHAR :
                 printf("im2d while .. ");
 
                 if (optarg != NULL)
