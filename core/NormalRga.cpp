@@ -61,7 +61,7 @@ int get_int_property(void) {
 }
 
 static void rga_set_driver_feature(struct rgaContext *ctx) {
-    if (rga_version_compare(ctx->mDriverVersion, (struct rga_version_t){ 1, 3, 0, {0} }) > 0)
+    if (rga_version_compare(ctx->mDriverVersion, (struct rga_version_t){ 1, 3, 0, {0} }) >= 0)
         ctx->driver_feature |= RGA_DRIVER_FEATURE_USER_CLOSE_FENCE;
 }
 
@@ -1476,8 +1476,9 @@ int RgaBlit(rga_info *src, rga_info *dst, rga_info *src1) {
 
     dst->out_fence_fd = rgaReg.out_fence_fd;
 
-    if ((rgaCtx->driver_feature & RGA_DRIVER_FEATURE_USER_CLOSE_FENCE) &&
-        (dst->in_fence_fd >= 0))
+    if (rgaCtx->driver_feature & RGA_DRIVER_FEATURE_USER_CLOSE_FENCE &&
+        dst->in_fence_fd > 0 &&
+        sync_mode == RGA_BLIT_ASYNC)
         close(dst->in_fence_fd);
 
     return 0;
@@ -1781,8 +1782,9 @@ int RgaCollorFill(rga_info *dst) {
 
     dst->out_fence_fd = rgaReg.out_fence_fd;
 
-    if ((rgaCtx->driver_feature & RGA_DRIVER_FEATURE_USER_CLOSE_FENCE) &&
-        (dst->in_fence_fd >= 0))
+    if (rgaCtx->driver_feature & RGA_DRIVER_FEATURE_USER_CLOSE_FENCE &&
+        dst->in_fence_fd > 0 &&
+        sync_mode == RGA_BLIT_ASYNC)
         close(dst->in_fence_fd);
 
     return 0;
@@ -2400,12 +2402,6 @@ int RgaCollorPalette(rga_info *src, rga_info *dst, rga_info *lut) {
         ALOGE(" %s(%d) RGA_COLOR_PALETTE fail: %s",__FUNCTION__, __LINE__,strerror(errno));
         return -errno;
     }
-
-    dst->out_fence_fd = rgaReg.out_fence_fd;
-
-    if ((rgaCtx->driver_feature & RGA_DRIVER_FEATURE_USER_CLOSE_FENCE) &&
-        (dst->in_fence_fd >= 0))
-        close(dst->in_fence_fd);
 
     return 0;
 }
