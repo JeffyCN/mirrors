@@ -106,7 +106,7 @@ set(OBJECT_NAME ${PROJECT_NAME}-object)
 
 add_library(${OBJECT_NAME} OBJECT ${IM2D_SRCS})
 
-target_include_directories(${OBJECT_NAME} PUBLIC ${IM2D_INCLUDE})
+target_include_directories(${OBJECT_NAME} PRIVATE ${IM2D_INCLUDE})
 # Some older compilers need to explicitly set this property
 # After setting this property, it can be used to generate a shared library
 set_target_properties(${OBJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE 1)
@@ -116,7 +116,7 @@ set(SHARED_LIB_NAME ${PROJECT_NAME})
 
 add_library(${SHARED_LIB_NAME} SHARED $<TARGET_OBJECTS:${OBJECT_NAME}>)
 
-target_include_directories(${SHARED_LIB_NAME} PUBLIC ${IM2D_INCLUDE})
+target_include_directories(${SHARED_LIB_NAME} PRIVATE ${IM2D_INCLUDE})
 
 if(NOT DEFINED IM2D_API_VERSION)
     set_target_properties(${SHARED_LIB_NAME} PROPERTIES
@@ -133,7 +133,7 @@ set(STATIC_LIB_NAME ${PROJECT_NAME}-static)
 
 add_library(${STATIC_LIB_NAME} STATIC $<TARGET_OBJECTS:${OBJECT_NAME}>)
 
-target_include_directories(${STATIC_LIB_NAME} PUBLIC ${IM2D_INCLUDE})
+target_include_directories(${STATIC_LIB_NAME} PRIVATE ${IM2D_INCLUDE})
 set_target_properties(${STATIC_LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 
 # If cmake version is 3.5.1, FIXIT
