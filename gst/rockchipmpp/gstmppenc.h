@@ -54,6 +54,11 @@ struct _GstMppEnc
   /* drop frames when flushing but not draining */
   gboolean draining;
 
+  /* frame system numbers that are ready for sending to MPP */
+  GList *frames;
+
+  guint32 required_keyframe_number;
+
   guint pending_frames;
   GMutex event_mutex;
   GCond event_cond;
