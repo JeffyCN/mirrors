@@ -89,7 +89,7 @@ mpp_dep = dependency('rockchip_mpp', required : get_option('rockchipmpp'))
 rga_dep = dependency('librga', required : get_option('rga'))
 
 if rga_dep.found() and not get_option('rga').disabled()
-  cdata.set10('HAVE_RGA', 1)
+  cdata.set('HAVE_RGA', 1)
 endif
 
 if not get_option('vpxalphadec').auto()
@@ -100,15 +100,15 @@ else
 endif
 
 if vpxalphadec
-  cdata.set10('USE_VPXALPHADEC', 1)
+  cdata.set('USE_VPXALPHADEC', 1)
 endif
 
 if cc.has_header_symbol('gst/video/video-format.h', 'GST_VIDEO_FORMAT_NV12_10LE40', dependencies : gstvideo_dep)
-  cdata.set10('HAVE_NV12_10LE40', 1)
+  cdata.set('HAVE_NV12_10LE40', 1)
 endif
 
 if cc.has_header_symbol('gst/video/video-format.h', 'GST_VIDEO_FORMAT_NV16_10LE40', dependencies : gstvideo_dep)
-  cdata.set10('HAVE_NV16_10LE40', 1)
+  cdata.set('HAVE_NV16_10LE40', 1)
 endif
 
 gst_rockchip_args = ['-DHAVE_CONFIG_H']
@@ -119,4 +119,4 @@ subdir('gst')
 configure_file(output : 'config.h', configuration : cdata)
 
 python = import('python').find_installation()
-run_command(python, '-c', 'import shutil; shutil.copy("hooks/pre-commit.hook", ".git/hooks/pre-commit")')
+run_command(python, '-c', 'import shutil; shutil.copy("hooks/pre-commit.hook", ".git/hooks/pre-commit")', check : false)
