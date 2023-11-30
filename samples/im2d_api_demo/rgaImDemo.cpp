@@ -65,15 +65,14 @@ int main(int argc, char*  argv[]) {
     int mode;
     int parm_data[MODE_MAX] = {0};
 
-    IM_STATUS         status;
-    IM_USAGE          rotate;
-    IM_USAGE          flip;
-    im_color_t        color;
+    IM_USAGE rotate;
+    IM_USAGE flip;
+    im_color_t color;
 
-    im_rect         src_rect;
-    im_rect         dst_rect;
-    rga_buffer_t     src;
-    rga_buffer_t     dst;
+    im_rect src_rect;
+    im_rect dst_rect;
+    rga_buffer_t src;
+    rga_buffer_t dst;
     rga_buffer_handle_t src_handle;
     rga_buffer_handle_t dst_handle;
 
