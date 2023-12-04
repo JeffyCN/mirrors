@@ -895,8 +895,15 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
     goto info_change;
   }
 
+  frame = gst_mpp_dec_get_frame (decoder, mpp_frame_get_pts (mframe));
+  if (!frame)
+    goto no_frame;
+
   if (!mpp_frame_get_buffer (mframe))
-    goto out;
+    goto error;
+
+  if (mpp_frame_get_discard (mframe) || mpp_frame_get_errinfo (mframe))
+    goto error;
 
   if (!self->convert && gst_mpp_info_changed (&self->info, mframe)) {
     self->task_ret = gst_mpp_dec_apply_info_change (decoder, mframe);
@@ -904,25 +911,18 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
       goto info_change;
   }
 
+  buffer = gst_mpp_dec_get_gst_buffer (decoder, mframe);
+  if (!buffer)
+    goto error;
+
+  gst_buffer_resize (buffer, 0, GST_VIDEO_INFO_SIZE (&self->info));
+
   mode = mpp_frame_get_mode (mframe);
 #ifdef MPP_FRAME_FLAG_IEP_DEI_MASK
   /* IEP deinterlaced */
   if (mode & MPP_FRAME_FLAG_IEP_DEI_MASK)
     mode = MPP_FRAME_FLAG_DEINTERLACED;
 #endif
-
-  frame = gst_mpp_dec_get_frame (decoder, mpp_frame_get_pts (mframe));
-  if (!frame)
-    goto no_frame;
-
-  if (mpp_frame_get_discard (mframe) || mpp_frame_get_errinfo (mframe))
-    goto error;
-
-  buffer = gst_mpp_dec_get_gst_buffer (decoder, mframe);
-  if (!buffer)
-    goto error;
-
-  gst_buffer_resize (buffer, 0, GST_VIDEO_INFO_SIZE (&self->info));
 
   gst_mpp_dec_update_interlace_mode (decoder, buffer, mode);
 
