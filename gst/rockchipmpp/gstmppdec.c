@@ -899,6 +899,9 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
   if (!frame)
     goto no_frame;
 
+  if (self->flushing && !self->draining)
+    goto drop;
+
   if (!mpp_frame_get_buffer (mframe))
     goto error;
 
@@ -930,9 +933,6 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
   GST_MINI_OBJECT_FLAG_SET (buffer, GST_MINI_OBJECT_FLAG_LOCKABLE);
 
   frame->output_buffer = buffer;
-
-  if (self->flushing && !self->draining)
-    goto drop;
 
   GST_DEBUG_OBJECT (self, "finish frame ts=%" GST_TIME_FORMAT,
       GST_TIME_ARGS (frame->pts));

@@ -511,6 +511,7 @@ gst_mpp_enc_start (GstVideoEncoder * encoder)
   self->flushing = FALSE;
   self->pending_frames = 0;
   self->frames = NULL;
+  self->required_keyframe_number = 0;
 
   g_mutex_init (&self->mutex);
 
@@ -998,9 +999,14 @@ gst_mpp_enc_poll_packet_locked (GstVideoEncoder * encoder)
   /* This encoded frame must be the oldest one */
   frame = gst_video_encoder_get_oldest_frame (encoder);
 
+  if (self->flushing && !self->draining)
+    goto drop;
+
   /* TODO: Remove it when using exact keyframe request */
-  if (frame->system_frame_number == self->required_keyframe_number)
+  if (frame->system_frame_number == self->required_keyframe_number) {
     gst_mpp_enc_force_keyframe (encoder, FALSE);
+    self->required_keyframe_number = 0;
+  }
 
   pkt_size = mpp_packet_get_length (mpkt);
   mbuf = mpp_packet_get_buffer (mpkt);
@@ -1033,9 +1039,6 @@ gst_mpp_enc_poll_packet_locked (GstVideoEncoder * encoder)
 
   gst_buffer_replace (&frame->output_buffer, buffer);
   gst_buffer_unref (buffer);
-
-  if (self->flushing && !self->draining)
-    goto drop;
 
   GST_DEBUG_OBJECT (self, "finish frame ts=%" GST_TIME_FORMAT,
       GST_TIME_ARGS (frame->pts));
