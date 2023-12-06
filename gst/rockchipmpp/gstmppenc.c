@@ -595,6 +595,8 @@ gst_mpp_enc_apply_strides (GstVideoEncoder * encoder, gint hstride,
       vstride == GST_MPP_VIDEO_INFO_VSTRIDE (info))
     return TRUE;
 
+  GST_INFO_OBJECT (self, "strides updated to (%dx%d)", hstride, vstride);
+
   self->prop_dirty = TRUE;
   return gst_mpp_video_info_align (info, hstride, vstride);
 }
@@ -606,7 +608,6 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   GstVideoInfo *info = &self->info;
   MppFrameFormat format;
   gint width, height, hstride, vstride;
-  gboolean convert = FALSE;
 
   GST_DEBUG_OBJECT (self, "setting format: %" GST_PTR_FORMAT, state->caps);
 
@@ -637,7 +638,11 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   width = self->width ? : width;
   height = self->height ? : height;
 
-  /* Check for conversion */
+  /*
+   * Check for conversion
+   * NOTE: Not checking the strides here, since they might not be the actual
+   * ones (could be overrided by video-meta)
+   */
   if (self->rotation || !gst_mpp_enc_format_supported (format) ||
       width != GST_VIDEO_INFO_WIDTH (info) ||
       height != GST_VIDEO_INFO_HEIGHT (info)) {
@@ -646,13 +651,8 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
       return FALSE;
     }
 
-    convert = TRUE;
-  }
-
-  if (convert) {
     /* Prefer NV12 when using RGA conversion */
-    if (gst_mpp_use_rga ())
-      format = MPP_FMT_YUV420SP;
+    format = MPP_FMT_YUV420SP;
 
     gst_mpp_video_info_update_format (info,
         gst_mpp_mpp_format_to_gst_format (format), width, height);

@@ -292,6 +292,11 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   }
 
   if (dst_format != src_format || dst_width != width || dst_height != height) {
+    if (!gst_mpp_use_rga ()) {
+      GST_ERROR_OBJECT (self, "unable to convert without RGA");
+      return FALSE;
+    }
+
     /* Conversion required */
     GST_INFO_OBJECT (self, "convert from %s (%dx%d) to %s (%dx%d)",
         gst_mpp_video_format_to_string (src_format), width, height,

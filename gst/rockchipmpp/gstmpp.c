@@ -112,15 +112,22 @@ gst_mpp_use_rga ()
 {
   static int mpp_use_rga = -1;
 
-#ifdef HAVE_RGA
   if (mpp_use_rga < 0) {
+#ifndef HAVE_RGA
+    GST_WARNING ("RGA disabled at compile time");
+#else
     const gchar *buf = g_getenv ("GST_MPP_NO_RGA");
-    if (!buf || buf[0] == '0')
+    if (!buf || buf[0] == '0') {
+      GST_WARNING ("RGA enabled");
       mpp_use_rga = 1;
-    else
-      mpp_use_rga = 0;
-  }
+      return 1;
+    }
+
+    GST_WARNING ("RGA disabled by env (GST_MPP_NO_RGA)");
 #endif
+
+    mpp_use_rga = 0;
+  }
 
   return mpp_use_rga > 0;
 }
