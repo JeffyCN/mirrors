@@ -1231,6 +1231,17 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
       /* source/cropping coordinates are given in Q16 */
       src.x << 16, src.y << 16, src.w << 16, src.h << 16);
 
+  if (ret && src.x & 1) {
+    /* The driver might require 2-aligned xpos */
+    src.x++;
+    src.w--;
+
+    ret = drmModeSetPlane (ximagesink->fd, ximagesink->plane_id,
+        ximagesink->crtc_id, fb_id, 0, result.x, result.y, result.w, result.h,
+        /* source/cropping coordinates are given in Q16 */
+        src.x << 16, src.y << 16, src.w << 16, src.h << 16);
+  }
+
   if (ret) {
     GST_ERROR_OBJECT (ximagesink, "drmModesetplane failed: %d", ret);
     goto out;
