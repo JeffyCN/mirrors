@@ -934,7 +934,7 @@ gst_mpp_enc_send_frame_locked (GstVideoEncoder * encoder)
   if (!self->frames)
     return FALSE;
 
-  if (!mpp_frame_init (&mframe))
+  if (mpp_frame_init (&mframe))
     return FALSE;
 
   mpp_frame_set_fmt (mframe, mpp_frame_get_fmt (self->mpp_frame));
