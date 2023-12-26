@@ -1645,7 +1645,7 @@ static RK_S32 split_nal_units(HEVCContext *s, RK_U8 *buf, RK_U32 length)
 
         consumed = mpp_hevc_extract_rbsp(s, buf, extract_length, nal);
 
-        if (consumed <= 0) {
+        if (consumed < 0) {
             ret = MPP_ERR_STREAM;
             goto fail;
         }
