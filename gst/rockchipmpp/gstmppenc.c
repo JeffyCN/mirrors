@@ -863,11 +863,14 @@ convert:
 
   if (gst_video_frame_map (&src_frame, &src_info, inbuf, GST_MAP_READ)) {
     if (gst_video_frame_map (&dst_frame, &dst_info, outbuf, GST_MAP_WRITE)) {
+      GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
       if (!gst_video_frame_copy (&dst_frame, &src_frame)) {
+        GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
         gst_video_frame_unmap (&dst_frame);
         gst_video_frame_unmap (&src_frame);
         goto err;
       }
+      GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
       gst_video_frame_unmap (&dst_frame);
     }
     gst_video_frame_unmap (&src_frame);
@@ -960,14 +963,14 @@ gst_mpp_enc_send_frame_locked (GstVideoEncoder * encoder)
 
   gst_video_codec_frame_unref (frame);
 
-  if (!self->mpi->encode_put_frame (self->mpp_ctx, mframe)) {
-    GST_DEBUG_OBJECT (self, "encoding frame %d", frame_number);
-    self->frames = g_list_delete_link (self->frames, self->frames);
-    return TRUE;
+  if (self->mpi->encode_put_frame (self->mpp_ctx, mframe)) {
+    mpp_frame_deinit (&mframe);
+    return FALSE;
   }
 
-  mpp_frame_deinit (&mframe);
-  return FALSE;
+  GST_DEBUG_OBJECT (self, "encoding frame %d", frame_number);
+  self->frames = g_list_delete_link (self->frames, self->frames);
+  return TRUE;
 }
 
 static gboolean
@@ -1110,9 +1113,7 @@ gst_mpp_enc_handle_frame (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
         (GstTaskFunction) gst_mpp_enc_loop, encoder, NULL);
   }
 
-  GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
   buffer = gst_mpp_enc_convert (encoder, frame);
-  GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
   if (G_UNLIKELY (!buffer))
     goto not_negotiated;
 
@@ -1120,10 +1121,12 @@ gst_mpp_enc_handle_frame (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
   frame->output_buffer = buffer;
 
   /* Avoid holding too much frames */
-  GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
-  GST_MPP_ENC_WAIT (encoder, self->pending_frames < MPP_PENDING_MAX
-      || self->flushing);
-  GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
+  if (G_UNLIKELY (self->pending_frames >= MPP_PENDING_MAX)) {
+    GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
+    GST_MPP_ENC_WAIT (encoder, self->pending_frames < MPP_PENDING_MAX
+        || self->flushing);
+    GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
+  }
 
   if (G_UNLIKELY (self->flushing))
     goto flushing;
