@@ -966,7 +966,7 @@ gst_mpp_enc_send_frame_locked (GstVideoEncoder * encoder)
     return TRUE;
   }
 
-  mpp_frame_deinit (mframe);
+  mpp_frame_deinit (&mframe);
   return FALSE;
 }
 
@@ -990,7 +990,7 @@ gst_mpp_enc_poll_packet_locked (GstVideoEncoder * encoder)
   /* Deinit input frame */
   meta = mpp_packet_get_meta (mpkt);
   if (!mpp_meta_get_frame (meta, KEY_INPUT_FRAME, &mframe))
-    mpp_frame_deinit (mframe);
+    mpp_frame_deinit (&mframe);
 
   /* Wake up the frame producer */
   self->pending_frames--;
