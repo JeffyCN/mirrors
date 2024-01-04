@@ -316,12 +316,12 @@ gst_mpp_h265_enc_class_init (GstMppH265EncClass * klass)
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_QP_MIN_I,
-      g_param_spec_int ("qp-min-i", "Min Intra QP",
+      g_param_spec_uint ("qp-min-i", "Min Intra QP",
           "Min Intra QP (0 = default)", 0, 51, DEFAULT_PROP_QP_MIN_I,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_QP_MAX_I,
-      g_param_spec_int ("qp-max-i", "Max Intra QP",
+      g_param_spec_uint ("qp-max-i", "Max Intra QP",
           "Max Intra QP (0 = default)", 0, 51, DEFAULT_PROP_QP_MAX_I,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
