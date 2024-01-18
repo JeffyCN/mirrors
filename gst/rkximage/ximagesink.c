@@ -1003,7 +1003,7 @@ xwindow_calculate_display_ratio (GstRkXImageSink * self, int *x, int *y,
   video_par_n = self->par_n;
   video_par_d = self->par_d;
 
-  if (self->keep_aspect) {
+  if (!self->keep_aspect) {
     *window_width = video_width;
     *window_height = video_height;
     goto out;
