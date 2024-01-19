@@ -47,6 +47,9 @@ struct _GstMppDec
   /* final output video info */
   GstVideoInfo info;
 
+  /* decoded MPP frame info */
+  MppFrame mpp_frame;
+
   /* specified output format */
   GstVideoFormat format;
 

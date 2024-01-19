@@ -255,6 +255,7 @@ gst_mpp_dec_start (GstVideoDecoder * decoder)
   self->mpp_type = MPP_VIDEO_CodingUnused;
   self->seen_valid_pts = FALSE;
   self->convert = FALSE;
+  self->mpp_frame = NULL;
 
   self->input_state = NULL;
 
@@ -304,6 +305,11 @@ gst_mpp_dec_stop (GstVideoDecoder * decoder)
   }
 
   gst_mpp_dec_clear_allocator (decoder);
+
+  if (self->mpp_frame) {
+    mpp_frame_deinit (self->mpp_frame);
+    self->mpp_frame = NULL;
+  }
 
   mpp_destroy (self->mpp_ctx);
 
@@ -534,17 +540,45 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
   }
 
   if (afbc) {
-    /* HACK: MPP would align width to 64 for AFBC */
+    /* HACK: Fake 64-aligned width for Mali DDK
+     *
+     * When importing AFBC dma-bufs, mali would re-calculate the row stride
+     * from width by itself. But the row stride aligning algorithms are
+     * different between MPP and Mali:
+     *
+     * MPP uses round_up_64(round_up_64(width) * bpp / 8)
+     * Mali uses round_up_64(width * bpp / 8)
+     *
+     * We need Mali to use the same row stride as MPP, so we fake a 64-aligned
+     * width here and crop to the real size later.
+     */
     dst_width = GST_ROUND_UP_64 (dst_width);
 
-    /* HACK: MPP might have extra offsets for AFBC */
-    dst_height += offset_y;
+    /* HACK: Fake hstride for Rockchip DRM driver
+     *
+     * When importing AFBC dma-bufs, the Rockchip DRM driver would calculate
+     * the pixel stride from pitch. But the pitch aligning algorithms are
+     * different between MPP and the driver:
+     *
+     * MPP uses round_up_64(round_up_64(width) * bpp / 8)
+     * Rockchip DRM driver expects (pixel_stride * bpp / 8)
+     *
+     * We need the driver to use the same pixel stride as MPP, so we
+     * re-calculate a fake hstride from the pixel stride (i.e. the 64-aligned
+     * fake width) here.
+     *
+     * NOTE: The hstride is not used by others for now.
+     */
+    hstride = 0;
 
+    /* HACK: Fixup height and vstride with MPP's extra Y offsets
+     *
+     * The MPP might have extra rows for AFBC dma-bufs, and those rows are not
+     * counted in the height and vstride.
+     */
+    dst_height += offset_y;
     if (vstride < dst_height)
       vstride = dst_height;
-
-    /* HACK: Fake hstride for Rockchip VOP driver */
-    hstride = 0;
   }
 
   if (!gst_mpp_dec_update_video_info (decoder, dst_format,
@@ -908,16 +942,18 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
   if (mpp_frame_get_discard (mframe) || mpp_frame_get_errinfo (mframe))
     goto error;
 
-  if (!self->convert && gst_mpp_info_changed (&self->info, mframe)) {
+  if (!self->convert && gst_mpp_frame_info_changed (self->mpp_frame, mframe)) {
     self->task_ret = gst_mpp_dec_apply_info_change (decoder, mframe);
     if (self->task_ret != GST_FLOW_OK)
       goto info_change;
   }
 
+  /* Get gst buffer (might be converted) */
   buffer = gst_mpp_dec_get_gst_buffer (decoder, mframe);
   if (!buffer)
     goto error;
 
+  /* Truncate MPP's extra data */
   gst_buffer_resize (buffer, 0, GST_VIDEO_INFO_SIZE (&self->info));
 
   mode = mpp_frame_get_mode (mframe);
@@ -940,12 +976,19 @@ gst_mpp_dec_loop (GstVideoDecoder * decoder)
   gst_video_decoder_finish_frame (decoder, frame);
 
 out:
-  if (mpp_frame_get_eos (mframe)) {
-    GST_INFO_OBJECT (self, "got eos");
-    self->task_ret = GST_FLOW_EOS;
-  }
+  if (mframe) {
+    if (mpp_frame_get_eos (mframe)) {
+      GST_INFO_OBJECT (self, "got eos");
+      self->task_ret = GST_FLOW_EOS;
+    }
 
-  mpp_frame_deinit (&mframe);
+    if (self->mpp_frame)
+      mpp_frame_deinit (&self->mpp_frame);
+
+    /* Save the last MPP frame for info change detection */
+    mpp_frame_set_buffer (mframe, NULL);
+    self->mpp_frame = mframe;
+  }
 
   if (self->task_ret != GST_FLOW_OK) {
     GST_DEBUG_OBJECT (self, "leaving output thread: %s",

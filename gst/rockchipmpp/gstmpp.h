@@ -97,7 +97,7 @@ gboolean gst_mpp_video_info_align (GstVideoInfo * info,
 
 gboolean gst_mpp_video_info_matched (GstVideoInfo * info, GstVideoInfo * other);
 
-gboolean gst_mpp_info_changed (GstVideoInfo * info, MppFrame * mframe);
+gboolean gst_mpp_frame_info_changed (MppFrame * frame, MppFrame * other);
 
 guint gst_mpp_get_pixel_stride (GstVideoInfo * info);
 

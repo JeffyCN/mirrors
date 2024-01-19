@@ -450,32 +450,30 @@ gst_mpp_video_info_matched (GstVideoInfo * info, GstVideoInfo * other)
 }
 
 gboolean
-gst_mpp_info_changed (GstVideoInfo * info, MppFrame * mframe)
+gst_mpp_frame_info_changed (MppFrame * frame, MppFrame * other)
 {
-  MppFrameFormat mpp_format = mpp_frame_get_fmt (mframe);
-  gint width = mpp_frame_get_width (mframe);
-  gint height = mpp_frame_get_height (mframe);
-  gint hstride = mpp_frame_get_hor_stride (mframe);
-  gint vstride = mpp_frame_get_ver_stride (mframe);
-  GstVideoFormat format = gst_mpp_mpp_format_to_gst_format (mpp_format);
-  gboolean afbc = !!MPP_FRAME_FMT_IS_FBC (mpp_format);
-
-  if (GST_VIDEO_INFO_FORMAT (info) != format)
+  if (!frame || !other)
     return TRUE;
 
-  if (GST_VIDEO_INFO_WIDTH (info) != width)
+  if (mpp_frame_get_fmt (frame) != mpp_frame_get_fmt (other))
     return TRUE;
 
-  if (GST_VIDEO_INFO_HEIGHT (info) != height)
+  if (mpp_frame_get_width (frame) != mpp_frame_get_width (other))
     return TRUE;
 
-  if (GST_MPP_VIDEO_INFO_HSTRIDE (info) != hstride)
+  if (mpp_frame_get_height (frame) != mpp_frame_get_height (other))
     return TRUE;
 
-  if (GST_VIDEO_INFO_N_PLANES (info) == 1 || afbc)
-    return FALSE;
+  if (mpp_frame_get_offset_x (frame) != mpp_frame_get_offset_x (other))
+    return TRUE;
 
-  if (GST_MPP_VIDEO_INFO_VSTRIDE (info) != vstride)
+  if (mpp_frame_get_offset_y (frame) != mpp_frame_get_offset_y (other))
+    return TRUE;
+
+  if (mpp_frame_get_hor_stride (frame) != mpp_frame_get_hor_stride (other))
+    return TRUE;
+
+  if (mpp_frame_get_ver_stride (frame) != mpp_frame_get_ver_stride (other))
     return TRUE;
 
   return FALSE;

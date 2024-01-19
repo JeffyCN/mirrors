@@ -1368,7 +1368,7 @@ no_rga:
           "Zero-copy encoded packet", DEFAULT_PROP_ZERO_COPY_PKT,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  if (g_getenv ("GST_MPPENC_DEFAULT_ARM_AFBC"))
+  if (g_getenv ("GST_MPP_ENC_DEFAULT_ARM_AFBC"))
     DEFAULT_PROP_ARM_AFBC = TRUE;
 
   g_object_class_install_property (gobject_class, PROP_ARM_AFBC,
