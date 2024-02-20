@@ -184,7 +184,7 @@ struct _GstRkXImageSink
   GstPollFD pollfd;
 
   guint32 last_fb_id;
-  GstVideoRectangle save_rect;
+  GstVideoRectangle render_rect;
   gboolean paused;
 };
 

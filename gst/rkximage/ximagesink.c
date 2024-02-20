@@ -987,30 +987,28 @@ gst_kms_sink_query (GstBaseSink * bsink, GstQuery * query)
   return GST_BASE_SINK_CLASS (parent_class)->query (bsink, query);
 }
 
-/*ximagesink*/
 static gboolean
-xwindow_calculate_display_ratio (GstRkXImageSink * self, int *x, int *y,
-    gint * window_width, gint * window_height)
+gst_kms_sink_calculate_display_ratio (GstRkXImageSink * self,
+    GstVideoInfo * vinfo, gint * scaled_width, gint * scaled_height)
 {
   guint dar_n, dar_d;
+  guint video_width, video_height;
   guint video_par_n, video_par_d;
   guint dpy_par_n, dpy_par_d;
-  gint video_width, video_height;
 
-  video_width = GST_VIDEO_INFO_WIDTH (&self->vinfo);
-  video_height = GST_VIDEO_INFO_HEIGHT (&self->vinfo);
+  video_width = GST_VIDEO_INFO_WIDTH (vinfo);
+  video_height = GST_VIDEO_INFO_HEIGHT (vinfo);
+  video_par_n = GST_VIDEO_INFO_PAR_N (vinfo);
+  video_par_d = GST_VIDEO_INFO_PAR_D (vinfo);
 
-  video_par_n = self->par_n;
-  video_par_d = self->par_d;
-
-  if (!self->keep_aspect) {
-    *window_width = video_width;
-    *window_height = video_height;
+  if (self->keep_aspect) {
+    gst_video_calculate_device_ratio (self->hdisplay, self->vdisplay,
+        self->mm_width, self->mm_height, &dpy_par_n, &dpy_par_d);
+  } else {
+    *scaled_width = video_width;
+    *scaled_height = video_height;
     goto out;
   }
-
-  gst_video_calculate_device_ratio (self->hdisplay, self->vdisplay,
-      self->mm_width, self->mm_height, &dpy_par_n, &dpy_par_d);
 
   if (!gst_video_calculate_display_ratio (&dar_n, &dar_d, video_width,
           video_height, video_par_n, video_par_d, dpy_par_n, dpy_par_d))
@@ -1025,20 +1023,25 @@ xwindow_calculate_display_ratio (GstRkXImageSink * self, int *x, int *y,
 
   /* start with same height, because of interlaced video */
   /* check hd / dar_d is an integer scale factor, and scale wd with the PAR */
-  video_width = gst_util_uint64_scale_int (self->xwindow->height, dar_n, dar_d);
-  video_height = gst_util_uint64_scale_int (self->xwindow->width, dar_d, dar_n);
-  if (video_width < *window_width) {
-    *x += (self->xwindow->width - video_width) / 2;
-    *window_width = video_width;
-    *window_height = self->xwindow->height;
+  if (video_height % dar_d == 0) {
+    GST_DEBUG_OBJECT (self, "keeping video height");
+    *scaled_width = (guint)
+        gst_util_uint64_scale_int (video_height, dar_n, dar_d);
+    *scaled_height = video_height;
+  } else if (video_width % dar_n == 0) {
+    GST_DEBUG_OBJECT (self, "keeping video width");
+    *scaled_width = video_width;
+    *scaled_height = (guint)
+        gst_util_uint64_scale_int (video_width, dar_d, dar_n);
   } else {
-    *y += (self->xwindow->height - video_height) / 2;
-    *window_height = video_height;
-    *window_width = self->xwindow->width;
+    GST_DEBUG_OBJECT (self, "approximating while keeping video height");
+    *scaled_width = (guint)
+        gst_util_uint64_scale_int (video_height, dar_n, dar_d);
+    *scaled_height = video_height;
   }
 
 out:
-  GST_DEBUG_OBJECT (self, "scaling to %dx%d", *window_width, *window_height);
+  GST_DEBUG_OBJECT (self, "scaling to %dx%d", *scaled_width, *scaled_height);
 
   return TRUE;
 }
@@ -1072,18 +1075,6 @@ xwindow_get_window_position (GstRkXImageSink * ximagesink, int *x, int *y)
   }
 
   return FALSE;
-}
-
-static void
-xwindow_get_render_rectangle (GstRkXImageSink * ximagesink,
-    gint * x, gint * y, gint * width, gint * height)
-{
-  if (ximagesink->save_rect.w != 0 && ximagesink->save_rect.h != 0) {
-    *width = ximagesink->save_rect.w;
-    *height = ximagesink->save_rect.h;
-    *x += ximagesink->save_rect.x;
-    *y += ximagesink->save_rect.y;
-  }
 }
 
 static void
@@ -1139,7 +1130,10 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
 {
   GstVideoCropMeta *crop;
   GstVideoRectangle src = { 0, };
-  GstVideoRectangle result = { 0, };
+  gint video_width, video_height;
+  GstVideoRectangle dst = { 0, };
+  GstVideoRectangle result;
+  gint window_x, window_y;
   GstBuffer *buffer = NULL;
   gboolean draw_border = FALSE;
   gboolean res = FALSE;
@@ -1189,8 +1183,28 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
     src.w = GST_VIDEO_SINK_WIDTH (ximagesink);
     src.h = GST_VIDEO_SINK_HEIGHT (ximagesink);
   }
-  result.w = ximagesink->xwindow->width;
-  result.h = ximagesink->xwindow->height;
+
+  video_width = src.w;
+  video_height = src.h;
+
+  gst_kms_sink_calculate_display_ratio (ximagesink, &ximagesink->vinfo,
+      &src.w, &src.h);
+
+  dst.w = ximagesink->render_rect.w;
+  dst.h = ximagesink->render_rect.h;
+  if (!dst.w || !dst.h) {
+    dst.w = ximagesink->xwindow->width;
+    dst.h = ximagesink->xwindow->height;
+  }
+
+  gst_video_sink_center_rect (src, dst, &result, TRUE);
+
+  result.x += ximagesink->render_rect.x;
+  result.y += ximagesink->render_rect.y;
+
+  /* Restore the real source size */
+  src.w = video_width;
+  src.h = video_height;
 
   g_mutex_lock (&ximagesink->x_lock);
 
@@ -1211,12 +1225,9 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
     ximagesink->draw_border = FALSE;
   }
 
-  xwindow_get_window_position (ximagesink, &result.x, &result.y);
-
-  xwindow_get_render_rectangle (ximagesink, &result.x, &result.y, &result.w,
-      &result.h);
-  xwindow_calculate_display_ratio (ximagesink, &result.x, &result.y, &result.w,
-      &result.h);
+  xwindow_get_window_position (ximagesink, &window_x, &window_y);
+  result.x += window_x;
+  result.y += window_y;
 
   if (GST_VIDEO_INFO_IS_AFBC (&ximagesink->vinfo))
     /* The AFBC's width should align to 4 */
@@ -1246,7 +1257,6 @@ gst_x_image_sink_ximage_put (GstRkXImageSink * ximagesink, GstBuffer * buf)
     GST_ERROR_OBJECT (ximagesink, "drmModesetplane failed: %d", ret);
     goto out;
   }
-
 
   /* HACK: Disable vsync might cause tearing */
   if (!g_getenv ("KMSSINK_DISABLE_VSYNC"))
@@ -1937,8 +1947,6 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
   GST_VIDEO_SINK_HEIGHT (ximagesink) = info.height;
   ximagesink->fps_n = info.fps_n;
   ximagesink->fps_d = info.fps_d;
-  ximagesink->par_n = info.par_n;
-  ximagesink->par_d = info.par_d;
 
   /* Notify application to set xwindow id now */
   g_mutex_lock (&ximagesink->flow_lock);
@@ -2319,13 +2327,11 @@ gst_x_image_sink_set_render_rectangle (GstVideoOverlay * overlay,
     gint x, gint y, gint width, gint height)
 {
   GstRkXImageSink *ximagesink = GST_X_IMAGE_SINK (overlay);
-  GST_DEBUG_OBJECT (ximagesink, "Set Render Rectangle"
-      "x %d y %d width %d height %d", x, y, width, height);
 
-  ximagesink->save_rect.w = width;
-  ximagesink->save_rect.h = height;
-  ximagesink->save_rect.x = x;
-  ximagesink->save_rect.y = y;
+  ximagesink->render_rect.x = x;
+  ximagesink->render_rect.y = y;
+  ximagesink->render_rect.w = width;
+  ximagesink->render_rect.h = height;
 
   gst_x_image_sink_expose (GST_VIDEO_OVERLAY (ximagesink));
 }
@@ -2543,10 +2549,10 @@ gst_x_image_sink_init (GstRkXImageSink * ximagesink)
   ximagesink->poll = gst_poll_new (TRUE);
   gst_video_info_init (&ximagesink->vinfo);
 
-  ximagesink->save_rect.x = 0;
-  ximagesink->save_rect.y = 0;
-  ximagesink->save_rect.w = 0;
-  ximagesink->save_rect.h = 0;
+  ximagesink->render_rect.x = 0;
+  ximagesink->render_rect.y = 0;
+  ximagesink->render_rect.w = 0;
+  ximagesink->render_rect.h = 0;
 
   ximagesink->paused = FALSE;
 
