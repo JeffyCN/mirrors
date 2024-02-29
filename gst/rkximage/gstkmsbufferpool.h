@@ -1,10 +1,9 @@
 /*
  * GStreamer
  * Copyright (C) 2016 Igalia
+ * Copyright (C) <2024> Rockchip Electronics Co., Ltd
  *
- * Authors:
- *  Víctor Manuel Jáquez Leal <vjaquez@igalia.com>
- *  Javier Martin <javiermartin@by.com.es>
+ * Based on kmssink
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
