@@ -241,6 +241,9 @@ drm_connector_is_used (int fd, drmModeRes * res, drmModeConnector * conn)
   gboolean result;
   drmModeCrtc *crtc;
 
+  if (conn->connection != DRM_MODE_CONNECTED)
+    return FALSE;
+
   result = FALSE;
   crtc = drm_find_crtc_for_connector (fd, res, conn, NULL);
   if (crtc) {
