@@ -407,7 +407,10 @@ static RK_S32 vp9_alloc_frame(Vp9CodecContext *ctx, VP9Frame *frame)
 
         mpp_frame_set_fbc_hdr_stride(frame->f, fbc_hdr_stride);
     } else {
-        mpp_slots_set_prop(s->slots, SLOTS_HOR_ALIGN, mpp_align_256_odd);
+        if (mpp_get_soc_type() == ROCKCHIP_SOC_RK3576)
+            mpp_slots_set_prop(s->slots, SLOTS_HOR_ALIGN, mpp_align_128_odd_plus_64);
+        else
+            mpp_slots_set_prop(s->slots, SLOTS_HOR_ALIGN, mpp_align_256_odd);
         mpp_slots_set_prop(s->slots, SLOTS_VER_ALIGN, mpp_align_64);
         if (MPP_FRAME_FMT_IS_TILE(s->cfg->base.out_fmt))
             mpp_frame_set_fmt(frame->f, ctx->pix_fmt | ((s->cfg->base.out_fmt & (MPP_FRAME_TILE_FLAG))));
