@@ -201,8 +201,8 @@ __bitread_error:
 static RK_S32 sign_extend(RK_S32 val, RK_U8 bits)
 {
     RK_U8 shift = 8 * sizeof(RK_S32) - bits;
-    union { RK_U8 u; RK_S32 s; } v = { (RK_U8) val << shift };
-    return v.s >> shift;
+    RK_S32 v = { (RK_U8) val << shift };
+    return v >> shift;
 }
 
 RK_S32 mpp_av1_read_signed(BitReadCtx_t *gbc,

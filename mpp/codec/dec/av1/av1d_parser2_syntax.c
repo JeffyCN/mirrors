@@ -97,6 +97,7 @@ static int av1d_fill_picparams(Av1CodecContext *ctx, DXVA_PicParams_AV1 *pp)
     pp->all_lossless          = h->all_lossless;
     /* References */
     pp->primary_ref_frame = frame_header->primary_ref_frame;
+    pp->enable_order_hint = seq->enable_order_hint;
     pp->order_hint        = frame_header->order_hint;
     pp->order_hint_bits   = seq->enable_order_hint ? seq->order_hint_bits_minus_1 + 1 : 0;
 
