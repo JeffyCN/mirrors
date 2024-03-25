@@ -238,8 +238,13 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   guint align = GST_MPP_ALIGNMENT;
 
   if (!width || !height) {
-    GST_ERROR_OBJECT (self, "invalid input video info");
-    return FALSE;
+    if (self->buf_size) {
+      GST_ERROR_OBJECT (self, "ignore invalid input video info");
+      return TRUE;
+    } else {
+      GST_ERROR_OBJECT (self, "invalid input video info");
+      return FALSE;
+    }
   }
 
   if (!pclass->set_format (decoder, state))
