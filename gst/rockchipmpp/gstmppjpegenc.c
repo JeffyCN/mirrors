@@ -80,7 +80,7 @@ GST_STATIC_PAD_TEMPLATE ("sink",
         GST_MPP_JPEG_ENC_SIZE_CAPS));
 
 static void
-gst_mpp_h264_enc_set_property (GObject * object,
+gst_mpp_jpeg_enc_set_property (GObject * object,
     guint prop_id, const GValue * value, GParamSpec * pspec)
 {
   GstVideoEncoder *encoder = GST_VIDEO_ENCODER (object);
@@ -121,7 +121,7 @@ gst_mpp_h264_enc_set_property (GObject * object,
 }
 
 static void
-gst_mpp_h264_enc_get_property (GObject * object,
+gst_mpp_jpeg_enc_get_property (GObject * object,
     guint prop_id, GValue * value, GParamSpec * pspec)
 {
   GstVideoEncoder *encoder = GST_VIDEO_ENCODER (object);
@@ -215,9 +215,9 @@ gst_mpp_jpeg_enc_class_init (GstMppJpegEncClass * klass)
       GST_DEBUG_FUNCPTR (gst_mpp_jpeg_enc_handle_frame);
 
   gobject_class->set_property =
-      GST_DEBUG_FUNCPTR (gst_mpp_h264_enc_set_property);
+      GST_DEBUG_FUNCPTR (gst_mpp_jpeg_enc_set_property);
   gobject_class->get_property =
-      GST_DEBUG_FUNCPTR (gst_mpp_h264_enc_get_property);
+      GST_DEBUG_FUNCPTR (gst_mpp_jpeg_enc_get_property);
 
   g_object_class_install_property (gobject_class, PROP_Q_FACTOR,
       g_param_spec_uint ("q-factor", "Quality Factor",
