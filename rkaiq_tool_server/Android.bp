@@ -1,0 +1,132 @@
+bootstrap_go_package {
+    name: "rkaiq_tool_server_soong-operator",
+    pkgPath: "android/soong/external/camera_engine_rkaiq/rkaiq_tool_server",
+    deps: [
+            "blueprint",
+            "blueprint-pathtools",
+            "soong",
+            "soong-android",
+            "soong-cc",
+            "soong-genrule",
+        ],
+    srcs: [
+            "rkaiq_tool_server.go",
+        ],
+    pluginFor: ["soong_build"],
+}
+
+cc_defaults {
+    name: "rkaiq_tool_server_defaults",
+    vendor: true,
+    proprietary: true,
+
+    defaults: [ "rkaiq-defaults", "rkaiq-defaults-flags", ],
+
+	rtti: true,
+    cflags: [
+        "-Wall",
+        "-Wno-error",
+        "-Wextra",
+        "-Wno-missing-field-initializers",
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+        "-Wno-non-pod-varargs",
+        "-DANDROID",
+    ],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/xcore",
+        "external/camera_engine_rkaiq/xcore/base",
+        "external/camera_engine_rkaiq/aiq_core",
+        "external/camera_engine_rkaiq/algos",
+        "external/camera_engine_rkaiq/algos_camgroup",
+        "external/camera_engine_rkaiq/hwi",
+        "external/camera_engine_rkaiq/iq_parser",
+        "external/camera_engine_rkaiq/iq_parser_v2",
+        "external/camera_engine_rkaiq/uAPI",
+        "external/camera_engine_rkaiq/uAPI/include",
+        "external/camera_engine_rkaiq/uAPI2",
+        "external/camera_engine_rkaiq/common",
+        "external/camera_engine_rkaiq/include",
+        "external/camera_engine_rkaiq/include/iq_parser",
+        "external/camera_engine_rkaiq/include/iq_parser_v2",
+        "external/camera_engine_rkaiq/include/iq_parser_v2/j2s",
+        "external/camera_engine_rkaiq/include/xcore",
+        "external/camera_engine_rkaiq/include/common",
+        "external/camera_engine_rkaiq/include/common/mediactl",
+        "external/camera_engine_rkaiq/include/xcore/base",
+        "external/camera_engine_rkaiq/include/algos",
+        "external/camera_engine_rkaiq/include/ipc_server",
+        "external/camera_engine_rkaiq/ipc_server",
+    ],
+
+    local_include_dirs: [
+        ".",
+        "camera",
+        "common",
+        "logger",
+        "mediactl",
+        "mediactl/linux",
+        "netserver",
+        "rkaiq",
+        "rkaiq/rkaiq_api",
+        "rtspserver",
+        "rtspserver/include",
+        "rtspserver/include/UsageEnvironment/include",
+        "rtspserver/include/liveMedia/",
+        "rtspserver/include/liveMedia/include",
+        "rtspserver/include/BasicUsageEnvironment/include",
+        "rtspserver/include/groupsock/include",
+    ],
+}
+
+cc_defaults {
+    name: "rkaiq_tool_server_default_libs",
+
+    static_libs: [
+        "libliveMedia",
+        "libgroupsock",
+        "libBasicUsageEnvironment",
+        "libUsageEnvironment",
+        "librtspserver",
+    ],
+    shared_libs: [
+        "libbase",
+        "libcutils",
+        "liblog",
+        "libvpu",
+        "libssl",
+        "libcrypto",
+    ],
+}
+
+cc_rkaiq_tool_server_binary {
+    name: "rkaiq_tool_server",
+    compile_multilib: "32",
+    defaults: [
+        "rkaiq_tool_server_defaults",
+        "rkaiq_tool_server_default_libs",
+    ],
+
+    srcs: [
+        "rkaiq_tool_server.cpp",
+        "camera/camera_capture.cpp",
+        "camera/camera_device.cpp",
+        "camera/camera_infohw.cpp",
+        "camera/camera_memory.cpp",
+        "logger/log.cpp",
+        "netserver/tcp_server.cpp",
+        "netserver/tcp_client.cpp",
+        "netserver/domain_tcp_client.cpp",
+        "rkaiq/rkaiq_api/rkaiq_socket.cpp",
+        "rkaiq/multiframe_process.cpp",
+        "rkaiq/rkaiq_protocol.cpp",
+        "rkaiq/rkaiq_online_protocol.cpp",
+        "rkaiq/rkaiq_raw_protocol.cpp",
+        "rkaiq/rkaiq_api/rkaiq_media.cpp",
+        "mediactl/libmediactl.c",
+        "mediactl/libv4l2subdev.c",
+        "mediactl/media_info.c",
+        "mediactl/options.c",
+    ],
+}

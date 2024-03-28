@@ -1,0 +1,10 @@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
+Name: rkaiq
+Description: Rockchip ISP API library
+Version: @PROJECT_VERSION@
+URL: https://www.rock-chips.com
+Requires: gtest = @PROJECT_VERSION@
+Libs: -L${libdir} -lrkaiq @CMAKE_THREAD_LIBS_INIT@
+Cflags: -I${includedir} @GTEST_HAS_PTHREAD_MACRO@

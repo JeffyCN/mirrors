@@ -1,0 +1,45 @@
+cc_library_static {
+    name: "librkaiq_camgroup_awb",
+    vendor: true,
+    stl: "c++_static",
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/ae",
+        "external/camera_engine_rkaiq/include/algos/awb",
+        "external/camera_engine_rkaiq/include/algos/ablc",
+        "external/camera_engine_rkaiq/algos_camgroup",
+    ],
+
+    srcs: [
+        "rk_aiq_algo_camgroup_awb_itf.cpp",
+        "rk_aiq_awb_algo_surround_view_v201.cpp",
+        "rk_aiq_uapiv2_camgroup_awb_int.cpp",
+        "rk_aiq_awb_algo_surround_view_v32.cpp"
+    ],
+
+    cppflags: [
+        "-ffast-math",
+        "-funroll-loops",
+        "-Os",
+        "-g",
+        "-Wno-error",
+        "-Wno-unused-value",
+        "-Wno-unused-variable",
+        "-Wno-unused-private-field",
+        "-Wno-unused-but-set-variable",
+        "-Wno-unused-function",
+        "-Wno-implicit-fallthrough",
+        "-Wno-address-of-packed-member",
+        "-Wno-ignored-qualifiers",
+        "-Wno-unused-label",
+        "-fno-strict-aliasing",
+        "-Wno-reorder",
+        "-Wno-overloaded-virtual",
+        "-Wno-unused-parameter",
+        "-Wno-extern-c-compat",
+        "-Wno-missing-braces",
+        "-Wno-missing-field-initializers",
+        "-UNDEBUG"
+    ],
+}

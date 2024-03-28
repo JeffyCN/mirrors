@@ -1,0 +1,423 @@
+cc_defaults {
+    name: "rkaiq-defaults",
+}
+
+rkaiq_defaults {
+    name: "rkaiq-defaults-flags",
+}
+
+bootstrap_go_package {
+    name: "soong-operator",
+    pkgPath: "android/soong/external/camera_engine_rkaiq",
+    deps: [
+            "blueprint",
+            "blueprint-pathtools",
+            "soong",
+            "soong-android",
+            "soong-cc",
+            "soong-genrule",
+        ],
+    srcs: [
+            "rkaiq.go",
+            "rkaiq_getAlgosLib.go",
+            "rkaiq_getAlgosMacros.go",
+            "rkaiq_getSrcsFiles.go",
+            "rkaiq_switchs.go",
+            "rkaiq_getStaticLibSrcs.go",
+        ],
+    pluginFor: ["soong_build"],
+}
+
+subdirs = [
+    "algos",
+    "algos_camgroup",
+    "iq_parser_v2",
+]
+
+cc_prebuilt_library_static {
+    name: "libgenMeshLib",
+    vendor: true,
+    arch: {
+        arm: {
+            srcs: ["common/gen_mesh/android/genMesh_static_32bit/libgenMeshLib.a"],
+        },
+        arm64: {
+            srcs: ["common/gen_mesh/android/genMesh_static_64bit/libgenMeshLib.a"],
+        },
+    },
+}
+
+cc_library_headers {
+	name: "librkaiq_headers",
+	export_include_dirs: ["include"],
+	vendor_available: true,
+}
+
+cc_rkaiq_library_shared {
+    name: "librkaiq",
+    vendor: true,
+    rtti: true,
+    stl: "c++_static",
+
+    defaults: [ "rkaiq-defaults", "rkaiq-defaults-flags", ],
+
+    local_include_dirs: [
+        ".",
+        "xcore",
+        "xcore/base",
+        "common",
+        "common/gen_mesh",
+        "aiq_core",
+        "algos",
+        "hwi",
+        "hwi/isp20",
+        "hwi/isp21",
+        "hwi/isp3x",
+        "hwi/isp32",
+        "hwi/isp39",
+        "iq_parser",
+        "iq_parser_v2",
+        "uAPI",
+        "uAPI/include",
+        "uAPI2",
+        "ipc_server",
+        "include",
+        "include/xcore",
+        "include/xcore/base",
+        "include/common",
+        "include/common/mediactl",
+        "include/algos",
+        "include/iq_parser",
+        "include/iq_parser_v2",
+        "include/iq_parser_v2/j2s",
+        "include/uAPI2",
+        "include/ipc_server",
+        "include/algos/amerge",
+		"modules",
+    ],
+
+    header_libs: [
+        "gl_headers",
+    ],
+
+    shared_libs: [
+        "libutils",
+        "libcutils",
+        "liblog",
+    ],
+
+    srcs: [
+        // AIQ_CORE_SRC
+        "aiq_core/RkAiqHandle.cpp",
+        "aiq_core/RkAiqCore.cpp",
+        "aiq_core/RkLumaCore.cpp",
+
+        "aiq_core/MessageBus.cpp",
+        "aiq_core/RkAiqAnalyzeGroupManager.cpp",
+        "aiq_core/RkAiqResourceTranslator.cpp",
+        "aiq_core/RkAiqResourceTranslatorV21.cpp",
+        "aiq_core/RkAiqResourceTranslatorV3x.cpp",
+        "aiq_core/RkAiqResourceTranslatorV32.cpp",
+        "aiq_core/RkAiqResourceTranslatorV39.cpp",
+        "aiq_core/thumbnails.cpp",
+
+        // ALGO_COMMON_SRC
+        "algos/interpolation.cpp",
+
+        // COMMON_SRC
+        "common/mediactl/mediactl.c",
+        "common/gen_mesh/genMesh.cpp",
+        "common/code_to_pixel_format.cpp",
+
+        // HWI_SRC
+        "hwi/CamHwBase.cpp",
+        "hwi/isp20/CamHwIsp20.cpp",
+        "hwi/isp21/CamHwIsp21.cpp",
+        "hwi/isp3x/CamHwIsp3x.cpp",
+        "hwi/isp32/CamHwIsp32.cpp",
+        "hwi/isp20/Isp20Params.cpp",
+        "hwi/isp20/Isp20StatsBuffer.cpp",
+        "hwi/isp20/Isp20_module_dbg.cpp",
+        "hwi/SensorHw.cpp",
+        "hwi/LensHw.cpp",
+        "hwi/FlashLight.cpp",
+        "hwi/isp20/Stream.cpp",
+        "hwi/isp20/RawStreamCapUnit.cpp",
+        "hwi/isp20/RawStreamProcUnit.cpp",
+        "hwi/isp20/PdafStreamProcUnit.cpp",
+        "hwi/isp20/CaptureRawData.cpp",
+        "hwi/image_processor.cpp",
+        "hwi/isp20/Isp20Evts.cpp",
+        "hwi/isp20/CifScaleStream.cpp",
+        "hwi/isp20/DumpRkRaw.cpp",
+
+        // // IQ_PARSER_SRC
+        // "iq_parser/RkAiqCalibParser.cpp",
+        // "iq_parser/RkAiqCalibDb.cpp",
+        // "iq_parser/RkAiqCalibTag.cpp",
+        // // rkaiq_3A_server use this file
+        "iq_parser/tinyxml2.cpp",
+        // "iq_parser/xmltags.cpp",
+        // "iq_parser/RkAiqCalibApi.cpp",
+
+        // // IQ_PARSER_V2_SRC
+        // "iq_parser_v2/awb_xml2json.cpp",
+        // "iq_parser_v2/bayernr_xml2json_v1.cpp",
+        // "iq_parser_v2/mfnr_xml2json_v1.cpp",
+        // "iq_parser_v2/ynr_xml2json_v1.cpp",
+        // "iq_parser_v2/uvnr_xml2json_v1.cpp",
+        // "iq_parser_v2/sharp_xml2json_v1.cpp",
+        // "iq_parser_v2/edgefilter_xml2json_v1.cpp",
+
+        // UAPI_SRC
+        "uAPI2/rk_aiq_user_api2_sysctl.cpp",
+        "uAPI2/rk_aiq_user_api2_debug.cpp",
+        "uAPI2/rk_aiq_user_api2_helper.cpp",
+        "uAPI2/rk_aiq_user_api2_wrapper.cpp",
+        "common/rkaiq_ini.c",
+
+        // XCORE_SRC
+        "xcore/xcam_common.cpp",
+        "xcore/xcam_log.cpp",
+        "xcore/xcam_thread.cpp",
+        "xcore/xcam_buffer.cpp",
+        "xcore/video_buffer.cpp",
+        "xcore/v4l2_buffer_proxy.cpp",
+        "xcore/v4l2_device.cpp",
+        "xcore/buffer_pool.cpp",
+        "xcore/poll_thread.cpp",
+        "xcore/smart_buffer_priv.cpp",
+        "xcore/fake_v4l2_device.cpp",
+
+        // IPC_SERVER_SRC
+        "ipc_server/socket_server.cpp",
+        "ipc_server/rkaiq_tool_ae.cpp",
+        "ipc_server/rkaiq_tool_anr.cpp",
+        "ipc_server/rkaiq_tool_imgproc.cpp",
+        "ipc_server/rkaiq_tool_sharp.cpp",
+        "ipc_server/rkaiq_tool_sysctl.cpp",
+        "ipc_server/command_process.cpp",
+        "ipc_server/MessageParser.cpp",
+
+        "RkAiqManager.cpp",
+        "RkAiqGlobalParamsManager.cpp",
+        "RkAiqCamProfiles.cpp",
+    ],
+
+    static_libs: [
+        "libgenMeshLib",
+        "libiq_parser_v2",
+    ],
+
+    cflags: [
+        "-fPIC",
+        "-Wall",
+        "-Wno-error",
+        "-Os",
+        "-g",
+        "-Wno-unused-value",
+        "-Wno-unused-variable",
+        "-Wno-unused-private-field",
+        "-Wno-unused-but-set-variable",
+        "-Wno-unused-function",
+        "-Wno-unused-label",
+        "-Wno-implicit-fallthrough",
+        "-Wno-ignored-qualifiers",
+        "-Wno-reorder",
+        "-Wno-address-of-packed-member",
+        "-Wno-unused-parameter",
+        "-Wno-overloaded-virtual",
+        "-Wno-extern-c-compat",
+        "-fno-strict-aliasing",
+        "-frtti",
+        "-DANDROID_OS",
+        "-UNDEBUG",
+    ],
+
+    cppflags: [
+        "-fPIC",
+        "-Wall",
+        "-Wno-error",
+        "-Os",
+        "-g",
+        "-Wno-unused-value",
+        "-Wno-unused-variable",
+        "-Wno-unused-private-field",
+        "-Wno-unused-but-set-variable",
+        "-Wno-unused-function",
+        "-Wno-implicit-fallthrough",
+        "-Wno-address-of-packed-member",
+        "-Wno-ignored-qualifiers",
+        "-Wno-unused-label",
+        "-fno-strict-aliasing",
+        "-Wno-reorder",
+        "-Wno-overloaded-virtual",
+        "-Wno-unused-parameter",
+        "-Wno-extern-c-compat",
+        "-Wno-missing-braces",
+        "-Wno-missing-field-initializers",
+        "-frtti",
+        "-std=c++11",
+        "-DANDROID_OS",
+        "-UNDEBUG",
+    ],
+
+    export_include_dirs: [
+        "xcore",
+        "xcore/base",
+        "aiq_core",
+        "algos",
+        "algos_camgroup",
+        "hwi",
+        "iq_parser",
+        "iq_parser_v2",
+        "uAPI",
+        "uAPI/include",
+        "uAPI2",
+        "common",
+        "include",
+        "include/iq_parser",
+        "include/iq_parser_v2",
+        "include/iq_parser_v2/j2s",
+        "include/xcore",
+        "include/common",
+        "include/common/mediactl",
+        "include/xcore/base",
+        "include/algos",
+        "include/ipc_server",
+        "ipc_server",
+    ],
+}
+
+cc_library_shared {
+    name: "librkvi",
+    vendor: true,
+    rtti: true,
+    stl: "c++_static",
+
+    defaults: [ "rkaiq-defaults", "rkaiq-defaults-flags", ],
+
+    local_include_dirs: [
+        ".",
+        "rk_stream/include",
+        "xcore",
+        "xcore/base",
+        "common",
+        "common/gen_mesh",
+        "aiq_core",
+        "algos",
+        "hwi",
+        "hwi/isp20",
+        "hwi/isp21",
+        "hwi/isp3x",
+        "iq_parser",
+        "iq_parser_v2",
+        "uAPI",
+        "uAPI/include",
+        "uAPI2",
+        "ipc_server",
+        "include",
+        "include/xcore",
+        "include/xcore/base",
+        "include/common",
+        "include/common/mediactl",
+        "include/algos",
+        "include/iq_parser",
+        "include/iq_parser_v2",
+        "include/iq_parser_v2/j2s",
+        "include/uAPI2",
+        "include/ipc_server",
+    ],
+
+    shared_libs: [
+        "libutils",
+        "libcutils",
+        "liblog",
+    ],
+
+
+    srcs: [
+        "rk_stream/stream_cfg/IspStreamCapUnit.cpp",
+        "rk_stream/stream_cfg/rk_vi_user_api_stream_cfg.cpp",
+        "rk_stream/stream_cfg/RawStreamCapUnit.cpp",
+        "rk_stream/stream_cfg/RawStreamProcUnit.cpp",
+        "rk_stream/stream_cfg/Stream.cpp",
+        "rk_stream/stream_cfg/MediaInfo.cpp",
+        "common/mediactl/mediactl.c",
+
+        // XCORE_SRC
+        "xcore/xcam_common.cpp",
+        "xcore/xcam_log.cpp",
+        "xcore/xcam_thread.cpp",
+        "xcore/xcam_buffer.cpp",
+        "xcore/video_buffer.cpp",
+        "xcore/v4l2_buffer_proxy.cpp",
+        "xcore/v4l2_device.cpp",
+        "xcore/buffer_pool.cpp",
+        "xcore/poll_thread.cpp",
+        "xcore/smart_buffer_priv.cpp",
+        "xcore/fake_v4l2_device.cpp",
+    ],
+
+    cflags: [
+        "-fPIC",
+        "-Wall",
+        "-Wno-error",
+        "-Os",
+        "-g",
+        "-Wno-unused-value",
+        "-Wno-unused-variable",
+        "-Wno-unused-private-field",
+        "-Wno-unused-but-set-variable",
+        "-Wno-unused-function",
+        "-Wno-unused-label",
+        "-Wno-implicit-fallthrough",
+        "-Wno-ignored-qualifiers",
+        "-Wno-reorder",
+        "-Wno-address-of-packed-member",
+        "-Wno-unused-parameter",
+        "-Wno-overloaded-virtual",
+        "-Wno-extern-c-compat",
+        "-fno-strict-aliasing",
+        "-frtti",
+        "-DANDROID_OS",
+        "-DUSE_RAWSTREAM_LIB"
+    ],
+
+    cppflags: [
+        "-fPIC",
+        "-Wall",
+        "-Wno-error",
+        "-Os",
+        "-g",
+        "-Wno-unused-value",
+        "-Wno-unused-variable",
+        "-Wno-unused-private-field",
+        "-Wno-unused-but-set-variable",
+        "-Wno-unused-function",
+        "-Wno-implicit-fallthrough",
+        "-Wno-address-of-packed-member",
+        "-Wno-ignored-qualifiers",
+        "-Wno-unused-label",
+        "-fno-strict-aliasing",
+        "-Wno-reorder",
+        "-Wno-overloaded-virtual",
+        "-Wno-unused-parameter",
+        "-Wno-extern-c-compat",
+        "-Wno-missing-braces",
+        "-Wno-missing-field-initializers",
+        "-frtti",
+        "-std=c++11",
+        "-DANDROID_OS",
+        "-DRKAIQ_ENABLE_PARSER_V1",
+        "-DRKAIQ_ENABLE_CAMGROUP",
+        "-DUSE_RAWSTREAM_LIB"
+    ],
+
+    export_include_dirs: [
+        "xcore",
+        "xcore/base",
+        "uAPI2",
+        "rk_stream/include",
+    ],
+}

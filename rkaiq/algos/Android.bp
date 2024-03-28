@@ -1,0 +1,590 @@
+cc_defaults {
+    name: "algo_defaults",
+    rtti: true,
+    stl: "c++_static",
+
+    defaults: [ "rkaiq-defaults", "rkaiq-defaults-flags", ],
+
+    cppflags: [
+        "-ffast-math",
+        "-funroll-loops",
+        "-Os",
+        "-g",
+        "-Wno-error",
+        "-Wno-unused-value",
+        "-Wno-unused-variable",
+        "-Wno-unused-private-field",
+        "-Wno-unused-but-set-variable",
+        "-Wno-unused-function",
+        "-Wno-implicit-fallthrough",
+        "-Wno-address-of-packed-member",
+        "-Wno-ignored-qualifiers",
+        "-Wno-unused-label",
+        "-fno-strict-aliasing",
+        "-Wno-reorder",
+        "-Wno-overloaded-virtual",
+        "-Wno-unused-parameter",
+        "-Wno-extern-c-compat",
+        "-Wno-missing-braces",
+        "-Wno-missing-field-initializers",
+        "-DGENMESH_ONLINE"
+    ],
+    include_dirs: [
+        "external/camera_engine_rkaiq",
+        "external/camera_engine_rkaiq/iq_parser",
+        "external/camera_engine_rkaiq/iq_parser_v2",
+        "external/camera_engine_rkaiq/include/algos",
+        "external/camera_engine_rkaiq/include",
+        "external/camera_engine_rkaiq/algos/",
+        "external/camera_engine_rkaiq/include/xcore/base",
+        "external/camera_engine_rkaiq/include/xcore",
+        "external/camera_engine_rkaiq/include/iq_parser",
+        "external/camera_engine_rkaiq/include/iq_parser_v2",
+        "external/camera_engine_rkaiq/include/iq_parser_v2/j2s",
+        "external/camera_engine_rkaiq/include/common",
+        "external/camera_engine_rkaiq/uAPI/include",
+        "external/camera_engine_rkaiq/include/uAPI2",
+        "external/camera_engine_rkaiq/common",
+        "external/camera_engine_rkaiq/xcore/base",
+        "external/camera_engine_rkaiq/xcore",
+        "external/camera_engine_rkaiq/aiq_core",
+        "external/camera_engine_rkaiq/algos_camgroup",
+    ],
+}
+
+subdirs = [
+    "algos/ae",
+    "algos/awb",
+    "algos/af",
+    "algos/asd",
+    "algos/afd",
+]
+
+cc_rkaiq_library_static {
+    name: "librkaiq_amerge",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/amerge",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_atmo",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/atmo",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_a3dlut",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/a3dlut",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_ablc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/ablc",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_ablc_v32",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/ablcV32",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_accm",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/accm",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_adebayer",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/adebayer",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_adpcc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/adpcc",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_afec",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/afec",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_agamma",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/agamma",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_adegamma",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/adegamma",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_agic",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/agic",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_aldch",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aldch",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_alsc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/alsc",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_aorb",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aorb",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_acsm",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/acsm",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_awdr",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+
+cc_rkaiq_library_static {
+    name: "librkaiq_adrc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/adrc",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_anr",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/anr",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_asharp",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/asharp",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_acp",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/acp",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_aie",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aie",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_adehaze",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/adehaze",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_acgc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/acgc",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_asharp_v3",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/asharp3",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_asharp_v33",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/asharpV33",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_asharp_v4",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/asharp4",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_asharp_v34",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/asharpV34",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_again_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/again",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_again_v2",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/again2",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_amfnr_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/amfnr",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_aynr_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aynr",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_aynr_v2",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aynr2",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_aynr_v3",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aynr3",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_aynr_v22",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aynrV22",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_aynr_v24",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/aynrV24",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_auvnr_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/auvnr",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_acnr_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/acnr",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_acnr_v2",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/acnr2",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_acnr_v30",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/acnrV30",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_acnr_v31",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/acnrV31",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_ayuvme_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/ayuvmeV1",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_arawnr_v1",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/arawnr",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_arawnr_v2",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/arawnr2",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_abayer2dnr_v2",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/abayer2dnr2",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_abayer2dnr_v23",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/abayer2dnrV23",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_abayertnr_v2",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/abayertnr2",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_abayertnr_v23",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/abayertnrV23",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_abayertnr_v30",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/abayertnrV30",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_amd",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/amd",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_aeis",
+    vendor: true,
+    defaults: ["algo_defaults"],
+    stl: "c++_static",
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/hwi",
+        "external/camera_engine_rkaiq/hwi/isp20",
+        "external/camera_engine_rkaiq/include/algos/aeis",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_acac",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/acac",
+    ],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_argbir",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/argbir",
+    ],
+}

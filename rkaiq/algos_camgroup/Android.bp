@@ -1,0 +1,76 @@
+cc_defaults {
+    name: "algos_camgroup_defaults",
+    rtti: true,
+    stl: "c++_static",
+
+    defaults: [ "rkaiq-defaults", "rkaiq-defaults-flags", ],
+
+    cppflags: [
+        "-ffast-math",
+        "-funroll-loops",
+        "-Os",
+        "-g",
+        "-Wno-error",
+        "-Wno-unused-value",
+        "-Wno-unused-variable",
+        "-Wno-unused-private-field",
+        "-Wno-unused-but-set-variable",
+        "-Wno-unused-function",
+        "-Wno-implicit-fallthrough",
+        "-Wno-address-of-packed-member",
+        "-Wno-ignored-qualifiers",
+        "-Wno-unused-label",
+        "-fno-strict-aliasing",
+        "-Wno-reorder",
+        "-Wno-overloaded-virtual",
+        "-Wno-unused-parameter",
+        "-Wno-extern-c-compat",
+        "-Wno-missing-braces",
+        "-Wno-missing-field-initializers",
+        "-DGENMESH_ONLINE"
+    ],
+    include_dirs: [
+        "external/camera_engine_rkaiq",
+        "external/camera_engine_rkaiq/iq_parser",
+        "external/camera_engine_rkaiq/iq_parser_v2",
+        "external/camera_engine_rkaiq/include/algos",
+        "external/camera_engine_rkaiq/include",
+        "external/camera_engine_rkaiq/algos/",
+        "external/camera_engine_rkaiq/include/xcore/base",
+        "external/camera_engine_rkaiq/include/xcore",
+        "external/camera_engine_rkaiq/include/iq_parser",
+        "external/camera_engine_rkaiq/include/iq_parser_v2",
+        "external/camera_engine_rkaiq/include/iq_parser_v2/j2s",
+        "external/camera_engine_rkaiq/include/common",
+        "external/camera_engine_rkaiq/include/uAPI",
+        "external/camera_engine_rkaiq/include/uAPI2",
+        "external/camera_engine_rkaiq/common",
+        "external/camera_engine_rkaiq/xcore/base",
+        "external/camera_engine_rkaiq/xcore",
+        "external/camera_engine_rkaiq/aiq_core",
+    ],
+}
+
+subdirs = [
+    "algos_camgroup/ae",
+    "algos_camgroup/awb",
+]
+
+
+cc_rkaiq_library_static {
+    name: "librkaiq_camgroup_misc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+
+    include_dirs: [
+        "external/camera_engine_rkaiq/include/algos/a3dlut",
+        "external/camera_engine_rkaiq/include/algos/accm",
+        "external/camera_engine_rkaiq/include/algos/adpcc",
+        "external/camera_engine_rkaiq/include/algos/alsc",
+        "external/camera_engine_rkaiq/include/algos/adehaze",
+        "external/camera_engine_rkaiq/include/algos/agamma",
+        "external/camera_engine_rkaiq/include/algos/adrc",
+        "external/camera_engine_rkaiq/include/algos/ablc",
+        "external/camera_engine_rkaiq/include/algos/argbir",
+    ],
+}

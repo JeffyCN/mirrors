@@ -1,0 +1,21 @@
+cmake_minimum_required(VERSION 2.8)
+
+set(TCP_TEST_SOURCE ${LOGGER_SOURCE} ${NET_SERVER_SOURCE})
+add_executable(tcp_server ${TCP_TEST_SOURCE} tcp/server.cpp)
+target_link_libraries(tcp_server pthread)
+add_executable(tcp_client ${TCP_TEST_SOURCE} tcp/client.cpp)
+target_link_libraries(tcp_client pthread)
+add_executable(virsual_rkaiq_tool ${TCP_TEST_SOURCE} virsual_rkaiq_tool/virsual_rkaiq_tool.cpp)
+target_link_libraries(virsual_rkaiq_tool pthread)
+
+set(FRAME_AVERGET_TEST_SOURCE ${LOGGER_SOURCE} ../rkaiq/multiframe_process.cpp)
+add_executable(frame_average ${FRAME_AVERGET_TEST_SOURCE} frame_average/frame_average.cpp)
+target_link_libraries(frame_average pthread)
+
+if(BUILD_RKMEDIA)
+set(RKMEDIA_TEST_SOURCE ${LOGGER_SOURCE} ${RKMEDIA_SOURCE})
+add_executable(rtsp_flow_test ${RKMEDIA_TEST_SOURCE} rkmedia/rtsp_flow_test.cpp)
+target_link_libraries(rtsp_flow_test pthread easymedia)
+add_executable(source_sink_test ${RKMEDIA_TEST_SOURCE} rkmedia/source_sink_test.cpp)
+target_link_libraries(source_sink_test pthread easymedia)
+endif()
