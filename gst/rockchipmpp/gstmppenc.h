@@ -57,6 +57,9 @@ struct _GstMppEnc
   /* frame system numbers that are ready for sending to MPP */
   GList *frames;
 
+  /* Max number of pending frames */
+  guint32 max_pending;
+
   guint32 required_keyframe_number;
 
   guint pending_frames;

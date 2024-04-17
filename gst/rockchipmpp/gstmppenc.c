@@ -37,8 +37,6 @@ GST_DEBUG_CATEGORY (GST_CAT_DEFAULT);
 #define parent_class gst_mpp_enc_parent_class
 G_DEFINE_ABSTRACT_TYPE (GstMppEnc, gst_mpp_enc, GST_TYPE_VIDEO_ENCODER);
 
-#define MPP_PENDING_MAX 16      /* Max number of MPP pending frame */
-
 #define GST_MPP_ENC_TASK_STARTED(encoder) \
     (gst_pad_get_task_state ((encoder)->srcpad) == GST_TASK_STARTED)
 
@@ -83,11 +81,15 @@ G_DEFINE_ABSTRACT_TYPE (GstMppEnc, gst_mpp_enc, GST_TYPE_VIDEO_ENCODER);
 /* Input isn't ARM AFBC by default */
 static GstVideoFormat DEFAULT_PROP_ARM_AFBC = FALSE;
 
+#define MPP_MAX_PENDING 16      /* Max number of MPP pending frames */
+static guint32 DEFAULT_PROP_MAX_PENDING = MPP_MAX_PENDING;
+
 #define DEFAULT_FPS 30
 
 enum
 {
   PROP_0,
+  PROP_MAX_PENDING,
   PROP_HEADER_MODE,
   PROP_RC_MODE,
   PROP_ROTATION,
@@ -170,6 +172,11 @@ gst_mpp_enc_set_property (GObject * object,
   GstMppEnc *self = GST_MPP_ENC (encoder);
 
   switch (prop_id) {
+    case PROP_MAX_PENDING:{
+      self->max_pending = g_value_get_uint (value);
+      GST_MPP_ENC_BROADCAST (encoder);
+      return;
+    }
     case PROP_HEADER_MODE:{
       MppEncHeaderMode header_mode = g_value_get_enum (value);
       if (self->header_mode == header_mode)
@@ -282,6 +289,9 @@ gst_mpp_enc_get_property (GObject * object,
   GstMppEnc *self = GST_MPP_ENC (encoder);
 
   switch (prop_id) {
+    case PROP_MAX_PENDING:
+      g_value_set_uint (value, self->max_pending);
+      break;
     case PROP_HEADER_MODE:
       g_value_set_enum (value, self->header_mode);
       break;
@@ -471,7 +481,7 @@ static gboolean
 gst_mpp_enc_start (GstVideoEncoder * encoder)
 {
   GstMppEnc *self = GST_MPP_ENC (encoder);
-  MppPollType timeout = MPP_POLL_NON_BLOCK;
+  MppPollType timeout;
 
   GST_DEBUG_OBJECT (self, "starting");
 
@@ -486,9 +496,12 @@ gst_mpp_enc_start (GstVideoEncoder * encoder)
   if (mpp_create (&self->mpp_ctx, &self->mpi))
     goto err_unref_alloc;
 
+  timeout = MPP_POLL_NON_BLOCK;
   if (self->mpi->control (self->mpp_ctx, MPP_SET_INPUT_TIMEOUT, &timeout))
     goto err_destroy_mpp;
 
+  /* 1ms timeout for polling */
+  timeout = 1;
   if (self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_TIMEOUT, &timeout))
     goto err_destroy_mpp;
 
@@ -761,7 +774,7 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
 
   gst_buffer_pool_set_config (pool, config);
 
-  gst_query_add_allocation_pool (query, pool, size, MPP_PENDING_MAX, 0);
+  gst_query_add_allocation_pool (query, pool, size, 0, 0);
   gst_query_add_allocation_param (query, self->allocator, NULL);
 
   gst_object_unref (pool);
@@ -1078,7 +1091,7 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
   /* Try sending ready frames to MPP (non-block) */
   while (gst_mpp_enc_send_frame_locked (encoder));
 
-  /* Try polling encoded packets from MPP (non-block) */
+  /* Try polling encoded packets from MPP (1ms timeout) */
   while (gst_mpp_enc_poll_packet_locked (encoder));
 
 out:
@@ -1121,9 +1134,9 @@ gst_mpp_enc_handle_frame (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
   frame->output_buffer = buffer;
 
   /* Avoid holding too much frames */
-  if (G_UNLIKELY (self->pending_frames >= MPP_PENDING_MAX)) {
+  if (G_UNLIKELY (self->pending_frames >= self->max_pending)) {
     GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
-    GST_MPP_ENC_WAIT (encoder, self->pending_frames < MPP_PENDING_MAX
+    GST_MPP_ENC_WAIT (encoder, self->pending_frames < self->max_pending
         || self->flushing);
     GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
   }
@@ -1179,6 +1192,8 @@ static void
 gst_mpp_enc_init (GstMppEnc * self)
 {
   self->mpp_type = MPP_VIDEO_CodingUnused;
+
+  self->max_pending = DEFAULT_PROP_MAX_PENDING;
 
   self->header_mode = DEFAULT_PROP_HEADER_MODE;
   self->sei_mode = DEFAULT_PROP_SEI_MODE;
@@ -1275,6 +1290,7 @@ gst_mpp_enc_class_init (GstMppEncClass * klass)
   GstVideoEncoderClass *encoder_class = GST_VIDEO_ENCODER_CLASS (klass);
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
+  const gchar *env;
 
   GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, "mppenc", 0, "MPP encoder");
 
@@ -1289,6 +1305,16 @@ gst_mpp_enc_class_init (GstMppEncClass * klass)
 
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gst_mpp_enc_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gst_mpp_enc_get_property);
+
+  env = g_getenv ("GST_MPP_ENC_MAX_PENDING");
+  if (env)
+    DEFAULT_PROP_MAX_PENDING = MAX (MIN (atoi (env), MPP_MAX_PENDING), 1);
+
+  g_object_class_install_property (gobject_class, PROP_MAX_PENDING,
+      g_param_spec_uint ("max-pending", "Max pending frames",
+          "Max pending frames",
+          1, MPP_MAX_PENDING, DEFAULT_PROP_MAX_PENDING,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_HEADER_MODE,
       g_param_spec_enum ("header-mode", "Header mode",
@@ -1368,7 +1394,8 @@ no_rga:
           "Zero-copy encoded packet", DEFAULT_PROP_ZERO_COPY_PKT,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  if (g_getenv ("GST_MPP_ENC_DEFAULT_ARM_AFBC"))
+  env = g_getenv ("GST_MPP_ENC_DEFAULT_ARM_AFBC");
+  if (env && env[0] == '1')
     DEFAULT_PROP_ARM_AFBC = TRUE;
 
   g_object_class_install_property (gobject_class, PROP_ARM_AFBC,
