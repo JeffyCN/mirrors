@@ -419,7 +419,7 @@ static RK_S32 vp9_alloc_frame(Vp9CodecContext *ctx, VP9Frame *frame)
     }
 
     if (s->cfg->base.enable_thumbnail && s->hw_info->cap_down_scale)
-        mpp_frame_set_thumbnail_en(frame->f, 1);
+        mpp_frame_set_thumbnail_en(frame->f, s->cfg->base.enable_thumbnail);
     else
         mpp_frame_set_thumbnail_en(frame->f, 0);
 
