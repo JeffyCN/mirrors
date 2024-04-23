@@ -833,10 +833,17 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
   src_hstride = GST_MPP_VIDEO_INFO_HSTRIDE (&src_info);
   src_vstride = GST_MPP_VIDEO_INFO_VSTRIDE (&src_info);
 
+  /**
+   * Update the strides of the dst video info temporarily to test if we
+   * can use the src buffer directly.
+   */
   if (!gst_mpp_video_info_align (&dst_info, src_hstride, src_vstride) ||
       !gst_mpp_enc_video_info_align (&dst_info) ||
-      !gst_mpp_video_info_matched (&src_info, &dst_info))
+      !gst_mpp_video_info_matched (&src_info, &dst_info)) {
+    /* Reset the temporarily modified dst video info. */
+    dst_info = self->info;
     goto convert;
+  }
 
   gst_mpp_enc_apply_strides (encoder, src_hstride, src_vstride);
   if (!gst_mpp_enc_apply_properties (encoder))
@@ -895,7 +902,6 @@ out:
   gst_buffer_copy_into (outbuf, inbuf,
       GST_BUFFER_COPY_FLAGS | GST_BUFFER_COPY_TIMESTAMPS, 0, 0);
 
-  dst_info = self->info;
   gst_buffer_add_video_meta_full (outbuf, GST_VIDEO_FRAME_FLAG_NONE,
       GST_VIDEO_INFO_FORMAT (&dst_info),
       GST_VIDEO_INFO_WIDTH (&dst_info), GST_VIDEO_INFO_HEIGHT (&dst_info),
