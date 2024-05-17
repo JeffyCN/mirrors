@@ -307,7 +307,7 @@ gst_mpp_dec_stop (GstVideoDecoder * decoder)
   gst_mpp_dec_clear_allocator (decoder);
 
   if (self->mpp_frame) {
-    mpp_frame_deinit (self->mpp_frame);
+    mpp_frame_deinit (&self->mpp_frame);
     self->mpp_frame = NULL;
   }
 
