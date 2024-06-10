@@ -299,6 +299,11 @@ static RK_S32 decode_profile_tier_level(HEVCContext *s, PTLCommon *ptl)
     READ_ONEBIT(gb, &ptl->non_packed_constraint_flag);
     READ_ONEBIT(gb, &ptl->frame_only_constraint_flag);
 
+    ptl->bit_depth_constraint = (ptl->profile_idc == MPP_PROFILE_HEVC_MAIN_10) ? 10 : 8;
+    ptl->chroma_format_constraint = H265_CHROMA_420;
+    ptl->intra_constraint_flag = 0;
+    ptl->lower_bitrate_constraint_flag = 1;
+
     SKIP_BITS(gb, 16); // XXX_reserved_zero_44bits[0..15]
     SKIP_BITS(gb, 16); // XXX_reserved_zero_44bits[16..31]
     SKIP_BITS(gb, 12); // XXX_reserved_zero_44bits[32..43]
@@ -312,6 +317,7 @@ static RK_S32 parse_ptl(HEVCContext *s, PTL *ptl, int max_num_sub_layers)
     RK_S32 i;
     HEVCLocalContext *lc = s->HEVClc;
     BitReadCtx_t *gb = &lc->gb;
+
     decode_profile_tier_level(s, &ptl->general_ptl);
     READ_BITS(gb, 8, &ptl->general_ptl.level_idc);
 
@@ -1037,7 +1043,7 @@ int mpp_hevc_decode_nal_vps(HEVCContext *s)
     BitReadCtx_t *gb = &s->HEVClc->gb;
     RK_U32 vps_id = 0;
     HEVCVPS *vps = NULL;
-    RK_U8 *vps_buf = mpp_calloc(RK_U8, sizeof(HEVCVPS));
+    RK_U8 *vps_buf = mpp_mem_pool_get(s->vps_pool);
     RK_S32 value = 0;
 
     if (!vps_buf)
@@ -1153,10 +1159,10 @@ int mpp_hevc_decode_nal_vps(HEVCContext *s)
 
     if (s->vps_list[vps_id] &&
         !memcmp(s->vps_list[vps_id], vps_buf, sizeof(HEVCVPS))) {
-        mpp_free(vps_buf);
+        mpp_mem_pool_put(s->vps_pool, vps_buf);
     } else {
         if (s->vps_list[vps_id] != NULL) {
-            mpp_free(s->vps_list[vps_id]);
+            mpp_mem_pool_put(s->vps_pool, s->vps_list[vps_id]);
         }
         s->vps_list[vps_id] = vps_buf;
         s->ps_need_upate = 1;
@@ -1165,7 +1171,7 @@ int mpp_hevc_decode_nal_vps(HEVCContext *s)
     return 0;
 __BITREAD_ERR:
 err:
-    mpp_free(vps_buf);
+    mpp_mem_pool_put(s->vps_pool, vps_buf);
     return  MPP_ERR_STREAM;
 }
 
@@ -1384,7 +1390,7 @@ static int scaling_list_data(HEVCContext *s, ScalingList *sl, HEVCSPS *sps)
                 }
             }
         }
-    if (sps->chroma_format_idc == 3) {
+    if (sps->chroma_format_idc == H265_CHROMA_444) {
         for (i = 0; i < 64; i++) {
             sl->sl[3][1][i] = sl->sl[2][1][i];
             sl->sl[3][2][i] = sl->sl[2][2][i];
@@ -1459,7 +1465,7 @@ RK_S32 mpp_hevc_decode_nal_sps(HEVCContext *s)
 
     READ_UE(gb, &sps->chroma_format_idc);
 
-    if (sps->chroma_format_idc == 3)
+    if (sps->chroma_format_idc == H265_CHROMA_444)
         READ_ONEBIT(gb, &sps->separate_colour_plane_flag);
 
     READ_UE(gb, &sps->width);
@@ -1496,10 +1502,10 @@ RK_S32 mpp_hevc_decode_nal_sps(HEVCContext *s)
     }
 
     switch (sps->chroma_format_idc) {
-    case 0 : {
+    case H265_CHROMA_400 : {
         sps->pix_fmt = MPP_FMT_YUV400;
     } break;
-    case 1 : {
+    case H265_CHROMA_420 : {
         switch (sps->bit_depth) {
         case 8:  sps->pix_fmt = MPP_FMT_YUV420SP;   break;
         case 10: sps->pix_fmt = MPP_FMT_YUV420SP_10BIT; break;
@@ -1510,7 +1516,7 @@ RK_S32 mpp_hevc_decode_nal_sps(HEVCContext *s)
             goto err;
         }
     } break;
-    case 2 : {
+    case H265_CHROMA_422 : {
         switch (sps->bit_depth) {
         case 8:  sps->pix_fmt = MPP_FMT_YUV422SP;   break;
         case 10: sps->pix_fmt = MPP_FMT_YUV422SP_10BIT; break;
@@ -1522,7 +1528,7 @@ RK_S32 mpp_hevc_decode_nal_sps(HEVCContext *s)
         }
         mpp_slots_set_prop(s->slots, SLOTS_LEN_ALIGN, rkv_len_align_422);
     } break;
-    case 3 : {
+    case H265_CHROMA_444 : {
         sps->pix_fmt = MPP_FMT_YUV444SP;
         mpp_slots_set_prop(s->slots, SLOTS_LEN_ALIGN, rkv_len_align_444);
     } break;

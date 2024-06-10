@@ -2031,8 +2031,10 @@ MPP_RET h265d_deinit(void *ctx)
         mpp_frame_deinit(&s->DPB[i].frame);
     }
 
-    for (i = 0; i < MAX_VPS_COUNT; i++)
-        mpp_free(s->vps_list[i]);
+    for (i = 0; i < MAX_VPS_COUNT; i++) {
+        if (s->vps_list[i])
+            mpp_mem_pool_put(s->vps_pool, s->vps_list[i]);
+    }
     for (i = 0; i < MAX_SPS_COUNT; i++) {
         if (s->sps_list[i])
             mpp_mem_pool_put(s->sps_pool, s->sps_list[i]);
@@ -2067,6 +2069,8 @@ MPP_RET h265d_deinit(void *ctx)
         mpp_packet_deinit(&s->input_packet);
     }
 
+    if (s->vps_pool)
+        mpp_mem_pool_deinit(s->vps_pool);
     if (s->sps_pool)
         mpp_mem_pool_deinit(s->sps_pool);
 
@@ -2200,6 +2204,7 @@ MPP_RET h265d_init(void *ctx, ParserCfg *parser_cfg)
 
     s->pre_pps_id = -1;
 
+    s->vps_pool = mpp_mem_pool_init(sizeof(HEVCVPS));
     s->sps_pool = mpp_mem_pool_init(sizeof(HEVCSPS));
 
 #ifdef dump
