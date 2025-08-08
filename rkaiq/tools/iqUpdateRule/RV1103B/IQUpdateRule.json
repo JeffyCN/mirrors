@@ -1,0 +1,32 @@
+{
+	"v6.0x8.0":	{ 
+        "UpdateRule":[{
+            "oldPath": "/texEst/stAuto/dyn/*/noiseEst/hw_texEstT_luma2ManualTex_thred",
+            "newPath": "/texEst/stAuto/dyn/*/noiseEst/hw_texEstT_nsEstTexManual_thred"
+        },{
+            "oldPath": "/texEst/stAuto/dyn/*/noiseEst/hw_texEstT_luma2TexThd_minLimit",
+            "newPath": "/texEst/stAuto/dyn/*/noiseEst/hw_texEstT_nsEstTexThd_minLimit"
+        },{
+            "oldPath": "/texEst/stAuto/dyn/*/noiseEst/hw_texEstT_luma2TexThd_maxLimit",
+            "newPath": "/texEst/stAuto/dyn/*/noiseEst/hw_texEstT_nsEstTexThd_maxLimit"
+        }]
+	},
+    "v6.0x8.1":	{ 
+        "UpdateRule":[{
+            "oldPath": "/ynr/stAuto/dyn/*/midNr",
+            "newPath": "/ynr/stAuto/dyn/*/midLoNr/mf"
+        },{
+            "oldPath": "/ynr/stAuto/dyn/*/loNr",
+            "newPath": "/ynr/stAuto/dyn/*/midLoNr/lf"
+        },{
+            "oldPath": "/ynr/stAuto/dyn/*/loNr/locYnrStrg_locSgmStrg/hw_ynrT_locSgmStrg2NrStrg_val",
+            "newPath": "/ynr/stAuto/dyn/*/midLoNr/locNrStrg/hw_ynrT_locSgmStrg2NrStrg_val"
+        },{
+            "oldPath": "/ynr/stAuto/dyn/*/loNr/epf/hw_ynrT_luma2RgeSgm_scale",
+            "newPath": "/ynr/stAuto/dyn/*/midLoNr/locNrStrg/hw_ynrT_luma2RgeSgm_scale"
+        },{
+            "oldPath": "/ynr/stAuto/dyn/*/loNr/epf/hw_ynrT_locSgmStrg2NrOut_alpha",
+            "newPath": "/ynr/stAuto/dyn/*/midLoNr/locNrStrg/hw_ynrT_locSgmStrg2NrOut_alpha"
+        }]
+	}
+}
