@@ -287,6 +287,27 @@ foreach name, values : map
       install : true)
   endif
 
+  # Install Vulkan WSI config
+  if is_vulkan_icd
+    custom_target(
+      'Vulkan manifest layer file',
+      input : 'data/vulkan/VkLayer_window_system_integration.json.in',
+      output : 'VkLayer_window_system_integration.json',
+      command : ['sed', 's/@LIB@/libVkLayer_window_system_integration.so/', '@INPUT@'],
+      capture : true,
+      install_dir : get_option('datadir') / 'vulkan' / 'implicit_layer.d',
+      install : true)
+  endif
+
+  # Install Vulkan WSI library
+  if is_vulkan_icd
+    lib_source = join_paths('data/vulkan/lib', arch, 'libVkLayer_window_system_integration.so')
+    install_data(
+        lib_source,
+        install_dir: get_option('libdir')
+    )
+  endif
+
   # No {headers, pkgconfig} for {ICD, vendor packages}
   if is_opencl_icd or is_vulkan_icd or vendor_package
     continue
