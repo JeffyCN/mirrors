@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# NOTE! Don't add files that are generated in specific
+# subdirectories here. Add them in the ".gitignore" file
+# in that subdirectory instead.
+#
+# NOTE! Please use 'git ls-files -i --exclude-standard'
+# command after changing this file, to see if there are
+# any tracked files which get ignored after the change.
+#
+# Normal rules (sorted alphabetically)
+#
+
+#
+## Generated files
+#
+
+rkaiq/include/iq_parser_v2/j2s/j2s_generated.h
+rkaiq/include/iq_parser_v2/j2s/j2s_generated_template_json.h
+rkaiq/algos/ae/linux/rv1106/aarch64
+rkaiq/algos/af/linux/rv1106/aarch64
+rkaiq/algos/awb/linux/rv1106/aarch64
+rkaiq/algos/asd/linux/rv1106/aarch64
+rkaiq/algos/a3dlut/linux/
+rkaiq/algos/abayer2dnrV23/linux/
+rkaiq/algos/abayertnrV23/linux/
+rkaiq/algos/ablc/linux/
+rkaiq/algos/acac/linux/
+rkaiq/algos/accm/linux/
+rkaiq/algos/acgc/linux/
+rkaiq/algos/acnrV30/linux/
+rkaiq/algos/acp/linux/
+rkaiq/algos/acsm/linux/
+rkaiq/algos/adebayer/linux/
+rkaiq/algos/adpcc/linux/
+rkaiq/algos/adrc/linux/
+rkaiq/algos/again2/linux/
+rkaiq/algos/agamma/linux/
+rkaiq/algos/agic/linux/
+rkaiq/algos/aie/linux/
+rkaiq/algos/aldch/linux/
+rkaiq/algos/alsc/linux/
+rkaiq/algos/amerge/linux/
+rkaiq/algos/asharpV33/linux/
+rkaiq/algos/awdr/linux/
+rkaiq/algos/aynrV22/linux/
+rkaiq/algos/aynr2/linux/
+rkaiq/algos/aynr3/linux/
+rkaiq/algos/asharp/linux/
+rkaiq/algos/asharp3/linux/
+rkaiq/algos/asharp4/linux/
+rkaiq/algos/atmo/linux/
+rkaiq/algos/abayer2dnr2/linux/
+rkaiq/algos/abayertnr2/linux/
+rkaiq/algos/acnr/linux/
+rkaiq/algos/acnr2/linux/
+rkaiq/algos/adegamma/linux/
+rkaiq/algos/adehaze/linux/
+rkaiq/algos/afec/linux/
+rkaiq/algos/anr/linux/
+rkaiq/algos/aorb/linux/
+rkaiq/algos/arawnr2/linux/
+rkaiq/algos/aeis/linux/
+rkaiq/algos/ablcV32/linux/
+rkaiq/algos_camgroup/ae/*.cpp
+rkaiq/algos_camgroup/awb/*.cpp
+rkaiq/algos/ae/*.cpp
+rkaiq/algos/af/*.cpp
+rkaiq/algos/awb/*.cpp
+rkaiq/algos/asd/*.cpp
+rkaiq/algos_camgroup/ae/*.h
+rkaiq/algos_camgroup/awb/*.h
+rkaiq/algos/ae/*.h
+rkaiq/algos/af/*.h
+rkaiq/algos/awb/*.h
+rkaiq/algos/asd/*.h
+rkaiq/output/
+rkisp_demo/deps

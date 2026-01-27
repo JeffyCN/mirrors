@@ -1,0 +1,3 @@
+add_executable(sensorhw_demo)
+target_sources(sensorhw_demo PRIVATE main.cpp)
+target_link_libraries(sensorhw_demo PRIVATE rk_irfpa_sensorhw)

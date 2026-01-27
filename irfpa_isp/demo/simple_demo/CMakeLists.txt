@@ -1,0 +1,3 @@
+add_executable(rk_irfpa_simple_demo)
+target_sources(rk_irfpa_simple_demo PRIVATE main.c)
+target_link_libraries(rk_irfpa_simple_demo PRIVATE rk_irfpa_simple_api)

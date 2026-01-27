@@ -1,0 +1,187 @@
+cc_prebuilt_library_static {
+    name: "librkAlgoMapSeparate",
+    vendor: true,
+    arch: {
+        arm: {
+            srcs: ["ldc/gen_mesh/android/arm/librkAlgoMapSeparate.a"],
+        },
+        arm64: {
+            srcs: ["ldc/gen_mesh/android/aarch64/librkAlgoMapSeparate.a"],
+        },
+    },
+}
+
+cc_prebuilt_library_static {
+    name: "librkAlgoGenMesh",
+    vendor: true,
+    arch: {
+        arm: {
+            srcs: ["ldc/gen_mesh/android/arm/librkAlgoGenMesh.a"],
+        },
+        arm64: {
+            srcs: ["ldc/gen_mesh/android/aarch64/librkAlgoGenMesh.a"],
+        },
+    },
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_3dlut",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_bayertnr",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_blc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_cac",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_ccm",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_cgc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_cnr",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_cp",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_csm",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_dehaze",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_demosaic",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_dpc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_drc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_gain",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_gamma",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_gic",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_ie",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_ldch",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_aldc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_lsc",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_merge",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_rgbir",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_sharp",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_yme",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_ynr",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_histeq",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}
+
+cc_rkaiq_library_static {
+    name: "librkaiq_enh",
+    vendor: true,
+    defaults: ["algo_defaults"],
+}

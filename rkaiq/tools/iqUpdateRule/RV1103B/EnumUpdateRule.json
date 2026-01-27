@@ -1,0 +1,113 @@
+{
+	"v6.0x7.3-rc0":	{
+		"/drc/stAuto/dyn/*/drcProc/sw_drcT_drcCurve_mode":{
+			"UpdateRule":[{
+					"oldDef": "drc_usrConfig_mode",
+					"newDef": "adrc_usrConfig_mode"
+				},{
+					"oldDef": "drc_vendorDefault_mode",
+					"newDef": "adrc_vendorDefault_mode"
+				}]
+		},
+		"/drc/stMan/dyn/drcProc/sw_drcT_drcCurve_mode":{
+			"UpdateRule":[{
+					"oldDef": "adrc_usrConfig_mode",
+					"newDef": "drc_usrConfig_mode"
+				},{
+					"oldDef": "adrc_vendorDefault_mode",
+					"newDef": "drc_vendorDefault_mode"
+				},{
+					"oldDef": "adrc_auto_mode",
+					"newDef": "drc_vendorDefault_mode"
+				}]
+		}
+	},
+	"v6.0x8.0":	{
+		"/drc/stAuto/dyn/*/drcProc/sw_drcT_drcCurve_mode":{
+			"UpdateRule":[{
+					"oldDef": "drc_usrConfig_mode",
+					"newDef": "adrc_usrConfig_mode"
+				},{
+					"oldDef": "drc_vendorDefault_mode",
+					"newDef": "adrc_vendorDefault_mode"
+				}]
+		},
+		"/drc/stMan/dyn/drcProc/sw_drcT_drcCurve_mode":{
+			"UpdateRule":[{
+					"oldDef": "drc_usrConfig_mode",
+					"newDef": "adrc_usrConfig_mode"
+				},{
+					"oldDef": "drc_vendorDefault_mode",
+					"newDef": "adrc_vendorDefault_mode"
+				}]
+		},
+		"/sharp/stAuto/dyn/*/edgeShp/edgeExtra/sw_shpT_filtRadius_mode":{
+			"UpdateRule":[{
+					"oldDef": "shp_edgeFiltRadius3_mode",
+					"newDef": "shp_edgeFilt3x3_mode"
+				},{
+					"oldDef": "shp_edgeFiltRadius5_mode",
+					"newDef": "shp_edgeFilt5x5_mode"
+				},{
+					"oldDef": "shp_edgeFiltRadius7_mode",
+					"newDef": "shp_edgeFilt7x7_mode"
+				}]
+		},
+		"/sharp/stMan/dyn/edgeShp/edgeExtra/sw_shpT_filtRadius_mode":{
+			"UpdateRule":[{
+					"oldDef": "shp_edgeFiltRadius3_mode",
+					"newDef": "shp_edgeFilt3x3_mode"
+				},{
+					"oldDef": "shp_edgeFiltRadius5_mode",
+					"newDef": "shp_edgeFilt5x5_mode"
+				},{
+					"oldDef": "shp_edgeFiltRadius7_mode",
+					"newDef": "shp_edgeFilt7x7_mode"
+				}]
+		}
+	},
+	"v6.0x8.1":	{
+		"/drc/stAuto/dyn/*/drcProc/sw_drcT_drcCurve_mode":{
+			"UpdateRule":[{
+					"oldDef": "drc_usrConfig_mode",
+					"newDef": "adrc_usrConfig_mode"
+				},{
+					"oldDef": "drc_vendorDefault_mode",
+					"newDef": "adrc_vendorDefault_mode"
+				}]
+		},
+		"/drc/stMan/dyn/drcProc/sw_drcT_drcCurve_mode":{
+			"UpdateRule":[{
+					"oldDef": "drc_usrConfig_mode",
+					"newDef": "adrc_usrConfig_mode"
+				},{
+					"oldDef": "drc_vendorDefault_mode",
+					"newDef": "adrc_vendorDefault_mode"
+				}]
+		},
+		"/sharp/stAuto/dyn/*/edgeShp/edgeExtra/sw_shpT_filtRadius_mode":{
+			"UpdateRule":[{
+					"oldDef": "shp_edgeFiltRadius3_mode",
+					"newDef": "shp_edgeFilt3x3_mode"
+				},{
+					"oldDef": "shp_edgeFiltRadius5_mode",
+					"newDef": "shp_edgeFilt5x5_mode"
+				},{
+					"oldDef": "shp_edgeFiltRadius7_mode",
+					"newDef": "shp_edgeFilt7x7_mode"
+				}]
+		},
+		"/sharp/stMan/dyn/edgeShp/edgeExtra/sw_shpT_filtRadius_mode":{
+			"UpdateRule":[{
+					"oldDef": "shp_edgeFiltRadius3_mode",
+					"newDef": "shp_edgeFilt3x3_mode"
+				},{
+					"oldDef": "shp_edgeFiltRadius5_mode",
+					"newDef": "shp_edgeFilt5x5_mode"
+				},{
+					"oldDef": "shp_edgeFiltRadius7_mode",
+					"newDef": "shp_edgeFilt7x7_mode"
+				}]
+		}
+	}
+}

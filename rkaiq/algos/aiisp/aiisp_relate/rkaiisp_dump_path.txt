@@ -1,0 +1,4 @@
+/data/DumpRaw/Cam0AiRawIn-2023124-17-48-29
+/data/DumpRaw/Cam0AiRawOut-2023124-17-48-29
+/data/offlineRaw/Cam0-raw-1970-01-01-00-11-59-834_2688_1520_10_0_42000_3_1548_1736_1024_1024.raw
+0 0 0
