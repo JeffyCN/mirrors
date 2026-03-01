@@ -443,15 +443,12 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
   }
 
   if (self->dma_feature) {
-    GstCaps *tmp_caps = gst_caps_copy (output_state->caps);
-    gst_caps_set_features (tmp_caps, 0,
+    /*
+     * Keep output_state->caps fixed for gst_pad_set_caps(), and force
+     * DMABuf memory feature when requested by dma-feature=true.
+     */
+    gst_caps_set_features (output_state->caps, 0,
         gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
-
-    /* HACK: Expose dmabuf feature when the subset check is hacked */
-    if (gst_caps_is_subset (tmp_caps, output_state->caps))
-      gst_caps_replace (&output_state->caps, tmp_caps);
-
-    gst_caps_unref (tmp_caps);
   }
 
   *info = output_state->info;
