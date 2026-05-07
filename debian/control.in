@@ -1,6 +1,6 @@
 Source: libmali
 Priority: optional
-Maintainer: Putin Lee <putin.li@rock-chips.com>
+Maintainer: Jacob Chen <cc@rock-chips.com>
 Uploaders: Jeffy Chen <jeffy.chen@rock-chips.com>
 Build-Depends: debhelper (>= 11),
                meson,
@@ -8,11 +8,6 @@ Build-Depends: debhelper (>= 11),
                libstdc++6,
                libgbm-dev,
                libdrm-dev,
-               libx11-xcb1,
-               libxcb-dri2-0,
-               libxdamage1,
-               libxext6,
-               libwayland-client0
 Standards-Version: 4.1.3
 Section: libs
 Homepage: https://github.com/rockchip-linux/libmali

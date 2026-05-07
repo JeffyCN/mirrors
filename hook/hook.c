@@ -38,13 +38,6 @@
 #include <EGL/eglext.h>
 #endif
 
-#ifdef HAS_X11
-#include <pthread.h>
-
-#include <X11/Xlib.h>
-#include <X11/Xlibint.h>
-#endif
-
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 #endif
@@ -57,17 +50,12 @@
 #define DRM_FORMAT_MOD_INVALID ((1ULL<<56) - 1)
 #endif
 
-#define ROUND_UP_N(num, align) ((((num) + ((align) - 1)) & ~((align) - 1)))
-
 /* A stub symbol to ensure that the hook library would not be removed as unused */
 int mali_injected = 0;
 
 /* Override libmali symbols */
 
 #ifdef HAS_GBM
-#ifndef HAS_gbm_bo_map
-static int (* _gbm_device_get_fd)(struct gbm_device *gbm) = NULL;
-#endif
 static struct gbm_surface * (* _gbm_surface_create)(struct gbm_device *, uint32_t, uint32_t, uint32_t, uint32_t) = NULL;
 #ifdef HAS_gbm_surface_create_with_modifiers
 static struct gbm_surface *(* _gbm_surface_create_with_modifiers) (struct gbm_device *gbm, uint32_t width, uint32_t height, uint32_t format, const uint64_t *modifiers, const unsigned int count);
@@ -79,51 +67,16 @@ static struct gbm_bo * (* _gbm_bo_create_with_modifiers)(struct gbm_device *gbm,
 #ifdef HAS_gbm_bo_get_modifier
 static uint64_t (* _gbm_bo_get_modifier)(struct gbm_bo *bo) = NULL;
 #endif
-#ifndef HAS_gbm_bo_map
-static uint32_t (* _gbm_bo_get_width)(struct gbm_bo *bo) = NULL;
-#endif
-#if !defined(HAS_gbm_bo_map) || !defined(HAS_gbm_bo_unmap)
-static uint32_t (* _gbm_bo_get_height)(struct gbm_bo *bo) = NULL;
-#endif
-#if !defined(HAS_gbm_bo_map) || !defined(HAS_gbm_bo_unmap) || \
-   !defined(HAS_gbm_bo_get_stride_for_plane)
-static uint32_t (* _gbm_bo_get_stride)(struct gbm_bo *bo) = NULL;
-#endif
-#ifndef HAS_gbm_bo_get_bpp
-static uint32_t (* _gbm_bo_get_format)(struct gbm_bo *bo) = NULL;
-#endif
-#ifndef HAS_gbm_bo_map
-static uint32_t (* _gbm_bo_get_bpp)(struct gbm_bo *bo) = NULL;
-static struct gbm_device * (* _gbm_bo_get_device)(struct gbm_bo *bo) = NULL;
-#endif
-#if !defined(HAS_gbm_bo_map) || !defined(HAS_gbm_bo_get_handle_for_plane)
-static union gbm_bo_handle (* _gbm_bo_get_handle)(struct gbm_bo *bo) = NULL;
-#endif
-#ifndef HAS_gbm_bo_get_fd_for_plane
-static int (* _gbm_bo_get_fd)(struct gbm_bo *bo) = NULL;
-#endif
-static struct gbm_bo *(* _gbm_bo_import)(struct gbm_device *gbm, uint32_t type, void *buffer, uint32_t flags) = NULL;
-#endif
+#endif // HAS_GBM
 
 #ifdef HAS_EGL
 static PFNEGLGETCURRENTSURFACEPROC _eglGetCurrentSurface = NULL;
 static PFNEGLGETDISPLAYPROC _eglGetDisplay = NULL;
 static PFNEGLGETPROCADDRESSPROC _eglGetProcAddress = NULL;
-static PFNEGLGETPLATFORMDISPLAYPROC _eglGetPlatformDisplay = NULL;
 static PFNEGLCHOOSECONFIGPROC _eglChooseConfig = NULL;
-static PFNEGLGETPLATFORMDISPLAYEXTPROC _eglGetPlatformDisplayEXT = NULL;
-static PFNEGLCREATEPIXMAPSURFACEPROC _eglCreatePixmapSurface = NULL;
-static PFNEGLCREATEWINDOWSURFACEPROC _eglCreateWindowSurface = NULL;
 static EGLBoolean (* _eglDestroySurface)(EGLDisplay dpy, EGLSurface surface) = NULL;
 static PFNEGLMAKECURRENTPROC _eglMakeCurrent = NULL;
-static PFNEGLCREATEPLATFORMWINDOWSURFACEPROC _eglCreatePlatformWindowSurface = NULL;
-static PFNEGLCREATEPLATFORMPIXMAPSURFACEPROC _eglCreatePlatformPixmapSurface = NULL;
-
-#ifdef HAS_X11
-static PFNEGLCREATEPLATFORMWINDOWSURFACEEXTPROC _eglCreatePlatformWindowSurfaceEXT = NULL;
-static PFNEGLCREATEPLATFORMPIXMAPSURFACEEXTPROC _eglCreatePlatformPixmapSurfaceEXT = NULL;
-#endif
-#endif
+#endif // HAS_EGL
 
 #define MALI_SYMBOL(func) { #func, (void **)(&_ ## func), }
 static struct {
@@ -131,9 +84,6 @@ static struct {
    void **symbol;
 } mali_symbols[] = {
 #ifdef HAS_GBM
-#ifndef HAS_gbm_bo_map
-   MALI_SYMBOL(gbm_device_get_fd),
-#endif
    MALI_SYMBOL(gbm_surface_create),
 #ifdef HAS_gbm_surface_create_with_modifiers
    MALI_SYMBOL(gbm_surface_create_with_modifiers),
@@ -145,59 +95,16 @@ static struct {
 #ifdef HAS_gbm_bo_get_modifier
    MALI_SYMBOL(gbm_bo_get_modifier),
 #endif
-#ifndef HAS_gbm_bo_map
-   MALI_SYMBOL(gbm_bo_get_width),
-#endif
-#if !defined(HAS_gbm_bo_map) || !defined(HAS_gbm_bo_unmap)
-   MALI_SYMBOL(gbm_bo_get_height),
-#endif
-#if !defined(HAS_gbm_bo_map) || !defined(HAS_gbm_bo_unmap) || \
-   !defined(HAS_gbm_bo_get_stride_for_plane)
-   MALI_SYMBOL(gbm_bo_get_stride),
-#endif
-#ifndef HAS_gbm_bo_get_bpp
-   MALI_SYMBOL(gbm_bo_get_format),
-#endif
-#ifndef HAS_gbm_bo_map
-   MALI_SYMBOL(gbm_bo_get_bpp),
-   MALI_SYMBOL(gbm_bo_get_device),
-#endif
-#if !defined(HAS_gbm_bo_map) || !defined(HAS_gbm_bo_get_handle_for_plane)
-   MALI_SYMBOL(gbm_bo_get_handle),
-#endif
-#ifndef HAS_gbm_bo_get_fd_for_plane
-   MALI_SYMBOL(gbm_bo_get_fd),
-#endif
-   MALI_SYMBOL(gbm_bo_import),
-#endif
+#endif // HAS_GBM
 #ifdef HAS_EGL
    MALI_SYMBOL(eglGetCurrentSurface),
    MALI_SYMBOL(eglGetDisplay),
    MALI_SYMBOL(eglGetProcAddress),
    MALI_SYMBOL(eglChooseConfig),
-   MALI_SYMBOL(eglCreatePixmapSurface),
-   MALI_SYMBOL(eglCreateWindowSurface),
    MALI_SYMBOL(eglDestroySurface),
    MALI_SYMBOL(eglMakeCurrent),
-#endif
+#endif // HAS_EGL
 };
-
-#ifdef HAS_EGL
-#define MALI_LOAD_SYMBOL(func) { #func, (void **)(&_ ## func), }
-static struct {
-   const char *func;
-   void **symbol;
-} mali_load_symbols[] = {
-   MALI_LOAD_SYMBOL(eglGetPlatformDisplay),
-   MALI_LOAD_SYMBOL(eglGetPlatformDisplayEXT),
-   MALI_LOAD_SYMBOL(eglCreatePlatformWindowSurface),
-   MALI_LOAD_SYMBOL(eglCreatePlatformPixmapSurface),
-#ifdef HAS_X11
-   MALI_LOAD_SYMBOL(eglCreatePlatformWindowSurfaceEXT),
-   MALI_LOAD_SYMBOL(eglCreatePlatformPixmapSurfaceEXT),
-#endif
-};
-#endif
 
 __attribute__((constructor)) static void
 load_mali_symbols(void)
@@ -232,12 +139,6 @@ load_mali_symbols(void)
    }
 
    dlclose(handle);
-
-#ifdef HAS_EGL
-#define GET_PROC_ADDR(v, n) v = (typeof(v))_eglGetProcAddress(n)
-   for (i = 0; i < ARRAY_SIZE(mali_load_symbols); i++)
-      GET_PROC_ADDR(*mali_load_symbols[i].symbol, mali_load_symbols[i].func);
-#endif
 }
 
 #ifdef HAS_GBM
@@ -257,68 +158,6 @@ can_ignore_modifiers(const uint64_t *modifiers,
 
    return !count;
 }
-
-#ifndef HAS_gbm_bo_get_offset
-uint32_t
-gbm_bo_get_offset(struct gbm_bo *bo, int plane)
-{
-   return 0;
-}
-#endif
-
-#ifndef HAS_gbm_bo_get_plane_count
-int
-gbm_bo_get_plane_count(struct gbm_bo *bo)
-{
-   return 1;
-}
-#endif
-
-#ifndef HAS_gbm_bo_get_stride_for_plane
-uint32_t
-gbm_bo_get_stride_for_plane(struct gbm_bo *bo, int plane)
-{
-   if (plane)
-      return 0;
-
-   return _gbm_bo_get_stride(bo);
-}
-#endif
-
-#ifndef HAS_gbm_bo_get_fd_for_plane
-int
-gbm_bo_get_fd_for_plane(struct gbm_bo *bo, int plane)
-{
-   if (plane)
-      return -1;
-
-   return _gbm_bo_get_fd(bo);
-}
-#endif
-
-#ifndef HAS_gbm_bo_get_handle_for_plane
-union gbm_bo_handle
-gbm_bo_get_handle_for_plane(struct gbm_bo *bo, int plane)
-{
-   union gbm_bo_handle ret;
-   ret.s32 = -1;
-
-   if (plane)
-      return ret;
-
-   return _gbm_bo_get_handle(bo);
-}
-#endif
-
-#ifndef HAS_gbm_device_get_format_modifier_plane_count
-int
-gbm_device_get_format_modifier_plane_count(struct gbm_device *gbm,
-                                           uint32_t format,
-                                           uint64_t modifier)
-{
-   return can_ignore_modifiers(&modifier, 1) ? 1 : 0;
-}
-#endif
 
 #ifndef HAS_gbm_bo_create_with_modifiers2
 struct gbm_bo *
@@ -391,155 +230,6 @@ gbm_surface_create_with_modifiers(struct gbm_device *gbm,
 }
 #endif
 
-#ifndef HAS_gbm_bo_map
-void *
-gbm_bo_map(struct gbm_bo *bo,
-           uint32_t x, uint32_t y, uint32_t width, uint32_t height,
-           uint32_t flags, uint32_t *stride, void **map_data)
-{
-   struct drm_mode_map_dumb arg;
-   struct gbm_device *gbm_dev;
-   void *map;
-   int fd, ret;
-
-   if (!bo || !map_data || width <= 0 || width > _gbm_bo_get_width(bo) ||
-       height <= 0 || height > _gbm_bo_get_height(bo)) {
-      errno = EINVAL;
-      return MAP_FAILED;
-   }
-
-   gbm_dev = _gbm_bo_get_device(bo);
-   if (!gbm_dev)
-      return MAP_FAILED;
-
-   fd = _gbm_device_get_fd(gbm_dev);
-   if (fd < 0)
-      return MAP_FAILED;
-
-   memset(&arg, 0, sizeof(arg));
-   arg.handle = _gbm_bo_get_handle(bo).u32;
-   ret = drmIoctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &arg);
-   if (ret)
-      return MAP_FAILED;
-
-   map = mmap(NULL, _gbm_bo_get_stride(bo) * _gbm_bo_get_height(bo),
-              PROT_READ | PROT_WRITE, MAP_SHARED, fd, arg.offset);
-   if (map == MAP_FAILED)
-      return map;
-
-   *map_data = map;
-
-   if (stride)
-      *stride = _gbm_bo_get_stride(bo);
-
-   return map + y * _gbm_bo_get_stride(bo) + x * (_gbm_bo_get_bpp(bo) >> 3);
-}
-#endif
-
-#ifndef HAS_gbm_bo_unmap
-void
-gbm_bo_unmap(struct gbm_bo *bo, void *map_data)
-{
-   if (map_data)
-      munmap(map_data, _gbm_bo_get_stride(bo) * _gbm_bo_get_height(bo));
-}
-#endif
-
-/* From mesa3d mesa-23.1.3-1 : src/gbm/main/gbm.c */
-#ifndef HAS_gbm_bo_get_bpp
-uint32_t
-gbm_bo_get_bpp(struct gbm_bo *bo)
-{
-   switch (_gbm_bo_get_format(bo)) {
-   default:
-      return 0;
-   case GBM_FORMAT_C8:
-   case GBM_FORMAT_R8:
-   case GBM_FORMAT_RGB332:
-   case GBM_FORMAT_BGR233:
-      return 8;
-   case GBM_FORMAT_R16:
-   case GBM_FORMAT_GR88:
-   case GBM_FORMAT_XRGB4444:
-   case GBM_FORMAT_XBGR4444:
-   case GBM_FORMAT_RGBX4444:
-   case GBM_FORMAT_BGRX4444:
-   case GBM_FORMAT_ARGB4444:
-   case GBM_FORMAT_ABGR4444:
-   case GBM_FORMAT_RGBA4444:
-   case GBM_FORMAT_BGRA4444:
-   case GBM_FORMAT_XRGB1555:
-   case GBM_FORMAT_XBGR1555:
-   case GBM_FORMAT_RGBX5551:
-   case GBM_FORMAT_BGRX5551:
-   case GBM_FORMAT_ARGB1555:
-   case GBM_FORMAT_ABGR1555:
-   case GBM_FORMAT_RGBA5551:
-   case GBM_FORMAT_BGRA5551:
-   case GBM_FORMAT_RGB565:
-   case GBM_FORMAT_BGR565:
-      return 16;
-   case GBM_FORMAT_RGB888:
-   case GBM_FORMAT_BGR888:
-      return 24;
-   case GBM_FORMAT_RG1616:
-   case GBM_FORMAT_GR1616:
-   case GBM_FORMAT_XRGB8888:
-   case GBM_FORMAT_XBGR8888:
-   case GBM_FORMAT_RGBX8888:
-   case GBM_FORMAT_BGRX8888:
-   case GBM_FORMAT_ARGB8888:
-   case GBM_FORMAT_ABGR8888:
-   case GBM_FORMAT_RGBA8888:
-   case GBM_FORMAT_BGRA8888:
-   case GBM_FORMAT_XRGB2101010:
-   case GBM_FORMAT_XBGR2101010:
-   case GBM_FORMAT_RGBX1010102:
-   case GBM_FORMAT_BGRX1010102:
-   case GBM_FORMAT_ARGB2101010:
-   case GBM_FORMAT_ABGR2101010:
-   case GBM_FORMAT_RGBA1010102:
-   case GBM_FORMAT_BGRA1010102:
-      return 32;
-   case GBM_FORMAT_XBGR16161616:
-   case GBM_FORMAT_ABGR16161616:
-   case GBM_FORMAT_XBGR16161616F:
-   case GBM_FORMAT_ABGR16161616F:
-      return 64;
-   }
-}
-#endif
-
-/* From mesa3d mesa-23.1.3-1 : src/gbm/main/gbm.c */
-#ifndef HAS_gbm_format_get_name
-static uint32_t
-gbm_format_canonicalize(uint32_t gbm_format)
-{
-   switch (gbm_format) {
-   case GBM_BO_FORMAT_XRGB8888:
-      return GBM_FORMAT_XRGB8888;
-   case GBM_BO_FORMAT_ARGB8888:
-      return GBM_FORMAT_ARGB8888;
-   default:
-      return gbm_format;
-   }
-}
-
-char *
-gbm_format_get_name(uint32_t gbm_format, struct gbm_format_name_desc *desc)
-{
-   gbm_format = gbm_format_canonicalize(gbm_format);
-
-   desc->name[0] = gbm_format;
-   desc->name[1] = gbm_format >> 8;
-   desc->name[2] = gbm_format >> 16;
-   desc->name[3] = gbm_format >> 24;
-   desc->name[4] = 0;
-
-   return desc->name;
-}
-#endif
-
 /* Wrappers for invalid modifier */
 
 uint64_t
@@ -586,149 +276,15 @@ gbm_bo_create(struct gbm_device *gbm,
    return _gbm_bo_create(gbm, width, height, format, flags);
 }
 
-/* Wrapper for unsupported GBM_BO_IMPORT_FD_MODIFIER */
-struct gbm_bo *
-gbm_bo_import(struct gbm_device *gbm, uint32_t type,
-              void *buffer, uint32_t flags)
-{
-   struct gbm_import_fd_modifier_data *mod_data;
-   struct gbm_import_fd_data data = {0};
-   struct gbm_bo *bo;
-
-   bo = _gbm_bo_import(gbm, type, buffer, flags);
-   if (bo || type != GBM_BO_IMPORT_FD_MODIFIER)
-      return bo;
-
-   mod_data = buffer;
-   if (!can_ignore_modifiers(&mod_data->modifier, 1) || mod_data->offsets[0])
-      return NULL;
-
-   data.fd = mod_data->fds[0];
-   data.width = mod_data->width;
-   data.height = mod_data->height;
-   data.stride = mod_data->strides[0];
-   data.format = mod_data->format;
-
-   if (mod_data->num_fds > 1) {
-      struct stat stat, tmp_stat;
-      int offset, i;
-
-      /* Ensure the dma-bufs are the same. */
-      if (fstat(data.fd, &stat))
-         return NULL;
-
-      for (i = 1, offset = 0; i < mod_data->num_fds; i++) {
-         if (fstat(mod_data->fds[i], &tmp_stat))
-            return NULL;
-
-         if ((stat.st_dev != tmp_stat.st_dev) ||
-             (stat.st_ino != tmp_stat.st_ino))
-            return NULL;
-
-         if (mod_data->strides[i] != data.stride &&
-             mod_data->strides[i] != data.stride / 2)
-            return NULL;
-
-         offset += mod_data->strides[i - 1] * ROUND_UP_N(mod_data->height, 16);
-         if (mod_data->offsets[i] != offset)
-            return NULL;
-      }
-   }
-
-   return _gbm_bo_import(gbm, GBM_BO_IMPORT_FD, (void *)&data, flags);
-}
-
 #endif // HAS_GBM
 
 #ifdef HAS_EGL
-#ifdef HAS_X11
-
-/* Hacked displays (should not be much) */
-#define MAX_X11_DISPLAY 32
-static Display *_x11_displays[MAX_X11_DISPLAY] = { NULL, };
-
-static pthread_mutex_t _x11_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static inline int
-force_x11_threads(void)
-{
-   return !getenv("MALI_X11_NO_FORCE_THREADS");
-}
-
-__attribute__((constructor)) static void
-init_x11_threads(void)
-{
-   if (force_x11_threads())
-      XInitThreads();
-}
-
-__attribute__((destructor)) static void
-cleanup_x11_display(void)
-{
-   int i;
-
-   for (i = 0; i < MAX_X11_DISPLAY; i++) {
-      Display *display = _x11_displays[i];
-      if (display)
-         XCloseDisplay(display);
-   }
-}
-
-static Display *
-fixup_x11_display(Display *display)
-{
-   int i;
-
-   if (!force_x11_threads())
-      return display;
-
-   if (!display || display->lock_fns)
-      return display;
-
-   pthread_mutex_lock(&_x11_mutex);
-   /* Create a new threaded display */
-   display = XOpenDisplay(DisplayString(display));
-
-   for (i = 0; i < MAX_X11_DISPLAY; i++) {
-      if (!_x11_displays[i]) {
-         _x11_displays[i] = display;
-         break;
-      }
-   }
-   pthread_mutex_unlock(&_x11_mutex);
-
-   return display;
-}
-
-#endif // HAS_X11
 
 /* Override EGL symbols */
-
-#ifdef HAS_X11
-
-EGLAPI EGLDisplay EGLAPIENTRY
-eglGetPlatformDisplayEXT(EGLenum platform, void *native_display, const EGLint *attrib_list)
-{
-   if (!_eglGetPlatformDisplayEXT)
-      return EGL_NO_DISPLAY;
-
-   if (platform == EGL_PLATFORM_X11_KHR && native_display) {
-      native_display = (void *)fixup_x11_display(native_display);
-      if (!native_display)
-         return EGL_NO_DISPLAY;
-   }
-
-   return _eglGetPlatformDisplayEXT(platform, native_display, attrib_list);
-}
-
-#endif // HAS_X11
 
 EGLAPI EGLDisplay EGLAPIENTRY
 eglGetDisplay(EGLNativeDisplayType display_id)
 {
-   const char *type = getenv("MALI_DEFAULT_WINSYS");
-   EGLDisplay display;
-
    /* HACK: For chromium angle with in-process-gpu. */
    if (getenv("MALI_FORCE_DEFAULT_DISPLAY") &&
        display_id != EGL_DEFAULT_DISPLAY) {
@@ -737,235 +293,10 @@ eglGetDisplay(EGLNativeDisplayType display_id)
       display_id = EGL_DEFAULT_DISPLAY;
    }
 
-   /* Honor the native display. */
-   if (display_id != EGL_DEFAULT_DISPLAY)
-      return _eglGetDisplay(display_id);
-
-   /* Honor the default winsys config. */
-#ifdef HAS_GBM
-   if (type && !strcmp(type, "gbm"))
-      return eglGetPlatformDisplay(EGL_PLATFORM_GBM_KHR,
-                                   EGL_DEFAULT_DISPLAY, NULL);
-#endif
-#ifdef HAS_WAYLAND
-   if (type && !strcmp(type, "wayland"))
-      return eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_EXT,
-                                   EGL_DEFAULT_DISPLAY, NULL);
-#endif
-#ifdef HAS_X11
-   if (type && !strcmp(type, "x11"))
-      return eglGetPlatformDisplay(EGL_PLATFORM_X11_KHR,
-                                   EGL_DEFAULT_DISPLAY, NULL);
-#endif
-
-   display = _eglGetDisplay(EGL_DEFAULT_DISPLAY);
-
-   /* Fallback to eglGetPlatformDisplay(). */
-#ifdef HAS_GBM
-   if (!display)
-      display = eglGetPlatformDisplay(EGL_PLATFORM_GBM_KHR,
-                                      EGL_DEFAULT_DISPLAY, NULL);
-#endif
-#ifdef HAS_WAYLAND
-   if (!display)
-      display = eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_EXT,
-                                      EGL_DEFAULT_DISPLAY, NULL);
-#endif
-#ifdef HAS_X11
-   if (!display)
-      display = eglGetPlatformDisplay(EGL_PLATFORM_X11_KHR,
-                                      EGL_DEFAULT_DISPLAY, NULL);
-#endif
-   return display;
+   return _eglGetDisplay(display_id);
 }
 
 /* Export for EGL 1.5 */
-
-/* From mesa3d mesa-23.1.3-1 : src/egl/main/egldisplay.h */
-static inline size_t
-_eglNumAttribs(const EGLAttrib *attribs)
-{
-   size_t len = 0;
-
-   if (attribs) {
-      while (attribs[len] != EGL_NONE)
-         len += 2;
-      len++;
-   }
-   return len;
-}
-
-/* From mesa3d mesa-23.1.3-1 : src/egl/main/eglapi.c */
-static EGLint *
-_eglConvertAttribsToInt(const EGLAttrib *attr_list)
-{
-   size_t size = _eglNumAttribs(attr_list);
-   EGLint *int_attribs = NULL;
-
-   /* Convert attributes from EGLAttrib[] to EGLint[] */
-   if (size) {
-      int_attribs = calloc(size, sizeof(int_attribs[0]));
-      if (!int_attribs)
-         return NULL;
-
-      for (size_t i = 0; i < size; i++)
-         int_attribs[i] = attr_list[i];
-   }
-   return int_attribs;
-}
-
-EGLAPI EGLDisplay EGLAPIENTRY
-eglGetPlatformDisplay(EGLenum platform, void *native_display, const EGLAttrib *attrib_list)
-{
-   if (_eglGetPlatformDisplayEXT) {
-      EGLint *int_attribs = _eglConvertAttribsToInt(attrib_list);
-      if (!int_attribs == !attrib_list) {
-#ifdef HAS_X11
-         EGLDisplay display =
-            eglGetPlatformDisplayEXT(platform, native_display, int_attribs);
-#else
-         EGLDisplay display =
-            _eglGetPlatformDisplayEXT(platform, native_display, int_attribs);
-#endif
-         free(int_attribs);
-         return display;
-      }
-   }
-
-   if (!_eglGetPlatformDisplay)
-      return EGL_NO_DISPLAY;
-
-#ifdef HAS_X11
-   if (platform == EGL_PLATFORM_X11_KHR && native_display) {
-      native_display = (void *)fixup_x11_display(native_display);
-      if (!native_display)
-         return EGL_NO_DISPLAY;
-   }
-#endif
-
-   return _eglGetPlatformDisplay(platform, native_display, attrib_list);
-}
-
-EGLAPI EGLSurface EGLAPIENTRY
-eglCreatePlatformWindowSurface(EGLDisplay dpy, EGLConfig config, void *native_window, const EGLAttrib *attrib_list)
-{
-   EGLSurface surface = EGL_NO_SURFACE;
-
-   if (!_eglCreatePlatformWindowSurface) {
-      /* HACK: For older Mali (e.g., Utgard). */
-      EGLint *int_attribs = _eglConvertAttribsToInt(attrib_list);
-      if (!int_attribs == !attrib_list) {
-         surface =
-            _eglCreateWindowSurface(dpy, config, native_window, int_attribs);
-#ifdef HAS_X11
-         if (surface == EGL_NO_SURFACE)
-            surface = _eglCreateWindowSurface(dpy, config,
-                                              *(void **)(native_window),
-                                              int_attribs);
-#endif
-      }
-
-      free(int_attribs);
-      return surface;
-   }
-
-   surface = _eglCreatePlatformWindowSurface(dpy, config,
-                                             native_window, attrib_list);
-
-#ifdef HAS_X11
-   /* HACK: Workaround for Mali interface incompatibility. */
-   if (surface == EGL_NO_SURFACE)
-      surface = _eglCreatePlatformWindowSurface(dpy, config,
-                                                *(void **)(native_window),
-                                                attrib_list);
-#endif
-
-   return surface;
-}
-
-EGLAPI EGLSurface EGLAPIENTRY
-eglCreatePlatformPixmapSurface(EGLDisplay dpy, EGLConfig config, void *native_pixmap, const EGLAttrib *attrib_list)
-{
-   EGLSurface surface = EGL_NO_SURFACE;
-
-   if (!_eglCreatePlatformPixmapSurface) {
-      /* HACK: For older Mali (e.g., Utgard). */
-      EGLint *int_attribs = _eglConvertAttribsToInt(attrib_list);
-      if (!int_attribs == !attrib_list) {
-         surface =
-            _eglCreatePixmapSurface(dpy, config, native_pixmap, int_attribs);
-#ifdef HAS_X11
-         if (surface == EGL_NO_SURFACE)
-            surface = _eglCreatePixmapSurface(dpy, config,
-                                              *(void **)(native_pixmap),
-                                              int_attribs);
-#endif
-      }
-      free(int_attribs);
-      return surface;
-   }
-
-   surface = _eglCreatePlatformPixmapSurface(dpy, config,
-                                             native_pixmap, attrib_list);
-
-#ifdef HAS_X11
-   /* HACK: Workaround for Mali interface incompatibility. */
-   if (surface == EGL_NO_SURFACE)
-      surface = _eglCreatePlatformPixmapSurface(dpy, config,
-                                                *(void **)(native_pixmap),
-                                                attrib_list);
-#endif
-
-   return surface;
-}
-
-#ifdef HAS_X11
-
-EGLAPI EGLSurface EGLAPIENTRY
-eglCreatePlatformWindowSurfaceEXT(EGLDisplay dpy, EGLConfig config, void *native_window, const EGLint *attrib_list)
-{
-   EGLSurface surface = EGL_NO_SURFACE;
-
-   if (!_eglCreatePlatformWindowSurfaceEXT)
-      return EGL_NO_SURFACE;
-
-   surface = _eglCreatePlatformWindowSurfaceEXT(dpy, config,
-                                                native_window, attrib_list);
-
-#ifdef HAS_X11
-   /* HACK: Workaround for Mali interface incompatibility. */
-   if (surface == EGL_NO_SURFACE)
-      surface = _eglCreatePlatformWindowSurfaceEXT(dpy, config,
-                                                   *(void **)(native_window),
-                                                   attrib_list);
-#endif
-
-   return surface;
-}
-
-EGLAPI EGLSurface EGLAPIENTRY
-eglCreatePlatformPixmapSurfaceEXT(EGLDisplay dpy, EGLConfig config, void *native_pixmap, const EGLint *attrib_list)
-{
-   EGLSurface surface;
-
-   if (!_eglCreatePlatformPixmapSurfaceEXT)
-      return EGL_NO_SURFACE;
-
-   surface = _eglCreatePlatformPixmapSurfaceEXT(dpy, config,
-                                                native_pixmap, attrib_list);
-
-#ifdef HAS_X11
-   /* HACK: Workaround for Mali interface incompatibility. */
-   if (surface == EGL_NO_SURFACE)
-      surface = _eglCreatePlatformPixmapSurfaceEXT(dpy, config,
-                                                   *(void **)(native_pixmap),
-                                                   attrib_list);
-#endif
-
-   return surface;
-}
-
-#endif
 
 /* HACK: Unset current surface before destroying it */
 
@@ -1020,36 +351,8 @@ eglGetProcAddress(const char *procname)
    if (!strcmp(procname, "eglGetDisplay"))
       return (__eglMustCastToProperFunctionPointerType)eglGetDisplay;
 
-   if (!strcmp(procname, "eglGetPlatformDisplay")) {
-      if (!_eglGetPlatformDisplay && !_eglGetPlatformDisplayEXT)
-         return NULL;
-      return (__eglMustCastToProperFunctionPointerType)eglGetPlatformDisplay;
-   }
-
-#ifdef HAS_X11
-   if (!strcmp(procname, "eglGetPlatformDisplayEXT")) {
-      if (!_eglGetPlatformDisplayEXT)
-         return NULL;
-      return (__eglMustCastToProperFunctionPointerType)eglGetPlatformDisplayEXT;
-   }
-#endif
-
    if (!strcmp(procname, "eglChooseConfig"))
       return (__eglMustCastToProperFunctionPointerType)eglChooseConfig;
-
-   if (!strcmp(procname, "eglCreatePlatformWindowSurface"))
-      return (__eglMustCastToProperFunctionPointerType)eglCreatePlatformWindowSurface;
-
-   if (!strcmp(procname, "eglCreatePlatformPixmapSurface"))
-      return (__eglMustCastToProperFunctionPointerType)eglCreatePlatformPixmapSurface;
-
-#ifdef HAS_X11
-   if (!strcmp(procname, "eglCreatePlatformWindowSurfaceEXT"))
-      return (__eglMustCastToProperFunctionPointerType)eglCreatePlatformWindowSurfaceEXT;
-
-   if (!strcmp(procname, "eglCreatePlatformPixmapSurfaceEXT"))
-      return (__eglMustCastToProperFunctionPointerType)eglCreatePlatformPixmapSurfaceEXT;
-#endif
 
    if (!strcmp(procname, "eglDestroySurface"))
       return (__eglMustCastToProperFunctionPointerType)eglDestroySurface;

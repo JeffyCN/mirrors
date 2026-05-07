@@ -1,3 +1,14 @@
+libmali (1.10-1) unstable; urgency=medium
+
+  * libmali: import Vulkan headers v1.4.303
+  * libmali: update G31/G52 userspace driver to g29p1-1
+  * libmali: update G310/G610 userspace driver to g29p1-11eac-12
+  * libmali: update G31/G52 userspace driver to g29p1-2
+  * libmali: update G310/G610 userspace driver to g29p1-11eac-14
+  * Refactor and cleanup
+
+ -- Jeffy Chen <jeffy.chen@rock-chips.com>  Thu, 7 May 2026 14:59:37 +0800
+
 libmali (1.9-1) unstable; urgency=medium
 
   * Switch to meson build system

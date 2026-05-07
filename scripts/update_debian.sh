@@ -1,16 +1,13 @@
 #!/bin/sh
 
-
 # Generate targets
-TARGETS=$(echo ${@:-$(find lib -type f)} | xargs -n 1 | sed 's,^lib/,,' | sort)
+TARGETS=$(echo ${@:-$(find lib -type f)} | xargs -n 1 | sort)
 echo $TARGETS | xargs -n 1 > debian/targets
 
 rm -f control.*
 
 # NOTE: Assuming multiarch packages could share debian files
 for target in $TARGETS; do
-	#export $(scripts/parse_name.sh $target)
-	#package=$name
 	package=$(basename ${target%.so})
 	control=control.$package
 

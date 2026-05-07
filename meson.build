@@ -1,6 +1,6 @@
 project(
   'libmali', 'c',
-  version : '1.9.0',
+  version : '1.10.0',
   meson_version : '>=0.53.0')
 
 mali_version = meson.project_version()
@@ -10,95 +10,79 @@ pkgconfig = import('pkgconfig')
 
 cc = meson.get_compiler('c')
 
-if get_option('arch') != 'auto'
-  arch = get_option('arch')
+library_path = get_option('library')
+if library_path != ''
+  if not fs.exists(meson.current_source_dir() / library_path)
+    error('Could not find the specified library at: ' + library_path)
+  endif
+
+  if library_path.contains('aarch64')
+    arch = 'aarch64'
+  elif library_path.contains('arm')
+    arch = 'arm'
+  else
+    arch = 'aarch64'
+  endif
 else
-  arch = host_machine.cpu_family()
+  if get_option('arch') != 'auto'
+    arch = get_option('arch')
+  else
+    arch = host_machine.cpu_family()
+  endif
+
+  if arch == 'armv7l' or arch == 'armhf' or arch == 'arm32'
+    arch = 'arm'
+  elif arch == 'armv8' or arch == 'arm64'
+    arch = 'aarch64'
+  endif
+
+  gpu = get_option('gpu')
+  platform = get_option('platform')
+
+  # Use gles platform for OpenGLES only (without OpenCL)
+  if platform == 'nocl'
+    platform = 'gles'
+  endif
+
+  message('Building for ' + '|'.join([arch, gpu, platform]))
+
+  # Grab libraries with specified configs
+  name_pattern = 'libmali-' + gpu + '-[^-]*'
+  if platform == 'gles' or platform == 'cl'
+    name_pattern += '-' + platform
+  endif
+  name_pattern += '\.so'
+
+  cmd = run_command('bash', '-c',
+    'cd ' + meson.current_source_dir() + ' && ' +
+    'find lib -regex "lib/' + arch + '-.*/' + name_pattern +
+    '" 2>/dev/null | head -1', check : false)
+
+  library_path = cmd.stdout().strip()
+  if library_path == ''
+      error('No library found!')
+  endif
 endif
 
-gpu = get_option('gpu')
-version = get_option('version')
-subversion = get_option('subversion')
-platform = get_option('platform')
-opencl_icd = get_option('opencl-icd')
-vendor_package = get_option('vendor-package')
-build_hook = get_option('hooks')
-wrappers_opts = get_option('wrappers')
-optimize = get_option('optimize-level')
-
-message('Building for ' + '|'.join([arch, gpu, version, subversion,
-  platform, optimize]))
-
-# Grab libraries with specified configs
-cmd = run_command('scripts/grabber.sh',
-  arch, gpu, version, subversion, platform, optimize, check : false)
-libs = cmd.stdout().strip().split(' ')
-
-# Use the first one as default library
-default_lib = libs[0]
-if default_lib == ''
-  error('Failed to find matched library')
-endif
-
-message('Source libraries: @0@'.format(libs))
+message('Building for ' + library_path)
 
 # Load original mali library for later function checks and linking
-run_command('ln', '-rsf', meson.current_source_dir() / default_lib,
+run_command('ln', '-rsf', meson.current_source_dir() / library_path,
   meson.current_build_dir() / 'libmali-prebuilt.so', check : false)
 mali = cc.find_library('mali-prebuilt', dirs : meson.current_build_dir())
 
-is_rk3288 = gpu == 'midgard-t76x'
-is_utgard = gpu.split('-')[0] == 'utgard'
-is_px3se = gpu == 'utgard-400' and subversion == 'r3p0'
+message('Using ' + library_path)
 
-# Parse platforms
+opencl_icd = get_option('opencl-icd')
+vendor_package = get_option('vendor-package')
+build_hook = get_option('hooks')
+wrappers = get_option('wrappers')
+
+# The hook library is for hacking GBM/EGL APIs
 has_gbm = cc.has_function('gbm_create_device', dependencies : mali)
-has_x11 = run_command('grep', '-wq', 'libxcb.so', default_lib,
-  check : false).returncode() == 0
-has_wayland = run_command('grep', '-wq', 'libwayland-client.so', default_lib,
-  check : false).returncode() == 0
-
-message('Using ' + default_lib + ' with' + (has_x11 ? ' x11' : '') +
-  (has_wayland ? ' wayland' : '') + (has_gbm ? ' gbm' : ''))
-
-# Required packages
-requires = []
-if has_gbm or has_wayland or has_x11
-  requires = ['libdrm']
-endif
-if has_wayland
-  requires += ['wayland-client', 'wayland-server']
-
-  if is_px3se
-    requires += ['libffi', 'libcrypto']
-  endif
-endif
-if has_x11
-  requires += ['x11', 'xcb']
-
-  if is_utgard
-    requires += ['xfixes', 'xext', 'xau', 'xdmcp', 'xdamage']
-  else
-    requires += ['x11-xcb', 'xcb-dri2']
-  endif
-endif
-
-# Required dependencies
-foreach require : requires
-  dependency(require)
-endforeach
-
-# The hook library is for hacking GBM/EGL/X11 APIs
 has_egl = cc.has_function('eglCreateContext', dependencies : mali)
-if not has_gbm and not has_egl and not has_x11
+if not has_gbm and not has_egl
   build_hook = false
-endif
-
-if wrappers_opts.auto() and is_utgard
-  wrappers = false
-  warning('Wrappers are disabled for utgard by default')
-else
-  wrappers = not wrappers_opts.disabled()
 endif
 
 if wrappers
@@ -126,7 +110,6 @@ gbm_wrappers = {'gbm' : '1'}
 egl_wrappers = {'EGL' : '1'}
 glesv1_wrappers = {'GLESv1_CM' : '1'}
 glesv2_wrappers = {'GLESv2' : '2'}
-wayland_wrappers = {'wayland-egl' : '1'}
 cl_wrappers = opencl_icd ? {'MaliOpenCL' : '1'} : {'OpenCL' : '1'}
 vk_wrappers = {'MaliVulkan' : '1'}
 
@@ -157,9 +140,6 @@ glesv2_headers = {
   'include/KHR' : 'KHR',
   'include/GLES2' : 'GLES2',
   'include/GLES3' : 'GLES3',
-}
-wayland_egl_headers = {
-  'include/WAYLAND' : '',
 }
 cl_headers = {
   'include/CL' : 'CL',
@@ -192,8 +172,6 @@ map = {
   'egl' : ['eglCreateContext', egl_wrappers, egl_headers, '7.10'],
   'glesv1_cm' : ['eglCreateContext', glesv1_wrappers, glesv1_headers, '7.10'],
   'glesv2' : ['eglCreateContext', glesv2_wrappers, glesv2_headers, '7.10'],
-  'wayland-egl' : ['wl_egl_window_create', wayland_wrappers,
-    wayland_egl_headers, '18.1.0'],
   'OpenCL' : ['clCreateContext', cl_wrappers, cl_headers, cl_version],
   'vulkan' : ['vk_icdGetInstanceProcAddr', vk_wrappers, vulkan_headers,
     mali_version],
@@ -225,20 +203,8 @@ mali_ldflags += ['-L${libdir}', '-lmali']
 
 pkgconfig.generate(
   libraries : mali_ldflags,
-  requires : requires,
   name : 'mali',
   description : 'Mali GPU User-Space Binary Driver')
-
-if is_utgard
-  # The utgard DDK requires libMali.so
-  custom_target(
-    'libMali',
-    output : 'libMali.so',
-    command : ['echo'],
-    capture : true,
-    install_dir : get_option('libdir'),
-    install : true)
-endif
 
 foreach name, values : map
   symbol = values[0]
@@ -248,12 +214,6 @@ foreach name, values : map
   pkg_cflags = []
   is_opencl_icd = opencl_icd and name == 'OpenCL'
   is_vulkan_icd = name == 'vulkan'
-
-  if name == 'wayland-egl'
-    if not get_option('wayland-egl')
-      continue
-    endif
-  endif
 
   if not cc.has_function(symbol, dependencies : mali)
     continue
@@ -292,8 +252,8 @@ foreach name, values : map
       install : true)
   endif
 
-  # Install Vulkan WSI config
   if is_vulkan_icd
+    # Install Vulkan WSI config
     custom_target(
       'Vulkan manifest layer file',
       input : 'data/vulkan/VkLayer_window_system_integration.json.in',
@@ -302,10 +262,8 @@ foreach name, values : map
       capture : true,
       install_dir : get_option('datadir') / 'vulkan' / 'implicit_layer.d',
       install : true)
-  endif
 
-  # Install Vulkan WSI library
-  if is_vulkan_icd
+    # Install Vulkan WSI library
     lib_source = join_paths('data/vulkan/lib', arch, 'libVkLayer_window_system_integration.so')
     install_data(
         lib_source,
@@ -331,12 +289,6 @@ foreach name, values : map
     meson.add_install_script('scripts/fixup_gbm.sh', get_option('includedir'))
   endif
 
-  if name == 'egl' and not has_x11
-    # Disable X11 in EGL header
-    meson.add_install_script('scripts/fixup_egl_nox11.sh',
-      get_option('includedir'))
-  endif
-
   if name == 'OpenCL'
     pkg_cflags += ['-DCL_TARGET_OPENCL_VERSION=' + cl_target_version]
 
@@ -352,7 +304,6 @@ foreach name, values : map
   pkgconfig.generate(
     libraries : mali_ldflags,
     extra_cflags : pkg_cflags,
-    requires : requires,
     version : pkg_version,
     name : name,
     description : 'Mali GPU User-Space Binary Driver Wrappers')
@@ -366,26 +317,6 @@ custom_target(
   capture : true,
   install_dir : get_option('sysconfdir') / 'profile.d',
   install : true)
-
-# Install optional overlay
-if get_option('with-overlay')
-  if is_px3se
-    install_data('overlay/S10libmali_px3se',
-      install_dir : get_option('sysconfdir') / 'init.d')
-    install_data('overlay/px3seBase', install_dir : get_option('bindir'))
-  endif
-
-  if is_rk3288 and subversion == 'all'
-    install_data('overlay/S10libmali_rk3288',
-      install_dir : get_option('sysconfdir') / 'init.d')
-  endif
-endif
-
-# Install firmwares
-if gpu == 'valhall-g610'
-  install_data('firmware/g610/mali_csffw.bin',
-    install_dir : get_option('firmware-dir'))
-endif
 
 if vendor_package
   # Install vendor ld config
@@ -405,12 +336,12 @@ elif get_option('khr-header')
     rename : 'khrplatform.h')
 endif
 
-# Install target libraries
-install_data(libs, install_dir : get_option('libdir'))
+# Install target library
+install_data(library_path, install_dir : get_option('libdir'))
 
 # Replace dummy libmali library
 meson.add_install_script('scripts/fixup_dummy.sh',
-  get_option('libdir'), default_lib)
+  get_option('libdir'), library_path)
 
 if not wrappers
   # Disable wrappers

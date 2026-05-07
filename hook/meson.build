@@ -1,20 +1,10 @@
 # The gbm functions that might be missing
 gbm_check_funcs = [
-  'gbm_bo_map',
-  'gbm_bo_unmap',
-  'gbm_bo_get_offset',
-  'gbm_bo_get_plane_count',
-  'gbm_device_get_format_modifier_plane_count',
-  'gbm_bo_get_handle_for_plane',
-  'gbm_bo_get_stride_for_plane',
-  'gbm_bo_get_fd_for_plane',
   'gbm_bo_get_modifier',
   'gbm_bo_create_with_modifiers',
   'gbm_bo_create_with_modifiers2',
   'gbm_surface_create_with_modifiers',
   'gbm_surface_create_with_modifiers2',
-  'gbm_bo_get_bpp',
-  'gbm_format_get_name',
 ]
 
 libhook_cflags = [
@@ -44,18 +34,6 @@ if has_egl
   # Add hooks to support default winsys
   libhook_inc += include_directories('../include')
   libhook_cflags += '-DHAS_EGL'
-
-  if cc.has_function('wl_egl_window_create', dependencies : mali)
-    libhook_cflags += '-DHAS_WAYLAND'
-  endif
-
-  if has_x11
-    # Add hooks to init X11 threads
-    libhook_dep += dependency('x11')
-    libhook_cflags += '-DHAS_X11'
-  else
-    libhook_cflags += '-DEGL_NO_X11'
-  endif
 endif
 
 libhook = shared_library(
