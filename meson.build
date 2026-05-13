@@ -164,6 +164,10 @@ wayland_egl_headers = {
 cl_headers = {
   'include/CL' : 'CL',
 }
+vulkan_headers = {
+  'include/vk_video' : 'vk_video',
+  'include/vulkan' : 'vulkan',
+}
 
 if cc.has_function('clCreateBufferWithProperties', dependencies : mali)
   cl_version = '3.0'
@@ -191,7 +195,8 @@ map = {
   'wayland-egl' : ['wl_egl_window_create', wayland_wrappers,
     wayland_egl_headers, '18.1.0'],
   'OpenCL' : ['clCreateContext', cl_wrappers, cl_headers, cl_version],
-  'vulkan' : ['vk_icdGetInstanceProcAddr', vk_wrappers, {}, mali_version],
+  'vulkan' : ['vk_icdGetInstanceProcAddr', vk_wrappers, vulkan_headers,
+    mali_version],
 }
 
 # Create dummy source for building dummy libraries
@@ -308,8 +313,8 @@ foreach name, values : map
     )
   endif
 
-  # No {headers, pkgconfig} for {ICD, vendor packages}
-  if is_opencl_icd or is_vulkan_icd or vendor_package
+  # No {headers, pkgconfig} for OpenCL ICD and vendor packages
+  if is_opencl_icd or vendor_package
     continue
   endif
 
@@ -337,6 +342,11 @@ foreach name, values : map
 
     meson.add_install_script('scripts/fixup_cl.sh',
       get_option('includedir'), cl_version)
+  endif
+
+  # Vulkan ICD does not provide pkg-config metadata.
+  if is_vulkan_icd
+    continue
   endif
 
   pkgconfig.generate(
