@@ -1,0 +1,28 @@
+option('arch', type: 'combo', choices: ['auto', 'arm', 'armv7l', 'armhf', 'arm32', 'armv8', 'arm64', 'aarch64'],
+       description: 'arch (default: auto)')
+option('gpu', type: 'string', value: 'midgard-t86x',
+       description: 'GPU name (default: midgard-t86x)')
+option('version', type: 'string', value: 'r18p0',
+       description: 'GPU version (default: r18p0)')
+option('subversion', type: 'string', value: 'none',
+       description: 'subversion (default: none)')
+option('platform', type: 'string', value: 'gbm',
+       description: 'platform (default: gbm)')
+option('with-overlay', type: 'boolean', value: false,
+       description: 'Install overlay (default: false)')
+option('opencl-icd', type: 'boolean', value: true,
+       description: 'OpenCL Installable Client Driver (ICD) (default: true)')
+option('khr-header', type: 'boolean', value: false,
+       description: 'Install KHR header (default: false)')
+option('wayland-egl', type: 'boolean', value: true,
+       description: 'Install wayland egl wrapper when needed (default: true)')
+option('vendor-package', type: 'boolean', value: false,
+       description: 'Install as vendor package (default: false)')
+option('hooks', type: 'boolean', value: true,
+       description: 'Enable hook library (default: true)')
+option('wrappers', type: 'feature', value: 'auto',
+       description: 'Install with wrappers (default: auto)')
+option('optimize-level', type: 'combo', choices: ['O0', 'O1', 'O2', 'O3', 'Os', 'Ofast', 'Og'], value: 'O3',
+       description: 'Optimize level (default: O3)')
+option('firmware-dir', type: 'string', value: '/lib/firmware',
+       description: 'Firmware DIR (default: /lib/firmware)')

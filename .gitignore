@@ -1,0 +1,13 @@
+*~
+*.o
+*.lo
+*.la
+*.orig
+*.rej
+*.loT
+*.pc
+.deps
+.libs
+TAGS
+*\.a
+debian/libmali-*

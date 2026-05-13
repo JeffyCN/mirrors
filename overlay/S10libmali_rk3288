@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# Change libmali link for rk3288w ....
+#
+
+case "$1" in
+	start)
+		GPUINFO=/sys/devices/platform/*gpu/gpuinfo
+
+		# filter out non-rk3288 devices
+		grep -q "Mali-T76x.*0x0750" $GPUINFO || exit 0
+
+		LIBMALI=$(find /usr/lib -maxdepth 2 -name libmali.so)
+		cd ${LIBMALI%/*}
+
+		# find the correct libmali for the gpu chip
+		SUBVER=$(grep -o "r[01]p0" $GPUINFO)
+		LIBMALI=$(ls libmali-midgard-t76x-*-$SUBVER-*.so | head -1)
+		[ -z "$LIBMALI" ] && exit 1
+
+		# bind with the new libmali
+		echo "Using $LIBMALI"
+		mount --bind $LIBMALI libmali.so
+		;;
+	stop) ;;
+	*)
+        echo "Usage: $0 {start|stop}"
+        exit 1
+        ;;
+esac
+exit 0
+
