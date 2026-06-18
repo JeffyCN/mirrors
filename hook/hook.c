@@ -285,14 +285,6 @@ gbm_bo_create(struct gbm_device *gbm,
 EGLAPI EGLDisplay EGLAPIENTRY
 eglGetDisplay(EGLNativeDisplayType display_id)
 {
-   /* HACK: For chromium angle with in-process-gpu. */
-   if (getenv("MALI_FORCE_DEFAULT_DISPLAY") &&
-       display_id != EGL_DEFAULT_DISPLAY) {
-      fprintf(stderr, "[MALI-HOOK] WARN: Native display(%p) ignored!\n",
-              display_id);
-      display_id = EGL_DEFAULT_DISPLAY;
-   }
-
    return _eglGetDisplay(display_id);
 }
 
