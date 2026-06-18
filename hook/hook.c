@@ -73,6 +73,7 @@ static uint64_t (* _gbm_bo_get_modifier)(struct gbm_bo *bo) = NULL;
 static PFNEGLGETCURRENTSURFACEPROC _eglGetCurrentSurface = NULL;
 static PFNEGLGETDISPLAYPROC _eglGetDisplay = NULL;
 static PFNEGLGETPROCADDRESSPROC _eglGetProcAddress = NULL;
+static PFNEGLGETPLATFORMDISPLAYPROC _eglGetPlatformDisplay = NULL;
 static PFNEGLCHOOSECONFIGPROC _eglChooseConfig = NULL;
 static EGLBoolean (* _eglDestroySurface)(EGLDisplay dpy, EGLSurface surface) = NULL;
 static PFNEGLMAKECURRENTPROC _eglMakeCurrent = NULL;
@@ -99,6 +100,7 @@ static struct {
 #ifdef HAS_EGL
    MALI_SYMBOL(eglGetCurrentSurface),
    MALI_SYMBOL(eglGetDisplay),
+   MALI_SYMBOL(eglGetPlatformDisplay),
    MALI_SYMBOL(eglGetProcAddress),
    MALI_SYMBOL(eglChooseConfig),
    MALI_SYMBOL(eglDestroySurface),
@@ -285,7 +287,18 @@ gbm_bo_create(struct gbm_device *gbm,
 EGLAPI EGLDisplay EGLAPIENTRY
 eglGetDisplay(EGLNativeDisplayType display_id)
 {
-   return _eglGetDisplay(display_id);
+   EGLDisplay dpy = _eglGetDisplay(display_id);
+
+   if (dpy == EGL_NO_DISPLAY)
+      dpy = _eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_KHR, display_id, NULL);
+
+   if (dpy == EGL_NO_DISPLAY)
+      dpy = _eglGetPlatformDisplay(EGL_PLATFORM_X11_KHR, display_id, NULL);
+
+   if (dpy == EGL_NO_DISPLAY)
+      dpy = _eglGetPlatformDisplay(EGL_PLATFORM_GBM_KHR, display_id, NULL);
+
+   return dpy;
 }
 
 /* Export for EGL 1.5 */
