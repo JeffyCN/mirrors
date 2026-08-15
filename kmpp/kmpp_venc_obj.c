@@ -12,6 +12,8 @@
 #include "rk_mpi.h"
 
 #include "mpp_2str.h"
+#include "mpp_mem.h"
+#include "mpp_common.h"
 #include "mpp_frame_impl.h"
 #include "mpp_packet_impl.h"
 
@@ -32,10 +34,132 @@
         } \
     } while(0)
 
+static void kmpp_clear_frame_meta(KmppMeta meta)
+{
+    RK_S32 val;
+    void *ptr = NULL;
+
+    kmpp_meta_get_s32(meta, KEY_INPUT_IDR_REQ, &val);
+    kmpp_meta_get_s32(meta, KEY_INPUT_PSKIP, &val);
+    kmpp_meta_get_s32(meta, KEY_INPUT_PSKIP_NON_REF, &val);
+    kmpp_meta_get_s32(meta, KEY_INPUT_PSKIP_NUM, &val);
+    kmpp_meta_get_s32(meta, KEY_ENC_MARK_LTR, &val);
+    kmpp_meta_get_s32(meta, KEY_ENC_USE_LTR, &val);
+    kmpp_meta_get_s32(meta, KEY_ENC_FRAME_QP, &val);
+    kmpp_meta_get_s32(meta, KEY_ENC_BASE_LAYER_PID, &val);
+    kmpp_meta_get_s32(meta, KEY_TEMPORAL_ID, &val);
+    kmpp_meta_get_ptr(meta, KEY_ROI_DATA, &ptr);
+    kmpp_meta_get_ptr(meta, KEY_OSD_DATA4, &ptr);
+    kmpp_meta_get_ptr(meta, KEY_USER_DATA, &ptr);
+    kmpp_meta_get_ptr(meta, KEY_USER_DATAS, &ptr);
+    kmpp_meta_get_ptr(meta, KEY_JPEG_ROI_DATA, &ptr);
+}
+
+static MPP_RET kmpp_convert_frame_meta(KmppMeta dst, MppMeta src)
+{
+    MppEncROICfg *roi = NULL;
+    MppEncOSDData3 *osd = NULL;
+    MppEncUserData *ud = NULL;
+    MppEncUserDataSet *uds = NULL;
+    MppJpegROICfg *jpeg_roi = NULL;
+    RK_S32 val;
+    MPP_RET ret;
+
+#define CONVERT_META_SCALAR(key) \
+    do { \
+        if (mpp_meta_get_s32(src, key, &val) == MPP_OK) { \
+            if (kmpp_meta_set_s32(dst, key, val)) \
+                mpp_loge("frame scalar key %#08x not converted, skipped\n", key); \
+        } \
+    } while (0)
+
+    CONVERT_META_SCALAR(KEY_INPUT_IDR_REQ);
+    CONVERT_META_SCALAR(KEY_INPUT_PSKIP);
+    CONVERT_META_SCALAR(KEY_INPUT_PSKIP_NON_REF);
+    CONVERT_META_SCALAR(KEY_INPUT_PSKIP_NUM);
+    CONVERT_META_SCALAR(KEY_ENC_MARK_LTR);
+    CONVERT_META_SCALAR(KEY_ENC_USE_LTR);
+    CONVERT_META_SCALAR(KEY_ENC_FRAME_QP);
+    CONVERT_META_SCALAR(KEY_ENC_BASE_LAYER_PID);
+    CONVERT_META_SCALAR(KEY_TEMPORAL_ID);
+
+#undef CONVERT_META_SCALAR
+
+    mpp_meta_get_ptr(src, KEY_ROI_DATA, (void **)&roi);
+    if (roi) {
+        MppEncROICfgLegacy legacy = { .change = 1 };
+
+        if (roi->number > MPP_ARRAY_ELEMS(legacy.regions) || (roi->number && !roi->regions))
+            return MPP_ERR_VALUE;
+
+        legacy.number = roi->number;
+        if (roi->number)
+            memcpy(legacy.regions, roi->regions, roi->number * sizeof(*roi->regions));
+
+        ret = kmpp_meta_set_ptr(dst, KEY_ROI_DATA, &legacy);
+        if (ret)
+            return ret;
+    }
+
+    mpp_meta_get_ptr(src, KEY_OSD_DATA3, (void **)&osd);
+    if (osd) {
+        ret = kmpp_meta_set_osd(dst, osd);
+        if (ret)
+            return ret;
+    }
+
+    mpp_meta_get_ptr(src, KEY_USER_DATA, (void **)&ud);
+    if (ud) {
+        MppEncUserDataShm shm = { .len = ud->len };
+
+        shm.data.uptr = ud->pdata;
+        ret = kmpp_meta_set_ptr(dst, KEY_USER_DATA, &shm);
+        if (ret)
+            return ret;
+    }
+
+    mpp_meta_get_ptr(src, KEY_USER_DATAS, (void **)&uds);
+    if (uds) {
+        MppEncUserDataSetShm *shm;
+        size_t size;
+        RK_U32 i;
+
+        if (uds->count && !uds->datas)
+            return MPP_ERR_VALUE;
+
+        size = sizeof(*shm) + uds->count * sizeof(MppEncUserDataFullShm);
+        shm = mpp_calloc_size(MppEncUserDataSetShm, size);
+        if (!shm)
+            return MPP_ERR_MALLOC;
+
+        shm->count = uds->count;
+        for (i = 0; i < uds->count; i++) {
+            shm->data[i].len = uds->datas[i].len;
+            shm->data[i].uuid.uptr = uds->datas[i].uuid;
+            shm->data[i].data.uptr = uds->datas[i].pdata;
+        }
+
+        ret = kmpp_meta_set_ptr(dst, KEY_USER_DATAS, shm);
+        mpp_free(shm);
+        if (ret)
+            return ret;
+    }
+
+    mpp_meta_get_ptr(src, KEY_JPEG_ROI_DATA, (void **)&jpeg_roi);
+    if (jpeg_roi) {
+        ret = kmpp_meta_set_ptr(dst, KEY_JPEG_ROI_DATA, jpeg_roi);
+        if (ret)
+            return ret;
+    }
+
+    return MPP_OK;
+}
+
 static KmppFrame kmpp_convert_frame(Kmpp *ctx, MppFrame frame, RK_U32 *is_kframe)
 {
     if (!__check_is_mpp_frame(frame)) {
         MppFrameImpl *impl = (MppFrameImpl *)frame;
+        KmppMeta kMeta = NULL;
 
         if (ctx->mKframe == NULL)
             kmpp_frame_get(&ctx->mKframe);
@@ -62,31 +186,22 @@ static KmppFrame kmpp_convert_frame(Kmpp *ctx, MppFrame frame, RK_U32 *is_kframe
             }
         }
 
+        kmpp_frame_get_meta_obj(ctx->mKframe, &kMeta);
+        if (kMeta)
+            kmpp_clear_frame_meta(kMeta);
+
         if (mpp_frame_has_meta(frame)) {
             MppMeta meta = mpp_frame_get_meta(frame);
             MppPacket packet = NULL;
 
+            /* Convert frame-scoped Meta into the reused KmppFrame object. */
+            if (kMeta && kmpp_convert_frame_meta(kMeta, meta)) {
+                mpp_loge_f("convert frame meta failed\n");
+                return NULL;
+            }
+
             mpp_meta_get_packet(meta, KEY_OUTPUT_PACKET, &packet);
             ctx->mPacket = packet;
-
-            /* copy ROI / OSD into kframe's meta so kernel reads them
-             * per-frame (flex inline) instead of async global control */
-            {
-                KmppMeta kMeta = NULL;
-
-                kmpp_frame_get_meta_obj(ctx->mKframe, &kMeta);
-                if (kMeta) {
-                    MppEncROICfg *roi = NULL;
-                    mpp_meta_get_ptr(meta, KEY_ROI_DATA, (void **)&roi);
-                    if (roi)
-                        kmpp_meta_set_ptr(kMeta, KEY_ROI_DATA, roi);
-
-                    MppEncOSDData3 *osd = NULL;
-                    kmpp_meta_get_osd(meta, &osd);
-                    if (osd)
-                        kmpp_meta_set_osd(kMeta, osd);
-                }
-            }
         }
 
         *is_kframe = 0;
