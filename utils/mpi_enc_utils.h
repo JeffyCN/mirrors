@@ -21,6 +21,7 @@
 #include "iniparser.h"
 #include "utils.h"
 #include "mpp_enc_args.h"
+#include "mpp_enc_frm_cfg.h"
 
 #include "rk_mpi.h"
 #include "rk_venc_kcfg.h"
@@ -138,10 +139,21 @@ typedef struct MpiEncTestArgs_t {
     RK_U32              sei_mode;
 } MpiEncTestArgs;
 
+typedef struct MpiEncFrmCfgFiles_t {
+    MppEncFrmCfgSet     set;
+    /* one block backing objs/entries/files, free this only */
+    void                *base;
+    MppEncFrmCfgObj     *objs;
+    const MppEncFrmCfg  **entries;
+    char                **files;
+    RK_U32              capacity;
+} MpiEncFrmCfgFiles;
+
 typedef struct MppEncTestObjSet_t {
     MppEncArgs          cmd_obj;
     MpiEncTestArgs      *cmd;
     MppEncCfg           cfg_obj;
+    MpiEncFrmCfgFiles   frm_cfg;
 } MppEncTestObjSet;
 
 typedef struct {

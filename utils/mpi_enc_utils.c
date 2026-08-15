@@ -17,6 +17,7 @@
 #define MODULE_TAG "mpi_enc_utils"
 
 #include <stdio.h>
+#include <limits.h>
 #include <string.h>
 
 #include "mpp_mem.h"
@@ -232,6 +233,116 @@ MPP_RET mpi_enc_load_ref_cfg(MppEncRefCfg ref, const char *path)
         mpp_loge("apply ref_cfg from %s failed\n", path);
 
     return ret;
+}
+
+static MPP_RET mpi_enc_frm_cfg_files_reserve(MpiEncFrmCfgFiles *files, RK_U32 required)
+{
+    MppEncFrmCfgObj *objs = NULL;
+    const MppEncFrmCfg **entries = NULL;
+    char **paths = NULL;
+    rk_u8 *buf;
+    RK_U32 capacity;
+
+    if (!files)
+        return MPP_ERR_NULL_PTR;
+
+    if (required <= files->capacity)
+        return MPP_OK;
+
+    capacity = files->capacity ? files->capacity : 4;
+    while (capacity < required) {
+        if (capacity > UINT_MAX / 2)
+            return MPP_ERR_VALUE;
+
+        capacity *= 2;
+    }
+
+    /* one block for the three pointer sized arrays */
+    buf = mpp_calloc_size(rk_u8, capacity * 3 * sizeof(void *));
+    if (!buf)
+        return MPP_ERR_MALLOC;
+
+    objs = (MppEncFrmCfgObj *)buf;
+    entries = (const MppEncFrmCfg **)(buf + capacity * sizeof(void *));
+    paths = (char **)(buf + capacity * 2 * sizeof(void *));
+
+    if (files->set.count) {
+        memcpy(objs, files->objs, sizeof(*objs) * files->set.count);
+        memcpy(entries, files->entries, sizeof(*entries) * files->set.count);
+        memcpy(paths, files->files, sizeof(*paths) * files->set.count);
+    }
+
+    MPP_FREE(files->base);
+    files->base = buf;
+    files->objs = objs;
+    files->entries = entries;
+    files->files = paths;
+    files->capacity = capacity;
+    files->set.entries = files->entries;
+
+    return MPP_OK;
+}
+
+static MPP_RET mpi_enc_load_frm_cfg_file(MpiEncFrmCfgFiles *files, RK_U32 index)
+{
+    MppCfgStrFmt fmt;
+    const MppEncFrmCfg *entry;
+    const char *path = files->files[index];
+    const char *ext = strrchr(path, '.');
+    MPP_RET ret = MPP_NOK;
+
+    if (!ext || (strcmp(ext, ".json") && strcmp(ext, ".toml"))) {
+        mpp_loge_f("frm_cfg file %s must be json or toml\n", path);
+
+        return MPP_NOK;
+    }
+
+    fmt = mpi_enc_utils_cfg_fmt(path);
+
+    if (mpp_enc_frm_cfg_get(&files->objs[index]))
+        goto done;
+    if (mpp_enc_frm_cfg_apply_file(files->objs[index], fmt, path))
+        goto done;
+
+    entry = mpp_enc_frm_cfg_get_entry(files->objs[index]);
+    if (!entry)
+        goto done;
+    files->entries[index] = entry;
+    mpp_logi("load frm_cfg file %s frame %d repeat %d\n", path, entry->frame_idx, entry->repeat);
+    ret = MPP_OK;
+
+done:
+    if (ret && files->objs[index]) {
+        mpp_enc_frm_cfg_put(files->objs[index]);
+        files->objs[index] = NULL;
+        files->entries[index] = NULL;
+    }
+
+    return ret;
+}
+
+static MPP_RET mpi_enc_load_frm_cfg(MpiEncFrmCfgFiles *files)
+{
+    RK_U32 i;
+
+    for (i = 0; i < files->set.count; i++) {
+        MPP_RET ret = mpi_enc_load_frm_cfg_file(files, i);
+
+        if (ret)
+            return ret;
+    }
+
+    /* Match -cfg precedence: later command-line input overrides earlier input. */
+    for (i = 0; i < files->set.count / 2; i++) {
+        RK_U32 last = files->set.count - i - 1;
+        const MppEncFrmCfg *entry = files->entries[i];
+
+        files->entries[i] = files->entries[last];
+        files->entries[last] = entry;
+    }
+    files->set.entries = files->entries;
+
+    return MPP_OK;
 }
 
 static void mpi_enc_sync_cmd(MpiEncTestArgs *cmd, MppEncCfg cfg)
@@ -797,6 +908,34 @@ RK_S32 mpi_enc_opt_ref_cfg(void *ctx, const char *next)
     return 0;
 }
 
+RK_S32 mpi_enc_opt_frm_cfg(void *ctx, const char *next)
+{
+    MppEncTestObjSet *obj_set = (MppEncTestObjSet *)ctx;
+    MpiEncFrmCfgFiles *files = &obj_set->frm_cfg;
+
+    if (next) {
+        size_t len = strnlen(next, MAX_FILE_NAME_LENGTH);
+
+        if (len && len < MAX_FILE_NAME_LENGTH) {
+            char *path;
+
+            if (mpi_enc_frm_cfg_files_reserve(files, files->set.count + 1))
+                return -1;
+
+            path = mpp_calloc(char, len + 1);
+            if (!path)
+                return -1;
+
+            memcpy(path, next, len);
+            files->files[files->set.count++] = path;
+            return 1;
+        }
+    }
+
+    mpp_loge("invalid or too long frm_cfg file\n");
+    return 0;
+}
+
 RK_S32 mpi_enc_opt_slt(void *ctx, const char *next)
 {
     MppEncTestObjSet* obj_set = (MppEncTestObjSet *)ctx;
@@ -1166,6 +1305,7 @@ static MppOptInfo enc_opts[] = {
     {"args",    "args_file",            "enc test args json/toml file",             mpi_enc_opt_args},
     {"cfg",     "cfg_file",             "enc cfg json/toml file",                   mpi_enc_opt_cfg},
     {"ref_cfg", "ref_cfg json file",    "ref_cfg json file",                        mpi_enc_opt_ref_cfg},
+    {"frm_cfg", "frm_cfg_file",         "frame cfg json/toml file",                 mpi_enc_opt_frm_cfg},
     {"slt",     "slt file",             "slt verify data file",                     mpi_enc_opt_slt},
     {"step",    "frame step",           "frame step, only for NV12 in slt test",    mpi_enc_opt_step},
     {"sm",      "scene mode",           "scene_mode, 0:default 1:ipc",              mpi_enc_opt_sm},
@@ -1345,6 +1485,12 @@ MPP_RET mpi_enc_test_objset_update_by_args(MppEncTestObjSet *obj_set, int argc, 
             if (obj_set->cfg_obj)
                 mpp_enc_cfg_set_s32(obj_set->cfg_obj, "rc:qp_init", cmd->qp_init);
         }
+    }
+
+    if (obj_set->frm_cfg.set.count) {
+        ret = mpi_enc_load_frm_cfg(&obj_set->frm_cfg);
+        if (ret)
+            goto done;
     }
 
     if (cmd->trace_fps) {
@@ -2396,8 +2542,19 @@ MPP_RET mpi_enc_test_objset_get(MppEncTestObjSet **obj_set)
 
 MPP_RET mpi_enc_test_objset_put(MppEncTestObjSet *obj_set)
 {
+    MpiEncFrmCfgFiles *files;
+    RK_U32 i;
+
     if (!obj_set)
         return MPP_OK;
+
+    files = &obj_set->frm_cfg;
+    for (i = 0; i < files->set.count; i++) {
+        MPP_FREE(files->files[i]);
+        if (files->objs[i])
+            mpp_enc_frm_cfg_put(files->objs[i]);
+    }
+    MPP_FREE(files->base);
 
     if (obj_set->cmd_obj)
         mpp_enc_args_put(obj_set->cmd_obj);
