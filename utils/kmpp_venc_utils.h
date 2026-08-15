@@ -31,6 +31,9 @@ extern "C" {
 /* Standard test UUID for unregistered user data SEI */
 extern RK_U8 venc_test_uuid[16];
 
+/* Deep-copy a frame cfg entry with VLA tails and bind test userdata. */
+MppEncFrmCfg *venc_dup_frm_cfg_with_ud(const MppEncFrmCfg *entry, RK_U8 *ud_buf, RK_U32 ud_buf_size);
+
 /* Set USER_DATA test pattern into frame meta (single buffer variant). */
 MPP_RET kmpp_venc_gen_userdata(KmppMeta meta, RK_U8 *ud_buf, RK_U32 ud_buf_size);
 

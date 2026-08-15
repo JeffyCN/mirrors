@@ -7,17 +7,147 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 #include "mpp_log.h"
 #include "mpp_mem.h"
 #include "mpp_common.h"
 #include "mpp_cfg_io.h"
-
-#include "kmpp_obj.h"
 #include "mpp_enc_frm_cfg.h"
+#include "kmpp_meta.h"
+#include "kmpp_venc_utils.h"
 
 #define TEST_PASS(fmt, ...)  mpp_logi("[PASS] " fmt, ## __VA_ARGS__)
 #define TEST_FAIL(fmt, ...)  do { mpp_loge("[FAIL] " fmt, ## __VA_ARGS__); ret = -1; } while (0)
+
+static rk_s32 test_frame_meta(MppEncFrmCfgObj obj)
+{
+    const MppEncFrmCfg *entry = mpp_enc_frm_cfg_get_entry(obj);
+    const MppEncFrmCfg *kmpp_entry = entry;
+    MppEncFrmMetaData mpp_data = { 0 };
+    MppEncFrmCfg *dup = NULL;
+    MppMeta meta = NULL;
+    KmppMeta kmeta = NULL;
+    RK_U8 ud_buf[64];
+    void *ptr = NULL;
+    RK_S32 val = -1;
+    rk_s32 ret = 0;
+
+    if (!entry)
+        return rk_nok;
+
+    if ((entry->userdata || entry->userdatas) && !entry->ud_buf) {
+        memset(ud_buf, 0x5a, sizeof(ud_buf));
+        mpp_data.ud_buf = ud_buf;
+        mpp_data.ud_buf_size = sizeof(ud_buf);
+
+        dup = venc_dup_frm_cfg_with_ud(entry, ud_buf, sizeof(ud_buf));
+        if (!dup) {
+            TEST_FAIL("duplicate KMPP entry");
+            goto done;
+        }
+
+        kmpp_entry = dup;
+    }
+
+    if (mpp_meta_get(&meta) || mpp_venc_gen_frame_meta(meta, 1920, 1080, entry, &mpp_data)) {
+        TEST_FAIL("materialize MppMeta");
+        goto done;
+    }
+
+    if (entry->userdata && (mpp_meta_get_ptr(meta, KEY_USER_DATA, &ptr) || !ptr))
+        TEST_FAIL("MppMeta USER_DATA");
+    ptr = NULL;
+
+    if (entry->userdatas && (mpp_meta_get_ptr(meta, KEY_USER_DATAS, &ptr) || !ptr))
+        TEST_FAIL("MppMeta USER_DATAS");
+    ptr = NULL;
+
+    if (entry->roi_cnt && (mpp_meta_get_ptr(meta, KEY_ROI_DATA, &ptr) || !ptr))
+        TEST_FAIL("MppMeta ROI");
+    ptr = NULL;
+
+    if (entry->osd_cnt && (mpp_meta_get_ptr(meta, KEY_OSD_DATA3, &ptr) || !ptr))
+        TEST_FAIL("MppMeta OSD");
+    ptr = NULL;
+
+    if (entry->jpeg_roi_cnt && (mpp_meta_get_ptr(meta, KEY_JPEG_ROI_DATA, &ptr) || !ptr))
+        TEST_FAIL("MppMeta JPEG ROI");
+
+#define CHECK_MPP_SCALAR(field, key) \
+    do { \
+        if (entry->field >= 0 && \
+            (mpp_meta_get_s32(meta, key, &val) || val != entry->field)) \
+            TEST_FAIL("MppMeta " #field); \
+    } while (0)
+
+    CHECK_MPP_SCALAR(input_idr_req, KEY_INPUT_IDR_REQ);
+    CHECK_MPP_SCALAR(input_pskip, KEY_INPUT_PSKIP);
+    CHECK_MPP_SCALAR(input_pskip_non_ref, KEY_INPUT_PSKIP_NON_REF);
+    CHECK_MPP_SCALAR(input_pskip_num, KEY_INPUT_PSKIP_NUM);
+    CHECK_MPP_SCALAR(enc_mark_ltr, KEY_ENC_MARK_LTR);
+    CHECK_MPP_SCALAR(enc_use_ltr, KEY_ENC_USE_LTR);
+    CHECK_MPP_SCALAR(enc_frame_qp, KEY_ENC_FRAME_QP);
+    CHECK_MPP_SCALAR(enc_base_layer_pid, KEY_ENC_BASE_LAYER_PID);
+    CHECK_MPP_SCALAR(temporal_id, KEY_TEMPORAL_ID);
+
+#undef CHECK_MPP_SCALAR
+
+    if (kmpp_meta_get_f(&kmeta) || kmpp_venc_gen_frame_meta(kmeta, 1920, 1080, kmpp_entry)) {
+        TEST_FAIL("materialize KmppMeta");
+        goto done;
+    }
+
+    if (entry->userdata && (kmpp_meta_get_ptr(kmeta, KEY_USER_DATA, &ptr) || !ptr))
+        TEST_FAIL("KmppMeta USER_DATA");
+    ptr = NULL;
+
+    if (entry->userdatas && (kmpp_meta_get_ptr(kmeta, KEY_USER_DATAS, &ptr) || !ptr))
+        TEST_FAIL("KmppMeta USER_DATAS");
+    ptr = NULL;
+
+    if (entry->roi_cnt && (kmpp_meta_get_ptr(kmeta, KEY_ROI_DATA, &ptr) || !ptr))
+        TEST_FAIL("KmppMeta ROI");
+    ptr = NULL;
+
+    if (entry->osd_cnt && (kmpp_meta_get_ptr(kmeta, KEY_OSD_DATA4, &ptr) || !ptr))
+        TEST_FAIL("KmppMeta OSD");
+    ptr = NULL;
+
+    if (entry->jpeg_roi_cnt && (kmpp_meta_get_ptr(kmeta, KEY_JPEG_ROI_DATA, &ptr) || !ptr))
+        TEST_FAIL("KmppMeta JPEG ROI");
+
+#define CHECK_KMPP_SCALAR(field, key) \
+    do { \
+        if (entry->field >= 0 && \
+            (kmpp_meta_get_s32(kmeta, key, &val) || val != entry->field)) \
+            TEST_FAIL("KmppMeta " #field); \
+    } while (0)
+
+    CHECK_KMPP_SCALAR(input_idr_req, KEY_INPUT_IDR_REQ);
+    CHECK_KMPP_SCALAR(input_pskip, KEY_INPUT_PSKIP);
+    CHECK_KMPP_SCALAR(input_pskip_num, KEY_INPUT_PSKIP_NUM);
+    CHECK_KMPP_SCALAR(enc_mark_ltr, KEY_ENC_MARK_LTR);
+    CHECK_KMPP_SCALAR(enc_use_ltr, KEY_ENC_USE_LTR);
+    CHECK_KMPP_SCALAR(enc_frame_qp, KEY_ENC_FRAME_QP);
+    CHECK_KMPP_SCALAR(enc_base_layer_pid, KEY_ENC_BASE_LAYER_PID);
+    CHECK_KMPP_SCALAR(temporal_id, KEY_TEMPORAL_ID);
+
+#undef CHECK_KMPP_SCALAR
+
+    if (!ret)
+        TEST_PASS("MppMeta and KmppMeta materialization");
+
+done:
+    if (meta)
+        mpp_meta_put(meta);
+    if (kmeta)
+        kmpp_meta_put_f(kmeta);
+    mpp_venc_frm_meta_deinit(&mpp_data);
+    MPP_FREE(dup);
+
+    return ret;
+}
 
 /*
  * External config file mode: read a JSON/TOML file from argv[1], apply it,
@@ -58,6 +188,11 @@ static rk_s32 test_file(const char *path)
     }
     TEST_PASS("apply %s ok", path);
 
+    if (test_frame_meta(obj)) {
+        TEST_FAIL("frame meta %s failed", path);
+        goto DONE;
+    }
+
     /* export: extract and dump */
     if (mpp_enc_frm_cfg_extract(obj, fmt, &out)) {
         TEST_FAIL("extract failed");
@@ -82,8 +217,10 @@ static rk_s32 test_file(const char *path)
 DONE:
     MPP_FREE(out);
     MPP_FREE(re_out);
+
     if (obj)
         mpp_enc_frm_cfg_put(obj);
+
     return ret;
 }
 
@@ -173,17 +310,56 @@ static rk_s32 verify_frame(const char *name, const MppEncFrmCfg *e)
         EXPECT_EQ("osd_cnt",   e->osd_cnt,   2);
         osd = MPP_ENC_FRM_OSD_ARR(e);
         EXPECT_EQ("osd0.enable", osd[0].enable, 1);
-        EXPECT_EQ("osd0.fmt",    osd[0].fmt,    1);
+        EXPECT_EQ("osd0.fmt",    osd[0].fmt,    65546);
         EXPECT_EQ("osd0.lt_x",   osd[0].lt_x,   0);
         EXPECT_EQ("osd0.lt_y",   osd[0].lt_y,   0);
         EXPECT_EQ("osd0.rb_x",   osd[0].rb_x,   16384);
         EXPECT_EQ("osd0.rb_y",   osd[0].rb_y,   32768);
         EXPECT_EQ("osd1.enable", osd[1].enable, 1);
-        EXPECT_EQ("osd1.fmt",    osd[1].fmt,    1);
+        EXPECT_EQ("osd1.fmt",    osd[1].fmt,    65546);
         EXPECT_EQ("osd1.lt_x",   osd[1].lt_x,   32768);
         EXPECT_EQ("osd1.lt_y",   osd[1].lt_y,   16384);
         EXPECT_EQ("osd1.rb_x",   osd[1].rb_x,   65535);
         EXPECT_EQ("osd1.rb_y",   osd[1].rb_y,   65535);
+    } else if (!strcmp(name, "frm_default")) {
+        EXPECT_EQ("frame_idx", e->frame_idx, 0);
+        EXPECT_EQ("repeat",    e->repeat,    -1);
+        EXPECT_EQ("userdata",  e->userdata,  0);
+        EXPECT_EQ("userdatas", e->userdatas, 0);
+        EXPECT_EQ("roi_cnt",   e->roi_cnt,   0);
+        EXPECT_EQ("osd_cnt",   e->osd_cnt,   0);
+    } else if (!strcmp(name, "frm_scalar")) {
+        EXPECT_EQ("frame_idx", e->frame_idx, 4);
+        EXPECT_EQ("repeat", e->repeat, 0);
+        EXPECT_EQ("input_idr_req", e->input_idr_req, 1);
+        EXPECT_EQ("input_pskip", e->input_pskip, -1);
+        EXPECT_EQ("enc_mark_ltr", e->enc_mark_ltr, -1);
+        EXPECT_EQ("enc_use_ltr", e->enc_use_ltr, -1);
+        EXPECT_EQ("enc_frame_qp", e->enc_frame_qp, 37);
+        EXPECT_EQ("enc_base_layer_pid", e->enc_base_layer_pid, 1);
+        EXPECT_EQ("temporal_id", e->temporal_id, 1);
+    } else if (!strcmp(name, "frm_pskip")) {
+        EXPECT_EQ("frame_idx", e->frame_idx, 9);
+        EXPECT_EQ("input_pskip", e->input_pskip, 1);
+    } else if (!strcmp(name, "frm_pskip_non_ref")) {
+        EXPECT_EQ("frame_idx", e->frame_idx, 9);
+        EXPECT_EQ("input_pskip_non_ref", e->input_pskip_non_ref, 1);
+    } else if (!strcmp(name, "frm_pskip_num")) {
+        EXPECT_EQ("frame_idx", e->frame_idx, 4);
+        EXPECT_EQ("input_pskip_num", e->input_pskip_num, 2);
+    } else if (!strcmp(name, "frm_ltr_mark")) {
+        EXPECT_EQ("frame_idx", e->frame_idx, 4);
+        EXPECT_EQ("enc_mark_ltr", e->enc_mark_ltr, 0);
+    } else if (!strcmp(name, "frm_ltr_use")) {
+        EXPECT_EQ("frame_idx", e->frame_idx, 6);
+        EXPECT_EQ("enc_use_ltr", e->enc_use_ltr, 0);
+    } else if (!strcmp(name, "frm_jpeg_roi")) {
+        const MppEncFrmJpegRoi *jpeg = MPP_ENC_FRM_JPEG_ROI_ARR(e);
+
+        EXPECT_EQ("frame_idx", e->frame_idx, 0);
+        EXPECT_EQ("jpeg_roi_cnt", e->jpeg_roi_cnt, 1);
+        EXPECT_EQ("jpeg_non_roi_level", e->jpeg_non_roi_level, 1);
+        EXPECT_EQ("jpeg.level", jpeg[0].level, 3);
     } else {
         TEST_FAIL("unknown frame config %s", name);
         ret = -1;
@@ -233,7 +409,7 @@ static rk_s32 test_multi(rk_s32 n, char **paths)
 
         TEST_PASS("apply %s ok", paths[i]);
         obj[i] = o;
-        entry_ptrs[i] = (const MppEncFrmCfg *)kmpp_obj_to_entry(o);
+        entry_ptrs[i] = mpp_enc_frm_cfg_get_entry(o);
         snprintf(names[i], sizeof(names[i]), "%s", name);
     }
 
@@ -247,7 +423,7 @@ static rk_s32 test_multi(rk_s32 n, char **paths)
         if (!entry_ptrs[i] || !names[i][0])
             continue;
         mpp_logi("--- verify frame[%d] %s ---\n", i, names[i]);
-        if (verify_frame(names[i], entry_ptrs[i]))
+        if (verify_frame(names[i], entry_ptrs[i]) || test_frame_meta(obj[i]))
             ret = -1;
     }
 
@@ -265,12 +441,10 @@ static rk_s32 test_multi(rk_s32 n, char **paths)
         } else if (e->frame_idx < hit->frame_idx ||
                    (hit->repeat >= 0 &&
                     e->frame_idx > hit->frame_idx + hit->repeat)) {
-            TEST_FAIL("lookup frame_idx=%d not covered by hit idx=%d",
-                      e->frame_idx, hit->frame_idx);
+            TEST_FAIL("lookup frame_idx=%d not covered by hit idx=%d", e->frame_idx, hit->frame_idx);
             ret = -1;
         } else {
-            TEST_PASS("lookup frame_idx=%d -> entry idx=%d",
-                      e->frame_idx, hit->frame_idx);
+            TEST_PASS("lookup frame_idx=%d -> entry idx=%d", e->frame_idx, hit->frame_idx);
         }
     }
 
@@ -282,26 +456,193 @@ static rk_s32 test_multi(rk_s32 n, char **paths)
     return ret;
 }
 
-int main(int argc, char *argv[])
+static rk_s32 test_lookup(void)
+{
+    const MppEncFrmCfg entries[] = {
+        { .frame_idx = 10, .repeat = 0,  .userdata = 1 },
+        { .frame_idx = 20, .repeat = 2,  .userdatas = 1 },
+        { .frame_idx = 21, .repeat = -1, .userdata = 1 },
+        { .frame_idx = 30, .repeat = 5,  .userdatas = 1 },
+        { .frame_idx = INT_MAX - 1, .repeat = 4, .userdata = 1 },
+    };
+    const MppEncFrmCfg *entry_ptrs[] = {
+        &entries[0], &entries[1], &entries[2], &entries[3], &entries[4],
+    };
+    const MppEncFrmCfgSet set = {
+        .count = MPP_ARRAY_ELEMS(entry_ptrs),
+        .entries = entry_ptrs,
+    };
+    const MppEncFrmCfgSet empty = { 0 };
+    const MppEncFrmCfg overflow_entry = {
+        .frame_idx = INT_MAX - 1,
+        .repeat = 4,
+        .userdata = 1,
+    };
+    const MppEncFrmCfg *overflow_entry_ptr = &overflow_entry;
+    const MppEncFrmCfgSet overflow_set = {
+        .count = 1,
+        .entries = &overflow_entry_ptr,
+    };
+    rk_s32 ret = 0;
+
+    if (mpp_enc_frm_cfg_lookup(NULL, 0) || mpp_enc_frm_cfg_lookup(&empty, 0))
+        TEST_FAIL("empty lookup");
+
+    if (mpp_enc_frm_cfg_lookup(&set, 9) || mpp_enc_frm_cfg_lookup(&set, 11))
+        TEST_FAIL("exact lookup boundary");
+
+    if (mpp_enc_frm_cfg_lookup(&set, 10) != &entries[0])
+        TEST_FAIL("exact lookup");
+
+    if (mpp_enc_frm_cfg_lookup(&set, 20) != &entries[1] || mpp_enc_frm_cfg_lookup(&set, 22) != &entries[1])
+        TEST_FAIL("finite repeat lookup");
+
+    if (mpp_enc_frm_cfg_lookup(&set, 23) != &entries[2] || mpp_enc_frm_cfg_lookup(&set, 30) != &entries[2])
+        TEST_FAIL("open repeat and first-match lookup");
+
+    if (mpp_enc_frm_cfg_lookup(&overflow_set, INT_MAX) != &overflow_entry)
+        TEST_FAIL("overflow-safe lookup");
+
+    if (!ret)
+        TEST_PASS("lookup boundaries");
+
+    return ret;
+}
+
+static rk_s32 test_defaults(void)
+{
+    MppEncFrmCfgObj obj = NULL;
+    const MppEncFrmCfg *entry;
+    rk_s32 ret = 0;
+
+    if (mpp_enc_frm_cfg_get(&obj))
+        return rk_nok;
+
+    entry = mpp_enc_frm_cfg_get_entry(obj);
+    if (!entry || entry->input_idr_req != -1 || entry->input_pskip != -1 ||
+        entry->input_pskip_non_ref != -1 || entry->input_pskip_num != -1 ||
+        entry->enc_mark_ltr != -1 || entry->enc_use_ltr != -1 ||
+        entry->enc_frame_qp != -1 || entry->enc_base_layer_pid != -1 || entry->temporal_id != -1)
+        TEST_FAIL("optional scalar defaults");
+    else
+        TEST_PASS("optional scalar defaults");
+
+    mpp_enc_frm_cfg_put(obj);
+
+    return ret;
+}
+
+static rk_s32 test_vla_grow(void)
+{
+    static char first[] =
+        "{\"roi_cnt\":1,\"roi\":[{\"w\":100,\"h\":100}],"
+        "\"osd_cnt\":1,\"osd\":[{\"enable\":1,\"fmt\":65546,"
+        "\"rb_x\":100,\"rb_y\":100}],"
+        "\"jpeg_roi_cnt\":1,\"jpeg_roi\":[{\"w\":100,\"h\":100,"
+        "\"level\":7,\"roi_en\":1}]}";
+    static char grow[] =
+        "{\"roi_cnt\":2,\"roi\":[{\"w\":100,\"h\":100},"
+        "{\"x\":100,\"y\":100,\"w\":200,\"h\":200}]}";
+    MppEncFrmCfgObj obj = NULL;
+    const MppEncFrmCfg *entry;
+    const MppEncFrmOsd *osd;
+    const MppEncFrmJpegRoi *jpeg;
+    rk_s32 ret = 0;
+
+    if (mpp_enc_frm_cfg_get(&obj) || mpp_enc_frm_cfg_apply(obj, MPP_CFG_STR_FMT_JSON, first) ||
+        mpp_enc_frm_cfg_apply(obj, MPP_CFG_STR_FMT_JSON, grow)) {
+        TEST_FAIL("VLA grow apply");
+        goto done;
+    }
+
+    entry = mpp_enc_frm_cfg_get_entry(obj);
+    if (!entry) {
+        TEST_FAIL("VLA grow entry");
+        goto done;
+    }
+
+    osd = MPP_ENC_FRM_OSD_ARR(entry);
+    jpeg = MPP_ENC_FRM_JPEG_ROI_ARR(entry);
+    if (entry->roi_cnt != 2 || entry->osd_cnt != 1 || entry->jpeg_roi_cnt != 1 || osd[0].enable != 1 ||
+        jpeg[0].level != 7)
+        TEST_FAIL("VLA grow preserves trailing arrays");
+    else
+        TEST_PASS("VLA grow preserves trailing arrays");
+
+done:
+    if (obj)
+        mpp_enc_frm_cfg_put(obj);
+
+    return ret;
+}
+
+static rk_s32 test_invalid_inputs(void)
+{
+    typedef struct InvalidFrmEntry_t {
+        MppEncFrmCfg cfg;
+        MppEncFrmRoi roi;
+        MppEncFrmOsd osd;
+    } InvalidFrmEntry;
+    InvalidFrmEntry entry = { 0 };
+    MppEncFrmMetaData data = { 0 };
+    MppMeta meta = NULL;
+    rk_s32 ret = 0;
+
+    if (mpp_meta_get(&meta))
+        return rk_nok;
+
+    if (mpp_venc_gen_frame_meta(meta, 1920, 1080, &entry.cfg, &data))
+        TEST_FAIL("accept disabled pskip modes");
+
+    entry.cfg.input_idr_req = 2;
+    if (mpp_venc_gen_frame_meta(meta, 1920, 1080, &entry.cfg, &data) != MPP_ERR_VALUE)
+        TEST_FAIL("reject invalid scalar");
+
+    memset(&entry, 0, sizeof(entry));
+    entry.cfg.input_pskip = 1;
+    entry.cfg.input_pskip_non_ref = 1;
+    if (mpp_venc_gen_frame_meta(meta, 1920, 1080, &entry.cfg, &data) != MPP_ERR_VALUE)
+        TEST_FAIL("reject conflicting pskip modes");
+
+    memset(&entry, 0, sizeof(entry));
+    entry.cfg.roi_cnt = 1;
+    entry.cfg.roi_off = offsetof(InvalidFrmEntry, roi);
+    entry.roi.x = -1;
+    entry.roi.w = 16;
+    entry.roi.h = 16;
+    if (mpp_venc_gen_frame_meta(meta, 1920, 1080, &entry.cfg, &data) != MPP_ERR_VALUE)
+        TEST_FAIL("reject invalid ROI");
+
+    memset(&entry, 0, sizeof(entry));
+    entry.cfg.osd_cnt = 1;
+    entry.cfg.osd_off = offsetof(InvalidFrmEntry, osd);
+    entry.osd.enable = 1;
+    entry.osd.fmt = MPP_FMT_ARGB8888;
+    entry.osd.rb_x = 127;
+    entry.osd.rb_y = 127;
+    entry.osd.stride = 1;
+    if (mpp_venc_gen_frame_meta(meta, 1920, 1080, &entry.cfg, &data) != MPP_ERR_VALUE)
+        TEST_FAIL("reject invalid OSD stride");
+
+    memset(&entry, 0, sizeof(entry));
+    entry.cfg.userdata = 1;
+    if (mpp_venc_gen_frame_meta(meta, 1920, 1080, &entry.cfg, &data) != MPP_ERR_NULL_PTR)
+        TEST_FAIL("reject missing userdata buffer");
+
+    if (!ret)
+        TEST_PASS("invalid materialization inputs");
+
+    mpp_venc_frm_meta_deinit(&data);
+    mpp_meta_put(meta);
+
+    return ret;
+}
+
+static rk_s32 test_scalar_roundtrip(void)
 {
     MppEncFrmCfgObj obj = NULL;
     char *json = NULL;
-    RK_S32 ret = 0;
-
-    /* file mode: dispatch on number of config files given */
-    if (argc > 1) {
-        if (argc == 2) {
-            /* single file: apply/extract/roundtrip on its own obj */
-            ret = test_file(argv[1]);
-            mpp_logi("\n=== %s ===\n", ret ? "FAILED" : "ALL PASSED");
-        } else {
-            /* multiple files: assemble a CfgSet and verify per-frame */
-            mpp_logi("=== multi-frame CfgSet: %d files ===\n", argc - 1);
-            ret = test_multi(argc - 1, &argv[1]);
-            mpp_logi("\n=== %s ===\n", ret ? "FAILED" : "ALL PASSED");
-        }
-        return ret;
-    }
+    rk_s32 ret = 0;
 
     mpp_logi("=== scalar apply + extract ===\n");
     if (mpp_enc_frm_cfg_get(&obj)) {
@@ -427,6 +768,40 @@ int main(int argc, char *argv[])
         if (vla_obj)
             mpp_enc_frm_cfg_put(vla_obj);
     }
+
+    return ret;
+}
+
+int main(int argc, char *argv[])
+{
+    RK_S32 ret = 0;
+
+    /* file mode: dispatch on number of config files given */
+    if (argc > 1) {
+        if (argc == 2) {
+            /* single file: apply/extract/roundtrip on its own obj */
+            ret = test_file(argv[1]);
+        } else {
+            /* multiple files: assemble a CfgSet and verify per-frame */
+            mpp_logi("=== multi-frame CfgSet: %d files ===\n", argc - 1);
+            ret = test_multi(argc - 1, &argv[1]);
+        }
+    } else {
+        ret = test_scalar_roundtrip();
+    }
+
+    /* built-in whitebox tests run after the file tests */
+    if (test_defaults())
+        ret = -1;
+
+    if (test_vla_grow())
+        ret = -1;
+
+    if (test_lookup())
+        ret = -1;
+
+    if (test_invalid_inputs())
+        ret = -1;
 
     mpp_logi("\n=== %s ===\n", ret ? "FAILED" : "ALL PASSED");
     return ret;

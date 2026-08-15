@@ -10,6 +10,7 @@
 
 #include "mpp_log.h"
 #include "mpp_env.h"
+#include "mpp_mem.h"
 #include "rk_venc_cmd.h"
 
 #include "kmpp_meta.h"
@@ -29,6 +30,38 @@ RK_U8 venc_test_uuid[16] = {
     0xfe, 0x39, 0xac, 0x4c, 0x4a, 0x8e, 0x4b, 0x4b,
     0x85, 0xd9, 0xb2, 0xa2, 0x4f, 0xa1, 0x19, 0x5b,
 };
+
+MppEncFrmCfg *venc_dup_frm_cfg_with_ud(const MppEncFrmCfg *entry, RK_U8 *ud_buf, RK_U32 ud_buf_size)
+{
+    size_t size = sizeof(*entry);
+    size_t end;
+    MppEncFrmCfg *dup;
+
+    if (entry->roi_cnt) {
+        end = entry->roi_off + entry->roi_cnt * sizeof(MppEncFrmRoi);
+        size = MPP_MAX(size, end);
+    }
+    if (entry->osd_cnt) {
+        end = entry->osd_off + entry->osd_cnt * sizeof(MppEncFrmOsd);
+        size = MPP_MAX(size, end);
+    }
+    if (entry->jpeg_roi_cnt) {
+        end = entry->jpeg_roi_off +
+              entry->jpeg_roi_cnt * sizeof(MppEncFrmJpegRoi);
+        size = MPP_MAX(size, end);
+    }
+
+    dup = mpp_malloc_size(MppEncFrmCfg, size);
+    if (!dup)
+        return NULL;
+
+    memcpy(dup, entry, size);
+    dup->ud_uuid = venc_test_uuid;
+    dup->ud_buf = ud_buf;
+    dup->ud_buf_size = ud_buf_size;
+
+    return dup;
+}
 
 static int find_nal_start(const RK_U8 *data, RK_S32 len, RK_S32 *offset)
 {
