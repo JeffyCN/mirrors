@@ -179,8 +179,9 @@ typedef struct Mpp {
     RK_U32          mParserNeedSplit;
     RK_U32          mParserInternalPts;     /* for MPEG2/MPEG4 */
     RK_U32          mImmediateOut;
-    /* backup extra packet for seek */
+    /* latest extra packet cache */
     MppPacket       mExtraPacket;
+    RK_U32          mExtraPacketState;
 } Mpp;
 
 MPP_RET mpp_ctx_create(Mpp **mpp, MppCtx ctx);

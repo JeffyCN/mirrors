@@ -36,6 +36,61 @@ static void mpp_notify_by_buffer_group(void *arg, void *group)
     mpp_notify_group(mpp, (MppBufferGroup)group);
 }
 
+enum {
+    MPP_EXTRA_PACKET_NEW,
+    MPP_EXTRA_PACKET_APPEND,
+    MPP_EXTRA_PACKET_REPLAY,
+};
+
+static MPP_RET mpp_cache_extra_packet(Mpp *mpp, MppPacket src)
+{
+    MppPacket packet = NULL;
+    MppPacketImpl *src_impl = (MppPacketImpl *)src;
+    MppPacketImpl *dst_impl = (MppPacketImpl *)mpp->mExtraPacket;
+    size_t dst_length = mpp->mExtraPacketState == MPP_EXTRA_PACKET_APPEND &&
+                        dst_impl ? dst_impl->length : 0;
+    size_t src_length = src_impl->length;
+    size_t length = dst_length + src_length;
+    size_t capacity = dst_impl ? dst_impl->size : 0;
+    MPP_RET ret;
+
+    if (capacity < length) {
+        void *data;
+
+        capacity = capacity ? capacity : 1024;
+        while (capacity < length)
+            capacity *= 2;
+
+        data = mpp_malloc_size(void, capacity);
+        if (!data)
+            return MPP_ERR_MALLOC;
+
+        ret = mpp_packet_init(&packet, data, capacity);
+        if (ret) {
+            mpp_free(data);
+            return ret;
+        }
+
+        if (dst_length)
+            memcpy(data, dst_impl->pos, dst_length);
+        if (mpp->mExtraPacket)
+            mpp_packet_deinit(&mpp->mExtraPacket);
+        mpp->mExtraPacket = packet;
+        dst_impl = (MppPacketImpl *)packet;
+    }
+
+    memcpy((RK_U8 *)dst_impl->pos + dst_length, src_impl->pos, src_length);
+    dst_impl->length = length;
+    if (!dst_length) {
+        dst_impl->pts = src_impl->pts;
+        dst_impl->dts = src_impl->dts;
+    }
+    dst_impl->flag = src_impl->flag | MPP_PACKET_FLAG_INTERNAL;
+    mpp->mExtraPacketState = MPP_EXTRA_PACKET_APPEND;
+
+    return MPP_OK;
+}
+
 static void *list_wraper_packet(void *arg)
 {
     MppPacket packet = *(MppPacket*)arg;
@@ -418,11 +473,17 @@ MPP_RET mpp_put_packet(Mpp *mpp, MppPacket packet)
         return ret;
     }
 
-    if (mpp->mExtraPacket) {
-        MppPacket extra = mpp->mExtraPacket;
+    RK_U32 flags = mpp_packet_get_flag(packet);
+    RK_S32 external_extra = (flags & MPP_PACKET_FLAG_EXTRA_DATA) &&
+                            !(flags & MPP_PACKET_FLAG_INTERNAL);
 
-        mpp->mExtraPacket = NULL;
-        mpp_put_packet(mpp, extra);
+    if (!external_extra && !(flags & MPP_PACKET_FLAG_INTERNAL)) {
+        if (mpp->mExtraPacketState == MPP_EXTRA_PACKET_REPLAY && mpp->mExtraPacket) {
+            ret = mpp_put_packet(mpp, mpp->mExtraPacket);
+            if (ret)
+                goto RET;
+        }
+        mpp->mExtraPacketState = MPP_EXTRA_PACKET_NEW;
     }
 
     /* non-jpeg mode - reserve extra task for incoming eos packet */
@@ -470,12 +531,20 @@ MPP_RET mpp_put_packet(Mpp *mpp, MppPacket packet)
         }
     }
 
+    if (external_extra) {
+        ret = mpp_cache_extra_packet(mpp, packet);
+        if (ret)
+            goto RET;
+    }
+
     if (NULL == mpp_packet_get_buffer(packet)) {
         /* packet copy path */
         MppPacket pkt_in = NULL;
 
         mpp_packet_copy_init(&pkt_in, packet);
-        mpp_packet_set_length(packet, 0);
+        /* Keep cached extra packet length for replay after reset. */
+        if (packet != mpp->mExtraPacket)
+            mpp_packet_set_length(packet, 0);
         pkt_copy = 1;
         packet = pkt_in;
         ret = MPP_OK;
@@ -1185,13 +1254,6 @@ MPP_RET mpp_reset(Mpp *mpp)
     mpp_ops_reset(mpp->mDump);
 
     if (mpp->mType == MPP_CTX_DEC) {
-        /*
-         * On mp4 case extra data of sps/pps will be put at the beginning
-         * If these packet was reset before they are send to decoder then
-         * decoder can not get these important information to continue decoding
-         * To avoid this case happen we need to save it on reset beginning
-         * then restore it on reset end.
-         */
         mpp_mutex_cond_lock(&mpp->mPktIn->cond_lock);
         while (mpp_list_size(mpp->mPktIn)) {
             MppPacket pkt = NULL;
@@ -1199,18 +1261,13 @@ MPP_RET mpp_reset(Mpp *mpp)
             mpp_list_del_at_head(mpp->mPktIn, &pkt, sizeof(pkt));
             mpp->mPacketGetCount++;
 
-            RK_U32 flags = mpp_packet_get_flag(pkt);
-            if (flags & MPP_PACKET_FLAG_EXTRA_DATA) {
-                if (mpp->mExtraPacket) {
-                    mpp_packet_deinit(&mpp->mExtraPacket);
-                }
-                mpp->mExtraPacket = pkt;
-            } else {
-                mpp_packet_deinit(&pkt);
-            }
+            mpp_packet_deinit(&pkt);
         }
         mpp_list_flush(mpp->mPktIn);
         mpp_mutex_cond_unlock(&mpp->mPktIn->cond_lock);
+
+        mpp->mExtraPacketState = mpp->mExtraPacket ? MPP_EXTRA_PACKET_REPLAY :
+                                 MPP_EXTRA_PACKET_NEW;
 
         mpp_dec_reset(mpp->mDec);
 
