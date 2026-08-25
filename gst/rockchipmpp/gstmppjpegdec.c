@@ -399,7 +399,7 @@ gst_mpp_jpeg_dec_get_mpp_packet (GstVideoDecoder * decoder,
 }
 
 static gboolean
-gst_mpp_jpeg_dec_shutdown (GstVideoDecoder * decoder, gboolean drain UNUSED)
+gst_mpp_jpeg_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
 {
   GstMppJpegDec *self = GST_MPP_JPEG_DEC (decoder);
   GstMppDec *mppdec = GST_MPP_DEC (decoder);
@@ -408,6 +408,12 @@ gst_mpp_jpeg_dec_shutdown (GstVideoDecoder * decoder, gboolean drain UNUSED)
   MppBuffer mbuf;
   MppMeta meta;
   MPP_RET ret;
+
+  /* It's safe to stop decoding immediately */
+  if (!drain) {
+    mppdec->mpi->reset (mppdec->mpp_ctx);
+    return FALSE;
+  }
 
   GST_DEBUG_OBJECT (self, "sending EOS");
 
