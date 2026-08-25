@@ -428,19 +428,50 @@ gst_mpp_enc_stop_task (GstVideoEncoder * encoder, gboolean drain)
 
   GST_DEBUG_OBJECT (self, "stopping encoding thread");
 
-  /* Discard pending frames */
-  if (!drain)
-    self->pending_frames = 0;
+  /* Unconditionally discard pending frames so the encoder loop
+   * can exit via the flush path without blocking on MPP poll.
+   */
+  self->pending_frames = 0;
+
+  if (self->frames) {
+    g_list_free (self->frames);
+    self->frames = NULL;
+  }
 
   GST_MPP_ENC_BROADCAST (encoder);
 
   GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
-  /* Wait for task thread to pause */
+  /* Wait for task thread to pause cleanly */
   if (task) {
     GST_OBJECT_LOCK (task);
     while (GST_TASK_STATE (task) == GST_TASK_STARTED)
       GST_TASK_WAIT (task);
     GST_OBJECT_UNLOCK (task);
+  }
+
+  /* Drain remaining MPP output packets so buffers are properly
+   * returned to the pool before reset, preventing pool corruption.
+   */
+  if (drain) {
+    MppPacket mpkt;
+    gint drain_count = 0;
+
+    while (1) {
+      MPP_RET ret = self->mpi->encode_get_packet (self->mpp_ctx, &mpkt);
+
+      if (ret || !mpkt)
+        break;
+
+      drain_count++;
+      MppFrame mframe;
+      MppMeta meta = mpp_packet_get_meta (mpkt);
+
+      if (!mpp_meta_get_frame (meta, KEY_INPUT_FRAME, &mframe))
+        mpp_frame_deinit (&mframe);
+
+      mpp_packet_deinit (&mpkt);
+    }
+    GST_INFO ("[TRK] DRAIN_DONE: encoder=%p drained=%d\n", self, drain_count);
   }
 
   gst_pad_stop_task (encoder->srcpad);
@@ -467,7 +498,25 @@ gst_mpp_enc_reset (GstVideoEncoder * encoder, gboolean drain, gboolean final)
   self->flushing = final;
   self->draining = FALSE;
 
+  GST_INFO ("[TRK] BEFORE_RESET: encoder=%p\n", self);
   self->mpi->reset (self->mpp_ctx);
+
+  /* Drain packets produced by MPP async thread during reset processing */
+  {
+    MppPacket mpkt;
+    gint drain_count = 0;
+    while (1) {
+      MPP_RET ret = self->mpi->encode_get_packet (self->mpp_ctx, &mpkt);
+      if (ret || !mpkt)
+        break;
+      drain_count++;
+      mpp_packet_deinit (&mpkt);
+    }
+    GST_INFO ("[TRK] POST_RESET_DRAIN: encoder=%p drained=%d\n", self,
+        drain_count);
+  }
+
+  GST_INFO ("[TRK] AFTER_RESET: encoder=%p\n", self);
   self->task_ret = GST_FLOW_OK;
   self->pending_frames = 0;
 
@@ -984,8 +1033,8 @@ gst_mpp_enc_poll_packet_locked (GstVideoEncoder * encoder)
   MppFrame mframe;
   MppPacket mpkt;
   MppMeta meta;
-  MppBuffer mbuf;
-  gint pkt_size;
+  MppBuffer mbuf = NULL;
+  gint pkt_size = 0;
 
   self->mpi->encode_get_packet (self->mpp_ctx, &mpkt);
   if (!mpkt)
@@ -1044,6 +1093,8 @@ gst_mpp_enc_poll_packet_locked (GstVideoEncoder * encoder)
   self->task_ret = gst_video_encoder_finish_frame (encoder, frame);
 
 out:
+  GST_INFO ("[TRK] PKT_POLL_DEINIT: pkt=%p mbuf=%p pkt_size=%d\n",
+      mpkt, mbuf, pkt_size);
   mpp_packet_deinit (&mpkt);
   return TRUE;
 error:
@@ -1064,7 +1115,7 @@ gst_mpp_enc_loop (GstVideoEncoder * encoder)
 
   GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
 
-  if (self->flushing && !self->pending_frames) {
+  if (self->flushing) {
     GST_INFO_OBJECT (self, "flushing");
     self->task_ret = GST_FLOW_FLUSHING;
     goto out;

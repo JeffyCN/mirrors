@@ -267,14 +267,19 @@ gst_mpp_allocator_free (GstAllocator * allocator, GstMemory * gmem)
 {
   GstMppAllocator *self = GST_MPP_ALLOCATOR (allocator);
 
-  /* Avoid caching external buffers */
+  /* Call parent free FIRST: it triggers qdata destroy -> gst_mpp_mem_destroy
+   * -> mpp_buffer_put, dropping the MppBuffer refcount to 0.
+   * After this, ext_group's buffer has refcount==0 and can be cleared.
+   * NOTE: allocator is still alive here because _gst_memory_free calls
+   * gst_object_unref(allocator) AFTER allocator->free() returns. */
+  GST_ALLOCATOR_CLASS (parent_class)->free (allocator, gmem);
+
+  /* Now the buffer has refcount==0 and can actually be removed from ext_group. */
   mpp_buffer_group_clear (self->ext_group);
 
   /* Clear cached buffers */
   if (!self->cacheable)
     mpp_buffer_group_clear (self->group);
-
-  GST_ALLOCATOR_CLASS (parent_class)->free (allocator, gmem);
 }
 
 GstAllocator *

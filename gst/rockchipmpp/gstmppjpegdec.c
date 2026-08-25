@@ -399,36 +399,45 @@ gst_mpp_jpeg_dec_get_mpp_packet (GstVideoDecoder * decoder,
 }
 
 static gboolean
-gst_mpp_jpeg_dec_shutdown (GstVideoDecoder * decoder, gboolean drain UNUSED)
+gst_mpp_jpeg_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
 {
   GstMppJpegDec *self = GST_MPP_JPEG_DEC (decoder);
   GstMppDec *mppdec = GST_MPP_DEC (decoder);
-  MppFrame mframe;
-  MppPacket mpkt;
-  MppBuffer mbuf;
-  MppMeta meta;
-  MPP_RET ret;
 
-  GST_DEBUG_OBJECT (self, "sending EOS");
+  /* It's safe to stop decoding immediately */
+  if (!drain) {
+    mppdec->mpi->reset (mppdec->mpp_ctx);
+    return FALSE;
+  }
 
-  /* Prepare EOS packet */
-  mpp_buffer_get (self->input_group, &mbuf, 1);
-  mpp_packet_init_with_buffer (&mpkt, mbuf);
-  mpp_buffer_put (mbuf);
-  mpp_packet_set_size (mpkt, 0);
-  mpp_packet_set_length (mpkt, 0);
-  mpp_packet_set_eos (mpkt);
+  {
+    MppFrame mframe;
+    MppPacket mpkt;
+    MppBuffer mbuf;
+    MppMeta meta;
+    MPP_RET ret;
 
-  mpp_frame_init (&mframe);
-  meta = mpp_packet_get_meta (mpkt);
-  mpp_meta_set_frame (meta, KEY_OUTPUT_FRAME, mframe);
+    GST_DEBUG_OBJECT (self, "sending EOS");
 
-  while (1) {
-    ret = mppdec->mpi->decode_put_packet (mppdec->mpp_ctx, mpkt);
-    if (!ret)
-      break;
+    /* Prepare EOS packet */
+    mpp_buffer_get (self->input_group, &mbuf, 1);
+    mpp_packet_init_with_buffer (&mpkt, mbuf);
+    mpp_buffer_put (mbuf);
+    mpp_packet_set_size (mpkt, 0);
+    mpp_packet_set_length (mpkt, 0);
+    mpp_packet_set_eos (mpkt);
 
-    g_usleep (1000);
+    mpp_frame_init (&mframe);
+    meta = mpp_packet_get_meta (mpkt);
+    mpp_meta_set_frame (meta, KEY_OUTPUT_FRAME, mframe);
+
+    while (1) {
+      ret = mppdec->mpi->decode_put_packet (mppdec->mpp_ctx, mpkt);
+      if (!ret)
+        break;
+
+      g_usleep (1000);
+    }
   }
 
   return TRUE;

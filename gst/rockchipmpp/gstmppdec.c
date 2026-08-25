@@ -63,6 +63,7 @@ G_DEFINE_ABSTRACT_TYPE (GstMppDec, gst_mpp_dec, GST_TYPE_VIDEO_DECODER);
 static gboolean DEFAULT_PROP_IGNORE_ERROR = TRUE;
 static gboolean DEFAULT_PROP_FAST_MODE = TRUE;
 static gboolean DEFAULT_PROP_DMA_FEATURE = FALSE;
+static gboolean DEFAULT_PROP_USE_MPP_PTS = TRUE;
 
 enum
 {
@@ -74,6 +75,7 @@ enum
   PROP_IGNORE_ERROR,
   PROP_FAST_MODE,
   PROP_DMA_FEATURE,
+  PROP_USE_MPP_PTS,
   PROP_LAST,
 };
 
@@ -151,6 +153,15 @@ gst_mpp_dec_set_property (GObject * object,
       self->dma_feature = g_value_get_boolean (value);
       break;
     }
+    case PROP_USE_MPP_PTS:{
+      /* 2026-08-13 B1: 暴露 use-mpp-pts 属性, 让 VFR 相机 (JPEG 1:1 无 B 帧重排)
+       * 可关闭 MPP 自动 PTS, 透传输入 PTS, 避免 pts_queue restore 补丁。 */
+      if (self->input_state)
+        GST_WARNING_OBJECT (decoder, "unable to change use-mpp-pts");
+      else
+        self->use_mpp_pts = g_value_get_boolean (value);
+      break;
+    }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -183,6 +194,9 @@ gst_mpp_dec_get_property (GObject * object,
     case PROP_DMA_FEATURE:
       g_value_set_boolean (value, self->dma_feature);
       break;
+    case PROP_USE_MPP_PTS:
+      g_value_set_boolean (value, self->use_mpp_pts);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       return;
@@ -193,6 +207,7 @@ static void
 gst_mpp_dec_stop_task (GstVideoDecoder * decoder, gboolean drain)
 {
   GstMppDecClass *klass = GST_MPP_DEC_GET_CLASS (decoder);
+  GstMppDec *self = GST_MPP_DEC (decoder);
 
   if (!GST_MPP_DEC_TASK_STARTED (decoder))
     return;
@@ -208,6 +223,32 @@ gst_mpp_dec_stop_task (GstVideoDecoder * decoder, gboolean drain)
       while (GST_TASK_STATE (task) == GST_TASK_STARTED)
         GST_TASK_WAIT (task);
       GST_OBJECT_UNLOCK (task);
+    }
+  }
+
+  /* Drain remaining output frames so buffers are properly returned
+   * to the pool before mpi->reset(), preventing pool corruption.
+   */
+  if (drain) {
+    MppFrame mframe;
+    gint timeout_ms = MPP_TIMEOUT_NON_BLOCK;
+
+    self->mpi->control (self->mpp_ctx, MPP_SET_OUTPUT_TIMEOUT, &timeout_ms);
+    while (1) {
+      self->mpi->decode_get_frame (self->mpp_ctx, &mframe);
+      if (!mframe)
+        break;
+
+      MppPacket mpkt = NULL;
+      MppMeta meta = mpp_frame_get_meta (mframe);
+
+      /* Deinit the input packet attached to this frame */
+      if (!mpp_meta_get_packet (meta, KEY_INPUT_PACKET, &mpkt)) {
+        mpp_meta_set_packet (meta, KEY_INPUT_PACKET, NULL);
+        mpp_packet_deinit (&mpkt);
+      }
+
+      mpp_frame_deinit (&mframe);
     }
   }
 
@@ -232,6 +273,11 @@ gst_mpp_dec_reset (GstVideoDecoder * decoder, gboolean drain, gboolean final)
 
   self->flushing = final;
   self->draining = FALSE;
+
+  if (self->mpp_frame) {
+    mpp_frame_deinit (&self->mpp_frame);
+    self->mpp_frame = NULL;
+  }
 
   self->mpi->reset (self->mpp_ctx);
   self->task_ret = GST_FLOW_OK;
@@ -271,8 +317,8 @@ gst_mpp_dec_start (GstVideoDecoder * decoder)
   self->decoded_frames = 0;
   self->flushing = FALSE;
 
-  /* Prefer using MPP PTS */
-  self->use_mpp_pts = TRUE;
+  /* Prefer using MPP PTS (value comes from use-mpp-pts property, initialized
+   * in gst_mpp_dec_init; do NOT override here so the property stays effective) */
   self->mpp_delta_pts = 0;
 
   g_mutex_init (&self->mutex);
@@ -1132,6 +1178,7 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   GstBuffer *tmp;
   GstFlowReturn ret;
   MppPacket mpkt = NULL;
+  gboolean packet_has_buffer = FALSE;
 
   GST_MPP_DEC_LOCK (decoder);
 
@@ -1170,6 +1217,13 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
 
   mpp_packet_set_pts (mpkt, self->use_mpp_pts ? -1 : (gint64) frame->pts);
 
+  /* Snapshot the ownership mode while mpkt is still owned by the plugin.
+   * The MPP copy path (no attached MppBuffer) synchronously creates a new
+   * packet and leaves this original packet for the caller to release.  The
+   * zero-copy path transfers mpkt to MPP, so it must not be touched after
+   * decode_put_packet() returns. */
+  packet_has_buffer = (mpp_packet_get_buffer (mpkt) != NULL);
+
   if (GST_CLOCK_TIME_IS_VALID (frame->pts))
     self->seen_valid_pts = TRUE;
 
@@ -1182,10 +1236,14 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   else if (G_UNLIKELY (ret != GST_FLOW_OK))
     goto drop;
 
-  /* MPP owns packet lifecycle if buffer is attached */
-  if (!mpp_packet_get_buffer (mpkt)) {
-    mpp_packet_deinit (&mpkt);
+  if (packet_has_buffer) {
+    /* Zero-copy: MPP owns mpkt after a successful send.  Do not inspect or
+     * deinit it here; the packet may already have been recycled by MPP. */
     mpkt = NULL;
+  } else {
+    /* Copy path: MPP synchronously copied the payload into a new packet, so
+     * the original packet remains owned by this function. */
+    mpp_packet_deinit (&mpkt);
   }
 
   gst_buffer_unmap (frame->input_buffer, &mapinfo);
@@ -1269,6 +1327,7 @@ gst_mpp_dec_init (GstMppDec * self)
   self->ignore_error = DEFAULT_PROP_IGNORE_ERROR;
   self->fast_mode = DEFAULT_PROP_FAST_MODE;
   self->dma_feature = DEFAULT_PROP_DMA_FEATURE;
+  self->use_mpp_pts = DEFAULT_PROP_USE_MPP_PTS;
 
   gst_video_decoder_set_packetized (decoder, TRUE);
 }
@@ -1373,6 +1432,16 @@ no_rga:
   g_object_class_install_property (gobject_class, PROP_DMA_FEATURE,
       g_param_spec_boolean ("dma-feature", "DMA feature",
           "Enable GST DMA feature", DEFAULT_PROP_DMA_FEATURE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  /* 2026-08-13 B1: 新增 use-mpp-pts 属性。
+   * 默认 TRUE = 使用 MPP 硬件生成 PTS (H264/H265 B 帧重排需要)。
+   * VFR 相机 JPEG 流 (1:1 无重排) 设 FALSE 时透传输入 PTS,
+   * 从源头消除 jpegdec 覆盖 PTS 导致的时间戳丢失。 */
+  g_object_class_install_property (gobject_class, PROP_USE_MPP_PTS,
+      g_param_spec_boolean ("use-mpp-pts", "Use MPP PTS",
+          "Use MPP generated PTS (TRUE) or passthrough input PTS (FALSE)",
+          DEFAULT_PROP_USE_MPP_PTS,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   element_class->change_state = GST_DEBUG_FUNCPTR (gst_mpp_dec_change_state);
