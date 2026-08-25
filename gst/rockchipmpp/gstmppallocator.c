@@ -267,14 +267,18 @@ gst_mpp_allocator_free (GstAllocator * allocator, GstMemory * gmem)
 {
   GstMppAllocator *self = GST_MPP_ALLOCATOR (allocator);
 
+  /* Return the MppBuffer to its group before clearing it, so it is
+   * recycled normally instead of being marked discarded.  The parent
+   * free releases the qdata holding the buffer ref; the allocator
+   * itself stays alive until free() returns. */
+  GST_ALLOCATOR_CLASS (parent_class)->free (allocator, gmem);
+
   /* Avoid caching external buffers */
   mpp_buffer_group_clear (self->ext_group);
 
   /* Clear cached buffers */
   if (!self->cacheable)
     mpp_buffer_group_clear (self->group);
-
-  GST_ALLOCATOR_CLASS (parent_class)->free (allocator, gmem);
 }
 
 GstAllocator *
