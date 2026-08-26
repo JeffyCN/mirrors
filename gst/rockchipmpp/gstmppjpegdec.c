@@ -398,6 +398,39 @@ gst_mpp_jpeg_dec_get_mpp_packet (GstVideoDecoder * decoder,
   return mpkt;
 }
 
+static void
+gst_mpp_jpeg_dec_drain_output (GstVideoDecoder * decoder)
+{
+  GstMppDec *mppdec = GST_MPP_DEC (decoder);
+  gint timeout_ms = MPP_TIMEOUT_NON_BLOCK;
+
+  /* Leftover output frames carry our input packet as KEY_INPUT_PACKET
+   * meta.  mpi->reset() discards queued frames without releasing the
+   * attached packets, so poll them out here and release both. */
+  mppdec->mpi->control (mppdec->mpp_ctx, MPP_SET_OUTPUT_TIMEOUT, &timeout_ms);
+
+  while (1) {
+    MppMeta meta;
+    MppPacket mpkt = NULL;
+    MppFrame mframe = NULL;
+
+    mppdec->mpi->decode_get_frame (mppdec->mpp_ctx, &mframe);
+    if (!mframe)
+      break;
+
+    meta = mpp_frame_get_meta (mframe);
+    if (meta)
+      mpp_meta_get_packet (meta, KEY_INPUT_PACKET, &mpkt);
+
+    if (mpkt) {
+      mpp_meta_set_packet (meta, KEY_INPUT_PACKET, NULL);
+      mpp_packet_deinit (&mpkt);
+    }
+
+    mpp_frame_deinit (&mframe);
+  }
+}
+
 static gboolean
 gst_mpp_jpeg_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
 {
@@ -411,6 +444,7 @@ gst_mpp_jpeg_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
 
   /* It's safe to stop decoding immediately */
   if (!drain) {
+    gst_mpp_jpeg_dec_drain_output (decoder);
     mppdec->mpi->reset (mppdec->mpp_ctx);
     return FALSE;
   }
