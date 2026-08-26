@@ -233,6 +233,11 @@ gst_mpp_dec_reset (GstVideoDecoder * decoder, gboolean drain, gboolean final)
   self->flushing = final;
   self->draining = FALSE;
 
+  if (self->mpp_frame) {
+    mpp_frame_deinit (&self->mpp_frame);
+    self->mpp_frame = NULL;
+  }
+
   self->mpi->reset (self->mpp_ctx);
   self->task_ret = GST_FLOW_OK;
   self->decoded_frames = 0;
@@ -1132,6 +1137,7 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   GstBuffer *tmp;
   GstFlowReturn ret;
   MppPacket mpkt = NULL;
+  gboolean packet_has_buffer = FALSE;
 
   GST_MPP_DEC_LOCK (decoder);
 
@@ -1170,6 +1176,12 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
 
   mpp_packet_set_pts (mpkt, self->use_mpp_pts ? -1 : (gint64) frame->pts);
 
+  /* Zero-copy packets (MppBuffer attached) are handed over to MPP and may
+   * already be recycled once decode_put_packet() returns, while copy-path
+   * packets are cloned synchronously and stay owned by the caller.
+   * Snapshot the mode before the send. */
+  packet_has_buffer = (mpp_packet_get_buffer (mpkt) != NULL);
+
   if (GST_CLOCK_TIME_IS_VALID (frame->pts))
     self->seen_valid_pts = TRUE;
 
@@ -1182,11 +1194,10 @@ gst_mpp_dec_handle_frame (GstVideoDecoder * decoder, GstVideoCodecFrame * frame)
   else if (G_UNLIKELY (ret != GST_FLOW_OK))
     goto drop;
 
-  /* MPP owns packet lifecycle if buffer is attached */
-  if (!mpp_packet_get_buffer (mpkt)) {
-    mpp_packet_deinit (&mpkt);
+  if (packet_has_buffer)
     mpkt = NULL;
-  }
+  else
+    mpp_packet_deinit (&mpkt);
 
   gst_buffer_unmap (frame->input_buffer, &mapinfo);
 
