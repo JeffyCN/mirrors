@@ -6,9 +6,11 @@
 #define MODULE_TAG "mpp_cfg_io"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <float.h>
 #include <string.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include "mpp_bit.h"
 #include "mpp_env.h"
@@ -4460,6 +4462,69 @@ rk_s32 mpp_cfg_from_string(MppCfgObj *obj, MppCfgStrFmt fmt, const char *buf)
         mpp_loge_f("buf %p size %d failed to get object\n", buf, size);
 
     *obj = object;
+    return ret;
+}
+
+rk_s32 mpp_cfg_from_file(MppCfgObj *obj, MppCfgStrFmt fmt, const char *path)
+{
+    char *buf = NULL;
+    rk_s32 size = 0;
+    rk_s32 len = 0;
+    rk_s32 fd;
+    rk_s32 ret = rk_nok;
+
+    if (!obj || fmt >= MPP_CFG_STR_FMT_BUTT || !path) {
+        mpp_loge_f("invalid param obj %p fmt %d path %p\n", obj, fmt, path);
+
+        return ret;
+    }
+
+    fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        mpp_loge_f("open file %s failed for %s\n", path, strerror(errno));
+
+        return ret;
+    }
+
+    size = lseek(fd, 0, SEEK_END);
+    if (size < 0) {
+        mpp_loge_f("lseek file %s failed for %s\n", path, strerror(errno));
+        goto done;
+    }
+
+    lseek(fd, 0, SEEK_SET);
+
+    buf = mpp_malloc_size(char, size + 1);
+    if (!buf) {
+        mpp_loge_f("malloc buffer size %d for file %s failed\n", size + 1, path);
+        goto done;
+    }
+
+    while (len < size) {
+        rk_s32 read_len = read(fd, buf + len, size - len);
+
+        if (read_len < 0) {
+            if (errno == EINTR)
+                continue;
+
+            mpp_loge_f("read file %s failed for %s\n", path, strerror(errno));
+            goto done;
+        }
+
+        if (!read_len)
+            break;
+
+        len += read_len;
+    }
+
+    buf[len] = '\0';
+    ret = mpp_cfg_from_string(obj, fmt, buf);
+
+done:
+    MPP_FREE(buf);
+    if (fd >= 0)
+        close(fd);
+
     return ret;
 }
 

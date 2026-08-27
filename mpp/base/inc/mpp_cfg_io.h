@@ -92,9 +92,10 @@ MppCfgObj mpp_cfg_from_trie(MppTrie trie);
 /* mark all MppCfgObject ready and build trie for string access */
 MppTrie mpp_cfg_to_trie(MppCfgObj obj);
 
-/* mpp_cfg output to string and input from string */
+/* mpp_cfg output to string and input from string or file */
 rk_s32 mpp_cfg_to_string(MppCfgObj obj, MppCfgStrFmt fmt, char **buf);
 rk_s32 mpp_cfg_from_string(MppCfgObj *obj, MppCfgStrFmt fmt, const char *buf);
+rk_s32 mpp_cfg_from_file(MppCfgObj *obj, MppCfgStrFmt fmt, const char *path);
 
 /*
  * obj  - read from file or string and get an object as source
