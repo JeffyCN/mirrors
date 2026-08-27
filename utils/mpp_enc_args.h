@@ -20,6 +20,7 @@ extern "C" {
 
 rk_s32 mpp_enc_args_extract(MppEncArgs cmd_obj, MppCfgStrFmt fmt, char **buf);
 rk_s32 mpp_enc_args_apply(MppEncArgs cmd_obj, MppCfgStrFmt fmt, char *buf);
+rk_s32 mpp_enc_args_apply_file(MppEncArgs cmd_obj, MppCfgStrFmt fmt, const char *path);
 
 #ifdef __cplusplus
 }

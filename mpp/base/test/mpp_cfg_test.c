@@ -6,10 +6,6 @@
 #define MODULE_TAG "mpp_cfg_test"
 
 #include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
 #include <string.h>
 
 #include "mpp_mem.h"
@@ -947,9 +943,6 @@ int main(int argc, char *argv[])
 
     if (argc > 1) {
         char *path = argv[1];
-        void *buf = NULL;
-        rk_s32 fd = -1;
-        rk_s32 size = 0;
         MppCfgStrFmt file_fmt = MPP_CFG_STR_FMT_JSON;
         char *ext = strrchr(path, '.');
 
@@ -961,28 +954,9 @@ int main(int argc, char *argv[])
         }
         mpp_logi("file %s format %s\n", path, str_fmt[file_fmt]);
 
-        fd = open(path, O_RDWR);
-        if (fd < 0) {
-            mpp_loge("open %s failed\n", path);
-            goto FILE_DONE;
-        }
-
-        size = lseek(fd, 0, SEEK_END);
-        if (size < 0) {
-            mpp_loge("lseek failed\n");
-            goto FILE_DONE;
-        }
-        lseek(fd, 0, SEEK_SET);
-
-        buf = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
-        if (!buf) {
-            mpp_loge("mmap fd %d size %d failed\n", fd, size);
-            goto FILE_DONE;
-        }
-
-        ret = mpp_cfg_from_string(&root, file_fmt, buf);
+        ret = mpp_cfg_from_file(&root, file_fmt, path);
         if (ret) {
-            mpp_loge("mpp_cfg_from_string failed\n");
+            mpp_loge("mpp_cfg_from_file failed\n");
             goto FILE_DONE;
         }
 
@@ -993,15 +967,6 @@ int main(int argc, char *argv[])
         mpp_logi("test to / from %s string %s\n", str_fmt[file_fmt], ret ? "failed" : "success");
 
     FILE_DONE:
-        if (buf) {
-            munmap(buf, size);
-            buf = NULL;
-        }
-        if (fd >= 0) {
-            close(fd);
-            fd = -1;
-        }
-
         mpp_cfg_put_all(root);
         root = NULL;
 

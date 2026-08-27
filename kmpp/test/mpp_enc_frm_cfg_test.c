@@ -6,10 +6,6 @@
 #define MODULE_TAG "mpp_enc_frm_cfg_test"
 
 #include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
 #include <string.h>
 
 #include "mpp_log.h"
@@ -37,11 +33,8 @@ static rk_s32 test_file(const char *path)
 {
     MppEncFrmCfgObj obj = NULL;
     MppCfgStrFmt fmt = MPP_CFG_STR_FMT_JSON;
-    char *buf = NULL;
     char *out = NULL;
     char *re_out = NULL;
-    rk_s32 fd = -1;
-    rk_s32 size = 0;
     rk_s32 ret = 0;
     char *ext = strrchr(path, '.');
 
@@ -58,28 +51,8 @@ static rk_s32 test_file(const char *path)
         goto DONE;
     }
 
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        TEST_FAIL("open %s failed", path);
-        goto DONE;
-    }
-
-    size = lseek(fd, 0, SEEK_END);
-    if (size <= 0) {
-        TEST_FAIL("lseek %s size %d", path, size);
-        goto DONE;
-    }
-    lseek(fd, 0, SEEK_SET);
-
-    buf = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
-    if (buf == MAP_FAILED) {
-        TEST_FAIL("mmap %s failed", path);
-        buf = NULL;
-        goto DONE;
-    }
-
     /* apply: VLA counts (roi_cnt/osd_cnt) in the file trigger resize */
-    if (mpp_enc_frm_cfg_apply(obj, fmt, buf)) {
+    if (mpp_enc_frm_cfg_apply_file(obj, fmt, path)) {
         TEST_FAIL("apply %s failed", path);
         goto DONE;
     }
@@ -109,10 +82,6 @@ static rk_s32 test_file(const char *path)
 DONE:
     MPP_FREE(out);
     MPP_FREE(re_out);
-    if (buf)
-        munmap(buf, size);
-    if (fd >= 0)
-        close(fd);
     if (obj)
         mpp_enc_frm_cfg_put(obj);
     return ret;
@@ -243,9 +212,6 @@ static rk_s32 test_multi(rk_s32 n, char **paths)
 
     for (i = 0; i < n; i++) {
         MppEncFrmCfgObj o = NULL;
-        void *buf = MAP_FAILED;
-        rk_s32 fd = -1;
-        rk_s32 size = 0;
         char name[32];
 
         basename_no_ext(paths[i], name, sizeof(name));
@@ -258,38 +224,17 @@ static rk_s32 test_multi(rk_s32 n, char **paths)
             continue;
         }
 
-        fd = open(paths[i], O_RDONLY);
-        if (fd < 0) {
-            TEST_FAIL("open %s failed", paths[i]);
-            mpp_enc_frm_cfg_put(o);
-            ret = -1;
-            continue;
-        }
-        size = lseek(fd, 0, SEEK_END);
-        lseek(fd, 0, SEEK_SET);
-        buf = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
-        if (buf == MAP_FAILED) {
-            TEST_FAIL("mmap %s failed", paths[i]);
-            close(fd);
-            mpp_enc_frm_cfg_put(o);
-            ret = -1;
-            continue;
-        }
-
-        if (mpp_enc_frm_cfg_apply(o, MPP_CFG_STR_FMT_JSON, buf)) {
+        if (mpp_enc_frm_cfg_apply_file(o, MPP_CFG_STR_FMT_JSON, paths[i])) {
             TEST_FAIL("apply %s failed", paths[i]);
+            mpp_enc_frm_cfg_put(o);
             ret = -1;
-        } else {
-            TEST_PASS("apply %s ok", paths[i]);
-            obj[i] = o;
-            entry_ptrs[i] = (const MppEncFrmCfg *)kmpp_obj_to_entry(o);
-            snprintf(names[i], sizeof(names[i]), "%s", name);
+            continue;
         }
 
-        munmap(buf, size);
-        close(fd);
-        if (!obj[i])
-            mpp_enc_frm_cfg_put(o);
+        TEST_PASS("apply %s ok", paths[i]);
+        obj[i] = o;
+        entry_ptrs[i] = (const MppEncFrmCfg *)kmpp_obj_to_entry(o);
+        snprintf(names[i], sizeof(names[i]), "%s", name);
     }
 
     set.count = n;

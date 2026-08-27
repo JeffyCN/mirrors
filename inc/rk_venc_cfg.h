@@ -48,6 +48,7 @@ MPP_RET mpp_enc_cfg_get_st(MppEncCfg cfg, const char *name, void *val);
 void mpp_enc_cfg_show(void);
 MPP_RET mpp_enc_cfg_extract(MppEncCfg cfg, MppCfgStrFmt fmt, char **buf);
 MPP_RET mpp_enc_cfg_apply(MppEncCfg cfg, MppCfgStrFmt fmt, char *buf);
+MPP_RET mpp_enc_cfg_apply_file(MppEncCfg cfg, MppCfgStrFmt fmt, const char *path);
 
 #ifdef __cplusplus
 }

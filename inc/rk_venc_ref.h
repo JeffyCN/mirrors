@@ -268,6 +268,7 @@ void mpp_enc_ref_cfg_show(void);
 
 /* JSON config apply / extract */
 MPP_RET mpp_enc_ref_cfg_apply(MppEncRefCfg ref, MppCfgStrFmt fmt, char *buf);
+MPP_RET mpp_enc_ref_cfg_apply_file(MppEncRefCfg ref, MppCfgStrFmt fmt, const char *path);
 MPP_RET mpp_enc_ref_cfg_extract(MppEncRefCfg ref, MppCfgStrFmt fmt, char **buf);
 
 #ifdef __cplusplus

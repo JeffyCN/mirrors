@@ -401,9 +401,7 @@ done:
 
 static rk_s32 test_apply_from_file(MppEncCfg cfg, rk_u32 flag, const char *path)
 {
-    FILE *f;
     char *fbuf = NULL;
-    long size;
     MppCfgStrFmt fmt = MPP_CFG_STR_FMT_JSON;
     char *ext;
     rk_s32 ret = 0;
@@ -412,41 +410,10 @@ static rk_s32 test_apply_from_file(MppEncCfg cfg, rk_u32 flag, const char *path)
     if (ext && !strcmp(ext, ".toml"))
         fmt = MPP_CFG_STR_FMT_TOML;
 
-    f = fopen(path, "r");
-    if (!f) {
-        mpp_loge("cannot open %s\n", path);
-        return rk_nok;
-    }
+    MPP_VERBOSE(flag, "apply from file %s (format %s)\n", path,
+                (fmt == MPP_CFG_STR_FMT_JSON) ? "JSON" : "TOML");
 
-    fseek(f, 0, SEEK_END);
-    size = ftell(f);
-    if (size < 0) {
-        mpp_loge("ftell %s failed ret %d\n", path, size);
-        fclose(f);
-        return rk_nok;
-    }
-    fseek(f, 0, SEEK_SET);
-    fbuf = mpp_malloc_size(char, size + 1);
-    if (!fbuf) {
-        fclose(f);
-        return rk_nok;
-    }
-    size_t n = fread(fbuf, 1, size, f);
-    if (n != (size_t)size) {
-        mpp_loge("fread %s failed: expected %ld got %zu\n", path, size, n);
-        MPP_FREE(fbuf);
-        fclose(f);
-        return rk_nok;
-    }
-    fbuf[size] = '\0';
-    fclose(f);
-
-    MPP_VERBOSE(flag, "apply from file %s (format %s):\n%s\n", path,
-                (fmt == MPP_CFG_STR_FMT_JSON) ? "JSON" : "TOML", fbuf);
-
-    ret = mpp_enc_cfg_apply(cfg, fmt, fbuf);
-    MPP_FREE(fbuf);
-
+    ret = mpp_enc_cfg_apply_file(cfg, fmt, path);
     if (ret) {
         mpp_loge("apply from file %s failed ret %d\n", path, ret);
         return ret;

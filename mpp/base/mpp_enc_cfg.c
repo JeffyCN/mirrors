@@ -538,16 +538,23 @@ MPP_RET mpp_enc_cfg_extract(MppEncCfg cfg, MppCfgStrFmt fmt, char **buf)
     return (buf && *buf) ? MPP_OK : MPP_NOK;
 }
 
-MPP_RET mpp_enc_cfg_apply(MppEncCfg cfg, MppCfgStrFmt fmt, char *buf)
+static void mpp_enc_cfg_apply_obj(MppEncCfg cfg, MppCfgObj obj)
 {
     MppEncCfgSet *cfg_impl = kmpp_obj_to_entry(cfg);
-    MppCfgObj obj = NULL;
     MppCfgObj root = NULL;
-    MPP_RET ret;
 
     root = kmpp_objdef_get_cfg_root(kmpp_obj_to_objdef((KmppObj)cfg));
     if (!root)
         root = kmpp_objdef_get_cfg_root(mpp_enc_cfg_def);
+
+    mpp_cfg_to_struct(obj, root, cfg_impl);
+    mpp_cfg_put_all(obj);
+}
+
+MPP_RET mpp_enc_cfg_apply(MppEncCfg cfg, MppCfgStrFmt fmt, char *buf)
+{
+    MppCfgObj obj = NULL;
+    MPP_RET ret;
 
     ret = mpp_cfg_from_string(&obj, fmt, buf);
     if (ret || !obj) {
@@ -556,8 +563,24 @@ MPP_RET mpp_enc_cfg_apply(MppEncCfg cfg, MppCfgStrFmt fmt, char *buf)
         return MPP_NOK;
     }
 
-    mpp_cfg_to_struct(obj, root, cfg_impl);
-    mpp_cfg_put_all(obj);
+    mpp_enc_cfg_apply_obj(cfg, obj);
+
+    return MPP_OK;
+}
+
+MPP_RET mpp_enc_cfg_apply_file(MppEncCfg cfg, MppCfgStrFmt fmt, const char *path)
+{
+    MppCfgObj obj = NULL;
+    MPP_RET ret;
+
+    ret = mpp_cfg_from_file(&obj, fmt, path);
+    if (ret || !obj) {
+        if (obj)
+            mpp_cfg_put_all(obj);
+        return MPP_NOK;
+    }
+
+    mpp_enc_cfg_apply_obj(cfg, obj);
 
     return MPP_OK;
 }

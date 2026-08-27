@@ -780,29 +780,19 @@ MppEncCpbInfo *mpp_enc_ref_cfg_get_cpb_info(MppEncRefCfg ref)
 /*
  * JSON config apply / extract — symmetric with mpp_enc_cfg_apply/extract
  */
-MPP_RET mpp_enc_ref_cfg_apply(MppEncRefCfg ref, MppCfgStrFmt fmt, char *buf)
+static MPP_RET mpp_enc_ref_cfg_apply_obj(MppEncRefCfg ref, MppCfgObj obj, MppCfgStrFmt fmt)
 {
     MppCfgObj root = NULL;
     MppEncRefCfgImpl *impl;
-    MppCfgObj obj = NULL;
     RK_S32 st_cnt = 0;
     RK_S32 lt_cnt = 0;
     MPP_RET ret = MPP_NOK;
-
-    if (!ref || !buf)
-        return MPP_NOK;
 
     /* use the obj's own objdef so kobj entries carry kernel-layout offsets */
     root = kmpp_objdef_get_cfg_root(kmpp_obj_to_objdef((KmppObj)ref));
     if (!root)
         root = kmpp_objdef_get_cfg_root(mpp_enc_ref_cfg_def);
     impl = (MppEncRefCfgImpl *)kmpp_obj_to_entry(ref);
-
-    if (mpp_cfg_from_string(&obj, fmt, buf) || !obj) {
-        mpp_loge_f("failed to parse config string\n");
-        mpp_cfg_put_all(obj);
-        return MPP_NOK;
-    }
 
     /* read VLA capacity from parsed tree before to_struct */
     {
@@ -867,6 +857,38 @@ MPP_RET mpp_enc_ref_cfg_apply(MppEncRefCfg ref, MppCfgStrFmt fmt, char *buf)
 done:
     mpp_cfg_put_all(obj);
     return ret;
+}
+
+MPP_RET mpp_enc_ref_cfg_apply(MppEncRefCfg ref, MppCfgStrFmt fmt, char *buf)
+{
+    MppCfgObj obj = NULL;
+
+    if (!ref || !buf)
+        return MPP_NOK;
+
+    if (mpp_cfg_from_string(&obj, fmt, buf) || !obj) {
+        mpp_loge_f("failed to parse config string\n");
+        mpp_cfg_put_all(obj);
+        return MPP_NOK;
+    }
+
+    return mpp_enc_ref_cfg_apply_obj(ref, obj, fmt);
+}
+
+MPP_RET mpp_enc_ref_cfg_apply_file(MppEncRefCfg ref, MppCfgStrFmt fmt, const char *path)
+{
+    MppCfgObj obj = NULL;
+
+    if (!ref || !path)
+        return MPP_NOK;
+
+    if (mpp_cfg_from_file(&obj, fmt, path) || !obj) {
+        mpp_loge_f("failed to parse config file %s\n", path);
+        mpp_cfg_put_all(obj);
+        return MPP_NOK;
+    }
+
+    return mpp_enc_ref_cfg_apply_obj(ref, obj, fmt);
 }
 
 MPP_RET mpp_enc_ref_cfg_extract(MppEncRefCfg ref, MppCfgStrFmt fmt, char **buf)

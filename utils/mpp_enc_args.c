@@ -123,14 +123,21 @@ rk_s32 mpp_enc_args_extract(MppEncArgs cmd_obj, MppCfgStrFmt fmt, char **buf)
     return (buf && *buf) ? rk_ok : rk_nok;
 }
 
-rk_s32 mpp_enc_args_apply(MppEncArgs cmd_obj, MppCfgStrFmt fmt, char *buf)
+static void mpp_enc_args_apply_obj(MppEncArgs cmd_obj, MppCfgObj obj)
 {
     MpiEncTestArgs *cmd = kmpp_obj_to_entry(cmd_obj);
-    MppCfgObj obj = NULL;
     MppCfgObj root = NULL;
-    rk_s32 ret;
 
     root = kmpp_objdef_get_cfg_root(mpp_enc_args_def);
+
+    mpp_cfg_to_struct(obj, root, cmd);
+    mpp_cfg_put_all(obj);
+}
+
+rk_s32 mpp_enc_args_apply(MppEncArgs cmd_obj, MppCfgStrFmt fmt, char *buf)
+{
+    MppCfgObj obj = NULL;
+    rk_s32 ret;
 
     ret = mpp_cfg_from_string(&obj, fmt, buf);
     if (ret || !obj) {
@@ -139,8 +146,24 @@ rk_s32 mpp_enc_args_apply(MppEncArgs cmd_obj, MppCfgStrFmt fmt, char *buf)
         return rk_nok;
     }
 
-    mpp_cfg_to_struct(obj, root, cmd);
-    mpp_cfg_put_all(obj);
+    mpp_enc_args_apply_obj(cmd_obj, obj);
+
+    return rk_ok;
+}
+
+rk_s32 mpp_enc_args_apply_file(MppEncArgs cmd_obj, MppCfgStrFmt fmt, const char *path)
+{
+    MppCfgObj obj = NULL;
+    rk_s32 ret;
+
+    ret = mpp_cfg_from_file(&obj, fmt, path);
+    if (ret || !obj) {
+        if (obj)
+            mpp_cfg_put_all(obj);
+        return rk_nok;
+    }
+
+    mpp_enc_args_apply_obj(cmd_obj, obj);
 
     return rk_ok;
 }

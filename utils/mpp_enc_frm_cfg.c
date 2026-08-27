@@ -151,21 +151,13 @@ static rk_s32 mpp_enc_frm_cfg_resize(MppEncFrmCfg *entry, KmppObj obj, rk_s32 ro
                            entry->new_jpeg_roi_cap * sizeof(MppEncFrmJpegRoi), caller);
 }
 
-MPP_RET mpp_enc_frm_cfg_apply(MppEncFrmCfgObj obj, MppCfgStrFmt fmt, char *buf)
+static MPP_RET mpp_enc_frm_cfg_apply_obj(MppEncFrmCfgObj obj, MppCfgObj tree, MppCfgStrFmt fmt)
 {
     MppEncFrmCfg *entry = kmpp_obj_to_entry(obj);
-    MppCfgObj tree = NULL;
     MppCfgObj root;
     MPP_RET ret = MPP_NOK;
 
-    if (!obj || !buf)
-        return MPP_ERR_NULL_PTR;
-
     root = kmpp_objdef_get_cfg_root(mpp_enc_frm_cfg_objdef());
-    if (mpp_cfg_from_string(&tree, fmt, buf) || !tree) {
-        mpp_cfg_put_all(tree);
-        return MPP_NOK;
-    }
 
     /* read VLA counts from parsed tree before to_struct */
     {
@@ -225,6 +217,36 @@ MPP_RET mpp_enc_frm_cfg_apply(MppEncFrmCfgObj obj, MppCfgStrFmt fmt, char *buf)
 done:
     mpp_cfg_put_all(tree);
     return ret;
+}
+
+MPP_RET mpp_enc_frm_cfg_apply(MppEncFrmCfgObj obj, MppCfgStrFmt fmt, char *buf)
+{
+    MppCfgObj tree = NULL;
+
+    if (!obj || !buf)
+        return MPP_ERR_NULL_PTR;
+
+    if (mpp_cfg_from_string(&tree, fmt, buf) || !tree) {
+        mpp_cfg_put_all(tree);
+        return MPP_NOK;
+    }
+
+    return mpp_enc_frm_cfg_apply_obj(obj, tree, fmt);
+}
+
+MPP_RET mpp_enc_frm_cfg_apply_file(MppEncFrmCfgObj obj, MppCfgStrFmt fmt, const char *path)
+{
+    MppCfgObj tree = NULL;
+
+    if (!obj || !path)
+        return MPP_ERR_NULL_PTR;
+
+    if (mpp_cfg_from_file(&tree, fmt, path) || !tree) {
+        mpp_cfg_put_all(tree);
+        return MPP_NOK;
+    }
+
+    return mpp_enc_frm_cfg_apply_obj(obj, tree, fmt);
 }
 
 MPP_RET mpp_enc_frm_cfg_extract(MppEncFrmCfgObj obj, MppCfgStrFmt fmt, char **buf)

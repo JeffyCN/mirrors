@@ -17,9 +17,7 @@
 #define MODULE_TAG "mpi_enc_utils"
 
 #include <stdio.h>
-#include <errno.h>
 #include <string.h>
-#include <sys/mman.h>
 
 #include "mpp_mem.h"
 #include "mpp_debug.h"
@@ -181,62 +179,20 @@ static MppCfgStrFmt mpi_enc_utils_cfg_fmt(const char *path)
     return (ext && !strcmp(ext, ".toml")) ? MPP_CFG_STR_FMT_TOML : MPP_CFG_STR_FMT_JSON;
 }
 
-static RK_S32 mpi_enc_utils_read_file(const char *path, void **buf, RK_S32 *size)
-{
-    RK_S32 fd = -1;
-    RK_S32 file_size = 0;
-    RK_S32 ret = MPP_NOK;
-
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        mpp_loge("open file %s failed for %s\n", path, strerror(errno));
-        goto done;
-    }
-
-    file_size = lseek(fd, 0, SEEK_END);
-    if (file_size < 0) {
-        mpp_loge("lseek %s failed for %s\n", path, strerror(errno));
-        goto done;
-    }
-
-    lseek(fd, 0, SEEK_SET);
-
-    *buf = mmap(NULL, file_size, PROT_READ, MAP_SHARED, fd, 0);
-    if (*buf == MAP_FAILED) {
-        mpp_loge("mmap file %s size %d failed\n", path, file_size);
-        *buf = NULL;
-        goto done;
-    }
-
-    *size = file_size;
-    ret = MPP_OK;
-
-done:
-    if (fd >= 0)
-        close(fd);
-
-    return ret;
-}
-
 static MPP_RET mpi_enc_utils_load_args(MppEncTestObjSet *obj_set)
 {
     MpiEncTestArgs *cmd = (MpiEncTestArgs *)obj_set->cmd;
     char *path = cmd->file_args;
     MPP_RET ret;
-    RK_S32 size = 0;
-    void *buf = NULL;
 
-    ret = mpi_enc_utils_read_file(path, &buf, &size);
-    if (ret)
-        return MPP_NOK;
+    if (!path)
+        return MPP_OK;
 
-    mpp_logi("load args file %s size %d\n", path, size);
+    mpp_logi("load args file %s\n", path);
 
-    ret = mpp_enc_args_apply(obj_set->cmd_obj, mpi_enc_utils_cfg_fmt(path), buf);
+    ret = mpp_enc_args_apply_file(obj_set->cmd_obj, mpi_enc_utils_cfg_fmt(path), path);
     if (ret)
         mpp_loge("apply enc_args from %s failed\n", path);
-
-    munmap(buf, size);
 
     return ret;
 }
@@ -246,20 +202,15 @@ static MPP_RET mpi_enc_utils_load_cfg(MppEncTestObjSet *obj_set)
     MpiEncTestArgs *cmd = (MpiEncTestArgs *)obj_set->cmd;
     char *path = cmd->file_cfg;
     MPP_RET ret;
-    RK_S32 size = 0;
-    void *buf = NULL;
 
-    ret = mpi_enc_utils_read_file(path, &buf, &size);
-    if (ret)
-        return MPP_NOK;
+    if (!path)
+        return MPP_OK;
 
-    mpp_logi("load cfg file %s size %d\n", path, size);
+    mpp_logi("load cfg file %s\n", path);
 
-    ret = mpp_enc_cfg_apply(obj_set->cfg_obj, mpi_enc_utils_cfg_fmt(path), buf);
+    ret = mpp_enc_cfg_apply_file(obj_set->cfg_obj, mpi_enc_utils_cfg_fmt(path), path);
     if (ret)
         mpp_loge("apply enc_cfg from %s failed\n", path);
-
-    munmap(buf, size);
 
     return ret;
 }
@@ -267,8 +218,6 @@ static MPP_RET mpi_enc_utils_load_cfg(MppEncTestObjSet *obj_set)
 MPP_RET mpi_enc_load_ref_cfg(MppEncRefCfg ref, const char *path)
 {
     MPP_RET ret;
-    RK_S32 size = 0;
-    void *buf = NULL;
 
     if (!ref)
         return MPP_ERR_NULL_PTR;
@@ -276,17 +225,11 @@ MPP_RET mpi_enc_load_ref_cfg(MppEncRefCfg ref, const char *path)
     if (!path)
         return MPP_OK;
 
-    ret = mpi_enc_utils_read_file(path, &buf, &size);
-    if (ret)
-        return MPP_NOK;
+    mpp_logi("load ref_cfg file %s\n", path);
 
-    mpp_logi("load ref_cfg file %s size %d\n", path, size);
-
-    ret = mpp_enc_ref_cfg_apply(ref, mpi_enc_utils_cfg_fmt(path), buf);
+    ret = mpp_enc_ref_cfg_apply_file(ref, mpi_enc_utils_cfg_fmt(path), path);
     if (ret)
         mpp_loge("apply ref_cfg from %s failed\n", path);
-
-    munmap(buf, size);
 
     return ret;
 }

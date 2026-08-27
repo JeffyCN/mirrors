@@ -125,6 +125,7 @@ rk_s32 mpp_enc_frm_cfg_get(MppEncFrmCfgObj *obj);
 rk_s32 mpp_enc_frm_cfg_put(MppEncFrmCfgObj obj);
 
 MPP_RET mpp_enc_frm_cfg_apply(MppEncFrmCfgObj obj, MppCfgStrFmt fmt, char *buf);
+MPP_RET mpp_enc_frm_cfg_apply_file(MppEncFrmCfgObj obj, MppCfgStrFmt fmt, const char *path);
 MPP_RET mpp_enc_frm_cfg_extract(MppEncFrmCfgObj obj, MppCfgStrFmt fmt, char **buf);
 
 const MppEncFrmCfg *mpp_enc_frm_cfg_get_entry(MppEncFrmCfgObj obj);
