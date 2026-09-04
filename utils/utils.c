@@ -177,10 +177,12 @@ void dump_mpp_frame_to_file(MppFrame frame, FILE *fp)
             fwrite(base_c, 1, width / 2, fp);
         }
     } break;
+    case MPP_FMT_YUV422SP_10BIT :
     case MPP_FMT_YUV420SP_10BIT : {
         RK_U32 i, k;
         RK_U8 *base_y = base;
         RK_U8 *base_c = base + h_stride * v_stride;
+        RK_U32 height_c = height / 2;
         RK_U8 *tmp_line = (RK_U8 *)mpp_malloc(RK_U16, width);
 
         if (!tmp_line) {
@@ -188,13 +190,16 @@ void dump_mpp_frame_to_file(MppFrame frame, FILE *fp)
             return;
         }
 
+        if ((fmt & MPP_FRAME_FMT_MASK) == MPP_FMT_YUV422SP_10BIT)
+            height_c = height;
+
         for (i = 0; i < height; i++, base_y += h_stride) {
             for (k = 0; k < MPP_ALIGN(width, 8) / 8; k++)
                 rearrange_pix(tmp_line, base_y, k);
             fwrite(tmp_line, width * sizeof(RK_U16), 1, fp);
         }
 
-        for (i = 0; i < height / 2; i++, base_c += h_stride) {
+        for (i = 0; i < height_c; i++, base_c += h_stride) {
             for (k = 0; k < MPP_ALIGN(width, 8) / 8; k++)
                 rearrange_pix(tmp_line, base_c, k);
             fwrite(tmp_line, width * sizeof(RK_U16), 1, fp);
