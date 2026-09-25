@@ -52,6 +52,7 @@ struct _GstMppH264Enc
 
   GstMppH264Profile profile;
   gint level;
+  gboolean level_from_user;
 
   guint qp_init;
   guint qp_min;
@@ -180,6 +181,9 @@ gst_mpp_h264_enc_set_property (GObject * object,
     }
     case PROP_LEVEL:{
       gint level = g_value_get_enum (value);
+      /* Set before the early return: naming the level explicitly is what turns
+       * the automatic calculation off, even when the value does not change. */
+      self->level_from_user = TRUE;
       if (self->level == level)
         return;
 
@@ -280,6 +284,74 @@ gst_mpp_h264_enc_get_property (GObject * object,
   }
 }
 
+/* Table A-1 of the H.264 specification, reduced to the two limits that decide
+ * the minimum conforming level for a given picture: MaxFS (frame size, in
+ * macroblocks) and MaxMBPS (macroblocks per second). Level 1b and the 6.x
+ * levels (8K) are left out.
+ *
+ * No released GStreamer has a shared helper for this yet; when
+ * gst_codec_utils_h264_get_level_limits() lands in a released libgstpbutils
+ * (1.30) this table should go and the helper be called instead, as
+ * v4l2videoenc does. */
+typedef struct
+{
+  gint level_idc;
+  guint32 max_mbps;
+  guint32 max_fs;
+} GstMppH264LevelLimits;
+
+static const GstMppH264LevelLimits h264_level_limits[] = {
+  {10, 1485, 99},
+  {11, 3000, 396},
+  {12, 6000, 396},
+  {13, 11880, 396},
+  {20, 11880, 396},
+  {21, 19800, 792},
+  {22, 20250, 1620},
+  {30, 40500, 1620},
+  {31, 108000, 3600},
+  {32, 216000, 5120},
+  {40, 245760, 8192},
+  {41, 245760, 8192},
+  {42, 522240, 8704},
+  {50, 589824, 22080},
+  {51, 983040, 36864},
+  {52, 2073600, 36864},
+};
+
+/* The lowest level that can carry this resolution and frame rate, or -1. */
+static gint
+gst_mpp_h264_enc_calculate_level (GstVideoInfo * info)
+{
+  guint32 mbs, mbps;
+  gint fps_n, fps_d;
+  guint i;
+
+  mbs = (GST_ROUND_UP_16 (GST_VIDEO_INFO_WIDTH (info)) / 16) *
+      (GST_ROUND_UP_16 (GST_VIDEO_INFO_HEIGHT (info)) / 16);
+  if (!mbs)
+    return -1;
+
+  fps_n = GST_VIDEO_INFO_FPS_N (info);
+  fps_d = GST_VIDEO_INFO_FPS_D (info);
+  if (fps_n <= 0 || fps_d <= 0) {
+    /* Unknown rate: assume the highest this encoder is asked for in practice
+     * rather than picking a level the stream could then exceed. */
+    fps_n = 60;
+    fps_d = 1;
+  }
+
+  mbps = gst_util_uint64_scale_ceil (mbs, fps_n, fps_d);
+
+  for (i = 0; i < G_N_ELEMENTS (h264_level_limits); i++) {
+    if (mbs <= h264_level_limits[i].max_fs &&
+        mbps <= h264_level_limits[i].max_mbps)
+      return h264_level_limits[i].level_idc;
+  }
+
+  return -1;
+}
+
 static gboolean
 gst_mpp_h264_enc_set_src_caps (GstVideoEncoder * encoder)
 {
@@ -356,10 +428,30 @@ static gboolean
 gst_mpp_h264_enc_set_format (GstVideoEncoder * encoder,
     GstVideoCodecState * state)
 {
+  GstMppH264Enc *self = GST_MPP_H264_ENC (encoder);
+  GstMppEnc *mppenc = GST_MPP_ENC (encoder);
   GstVideoEncoderClass *pclass = GST_VIDEO_ENCODER_CLASS (parent_class);
 
   if (!pclass->set_format (encoder, state))
     return FALSE;
+
+  /* Derive the level now that the input format is known, unless the
+   * application named one. Done here rather than in set_src_caps because
+   * apply_properties pushes h264:level into MPP and then calls set_src_caps --
+   * changing it there would advertise one level and encode at another. */
+  if (!self->level_from_user) {
+    gint level = gst_mpp_h264_enc_calculate_level (&state->info);
+
+    if (level > 0 && level != self->level) {
+      GST_INFO_OBJECT (self, "using H.264 level %d for %dx%d@%d/%d fps", level,
+          GST_VIDEO_INFO_WIDTH (&state->info),
+          GST_VIDEO_INFO_HEIGHT (&state->info),
+          GST_VIDEO_INFO_FPS_N (&state->info),
+          GST_VIDEO_INFO_FPS_D (&state->info));
+      self->level = level;
+      mppenc->prop_dirty = TRUE;
+    }
+  }
 
   return gst_mpp_h264_enc_apply_properties (encoder);
 }
@@ -385,6 +477,7 @@ gst_mpp_h264_enc_init (GstMppH264Enc * self)
 
   self->profile = DEFAULT_PROP_PROFILE;
   self->level = DEFAULT_PROP_LEVEL;
+  self->level_from_user = FALSE;
   self->qp_init = DEFAULT_PROP_QP_INIT;
   self->qp_min = DEFAULT_PROP_QP_MIN;
   self->qp_max = DEFAULT_PROP_QP_MAX;
