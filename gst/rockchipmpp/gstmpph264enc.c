@@ -98,7 +98,7 @@ GST_STATIC_PAD_TEMPLATE ("src",
         GST_MPP_H264_ENC_SIZE_CAPS ","
         "stream-format = (string) { byte-stream }, "
         "alignment = (string) { au }, "
-        "profile = (string) { baseline, main, high }"));
+        "profile = (string) { constrained-baseline, baseline, main, high }"));
 
 static GstStaticPadTemplate gst_mpp_h264_enc_sink_template =
 GST_STATIC_PAD_TEMPLATE ("sink",
