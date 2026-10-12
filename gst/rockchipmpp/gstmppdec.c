@@ -814,34 +814,43 @@ out:
   return frame;
 }
 
-#ifdef HAVE_RGA
 static gboolean
-gst_mpp_dec_rga_convert (GstVideoDecoder * decoder, MppFrame mframe,
+gst_mpp_dec_convert (GstVideoDecoder * decoder, MppFrame mframe,
     GstBuffer * buffer)
 {
   GstMppDec *self = GST_MPP_DEC (decoder);
   GstVideoInfo *info = &self->info;
   GstMemory *mem;
-  gboolean ret;
+  gboolean ret = FALSE;
 
   GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
 
   mem = gst_allocator_alloc (self->allocator, GST_VIDEO_INFO_SIZE (info), NULL);
-  g_return_val_if_fail (mem, FALSE);
+  if (!mem)
+    goto out;
 
-  if (!gst_mpp_rga_convert_from_mpp_frame (mframe, mem, info, self->rotation)) {
-    GST_WARNING_OBJECT (self, "failed to convert");
-    gst_memory_unref (mem);
-    ret = FALSE;
-  } else {
+  /* Try the RGA tier first (DMA, zero copy), then the GPU tier */
+#ifdef HAVE_RGA
+  if (gst_mpp_use_rga ())
+    ret = gst_mpp_rga_convert_from_mpp_frame (mframe, mem, info,
+        self->rotation);
+#endif
+
+  /* RGA is preferred for rotation (DMA rotation is cheaper); the GPU
+   * tier only rotates via its zero-copy path */
+  if (!ret && gst_mpp_use_gpu ())
+    ret = gst_mpp_gpu_convert_from_mpp_frame (mframe, mem, info,
+        self->rotation);
+
+  if (ret)
     gst_buffer_replace_all_memory (buffer, mem);
-    ret = TRUE;
-  }
+  else
+    gst_memory_unref (mem);
 
+out:
   GST_VIDEO_DECODER_STREAM_LOCK (decoder);
   return ret;
 }
-#endif
 
 static GstBuffer *
 gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
@@ -917,14 +926,8 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
   if (!self->convert)
     return buffer;
 
-#ifdef HAVE_RGA
-  if (gst_mpp_use_rga ()) {
-    if (!GST_VIDEO_INFO_IS_AFBC (info) && !GST_VIDEO_INFO_IS_RFBC (info) &&
-        !offset_x && !offset_y &&
-        gst_mpp_dec_rga_convert (decoder, mframe, buffer))
-      return buffer;
-  }
-#endif
+  if (gst_mpp_dec_convert (decoder, mframe, buffer))
+    return buffer;
 
   GST_WARNING_OBJECT (self, "unable to convert frame");
 
@@ -1327,7 +1330,9 @@ gst_mpp_dec_class_init (GstMppDecClass * klass)
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gst_mpp_dec_get_property);
 
 #ifdef HAVE_RGA
-  if (!gst_mpp_use_rga ())
+  /* The GPU tier rotates (zero-copy path) and scales (viewport) too,
+   * so keep the properties installed while any tier is available */
+  if (!gst_mpp_use_rga () && !gst_mpp_use_gpu ())
     goto no_rga;
 
   g_object_class_install_property (gobject_class, PROP_ROTATION,

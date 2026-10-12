@@ -224,4 +224,12 @@ gst_mpp_rga_convert_from_mpp_frame (MppFrame mframe,
   return gst_mpp_rga_do_convert (&src, &dst, rotation);
 }
 
+#else
+
+gboolean
+gst_mpp_use_rga ()
+{
+  return FALSE;
+}
+
 #endif
