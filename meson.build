@@ -92,6 +92,16 @@ if rga_dep.found() and not get_option('rga').disabled()
   cdata.set('HAVE_RGA', 1)
 endif
 
+egl_dep = dependency('egl', required : get_option('gpu'))
+glesv2_dep = dependency('glesv2', required : get_option('gpu'))
+gbm_dep = dependency('gbm', required : get_option('gpu'))
+gpu_drm_dep = dependency('libdrm', required : get_option('gpu'))
+
+if not get_option('gpu').disabled() and egl_dep.found() and glesv2_dep.found() and \
+   gbm_dep.found() and gpu_drm_dep.found()
+  cdata.set('HAVE_GPU', 1)
+endif
+
 if not get_option('vpxalphadec').auto()
   vpxalphadec = get_option('vpxalphadec').enabled()
 else
