@@ -81,6 +81,27 @@ G_BEGIN_DECLS;
     "BGR16, RGB, BGR, RGBA, BGRA, RGBx, BGRx"
 #endif
 
+struct gst_mpp_format
+{
+  GstVideoFormat gst_format;
+  MppFrameFormat mpp_format;
+#ifdef HAVE_RGA
+  RgaSURF_FORMAT rga_format;
+#endif
+  gint pixel_stride0;
+  gboolean is_yuv;
+};
+
+extern struct gst_mpp_format gst_mpp_formats[];
+
+#define GST_MPP_GET_FORMAT(type, format) ({ \
+  struct gst_mpp_format *_tmp = gst_mpp_formats; \
+  for (; _tmp->gst_format != GST_VIDEO_FORMAT_UNKNOWN; _tmp++) { \
+    if (_tmp->type ## _format == (format)) break;\
+  }; \
+  (_tmp->gst_format != GST_VIDEO_FORMAT_UNKNOWN) ? _tmp : NULL; \
+})
+
 gboolean gst_mpp_use_rga ();
 
 const gchar *gst_mpp_video_format_to_string (GstVideoFormat format);
@@ -93,9 +114,18 @@ MppFrameFormat gst_mpp_gst_format_to_mpp_format (GstVideoFormat format);
 gboolean gst_mpp_rga_convert (GstBuffer * inbuf, GstVideoInfo * src_vinfo,
     GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation);
 
-gboolean gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
+gboolean gst_mpp_rga_convert_from_mpp_frame (MppFrame mframe,
     GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation);
+
+RgaSURF_FORMAT gst_mpp_mpp_format_to_rga_format (MppFrameFormat mpp_format);
+
+RgaSURF_FORMAT gst_mpp_gst_format_to_rga_format (GstVideoFormat format);
 #endif
+
+gboolean gst_mpp_use_gpu (void);
+
+gboolean gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe,
+    GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation);
 
 /* Apply new format and size without reinit the video info */
 void
