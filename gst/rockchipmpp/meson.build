@@ -1,5 +1,6 @@
 rockchipmpp_sources = [
   'gstmpp.c',
+  'gstmpprga.c',
   'gstmppallocator.c',
   'gstmppdec.c',
   'gstmppjpegdec.c',

@@ -41,17 +41,6 @@
 GST_DEBUG_CATEGORY_STATIC (mpp_debug);
 #define GST_CAT_DEFAULT mpp_debug
 
-struct gst_mpp_format
-{
-  GstVideoFormat gst_format;
-  MppFrameFormat mpp_format;
-#ifdef HAVE_RGA
-  RgaSURF_FORMAT rga_format;
-#endif
-  gint pixel_stride0;
-  gboolean is_yuv;
-};
-
 #ifdef HAVE_RGA
 #define GST_MPP_FORMAT(gst, mpp, rga, pixel_stride0, yuv) \
   { GST_VIDEO_FORMAT_ ## gst, MPP_FMT_ ## mpp, RK_FORMAT_ ## rga, \
@@ -97,40 +86,9 @@ struct gst_mpp_format gst_mpp_formats[] = {
   GST_MPP_FORMAT (xBGR, ABGR8888, UNKNOWN, 4, 0),
   GST_MPP_FORMAT (RGBx, RGBA8888, RGBX_8888, 4, 0),
   GST_MPP_FORMAT (BGRx, BGRA8888, BGRX_8888, 4, 0),
+  /* sentinel */
+  GST_MPP_FORMAT (UNKNOWN, BUTT, UNKNOWN, 0, 0),
 };
-
-#define GST_MPP_GET_FORMAT(type, format) ({ \
-  struct gst_mpp_format *_tmp; \
-  for (guint i = 0; i < ARRAY_SIZE (gst_mpp_formats) || (_tmp = NULL); i++) { \
-    _tmp = &gst_mpp_formats[i]; \
-    if (_tmp->type ## _format == (format)) break;\
-  }; _tmp; \
-})
-
-gboolean
-gst_mpp_use_rga ()
-{
-  static int mpp_use_rga = -1;
-
-  if (mpp_use_rga < 0) {
-#ifndef HAVE_RGA
-    GST_WARNING ("RGA disabled at compile time");
-#else
-    const gchar *buf = g_getenv ("GST_MPP_NO_RGA");
-    if (!buf || buf[0] == '0') {
-      GST_WARNING ("RGA enabled");
-      mpp_use_rga = 1;
-      return 1;
-    }
-
-    GST_WARNING ("RGA disabled by env (GST_MPP_NO_RGA)");
-#endif
-
-    mpp_use_rga = 0;
-  }
-
-  return mpp_use_rga > 0;
-}
 
 const gchar *
 gst_mpp_video_format_to_string (GstVideoFormat format)
@@ -157,7 +115,7 @@ gst_mpp_gst_format_to_mpp_format (GstVideoFormat gst_format)
 }
 
 #ifdef HAVE_RGA
-static RgaSURF_FORMAT
+RgaSURF_FORMAT
 gst_mpp_mpp_format_to_rga_format (MppFrameFormat mpp_format)
 {
   struct gst_mpp_format *format = GST_MPP_GET_FORMAT (mpp,
@@ -165,184 +123,13 @@ gst_mpp_mpp_format_to_rga_format (MppFrameFormat mpp_format)
   return format ? format->rga_format : RK_FORMAT_UNKNOWN;
 }
 
-static RgaSURF_FORMAT
+RgaSURF_FORMAT
 gst_mpp_gst_format_to_rga_format (GstVideoFormat gst_format)
 {
   struct gst_mpp_format *format = GST_MPP_GET_FORMAT (gst, gst_format);
   return format ? format->rga_format : RK_FORMAT_UNKNOWN;
 }
 
-static gboolean
-gst_mpp_set_rga_info (rga_info_t * info, RgaSURF_FORMAT rga_format,
-    guint width, guint height, guint hstride, guint vstride)
-{
-  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (rga, rga_format);
-
-  g_assert (format);
-  if (format->is_yuv) {
-    /* RGA requires yuv image rect align to 2 */
-    width &= ~1;
-    height &= ~1;
-
-    if (vstride % 2)
-      return FALSE;
-  }
-
-  if (info->fd < 0 && !info->virAddr)
-    return FALSE;
-
-  info->mmuFlag = 1;
-  rga_set_rect (&info->rect, 0, 0, width, height, hstride, vstride, rga_format);
-  return TRUE;
-}
-
-static gboolean
-gst_mpp_rga_info_from_mpp_frame (rga_info_t * info, MppFrame mframe)
-{
-  MppFrameFormat mpp_format = mpp_frame_get_fmt (mframe);
-  MppBuffer mbuf = mpp_frame_get_buffer (mframe);
-  guint width = mpp_frame_get_width (mframe);
-  guint height = mpp_frame_get_height (mframe);
-  guint hstride = mpp_frame_get_hor_stride (mframe);
-  guint vstride = mpp_frame_get_ver_stride (mframe);
-  RgaSURF_FORMAT rga_format = gst_mpp_mpp_format_to_rga_format (mpp_format);
-
-  struct gst_mpp_format *format = GST_MPP_GET_FORMAT (mpp, mpp_format);
-  if (format)
-    hstride = hstride / format->pixel_stride0;
-
-  g_return_val_if_fail (mbuf, FALSE);
-
-  info->fd = mpp_buffer_get_fd (mbuf);
-
-  return gst_mpp_set_rga_info (info, rga_format, width, height,
-      hstride, vstride);
-}
-
-static gboolean
-gst_mpp_rga_info_from_video_info (rga_info_t * info, GstVideoInfo * vinfo)
-{
-  GstVideoFormat format = GST_VIDEO_INFO_FORMAT (vinfo);
-  guint width = GST_VIDEO_INFO_WIDTH (vinfo);
-  guint height = GST_VIDEO_INFO_HEIGHT (vinfo);
-  guint hstride = gst_mpp_get_pixel_stride (vinfo);
-  guint vstride = GST_MPP_VIDEO_INFO_VSTRIDE (vinfo);
-  RgaSURF_FORMAT rga_format = gst_mpp_gst_format_to_rga_format (format);
-
-  return gst_mpp_set_rga_info (info, rga_format, width, height,
-      hstride, vstride);
-}
-
-static gboolean
-gst_mpp_rga_do_convert (rga_info_t * src_info, rga_info_t * dst_info)
-{
-  static gint rga_supported = 1;
-  static gint rga_inited = 0;
-
-  if (!rga_supported || !gst_mpp_use_rga ())
-    return FALSE;
-
-  if (!rga_inited) {
-    if (c_RkRgaInit () < 0) {
-      rga_supported = 0;
-      GST_WARNING ("failed to init RGA");
-      return FALSE;
-    }
-    rga_inited = 1;
-  }
-
-  if (c_RkRgaBlit (src_info, dst_info, NULL) < 0) {
-    GST_WARNING ("failed to blit");
-    return FALSE;
-  }
-
-  GST_DEBUG ("converted with RGA");
-  return TRUE;
-}
-
-static gint
-gst_mpp_rga_get_rotation (gint rotation)
-{
-  switch (rotation) {
-    case 0:
-      return 0;
-    case 90:
-      return HAL_TRANSFORM_ROT_90;
-    case 180:
-      return HAL_TRANSFORM_ROT_180;
-    case 270:
-      return HAL_TRANSFORM_ROT_270;
-    default:
-      return -1;
-  }
-}
-
-gboolean
-gst_mpp_rga_convert (GstBuffer * inbuf, GstVideoInfo * src_vinfo,
-    GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation)
-{
-  GstMapInfo mapinfo = { 0, };
-  gboolean ret;
-
-  rga_info_t src_info = { 0, };
-  rga_info_t dst_info = { 0, };
-
-  if (!gst_mpp_rga_info_from_video_info (&src_info, src_vinfo))
-    return FALSE;
-
-  if (!gst_mpp_rga_info_from_video_info (&dst_info, dst_vinfo))
-    return FALSE;
-
-  /* Prefer using dma fd */
-  if (gst_buffer_n_memory (inbuf) == 1) {
-    GstMemory *mem = gst_buffer_peek_memory (inbuf, 0);
-    gsize offset;
-
-    if (gst_is_dmabuf_memory (mem)) {
-      gst_memory_get_sizes (mem, &offset, NULL);
-      if (!offset)
-        src_info.fd = gst_dmabuf_memory_get_fd (mem);
-    }
-  }
-
-  if (src_info.fd <= 0) {
-    gst_buffer_map (inbuf, &mapinfo, GST_MAP_READ);
-    src_info.virAddr = mapinfo.data;
-  }
-
-  dst_info.fd = gst_dmabuf_memory_get_fd (out_mem);
-
-  src_info.rotation = gst_mpp_rga_get_rotation (rotation);
-  if (src_info.rotation < 0)
-    return FALSE;
-
-  ret = gst_mpp_rga_do_convert (&src_info, &dst_info);
-
-  gst_buffer_unmap (inbuf, &mapinfo);
-  return ret;
-}
-
-gboolean
-gst_mpp_rga_convert_from_mpp_frame (MppFrame * mframe,
-    GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation)
-{
-  rga_info_t src_info = { 0, };
-  rga_info_t dst_info = { 0, };
-
-  if (!gst_mpp_rga_info_from_mpp_frame (&src_info, mframe))
-    return FALSE;
-
-  if (!gst_mpp_rga_info_from_video_info (&dst_info, dst_vinfo))
-    return FALSE;
-
-  dst_info.fd = gst_dmabuf_memory_get_fd (out_mem);
-
-  src_info.rotation = gst_mpp_rga_get_rotation (rotation);
-  if (src_info.rotation < 0)
-    return FALSE;
-
-  return gst_mpp_rga_do_convert (&src_info, &dst_info);
-}
 #endif
 
 void
