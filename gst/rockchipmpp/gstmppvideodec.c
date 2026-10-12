@@ -342,7 +342,7 @@ gst_mpp_video_dec_class_init (GstMppVideoDecClass * klass)
 
   gst_mpp_video_dec_setup_default_format ();
 
-#ifdef HAVE_RGA
+#if defined (HAVE_RGA) || defined (HAVE_GPU)
   g_object_class_install_property (gobject_class, PROP_FORMAT,
       g_param_spec_enum ("format", "Prefered output format",
           "Prefered output format",
