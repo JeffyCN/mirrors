@@ -747,7 +747,7 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
   GstBufferPool *pool;
   GstVideoInfo info;
   GstCaps *caps;
-  guint size;
+  guint size, min_buffers;
 
   GST_DEBUG_OBJECT (self, "propose allocation");
 
@@ -779,7 +779,11 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
   pool = gst_video_buffer_pool_new ();
 
   config = gst_buffer_pool_get_config (pool);
-  gst_buffer_pool_config_set_params (config, caps, size, 0, 0);
+  /* The encoder holds up to max-pending frames in MPP plus the one waiting in
+   * handle_frame for a slot; a capture source must keep that many beyond what it
+   * needs itself, or it runs dry (rkisp drops frames when no buffer is queued). */
+  min_buffers = self->max_pending + 1;
+  gst_buffer_pool_config_set_params (config, caps, size, min_buffers, 0);
   gst_buffer_pool_config_set_allocator (config, self->allocator, NULL);
 
   /* Expose alignment to pool */
@@ -789,7 +793,7 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
 
   gst_buffer_pool_set_config (pool, config);
 
-  gst_query_add_allocation_pool (query, pool, size, 0, 0);
+  gst_query_add_allocation_pool (query, pool, size, min_buffers, 0);
   gst_query_add_allocation_param (query, self->allocator, NULL);
 
   gst_object_unref (pool);
