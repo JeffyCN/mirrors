@@ -85,6 +85,9 @@ GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw,"
         "format = (string) { " MPP_ENC_FORMATS " }, "
+        GST_MPP_VP8_ENC_SIZE_CAPS ";"
+        "video/x-raw(memory:DMABuf),"
+        "format = (string) { " MPP_ENC_FORMATS " }, "
         GST_MPP_VP8_ENC_SIZE_CAPS));
 
 static void
