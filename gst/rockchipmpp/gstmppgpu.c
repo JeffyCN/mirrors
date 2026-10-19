@@ -491,6 +491,46 @@ gst_mpp_gpu_build_program (const char *fs_src)
   return program;
 }
 
+/* Open the render node of a Mali DRM driver. On RK3576 renderD128 is
+ * the display controller; its primary node is denied to sandboxed
+ * services and sends Mesa down the kmsro path. Fall back to the
+ * Rockchip DDK setup, where the GPU has no DRM driver. */
+static gint
+gst_mpp_gpu_open_drm (void)
+{
+  drmDevicePtr devices[16];
+  gint i, n, fd = -1;
+
+  n = drmGetDevices2 (0, devices, G_N_ELEMENTS (devices));
+  for (i = 0; i < n && fd < 0; i++) {
+    drmVersionPtr ver;
+
+    if (!(devices[i]->available_nodes & (1 << DRM_NODE_RENDER)))
+      continue;
+
+    fd = open (devices[i]->nodes[DRM_NODE_RENDER], O_RDWR | O_CLOEXEC);
+    if (fd < 0)
+      continue;
+
+    ver = drmGetVersion (fd);
+    if (!ver || (strcmp (ver->name, "panfrost") &&
+            strcmp (ver->name, "panthor"))) {
+      close (fd);
+      fd = -1;
+    }
+    drmFreeVersion (ver);
+  }
+  if (n > 0)
+    drmFreeDevices (devices, n);
+
+  if (fd < 0)
+    fd = drmOpen ("rockchip", NULL);
+  if (fd < 0)
+    fd = open ("/dev/dri/renderD128", O_RDWR | O_CLOEXEC);
+
+  return fd;
+}
+
 static gboolean
 gst_mpp_gpu_init (void)
 {
@@ -518,9 +558,7 @@ gst_mpp_gpu_init (void)
   if (!get_platform_display)
     goto err;
 
-  gctx.drm_fd = drmOpen ("rockchip", NULL);
-  if (gctx.drm_fd < 0)
-    gctx.drm_fd = open ("/dev/dri/renderD128", O_RDWR | O_CLOEXEC);
+  gctx.drm_fd = gst_mpp_gpu_open_drm ();
   if (gctx.drm_fd < 0)
     goto err;
 
