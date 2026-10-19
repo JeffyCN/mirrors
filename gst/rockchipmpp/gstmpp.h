@@ -94,12 +94,19 @@ struct gst_mpp_format
 
 extern struct gst_mpp_format gst_mpp_formats[];
 
+/* Only the sentinel has both formats unset: rows for GstVideoFormats
+ * this GStreamer lacks keep GST_VIDEO_FORMAT_UNKNOWN but still map an
+ * MPP format, and must not end the scan. */
+#define GST_MPP_FORMAT_IS_SENTINEL(f) \
+  ((f)->gst_format == GST_VIDEO_FORMAT_UNKNOWN && \
+      (f)->mpp_format == MPP_FMT_BUTT)
+
 #define GST_MPP_GET_FORMAT(type, format) ({ \
   struct gst_mpp_format *_tmp = gst_mpp_formats; \
-  for (; _tmp->gst_format != GST_VIDEO_FORMAT_UNKNOWN; _tmp++) { \
+  for (; !GST_MPP_FORMAT_IS_SENTINEL (_tmp); _tmp++) { \
     if (_tmp->type ## _format == (format)) break;\
   }; \
-  (_tmp->gst_format != GST_VIDEO_FORMAT_UNKNOWN) ? _tmp : NULL; \
+  GST_MPP_FORMAT_IS_SENTINEL (_tmp) ? NULL : _tmp; \
 })
 
 gboolean gst_mpp_use_rga ();
