@@ -192,13 +192,23 @@ static const char *fs_src_c10 =
  * which reports a false FBO-complete and corrupts the output.
  */
 
+/*
+ * The plane and pass-B shaders below address dst pixels by index. GLSL
+ * ES 1.00 declares gl_FragCoord mediump, and Mesa on Mali evaluates it in
+ * fp16, which cannot hold pixel centres from 1024.5 on: those samples
+ * land on texel edges and blend two texels.  Derive the index from the
+ * highp texcoord varying instead; u_vp is the viewport size in pixels.
+ */
+
 /* 8-bit src: Y is a plain single-component copy */
 static const char *fs_plane8_y =
     "precision highp float;\n"
+    "varying vec2 texcoord;\n"
     "uniform sampler2D tex_y;\n"
     "uniform vec2 t_step;\n"
+    "uniform vec2 u_vp;\n"
     "void main() {\n"
-    "   vec2 t = (floor(gl_FragCoord.xy) + 0.5) * t_step;\n"
+    "   vec2 t = (floor(texcoord * u_vp) + 0.5) * t_step;\n"
     "   float v = texture2D(tex_y, t).r;\n"
     "   gl_FragColor = vec4(v, v, v, 1.0);\n" "}\n";
 
@@ -222,7 +232,9 @@ static const char *fs_plane8_y =
  * and a 4:2:2 src into a 4:2:0 dst keeps the even chroma rows. */
 static const char *fs_plane8_uv =
     "precision highp float;\n"
+    "varying vec2 texcoord;\n"
     "uniform sampler2D tex_c;\n"
+    "uniform vec2 u_vp;\n"
     "uniform float u_tx;\n"
     "uniform float u_ratio_x;\n"
     "uniform float u_ratio_y;\n"
@@ -232,10 +244,10 @@ static const char *fs_plane8_uv =
     "uniform float vu;\n"
     "uniform float dvu;\n"
     "void main() {\n"
-    "   float r = floor(gl_FragCoord.y);\n"
-    "   float srow = floor((u_rowmul * r + 0.5) * u_ratio_y * u_vhalf);\n"
+    "   vec2 px = floor(texcoord * u_vp);\n"
+    "   float srow = floor((u_rowmul * px.y + 0.5) * u_ratio_y * u_vhalf);\n"
     "   float ty = (srow + 0.5) * u_vs2;\n"
-    "   float bx = floor(gl_FragCoord.x) * 4.0;\n"
+    "   float bx = px.x * 4.0;\n"
     "   float b0 = texture2D(tex_c, vec2((bx + 0.5) * u_ratio_x * u_tx, ty)).r;\n"
     "   float b1 = texture2D(tex_c, vec2((bx + 1.5) * u_ratio_x * u_tx, ty)).r;\n"
     "   float b2 = texture2D(tex_c, vec2((bx + 2.5) * u_ratio_x * u_tx, ty)).r;\n"
@@ -257,23 +269,28 @@ static const char *fs_plane8_uv =
 static const char *fs_rgb2y =
     "#extension GL_OES_EGL_image_external : require\n"
     "precision highp float;\n"
+    "varying vec2 texcoord;\n"
     "uniform samplerExternalOES tex;\n"
     "uniform vec2 t_step;\n"
+    "uniform vec2 u_vp;\n"
     "void main() {\n"
-    "   vec3 c = texture2D(tex, (floor(gl_FragCoord.xy) + 0.5) * t_step).rgb;\n"
+    "   vec3 c = texture2D(tex, (floor(texcoord * u_vp) + 0.5) * t_step).rgb;\n"
     "   float y = 0.2568 * c.r + 0.5041 * c.g + 0.0979 * c.b + 0.0625;\n"
     "   gl_FragColor = vec4(y, y, y, 1.0);\n" "}\n";
 
 static const char *fs_rgb2uvc =
     "#extension GL_OES_EGL_image_external : require\n"
     "precision highp float;\n"
+    "varying vec2 texcoord;\n"
     "uniform samplerExternalOES tex;\n"
     "uniform vec2 px_step;\n"
+    "uniform vec2 u_vp;\n"
     "uniform float row_step;\n"
     "uniform float swap;\n"
     "void main() {\n"
-    "   float base = floor(gl_FragCoord.x) * 4.0;\n"
-    "   float py = (floor(gl_FragCoord.y) * row_step + 0.5) * px_step.y;\n"
+    "   vec2 px = floor(texcoord * u_vp);\n"
+    "   float base = px.x * 4.0;\n"
+    "   float py = (px.y * row_step + 0.5) * px_step.y;\n"
     "   vec3 c0 = texture2D(tex, vec2((base + 0.5) * px_step.x, py)).rgb;\n"
     "   vec3 c1 = texture2D(tex, vec2((base + 2.5) * px_step.x, py)).rgb;\n"
     "   float u0 = -0.1482 * c0.r - 0.2910 * c0.g + 0.4392 * c0.b + 0.5020;\n"
@@ -286,13 +303,16 @@ static const char *fs_rgb2uvc =
 static const char *fs_rgb2c =
     "#extension GL_OES_EGL_image_external : require\n"
     "precision highp float;\n"
+    "varying vec2 texcoord;\n"
     "uniform samplerExternalOES tex;\n"
     "uniform vec2 px_step;\n"
+    "uniform vec2 u_vp;\n"
     "uniform float row_step;\n"
     "uniform float sel;\n"
     "void main() {\n"
-    "   vec3 c = texture2D(tex, vec2((floor(gl_FragCoord.x) * 2.0 + 0.5) * px_step.x,\n"
-    "                                (floor(gl_FragCoord.y) * row_step + 0.5) * px_step.y)).rgb;\n"
+    "   vec2 px = floor(texcoord * u_vp);\n"
+    "   vec3 c = texture2D(tex, vec2((px.x * 2.0 + 0.5) * px_step.x,\n"
+    "                                (px.y * row_step + 0.5) * px_step.y)).rgb;\n"
     "   float u = -0.1482 * c.r - 0.2910 * c.g + 0.4392 * c.b + 0.5020;\n"
     "   float v = 0.4392 * c.r - 0.3678 * c.g - 0.0714 * c.b + 0.5020;\n"
     "   gl_FragColor = vec4(mix(u, v, sel), 0.0, 0.0, 1.0);\n" "}\n";
@@ -318,14 +338,17 @@ static const char *fs_plane10_y =
 static const char *fs_plane10_uv =
     "#extension GL_OES_EGL_image_external : require\n"
     "precision highp float;\n"
+    "varying vec2 texcoord;\n"
     "uniform samplerExternalOES tex_y;\n"
     "uniform vec2 src_scale;\n"
     "uniform vec2 px_step;\n"
+    "uniform vec2 u_vp;\n"
     "uniform float u_rowmul;\n"
     "uniform float dvu;\n"
     "void main() {\n"
-    "   float base = floor(gl_FragCoord.x) * 4.0;\n"
-    "   float py = (u_rowmul * floor(gl_FragCoord.y) + 0.5) * px_step.y;\n"
+    "   vec2 px = floor(texcoord * u_vp);\n"
+    "   float base = px.x * 4.0;\n"
+    "   float py = (u_rowmul * px.y + 0.5) * px_step.y;\n"
     "   vec3 c0 = texture2D(tex_y, vec2((base + 0.5) * px_step.x, py) * src_scale).rgb;\n"
     "   vec3 c1 = texture2D(tex_y, vec2((base + 2.5) * px_step.x, py) * src_scale).rgb;\n"
     "   float u0 = -0.1482 * c0.r - 0.2910 * c0.g + 0.4392 * c0.b + 0.5020;\n"
@@ -1374,6 +1397,8 @@ gst_mpp_gpu_planes_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
 
     glViewport (0, 0, pass[p].viewport_w, pass[p].viewport_h);
     glUseProgram (pass[p].program);
+    glUniform2f (glGetUniformLocation (pass[p].program, "u_vp"),
+        pass[p].viewport_w, pass[p].viewport_h);
     if (pass[p].program == gctx.program_plane8_y) {
       glUniform2f (gctx.plane8_y_t_step_loc,
           ratio_x / hor_stride, ratio_y / ver_stride);
@@ -1746,6 +1771,8 @@ gst_mpp_gpu_yuv_via_rgb (gint dst_fd, GstVideoInfo * dst_vinfo,
 
     glViewport (0, 0, planes[p].vw, planes[p].vh);
     glUseProgram (planes[p].program);
+    glUniform2f (glGetUniformLocation (planes[p].program, "u_vp"),
+        planes[p].vw, planes[p].vh);
     if (planes[p].program == gctx.program_rgb2y) {
       glUniform2f (gctx.rgb2y_t_step_loc, 1.0f / dst_w, 1.0f / dst_h);
     } else {
