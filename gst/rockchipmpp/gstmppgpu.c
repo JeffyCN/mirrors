@@ -112,11 +112,10 @@ gst_mpp_gpu_load_procs (void)
  * CbCr row: one texel == one byte) and reconstruct Cb/Cr in the shader
  * by sampling one texel apart. BT.601 limited-range YUV -> RGB.
  *
- * NOTE on rkvdec H.264 4:2:2 (MPP_FMT_YUV422SP): despite the format
- * name, the buffer layout is NOT standard NV16. Empirically the chroma
- * pairs sit at FULL width but HALF height (the chroma is 4:2:2
- * horizontally but 4:2:0 vertically), and MPP reports the frame size
- * accordingly (2.5 B/px, not NV16's 3.0).
+ * NOTE on rkvdec H.264 4:2:2 (MPP_FMT_YUV422SP): the buffer is standard
+ * NV16, the chroma plane hor_stride bytes wide and ver_stride rows tall
+ * (one chroma row per luma row), as libv4l-rkmpp 14b5d17 verified
+ * against a software decode on RK3588 and RK3576.
  */
 static const char *vs_src =
     "attribute vec4 position;\n"
@@ -151,13 +150,14 @@ static const char *fs_src =
     "uniform sampler2D tex_c;\n"
     "uniform vec2 src_scale;\n" "uniform float chr_dx;\n" "uniform float vu;\n"
     "void main() {\n"
-    /* texcoord spans the visible source area; chroma texels track luma
-     * columns and the chroma rows cover the same physical height at
-     * half density, so both planes share the same sampling position */
+    /* texcoord spans the visible source area and the chroma rows cover
+     * the same height as luma, so t.y serves both planes; a luma column
+     * takes the CbCr pair that starts at the even byte at or below it */
     "   vec2 t = texcoord * src_scale;\n"
+    "   float cx = (floor(t.x / (2.0 * chr_dx)) * 2.0 + 0.5) * chr_dx;\n"
     "   float y = (texture2D(tex_y, t).r - 0.0625) * 1.164;\n"
-    "   float c1 = texture2D(tex_c, t).r - 0.5;\n"
-    "   float c2 = texture2D(tex_c, t + vec2(chr_dx, 0.0)).r - 0.5;\n"
+    "   float c1 = texture2D(tex_c, vec2(cx, t.y)).r - 0.5;\n"
+    "   float c2 = texture2D(tex_c, vec2(cx + chr_dx, t.y)).r - 0.5;\n"
     "   float cb = mix(c1, c2, vu);\n"
     "   float cr = mix(c2, c1, vu);\n"
     "   float r = clamp(y + 1.596 * cr, 0.0, 1.0);\n"
@@ -193,13 +193,23 @@ static const char *fs_src_c10 =
  * which reports a false FBO-complete and corrupts the output.
  */
 
+/*
+ * The plane and pass-B shaders below address dst pixels by index. GLSL
+ * ES 1.00 declares gl_FragCoord mediump, and Mesa on Mali evaluates it in
+ * fp16, which cannot hold pixel centres from 1024.5 on: those samples
+ * land on texel edges and blend two texels.  Derive the index from the
+ * highp texcoord varying instead; u_vp is the viewport size in pixels.
+ */
+
 /* 8-bit src: Y is a plain single-component copy */
 static const char *fs_plane8_y =
     "precision highp float;\n"
+    "varying vec2 texcoord;\n"
     "uniform sampler2D tex_y;\n"
     "uniform vec2 t_step;\n"
+    "uniform vec2 u_vp;\n"
     "void main() {\n"
-    "   vec2 t = (floor(gl_FragCoord.xy) + 0.5) * t_step;\n"
+    "   vec2 t = (floor(texcoord * u_vp) + 0.5) * t_step;\n"
     "   float v = texture2D(tex_y, t).r;\n"
     "   gl_FragColor = vec4(v, v, v, 1.0);\n" "}\n";
 
@@ -212,45 +222,37 @@ static const char *fs_plane8_y =
  * r sits at dst luma line Ld = u_rowmul * r + 0.5 (u_rowmul is 2 for
  * 4:2:0 dst, 1 for 4:2:2 dst); that line maps to src luma line
  * L = Ld * u_ratio_y and src chroma row floor(L * u_vhalf) (u_vhalf is
- * 0.5 for 4:2:0 src, 1 for 4:2:2 src whose logical chroma rows match
- * the luma rows).  4:2:2 sources pack two logical chroma rows into one
- * double-width texture row, so the texel row is floor(srow * u_va)
- * (u_va 1 or 0.5).  Empirically (buffer dumps cross-checked against a
- * software decode) the rkvdec 4:2:2 chroma rows are CONTIGUOUS half
- * height rows -- no interlace offset between logical rows.
+ * 0.5 for 4:2:0 src, 1 for 4:2:2 src whose chroma rows match the luma
+ * rows); u_vs2 is one over the src chroma plane height in rows.
  *
- * Horizontal pair pick: the dst texel carries the chroma of luma
- * columns 4tx..4tx+3, which for a 4:2:2 src (one chroma pair per luma
- * column) are the pairs of columns 4tx and 4tx+2 -- bytes 8tx..8tx+1
- * and 8tx+4..8tx+5 of the double-width row (u_bxmul 8, u_b2off 4.5).
- * A 4:2:0 src has one pair per two luma columns, so the same texel
- * takes consecutive bytes 4tx..4tx+3 (u_bxmul 4, u_b2off 2.5).  At 1:1
- * the row mapping collapses onto texel centres and the copy is bit
- * exact; scaled output is horizontally bilinear (texture filter) and
- * vertically nearest-row. */
+ * Horizontal pair pick: both src families carry one chroma pair per two
+ * luma columns, so the dst texel for luma columns 4tx..4tx+3 takes the
+ * consecutive bytes 4tx..4tx+3.  At 1:1 the row mapping collapses onto
+ * texel centres and the copy is bit exact; scaled output is
+ * horizontally bilinear (texture filter) and vertically nearest-row,
+ * and a 4:2:2 src into a 4:2:0 dst keeps the even chroma rows. */
 static const char *fs_plane8_uv =
     "precision highp float;\n"
+    "varying vec2 texcoord;\n"
     "uniform sampler2D tex_c;\n"
+    "uniform vec2 u_vp;\n"
     "uniform float u_tx;\n"
     "uniform float u_ratio_x;\n"
     "uniform float u_ratio_y;\n"
     "uniform float u_rowmul;\n"
     "uniform float u_vhalf;\n"
-    "uniform float u_va;\n"
     "uniform float u_vs2;\n"
-    "uniform float u_bxmul;\n"
-    "uniform float u_b2off;\n"
     "uniform float vu;\n"
     "uniform float dvu;\n"
     "void main() {\n"
-    "   float r = floor(gl_FragCoord.y);\n"
-    "   float srow = floor((u_rowmul * r + 0.5) * u_ratio_y * u_vhalf);\n"
-    "   float ty = (floor(srow * u_va) + 0.5) * u_vs2;\n"
-    "   float bx = floor(gl_FragCoord.x) * u_bxmul;\n"
+    "   vec2 px = floor(texcoord * u_vp);\n"
+    "   float srow = floor((u_rowmul * px.y + 0.5) * u_ratio_y * u_vhalf);\n"
+    "   float ty = (srow + 0.5) * u_vs2;\n"
+    "   float bx = px.x * 4.0;\n"
     "   float b0 = texture2D(tex_c, vec2((bx + 0.5) * u_ratio_x * u_tx, ty)).r;\n"
     "   float b1 = texture2D(tex_c, vec2((bx + 1.5) * u_ratio_x * u_tx, ty)).r;\n"
-    "   float b2 = texture2D(tex_c, vec2((bx + u_b2off) * u_ratio_x * u_tx, ty)).r;\n"
-    "   float b3 = texture2D(tex_c, vec2((bx + u_b2off + 1.0) * u_ratio_x * u_tx, ty)).r;\n"
+    "   float b2 = texture2D(tex_c, vec2((bx + 2.5) * u_ratio_x * u_tx, ty)).r;\n"
+    "   float b3 = texture2D(tex_c, vec2((bx + 3.5) * u_ratio_x * u_tx, ty)).r;\n"
     "   float cb0 = mix(b0, b1, vu);\n"
     "   float cr0 = mix(b1, b0, vu);\n"
     "   float cb1 = mix(b2, b3, vu);\n"
@@ -266,25 +268,28 @@ static const char *fs_plane8_uv =
  * src -> RGB -> dst, all GPU side.
  */
 static const char *fs_rgb2y =
-    "#extension GL_OES_EGL_image_external : require\n"
     "precision highp float;\n"
-    "uniform samplerExternalOES tex;\n"
+    "varying vec2 texcoord;\n"
+    "uniform sampler2D tex;\n"
     "uniform vec2 t_step;\n"
+    "uniform vec2 u_vp;\n"
     "void main() {\n"
-    "   vec3 c = texture2D(tex, (floor(gl_FragCoord.xy) + 0.5) * t_step).rgb;\n"
+    "   vec3 c = texture2D(tex, (floor(texcoord * u_vp) + 0.5) * t_step).rgb;\n"
     "   float y = 0.2568 * c.r + 0.5041 * c.g + 0.0979 * c.b + 0.0625;\n"
     "   gl_FragColor = vec4(y, y, y, 1.0);\n" "}\n";
 
 static const char *fs_rgb2uvc =
-    "#extension GL_OES_EGL_image_external : require\n"
     "precision highp float;\n"
-    "uniform samplerExternalOES tex;\n"
+    "varying vec2 texcoord;\n"
+    "uniform sampler2D tex;\n"
     "uniform vec2 px_step;\n"
+    "uniform vec2 u_vp;\n"
     "uniform float row_step;\n"
     "uniform float swap;\n"
     "void main() {\n"
-    "   float base = floor(gl_FragCoord.x) * 4.0;\n"
-    "   float py = (floor(gl_FragCoord.y) * row_step + 0.5) * px_step.y;\n"
+    "   vec2 px = floor(texcoord * u_vp);\n"
+    "   float base = px.x * 4.0;\n"
+    "   float py = (px.y * row_step + 0.5) * px_step.y;\n"
     "   vec3 c0 = texture2D(tex, vec2((base + 0.5) * px_step.x, py)).rgb;\n"
     "   vec3 c1 = texture2D(tex, vec2((base + 2.5) * px_step.x, py)).rgb;\n"
     "   float u0 = -0.1482 * c0.r - 0.2910 * c0.g + 0.4392 * c0.b + 0.5020;\n"
@@ -295,15 +300,17 @@ static const char *fs_rgb2uvc =
     "}\n";
 
 static const char *fs_rgb2c =
-    "#extension GL_OES_EGL_image_external : require\n"
     "precision highp float;\n"
-    "uniform samplerExternalOES tex;\n"
+    "varying vec2 texcoord;\n"
+    "uniform sampler2D tex;\n"
     "uniform vec2 px_step;\n"
+    "uniform vec2 u_vp;\n"
     "uniform float row_step;\n"
     "uniform float sel;\n"
     "void main() {\n"
-    "   vec3 c = texture2D(tex, vec2((floor(gl_FragCoord.x) * 2.0 + 0.5) * px_step.x,\n"
-    "                                (floor(gl_FragCoord.y) * row_step + 0.5) * px_step.y)).rgb;\n"
+    "   vec2 px = floor(texcoord * u_vp);\n"
+    "   vec3 c = texture2D(tex, vec2((px.x * 2.0 + 0.5) * px_step.x,\n"
+    "                                (px.y * row_step + 0.5) * px_step.y)).rgb;\n"
     "   float u = -0.1482 * c.r - 0.2910 * c.g + 0.4392 * c.b + 0.5020;\n"
     "   float v = 0.4392 * c.r - 0.3678 * c.g - 0.0714 * c.b + 0.5020;\n"
     "   gl_FragColor = vec4(mix(u, v, sel), 0.0, 0.0, 1.0);\n" "}\n";
@@ -329,14 +336,17 @@ static const char *fs_plane10_y =
 static const char *fs_plane10_uv =
     "#extension GL_OES_EGL_image_external : require\n"
     "precision highp float;\n"
+    "varying vec2 texcoord;\n"
     "uniform samplerExternalOES tex_y;\n"
     "uniform vec2 src_scale;\n"
     "uniform vec2 px_step;\n"
+    "uniform vec2 u_vp;\n"
     "uniform float u_rowmul;\n"
     "uniform float dvu;\n"
     "void main() {\n"
-    "   float base = floor(gl_FragCoord.x) * 4.0;\n"
-    "   float py = (u_rowmul * floor(gl_FragCoord.y) + 0.5) * px_step.y;\n"
+    "   vec2 px = floor(texcoord * u_vp);\n"
+    "   float base = px.x * 4.0;\n"
+    "   float py = (u_rowmul * px.y + 0.5) * px_step.y;\n"
     "   vec3 c0 = texture2D(tex_y, vec2((base + 0.5) * px_step.x, py) * src_scale).rgb;\n"
     "   vec3 c1 = texture2D(tex_y, vec2((base + 2.5) * px_step.x, py) * src_scale).rgb;\n"
     "   float u0 = -0.1482 * c0.r - 0.2910 * c0.g + 0.4392 * c0.b + 0.5020;\n"
@@ -384,10 +394,7 @@ struct _GstMppGpuCtx
   GLint plane8_uv_ratio_y_loc;
   GLint plane8_uv_rowmul_loc;
   GLint plane8_uv_vhalf_loc;
-  GLint plane8_uv_va_loc;
   GLint plane8_uv_vs2_loc;
-  GLint plane8_uv_bxmul_loc;
-  GLint plane8_uv_b2off_loc;
   GLint plane8_y_t_step_loc;
   GLint plane10_y_src_scale_loc;
   GLint plane10_uv_src_scale_loc;
@@ -677,13 +684,8 @@ gst_mpp_gpu_init (void)
       glGetUniformLocation (gctx.program_plane8_uv, "u_rowmul");
   gctx.plane8_uv_vhalf_loc =
       glGetUniformLocation (gctx.program_plane8_uv, "u_vhalf");
-  gctx.plane8_uv_va_loc = glGetUniformLocation (gctx.program_plane8_uv, "u_va");
   gctx.plane8_uv_vs2_loc =
       glGetUniformLocation (gctx.program_plane8_uv, "u_vs2");
-  gctx.plane8_uv_bxmul_loc =
-      glGetUniformLocation (gctx.program_plane8_uv, "u_bxmul");
-  gctx.plane8_uv_b2off_loc =
-      glGetUniformLocation (gctx.program_plane8_uv, "u_b2off");
   glUseProgram (gctx.program_plane8_y);
   glUniform1i (glGetUniformLocation (gctx.program_plane8_y, "tex_y"), 0);
   gctx.plane8_y_t_step_loc =
@@ -851,32 +853,33 @@ gst_mpp_gpu_bind_src (gint src_fds[2], guint hor_stride, guint ver_stride,
       *vu = 1.0f;
       break;
     case MPP_FMT_YUV422SP:
-      /* rkvdec H.264 4:2:2: chroma pairs at FULL width but HALF
-       * height; row = hor_stride pairs = 2*hs bytes */
+      /* NV16: chroma row = hor_stride/2 CbCr pairs (hs bytes), one
+       * chroma row per luma row */
       fcc[0] = DRM_FORMAT_R8;
       pw[0] = hor_stride;
       ph[0] = ver_stride;
       pp[0] = hor_stride;
       off[0] = 0;
       fcc[1] = DRM_FORMAT_R8;
-      pw[1] = hor_stride * 2;
-      ph[1] = ver_stride / 2;
-      pp[1] = hor_stride * 2;
+      pw[1] = hor_stride;
+      ph[1] = ver_stride;
+      pp[1] = hor_stride;
       off[1] = hor_stride * ver_stride;
-      *chr_dx = 1.0f / (2 * hor_stride);
+      *chr_dx = 1.0f / hor_stride;
       break;
     case MPP_FMT_YUV422SP_VU:
+      /* NV61: same layout with VU pairs */
       fcc[0] = DRM_FORMAT_R8;
       pw[0] = hor_stride;
       ph[0] = ver_stride;
       pp[0] = hor_stride;
       off[0] = 0;
       fcc[1] = DRM_FORMAT_R8;
-      pw[1] = hor_stride * 2;
-      ph[1] = ver_stride / 2;
-      pp[1] = hor_stride * 2;
+      pw[1] = hor_stride;
+      ph[1] = ver_stride;
+      pp[1] = hor_stride;
       off[1] = hor_stride * ver_stride;
-      *chr_dx = 1.0f / (2 * hor_stride);
+      *chr_dx = 1.0f / hor_stride;
       *vu = 1.0f;
       break;
     default:
@@ -1165,25 +1168,20 @@ gst_mpp_gpu_dst_fourcc (GstVideoFormat format)
   return 0;
 }
 
-/* Import a dmabuf as an OES texture (single plane) */
 static GLuint
-gst_mpp_gpu_import_oes (gint fd, guint32 fourcc, guint width, guint height,
-    guint stride)
+gst_mpp_gpu_import_tex (gint fd, guint32 fourcc, guint w, guint h,
+    guint pitch, guint offset, GLenum target)
 {
-  PFNEGLCREATEIMAGEKHRPROC create_image =
-      (PFNEGLCREATEIMAGEKHRPROC) eglGetProcAddress ("eglCreateImageKHR");
-  PFNEGLDESTROYIMAGEKHRPROC destroy_image =
-      (PFNEGLDESTROYIMAGEKHRPROC) eglGetProcAddress ("eglDestroyImageKHR");
-  PFNGLEGLIMAGETARGETTEXTURE2DOESPROC image_target_texture_2d =
-      (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)
-      eglGetProcAddress ("glEGLImageTargetTexture2DOES");
+  PFNEGLCREATEIMAGEKHRPROC create_image = p_create_image;
+  PFNEGLDESTROYIMAGEKHRPROC destroy_image = p_destroy_image;
+  PFNGLEGLIMAGETARGETTEXTURE2DOESPROC image_target_texture_2d = p_image_target;
   EGLint attribs[] = {
-    EGL_WIDTH, (EGLint) width,
-    EGL_HEIGHT, (EGLint) height,
+    EGL_WIDTH, (EGLint) w,
+    EGL_HEIGHT, (EGLint) h,
     EGL_LINUX_DRM_FOURCC_EXT, (EGLint) fourcc,
     EGL_DMA_BUF_PLANE0_FD_EXT, fd,
-    EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-    EGL_DMA_BUF_PLANE0_PITCH_EXT, (EGLint) stride,
+    EGL_DMA_BUF_PLANE0_OFFSET_EXT, (EGLint) offset,
+    EGL_DMA_BUF_PLANE0_PITCH_EXT, (EGLint) pitch,
     EGL_NONE,
   };
   EGLImageKHR image;
@@ -1194,22 +1192,26 @@ gst_mpp_gpu_import_oes (gint fd, guint32 fourcc, guint width, guint height,
 
   image = create_image (gctx.display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
       NULL, attribs);
-  if (image == EGL_NO_IMAGE_KHR)
+  if (image == EGL_NO_IMAGE_KHR) {
+    GST_WARNING ("import tex failed: fourcc %08x %ux%u pitch %u offset %u: "
+        "egl 0x%x", fourcc, w, h, pitch, offset, eglGetError ());
     return 0;
+  }
 
   glGenTextures (1, &tex);
-  glBindTexture (GL_TEXTURE_EXTERNAL_OES, tex);
-  image_target_texture_2d (GL_TEXTURE_EXTERNAL_OES, image);
+  glBindTexture (target, tex);
+  image_target_texture_2d (target, image);
 
   destroy_image (gctx.display, image);
   return tex;
 }
 
-/* Render the bound source straight into the dst dmabuf (zero copy).
- * This is the weston fb-convert trick: import the dst as an OES
- * texture and attach it as the FBO color attachment.  Only safe for
- * RGB-family dst formats; YUV attachments report a false FBO-complete
- * on the Mali DDK and corrupt the output, so they never get here. */
+/* Render the bound source straight into the dst dmabuf (zero copy):
+ * import the dst as a 2D texture and attach it as the FBO color
+ * attachment.  An external (OES) texture is not color-renderable on
+ * Mesa.  Only safe for RGB-family dst formats; YUV attachments report
+ * a false FBO-complete on the Mali DDK and corrupt the output, so they
+ * never get here. */
 static gboolean
 gst_mpp_gpu_direct_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
     guint src_width, guint src_height, guint src_hor_stride,
@@ -1227,8 +1229,9 @@ gst_mpp_gpu_direct_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
   if (!fourcc || dst_fd < 0)
     return FALSE;
 
-  dst_tex = gst_mpp_gpu_import_oes (dst_fd, fourcc, dst_width, dst_height,
-      dst_stride);
+  gst_mpp_gpu_load_procs ();
+  dst_tex = gst_mpp_gpu_import_tex (dst_fd, fourcc, dst_width, dst_height,
+      dst_stride, 0, GL_TEXTURE_2D);
   if (!dst_tex) {
     GST_WARNING ("failed to import dst dmabuf");
     goto out;
@@ -1237,7 +1240,7 @@ gst_mpp_gpu_direct_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
   glGenFramebuffers (1, &fbo);
   glBindFramebuffer (GL_FRAMEBUFFER, fbo);
   glFramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-      GL_TEXTURE_EXTERNAL_OES, dst_tex, 0);
+      GL_TEXTURE_2D, dst_tex, 0);
   status = glCheckFramebufferStatus (GL_FRAMEBUFFER);
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     GST_WARNING ("direct fbo incomplete: 0x%x", status);
@@ -1392,6 +1395,8 @@ gst_mpp_gpu_planes_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
 
     glViewport (0, 0, pass[p].viewport_w, pass[p].viewport_h);
     glUseProgram (pass[p].program);
+    glUniform2f (glGetUniformLocation (pass[p].program, "u_vp"),
+        pass[p].viewport_w, pass[p].viewport_h);
     if (pass[p].program == gctx.program_plane8_y) {
       glUniform2f (gctx.plane8_y_t_step_loc,
           ratio_x / hor_stride, ratio_y / ver_stride);
@@ -1403,14 +1408,8 @@ gst_mpp_gpu_planes_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
       glUniform1f (gctx.plane8_uv_ratio_y_loc, ratio_y);
       glUniform1f (gctx.plane8_uv_rowmul_loc, dst_422 ? 1.0f : 2.0f);
       glUniform1f (gctx.plane8_uv_vhalf_loc, src_422 ? 1.0f : 0.5f);
-      glUniform1f (gctx.plane8_uv_va_loc, src_422 ? 0.5f : 1.0f);
-      glUniform1f (gctx.plane8_uv_vs2_loc, 2.0f / ver_stride);
-      /* 4:2:2 src has one chroma pair per luma column: the dst texel
-       * (luma cols 4tx..4tx+3) picks the pairs of columns 4tx and
-       * 4tx+2, i.e. bytes 8tx..+1 and 8tx+4..+5 of the double-width
-       * row.  4:2:0 src takes the consecutive bytes 4tx..+3. */
-      glUniform1f (gctx.plane8_uv_bxmul_loc, src_422 ? 8.0f : 4.0f);
-      glUniform1f (gctx.plane8_uv_b2off_loc, src_422 ? 4.5f : 2.5f);
+      glUniform1f (gctx.plane8_uv_vs2_loc,
+          (src_422 ? 1.0f : 2.0f) / ver_stride);
       glUniform1f (gctx.plane8_uv_vu_loc, vu);
       glUniform1f (gctx.plane8_uv_dvu_loc, dst_swap ? 1.0f : 0.0f);
       glActiveTexture (GL_TEXTURE0);
@@ -1525,60 +1524,18 @@ gst_mpp_gpu_rgb_intermediate (guint w, guint h)
     }
 
     glGenTextures (1, &gctx.rgb_itex);
-    glBindTexture (GL_TEXTURE_EXTERNAL_OES, gctx.rgb_itex);
-    p_image_target (GL_TEXTURE_EXTERNAL_OES, image);
-    glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER,
-        GL_NEAREST);
-    glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER,
-        GL_NEAREST);
-    glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S,
-        GL_CLAMP_TO_EDGE);
-    glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T,
-        GL_CLAMP_TO_EDGE);
+    glBindTexture (GL_TEXTURE_2D, gctx.rgb_itex);
+    p_image_target (GL_TEXTURE_2D, image);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     p_destroy_image (gctx.display, image);
   }
 
   gctx.rgb_w = w;
   gctx.rgb_h = h;
   return TRUE;
-}
-
-static GLuint
-gst_mpp_gpu_import_tex (gint fd, guint32 fourcc, guint w, guint h,
-    guint pitch, guint offset, GLenum target)
-{
-  PFNEGLCREATEIMAGEKHRPROC create_image = p_create_image;
-  PFNEGLDESTROYIMAGEKHRPROC destroy_image = p_destroy_image;
-  PFNGLEGLIMAGETARGETTEXTURE2DOESPROC image_target_texture_2d = p_image_target;
-  EGLint attribs[] = {
-    EGL_WIDTH, (EGLint) w,
-    EGL_HEIGHT, (EGLint) h,
-    EGL_LINUX_DRM_FOURCC_EXT, (EGLint) fourcc,
-    EGL_DMA_BUF_PLANE0_FD_EXT, fd,
-    EGL_DMA_BUF_PLANE0_OFFSET_EXT, (EGLint) offset,
-    EGL_DMA_BUF_PLANE0_PITCH_EXT, (EGLint) pitch,
-    EGL_NONE,
-  };
-  EGLImageKHR image;
-  GLuint tex = 0;
-
-  if (!create_image || !destroy_image || !image_target_texture_2d)
-    return 0;
-
-  image = create_image (gctx.display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
-      NULL, attribs);
-  if (image == EGL_NO_IMAGE_KHR) {
-    GST_WARNING ("import tex failed: fourcc %08x %ux%u pitch %u offset %u: "
-        "egl 0x%x", fourcc, w, h, pitch, offset, eglGetError ());
-    return 0;
-  }
-
-  glGenTextures (1, &tex);
-  glBindTexture (target, tex);
-  image_target_texture_2d (target, image);
-
-  destroy_image (gctx.display, image);
-  return tex;
 }
 
 /* Two-pass YUV conversion through an RGB intermediate:
@@ -1693,7 +1650,7 @@ gst_mpp_gpu_yuv_via_rgb (gint dst_fd, GstVideoInfo * dst_vinfo,
     glGenFramebuffers (1, &fbo);
     glBindFramebuffer (GL_FRAMEBUFFER, fbo);
     glFramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-        GL_TEXTURE_EXTERNAL_OES, rgb_tex, 0);
+        GL_TEXTURE_2D, rgb_tex, 0);
     status = glCheckFramebufferStatus (GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
       GST_WARNING ("via-rgb: pass A fbo incomplete: 0x%x", status);
@@ -1736,9 +1693,6 @@ gst_mpp_gpu_yuv_via_rgb (gint dst_fd, GstVideoInfo * dst_vinfo,
   }
 
   /* pass B: RGB intermediate -> dst planes, sampling the same texture */
-  glActiveTexture (GL_TEXTURE0);
-  glBindTexture (GL_TEXTURE_EXTERNAL_OES, rgb_tex);
-
   for (p = 0; p < (gint) nplanes; p++) {
     GLuint tex = 0, fbo = 0;
     GLint pos_loc;
@@ -1770,6 +1724,11 @@ gst_mpp_gpu_yuv_via_rgb (gint dst_fd, GstVideoInfo * dst_vinfo,
 
     glViewport (0, 0, planes[p].vw, planes[p].vh);
     glUseProgram (planes[p].program);
+    /* the dst plane import rebinds GL_TEXTURE_2D on unit 0 */
+    glActiveTexture (GL_TEXTURE0);
+    glBindTexture (GL_TEXTURE_2D, rgb_tex);
+    glUniform2f (glGetUniformLocation (planes[p].program, "u_vp"),
+        planes[p].vw, planes[p].vh);
     if (planes[p].program == gctx.program_rgb2y) {
       glUniform2f (gctx.rgb2y_t_step_loc, 1.0f / dst_w, 1.0f / dst_h);
     } else {
