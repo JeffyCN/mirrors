@@ -112,11 +112,10 @@ gst_mpp_gpu_load_procs (void)
  * CbCr row: one texel == one byte) and reconstruct Cb/Cr in the shader
  * by sampling one texel apart. BT.601 limited-range YUV -> RGB.
  *
- * NOTE on rkvdec H.264 4:2:2 (MPP_FMT_YUV422SP): despite the format
- * name, the buffer layout is NOT standard NV16. Empirically the chroma
- * pairs sit at FULL width but HALF height (the chroma is 4:2:2
- * horizontally but 4:2:0 vertically), and MPP reports the frame size
- * accordingly (2.5 B/px, not NV16's 3.0).
+ * NOTE on rkvdec H.264 4:2:2 (MPP_FMT_YUV422SP): the buffer is standard
+ * NV16, the chroma plane hor_stride bytes wide and ver_stride rows tall
+ * (one chroma row per luma row), as libv4l-rkmpp 14b5d17 verified
+ * against a software decode on RK3588 and RK3576.
  */
 static const char *vs_src =
     "attribute vec4 position;\n"
@@ -212,22 +211,15 @@ static const char *fs_plane8_y =
  * r sits at dst luma line Ld = u_rowmul * r + 0.5 (u_rowmul is 2 for
  * 4:2:0 dst, 1 for 4:2:2 dst); that line maps to src luma line
  * L = Ld * u_ratio_y and src chroma row floor(L * u_vhalf) (u_vhalf is
- * 0.5 for 4:2:0 src, 1 for 4:2:2 src whose logical chroma rows match
- * the luma rows).  4:2:2 sources pack two logical chroma rows into one
- * double-width texture row, so the texel row is floor(srow * u_va)
- * (u_va 1 or 0.5).  Empirically (buffer dumps cross-checked against a
- * software decode) the rkvdec 4:2:2 chroma rows are CONTIGUOUS half
- * height rows -- no interlace offset between logical rows.
+ * 0.5 for 4:2:0 src, 1 for 4:2:2 src whose chroma rows match the luma
+ * rows); u_vs2 is one over the src chroma plane height in rows.
  *
- * Horizontal pair pick: the dst texel carries the chroma of luma
- * columns 4tx..4tx+3, which for a 4:2:2 src (one chroma pair per luma
- * column) are the pairs of columns 4tx and 4tx+2 -- bytes 8tx..8tx+1
- * and 8tx+4..8tx+5 of the double-width row (u_bxmul 8, u_b2off 4.5).
- * A 4:2:0 src has one pair per two luma columns, so the same texel
- * takes consecutive bytes 4tx..4tx+3 (u_bxmul 4, u_b2off 2.5).  At 1:1
- * the row mapping collapses onto texel centres and the copy is bit
- * exact; scaled output is horizontally bilinear (texture filter) and
- * vertically nearest-row. */
+ * Horizontal pair pick: both src families carry one chroma pair per two
+ * luma columns, so the dst texel for luma columns 4tx..4tx+3 takes the
+ * consecutive bytes 4tx..4tx+3.  At 1:1 the row mapping collapses onto
+ * texel centres and the copy is bit exact; scaled output is
+ * horizontally bilinear (texture filter) and vertically nearest-row,
+ * and a 4:2:2 src into a 4:2:0 dst keeps the even chroma rows. */
 static const char *fs_plane8_uv =
     "precision highp float;\n"
     "uniform sampler2D tex_c;\n"
@@ -236,21 +228,18 @@ static const char *fs_plane8_uv =
     "uniform float u_ratio_y;\n"
     "uniform float u_rowmul;\n"
     "uniform float u_vhalf;\n"
-    "uniform float u_va;\n"
     "uniform float u_vs2;\n"
-    "uniform float u_bxmul;\n"
-    "uniform float u_b2off;\n"
     "uniform float vu;\n"
     "uniform float dvu;\n"
     "void main() {\n"
     "   float r = floor(gl_FragCoord.y);\n"
     "   float srow = floor((u_rowmul * r + 0.5) * u_ratio_y * u_vhalf);\n"
-    "   float ty = (floor(srow * u_va) + 0.5) * u_vs2;\n"
-    "   float bx = floor(gl_FragCoord.x) * u_bxmul;\n"
+    "   float ty = (srow + 0.5) * u_vs2;\n"
+    "   float bx = floor(gl_FragCoord.x) * 4.0;\n"
     "   float b0 = texture2D(tex_c, vec2((bx + 0.5) * u_ratio_x * u_tx, ty)).r;\n"
     "   float b1 = texture2D(tex_c, vec2((bx + 1.5) * u_ratio_x * u_tx, ty)).r;\n"
-    "   float b2 = texture2D(tex_c, vec2((bx + u_b2off) * u_ratio_x * u_tx, ty)).r;\n"
-    "   float b3 = texture2D(tex_c, vec2((bx + u_b2off + 1.0) * u_ratio_x * u_tx, ty)).r;\n"
+    "   float b2 = texture2D(tex_c, vec2((bx + 2.5) * u_ratio_x * u_tx, ty)).r;\n"
+    "   float b3 = texture2D(tex_c, vec2((bx + 3.5) * u_ratio_x * u_tx, ty)).r;\n"
     "   float cb0 = mix(b0, b1, vu);\n"
     "   float cr0 = mix(b1, b0, vu);\n"
     "   float cb1 = mix(b2, b3, vu);\n"
@@ -384,10 +373,7 @@ struct _GstMppGpuCtx
   GLint plane8_uv_ratio_y_loc;
   GLint plane8_uv_rowmul_loc;
   GLint plane8_uv_vhalf_loc;
-  GLint plane8_uv_va_loc;
   GLint plane8_uv_vs2_loc;
-  GLint plane8_uv_bxmul_loc;
-  GLint plane8_uv_b2off_loc;
   GLint plane8_y_t_step_loc;
   GLint plane10_y_src_scale_loc;
   GLint plane10_uv_src_scale_loc;
@@ -677,13 +663,8 @@ gst_mpp_gpu_init (void)
       glGetUniformLocation (gctx.program_plane8_uv, "u_rowmul");
   gctx.plane8_uv_vhalf_loc =
       glGetUniformLocation (gctx.program_plane8_uv, "u_vhalf");
-  gctx.plane8_uv_va_loc = glGetUniformLocation (gctx.program_plane8_uv, "u_va");
   gctx.plane8_uv_vs2_loc =
       glGetUniformLocation (gctx.program_plane8_uv, "u_vs2");
-  gctx.plane8_uv_bxmul_loc =
-      glGetUniformLocation (gctx.program_plane8_uv, "u_bxmul");
-  gctx.plane8_uv_b2off_loc =
-      glGetUniformLocation (gctx.program_plane8_uv, "u_b2off");
   glUseProgram (gctx.program_plane8_y);
   glUniform1i (glGetUniformLocation (gctx.program_plane8_y, "tex_y"), 0);
   gctx.plane8_y_t_step_loc =
@@ -851,32 +832,33 @@ gst_mpp_gpu_bind_src (gint src_fds[2], guint hor_stride, guint ver_stride,
       *vu = 1.0f;
       break;
     case MPP_FMT_YUV422SP:
-      /* rkvdec H.264 4:2:2: chroma pairs at FULL width but HALF
-       * height; row = hor_stride pairs = 2*hs bytes */
+      /* NV16: chroma row = hor_stride/2 CbCr pairs (hs bytes), one
+       * chroma row per luma row */
       fcc[0] = DRM_FORMAT_R8;
       pw[0] = hor_stride;
       ph[0] = ver_stride;
       pp[0] = hor_stride;
       off[0] = 0;
       fcc[1] = DRM_FORMAT_R8;
-      pw[1] = hor_stride * 2;
-      ph[1] = ver_stride / 2;
-      pp[1] = hor_stride * 2;
+      pw[1] = hor_stride;
+      ph[1] = ver_stride;
+      pp[1] = hor_stride;
       off[1] = hor_stride * ver_stride;
-      *chr_dx = 1.0f / (2 * hor_stride);
+      *chr_dx = 1.0f / hor_stride;
       break;
     case MPP_FMT_YUV422SP_VU:
+      /* NV61: same layout with VU pairs */
       fcc[0] = DRM_FORMAT_R8;
       pw[0] = hor_stride;
       ph[0] = ver_stride;
       pp[0] = hor_stride;
       off[0] = 0;
       fcc[1] = DRM_FORMAT_R8;
-      pw[1] = hor_stride * 2;
-      ph[1] = ver_stride / 2;
-      pp[1] = hor_stride * 2;
+      pw[1] = hor_stride;
+      ph[1] = ver_stride;
+      pp[1] = hor_stride;
       off[1] = hor_stride * ver_stride;
-      *chr_dx = 1.0f / (2 * hor_stride);
+      *chr_dx = 1.0f / hor_stride;
       *vu = 1.0f;
       break;
     default:
@@ -1403,14 +1385,8 @@ gst_mpp_gpu_planes_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
       glUniform1f (gctx.plane8_uv_ratio_y_loc, ratio_y);
       glUniform1f (gctx.plane8_uv_rowmul_loc, dst_422 ? 1.0f : 2.0f);
       glUniform1f (gctx.plane8_uv_vhalf_loc, src_422 ? 1.0f : 0.5f);
-      glUniform1f (gctx.plane8_uv_va_loc, src_422 ? 0.5f : 1.0f);
-      glUniform1f (gctx.plane8_uv_vs2_loc, 2.0f / ver_stride);
-      /* 4:2:2 src has one chroma pair per luma column: the dst texel
-       * (luma cols 4tx..4tx+3) picks the pairs of columns 4tx and
-       * 4tx+2, i.e. bytes 8tx..+1 and 8tx+4..+5 of the double-width
-       * row.  4:2:0 src takes the consecutive bytes 4tx..+3. */
-      glUniform1f (gctx.plane8_uv_bxmul_loc, src_422 ? 8.0f : 4.0f);
-      glUniform1f (gctx.plane8_uv_b2off_loc, src_422 ? 4.5f : 2.5f);
+      glUniform1f (gctx.plane8_uv_vs2_loc,
+          (src_422 ? 1.0f : 2.0f) / ver_stride);
       glUniform1f (gctx.plane8_uv_vu_loc, vu);
       glUniform1f (gctx.plane8_uv_dvu_loc, dst_swap ? 1.0f : 0.0f);
       glActiveTexture (GL_TEXTURE0);
