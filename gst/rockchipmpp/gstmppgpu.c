@@ -268,10 +268,9 @@ static const char *fs_plane8_uv =
  * src -> RGB -> dst, all GPU side.
  */
 static const char *fs_rgb2y =
-    "#extension GL_OES_EGL_image_external : require\n"
     "precision highp float;\n"
     "varying vec2 texcoord;\n"
-    "uniform samplerExternalOES tex;\n"
+    "uniform sampler2D tex;\n"
     "uniform vec2 t_step;\n"
     "uniform vec2 u_vp;\n"
     "void main() {\n"
@@ -280,10 +279,9 @@ static const char *fs_rgb2y =
     "   gl_FragColor = vec4(y, y, y, 1.0);\n" "}\n";
 
 static const char *fs_rgb2uvc =
-    "#extension GL_OES_EGL_image_external : require\n"
     "precision highp float;\n"
     "varying vec2 texcoord;\n"
-    "uniform samplerExternalOES tex;\n"
+    "uniform sampler2D tex;\n"
     "uniform vec2 px_step;\n"
     "uniform vec2 u_vp;\n"
     "uniform float row_step;\n"
@@ -302,10 +300,9 @@ static const char *fs_rgb2uvc =
     "}\n";
 
 static const char *fs_rgb2c =
-    "#extension GL_OES_EGL_image_external : require\n"
     "precision highp float;\n"
     "varying vec2 texcoord;\n"
-    "uniform samplerExternalOES tex;\n"
+    "uniform sampler2D tex;\n"
     "uniform vec2 px_step;\n"
     "uniform vec2 u_vp;\n"
     "uniform float row_step;\n"
@@ -1171,25 +1168,20 @@ gst_mpp_gpu_dst_fourcc (GstVideoFormat format)
   return 0;
 }
 
-/* Import a dmabuf as an OES texture (single plane) */
 static GLuint
-gst_mpp_gpu_import_oes (gint fd, guint32 fourcc, guint width, guint height,
-    guint stride)
+gst_mpp_gpu_import_tex (gint fd, guint32 fourcc, guint w, guint h,
+    guint pitch, guint offset, GLenum target)
 {
-  PFNEGLCREATEIMAGEKHRPROC create_image =
-      (PFNEGLCREATEIMAGEKHRPROC) eglGetProcAddress ("eglCreateImageKHR");
-  PFNEGLDESTROYIMAGEKHRPROC destroy_image =
-      (PFNEGLDESTROYIMAGEKHRPROC) eglGetProcAddress ("eglDestroyImageKHR");
-  PFNGLEGLIMAGETARGETTEXTURE2DOESPROC image_target_texture_2d =
-      (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)
-      eglGetProcAddress ("glEGLImageTargetTexture2DOES");
+  PFNEGLCREATEIMAGEKHRPROC create_image = p_create_image;
+  PFNEGLDESTROYIMAGEKHRPROC destroy_image = p_destroy_image;
+  PFNGLEGLIMAGETARGETTEXTURE2DOESPROC image_target_texture_2d = p_image_target;
   EGLint attribs[] = {
-    EGL_WIDTH, (EGLint) width,
-    EGL_HEIGHT, (EGLint) height,
+    EGL_WIDTH, (EGLint) w,
+    EGL_HEIGHT, (EGLint) h,
     EGL_LINUX_DRM_FOURCC_EXT, (EGLint) fourcc,
     EGL_DMA_BUF_PLANE0_FD_EXT, fd,
-    EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-    EGL_DMA_BUF_PLANE0_PITCH_EXT, (EGLint) stride,
+    EGL_DMA_BUF_PLANE0_OFFSET_EXT, (EGLint) offset,
+    EGL_DMA_BUF_PLANE0_PITCH_EXT, (EGLint) pitch,
     EGL_NONE,
   };
   EGLImageKHR image;
@@ -1200,22 +1192,26 @@ gst_mpp_gpu_import_oes (gint fd, guint32 fourcc, guint width, guint height,
 
   image = create_image (gctx.display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
       NULL, attribs);
-  if (image == EGL_NO_IMAGE_KHR)
+  if (image == EGL_NO_IMAGE_KHR) {
+    GST_WARNING ("import tex failed: fourcc %08x %ux%u pitch %u offset %u: "
+        "egl 0x%x", fourcc, w, h, pitch, offset, eglGetError ());
     return 0;
+  }
 
   glGenTextures (1, &tex);
-  glBindTexture (GL_TEXTURE_EXTERNAL_OES, tex);
-  image_target_texture_2d (GL_TEXTURE_EXTERNAL_OES, image);
+  glBindTexture (target, tex);
+  image_target_texture_2d (target, image);
 
   destroy_image (gctx.display, image);
   return tex;
 }
 
-/* Render the bound source straight into the dst dmabuf (zero copy).
- * This is the weston fb-convert trick: import the dst as an OES
- * texture and attach it as the FBO color attachment.  Only safe for
- * RGB-family dst formats; YUV attachments report a false FBO-complete
- * on the Mali DDK and corrupt the output, so they never get here. */
+/* Render the bound source straight into the dst dmabuf (zero copy):
+ * import the dst as a 2D texture and attach it as the FBO color
+ * attachment.  An external (OES) texture is not color-renderable on
+ * Mesa.  Only safe for RGB-family dst formats; YUV attachments report
+ * a false FBO-complete on the Mali DDK and corrupt the output, so they
+ * never get here. */
 static gboolean
 gst_mpp_gpu_direct_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
     guint src_width, guint src_height, guint src_hor_stride,
@@ -1233,8 +1229,9 @@ gst_mpp_gpu_direct_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
   if (!fourcc || dst_fd < 0)
     return FALSE;
 
-  dst_tex = gst_mpp_gpu_import_oes (dst_fd, fourcc, dst_width, dst_height,
-      dst_stride);
+  gst_mpp_gpu_load_procs ();
+  dst_tex = gst_mpp_gpu_import_tex (dst_fd, fourcc, dst_width, dst_height,
+      dst_stride, 0, GL_TEXTURE_2D);
   if (!dst_tex) {
     GST_WARNING ("failed to import dst dmabuf");
     goto out;
@@ -1243,7 +1240,7 @@ gst_mpp_gpu_direct_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
   glGenFramebuffers (1, &fbo);
   glBindFramebuffer (GL_FRAMEBUFFER, fbo);
   glFramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-      GL_TEXTURE_EXTERNAL_OES, dst_tex, 0);
+      GL_TEXTURE_2D, dst_tex, 0);
   status = glCheckFramebufferStatus (GL_FRAMEBUFFER);
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     GST_WARNING ("direct fbo incomplete: 0x%x", status);
@@ -1527,60 +1524,18 @@ gst_mpp_gpu_rgb_intermediate (guint w, guint h)
     }
 
     glGenTextures (1, &gctx.rgb_itex);
-    glBindTexture (GL_TEXTURE_EXTERNAL_OES, gctx.rgb_itex);
-    p_image_target (GL_TEXTURE_EXTERNAL_OES, image);
-    glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER,
-        GL_NEAREST);
-    glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER,
-        GL_NEAREST);
-    glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S,
-        GL_CLAMP_TO_EDGE);
-    glTexParameteri (GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T,
-        GL_CLAMP_TO_EDGE);
+    glBindTexture (GL_TEXTURE_2D, gctx.rgb_itex);
+    p_image_target (GL_TEXTURE_2D, image);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     p_destroy_image (gctx.display, image);
   }
 
   gctx.rgb_w = w;
   gctx.rgb_h = h;
   return TRUE;
-}
-
-static GLuint
-gst_mpp_gpu_import_tex (gint fd, guint32 fourcc, guint w, guint h,
-    guint pitch, guint offset, GLenum target)
-{
-  PFNEGLCREATEIMAGEKHRPROC create_image = p_create_image;
-  PFNEGLDESTROYIMAGEKHRPROC destroy_image = p_destroy_image;
-  PFNGLEGLIMAGETARGETTEXTURE2DOESPROC image_target_texture_2d = p_image_target;
-  EGLint attribs[] = {
-    EGL_WIDTH, (EGLint) w,
-    EGL_HEIGHT, (EGLint) h,
-    EGL_LINUX_DRM_FOURCC_EXT, (EGLint) fourcc,
-    EGL_DMA_BUF_PLANE0_FD_EXT, fd,
-    EGL_DMA_BUF_PLANE0_OFFSET_EXT, (EGLint) offset,
-    EGL_DMA_BUF_PLANE0_PITCH_EXT, (EGLint) pitch,
-    EGL_NONE,
-  };
-  EGLImageKHR image;
-  GLuint tex = 0;
-
-  if (!create_image || !destroy_image || !image_target_texture_2d)
-    return 0;
-
-  image = create_image (gctx.display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
-      NULL, attribs);
-  if (image == EGL_NO_IMAGE_KHR) {
-    GST_WARNING ("import tex failed: fourcc %08x %ux%u pitch %u offset %u: "
-        "egl 0x%x", fourcc, w, h, pitch, offset, eglGetError ());
-    return 0;
-  }
-
-  glGenTextures (1, &tex);
-  glBindTexture (target, tex);
-  image_target_texture_2d (target, image);
-
-  destroy_image (gctx.display, image);
-  return tex;
 }
 
 /* Two-pass YUV conversion through an RGB intermediate:
@@ -1695,7 +1650,7 @@ gst_mpp_gpu_yuv_via_rgb (gint dst_fd, GstVideoInfo * dst_vinfo,
     glGenFramebuffers (1, &fbo);
     glBindFramebuffer (GL_FRAMEBUFFER, fbo);
     glFramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-        GL_TEXTURE_EXTERNAL_OES, rgb_tex, 0);
+        GL_TEXTURE_2D, rgb_tex, 0);
     status = glCheckFramebufferStatus (GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
       GST_WARNING ("via-rgb: pass A fbo incomplete: 0x%x", status);
@@ -1738,9 +1693,6 @@ gst_mpp_gpu_yuv_via_rgb (gint dst_fd, GstVideoInfo * dst_vinfo,
   }
 
   /* pass B: RGB intermediate -> dst planes, sampling the same texture */
-  glActiveTexture (GL_TEXTURE0);
-  glBindTexture (GL_TEXTURE_EXTERNAL_OES, rgb_tex);
-
   for (p = 0; p < (gint) nplanes; p++) {
     GLuint tex = 0, fbo = 0;
     GLint pos_loc;
@@ -1772,6 +1724,9 @@ gst_mpp_gpu_yuv_via_rgb (gint dst_fd, GstVideoInfo * dst_vinfo,
 
     glViewport (0, 0, planes[p].vw, planes[p].vh);
     glUseProgram (planes[p].program);
+    /* the dst plane import rebinds GL_TEXTURE_2D on unit 0 */
+    glActiveTexture (GL_TEXTURE0);
+    glBindTexture (GL_TEXTURE_2D, rgb_tex);
     glUniform2f (glGetUniformLocation (planes[p].program, "u_vp"),
         planes[p].vw, planes[p].vh);
     if (planes[p].program == gctx.program_rgb2y) {
