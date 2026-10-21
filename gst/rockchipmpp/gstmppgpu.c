@@ -150,13 +150,14 @@ static const char *fs_src =
     "uniform sampler2D tex_c;\n"
     "uniform vec2 src_scale;\n" "uniform float chr_dx;\n" "uniform float vu;\n"
     "void main() {\n"
-    /* texcoord spans the visible source area; chroma texels track luma
-     * columns and the chroma rows cover the same physical height at
-     * half density, so both planes share the same sampling position */
+    /* texcoord spans the visible source area and the chroma rows cover
+     * the same height as luma, so t.y serves both planes; a luma column
+     * takes the CbCr pair that starts at the even byte at or below it */
     "   vec2 t = texcoord * src_scale;\n"
+    "   float cx = (floor(t.x / (2.0 * chr_dx)) * 2.0 + 0.5) * chr_dx;\n"
     "   float y = (texture2D(tex_y, t).r - 0.0625) * 1.164;\n"
-    "   float c1 = texture2D(tex_c, t).r - 0.5;\n"
-    "   float c2 = texture2D(tex_c, t + vec2(chr_dx, 0.0)).r - 0.5;\n"
+    "   float c1 = texture2D(tex_c, vec2(cx, t.y)).r - 0.5;\n"
+    "   float c2 = texture2D(tex_c, vec2(cx + chr_dx, t.y)).r - 0.5;\n"
     "   float cb = mix(c1, c2, vu);\n"
     "   float cr = mix(c2, c1, vu);\n"
     "   float r = clamp(y + 1.596 * cr, 0.0, 1.0);\n"
