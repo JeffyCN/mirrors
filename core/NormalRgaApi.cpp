@@ -836,6 +836,7 @@ int NormalRgaFullColorSpaceConvert(struct rga_req *msg, int color_space_mode) {
         { { 0.1916, 1, 0.0993, -37.2476 }, { -0.1106, 0, 0.9895, 15.4669 }, { 0.9827, 0.0002, -0.0723, 11.4231 } },       //709  limit range => 601 limit range
         { { 0.1685, 0.8588, 0.0872, -16.7232 }, { -0.0971, 0, 0.8695, 29.1335 }, { 0.8638, 0, -0.0637, 25.5824 } },       //709  full range => 601 limit range
         { { 0.1955, 1, 0.1019, -38.0729 }, { -0.1104, 0, 0.9899, 15.4218 }, { 0.9836, 0, -0.0716, 11.2587 } },            //709  full range => 601 full range
+        { { 0, 0.8602, 0, 16.44 }, { 0, 0, 0.8798, 16.02 }, { 0.8798, 0, 0, 16.02 } },                                      //709  full range => 709 limit range
     };
 
     static struct rga_csc_clip default_csc_clip_table[] = {
@@ -880,6 +881,11 @@ int NormalRgaFullColorSpaceConvert(struct rga_req *msg, int color_space_mode) {
         case yuv2yuv_709_full_2_601_full :
             fptr = &(default_csc_float_table[6]);
             clip_ptr = &(default_csc_clip_table[0]);
+            break;
+
+        case yuv2yuv_709_full_2_709_limit :
+            fptr = &(default_csc_float_table[7]);
+            clip_ptr = &(default_csc_clip_table[1]);
             break;
 
         case yuv2yuv_601_limit_2_709_limit :
