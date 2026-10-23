@@ -1280,6 +1280,15 @@ IM_STATUS rga_check_feature(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst
         return IM_STATUS_NOT_SUPPORTED;
     }
 
+    if ((((~mode_usage & IM_COLOR_FILL) && src.rd_mode == IM_AFBC16x16_MODE) ||
+         (pat_enable && pat.rd_mode == IM_AFBC16x16_MODE) ||
+         dst.rd_mode == IM_AFBC16x16_MODE) &&
+        (~feature_usage & IM_RGA_SUPPORT_FEATURE_FBC)) {
+        IM_LOGW("The platform does not support AFBC16x16 mode. \n%s",
+                querystring(RGA_FEATURE));
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
     return IM_STATUS_NOERROR;
 }
 
