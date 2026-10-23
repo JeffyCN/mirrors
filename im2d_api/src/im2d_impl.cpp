@@ -1523,7 +1523,9 @@ IM_STATUS rga_get_opt(im_opt_t *opt, void *ptr) {
                             (struct rga_version_t){ 2, 0, 0, {0}}) > 0)
         return IM_STATUS_FAILED;
 
-    if (rga_version_compare(RGA_GET_API_VERSION(*(im_api_version_t *)ptr),
+    /* C has no default initializer, so a zeroed im_opt_t means the current layout. */
+    if (*(im_api_version_t *)ptr != 0 &&
+        rga_version_compare(RGA_GET_API_VERSION(*(im_api_version_t *)ptr),
                             (struct rga_version_t){ 1, 7, 2, {0}}) <= 0) {
         opt->color = ((im_opt_t *)ptr)->color;
         memcpy(&opt->colorkey_range, &((im_opt_t *)ptr)->colorkey_range, sizeof(im_colorkey_range));
