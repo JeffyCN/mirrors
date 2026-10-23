@@ -1154,6 +1154,23 @@ IM_STATUS rga_check_align(const char *name, rga_buffer_t info, int byte_stride, 
     return IM_STATUS_NOERROR;
 }
 
+static IM_STATUS rga_check_10bit_x_offset(const char *name, rga_buffer_t info, im_rect rect) {
+    if (info.rd_mode != 0 && info.rd_mode != IM_RASTER_MODE)
+        return IM_STATUS_NOERROR;
+
+    if (info.format != RK_FORMAT_YCbCr_420_SP_10B && info.format != RK_FORMAT_YCrCb_420_SP_10B &&
+        info.format != RK_FORMAT_YCbCr_422_SP_10B && info.format != RK_FORMAT_YCrCb_422_SP_10B)
+        return IM_STATUS_NOERROR;
+
+    if (rect.x % 64) {
+        IM_LOGW("%s unsupported x offset %d, %s input needs an x offset that is a multiple of 64 on RGA2-Pro",
+                name, rect.x, translate_format_str(info.format));
+        return IM_STATUS_NOT_SUPPORTED;
+    }
+
+    return IM_STATUS_NOERROR;
+}
+
 IM_STATUS rga_check_blend(rga_buffer_t src, rga_buffer_t pat, rga_buffer_t dst, int pat_enable, int mode_usage) {
     int src_fmt, pat_fmt, dst_fmt;
     bool src_isRGB, pat_isRGB, dst_isRGB;
@@ -1317,6 +1334,11 @@ IM_STATUS rga_check(const rga_buffer_t src, const rga_buffer_t dst, const rga_bu
         ret = rga_check_align("src", src, rga_info->byte_stride, true);
         if (ret != IM_STATUS_NOERROR)
             return ret;
+        if (rga_info->version & IM_RGA_HW_VERSION_RGA_2_PRO) {
+            ret = rga_check_10bit_x_offset("src", src, src_rect);
+            if (ret != IM_STATUS_NOERROR)
+                return ret;
+        }
     }
     if (pat_enable) {
         /* RGA1 cannot support src1. */
