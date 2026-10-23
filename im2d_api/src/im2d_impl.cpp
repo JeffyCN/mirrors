@@ -2190,16 +2190,21 @@ IM_STATUS rga_task_submit(im_job_handle_t job_handle, rga_buffer_t src, rga_buff
                 return IM_STATUS_ILLEGAL_PARAM;
             }
 
-            dstinfo.color_space_mode =
-                rga_get_csc_mode(&session->hardware_info,
-                                 src.color_space_mode, pat.color_space_mode);
-            dstinfo.color_space_mode |=
-                rga_get_csc_mode(&session->hardware_info,
-                                 pat.color_space_mode, dst.color_space_mode);
+            int src_csc_mode = rga_get_csc_mode(&session->hardware_info,
+                                                src.color_space_mode, pat.color_space_mode);
+            int pat_csc_mode = rga_get_csc_mode(&session->hardware_info,
+                                                pat.color_space_mode, dst.color_space_mode);
+            if (src_csc_mode < 0 || pat_csc_mode < 0)
+                return IM_STATUS_NOT_SUPPORTED;
+
+            dstinfo.color_space_mode = src_csc_mode | pat_csc_mode;
         } else {
-            dstinfo.color_space_mode =
-                rga_get_csc_mode(&session->hardware_info,
-                                 src.color_space_mode, dst.color_space_mode);
+            int csc_mode = rga_get_csc_mode(&session->hardware_info,
+                                            src.color_space_mode, dst.color_space_mode);
+            if (csc_mode < 0)
+                return IM_STATUS_NOT_SUPPORTED;
+
+            dstinfo.color_space_mode = csc_mode;
         }
     }
 
