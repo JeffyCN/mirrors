@@ -183,8 +183,8 @@ enum {
     yuv2yuv_601_limit_2_601_full    = 0xd << 8,     //not support
     yuv2yuv_601_full_2_601_limit    = 0xe << 8,     //not support
     yuv2yuv_709_limit_2_709_full    = 0xf << 8,     //not support
-    yuv2yuv_709_full_2_709_limit    = 0x10 << 8,     //not support
-    full_csc_mask = 0xf00,
+    yuv2yuv_709_full_2_709_limit    = 0x10 << 8,
+    full_csc_mask = 0x1f00,
 };
 
 enum {
