@@ -26,8 +26,43 @@
 #include "config.h"
 #endif
 
+#include <drm_fourcc.h>
+
+#include <gst/base/gstbasetransform.h>
+
 #include "gstmppallocator.h"
 #include "gstmppdec.h"
+
+#ifndef AFBC_FORMAT_MOD_BLOCK_SIZE_16x16
+#define AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 (1ULL)
+#endif
+
+#ifndef AFBC_FORMAT_MOD_SPARSE
+#define AFBC_FORMAT_MOD_SPARSE (((__u64)1) << 6)
+#endif
+
+/* The modifier MPP produces for AFBC output */
+#define GST_MPP_AFBC_MODIFIER \
+  (DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_SPARSE) | \
+   DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16))
+
+/* DRM fourcc of the compressed form, as advertised for AFBC scanout */
+static guint32
+gst_mpp_dec_afbc_drm_fourcc (GstVideoFormat format)
+{
+  switch (format) {
+    case GST_VIDEO_FORMAT_NV12:
+      return DRM_FORMAT_YUV420_8BIT;
+    case GST_VIDEO_FORMAT_NV12_10LE40:
+      return DRM_FORMAT_YUV420_10BIT;
+    case GST_VIDEO_FORMAT_NV16:
+      return DRM_FORMAT_YUYV;
+    case GST_VIDEO_FORMAT_NV16_10LE40:
+      return DRM_FORMAT_NV20;
+    default:
+      return 0;
+  }
+}
 
 #define GST_CAT_DEFAULT mpp_dec_debug
 GST_DEBUG_CATEGORY (GST_CAT_DEFAULT);
@@ -404,6 +439,169 @@ gst_mpp_dec_set_format (GstVideoDecoder * decoder, GstVideoCodecState * state)
   return TRUE;
 }
 
+#define GST_MPP_DEC_ENDPOINT_MAX_HOPS 8
+
+/* Elements whose pads never constrain the caps: they have no caps
+ * query implementation of their own, so their pads answer through the
+ * default handler, which returns the pad template caps (ANY for
+ * these).  Stopping the walk at one of them and trusting that answer
+ * would advertise the feature for whatever sits behind it. */
+static const gchar *const gst_mpp_dec_caps_transparent_factories[] = {
+  "queue", "queue2", "multiqueue", "tee", "valve", NULL
+};
+
+static GstCaps *gst_mpp_dec_query_endpoint_caps_from (GstPad * pad, guint hop);
+
+/* Continue the walk behind one pad.  Returns NULL when nothing is
+ * linked there. */
+static GstCaps *
+gst_mpp_dec_query_endpoint_caps_behind (GstPad * pad, guint hop)
+{
+  GstPad *peer = gst_pad_get_peer (pad);
+  GstCaps *caps;
+
+  if (!peer)
+    return NULL;
+
+  caps = gst_mpp_dec_query_endpoint_caps_from (peer, hop);
+  gst_object_unref (peer);
+
+  return caps;
+}
+
+/*
+ * Query the caps accepted by the negotiation endpoint downstream,
+ * looking through plain 1:1 converter elements (videoconvert,
+ * videoscale, identity, ...) and through caps-transparent elements
+ * (queue, queue2, multiqueue, tee, valve).  Neither class says
+ * anything about the pipeline behind it: the converters propagate
+ * every caps feature through their templates while being unable to
+ * cross features when a conversion is actually needed, and the
+ * transparent elements answer with their template caps (ANY).  The
+ * first element that does impose a constraint - a capsfilter, a
+ * converter that is not a plain 1:1 transform, a sink - ends the
+ * walk: its pad's answer is the endpoint caps.  A tee hands the caps
+ * to every branch, so the endpoint caps of all its branches are
+ * intersected; a multiqueue pad pairs with the same-indexed src pad.
+ */
+static GstCaps *
+gst_mpp_dec_query_endpoint_caps_from (GstPad * pad, guint hop)
+{
+  GstElement *element;
+  GstCaps *caps = NULL;
+
+  if (hop >= GST_MPP_DEC_ENDPOINT_MAX_HOPS)
+    return gst_pad_query_caps (pad, NULL);
+
+  element = gst_pad_get_parent_element (pad);
+
+  if (!element || GST_IS_BIN (element)) {
+    gst_clear_object (&element);
+    return gst_pad_query_caps (pad, NULL);
+  }
+
+  if (GST_IS_BASE_TRANSFORM (element)
+      && g_list_length (element->srcpads) == 1
+      && g_list_length (element->sinkpads) == 1) {
+    GstElementFactory *factory = gst_element_get_factory (element);
+
+    /* A capsfilter is a 1:1 base transform too, but its getcaps
+     * answer already merges its own constraint with everything
+     * behind it: it is the endpoint, do not look through it. */
+    if (factory && !g_strcmp0 (GST_OBJECT_NAME (factory), "capsfilter")) {
+      caps = gst_pad_query_caps (pad, NULL);
+    } else {
+      /* Plain 1:1 converter: its own pads carry no constraint, look
+       * through to what follows it. */
+      caps =
+          gst_mpp_dec_query_endpoint_caps_behind (element->srcpads->data,
+          hop + 1);
+    }
+  } else {
+    GstElementFactory *factory = gst_element_get_factory (element);
+
+    if (factory && g_strv_contains (gst_mpp_dec_caps_transparent_factories,
+            GST_OBJECT_NAME (factory))) {
+      const gchar *name = GST_OBJECT_NAME (factory);
+
+      if (!g_strcmp0 (name, "tee")
+          && g_list_length (element->sinkpads) == 1) {
+        /* The caps reach every branch: each branch endpoint must
+         * keep accepting them. */
+        GList *l;
+
+        for (l = element->srcpads; l; l = l->next) {
+          GstCaps *branch =
+              gst_mpp_dec_query_endpoint_caps_behind (l->data, hop + 1);
+
+          if (!branch)          /* unlinked branch: receives nothing */
+            continue;
+
+          if (!caps) {
+            caps = branch;
+          } else {
+            GstCaps *tmp = gst_caps_intersect (caps, branch);
+
+            gst_caps_unref (caps);
+            gst_caps_unref (branch);
+            caps = tmp;
+          }
+        }
+      } else {
+        GstPad *srcpad = NULL;
+
+        if (!g_strcmp0 (name, "multiqueue")) {
+          /* sink_N pairs with src_N */
+          const gchar *sink_name = GST_OBJECT_NAME (pad);
+
+          if (g_str_has_prefix (sink_name, "sink_")) {
+            gchar *src_name =
+                g_strdup_printf ("src_%s", sink_name + strlen ("sink_"));
+
+            srcpad = gst_element_get_static_pad (element, src_name);
+            g_free (src_name);
+          }
+        } else if (g_list_length (element->srcpads) == 1
+            && g_list_length (element->sinkpads) == 1) {
+          /* queue, queue2, valve */
+          srcpad = gst_object_ref (element->srcpads->data);
+        }
+
+        if (srcpad) {
+          caps = gst_mpp_dec_query_endpoint_caps_behind (srcpad, hop + 1);
+          gst_object_unref (srcpad);
+        }
+      }
+    }
+  }
+
+  /* Whatever did not let the walk continue - a capsfilter, a
+   * converter that is not a plain 1:1 transform, a sink, or an
+   * element with no linked continuation - is the endpoint. */
+  if (!caps)
+    caps = gst_pad_query_caps (pad, NULL);
+
+  gst_object_unref (element);
+
+  return caps;
+}
+
+static GstCaps *
+gst_mpp_dec_query_endpoint_caps (GstVideoDecoder * decoder)
+{
+  GstPad *pad;
+  GstCaps *caps = NULL;
+
+  pad = gst_pad_get_peer (GST_VIDEO_DECODER_SRC_PAD (decoder));
+
+  if (pad) {
+    caps = gst_mpp_dec_query_endpoint_caps_from (pad, 0);
+    gst_object_unref (pad);
+  }
+
+  return caps;
+}
+
 static gboolean
 gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
     guint width, guint height, gint hstride, gint vstride, guint align,
@@ -452,8 +650,89 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
      * Keep output_state->caps fixed for gst_pad_set_caps(), and force
      * DMABuf memory feature when requested by dma-feature=true.
      */
+    if (afbc) {
+      /* Prefer the standard dma-drm form of the compressed buffer when
+       * downstream can negotiate it, otherwise fall back to the
+       * private arm-afbc field. */
+      guint32 fourcc = gst_mpp_dec_afbc_drm_fourcc (format);
+
+      if (fourcc) {
+        GstCaps *drm_caps, *peer = NULL;
+        GstQuery *query;
+        gboolean prefer_drm = FALSE;
+        gchar *drm_str = gst_video_dma_drm_fourcc_to_string (fourcc,
+            GST_MPP_AFBC_MODIFIER);
+
+        drm_caps = gst_caps_new_simple ("video/x-raw",
+            "format", G_TYPE_STRING, "DMA_DRM",
+            "drm-format", G_TYPE_STRING, drm_str,
+            "width", G_TYPE_INT,
+            GST_VIDEO_INFO_WIDTH (&output_state->info),
+            "height", G_TYPE_INT,
+            GST_VIDEO_INFO_HEIGHT (&output_state->info),
+            "framerate", GST_TYPE_FRACTION,
+            GST_VIDEO_INFO_FPS_N (&output_state->info),
+            GST_VIDEO_INFO_FPS_D (&output_state->info), NULL);
+        g_free (drm_str);
+        gst_caps_set_features (drm_caps, 0,
+            gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
+
+        query = gst_query_new_caps (NULL);
+        if (gst_pad_peer_query (GST_VIDEO_DECODER_SRC_PAD (decoder), query)) {
+          GstCaps *intersect;
+
+          gst_query_parse_caps_result (query, &peer);
+          intersect = gst_caps_intersect_full (drm_caps, peer,
+              GST_CAPS_INTERSECT_FIRST);
+          if (!gst_caps_is_empty (intersect))
+            prefer_drm = TRUE;
+          gst_caps_unref (intersect);
+        }
+        gst_query_unref (query);
+
+        if (prefer_drm) {
+          gst_caps_unref (output_state->caps);
+          output_state->caps = drm_caps;
+        } else {
+          gst_caps_unref (drm_caps);
+        }
+      }
+    }
+
     gst_caps_set_features (output_state->caps, 0,
         gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
+  } else {
+    /*
+     * The decoder's output buffers always wrap MPP buffers, i.e.
+     * dmabufs.  Advertise that through the caps feature when the
+     * negotiation endpoint downstream keeps accepting the buffer
+     * format, so dmabuf-aware sinks (glupload, waylandsink, kmssink)
+     * pick their zero-copy paths instead of keying off the plain caps.
+     *
+     * The feature itself cannot be probed through caps queries:
+     * intersecting DMABuf caps with system-memory caps succeeds by
+     * design here (dma memory is mappable), and 1:1 converters
+     * propagate every feature through their templates while being
+     * unable to cross features when a conversion is actually needed.
+     * So look through plain 1:1 converters instead (stopping at
+     * capsfilters, whose answer already includes their constraint)
+     * and only offer the feature when the endpoint accepts the plain
+     * format.  Downstreams that would need a conversion keep
+     * negotiating the plain caps like before; they map the dmabuf
+     * memory through the generic memory API anyway.
+     */
+    GstCaps *endpoint = gst_mpp_dec_query_endpoint_caps (decoder);
+
+    if (endpoint) {
+      GstCaps *probe = gst_caps_intersect (output_state->caps, endpoint);
+
+      if (!gst_caps_is_empty (probe))
+        gst_caps_set_features (output_state->caps, 0,
+            gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
+
+      gst_caps_unref (probe);
+      gst_caps_unref (endpoint);
+    }
   }
 
   *info = output_state->info;

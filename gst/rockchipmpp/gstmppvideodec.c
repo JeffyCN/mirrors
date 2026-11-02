@@ -74,6 +74,7 @@ static GstStaticPadTemplate gst_mpp_video_dec_src_template =
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS (MPP_DEC_CAPS_MAKE ("{" MPP_DEC_FORMATS "}") ";"
         MPP_DEC_CAPS_MAKE_AFBC ("{" MPP_DEC_FORMATS "}") ";"
+        MPP_DEC_CAPS_MAKE_DMA_DRM_AFBC ";"
         MPP_DEC_CAPS_MAKE_RFBC ("{" MPP_DEC_FORMATS "}") ";")
     );
 
