@@ -97,7 +97,9 @@ GST_STATIC_PAD_TEMPLATE ("sink",
         "video/x-raw(memory:DMABuf), format = (string) DMA_DRM, "
         "drm-format = (string) { "
         "YU08:0x0800000000000041, YU10:0x0800000000000041, "
-        "YUYV:0x0800000000000041, NV20:0x0800000000000041 }, "
+        "YUYV:0x0800000000000041, NV20:0x0800000000000041, "
+        "NV12:0x0b10000000000001, NV15:0x0b10000000000001, "
+        "NV16:0x0b10000000000001, NV20:0x0b10000000000001 }, "
         "framerate = (fraction) [ 0, MAX ], "
         "width = (int) [ 1, MAX ], height = (int) [ 1, MAX ]")
     );
@@ -647,22 +649,65 @@ gst_kms_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
   gboolean need_pool;
   GstVideoInfo vinfo;
   GstBufferPool *pool;
-  GstStructure *s;
   gsize size;
-  gint value;
 
   self = GST_X_IMAGE_SINK (bsink);
 
   gst_query_parse_allocation (query, &caps, &need_pool);
   if (!caps)
     goto no_caps;
-  if (!gst_video_info_from_caps (&vinfo, caps))
+  /* gst_video_info_from_caps() succeeds on dma-drm caps but yields an
+   * info with zero geometry, so the dma-drm form is resolved first;
+   * mirror set_caps. */
+  if (gst_video_is_dma_drm_caps (caps)) {
+    /* Resolve the dma-drm caps to the underlying format geometry so
+     * the sizing follows the negotiated link. */
+    GstVideoInfoDmaDrm drm_info;
+    GstVideoFormat video_format;
+
+    if (!gst_video_info_dma_drm_from_caps (&drm_info, caps))
+      goto invalid_caps;
+
+    if (drm_info.drm_modifier == DRM_AFBC_MODIFIER) {
+      switch (drm_info.drm_fourcc) {
+        case DRM_FORMAT_YUV420_8BIT:
+          video_format = GST_VIDEO_FORMAT_NV12;
+          break;
+        case DRM_FORMAT_YUV420_10BIT:
+          video_format = GST_VIDEO_FORMAT_NV12_10LE40;
+          break;
+        case DRM_FORMAT_YUYV:
+          video_format = GST_VIDEO_FORMAT_NV16;
+          break;
+        case DRM_FORMAT_NV20:
+          video_format = GST_VIDEO_FORMAT_NV16_10LE40;
+          break;
+        default:
+          goto invalid_caps;
+      }
+    } else if (drm_info.drm_modifier == DRM_RFBC_MODIFIER) {
+      video_format = gst_video_format_from_drm (drm_info.drm_fourcc);
+    } else if (drm_info.drm_modifier == DRM_FORMAT_MOD_LINEAR) {
+      video_format = gst_video_format_from_drm (drm_info.drm_fourcc);
+    } else {
+      goto invalid_caps;
+    }
+
+    if (video_format == GST_VIDEO_FORMAT_UNKNOWN
+        || !gst_video_info_set_format (&vinfo, video_format,
+            GST_VIDEO_INFO_WIDTH (&drm_info.vinfo),
+            GST_VIDEO_INFO_HEIGHT (&drm_info.vinfo)))
+      goto invalid_caps;
+  } else if (!gst_video_info_from_caps (&vinfo, caps)) {
     goto invalid_caps;
+  }
 
   size = GST_VIDEO_INFO_SIZE (&vinfo);
 
   pool = NULL;
-  if (need_pool) {
+  /* A pool this element creates serves plain system-memory links;
+   * dma-drm buffers come from the upstream allocator. */
+  if (need_pool && !gst_video_is_dma_drm_caps (caps)) {
     pool = gst_kms_sink_create_pool (self, caps, size, 0);
     if (!pool)
       goto no_pool;
@@ -1920,6 +1965,36 @@ gst_x_image_sink_getcaps (GstBaseSink * bsink, GstCaps * filter)
   ximagesink = GST_X_IMAGE_SINK (bsink);
 
   caps = gst_x_image_sink_get_allowed_caps (ximagesink);
+
+  /* The allowed caps only describe what the DRM planes can scan out
+   * through the color-keyed window; also offer the template's dma-drm
+   * structure (the only form compressed buffers take) so it stays
+   * negotiable.  The template's raw structure is left out on purpose:
+   * it carries no format list, which would make any raw format
+   * negotiable and push failures to display time with no retry. */
+  if (caps) {
+    GstCaps *tmp = gst_pad_get_pad_template_caps (GST_BASE_SINK_PAD (bsink));
+    GstCaps *tmpl = gst_caps_new_empty ();
+    guint i, n = gst_caps_get_size (tmp);
+
+    for (i = 0; i < n; i++) {
+      GstCaps *single = gst_caps_copy_nth (tmp, i);
+      GstStructure *st = gst_caps_get_structure (single, 0);
+      const gchar *fmt = gst_structure_get_string (st, "format");
+
+      /* gst_video_is_dma_drm_caps() requires fixed caps, which a
+       * template structure with a drm-format list never is. */
+      if (gst_caps_features_contains (gst_caps_get_features (single, 0),
+              GST_CAPS_FEATURE_MEMORY_DMABUF) && !g_strcmp0 (fmt, "DMA_DRM"))
+        gst_caps_append (tmpl, single);
+      else
+        gst_caps_unref (single);
+    }
+    gst_caps_unref (tmp);
+
+    caps = gst_caps_merge (tmpl, caps);
+  }
+
   if (caps && filter) {
     out_caps = gst_caps_intersect_full (caps, filter, GST_CAPS_INTERSECT_FIRST);
     gst_caps_unref (caps);
@@ -1936,8 +2011,6 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
   GstRkXImageSink *ximagesink;
   GstVideoInfo info;
   GstBufferPool *newpool, *oldpool;
-  GstStructure *s;
-  gint value;
 
   ximagesink = GST_X_IMAGE_SINK (bsink);
 
@@ -1951,22 +2024,64 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
 
   GST_DEBUG_OBJECT (ximagesink, "given caps %" GST_PTR_FORMAT, caps);
 
-  if (!gst_video_info_from_caps (&info, caps))
-    goto invalid_format;
+  if (gst_video_is_dma_drm_caps (caps)) {
+    /* The AFBC input arrives through the standard dma-drm caps; resolve
+     * the format and derive the compression flag from the modifier. */
+    GstVideoInfoDmaDrm drm_info;
+    GstVideoFormat video_format;
+    GstVideoInfo tmp;
+    guint i;
 
-  /* parse FBC from caps */
-  s = gst_caps_get_structure (caps, 0);
-  if (gst_structure_get_int (s, "arm-afbc", &value)) {
-    if (value)
+    if (!gst_video_info_dma_drm_from_caps (&drm_info, caps))
+      goto invalid_format;
+
+    if (drm_info.drm_modifier == DRM_AFBC_MODIFIER) {
+      switch (drm_info.drm_fourcc) {
+        case DRM_FORMAT_YUV420_8BIT:
+          video_format = GST_VIDEO_FORMAT_NV12;
+          break;
+        case DRM_FORMAT_YUV420_10BIT:
+          video_format = GST_VIDEO_FORMAT_NV12_10LE40;
+          break;
+        case DRM_FORMAT_YUYV:
+          video_format = GST_VIDEO_FORMAT_NV16;
+          break;
+        case DRM_FORMAT_NV20:
+          video_format = GST_VIDEO_FORMAT_NV16_10LE40;
+          break;
+        default:
+          goto invalid_format;
+      }
+    } else if (drm_info.drm_modifier == DRM_RFBC_MODIFIER) {
+      video_format = gst_video_format_from_drm (drm_info.drm_fourcc);
+    } else if (drm_info.drm_modifier == DRM_FORMAT_MOD_LINEAR) {
+      video_format = gst_video_format_from_drm (drm_info.drm_fourcc);
+    } else {
+      goto invalid_format;
+    }
+
+    if (video_format == GST_VIDEO_FORMAT_UNKNOWN)
+      goto invalid_format;
+
+    if (!gst_video_info_set_format (&tmp, video_format,
+            GST_VIDEO_INFO_WIDTH (&drm_info.vinfo),
+            GST_VIDEO_INFO_HEIGHT (&drm_info.vinfo)))
+      goto invalid_format;
+
+    info = drm_info.vinfo;
+    info.finfo = tmp.finfo;
+    for (i = 0; i < GST_VIDEO_MAX_PLANES; i++)
+      info.stride[i] = tmp.stride[i];
+    for (i = 0; i < GST_VIDEO_MAX_PLANES; i++)
+      info.offset[i] = tmp.offset[i];
+    info.size = tmp.size;
+
+    if (drm_info.drm_modifier == DRM_AFBC_MODIFIER)
       GST_VIDEO_INFO_SET_AFBC (&info);
-    else
-      GST_VIDEO_INFO_UNSET_AFBC (&info);
-  }
-  if (gst_structure_get_int (s, "rfbc", &value)) {
-    if (value)
+    else if (drm_info.drm_modifier == DRM_RFBC_MODIFIER)
       GST_VIDEO_INFO_SET_RFBC (&info);
-    else
-      GST_VIDEO_INFO_UNSET_RFBC (&info);
+  } else if (!gst_video_info_from_caps (&info, caps)) {
+    goto invalid_format;
   }
 
   GST_VIDEO_SINK_WIDTH (ximagesink) = info.width;
@@ -1988,11 +2103,15 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
       GST_VIDEO_SINK_HEIGHT (ximagesink) <= 0)
     goto invalid_size;
 
-  /* create a new pool for the new configuration */
-  newpool = gst_kms_sink_create_pool (ximagesink, caps,
-      GST_VIDEO_INFO_SIZE (&info), 2);
-  if (!newpool)
-    goto no_pool;
+  /* The internal pool serves the system-memory render path only;
+   * dma-drm buffers are imported as they arrive (show_frame). */
+  newpool = NULL;
+  if (!gst_video_is_dma_drm_caps (caps)) {
+    newpool = gst_kms_sink_create_pool (ximagesink, caps,
+        GST_VIDEO_INFO_SIZE (&info), 2);
+    if (!newpool)
+      goto no_pool;
+  }
 
   /* we don't activate the internal pool yet as it may not be needed */
   oldpool = ximagesink->pool;
