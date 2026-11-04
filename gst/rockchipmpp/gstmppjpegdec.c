@@ -26,6 +26,8 @@
 #include "config.h"
 #endif
 
+#include <gst/base/gstadapter.h>
+
 #include "gstmppallocator.h"
 #include "gstmppjpegdec.h"
 
@@ -44,6 +46,11 @@ struct _GstMppJpegDec
 
   /* group for input packet buffer allocations */
   MppBufferGroup input_group;
+
+  /* framing state for the parse() vfunc (unparsed input) */
+  gboolean saw_header;
+  gboolean parse_resync;
+  guint parse_entropy_len;
 };
 
 #define parent_class gst_mpp_jpeg_dec_parent_class
@@ -59,12 +66,16 @@ enum
   PROP_LAST,
 };
 
-/* GstVideoDecoder base class method */
+/* Accept both parsed and unparsed JPEG input: parsed streams (jpegparse,
+ * the mpp jpeg encoder) arrive one image per buffer, while raw streams
+ * are framed by the parse() vfunc below, mirroring the software jpegdec.
+ * No "parsed" field here: a caps subset check would otherwise reject
+ * every producer that does not carry the field. */
 static GstStaticPadTemplate gst_mpp_jpeg_dec_sink_template =
-    GST_STATIC_PAD_TEMPLATE ("sink",
+GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("image/jpeg," "parsed = (boolean) true" ";")
+    GST_STATIC_CAPS ("image/jpeg")
     );
 
 #define MPP_JPEGDEC_FORMATS \
@@ -168,6 +179,26 @@ gst_mpp_jpeg_dec_get_property (GObject * object,
   }
 }
 
+/* The framing state must not survive a flush (seek): the parse()
+ * vfunc would misframe the first frames of the new segment. */
+static gboolean
+gst_mpp_jpeg_dec_flush (GstVideoDecoder * decoder)
+{
+  GstMppJpegDec *self = GST_MPP_JPEG_DEC (decoder);
+  GstVideoDecoderClass *pclass = GST_VIDEO_DECODER_CLASS (parent_class);
+
+  /* Chain up: the base flush resets the MPP context and the pending
+   * frames; the parse state resets on top of it. */
+  if (pclass->flush && !pclass->flush (decoder))
+    return FALSE;
+
+  self->saw_header = FALSE;
+  self->parse_resync = FALSE;
+  self->parse_entropy_len = 0;
+
+  return TRUE;
+}
+
 static gboolean
 gst_mpp_jpeg_dec_start (GstVideoDecoder * decoder)
 {
@@ -176,6 +207,10 @@ gst_mpp_jpeg_dec_start (GstVideoDecoder * decoder)
   GstMppDec *mppdec = GST_MPP_DEC (decoder);
 
   GST_DEBUG_OBJECT (self, "starting");
+
+  self->saw_header = FALSE;
+  self->parse_resync = FALSE;
+  self->parse_entropy_len = 0;
 
   if (mpp_buffer_group_get_internal (&self->input_group, MPP_BUFFER_TYPE_DRM))
     return FALSE;
@@ -281,8 +316,16 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   if (!pclass->set_format (decoder, state))
     return FALSE;
 
-  /* Figure out original output format */
+  /* Unparsed input is framed by the parse() vfunc below */
   structure = gst_caps_get_structure (state->caps, 0);
+  {
+    gboolean parsed = FALSE;
+
+    gst_structure_get_boolean (structure, "parsed", &parsed);
+    gst_video_decoder_set_packetized (decoder, parsed);
+  }
+
+  /* Figure out original output format */
   src_format = gst_mpp_jpeg_dec_get_format (structure);
   switch (src_format) {
     case GST_VIDEO_FORMAT_NV12:
@@ -352,6 +395,180 @@ gst_mpp_jpeg_dec_set_format (GstVideoDecoder * decoder,
   /* Update final output info */
   return gst_mpp_dec_update_simple_video_info (decoder, dst_format,
       dst_width, dst_height, align);
+}
+
+static inline gboolean
+gst_mpp_jpeg_dec_parse_tag_has_entropy_segment (guint8 tag)
+{
+  if (tag == 0xda || (tag >= 0xd0 && tag <= 0xd7))
+    return TRUE;
+  return FALSE;
+}
+
+/* Frame an unparsed JPEG byte stream into one-image frames: scan for
+ * SOI/EOI markers, walk the length-coded segments and the entropy-coded
+ * data so payloads containing marker-looking bytes do not false-trigger.
+ * Scanner logic adapted from gst_jpeg_dec_parse() in gst-plugins-good
+ * 1.28.8 (gstjpegdec.c). */
+static GstFlowReturn
+gst_mpp_jpeg_dec_parse (GstVideoDecoder * bdec, GstVideoCodecFrame * frame,
+    GstAdapter * adapter, gboolean at_eos)
+{
+  GstMppJpegDec *self = GST_MPP_JPEG_DEC (bdec);
+  guint size;
+  gint toadd = 0;
+  gboolean resync;
+  gint offset = 0, noffset;
+
+  GST_VIDEO_CODEC_FRAME_SET_SYNC_POINT (frame);
+
+  size = gst_adapter_available (adapter);
+  GST_DEBUG_OBJECT (self, "parsing jpeg image data (%u bytes)", size);
+
+  if (at_eos) {
+    /* flush everything that is left; leftover data without a header is
+     * dropped instead of decoded */
+    toadd = size;
+
+    if (!self->saw_header)
+      goto drop_frame;
+    goto have_full_frame;
+  }
+
+  if (size < 8)
+    goto need_more_data;
+
+  if (!self->saw_header) {
+    /* expect the start marker first, skip anything before it */
+    gint ret = gst_adapter_masked_scan_uint32 (adapter, 0xffff0000,
+        0xffd80000, 0, size - 4);
+
+    if (ret < 0)
+      goto need_more_data;
+
+    if (ret) {
+      gst_adapter_flush (adapter, ret);
+      size -= ret;
+    }
+    self->saw_header = TRUE;
+  }
+
+  while (1) {
+    guint frame_len;
+    guint32 value;
+
+    noffset = gst_adapter_masked_scan_uint32_peek (adapter, 0x0000ff00,
+        0x0000ff00, offset, size - offset, &value);
+
+    /* lost sync if the 0xff marker is not where expected */
+    if ((resync = (noffset != offset))) {
+      GST_DEBUG_OBJECT (self, "lost sync at 0x%08x, resyncing", offset + 2);
+    }
+    /* may have a marker, but could have been resyncing */
+    resync = resync || self->parse_resync;
+    /* skip over extra 0xff */
+    while ((noffset >= 0) && ((value & 0xff) == 0xff)) {
+      noffset++;
+      noffset = gst_adapter_masked_scan_uint32_peek (adapter, 0x0000ff00,
+          0x0000ff00, noffset, size - noffset, &value);
+    }
+    /* enough bytes left for the marker payload? */
+    if (noffset < 0)
+      goto need_more_data;
+
+    offset = noffset;
+    value = value & 0xff;
+    if (value == 0xd9) {
+      GST_DEBUG_OBJECT (self, "0x%08x: EOI marker", offset + 2);
+      self->saw_header = FALSE;
+      self->parse_resync = FALSE;
+      toadd = offset + 4;
+      goto have_full_frame;
+    }
+    if (value == 0xd8) {
+      GST_DEBUG_OBJECT (self, "0x%08x: SOI marker before EOI marker",
+          offset + 2);
+      self->saw_header = FALSE;
+      self->parse_resync = FALSE;
+      toadd = offset;
+      goto have_full_frame;
+    }
+
+    if (value >= 0xd0 && value <= 0xd7) {
+      frame_len = 0;
+    } else {
+      /* peek tag and subsequent length */
+      if (offset + 2 + 4 > size)
+        goto need_more_data;
+      else
+        gst_adapter_masked_scan_uint32_peek (adapter, 0x0, 0x0, offset + 2, 4,
+            &frame_len);
+      frame_len = frame_len & 0xffff;
+    }
+    /* the frame length includes the 2 length bytes themselves; here at
+     * least 2 more bytes are wanted at the end for a marker */
+    if (offset + 2 + 2 + frame_len + 2 > size)
+      goto need_more_data;
+
+    if (gst_mpp_jpeg_dec_parse_tag_has_entropy_segment (value)) {
+      guint eseglen = self->parse_entropy_len;
+
+      if (size < offset + 2 + frame_len + eseglen)
+        goto need_more_data;
+      noffset = offset + 2 + frame_len + self->parse_entropy_len;
+      while (1) {
+        noffset = gst_adapter_masked_scan_uint32_peek (adapter, 0x0000ff00,
+            0x0000ff00, noffset, size - noffset, &value);
+        if (noffset < 0) {
+          /* need more data */
+          self->parse_entropy_len = size - offset - 4 - frame_len - 2;
+          goto need_more_data;
+        }
+        if ((value & 0xff) != 0x00) {
+          eseglen = noffset - offset - frame_len - 2;
+          break;
+        }
+        noffset++;
+      }
+      self->parse_entropy_len = 0;
+      frame_len += eseglen;
+      GST_DEBUG_OBJECT (self, "entropy segment length %u => frame_len %u",
+          eseglen, frame_len);
+    }
+
+    if (resync) {
+      /* check if sync would hold when interpreting this as a sync point
+       * and skipping this frame */
+      noffset = offset + frame_len + 2;
+      noffset = gst_adapter_masked_scan_uint32 (adapter, 0x0000ff00,
+          0x0000ff00, noffset, 4);
+      if (noffset < 0) {
+        /* keep resyncing until the data runs out or a plausible sync
+         * point is found */
+        offset++;
+        continue;
+      }
+    }
+
+    /* add the current segment and move on */
+    toadd += frame_len + 2;
+    offset += frame_len + 2;
+  }
+
+need_more_data:
+  if (toadd)
+    gst_video_decoder_add_to_frame (bdec, toadd);
+  return GST_VIDEO_DECODER_FLOW_NEED_DATA;
+
+have_full_frame:
+  if (toadd)
+    gst_video_decoder_add_to_frame (bdec, toadd);
+  GST_VIDEO_CODEC_FRAME_SET_SYNC_POINT (frame);
+  return gst_video_decoder_have_frame (bdec);
+
+drop_frame:
+  gst_adapter_flush (adapter, size);
+  return GST_FLOW_OK;
 }
 
 static MppPacket
@@ -564,8 +781,10 @@ gst_mpp_jpeg_dec_class_init (GstMppJpegDecClass * klass)
       "MPP JPEG decoder");
 
   decoder_class->start = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_start);
+  decoder_class->flush = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_flush);
   decoder_class->stop = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_stop);
   decoder_class->set_format = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_set_format);
+  decoder_class->parse = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_parse);
 
   pclass->startup = NULL;
   pclass->get_mpp_packet = GST_DEBUG_FUNCPTR (gst_mpp_jpeg_dec_get_mpp_packet);
