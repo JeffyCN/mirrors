@@ -66,10 +66,13 @@ enum
     "width  = (int) [ 16, MAX ], height = (int) [ 16, MAX ]"
 
 static GstStaticPadTemplate gst_mpp_jpeg_enc_src_template =
-GST_STATIC_PAD_TEMPLATE ("src",
+    GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
+    /* One complete JPEG frame per buffer; mppjpegdec and jpegparse
+     * require the parsed flag on their sink caps */
     GST_STATIC_CAPS ("image/jpeg, "
+        "parsed = (boolean) true, "
         GST_MPP_JPEG_ENC_SIZE_CAPS "," "sof-marker = { 0 }"));
 
 static GstStaticPadTemplate gst_mpp_jpeg_enc_sink_template =
@@ -176,7 +179,9 @@ gst_mpp_jpeg_enc_set_format (GstVideoEncoder * encoder,
   if (!gst_mpp_jpeg_enc_apply_properties (encoder))
     return FALSE;
 
-  caps = gst_caps_new_empty_simple ("image/jpeg");
+  /* The output is one complete baseline JPEG frame per buffer */
+  caps = gst_caps_new_simple ("image/jpeg",
+      "parsed", G_TYPE_BOOLEAN, TRUE, "sof-marker", G_TYPE_INT, 0, NULL);
   return gst_mpp_enc_set_src_caps (encoder, caps);
 }
 
