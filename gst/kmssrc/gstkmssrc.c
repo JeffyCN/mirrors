@@ -46,6 +46,10 @@
 
 #define DEFAULT_PROP_FRAMERATE_LIMIT 120
 
+/* Re-emit an unchanged FB after this long without a page flip, so a
+ * static screen keeps streaming instead of blocking forever. */
+#define KMS_SRC_STATIC_GRACE (250 * GST_MSECOND)
+
 static gboolean DEFAULT_PROP_DMA_FEATURE = FALSE;
 
 #define GST_TYPE_KMS_SRC (gst_kms_src_get_type())
@@ -468,6 +472,7 @@ static guint
 gst_kms_src_get_next_fb_id (GstKmsSrc * self)
 {
   GstClockTimeDiff diff;
+  GstClockTime now;
   gboolean sync_fb = self->sync_fb && !self->fb_id;
   guint duration = 0;
   guint fb_id;
@@ -481,17 +486,36 @@ gst_kms_src_get_next_fb_id (GstKmsSrc * self)
     duration = GST_SECOND / self->framerate_limit;
 
   while (1) {
-    diff = GST_CLOCK_DIFF (self->last_frame_time, gst_util_get_timestamp ());
+    now = gst_util_get_timestamp ();
+    diff = GST_CLOCK_DIFF (self->last_frame_time, now);
 
     fb_id = gst_kms_src_get_fb_id (self);
-    if (!fb_id)
-      return 0;
+    if (!fb_id) {
+      /* The compositor detaches every plane when fully idle, leaving no
+       * legacy FB id on the CRTC. Fall back to the last FB: if it was
+       * freed in the meantime the import fails cleanly, otherwise the
+       * capture keeps streaming the last shown frame. */
+      fb_id = self->last_fb_id;
+      if (!fb_id)
+        return 0;
+    }
 
     if (!sync_fb || fb_id != self->last_fb_id) {
       sync_fb = FALSE;
+      self->static_since = 0;
 
       if (diff >= duration)
         return fb_id;
+    } else {
+      /* Static screen: no flip will ever come. After a grace period
+       * re-emit the unchanged FB so the capture keeps flowing. */
+      if (!self->static_since) {
+        self->static_since = now;
+      } else if (now - self->static_since >= KMS_SRC_STATIC_GRACE &&
+          diff >= duration) {
+        GST_DEBUG_OBJECT (self, "FB %d unchanged, re-emitting", fb_id);
+        return fb_id;
+      }
     }
 
     g_usleep (1000);
