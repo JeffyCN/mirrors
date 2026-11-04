@@ -280,7 +280,14 @@ gst_mpp_get_pixel_stride (GstVideoInfo * info)
   if (!format)
     return hstride;
 
-  return hstride / format->pixel_stride0;
+  hstride /= format->pixel_stride0;
+
+  /* 4 pixels share 5 bytes in the packed 10-bit forms */
+  if (format->mpp_format == MPP_FMT_YUV420SP_10BIT ||
+      format->mpp_format == MPP_FMT_YUV422SP_10BIT)
+    hstride = hstride * 4 / 5;
+
+  return hstride;
 }
 
 static gboolean

@@ -111,6 +111,8 @@ static const MppFrameFormat gst_mpp_enc_formats[] = {
   MPP_FMT_YUV420P,
   MPP_FMT_YUV422_YUYV,
   MPP_FMT_YUV422_UYVY,
+  MPP_FMT_YUV420SP_10BIT,
+  MPP_FMT_YUV422SP_10BIT,
   MPP_FMT_YUV444SP,
   MPP_FMT_YUV444P,
   MPP_FMT_RGB565LE,
@@ -701,7 +703,10 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   }
 
   if (self->input_state) {
-    if (gst_caps_is_strictly_equal (self->input_state->caps, state->caps))
+    /* Only skip identical reconfiguration when the previous one fully
+     * succeeded; a failed set_format must be retried, not ignored. */
+    if (self->format_configured &&
+        gst_caps_is_strictly_equal (self->input_state->caps, state->caps))
       return TRUE;
 
     gst_mpp_enc_reset (encoder, TRUE, FALSE);
@@ -711,6 +716,7 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   }
 
   self->input_state = gst_video_codec_state_ref (state);
+  self->format_configured = FALSE;
 
   *info = state->info;
 
@@ -797,7 +803,9 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   mpp_enc_cfg_set_s32 (self->mpp_cfg, "rc:fps_out_denorm",
       GST_VIDEO_INFO_FPS_D (info));
 
-  return gst_mpp_enc_apply_strides (encoder, hstride, vstride);
+  self->format_configured =
+      gst_mpp_enc_apply_strides (encoder, hstride, vstride);
+  return self->format_configured;
 }
 
 static gboolean

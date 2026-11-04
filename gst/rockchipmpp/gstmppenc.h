@@ -86,6 +86,7 @@ struct _GstMppEnc
 
   gboolean arm_afbc;
   gboolean prop_arm_afbc;
+  gboolean format_configured;
 
   gboolean prop_dirty;
 
@@ -97,6 +98,8 @@ struct _GstMppEnc
   MppApi *mpi;
 };
 
+/* NOTE: the vepu on rk3588 cannot encode the 10-bit YUV input formats,
+ * so they are not advertised here. */
 #define MPP_ENC_IN_FORMATS \
     "NV12, I420, YUY2, UYVY, " \
     "BGR16, RGB16, BGR, RGB, " \
