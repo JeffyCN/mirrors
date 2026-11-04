@@ -118,17 +118,9 @@ GType gst_mpp_dec_get_type (void);
 #define MPP_DEC_FORMATS MPP_DEC_OUT_FORMATS
 #endif
 
-#define MPP_DEC_FEATURE_ARM_AFBC "arm-afbc"
-#define MPP_DEC_FEATURE_RFBC "rfbc"
-
 #define MPP_DEC_CAPS_MAKE(fmts) \
     GST_VIDEO_CAPS_MAKE (fmts) ";" \
     GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_DMABUF, fmts)
-
-#define MPP_DEC_CAPS_MAKE_AFBC(fmts) \
-    GST_VIDEO_CAPS_MAKE (fmts) ", " MPP_DEC_FEATURE_ARM_AFBC " = (int) 1;" \
-    GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_DMABUF, fmts) \
-    ", " MPP_DEC_FEATURE_ARM_AFBC " = (int) 1"
 
 /* Standard dma-drm form of the AFBC output; the modifier literal must
  * stay in sync with GST_MPP_AFBC_MODIFIER and the fourccs with
@@ -141,10 +133,9 @@ GType gst_mpp_dec_get_type (void);
     "width = (int) [ 1, MAX ], height = (int) [ 1, MAX ], " \
     "framerate = (fraction) [ 0/1, MAX ]"
 
-#define MPP_DEC_CAPS_MAKE_RFBC(fmts) \
-    GST_VIDEO_CAPS_MAKE (fmts) ", " MPP_DEC_FEATURE_RFBC " = (int) 1;" \
-    GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_DMABUF, fmts) \
-    ", " MPP_DEC_FEATURE_RFBC " = (int) 1"
+/* RFBC keeps the plane's normal fourcc; the Rockchip modifier
+ * describes the compression */
+#define MPP_DEC_CAPS_MAKE_DMA_DRM_RFBC     "video/x-raw(memory:DMABuf), format = (string) DMA_DRM, "     "drm-format = (string) { "     "NV12:0x0b10000000000001, NV15:0x0b10000000000001, "     "NV16:0x0b10000000000001, NV20:0x0b10000000000001 }, "     "width = (int) [ 1, MAX ], height = (int) [ 1, MAX ], "     "framerate = (fraction) [ 0/1, MAX ]"
 
 void gst_mpp_dec_fixup_video_info (GstVideoDecoder * decoder,
     GstVideoFormat format, gint width, gint height);

@@ -93,7 +93,13 @@ GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("video/x-raw, "
         "framerate = (fraction) [ 0, MAX ], "
-        "width = (int) [ 1, MAX ], " "height = (int) [ 1, MAX ]")
+        "width = (int) [ 1, MAX ], " "height = (int) [ 1, MAX ]; "
+        "video/x-raw(memory:DMABuf), format = (string) DMA_DRM, "
+        "drm-format = (string) { "
+        "YU08:0x0800000000000041, YU10:0x0800000000000041, "
+        "YUYV:0x0800000000000041, NV20:0x0800000000000041 }, "
+        "framerate = (fraction) [ 0, MAX ], "
+        "width = (int) [ 1, MAX ], height = (int) [ 1, MAX ]")
     );
 
 enum
@@ -500,22 +506,9 @@ drm_ensure_allowed_caps (GstRkXImageSink * self, drmModePlane * plane,
     if (!caps)
       continue;
 
-    if (afbc) {
-      GstCaps *afbc_caps = gst_caps_copy (caps);
-      gst_caps_set_simple (afbc_caps, "arm-afbc", G_TYPE_INT, 1, NULL);
-
-      out_caps = gst_caps_merge (out_caps, afbc_caps);
-    }
-
-    if (rfbc) {
-      GstCaps *rfbc_caps = gst_caps_copy (caps);
-      gst_caps_set_simple (rfbc_caps, "rfbc", G_TYPE_INT, 1, NULL);
-
-      out_caps = gst_caps_merge (out_caps, rfbc_caps);
-    }
-
-    if ((!afbc && !rfbc) || linear)
-      out_caps = gst_caps_merge (out_caps, caps);
+    /* Compressed buffers are only described by the standard dma-drm
+     * caps built from the plane's modifiers. */
+    out_caps = gst_caps_merge (out_caps, caps);
   }
 
   self->allowed_caps = gst_caps_simplify (out_caps);
@@ -666,12 +659,6 @@ gst_kms_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
   if (!gst_video_info_from_caps (&vinfo, caps))
     goto invalid_caps;
 
-  s = gst_caps_get_structure (caps, 0);
-  if (gst_structure_get_int (s, "arm-afbc", &value) && value)
-    goto fbc_caps;
-  if (gst_structure_get_int (s, "rfbc", &value) && value)
-    goto fbc_caps;
-
   size = GST_VIDEO_INFO_SIZE (&vinfo);
 
   pool = NULL;
@@ -708,11 +695,6 @@ no_caps:
 invalid_caps:
   {
     GST_DEBUG_OBJECT (bsink, "invalid caps specified");
-    return FALSE;
-  }
-fbc_caps:
-  {
-    GST_DEBUG_OBJECT (bsink, "no allocation for FBC");
     return FALSE;
   }
 no_pool:

@@ -33,19 +33,6 @@
 #include "gstmppallocator.h"
 #include "gstmppdec.h"
 
-#ifndef AFBC_FORMAT_MOD_BLOCK_SIZE_16x16
-#define AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 (1ULL)
-#endif
-
-#ifndef AFBC_FORMAT_MOD_SPARSE
-#define AFBC_FORMAT_MOD_SPARSE (((__u64)1) << 6)
-#endif
-
-/* The modifier MPP produces for AFBC output */
-#define GST_MPP_AFBC_MODIFIER \
-  (DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_SPARSE) | \
-   DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16))
-
 /* DRM fourcc of the compressed form, as advertised for AFBC scanout */
 static guint32
 gst_mpp_dec_afbc_drm_fourcc (GstVideoFormat format)
@@ -619,86 +606,79 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
   output_state->caps = gst_video_info_to_caps (&output_state->info);
 
   if (afbc) {
+    guint32 fourcc;
+
     if (!self->fbc) {
       GST_ERROR_OBJECT (self, "AFBC not supported");
+      gst_video_codec_state_unref (output_state);
       return FALSE;
     }
-
-    gst_caps_set_simple (output_state->caps,
-        MPP_DEC_FEATURE_ARM_AFBC, G_TYPE_INT, afbc, NULL);
 
     GST_VIDEO_INFO_SET_AFBC (&output_state->info);
     GST_VIDEO_INFO_UNSET_RFBC (&output_state->info);
-  } else if (rfbc) {
-    if (!self->fbc) {
-      GST_ERROR_OBJECT (self, "RFBC not supported");
+
+    /* The compressed output is only described by the standard dma-drm
+     * caps built from the single-planar fourcc and the ARM AFBC
+     * modifier that the display drivers advertise for scanout. */
+    fourcc = gst_mpp_dec_afbc_drm_fourcc (format);
+    if (fourcc) {
+      GstStructure *s;
+      gchar *drm_str = gst_video_dma_drm_fourcc_to_string (fourcc,
+          GST_MPP_AFBC_MODIFIER);
+
+      /* Keep the fields gst_video_info_to_caps() derived from the
+       * output state (pixel-aspect-ratio, interlace-mode, colorimetry)
+       * and only switch the describing format to the dma-drm form. */
+      s = gst_caps_get_structure (output_state->caps, 0);
+      gst_structure_set (s,
+          "format", G_TYPE_STRING, "DMA_DRM",
+          "drm-format", G_TYPE_STRING, drm_str, NULL);
+      g_free (drm_str);
+    } else {
+      GST_ERROR_OBJECT (self, "no dma-drm form for AFBC %s",
+          gst_mpp_video_format_to_string (format));
+      gst_video_codec_state_unref (output_state);
       return FALSE;
     }
-
-    gst_caps_set_simple (output_state->caps,
-        MPP_DEC_FEATURE_RFBC, G_TYPE_INT, rfbc, NULL);
+  } else if (rfbc) {
+    guint32 fourcc;
 
     GST_VIDEO_INFO_SET_RFBC (&output_state->info);
     GST_VIDEO_INFO_UNSET_AFBC (&output_state->info);
+
+    /* RFBC buffers keep the plane's normal fourcc; the Rockchip RFBC
+     * modifier describes the compression and the payload follows the
+     * MPP strides with no separate header plane. */
+    fourcc = gst_video_dma_drm_fourcc_from_format (format);
+    if (fourcc) {
+      GstStructure *s;
+      gchar *drm_str = gst_video_dma_drm_fourcc_to_string (fourcc,
+          GST_MPP_RFBC_MODIFIER);
+
+      /* Keep the fields gst_video_info_to_caps() derived from the
+       * output state (pixel-aspect-ratio, interlace-mode, colorimetry)
+       * and only switch the describing format to the dma-drm form. */
+      s = gst_caps_get_structure (output_state->caps, 0);
+      gst_structure_set (s,
+          "format", G_TYPE_STRING, "DMA_DRM",
+          "drm-format", G_TYPE_STRING, drm_str, NULL);
+      g_free (drm_str);
+    } else {
+      GST_ERROR_OBJECT (self, "no dma-drm form for RFBC %s",
+          gst_mpp_video_format_to_string (format));
+      gst_video_codec_state_unref (output_state);
+      return FALSE;
+    }
   } else {
     GST_VIDEO_INFO_UNSET_AFBC (&output_state->info);
     GST_VIDEO_INFO_UNSET_RFBC (&output_state->info);
   }
 
-  if (self->dma_feature) {
+  if (self->dma_feature || afbc || rfbc) {
     /*
      * Keep output_state->caps fixed for gst_pad_set_caps(), and force
      * DMABuf memory feature when requested by dma-feature=true.
      */
-    if (afbc) {
-      /* Prefer the standard dma-drm form of the compressed buffer when
-       * downstream can negotiate it, otherwise fall back to the
-       * private arm-afbc field. */
-      guint32 fourcc = gst_mpp_dec_afbc_drm_fourcc (format);
-
-      if (fourcc) {
-        GstCaps *drm_caps, *peer = NULL;
-        GstQuery *query;
-        gboolean prefer_drm = FALSE;
-        gchar *drm_str = gst_video_dma_drm_fourcc_to_string (fourcc,
-            GST_MPP_AFBC_MODIFIER);
-
-        drm_caps = gst_caps_new_simple ("video/x-raw",
-            "format", G_TYPE_STRING, "DMA_DRM",
-            "drm-format", G_TYPE_STRING, drm_str,
-            "width", G_TYPE_INT,
-            GST_VIDEO_INFO_WIDTH (&output_state->info),
-            "height", G_TYPE_INT,
-            GST_VIDEO_INFO_HEIGHT (&output_state->info),
-            "framerate", GST_TYPE_FRACTION,
-            GST_VIDEO_INFO_FPS_N (&output_state->info),
-            GST_VIDEO_INFO_FPS_D (&output_state->info), NULL);
-        g_free (drm_str);
-        gst_caps_set_features (drm_caps, 0,
-            gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
-
-        query = gst_query_new_caps (NULL);
-        if (gst_pad_peer_query (GST_VIDEO_DECODER_SRC_PAD (decoder), query)) {
-          GstCaps *intersect;
-
-          gst_query_parse_caps_result (query, &peer);
-          intersect = gst_caps_intersect_full (drm_caps, peer,
-              GST_CAPS_INTERSECT_FIRST);
-          if (!gst_caps_is_empty (intersect))
-            prefer_drm = TRUE;
-          gst_caps_unref (intersect);
-        }
-        gst_query_unref (query);
-
-        if (prefer_drm) {
-          gst_caps_unref (output_state->caps);
-          output_state->caps = drm_caps;
-        } else {
-          gst_caps_unref (drm_caps);
-        }
-      }
-    }
-
     gst_caps_set_features (output_state->caps, 0,
         gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
   } else {

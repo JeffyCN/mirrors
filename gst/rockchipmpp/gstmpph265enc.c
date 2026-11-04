@@ -28,7 +28,11 @@
 #include "gstmpph265enc.h"
 
 /* FIXME: Not all chips support NV24 and Y444. */
-#define MPP_H265_ENC_FORMATS MPP_ENC_FORMATS ", NV24, Y444"
+/* The 8-bit 4:2:2 YUV formats are accepted by the RV encoder cores
+ * (verified byte-identical output on the rk3588 vepu580) but rejected
+ * by the VP8/JPEG cores, so they are listed here instead of the shared
+ * MPP_ENC_FORMATS. */
+#define MPP_H265_ENC_FORMATS MPP_ENC_FORMATS ", NV16, Y42B, NV24, Y444"
 
 #define GST_MPP_H265_ENC(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
     GST_TYPE_MPP_H265_ENC, GstMppH265Enc))
@@ -92,7 +96,7 @@ static GstStaticPadTemplate gst_mpp_h265_enc_sink_template =
         GST_MPP_H265_ENC_SIZE_CAPS ";"
         "video/x-raw(memory:DMABuf),"
         "format = (string) { " MPP_H265_ENC_FORMATS " }, "
-        GST_MPP_H265_ENC_SIZE_CAPS ";"));
+        GST_MPP_H265_ENC_SIZE_CAPS ";" MPP_ENC_CAPS_DMA_DRM_AFBC));
 
 static void
 gst_mpp_h265_enc_set_property (GObject * object,

@@ -85,6 +85,7 @@ struct _GstMppEnc
   gboolean zero_copy_pkt;
 
   gboolean arm_afbc;
+  gboolean prop_arm_afbc;
 
   gboolean prop_dirty;
 
@@ -106,6 +107,16 @@ struct _GstMppEnc
 #else
 #define MPP_ENC_FORMATS MPP_ENC_IN_FORMATS
 #endif
+
+/* Standard dma-drm form of the AFBC input; the modifier literal must
+ * stay in sync with GST_MPP_AFBC_MODIFIER and the fourccs with
+ * gst_mpp_enc_video_format_from_afbc_fourcc(). */
+#define MPP_ENC_CAPS_DMA_DRM_AFBC \
+    "video/x-raw(memory:DMABuf), format = (string) DMA_DRM, " \
+    "drm-format = (string) { " \
+    "YU08:0x0800000000000041, YUYV:0x0800000000000041 }, " \
+    "width = (int) [ 1, MAX ], height = (int) [ 1, MAX ], " \
+    "framerate = (fraction) [ 0/1, MAX ]"
 
 gboolean gst_mpp_enc_apply_properties (GstVideoEncoder * encoder);
 gboolean gst_mpp_enc_set_src_caps (GstVideoEncoder * encoder, GstCaps * caps);

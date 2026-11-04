@@ -25,6 +25,41 @@
 #include <gst/video/video.h>
 #include <gst/allocators/gstdmabuf.h>
 
+#include <drm_fourcc.h>
+
+#ifndef AFBC_FORMAT_MOD_BLOCK_SIZE_16x16
+#define AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 (1ULL)
+#endif
+
+#ifndef AFBC_FORMAT_MOD_SPARSE
+#define AFBC_FORMAT_MOD_SPARSE (((__u64)1) << 6)
+#endif
+
+/* The modifier MPP uses for AFBC input and output */
+#define GST_MPP_AFBC_MODIFIER \
+  (DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_SPARSE) | \
+   DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16))
+
+/* The modifier the Rockchip decoder and display drivers use for RFBC
+ * buffers (vendor 64x4 block) */
+#ifndef DRM_FORMAT_MOD_VENDOR_ROCKCHIP
+#define DRM_FORMAT_MOD_VENDOR_ROCKCHIP 0x0b
+#endif
+#ifndef DRM_FORMAT_MOD_ROCKCHIP_TYPE_RFBC
+#define DRM_FORMAT_MOD_ROCKCHIP_TYPE_RFBC 0x1
+#endif
+#ifndef ROCKCHIP_RFBC_BLOCK_SIZE_64x4
+#define ROCKCHIP_RFBC_BLOCK_SIZE_64x4 (1ULL)
+#endif
+#ifndef DRM_FORMAT_MOD_ROCKCHIP_RFBC
+#define DRM_FORMAT_MOD_ROCKCHIP_RFBC(mode) \
+  ((((__u64) DRM_FORMAT_MOD_VENDOR_ROCKCHIP) << 56) | \
+      (((__u64) DRM_FORMAT_MOD_ROCKCHIP_TYPE_RFBC) << 52) | \
+      ((mode) & 0x000fffffffffffffULL))
+#endif
+#define GST_MPP_RFBC_MODIFIER \
+  DRM_FORMAT_MOD_ROCKCHIP_RFBC(ROCKCHIP_RFBC_BLOCK_SIZE_64x4)
+
 #ifdef HAVE_RGA
 #include <rga/rga.h>
 #include <rga/RgaApi.h>

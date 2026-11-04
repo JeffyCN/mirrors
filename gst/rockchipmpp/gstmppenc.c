@@ -269,10 +269,12 @@ gst_mpp_enc_set_property (GObject * object,
       return;
     }
     case PROP_ARM_AFBC:{
-      if (self->input_state)
+      if (self->input_state) {
         GST_WARNING_OBJECT (encoder, "unable to change ARM AFBC");
-      else
-        self->arm_afbc = g_value_get_boolean (value);
+      } else {
+        self->prop_arm_afbc = g_value_get_boolean (value);
+        self->arm_afbc = self->prop_arm_afbc;
+      }
       return;
     }
     default:
@@ -331,7 +333,7 @@ gst_mpp_enc_get_property (GObject * object,
       g_value_set_boolean (value, self->zero_copy_pkt);
       break;
     case PROP_ARM_AFBC:
-      g_value_set_boolean (value, self->arm_afbc);
+      g_value_set_boolean (value, self->prop_arm_afbc);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -628,6 +630,23 @@ gst_mpp_enc_apply_strides (GstVideoEncoder * encoder, gint hstride,
   return gst_mpp_video_info_align (info, hstride, vstride);
 }
 
+/* GstVideoFormat of the AFBC forms described by the dma-drm caps */
+static GstVideoFormat
+gst_mpp_enc_video_format_from_afbc_fourcc (guint32 fourcc)
+{
+  switch (fourcc) {
+    case DRM_FORMAT_YUV420_8BIT:
+      return GST_VIDEO_FORMAT_NV12;
+    case DRM_FORMAT_YUYV:
+      return GST_VIDEO_FORMAT_NV16;
+      /* The 10-bit YUV forms are rejected: the vepu on rk3588 maps them
+       * to an unsupported sentinel and the HAL silently truncates the
+       * format id, producing garbage output. */
+    default:
+      return GST_VIDEO_FORMAT_UNKNOWN;
+  }
+}
+
 static gboolean
 gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
 {
@@ -637,6 +656,49 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
   gint width, height, hstride, vstride;
 
   GST_DEBUG_OBJECT (self, "setting format: %" GST_PTR_FORMAT, state->caps);
+
+  /* Re-derive from the property on every reconfiguration; the dma-drm
+   * branch below overrides it from the modifier. */
+  self->arm_afbc = self->prop_arm_afbc;
+
+  if (gst_video_is_dma_drm_caps (state->caps)) {
+    /* The AFBC input arrives through the standard dma-drm caps; resolve
+     * the format and derive the compression flag from the modifier. */
+    GstVideoInfoDmaDrm drm_info;
+    GstVideoFormat video_format;
+    GstVideoInfo tmp;
+    guint i;
+
+    if (!gst_video_info_dma_drm_from_caps (&drm_info, state->caps))
+      return FALSE;
+
+    if (drm_info.drm_modifier != GST_MPP_AFBC_MODIFIER) {
+      GST_ERROR_OBJECT (self, "unsupported drm modifier");
+      return FALSE;
+    }
+
+    video_format =
+        gst_mpp_enc_video_format_from_afbc_fourcc (drm_info.drm_fourcc);
+    if (video_format == GST_VIDEO_FORMAT_UNKNOWN) {
+      GST_ERROR_OBJECT (self, "unsupported AFBC fourcc");
+      return FALSE;
+    }
+
+    if (!gst_video_info_set_format (&tmp, video_format,
+            GST_VIDEO_INFO_WIDTH (&drm_info.vinfo),
+            GST_VIDEO_INFO_HEIGHT (&drm_info.vinfo)))
+      return FALSE;
+
+    drm_info.vinfo.finfo = tmp.finfo;
+    for (i = 0; i < GST_VIDEO_MAX_PLANES; i++)
+      drm_info.vinfo.stride[i] = tmp.stride[i];
+    for (i = 0; i < GST_VIDEO_MAX_PLANES; i++)
+      drm_info.vinfo.offset[i] = tmp.offset[i];
+    drm_info.vinfo.size = tmp.size;
+
+    state->info = drm_info.vinfo;
+    self->arm_afbc = TRUE;
+  }
 
   if (self->input_state) {
     if (gst_caps_is_strictly_equal (self->input_state->caps, state->caps))
@@ -755,8 +817,40 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
   if (caps == NULL)
     return FALSE;
 
-  if (!gst_video_info_from_caps (&info, caps))
+  /* gst_video_info_from_caps() succeeds on dma-drm caps but yields an
+   * info with zero geometry (n_planes=0), and the stride derivation
+   * below divides by that; resolve the dma-drm form first and fall
+   * back to the plain parse only otherwise. */
+  if (gst_video_is_dma_drm_caps (caps)) {
+    /* Mirror the set_format resolution so the alignment metas and
+     * the pool sizing reach the dma-drm links. */
+    GstVideoInfoDmaDrm drm_info;
+    GstVideoFormat video_format;
+    GstVideoInfo tmp;
+    guint i;
+
+    if (!gst_video_info_dma_drm_from_caps (&drm_info, caps))
+      return FALSE;
+    if (drm_info.drm_modifier != GST_MPP_AFBC_MODIFIER)
+      return FALSE;
+    video_format =
+        gst_mpp_enc_video_format_from_afbc_fourcc (drm_info.drm_fourcc);
+    if (video_format == GST_VIDEO_FORMAT_UNKNOWN)
+      return FALSE;
+    if (!gst_video_info_set_format (&tmp, video_format,
+            GST_VIDEO_INFO_WIDTH (&drm_info.vinfo),
+            GST_VIDEO_INFO_HEIGHT (&drm_info.vinfo)))
+      return FALSE;
+    drm_info.vinfo.finfo = tmp.finfo;
+    for (i = 0; i < GST_VIDEO_MAX_PLANES; i++)
+      drm_info.vinfo.stride[i] = tmp.stride[i];
+    for (i = 0; i < GST_VIDEO_MAX_PLANES; i++)
+      drm_info.vinfo.offset[i] = tmp.offset[i];
+    drm_info.vinfo.size = tmp.size;
+    info = drm_info.vinfo;
+  } else if (!gst_video_info_from_caps (&info, caps)) {
     return FALSE;
+  }
 
   gst_mpp_enc_video_info_align (&info);
   size = GST_VIDEO_INFO_SIZE (&info);
@@ -1202,7 +1296,7 @@ gst_mpp_enc_init (GstMppEnc * self)
   self->bps_min = DEFAULT_PROP_BPS_MIN;
   self->bps_max = DEFAULT_PROP_BPS_MAX;
   self->zero_copy_pkt = DEFAULT_PROP_ZERO_COPY_PKT;
-  self->arm_afbc = DEFAULT_PROP_ARM_AFBC;
+  self->prop_arm_afbc = self->arm_afbc = DEFAULT_PROP_ARM_AFBC;
   self->prop_dirty = TRUE;
 }
 
