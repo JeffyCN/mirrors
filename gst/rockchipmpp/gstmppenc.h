@@ -84,6 +84,14 @@ struct _GstMppEnc
 
   gboolean zero_copy_pkt;
 
+  /* Unwrap the legacy IVF container framing some MPP codec HALs (VP8)
+   * wrap around the encoded stream. Set by the subclass in init(). */
+  gboolean strip_ivf;
+
+  /* IVF framing detection state, valid after the first packet */
+  gboolean ivf_checked;
+  gboolean ivf_output;
+
   gboolean arm_afbc;
   gboolean prop_arm_afbc;
   gboolean format_configured;

@@ -86,6 +86,10 @@ static guint32 DEFAULT_PROP_MAX_PENDING = MPP_MAX_PENDING;
 
 #define DEFAULT_FPS 30
 
+/* Legacy IVF container framing sizes (see gst_mpp_enc_unwrap_ivf) */
+#define IVF_FILE_HDR_LEN 32
+#define IVF_FRAME_HDR_LEN 12
+
 enum
 {
   PROP_0,
@@ -563,6 +567,10 @@ gst_mpp_enc_start (GstVideoEncoder * encoder)
   self->flushing = FALSE;
   self->pending_frames = 0;
   self->frames = NULL;
+
+  /* New MPP encoder session: re-detect the IVF framing mode */
+  self->ivf_checked = FALSE;
+  self->ivf_output = FALSE;
 
   g_mutex_init (&self->mutex);
 
@@ -1116,6 +1124,77 @@ gst_mpp_enc_send_frame_locked (GstVideoEncoder * encoder)
 }
 
 static gboolean
+gst_mpp_enc_is_ivf_header (const guint8 * data, gsize len)
+{
+  guint hdrlen;
+
+  if (len < IVF_FILE_HDR_LEN || memcmp (data, "DKIF", 4) ||
+      memcmp (data + 8, "VP80", 4))
+    return FALSE;
+
+  hdrlen = GST_READ_UINT16_LE (data + 6);
+  return hdrlen >= IVF_FILE_HDR_LEN && hdrlen <= len;
+}
+
+/*
+ * Unwrap the legacy IVF container framing the MPP VP8 HAL emits: a
+ * 32-byte "DKIF" file header on the first packet, then a 12-byte frame
+ * header ([frame size u32 LE][pts u64 LE]) before every frame.
+ *
+ * The MPP config switch for this (vp8:disable_ivf) is a no-op on
+ * current MPP releases: proc_vp8_cfg() copies the h265 config struct
+ * instead of the vp8 one, so the request never reaches the HAL.
+ *
+ * The frame pts in the IVF header is a plain frame counter; the frame
+ * PTS tracked by the video encoder base class is kept instead.
+ *
+ * Returns the offset and size of the raw frame payload.
+ */
+static gboolean
+gst_mpp_enc_unwrap_ivf (GstMppEnc * self, MppBuffer mbuf, gint pkt_size,
+    gsize * offset, gsize * size)
+{
+  const guint8 *data = mpp_buffer_get_ptr (mbuf);
+  gsize len = pkt_size;
+  gsize off = 0, fsz;
+
+  if (G_UNLIKELY (!self->ivf_checked)) {
+    /* The first packet decides the framing mode, so a future MPP that
+     * honors vp8:disable_ivf passes raw frames through untouched. */
+    self->ivf_checked = TRUE;
+    self->ivf_output = gst_mpp_enc_is_ivf_header (data, len);
+
+    GST_INFO_OBJECT (self, "encoder output is %sIVF framed",
+        self->ivf_output ? "" : "not ");
+  }
+
+  if (!self->ivf_output) {
+    *offset = 0;
+    *size = len;
+    return TRUE;
+  }
+
+  /* A session header may reappear after an encoder reset */
+  if (gst_mpp_enc_is_ivf_header (data, len))
+    off = GST_READ_UINT16_LE (data + 6);
+
+  if (off + IVF_FRAME_HDR_LEN > len)
+    goto invalid;
+
+  fsz = GST_READ_UINT32_LE (data + off);
+  if (!fsz || fsz > len - off - IVF_FRAME_HDR_LEN)
+    goto invalid;
+
+  *offset = off + IVF_FRAME_HDR_LEN;
+  *size = fsz;
+  return TRUE;
+
+invalid:
+  GST_WARNING_OBJECT (self, "invalid IVF frame header");
+  return FALSE;
+}
+
+static gboolean
 gst_mpp_enc_poll_packet_locked (GstVideoEncoder * encoder)
 {
   GstMppEnc *self = GST_MPP_ENC (encoder);
@@ -1127,6 +1206,7 @@ gst_mpp_enc_poll_packet_locked (GstVideoEncoder * encoder)
   MppMeta meta;
   MppBuffer mbuf;
   gint pkt_size;
+  gsize payload_off = 0, payload_size;
 
   self->mpi->encode_get_packet (self->mpp_ctx, &mpkt);
   if (!mpkt)
@@ -1152,6 +1232,12 @@ gst_mpp_enc_poll_packet_locked (GstVideoEncoder * encoder)
   if (!mbuf)
     goto error;
 
+  payload_size = pkt_size;
+  if (self->strip_ivf &&
+      !gst_mpp_enc_unwrap_ivf (self, mbuf, pkt_size, &payload_off,
+          &payload_size))
+    goto error;
+
   if (self->zero_copy_pkt) {
     buffer = gst_buffer_new ();
     if (!buffer)
@@ -1166,14 +1252,15 @@ gst_mpp_enc_poll_packet_locked (GstVideoEncoder * encoder)
       goto error;
     }
 
-    gst_memory_resize (mem, 0, pkt_size);
+    gst_memory_resize (mem, payload_off, payload_size);
     gst_buffer_append_memory (buffer, mem);
   } else {
-    buffer = gst_video_encoder_allocate_output_buffer (encoder, pkt_size);
+    buffer = gst_video_encoder_allocate_output_buffer (encoder, payload_size);
     if (!buffer)
       goto error;
 
-    gst_buffer_fill (buffer, 0, mpp_buffer_get_ptr (mbuf), pkt_size);
+    gst_buffer_fill (buffer, 0,
+        (guint8 *) mpp_buffer_get_ptr (mbuf) + payload_off, payload_size);
   }
 
   gst_buffer_replace (&frame->output_buffer, buffer);

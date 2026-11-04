@@ -243,6 +243,10 @@ gst_mpp_vp8_enc_init (GstMppVp8Enc * self)
 {
   self->parent.mpp_type = MPP_VIDEO_CodingVP8;
 
+  /* MPP wraps VP8 output in IVF container framing; unwrap it in the
+   * shared packet polling so downstream gets raw video/x-vp8 frames */
+  self->parent.strip_ivf = TRUE;
+
   self->qp_init = DEFAULT_PROP_QP_INIT;
   self->qp_min = DEFAULT_PROP_QP_MIN;
   self->qp_max = DEFAULT_PROP_QP_MAX;
