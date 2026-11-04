@@ -13,6 +13,10 @@ rockchipmpp_sources = [
   'gstmppvp8enc.c',
 ]
 
+if rga_dep.found()
+  rockchipmpp_sources += ['gstrgautil.c']
+endif
+
 if vpxalphadec
   rockchipmpp_sources += ['gstmppalphadecodebin.c', 'gstmppvpxalphadecodebin.c']
 endif

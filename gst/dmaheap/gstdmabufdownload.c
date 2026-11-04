@@ -29,6 +29,12 @@
  * drm-format=<FOURCC>) and the per-format video/x-raw(memory:DMABuf)
  * caps; only the linear layout can be downloaded.
  *
+ * The copy prefers the RGA blitter when librga is available and the
+ * format and geometry are RGA-capable: the blitter reads the source
+ * through its dma-buf fd, so the CPU never maps the input.  Any RGA
+ * failure falls back to the plain CPU copy for the rest of the
+ * stream; the "use-rga" property disables the blitter entirely.
+ *
  * ## Example launch line
  * |[
  * gst-launch-1.0 videotestsrc ! dmaheapalloc ! dmabufdownload ! videoconvert ! video/x-raw,format=BGRx ! fakesink
@@ -42,9 +48,14 @@
 #endif
 
 #include <string.h>
+#include <stdio.h>
 
 #include "gstdmabufdownload.h"
 #include "gstdmaheapformat.h"
+
+#ifdef HAVE_RGA_UTIL
+#include "gstrgautil.h"
+#endif
 
 #include <gst/video/video.h>
 #include <gst/allocators/gstdmabuf.h>
@@ -61,6 +72,14 @@ GST_STATIC_PAD_TEMPLATE ("src",
 
 #define gst_dmabuf_download_parent_class parent_class
 G_DEFINE_TYPE (GstDmaBufDownload, gst_dmabuf_download, GST_TYPE_BASE_TRANSFORM);
+
+enum
+{
+  PROP_0,
+  PROP_USE_RGA,
+};
+
+#define DEFAULT_USE_RGA TRUE
 
 /* Sink pad template caps: the dma-drm variant first (matching what
  * dmabuf producers prefer to negotiate) followed by the legacy
@@ -177,6 +196,34 @@ gst_dmabuf_download_set_caps (GstBaseTransform * trans, GstCaps * incaps,
       GST_VIDEO_INFO_HEIGHT (&self->out_info))
     return FALSE;
 
+#ifdef HAVE_RGA_UTIL
+  /* The RGA blitter is offered when the format sits in the shared
+   * rga format table and the caps geometry passes the im2d stride
+   * gate; the runtime re-checks per frame and falls back to the CPU
+   * copy on the first driver-level failure. */
+  self->rga_fmt_index = -1;
+  self->rga_active = FALSE;
+  self->rga_failed = FALSE;
+  if (self->use_rga) {
+    gint idx = (gint) gst_rga_format_index (
+        GST_VIDEO_INFO_FORMAT (&self->in_info));
+
+    /* Only the format membership is decided here; the stride/rect
+     * alignment rules are enforced per frame by
+     * gst_rga_wrap_info(), whose failure falls back to the CPU copy.
+     * The producer's actual strides live in the buffer's video meta,
+     * so a caps-time pitch guess would reject valid padded frames
+     * (the packed 10-bit producer pads rows to 64 bytes). */
+    if (idx >= 0) {
+      self->rga_fmt_index = idx;
+      self->rga_active = TRUE;
+      GST_INFO_OBJECT (self, "download will use the RGA blitter");
+    } else {
+      GST_INFO_OBJECT (self, "format not RGA-capable, CPU copy");
+    }
+  }
+#endif
+
   return TRUE;
 }
 
@@ -246,12 +293,94 @@ gst_dmabuf_download_prepare_output_buffer (GstBaseTransform * trans,
   }
 }
 
+#ifdef HAVE_RGA_UTIL
+/* One RGA blit: the dma-buf is read by the blitter through its fd
+ * (no CPU mmap of the source), the destination is the mapped
+ * system-memory output.  Returns GST_FLOW_OK on success; any
+ * failure makes the caller stick to the CPU copy for the stream. */
+static GstFlowReturn
+gst_dmabuf_download_transform_rga (GstDmaBufDownload * self,
+    GstBuffer * in, GstBuffer * out)
+{
+  rga_buffer_t src, dst;
+  im_rect srect = { 0, }, drect = { 0, };
+  GstVideoInfo src_info = self->in_info;
+  GstVideoInfo dst_info = self->out_info;
+  GstMapInfo map = { 0, };
+  gint fd = -1;
+  IM_STATUS ret;
+
+  gst_rga_info_apply_video_meta (&src_info, in);
+  gst_rga_info_apply_video_meta (&dst_info, out);
+
+  /* The blitter reads the source through its dma-buf fd, so the
+   * download never mmaps (and never caches-in) the input. */
+  if (gst_buffer_n_memory (in) == 1) {
+    GstMemory *mem = gst_buffer_peek_memory (in, 0);
+
+    if (gst_is_dmabuf_memory (mem)) {
+      gsize offset;
+
+      gst_memory_get_sizes (mem, &offset, NULL);
+      if (!offset)
+        fd = gst_dmabuf_memory_get_fd (mem);
+    }
+  }
+
+  if (fd < 0)
+    return GST_FLOW_NOT_SUPPORTED;
+
+  if (!gst_buffer_map (out, &map, GST_MAP_WRITE)) {
+    GST_ERROR_OBJECT (self, "failed to map output buffer");
+    return GST_FLOW_ERROR;
+  }
+
+  src = gst_rga_wrap_info (self->rga_fmt_index, fd, NULL, &src_info);
+  dst = gst_rga_wrap_info (self->rga_fmt_index, -1, map.data, &dst_info);
+
+  if (!src.wstride || !dst.wstride) {
+    GST_WARNING_OBJECT (self, "frame geometry not RGA-capable");
+    gst_buffer_unmap (out, &map);
+    return GST_FLOW_NOT_SUPPORTED;
+  }
+
+  ret = gst_rga_process (&src, &dst, &srect, &drect, 0);
+  gst_buffer_unmap (out, &map);
+
+  if (ret <= 0) {
+    GST_WARNING_OBJECT (self, "RGA download failed: %s", imStrError (ret));
+    return GST_FLOW_NOT_SUPPORTED;
+  }
+
+  GST_LOG_OBJECT (self, "downloaded via the RGA blitter");
+  return GST_FLOW_OK;
+}
+#endif
+
 static GstFlowReturn
 gst_dmabuf_download_transform (GstBaseTransform * trans, GstBuffer * in,
     GstBuffer * out)
 {
   GstDmaBufDownload *self = GST_DMABUF_DOWNLOAD (trans);
   GstVideoFrame src, dst;
+
+#ifdef HAVE_RGA_UTIL
+  /* Preferred path: the RGA blitter reads the dma-buf directly.
+   * A driver-level failure sticks the stream to the CPU copy: the
+   * failure modes (geometry the check layer rejects, a wedged
+   * blitter) are per-configuration, not transient. */
+  if (self->rga_active && !self->rga_failed) {
+    GstFlowReturn ret = gst_dmabuf_download_transform_rga (self, in, out);
+
+    if (ret == GST_FLOW_OK)
+      return GST_FLOW_OK;
+    if (ret != GST_FLOW_NOT_SUPPORTED) {
+      self->rga_failed = TRUE;
+      GST_WARNING_OBJECT (trans, "RGA download failed, falling back "
+          "to the CPU copy for this stream");
+    }
+  }
+#endif
 
   /* Mapping a dmabuf memory mmaps it, which is the actual download;
    * gst_video_frame_map honors a GstVideoMeta on the buffer, so
@@ -294,14 +423,57 @@ gst_dmabuf_download_stop (GstBaseTransform * trans)
 }
 
 static void
+gst_dmabuf_download_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec)
+{
+  GstDmaBufDownload *self = GST_DMABUF_DOWNLOAD (object);
+
+  switch (prop_id) {
+    case PROP_USE_RGA:
+      self->use_rga = g_value_get_boolean (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
+
+static void
+gst_dmabuf_download_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec)
+{
+  GstDmaBufDownload *self = GST_DMABUF_DOWNLOAD (object);
+
+  switch (prop_id) {
+    case PROP_USE_RGA:
+      g_value_set_boolean (value, self->use_rga);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
+
+static void
 gst_dmabuf_download_class_init (GstDmaBufDownloadClass * klass)
 {
   GstElementClass *gstelement_class = GST_ELEMENT_CLASS (klass);
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GstBaseTransformClass *trans_class = GST_BASE_TRANSFORM_CLASS (klass);
   GstCaps *sink_caps;
 
   GST_DEBUG_CATEGORY_INIT (gst_dmabuf_download_debug, "dmabufdownload", 0,
       "dmabufdownload");
+
+  gobject_class->set_property = gst_dmabuf_download_set_property;
+  gobject_class->get_property = gst_dmabuf_download_get_property;
+
+  g_object_class_install_property (gobject_class, PROP_USE_RGA,
+      g_param_spec_boolean ("use-rga", "Use RGA",
+          "Prefer the RGA blitter for the dma-buf download copy when "
+          "the format and geometry are RGA-capable (CPU copy fallback)",
+          DEFAULT_USE_RGA,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   gst_element_class_set_static_metadata (gstelement_class,
       "DMA-BUF downloader", "Filter/Video",
@@ -331,6 +503,7 @@ gst_dmabuf_download_init (GstDmaBufDownload * self)
 {
   gst_video_info_init (&self->in_info);
   gst_video_info_init (&self->out_info);
+  self->use_rga = DEFAULT_USE_RGA;
 }
 
 gboolean

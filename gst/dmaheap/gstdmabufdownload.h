@@ -44,6 +44,14 @@ struct _GstDmaBufDownload
   GstVideoInfo out_info;
   GstBufferPool *pool;
   GstCaps *pool_caps;
+
+  gboolean use_rga;
+
+#ifdef HAVE_RGA_UTIL
+  gint rga_fmt_index;           /* rga format table index, -1 = no rga */
+  gboolean rga_active;          /* this negotiation can use the rga path */
+  gboolean rga_failed;          /* an rga job failed: stick to the CPU */
+#endif
 };
 
 struct _GstDmaBufDownloadClass
