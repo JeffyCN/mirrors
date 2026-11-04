@@ -109,6 +109,8 @@ enum
 static const MppFrameFormat gst_mpp_enc_formats[] = {
   MPP_FMT_YUV420SP,
   MPP_FMT_YUV420P,
+  MPP_FMT_YUV422SP,
+  MPP_FMT_YUV422P,
   MPP_FMT_YUV422_YUYV,
   MPP_FMT_YUV422_UYVY,
   MPP_FMT_YUV420SP_10BIT,
@@ -124,6 +126,25 @@ static const MppFrameFormat gst_mpp_enc_formats[] = {
   MPP_FMT_RGBA8888,
   MPP_FMT_BGRA8888,
 };
+
+/* Only the RV encoder cores take the 4:2:2 layouts natively; the VP8
+ * and JPEG cores reject them ("get_vepu_fmt unsupport"), so they must
+ * go through the conversion path instead. */
+static gboolean
+gst_mpp_enc_format_is_422 (MppFrameFormat format)
+{
+  switch (format) {
+    case MPP_FMT_YUV422SP:
+    case MPP_FMT_YUV422P:
+    case MPP_FMT_YUV422SP_VU:
+    case MPP_FMT_YUV422_YUYV:
+    case MPP_FMT_YUV422_UYVY:
+    case MPP_FMT_YUV422SP_10BIT:
+      return TRUE;
+    default:
+      return FALSE;
+  }
+}
 
 static gboolean
 gst_mpp_enc_format_supported (MppFrameFormat format)
@@ -739,6 +760,9 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
    * ones (could be overrided by video-meta)
    */
   if (self->rotation || !gst_mpp_enc_format_supported (format) ||
+      (gst_mpp_enc_format_is_422 (format) &&
+          self->mpp_type != MPP_VIDEO_CodingAVC &&
+          self->mpp_type != MPP_VIDEO_CodingHEVC) ||
       width != GST_VIDEO_INFO_WIDTH (info) ||
       height != GST_VIDEO_INFO_HEIGHT (info)) {
     if (!gst_mpp_use_rga ()) {
