@@ -34,6 +34,8 @@
 #include <gst/base/gstpushsrc.h>
 #include <gst/allocators/gstdmabuf.h>
 
+#include <gst/video/video-info-dma.h>
+
 #ifndef DRM_FORMAT_NV12_10
 #define DRM_FORMAT_NV12_10 fourcc_code('N', 'A', '1', '2')
 #endif
@@ -80,6 +82,18 @@ struct _GstKmsSrc
 
   guint last_fb_id;
   GstClockTime last_frame_time;
+
+  /* When the FB content was first seen unchanged (0 = just changed) */
+  GstClockTime static_since;
+
+  /* DRM fourcc of the current FB, and of the negotiated DMA_DRM caps */
+  guint32 fb_fourcc;
+  guint32 caps_fourcc;
+
+  /* Caps geometry currently negotiated downstream */
+  GstVideoFormat neg_format;
+  gint neg_width, neg_height;
+  gboolean neg_dmabuf;
 
   GstClockTime start_time;
 };
@@ -519,6 +533,8 @@ gst_kms_src_update_info (GstKmsSrc * self, struct kmssrc_fb *fb)
   GstVideoFormat format;
   guint i;
 
+  self->fb_fourcc = fb->fourcc;
+
 #define KMSSRC_CASE_FOURCC(fourcc, gst) \
   case DRM_FORMAT_ ## fourcc: format = GST_VIDEO_FORMAT_ ## gst; break;
 
@@ -704,6 +720,9 @@ err:
   return NULL;
 }
 
+static GstCaps *gst_kms_src_build_dma_drm_caps (GstKmsSrc * self,
+    guint32 fourcc);
+
 static GstFlowReturn
 gst_kms_src_create (GstPushSrc * src, GstBuffer ** ret)
 {
@@ -726,6 +745,62 @@ gst_kms_src_create (GstPushSrc * src, GstBuffer ** ret)
   if (!buf) {
     GST_ERROR_OBJECT (self, "could not import FB %d", fb_id);
     goto err;
+  }
+
+  /* The scanout FB can change format or geometry mid-stream, e.g. when
+   * the compositor promotes a fullscreen video from an RGB composition
+   * to direct NV12 scanout. Renegotiate instead of pushing buffers
+   * that contradict the caps. */
+  if (GST_VIDEO_INFO_FORMAT (&self->info) != self->neg_format ||
+      GST_VIDEO_INFO_WIDTH (&self->info) != self->neg_width ||
+      GST_VIDEO_INFO_HEIGHT (&self->info) != self->neg_height) {
+    GstCaps *new_caps;
+
+    GST_DEBUG_OBJECT (self, "FB changed to %s %dx%d, renegotiating",
+        gst_video_format_to_string (GST_VIDEO_INFO_FORMAT (&self->info)),
+        GST_VIDEO_INFO_WIDTH (&self->info),
+        GST_VIDEO_INFO_HEIGHT (&self->info));
+
+    if (self->caps_fourcc)
+      new_caps = gst_kms_src_build_dma_drm_caps (self, self->fb_fourcc);
+    else
+      new_caps = gst_video_info_to_caps (&self->info);
+
+    if (!new_caps) {
+      gst_buffer_unref (buf);
+      goto err;
+    }
+
+    if (self->neg_dmabuf)
+      gst_caps_set_features (new_caps, 0,
+          gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
+
+    /* Caps events must carry fixed caps: fixate the framerate range
+     * advertised for negotiation. */
+    if (self->fps_n && self->fps_d)
+      gst_caps_set_simple (new_caps, "framerate", GST_TYPE_FRACTION,
+          self->fps_n, self->fps_d, NULL);
+
+    GstCaps *fixed_caps = gst_caps_fixate (new_caps);
+
+    gst_caps_unref (new_caps);
+    new_caps = fixed_caps;
+
+    if (!gst_pad_push_event (GST_BASE_SRC_PAD (GST_BASE_SRC (src)),
+            gst_event_new_caps (new_caps))) {
+      GST_ERROR_OBJECT (self, "downstream refused caps %" GST_PTR_FORMAT,
+          new_caps);
+      gst_caps_unref (new_caps);
+      gst_buffer_unref (buf);
+      return GST_FLOW_NOT_NEGOTIATED;
+    }
+    gst_caps_unref (new_caps);
+
+    self->neg_format = GST_VIDEO_INFO_FORMAT (&self->info);
+    self->neg_width = GST_VIDEO_INFO_WIDTH (&self->info);
+    self->neg_height = GST_VIDEO_INFO_HEIGHT (&self->info);
+    if (self->caps_fourcc)
+      self->caps_fourcc = self->fb_fourcc;
   }
 
   self->last_frame_time = gst_util_get_timestamp ();
@@ -752,12 +827,76 @@ gst_kms_src_set_caps (GstBaseSrc * basesrc, GstCaps * caps)
   GstVideoInfo *info = &self->info;
   GstStructure *structure;
   const GValue *new_fps;
+  const gchar *format_str;
+  gint width = 0, height = 0;
+  guint32 fourcc = 0;
+
+  structure = gst_caps_get_structure (caps, 0);
 
   /* The only thing that can change is the framerate downstream wants */
-  structure = gst_caps_get_structure (caps, 0);
   new_fps = gst_structure_get_value (structure, "framerate");
   if (!new_fps)
     return FALSE;
+
+  /* The caps must describe the FB actually being captured, otherwise
+   * the pushed buffers would contradict the caps (wrong format or
+   * geometry for every consumer). */
+  format_str = gst_structure_get_string (structure, "format");
+
+  if (g_strcmp0 (format_str, "DMA_DRM") == 0) {
+    const gchar *drm_format = gst_structure_get_string (structure,
+        "drm-format");
+    guint64 modifier = DRM_FORMAT_MOD_INVALID;
+
+    if (drm_format)
+      fourcc = gst_video_dma_drm_fourcc_from_string (drm_format, &modifier);
+
+    if (!fourcc || modifier != DRM_FORMAT_MOD_LINEAR) {
+      GST_ERROR_OBJECT (self, "unsupported dma-drm caps %" GST_PTR_FORMAT,
+          caps);
+      return FALSE;
+    }
+
+    /* set_caps is the enforcement point for what get_caps offered:
+     * the scanout FB can change format between the caps query and the
+     * negotiation, and buffers captured under the new fourcc would
+     * contradict the negotiated caps. */
+    if (fourcc != self->fb_fourcc) {
+      GST_ERROR_OBJECT (self, "caps drm-format %s doesn't match the FB "
+          "format %s", drm_format,
+          gst_video_format_to_string (GST_VIDEO_INFO_FORMAT (info)));
+      return FALSE;
+    }
+  } else if (format_str) {
+    if (gst_video_format_from_string (format_str) !=
+        GST_VIDEO_INFO_FORMAT (info)) {
+      GST_ERROR_OBJECT (self, "caps format %s doesn't match the FB format "
+          "%s", format_str,
+          gst_video_format_to_string (GST_VIDEO_INFO_FORMAT (info)));
+      return FALSE;
+    }
+  } else {
+    GST_ERROR_OBJECT (self, "caps without format field %" GST_PTR_FORMAT, caps);
+    return FALSE;
+  }
+
+  if (!gst_structure_get (structure, "width", G_TYPE_INT, &width,
+          "height", G_TYPE_INT, &height, NULL) ||
+      width != GST_VIDEO_INFO_WIDTH (info) ||
+      height != GST_VIDEO_INFO_HEIGHT (info)) {
+    GST_ERROR_OBJECT (self, "caps geometry %dx%d doesn't match the FB "
+        "geometry %dx%d", width, height, GST_VIDEO_INFO_WIDTH (info),
+        GST_VIDEO_INFO_HEIGHT (info));
+    return FALSE;
+  }
+
+  self->caps_fourcc = fourcc;
+  self->neg_format = GST_VIDEO_INFO_FORMAT (info);
+  self->neg_width = GST_VIDEO_INFO_WIDTH (info);
+  self->neg_height = GST_VIDEO_INFO_HEIGHT (info);
+  self->neg_dmabuf =
+      gst_caps_features_contains (gst_caps_get_features (caps, 0),
+      GST_CAPS_FEATURE_MEMORY_DMABUF);
 
   /* Store this FPS for use when generating buffers */
   info->fps_n = self->fps_n = gst_value_get_fraction_numerator (new_fps);
@@ -775,13 +914,34 @@ gst_kms_src_set_caps (GstBaseSrc * basesrc, GstCaps * caps)
 }
 
 static GstCaps *
+gst_kms_src_build_dma_drm_caps (GstKmsSrc * self, guint32 fourcc)
+{
+  GstCaps *caps;
+  gchar *drm_str;
+
+  /* The legacy uAPI has no FB modifiers, the FB is linear. */
+  drm_str = gst_video_dma_drm_fourcc_to_string (fourcc, DRM_FORMAT_MOD_LINEAR);
+  if (!drm_str)
+    return NULL;
+
+  caps = gst_caps_new_simple ("video/x-raw",
+      "format", G_TYPE_STRING, "DMA_DRM",
+      "drm-format", G_TYPE_STRING, drm_str,
+      "width", G_TYPE_INT, GST_VIDEO_INFO_WIDTH (&self->info),
+      "height", G_TYPE_INT, GST_VIDEO_INFO_HEIGHT (&self->info),
+      "framerate", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT, 1, NULL);
+  g_free (drm_str);
+
+  return caps;
+}
+
+static GstCaps *
 gst_kms_src_get_caps (GstBaseSrc * basesrc, GstCaps * filter)
 {
   GstKmsSrc *self = GST_KMS_SRC (basesrc);
-  GstStructure *s;
-  GstCaps *caps;
+  GstCaps *caps, *raw_caps;
   struct kmssrc_fb fb;
-  guint fb_id;
+  guint fb_id, i;
 
   fb_id = gst_kms_src_get_fb_id (self);
   if (!fb_id)
@@ -799,11 +959,39 @@ gst_kms_src_get_caps (GstBaseSrc * basesrc, GstCaps * filter)
 
   gst_kms_src_free_fb (self, &fb);
 
-  caps = gst_video_info_to_caps (&self->info);
+  caps = gst_caps_new_empty ();
 
-  if (self->dma_feature)
-    gst_caps_set_features (caps, 0,
+  if (self->dma_feature) {
+    GstCaps *drm_caps = gst_kms_src_build_dma_drm_caps (self, self->fb_fourcc);
+
+    /* Offer the scanout FB as dma-drm caps first: DRM-aware consumers
+     * (kmssink) then import it zero-copy. */
+    if (drm_caps) {
+      /* gst_caps_set_features() consumes the features reference */
+      gst_caps_set_features (drm_caps, 0,
+          gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
+
+      caps = gst_caps_merge (caps, drm_caps);
+    }
+  }
+
+  raw_caps = gst_video_info_to_caps (&self->info);
+
+  if (self->dma_feature) {
+    /* The exported memories are dma-bufs either way, so also allow the
+     * plain-format dmabuf caps expected by waylandsink and glupload. */
+    GstCaps *dma_caps = gst_caps_copy (raw_caps);
+
+    /* gst_caps_set_features() consumes the features reference */
+    gst_caps_set_features (dma_caps, 0,
         gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
+
+    caps = gst_caps_merge (caps, dma_caps);
+  }
+
+  /* System-memory caps last: the dma-buf memories are mmap-able, so
+   * CPU consumers keep working through the generic memory API. */
+  caps = gst_caps_merge (caps, raw_caps);
 
   if (filter) {
     GstCaps *intersection;
@@ -814,9 +1002,12 @@ gst_kms_src_get_caps (GstBaseSrc * basesrc, GstCaps * filter)
     caps = intersection;
   }
 
-  s = gst_caps_get_structure (caps, 0);
-  gst_structure_set (s, "framerate", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT,
-      1, NULL);
+  /* Advertise a variable framerate on every structure, the capture
+   * pace follows the compositor flips, not a fixed clock. */
+  for (i = 0; i < gst_caps_get_size (caps); i++) {
+    gst_structure_set (gst_caps_get_structure (caps, i),
+        "framerate", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT, 1, NULL);
+  }
 
   GST_DEBUG_OBJECT (self, "returning caps: %" GST_PTR_FORMAT, caps);
   return caps;
@@ -904,6 +1095,13 @@ gst_kms_src_start (GstBaseSrc * basesrc)
 
   self->last_fb_id = 0;
   self->last_frame_time = gst_util_get_timestamp ();
+  self->static_since = 0;
+  self->fb_fourcc = 0;
+  self->caps_fourcc = 0;
+  self->neg_format = GST_VIDEO_FORMAT_UNKNOWN;
+  self->neg_width = 0;
+  self->neg_height = 0;
+  self->neg_dmabuf = FALSE;
   self->start_time = gst_util_get_timestamp ();
 
   self->pollfd.fd = self->fd;
