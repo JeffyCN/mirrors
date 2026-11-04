@@ -1364,6 +1364,8 @@ static GstFlowReturn
 gst_mpp_dec_send_mpp_packet_unlocked (GstVideoDecoder * decoder, MppPacket mpkt)
 {
   GstMppDec *self = GST_MPP_DEC (decoder);
+  gint64 deadline =
+      g_get_monotonic_time () + GST_MPP_DEC_STALL_TIMEOUT_MS * 1000;
   gint timeout_ms = MPP_INPUT_TIMEOUT_MS;
 
   self->mpi->control (self->mpp_ctx, MPP_SET_INPUT_TIMEOUT, &timeout_ms);
@@ -1381,7 +1383,16 @@ gst_mpp_dec_send_mpp_packet_unlocked (GstVideoDecoder * decoder, MppPacket mpkt)
       case MPP_ERR_BUFFER_FULL:
         /* fall-through */
       case MPP_ERR_TIMEOUT:
-        /* Timed out */
+        /* Timed out; fail instead of retrying forever when the decoder
+         * pipeline is wedged and will never take the packet again */
+        if (g_get_monotonic_time () > deadline) {
+          GST_ELEMENT_ERROR (decoder, STREAM, DECODE,
+              ("Decoder rejected input for %d ms",
+                  GST_MPP_DEC_STALL_TIMEOUT_MS),
+              ("decode_put_packet failed (ret %d); the stream may be "
+                  "unparseable", ret));
+          return GST_FLOW_ERROR;
+        }
         break;
       default:
         /* Unknown error */

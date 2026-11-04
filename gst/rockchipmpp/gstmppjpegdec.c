@@ -441,6 +441,8 @@ gst_mpp_jpeg_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
   MppBuffer mbuf;
   MppMeta meta;
   MPP_RET ret;
+  gint64 deadline =
+      g_get_monotonic_time () + GST_MPP_DEC_STALL_TIMEOUT_MS * 1000;
 
   /* It's safe to stop decoding immediately */
   if (!drain) {
@@ -468,9 +470,22 @@ gst_mpp_jpeg_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
     if (!ret)
       break;
 
+    /* A wedged decoder pipeline never takes the EOS packet; stop
+     * waiting and reset instead of blocking the state change */
+    if (g_get_monotonic_time () > deadline) {
+      GST_WARNING_OBJECT (self, "decoder stalled draining; resetting");
+      mppdec->mpi->reset (mppdec->mpp_ctx);
+      /* The reset flushed the packet back to us: it was never consumed
+       * by the MPP worker, so we still own it. */
+      mpp_packet_deinit (&mpkt);
+      return FALSE;
+    }
+
     g_usleep (1000);
   }
 
+  /* NOTE: the EOS packet is left undeinited on purpose; its buffer and
+   * output frame stay owned by the MPP worker task until it finishes */
   return TRUE;
 }
 

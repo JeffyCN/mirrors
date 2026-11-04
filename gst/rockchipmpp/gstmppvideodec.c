@@ -235,6 +235,8 @@ gst_mpp_video_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
   GstMppDec *mppdec = GST_MPP_DEC (decoder);
   MppPacket mpkt;
   MPP_RET ret;
+  gint64 deadline =
+      g_get_monotonic_time () + GST_MPP_DEC_STALL_TIMEOUT_MS * 1000;
 
   /* It's safe to stop decoding immediately */
   if (!drain) {
@@ -252,6 +254,15 @@ gst_mpp_video_dec_shutdown (GstVideoDecoder * decoder, gboolean drain)
     ret = mppdec->mpi->decode_put_packet (mppdec->mpp_ctx, mpkt);
     if (!ret)
       break;
+
+    /* A wedged decoder pipeline never takes the EOS packet; stop
+     * waiting and reset instead of blocking the state change */
+    if (g_get_monotonic_time () > deadline) {
+      GST_WARNING_OBJECT (self, "decoder stalled draining; resetting");
+      mpp_packet_deinit (&mpkt);
+      mppdec->mpi->reset (mppdec->mpp_ctx);
+      return FALSE;
+    }
 
     g_usleep (1000);
   }

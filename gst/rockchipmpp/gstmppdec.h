@@ -26,6 +26,12 @@
 
 #include "gstmpp.h"
 
+/* Give up on an MPP context that keeps rejecting input for this long.
+ * A wedged decoder pipeline (e.g. an unparseable stream) never errors
+ * out by itself; without a deadline the dataflow thread would block
+ * in decode_put_packet() forever. */
+#define GST_MPP_DEC_STALL_TIMEOUT_MS 2000
+
 G_BEGIN_DECLS;
 
 #define GST_TYPE_MPP_DEC	(gst_mpp_dec_get_type())
