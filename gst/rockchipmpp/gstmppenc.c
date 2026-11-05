@@ -971,17 +971,26 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
   if (!outbuf)
     goto err;
 
-  if (self->rotation)
+  /* AFBC input is compressed: only the native import path is valid.
+   * The conversion tiers would read the compressed payload as linear
+   * pixels and silently produce garbage, so they are off-limits. */
+  if (!self->arm_afbc && self->rotation)
     goto convert;
 
-  if (gst_buffer_n_memory (inbuf) != 1)
+  if (!self->arm_afbc && gst_buffer_n_memory (inbuf) != 1)
     goto convert;
 
   in_mem = gst_buffer_peek_memory (inbuf, 0);
 
   out_mem = gst_mpp_allocator_import_gst_memory (self->allocator, in_mem);
-  if (!out_mem)
-    goto convert;
+  if (!out_mem) {
+    if (!self->arm_afbc)
+      goto convert;
+    GST_ELEMENT_ERROR (self, STREAM, NOT_IMPLEMENTED,
+        ("AFBC input requires aligned importable buffers; "
+            "conversion is not supported"), (NULL));
+    goto err;
+  }
 
   src_hstride = GST_MPP_VIDEO_INFO_HSTRIDE (&src_info);
   src_vstride = GST_MPP_VIDEO_INFO_VSTRIDE (&src_info);
@@ -995,7 +1004,11 @@ gst_mpp_enc_convert (GstVideoEncoder * encoder, GstVideoCodecFrame * frame)
       !gst_mpp_video_info_matched (&src_info, &dst_info)) {
     /* Reset the temporarily modified dst video info. */
     dst_info = self->info;
-    goto convert;
+    if (!self->arm_afbc)
+      goto convert;
+    GST_ELEMENT_ERROR (self, STREAM, NOT_IMPLEMENTED,
+        ("AFBC input stride mismatch; conversion is not supported"), (NULL));
+    goto err;
   }
 
   gst_mpp_enc_apply_strides (encoder, src_hstride, src_vstride);
