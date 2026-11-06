@@ -1033,6 +1033,8 @@ convert:
     goto err;
 
   gst_buffer_append_memory (outbuf, out_mem);
+  /* Ownership moved to the buffer; the error path must not unref it. */
+  out_mem = NULL;
 
 #ifdef HAVE_RGA
   if (gst_mpp_use_rga () &&
@@ -1047,20 +1049,24 @@ convert:
       GST_VIDEO_INFO_FORMAT (&src_info) != GST_VIDEO_INFO_FORMAT (&dst_info))
     goto err;
 
-  if (gst_video_frame_map (&src_frame, &src_info, inbuf, GST_MAP_READ)) {
-    if (gst_video_frame_map (&dst_frame, &dst_info, outbuf, GST_MAP_WRITE)) {
-      GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
-      if (!gst_video_frame_copy (&dst_frame, &src_frame)) {
-        GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
-        gst_video_frame_unmap (&dst_frame);
-        gst_video_frame_unmap (&src_frame);
-        goto err;
-      }
-      GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
-      gst_video_frame_unmap (&dst_frame);
-    }
+  if (!gst_video_frame_map (&src_frame, &src_info, inbuf, GST_MAP_READ))
+    goto err;
+
+  if (!gst_video_frame_map (&dst_frame, &dst_info, outbuf, GST_MAP_WRITE)) {
     gst_video_frame_unmap (&src_frame);
+    goto err;
   }
+
+  GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
+  if (!gst_video_frame_copy (&dst_frame, &src_frame)) {
+    GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
+    gst_video_frame_unmap (&dst_frame);
+    gst_video_frame_unmap (&src_frame);
+    goto err;
+  }
+  GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
+  gst_video_frame_unmap (&dst_frame);
+  gst_video_frame_unmap (&src_frame);
 
   GST_DEBUG_OBJECT (self, "using software converted buffer");
 
