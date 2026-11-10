@@ -211,9 +211,23 @@ gst_mpp_video_dec_startup (GstVideoDecoder * decoder)
   }
 
   if (mppdec->fbc) {
-    MppFrameFormat mpp_format = MPP_FMT_YUV420SP | MPP_FRAME_FBC_AFBC_V2;
-    mppdec->mpi->control (mppdec->mpp_ctx, MPP_DEC_SET_OUTPUT_FORMAT,
-        &mpp_format);
+    /* Requesting FBC output precludes every conversion tier: AFBC
+       bodies cannot be converted (the CPU cannot read them and the
+       hardware tiers do not accept them), and a conversion configured
+       through format/rotation/size would negotiate and then fail
+       frame after frame.  Decode to linear NV12 instead - the fbc
+       flag stays best-effort for the passthrough case. */
+    GstMppDec *dec = GST_MPP_DEC (decoder);
+    gboolean conversion_needed = dec->rotation != 0 ||
+        (dec->format != GST_VIDEO_FORMAT_UNKNOWN &&
+        dec->format != GST_VIDEO_FORMAT_NV12) ||
+        dec->width != 0 || dec->height != 0;
+
+    if (!conversion_needed) {
+      MppFrameFormat mpp_format = MPP_FMT_YUV420SP | MPP_FRAME_FBC_AFBC_V2;
+      mppdec->mpi->control (mppdec->mpp_ctx, MPP_DEC_SET_OUTPUT_FORMAT,
+          &mpp_format);
+    }
   }
 
   return TRUE;
