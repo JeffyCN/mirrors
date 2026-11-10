@@ -166,8 +166,17 @@ RgaSURF_FORMAT gst_mpp_gst_format_to_rga_format (GstVideoFormat format);
 
 gboolean gst_mpp_use_gpu (void);
 
+/* Compression carried by a decoded frame */
+gboolean gst_mpp_frame_is_fbc (MppFrame mframe);
+gboolean gst_mpp_frame_is_rfbc (MppFrame mframe);
+gboolean gst_mpp_frame_is_afbc (MppFrame mframe);
+
 gboolean gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe,
-    GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation);
+    GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation,
+    gboolean bt709);
+
+/* TRUE when the GPU tier converts a compressed frame into that target */
+gboolean gst_mpp_gpu_can_convert_compressed (GstVideoFormat dst_fmt);
 
 /* Apply new format and size without reinit the video info */
 void

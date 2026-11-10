@@ -53,12 +53,21 @@ gst_mpp_use_gpu (void)
 
 gboolean
 gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
-    GstVideoInfo * dst_vinfo, gint rotation)
+    GstVideoInfo * dst_vinfo, gint rotation, gboolean bt709)
 {
   (void) mframe;
   (void) out_mem;
   (void) dst_vinfo;
   (void) rotation;
+  (void) bt709;
+
+  return FALSE;
+}
+
+gboolean
+gst_mpp_gpu_can_convert_compressed (GstVideoFormat dst_fmt)
+{
+  (void) dst_fmt;
 
   return FALSE;
 }
@@ -182,8 +191,9 @@ static const char *fs_src_c10 =
     "varying vec2 texcoord;\n"
     "uniform samplerExternalOES tex_y;\n"
     "uniform vec2 src_scale;\n"
+    "uniform vec2 src_off;\n"
     "void main() {\n"
-    "   gl_FragColor = vec4(texture2D(tex_y, texcoord * src_scale).rgb, 1.0);\n"
+    "   gl_FragColor = vec4(texture2D(tex_y, texcoord * src_scale + src_off).rgb, 1.0);\n"
     "}\n";
 
 /*
@@ -366,15 +376,18 @@ struct _GstMppGpuCtx
   /* Per-format latch: an import failure must not disable the GPU tier
    * for other format pairs in the same process */
   MppFrameFormat unavailable_src_fmt;
+  gboolean unavailable_src_afbc;
   GstVideoFormat unavailable_dst_fmt;
   /* Same latch, for the direct (render into dst dmabuf) path */
   MppFrameFormat unavailable_direct_src_fmt;
+  gboolean unavailable_direct_src_afbc;
   GstVideoFormat unavailable_direct_dst_fmt;
   /* Same latch, for the plane path (render into dst Y/UV planes) */
   MppFrameFormat unavailable_planes_src_fmt;
   GstVideoFormat unavailable_planes_dst_fmt;
   /* Same latch, for the via-RGB two-pass path */
   MppFrameFormat unavailable_via_src_fmt;
+  gboolean unavailable_via_src_afbc;
   GstVideoFormat unavailable_via_dst_fmt;
 
   gint drm_fd;
@@ -423,6 +436,7 @@ struct _GstMppGpuCtx
   GLint chr_dx_loc;
   GLint vu_loc;
   GLint src_scale_c10_loc;
+  GLint src_off_c10_loc;
   GLint rot_loc;
   GLint rot_c10_loc;
 
@@ -442,12 +456,15 @@ struct _GstMppGpuCtx
 
 static struct _GstMppGpuCtx gctx = {
   .unavailable_src_fmt = MPP_FMT_BUTT,
+  .unavailable_src_afbc = FALSE,
   .unavailable_dst_fmt = GST_VIDEO_FORMAT_UNKNOWN,
   .unavailable_direct_src_fmt = MPP_FMT_BUTT,
+  .unavailable_direct_src_afbc = FALSE,
   .unavailable_direct_dst_fmt = GST_VIDEO_FORMAT_UNKNOWN,
   .unavailable_planes_src_fmt = MPP_FMT_BUTT,
   .unavailable_planes_dst_fmt = GST_VIDEO_FORMAT_UNKNOWN,
   .unavailable_via_src_fmt = MPP_FMT_BUTT,
+  .unavailable_via_src_afbc = FALSE,
   .unavailable_via_dst_fmt = GST_VIDEO_FORMAT_UNKNOWN,
 };
 
@@ -660,6 +677,7 @@ gst_mpp_gpu_init (void)
   glUseProgram (gctx.program_c10);
   glUniform1i (glGetUniformLocation (gctx.program_c10, "tex_y"), 0);
   gctx.src_scale_c10_loc = glGetUniformLocation (gctx.program_c10, "src_scale");
+  gctx.src_off_c10_loc = glGetUniformLocation (gctx.program_c10, "src_off");
   gctx.rot_loc = glGetUniformLocation (gctx.program, "rotation");
   gctx.rot_c10_loc = glGetUniformLocation (gctx.program_c10, "rotation");
 
@@ -985,6 +1003,69 @@ gst_mpp_gpu_bind_src_oes (gint src_fd, guint hor_stride, guint ver_stride)
   return TRUE;
 }
 
+/* Import of an ARM AFBC NV12 body (MPP fourcc YU08 with the ARM AFBC
+ * modifier).  The description must match what the wayland client sends
+ * for these buffers, otherwise the DDK refuses the import with
+ * EGL_BAD_ACCESS.  The client describes an AFBC frame the way the
+ * 4:2:0 family is described in dma-buf terms: a single plane whose
+ * stride is the luma stride scaled by 1.5 (see
+ * gst_wl_linux_dmabuf_construct_wl_buffer), plus the modifier, the
+ * preserved flag and the YUV hints. */
+static gboolean
+gst_mpp_gpu_bind_src_afbc (gint src_fd, guint width, guint image_height,
+    guint y_stride, gboolean bt709)
+{
+  PFNGLEGLIMAGETARGETTEXTURE2DOESPROC image_target;
+  PFNEGLCREATEIMAGEKHRPROC create_image;
+  PFNEGLDESTROYIMAGEKHRPROC destroy_image;
+  EGLDisplay dpy = gctx.display;
+  EGLImageKHR img;
+  guint64 mod = (guint64) GST_MPP_AFBC_MODIFIER;
+  EGLint attrs[] = {
+    EGL_WIDTH, (EGLint) width,
+    EGL_HEIGHT, (EGLint) image_height,
+    EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_YUV420_8BIT,
+    EGL_IMAGE_PRESERVED_KHR, EGL_TRUE,
+    EGL_DMA_BUF_PLANE0_FD_EXT, src_fd,
+    EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+    EGL_DMA_BUF_PLANE0_PITCH_EXT, (EGLint) (y_stride * 3 / 2),
+    EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT, (EGLint) (mod & 0xffffffffu),
+    EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT, (EGLint) (mod >> 32),
+    /* the YUV hints drive the hardware YUV -> RGB conversion: the
+       matrix follows the stream (non-709 falls back to REC601, like
+       the other tiers), the range is the limited one the decoder
+       delivers */
+    EGL_YUV_COLOR_SPACE_HINT_EXT,
+    bt709 ? EGL_ITU_REC709_EXT : EGL_ITU_REC601_EXT,
+    EGL_SAMPLE_RANGE_HINT_EXT, EGL_YUV_NARROW_RANGE_EXT,
+    EGL_NONE
+  };
+
+  EGL_LOAD_PROC (image_target, PFNGLEGLIMAGETARGETTEXTURE2DOESPROC,
+      "glEGLImageTargetTexture2DOES");
+  EGL_LOAD_PROC (create_image, PFNEGLCREATEIMAGEKHRPROC, "eglCreateImageKHR");
+  EGL_LOAD_PROC (destroy_image, PFNEGLDESTROYIMAGEKHRPROC,
+      "eglDestroyImageKHR");
+  if (!image_target || !create_image || !destroy_image)
+    return FALSE;
+
+  img = create_image (dpy, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attrs);
+  if (img == EGL_NO_IMAGE_KHR) {
+    gint sz = (gint) lseek (src_fd, 0, SEEK_END);
+    GST_WARNING ("failed to import AFBC YU08 image (egl error 0x%x), "
+        "dmabuf size %d, w %u h %u pitch %u",
+        (guint) eglGetError (), sz, width, image_height, y_stride * 3 / 2);
+    return FALSE;
+  }
+
+  glBindTexture (GL_TEXTURE_EXTERNAL_OES, gctx.src_tex_oes);
+  image_target (GL_TEXTURE_EXTERNAL_OES, img);
+  (void) glGetError ();
+
+  destroy_image (dpy, img);
+  return TRUE;
+}
+
 static void
 gst_mpp_gpu_pack_yuv_pixel (const guint8 * p, guint8 * yy, guint8 * uu,
     guint8 * vv)
@@ -1168,6 +1249,16 @@ gst_mpp_gpu_dst_fourcc (GstVideoFormat format)
   return 0;
 }
 
+/* The direct path renders into the target dmabuf itself and is the
+ * path that takes a compressed frame: the paths that write the target
+ * planes need a raster import the DDK refuses for a width that is not
+ * 64-aligned. */
+gboolean
+gst_mpp_gpu_can_convert_compressed (GstVideoFormat dst_fmt)
+{
+  return gst_mpp_gpu_dst_fourcc (dst_fmt) != 0;
+}
+
 static GLuint
 gst_mpp_gpu_import_tex (gint fd, guint32 fourcc, guint w, guint h,
     guint pitch, guint offset, GLenum target)
@@ -1206,6 +1297,52 @@ gst_mpp_gpu_import_tex (gint fd, guint32 fourcc, guint w, guint h,
   return tex;
 }
 
+/* The AFBC body carries the frame at the width the decoder aligns the
+ * caps to - the passthrough caps carry that width - so the import has
+ * to describe it, and the visible columns are sampled from its left
+ * edge. */
+static guint
+gst_mpp_gpu_afbc_width (guint src_width)
+{
+  return GST_ROUND_UP_64 (src_width);
+}
+
+/* Set the source sampling uniforms of the program in use.  The plane
+ * shader samples the two raster planes of a linear frame; the OES
+ * shader samples one imported image whose geometry the caller states.
+ * An AFBC body is imported as the aligned frame width with the
+ * structural rows the decoder reserves above the picture, so the
+ * visible picture is sampled from below them. */
+static void
+gst_mpp_gpu_set_src_sampling (gboolean use_c10, gboolean src_afbc,
+    guint src_width, guint src_height, guint hor_stride, guint ver_stride,
+    guint src_off_y, GLfloat chr_dx, GLfloat vu)
+{
+  if (!use_c10) {
+    glUniform2f (gctx.src_scale_loc, (GLfloat) src_width / hor_stride,
+        (GLfloat) src_height / ver_stride);
+    glUniform1f (gctx.chr_dx_loc, chr_dx);
+    glUniform1f (gctx.vu_loc, vu);
+    return;
+  }
+
+  if (src_afbc) {
+    guint img_h = src_height + src_off_y;
+
+    glUniform2f (gctx.src_scale_c10_loc,
+        (GLfloat) src_width / gst_mpp_gpu_afbc_width (src_width),
+        (GLfloat) src_height / img_h);
+    glUniform2f (gctx.src_off_c10_loc, 0.0f, (GLfloat) src_off_y / img_h);
+  } else {
+    /* the OES image is claimed at hor_stride / 10 * 8 wide; sample the
+     * visible width within it */
+    glUniform2f (gctx.src_scale_c10_loc,
+        (GLfloat) src_width / (hor_stride / 10 * 8),
+        (GLfloat) src_height / ver_stride);
+    glUniform2f (gctx.src_off_c10_loc, 0.0f, 0.0f);
+  }
+}
+
 /* Render the bound source straight into the dst dmabuf (zero copy):
  * import the dst as a 2D texture and attach it as the FBO color
  * attachment.  An external (OES) texture is not color-renderable on
@@ -1216,7 +1353,7 @@ static gboolean
 gst_mpp_gpu_direct_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
     guint src_width, guint src_height, guint src_hor_stride,
     guint src_ver_stride, GLfloat chr_dx, GLfloat vu, gboolean use_c10,
-    gint rotation)
+    gint rotation, gboolean src_afbc, guint src_off_y)
 {
   guint32 fourcc = gst_mpp_gpu_dst_fourcc (GST_VIDEO_INFO_FORMAT (dst_vinfo));
   guint dst_width = GST_VIDEO_INFO_WIDTH (dst_vinfo);
@@ -1250,18 +1387,8 @@ gst_mpp_gpu_direct_convert (gint dst_fd, GstVideoInfo * dst_vinfo,
   glViewport (0, 0, dst_width, dst_height);
   glUseProgram (use_c10 ? gctx.program_c10 : gctx.program);
   glUniform1i (use_c10 ? gctx.rot_c10_loc : gctx.rot_loc, rotation / 90);
-  if (use_c10) {
-    /* the OES image is claimed at hor_stride / 10 * 8 wide; sample the
-     * visible width within it */
-    glUniform2f (gctx.src_scale_c10_loc,
-        (GLfloat) src_width / (src_hor_stride / 10 * 8),
-        (GLfloat) src_height / src_ver_stride);
-  } else {
-    glUniform2f (gctx.src_scale_loc, (GLfloat) src_width / src_hor_stride,
-        (GLfloat) src_height / src_ver_stride);
-    glUniform1f (gctx.chr_dx_loc, chr_dx);
-    glUniform1f (gctx.vu_loc, vu);
-  }
+  gst_mpp_gpu_set_src_sampling (use_c10, src_afbc, src_width, src_height,
+      src_hor_stride, src_ver_stride, src_off_y, chr_dx, vu);
   glActiveTexture (GL_TEXTURE0);
   /* the 8-bit program samples sampler2D (R8 imports); only the 10-bit
    * program uses samplerExternalOES */
@@ -1547,7 +1674,8 @@ gst_mpp_gpu_rgb_intermediate (guint w, guint h)
 static gboolean
 gst_mpp_gpu_yuv_via_rgb (gint dst_fd, GstVideoInfo * dst_vinfo,
     guint src_width, guint src_height, guint hor_stride, guint ver_stride,
-    GLfloat chr_dx, GLfloat vu, gboolean use_c10, gint rotation)
+    GLfloat chr_dx, GLfloat vu, gboolean use_c10, gint rotation,
+    gboolean src_afbc, guint src_off_y)
 {
   guint dst_w = GST_VIDEO_INFO_WIDTH (dst_vinfo);
   guint dst_h = GST_VIDEO_INFO_HEIGHT (dst_vinfo);
@@ -1663,10 +1791,9 @@ gst_mpp_gpu_yuv_via_rgb (gint dst_fd, GstVideoInfo * dst_vinfo,
     glViewport (0, 0, dst_w, dst_h);
     glUseProgram (use_c10 ? gctx.program_c10 : gctx.program);
     glUniform1i (use_c10 ? gctx.rot_c10_loc : gctx.rot_loc, rotation / 90);
+    gst_mpp_gpu_set_src_sampling (use_c10, src_afbc, src_width, src_height,
+        hor_stride, ver_stride, src_off_y, chr_dx, vu);
     if (use_c10) {
-      glUniform2f (gctx.src_scale_c10_loc,
-          (GLfloat) src_width / (hor_stride / 10 * 8),
-          (GLfloat) src_height / ver_stride);
       glActiveTexture (GL_TEXTURE0);
       glBindTexture (GL_TEXTURE_EXTERNAL_OES, gctx.src_tex_oes);
     } else {
@@ -1777,7 +1904,7 @@ out:
 
 gboolean
 gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
-    GstVideoInfo * dst_vinfo, gint rotation)
+    GstVideoInfo * dst_vinfo, gint rotation, gboolean bt709)
 {
   MppFrameFormat src_fmt = mpp_frame_get_fmt (mframe) & MPP_FRAME_FMT_MASK;
   GstVideoFormat dst_fmt = GST_VIDEO_INFO_FORMAT (dst_vinfo);
@@ -1787,10 +1914,12 @@ gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
   guint height = GST_VIDEO_INFO_HEIGHT (dst_vinfo);
   guint hor_stride = mpp_frame_get_hor_stride (mframe);
   guint ver_stride = mpp_frame_get_ver_stride (mframe);
+  guint src_off_y = mpp_frame_get_offset_y (mframe);
   MppBuffer mbuf;
   GLfloat chr_dx = 0.0f, vu = 0.0f;
   GLuint fbo_status;
   gboolean use_c10;
+  gboolean afbc_src = FALSE;
   gsize rgba_size;
   gint src_fd;
   gint src_fds[2];
@@ -1814,8 +1943,11 @@ gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
   if (rotation && rotation % 90)
     goto out;
 
+  afbc_src = gst_mpp_frame_is_afbc (mframe);
+
   if (gctx.unavailable_src_fmt == src_fmt
-      && gctx.unavailable_dst_fmt == dst_fmt) {
+      && gctx.unavailable_dst_fmt == dst_fmt
+      && gctx.unavailable_src_afbc == afbc_src) {
     GST_DEBUG ("GPU convert unavailable for fmt pair %d -> %s", (gint) src_fmt,
         gst_mpp_video_format_to_string (dst_fmt));
     goto out;
@@ -1838,26 +1970,54 @@ gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
   /* The compact 10-bit format goes through a whole-frame NV15 import
    * with the hardware sampler doing unpack + CSC; the 8-bit formats go
    * through the plane-based shader */
-  use_c10 = (src_fmt == MPP_FMT_YUV420SP_10BIT);
+  if (afbc_src) {
+    /* ARM AFBC NV12: import the compressed body with the AFBC
+       modifier using the compositor-proven attr layout; the OES
+       sampler converts the 4:2:0 family on the GPU.  Only NV12 AFBC
+       reaches here (negotiation gates it).  The luma stride of the
+       description is derived at the visible width, the same way the
+       decoder builds the passthrough video meta the client sends. */
+    GstVideoInfo nv12_info;
+    guint src_y_stride;
+    if (gst_video_info_set_format (&nv12_info, GST_VIDEO_FORMAT_NV12,
+            src_width, src_height))
+      src_y_stride = GST_VIDEO_INFO_PLANE_STRIDE (&nv12_info, 0);
+    else
+      src_y_stride = src_width;
 
-  if (use_c10) {
-    if (!gst_mpp_gpu_bind_src_oes (src_fd, hor_stride, ver_stride)) {
+    if (!gst_mpp_gpu_bind_src_afbc (src_fd,
+            gst_mpp_gpu_afbc_width (src_width), src_height + src_off_y,
+            src_y_stride, bt709)) {
       gctx.unavailable_src_fmt = src_fmt;
       gctx.unavailable_dst_fmt = dst_fmt;
+      gctx.unavailable_src_afbc = TRUE;
       goto out_unmake;
     }
+    use_c10 = TRUE;
     ret = TRUE;
   } else {
-    ret =
-        gst_mpp_gpu_bind_src (src_fds, hor_stride, ver_stride, src_fmt, FALSE,
-        &chr_dx, &vu);
-  }
+    use_c10 = (src_fmt == MPP_FMT_YUV420SP_10BIT);
 
-  if (!ret) {
-    gctx.unavailable_src_fmt = src_fmt;
-    gctx.unavailable_dst_fmt = dst_fmt;
-    ret = FALSE;
-    goto out_unmake;
+    if (use_c10) {
+      if (!gst_mpp_gpu_bind_src_oes (src_fd, hor_stride, ver_stride)) {
+        gctx.unavailable_src_fmt = src_fmt;
+        gctx.unavailable_dst_fmt = dst_fmt;
+        goto out_unmake;
+      }
+      ret = TRUE;
+    } else {
+      ret =
+          gst_mpp_gpu_bind_src (src_fds, hor_stride, ver_stride, src_fmt,
+          FALSE, &chr_dx, &vu);
+    }
+
+    if (!ret) {
+      gctx.unavailable_src_fmt = src_fmt;
+      gctx.unavailable_dst_fmt = dst_fmt;
+      gctx.unavailable_src_afbc = afbc_src;
+      ret = FALSE;
+      goto out_unmake;
+    }
   }
 
   /* Zero-copy path: render straight into the dst dmabuf.  FBO
@@ -1865,16 +2025,19 @@ gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
    * and fall through to the readback path. */
   if (gst_mpp_gpu_dst_fourcc (dst_fmt) &&
       !(gctx.unavailable_direct_src_fmt == src_fmt &&
-          gctx.unavailable_direct_dst_fmt == dst_fmt)) {
+          gctx.unavailable_direct_dst_fmt == dst_fmt &&
+          gctx.unavailable_direct_src_afbc == afbc_src)) {
     gint dst_fd = gst_dmabuf_memory_get_fd (out_mem);
 
     if (dst_fd >= 0 &&
         gst_mpp_gpu_direct_convert (dst_fd, dst_vinfo, src_width, src_height,
-            hor_stride, ver_stride, chr_dx, vu, use_c10, rotation))
+            hor_stride, ver_stride, chr_dx, vu, use_c10, rotation,
+            afbc_src, src_off_y))
       goto out_unmake;
 
     gctx.unavailable_direct_src_fmt = src_fmt;
     gctx.unavailable_direct_dst_fmt = dst_fmt;
+    gctx.unavailable_direct_src_afbc = afbc_src;
     GST_WARNING ("direct path unavailable for %d -> %s, falling back",
         (gint) src_fmt, gst_mpp_video_format_to_string (dst_fmt));
   }
@@ -1887,7 +2050,7 @@ gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
    * accepts only at 16-texel-aligned widths, so gate on the dst width
    * here and let an odd size fall through instead of latching the
    * pair.  No rotation; that keeps the via-RGB two-pass below. */
-  if (!rotation && (width % 64) == 0 &&
+  if (!afbc_src && !rotation && (width % 64) == 0 &&
       (dst_fmt == GST_VIDEO_FORMAT_NV12 ||
           dst_fmt == GST_VIDEO_FORMAT_NV21 ||
           dst_fmt == GST_VIDEO_FORMAT_NV16 ||
@@ -1920,7 +2083,8 @@ gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
           dst_fmt == GST_VIDEO_FORMAT_YV12) &&
       (!rotation || (width / 4) % 16 == 0) &&
       !(gctx.unavailable_via_src_fmt == src_fmt &&
-          gctx.unavailable_via_dst_fmt == dst_fmt)) {
+          gctx.unavailable_via_dst_fmt == dst_fmt &&
+          gctx.unavailable_via_src_afbc == afbc_src)) {
     gint dst_fd = gst_dmabuf_memory_get_fd (out_mem);
     gboolean transient;
 
@@ -1930,12 +2094,14 @@ gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
 
     if (!transient && dst_fd >= 0 &&
         gst_mpp_gpu_yuv_via_rgb (dst_fd, dst_vinfo, src_width, src_height,
-            hor_stride, ver_stride, chr_dx, vu, use_c10, rotation))
+            hor_stride, ver_stride, chr_dx, vu, use_c10, rotation,
+            afbc_src, src_off_y))
       goto out_unmake;
 
     if (!transient) {
       gctx.unavailable_via_src_fmt = src_fmt;
       gctx.unavailable_via_dst_fmt = dst_fmt;
+      gctx.unavailable_via_src_afbc = afbc_src;
       GST_WARNING ("via-rgb path unavailable for %d -> %s, falling back",
           (gint) src_fmt, gst_mpp_video_format_to_string (dst_fmt));
     }
@@ -1980,18 +2146,8 @@ gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
   glClear (GL_COLOR_BUFFER_BIT);
   glUseProgram (use_c10 ? gctx.program_c10 : gctx.program);
   glUniform1i (use_c10 ? gctx.rot_c10_loc : gctx.rot_loc, 0);
-  if (use_c10) {
-    /* the OES image is claimed at hor_stride / 10 * 8 wide; sample the
-     * visible width within it */
-    glUniform2f (gctx.src_scale_c10_loc,
-        (GLfloat) src_width / (hor_stride / 10 * 8),
-        (GLfloat) src_height / ver_stride);
-  } else {
-    glUniform2f (gctx.src_scale_loc,
-        (GLfloat) src_width / hor_stride, (GLfloat) src_height / ver_stride);
-    glUniform1f (gctx.chr_dx_loc, chr_dx);
-    glUniform1f (gctx.vu_loc, vu);
-  }
+  gst_mpp_gpu_set_src_sampling (use_c10, afbc_src, src_width, src_height,
+      hor_stride, ver_stride, src_off_y, chr_dx, vu);
   glActiveTexture (GL_TEXTURE0);
   if (use_c10)
     glBindTexture (GL_TEXTURE_EXTERNAL_OES, gctx.src_tex_oes);

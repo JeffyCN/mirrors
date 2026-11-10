@@ -74,6 +74,10 @@ struct _GstMppDec
 
   gboolean fast_mode;
 
+  /* compression of current frame (cached from apply_info_change) */
+  gboolean convert_afbc;
+  gboolean convert_rfbc;
+
   /* stop handling new frame when flushing */
   gboolean flushing;
 
@@ -148,6 +152,9 @@ void gst_mpp_dec_fixup_video_info (GstVideoDecoder * decoder,
 
 gboolean gst_mpp_dec_update_simple_video_info (GstVideoDecoder * decoder,
     GstVideoFormat format, guint width, guint height, guint align);
+
+/* TRUE when a compressed (AFBC) frame can be converted by the GPU tier */
+gboolean gst_mpp_dec_can_convert_afbc (GstMppDec * self);
 
 G_END_DECLS;
 

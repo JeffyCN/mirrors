@@ -211,22 +211,28 @@ gst_mpp_video_dec_startup (GstVideoDecoder * decoder)
   }
 
   if (mppdec->fbc) {
-    /* Requesting FBC output precludes every conversion tier: AFBC
-       bodies cannot be converted (the CPU cannot read them and the
-       hardware tiers do not accept them), and a conversion configured
-       through format/rotation/size would negotiate and then fail
-       frame after frame.  Decode to linear NV12 instead - the fbc
-       flag stays best-effort for the passthrough case. */
+    /* The compressed output survives a conversion when the GPU tier can
+       take it: the GPU imports the AFBC body and converts it there.  A
+       conversion configured through format/rotation/size otherwise has
+       no tier that reads a compressed frame - the CPU cannot read it and
+       the RGA only reads Rockchip's own compression - so decode linear
+       NV12 instead and let the RGA tier convert.  The fbc flag stays
+       best-effort in that case. */
     GstMppDec *dec = GST_MPP_DEC (decoder);
     gboolean conversion_needed = dec->rotation != 0 ||
         (dec->format != GST_VIDEO_FORMAT_UNKNOWN &&
         dec->format != GST_VIDEO_FORMAT_NV12) ||
         dec->width != 0 || dec->height != 0;
 
-    if (!conversion_needed) {
+    if (!conversion_needed || gst_mpp_dec_can_convert_afbc (dec)) {
       MppFrameFormat mpp_format = MPP_FMT_YUV420SP | MPP_FRAME_FBC_AFBC_V2;
-      mppdec->mpi->control (mppdec->mpp_ctx, MPP_DEC_SET_OUTPUT_FORMAT,
-          &mpp_format);
+      gint mpp_ret = (gint) mppdec->mpi->control (mppdec->mpp_ctx,
+          MPP_DEC_SET_OUTPUT_FORMAT, &mpp_format);
+      GST_DEBUG_OBJECT (decoder, "fbc output format requested (ret %d)",
+          mpp_ret);
+    } else {
+      GST_INFO_OBJECT (decoder, "fbc output needs a conversion the GPU "
+          "tier cannot do, decoding linear");
     }
   }
 

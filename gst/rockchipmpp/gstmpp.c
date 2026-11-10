@@ -132,6 +132,38 @@ gst_mpp_gst_format_to_rga_format (GstVideoFormat gst_format)
 
 #endif
 
+/* The frame format carries the compression in its flags: Rockchip's own
+ * compression (RKFBC) and the ARM one (AFBC) are told apart by the
+ * modifier they are decoded with. */
+gboolean
+gst_mpp_frame_is_fbc (MppFrame mframe)
+{
+  return !!MPP_FRAME_FMT_IS_FBC (mpp_frame_get_fmt (mframe));
+}
+
+gboolean
+gst_mpp_frame_is_rfbc (MppFrame mframe)
+{
+  if (gst_mpp_frame_is_fbc (mframe) && g_getenv ("GST_MPP_DEC_FBC_IS_RFBC"))
+    return TRUE;
+
+#ifdef MPP_FRAME_FMT_IS_RKFBC
+  return !!MPP_FRAME_FMT_IS_RKFBC (mpp_frame_get_fmt (mframe));
+#else
+  (void) mframe;
+  return FALSE;
+#endif
+}
+
+gboolean
+gst_mpp_frame_is_afbc (MppFrame mframe)
+{
+  if (gst_mpp_frame_is_rfbc (mframe))
+    return FALSE;
+
+  return gst_mpp_frame_is_fbc (mframe);
+}
+
 void
 gst_mpp_video_info_update_format (GstVideoInfo * info, GstVideoFormat format,
     guint width, guint height)

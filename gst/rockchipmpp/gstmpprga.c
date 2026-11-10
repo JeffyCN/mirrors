@@ -178,6 +178,13 @@ gst_mpp_rga_convert_from_mpp_frame (MppFrame mframe,
   if (!src.wstride || !dst.wstride)
     return FALSE;
 
+  /* RGA3 reads RKFBC-compressed sources with the fbc read mode; raster
+   * mode is the implicit default for plain frames. */
+#ifdef MPP_FRAME_FMT_IS_RKFBC
+  if (MPP_FRAME_FMT_IS_RKFBC (mpp_frame_get_fmt (mframe)))
+    src.rd_mode = fbc_mode;
+#endif
+
   return gst_rga_process (&src, &dst, NULL, NULL,
       gst_mpp_rga_get_rotation (rotation)) > 0;
 }

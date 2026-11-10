@@ -290,6 +290,8 @@ gst_mpp_dec_start (GstVideoDecoder * decoder)
   self->mpp_type = MPP_VIDEO_CodingUnused;
   self->seen_valid_pts = FALSE;
   self->convert = FALSE;
+  self->convert_afbc = FALSE;
+  self->convert_rfbc = FALSE;
   self->mpp_frame = NULL;
 
   self->input_state = NULL;
@@ -815,33 +817,52 @@ gst_mpp_dec_fixup_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
       self->width ? : width, self->height ? : height);
 }
 
-static gboolean
-gst_mpp_frame_is_fbc (MppFrame mframe)
+/* The compressed output is 8-bit 4:2:0 AFBC.  Reading it needs the
+ * GPU, so a conversion of such a frame is possible with the GPU tier
+ * alone.  A source in another chroma format or bit depth keeps the
+ * linear path: the compressed output would change the picture the
+ * stream carries.  A scaled destination keeps the linear path too:
+ * the GPU sampler scales by point sampling while the RGA averages the
+ * source area, so a scaled picture is better made from a linear
+ * frame. */
+gboolean
+gst_mpp_dec_can_convert_afbc (GstMppDec * self)
 {
-  return !!MPP_FRAME_FMT_IS_FBC (mpp_frame_get_fmt (mframe));
-}
+  GstStructure *structure;
+  const gchar *chroma_format;
+  guint depth = 0;
 
-static gboolean
-gst_mpp_frame_is_rfbc (MppFrame mframe)
-{
-  if (gst_mpp_frame_is_fbc (mframe) && g_getenv ("GST_MPP_DEC_FBC_IS_RFBC"))
-    return TRUE;
-
-#ifdef MPP_FRAME_FMT_IS_RKFBC
-  return !!MPP_FRAME_FMT_IS_RKFBC (mpp_frame_get_fmt (mframe));
-#else
-  (void) mframe;
-  return FALSE;
-#endif
-}
-
-static gboolean
-gst_mpp_frame_is_afbc (MppFrame mframe)
-{
-  if (gst_mpp_frame_is_rfbc (mframe))
+  if (!gst_mpp_use_gpu ())
     return FALSE;
 
-  return gst_mpp_frame_is_fbc (mframe);
+  /* Without a size override the destination keeps the source size, so
+   * the frame is converted without scaling */
+  if (self->width != 0 || self->height != 0)
+    return FALSE;
+
+  /* Only a target the GPU renders into directly takes a compressed
+   * frame: the paths that write the target planes import them as raster
+   * planes, which the DDK refuses for a width that is not 64-aligned. */
+  if (!gst_mpp_gpu_can_convert_compressed (self->format))
+    return FALSE;
+
+  if (!self->input_state || !self->input_state->caps)
+    return TRUE;
+
+  structure = gst_caps_get_structure (self->input_state->caps, 0);
+
+  /* The parser reports the chroma format and the bit depth in the
+   * input caps; a stream that carries neither is read as 8-bit 4:2:0,
+   * which is what the compressed output is. */
+  chroma_format = gst_structure_get_string (structure, "chroma-format");
+  if (chroma_format && g_strcmp0 (chroma_format, "4:2:0") != 0)
+    return FALSE;
+
+  gst_structure_get_uint (structure, "bit-depth-luma", &depth);
+  if (depth && depth != 8)
+    return FALSE;
+
+  return TRUE;
 }
 
 static GstFlowReturn
@@ -881,24 +902,44 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
 
   if (self->rotation || dst_format != src_format ||
       dst_width != width || dst_height != height) {
-    if (afbc || rfbc || offset_x || offset_y) {
-      GST_ERROR_OBJECT (self, "unable to convert with FBC or offsets (%d, %d)",
+    /* MPP offsets are not consumed by any conversion tier - except
+       AFBC: rkvdec2 reports a structural offset_y (extra FBC body
+       rows, the passthrough path adds them to the caps height the
+       same way), which the GPU AFBC import covers.  offset_x stays
+       rejected. */
+    if (offset_x || (offset_y && !afbc)) {
+      GST_ERROR_OBJECT (self, "unable to convert with offsets (%d, %d)",
           offset_x, offset_y);
       return GST_FLOW_NOT_NEGOTIATED;
     }
 
-    /* Conversion required */
-    GST_INFO_OBJECT (self, "convert from %s (%dx%d) to %s (%dx%d)",
-        gst_mpp_video_format_to_string (src_format), width, height,
+    /* Compressed frames convert on the matching hardware tier only:
+       ARM AFBC on the GPU (the compositor samples these same buffers
+       successfully), RKFBC on RGA3 (rd_mode = fbc_mode).  AFBC
+       conversion is vouched for with NV12 sources only. */
+    if (afbc && src_format != GST_VIDEO_FORMAT_NV12) {
+      GST_ERROR_OBJECT (self, "unable to convert AFBC %s",
+          gst_mpp_video_format_to_string (src_format));
+      return GST_FLOW_NOT_NEGOTIATED;
+    }
+
+    GST_INFO_OBJECT (self, "convert from %s%s (%dx%d) to %s (%dx%d)",
+        gst_mpp_video_format_to_string (src_format),
+        afbc ? "(AFBC)" : (rfbc ? "(RFBC)" : ""),
+        width, height,
         gst_mpp_video_format_to_string (dst_format), dst_width, dst_height);
 
     self->convert = TRUE;
+    self->convert_afbc = afbc;
+    self->convert_rfbc = rfbc;
 
+    /* Converted output: real geometry, plain strides; the FBC
+       passthrough HACKs below do not apply */
     hstride = 0;
     vstride = 0;
   }
 
-  if (afbc || rfbc) {
+  if ((afbc || rfbc) && !self->convert) {
     /* HACK: Fake 64-aligned width for Mali DDK
      *
      * When importing AFBC dma-bufs, mali would re-calculate the row stride
@@ -938,6 +979,15 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
     dst_height += offset_y;
     if (vstride < dst_height)
       vstride = dst_height;
+  }
+
+  /* Converted output is uncompressed: plain caps without the FBC
+     flags (the passthrough branch keeps the FBC geometry and flags) */
+  if (self->convert) {
+    if (!gst_mpp_dec_update_video_info (decoder, dst_format,
+            dst_width, dst_height, 0, 0, 0, FALSE, FALSE))
+      return GST_FLOW_NOT_NEGOTIATED;
+    return GST_FLOW_OK;
   }
 
   if (!gst_mpp_dec_update_video_info (decoder, dst_format,
@@ -1122,6 +1172,8 @@ gst_mpp_dec_convert (GstVideoDecoder * decoder, MppFrame mframe,
   GstVideoInfo *info = &self->info;
   GstMemory *mem;
   gboolean ret = FALSE;
+  gboolean afbc, rfbc;
+  gboolean bt709;
 
   GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
 
@@ -1129,18 +1181,67 @@ gst_mpp_dec_convert (GstVideoDecoder * decoder, MppFrame mframe,
   if (!mem)
     goto out;
 
-  /* Try the RGA tier first (DMA, zero copy), then the GPU tier */
+  /* Compressed frames convert on the tier that reads their
+     compression: ARM AFBC on the GPU, RKFBC on RGA3. */
+  afbc = self->convert_afbc;
+  rfbc = self->convert_rfbc;
+
+  /* The GPU tier converts YUV on the hardware, which needs the
+   * stream's matrix; the RGA tier converts with its own default */
+  bt709 = self->input_state &&
+      self->input_state->info.colorimetry.matrix ==
+      GST_VIDEO_COLOR_MATRIX_BT709;
+
+  if (afbc) {
+#ifdef HAVE_GPU
+    if (gst_mpp_use_gpu ()) {
+      ret = gst_mpp_gpu_convert_from_mpp_frame (mframe, mem, info,
+          self->rotation, bt709);
+      GST_DEBUG_OBJECT (decoder, "convert tier=AFBC-GPU ret=%d", ret);
+    } else
+#endif
+    {
+      GST_DEBUG_OBJECT (decoder, "convert tier=AFBC-GPU unavailable");
+    }
+    /* No other tier reads a compressed frame: fail the stream instead
+       of dropping every frame of it */
+    if (!ret) {
+      GST_ELEMENT_ERROR (decoder, STREAM, FORMAT, (NULL),
+          ("unable to convert AFBC frame on the GPU tier"));
+      self->task_ret = GST_FLOW_ERROR;
+    }
+  } else if (rfbc) {
 #ifdef HAVE_RGA
-  if (gst_mpp_use_rga ())
-    ret = gst_mpp_rga_convert_from_mpp_frame (mframe, mem, info,
-        self->rotation);
+    if (gst_mpp_use_rga ()) {
+      ret = gst_mpp_rga_convert_from_mpp_frame (mframe, mem, info,
+          self->rotation);
+      GST_DEBUG_OBJECT (decoder, "convert tier=RFBC-RGA ret=%d", ret);
+    } else
+#endif
+    {
+      GST_DEBUG_OBJECT (decoder, "convert tier=RFBC-RGA unavailable");
+    }
+    /* The GPU tier cannot read RKFBC either: fail the stream the same
+       way the AFBC branch does */
+    if (!ret) {
+      GST_ELEMENT_ERROR (decoder, STREAM, FORMAT, (NULL),
+          ("unable to convert RFBC frame on the RGA tier"));
+      self->task_ret = GST_FLOW_ERROR;
+    }
+  } else {
+    /* Try the RGA tier first (DMA, zero copy), then the GPU tier */
+#ifdef HAVE_RGA
+    if (gst_mpp_use_rga ())
+      ret = gst_mpp_rga_convert_from_mpp_frame (mframe, mem, info,
+          self->rotation);
 #endif
 
-  /* RGA is preferred for rotation (DMA rotation is cheaper); the GPU
-   * tier only rotates via its zero-copy path */
-  if (!ret && gst_mpp_use_gpu ())
-    ret = gst_mpp_gpu_convert_from_mpp_frame (mframe, mem, info,
-        self->rotation);
+    /* RGA is preferred for rotation (DMA rotation is cheaper); the GPU
+     * tier only rotates via its zero-copy path */
+    if (!ret && gst_mpp_use_gpu ())
+      ret = gst_mpp_gpu_convert_from_mpp_frame (mframe, mem, info,
+          self->rotation, bt709);
+  }
 
   if (ret)
     gst_buffer_replace_all_memory (buffer, mem);
@@ -1189,8 +1290,13 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
     return NULL;
   }
 
-  if (rfbc || afbc || offset_x || offset_y ||
-      crop_x || crop_y || crop_w || crop_h) {
+  /* The compression flags and the structural offsets of the source
+     frame have been consumed by the conversion; a converted buffer
+     carries the converted geometry.  The crop-rectangle property is
+     still applied: the conversion does not crop, downstream reads
+     the meta. */
+  if (crop_x || crop_y || crop_w || crop_h ||
+      (!self->convert && (rfbc || afbc || offset_x || offset_y))) {
     GstVideoCropMeta *cmeta = gst_buffer_add_video_crop_meta (buffer);
     gint width = mpp_frame_get_width (mframe);
     gint height = mpp_frame_get_height (mframe);
@@ -1207,9 +1313,11 @@ gst_mpp_dec_get_gst_buffer (GstVideoDecoder * decoder, MppFrame mframe)
     if (crop_h && crop_h < cmeta->height)
       cmeta->height = crop_h;
 
-    /* Apply MPP offsets */
-    cmeta->x += offset_x;
-    cmeta->y += offset_y;
+    /* Apply MPP offsets; the conversion has consumed them already */
+    if (!self->convert) {
+      cmeta->x += offset_x;
+      cmeta->y += offset_y;
+    }
 
     GST_DEBUG_OBJECT (self, "cropping <%d,%d,%d,%d> within <%d,%d,%d,%d>",
         cmeta->x, cmeta->y, cmeta->width, cmeta->height, offset_x, offset_y,
