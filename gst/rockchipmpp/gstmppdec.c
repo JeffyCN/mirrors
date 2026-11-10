@@ -437,12 +437,14 @@ static const gchar *const gst_mpp_dec_caps_transparent_factories[] = {
   "queue", "queue2", "multiqueue", "tee", "valve", NULL
 };
 
-static GstCaps *gst_mpp_dec_query_endpoint_caps_from (GstPad * pad, guint hop);
+static GstCaps *gst_mpp_dec_query_endpoint_caps_from (GstPad * pad, guint hop,
+    gboolean * trusted);
 
 /* Continue the walk behind one pad.  Returns NULL when nothing is
  * linked there. */
 static GstCaps *
-gst_mpp_dec_query_endpoint_caps_behind (GstPad * pad, guint hop)
+gst_mpp_dec_query_endpoint_caps_behind (GstPad * pad, guint hop,
+    gboolean * trusted)
 {
   GstPad *peer = gst_pad_get_peer (pad);
   GstCaps *caps;
@@ -450,7 +452,7 @@ gst_mpp_dec_query_endpoint_caps_behind (GstPad * pad, guint hop)
   if (!peer)
     return NULL;
 
-  caps = gst_mpp_dec_query_endpoint_caps_from (peer, hop);
+  caps = gst_mpp_dec_query_endpoint_caps_from (peer, hop, trusted);
   gst_object_unref (peer);
 
   return caps;
@@ -472,10 +474,16 @@ gst_mpp_dec_query_endpoint_caps_behind (GstPad * pad, guint hop)
  * intersected; a multiqueue pad pairs with the same-indexed src pad.
  */
 static GstCaps *
-gst_mpp_dec_query_endpoint_caps_from (GstPad * pad, guint hop)
+gst_mpp_dec_query_endpoint_caps_from (GstPad * pad, guint hop,
+    gboolean * trusted)
 {
   GstElement *element;
   GstCaps *caps = NULL;
+
+  /* Stops the walk cannot vouch for (opaque bins, hop exhaustion,
+   * unlinkeds) leave *trusted FALSE: the caller then keeps the plain
+   * caps instead of offering the DMABuf feature. */
+  *trusted = FALSE;
 
   if (hop >= GST_MPP_DEC_ENDPOINT_MAX_HOPS)
     return gst_pad_query_caps (pad, NULL);
@@ -497,12 +505,13 @@ gst_mpp_dec_query_endpoint_caps_from (GstPad * pad, guint hop)
      * behind it: it is the endpoint, do not look through it. */
     if (factory && !g_strcmp0 (GST_OBJECT_NAME (factory), "capsfilter")) {
       caps = gst_pad_query_caps (pad, NULL);
+      *trusted = TRUE;
     } else {
       /* Plain 1:1 converter: its own pads carry no constraint, look
        * through to what follows it. */
       caps =
           gst_mpp_dec_query_endpoint_caps_behind (element->srcpads->data,
-          hop + 1);
+          hop + 1, trusted);
     }
   } else {
     GstElementFactory *factory = gst_element_get_factory (element);
@@ -518,15 +527,24 @@ gst_mpp_dec_query_endpoint_caps_from (GstPad * pad, guint hop)
         GList *l;
 
         for (l = element->srcpads; l; l = l->next) {
-          GstCaps *branch =
-              gst_mpp_dec_query_endpoint_caps_behind (l->data, hop + 1);
+          GstCaps *branch;
+          gboolean branch_trusted = FALSE;
+
+          branch =
+              gst_mpp_dec_query_endpoint_caps_behind (l->data, hop + 1,
+              &branch_trusted);
 
           if (!branch)          /* unlinked branch: receives nothing */
             continue;
 
           if (!caps) {
             caps = branch;
+            *trusted = branch_trusted;
           } else {
+            /* Every reachable branch must itself be vouched for: one
+               indeterminable branch downgrades the whole offer. */
+            *trusted = *trusted && branch_trusted;
+
             GstCaps *tmp = gst_caps_intersect (caps, branch);
 
             gst_caps_unref (caps);
@@ -555,16 +573,27 @@ gst_mpp_dec_query_endpoint_caps_from (GstPad * pad, guint hop)
         }
 
         if (srcpad) {
-          caps = gst_mpp_dec_query_endpoint_caps_behind (srcpad, hop + 1);
+          caps = gst_mpp_dec_query_endpoint_caps_behind (srcpad, hop + 1,
+              trusted);
           gst_object_unref (srcpad);
         }
       }
+    } else if (factory) {
+      /* A real self-constrained endpoint (a sink, or any element that
+       * is neither a 1:1 converter nor caps-transparent): its pads
+       * answer through the element's own getcaps, which states
+       * exactly what it accepts. */
+      caps = gst_pad_query_caps (pad, NULL);
+      *trusted = TRUE;
     }
   }
 
   /* Whatever did not let the walk continue - a capsfilter, a
    * converter that is not a plain 1:1 transform, a sink, or an
-   * element with no linked continuation - is the endpoint. */
+   * element with no linked continuation - is the endpoint.  Only a
+   * real self-constrained endpoint (capsfilter, sink, converter)
+   * vouches for the answer; bins, hop exhaustion and unlinkeds leave
+   * *trusted FALSE. */
   if (!caps)
     caps = gst_pad_query_caps (pad, NULL);
 
@@ -574,15 +603,17 @@ gst_mpp_dec_query_endpoint_caps_from (GstPad * pad, guint hop)
 }
 
 static GstCaps *
-gst_mpp_dec_query_endpoint_caps (GstVideoDecoder * decoder)
+gst_mpp_dec_query_endpoint_caps (GstVideoDecoder * decoder, gboolean * trusted)
 {
   GstPad *pad;
   GstCaps *caps = NULL;
 
+  *trusted = FALSE;
+
   pad = gst_pad_get_peer (GST_VIDEO_DECODER_SRC_PAD (decoder));
 
   if (pad) {
-    caps = gst_mpp_dec_query_endpoint_caps_from (pad, 0);
+    caps = gst_mpp_dec_query_endpoint_caps_from (pad, 0, trusted);
     gst_object_unref (pad);
   }
 
@@ -701,9 +732,17 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
      * negotiating the plain caps like before; they map the dmabuf
      * memory through the generic memory API anyway.
      */
-    GstCaps *endpoint = gst_mpp_dec_query_endpoint_caps (decoder);
+    gboolean trusted = FALSE;
+    GstCaps *endpoint = gst_mpp_dec_query_endpoint_caps (decoder, &trusted);
 
-    if (endpoint) {
+    /* The feature is only offered when the walk reached a
+     * self-constrained endpoint: it is the one case where "endpoint
+     * accepts plain NV12" implies "endpoint accepts the DMABuf
+     * feature" without a feature-crossing converter in between.  Bins
+     * (playbin decodebin/playsink/sink bins) answer through their
+     * children's templates, which propagate features the converters
+     * between here and there cannot carry, so they are distrusted. */
+    if (endpoint && trusted) {
       GstCaps *probe = gst_caps_intersect (output_state->caps, endpoint);
 
       if (!gst_caps_is_empty (probe))
@@ -711,6 +750,8 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
             gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
 
       gst_caps_unref (probe);
+      gst_caps_unref (endpoint);
+    } else if (endpoint) {
       gst_caps_unref (endpoint);
     }
   }
