@@ -49,7 +49,8 @@ static gboolean DEFAULT_PROP_DMA_FEATURE = FALSE;
 #define GST_TYPE_KMS_SRC (gst_kms_src_get_type())
 G_DECLARE_FINAL_TYPE (GstKmsSrc, gst_kms_src, GST, KMS_SRC, GstPushSrc);
 
-struct _GstKmsSrc {
+struct _GstKmsSrc
+{
   GstBaseSrc element;
 
   GstAllocator *allocator;
@@ -113,7 +114,8 @@ enum
   PROP_LAST,
 };
 
-struct kmssrc_fb {
+struct kmssrc_fb
+{
   guint handles[4];
   guint pitches[4];
   guint offsets[4];
@@ -240,7 +242,7 @@ gst_kms_src_get_encoder_fb (GstKmsSrc * self, guint encoder_id)
 
   encoder = drmModeGetEncoder (self->fd, encoder_id);
   if (!encoder)
-      return 0;
+    return 0;
 
   fb_id = gst_kms_src_get_crtc_fb (self, encoder->crtc_id);
 
@@ -309,7 +311,7 @@ gst_kms_src_get_encoder_crtc (GstKmsSrc * self, guint encoder_id)
 
   encoder = drmModeGetEncoder (self->fd, encoder_id);
   if (!encoder)
-      return 0;
+    return 0;
 
   crtc_id = encoder->crtc_id;
 
@@ -460,8 +462,7 @@ gst_kms_src_get_next_fb_id (GstKmsSrc * self)
     gst_kms_src_sync_vblank (self);
 
   if (self->fps_d && self->fps_n)
-    duration =
-        gst_util_uint64_scale (GST_SECOND, self->fps_d, self->fps_n);
+    duration = gst_util_uint64_scale (GST_SECOND, self->fps_d, self->fps_n);
   else if (self->framerate_limit)
     duration = GST_SECOND / self->framerate_limit;
 
@@ -488,18 +489,18 @@ gst_kms_src_get_next_fb_id (GstKmsSrc * self)
 #ifndef HAS_DRM_CLOSE_HANDLE
 /* From libdrm 2.4.109 : xf86drm.c */
 static int
-drmCloseBufferHandle(int fd, uint32_t handle)
+drmCloseBufferHandle (int fd, uint32_t handle)
 {
   struct drm_gem_close args;
 
-  memset(&args, 0, sizeof(args));
+  memset (&args, 0, sizeof (args));
   args.handle = handle;
-  return drmIoctl(fd, DRM_IOCTL_GEM_CLOSE, &args);
+  return drmIoctl (fd, DRM_IOCTL_GEM_CLOSE, &args);
 }
 #endif
 
 static void
-gst_kms_src_free_fb (GstKmsSrc * self, struct kmssrc_fb * fb)
+gst_kms_src_free_fb (GstKmsSrc * self, struct kmssrc_fb *fb)
 {
   guint i;
 
@@ -512,7 +513,7 @@ gst_kms_src_free_fb (GstKmsSrc * self, struct kmssrc_fb * fb)
 }
 
 static gboolean
-gst_kms_src_update_info (GstKmsSrc * self, struct kmssrc_fb * fb)
+gst_kms_src_update_info (GstKmsSrc * self, struct kmssrc_fb *fb)
 {
   GstVideoInfo *info = &self->info;
   GstVideoFormat format;
@@ -522,31 +523,31 @@ gst_kms_src_update_info (GstKmsSrc * self, struct kmssrc_fb * fb)
   case DRM_FORMAT_ ## fourcc: format = GST_VIDEO_FORMAT_ ## gst; break;
 
   switch (fb->fourcc) {
-    KMSSRC_CASE_FOURCC (ARGB8888, BGRA);
-    KMSSRC_CASE_FOURCC (XRGB8888, BGRx);
-    KMSSRC_CASE_FOURCC (ABGR8888, RGBA);
-    KMSSRC_CASE_FOURCC (XBGR8888, RGBx);
-    KMSSRC_CASE_FOURCC (RGB888, BGR);
-    KMSSRC_CASE_FOURCC (BGR888, RGB);
-    KMSSRC_CASE_FOURCC (YUV422, Y42B);
-    KMSSRC_CASE_FOURCC (NV16, NV16);
-    KMSSRC_CASE_FOURCC (NV61, NV61);
-    KMSSRC_CASE_FOURCC (UYVY, UYVY);
-    KMSSRC_CASE_FOURCC (YVYU, YVYU);
-    KMSSRC_CASE_FOURCC (YUYV, YUY2);
-    KMSSRC_CASE_FOURCC (YUV420, I420);
-    KMSSRC_CASE_FOURCC (YVU420, YV12);
-    KMSSRC_CASE_FOURCC (NV12, NV12);
-    KMSSRC_CASE_FOURCC (NV21, NV21);
-    KMSSRC_CASE_FOURCC (RGB565, RGB16);
-    KMSSRC_CASE_FOURCC (BGR565, BGR16);
+      KMSSRC_CASE_FOURCC (ARGB8888, BGRA);
+      KMSSRC_CASE_FOURCC (XRGB8888, BGRx);
+      KMSSRC_CASE_FOURCC (ABGR8888, RGBA);
+      KMSSRC_CASE_FOURCC (XBGR8888, RGBx);
+      KMSSRC_CASE_FOURCC (RGB888, BGR);
+      KMSSRC_CASE_FOURCC (BGR888, RGB);
+      KMSSRC_CASE_FOURCC (YUV422, Y42B);
+      KMSSRC_CASE_FOURCC (NV16, NV16);
+      KMSSRC_CASE_FOURCC (NV61, NV61);
+      KMSSRC_CASE_FOURCC (UYVY, UYVY);
+      KMSSRC_CASE_FOURCC (YVYU, YVYU);
+      KMSSRC_CASE_FOURCC (YUYV, YUY2);
+      KMSSRC_CASE_FOURCC (YUV420, I420);
+      KMSSRC_CASE_FOURCC (YVU420, YV12);
+      KMSSRC_CASE_FOURCC (NV12, NV12);
+      KMSSRC_CASE_FOURCC (NV21, NV21);
+      KMSSRC_CASE_FOURCC (RGB565, RGB16);
+      KMSSRC_CASE_FOURCC (BGR565, BGR16);
 #ifdef HAVE_NV12_10LE40
-    KMSSRC_CASE_FOURCC (NV15, NV12_10LE40);
-    KMSSRC_CASE_FOURCC (NV12_10, NV12_10LE40);
+      KMSSRC_CASE_FOURCC (NV15, NV12_10LE40);
+      KMSSRC_CASE_FOURCC (NV12_10, NV12_10LE40);
 #endif
-  default:
-    GST_ERROR_OBJECT (self, "format not supported %x", fb->fourcc);
-    return FALSE;
+    default:
+      GST_ERROR_OBJECT (self, "format not supported %x", fb->fourcc);
+      return FALSE;
   }
 
   gst_video_info_set_format (info, format, fb->width, fb->height);
@@ -568,7 +569,7 @@ gst_kms_src_update_info (GstKmsSrc * self, struct kmssrc_fb * fb)
 }
 
 static gboolean
-gst_kms_src_get_fb (GstKmsSrc * self, guint fb_id, struct kmssrc_fb * kmssrc_fb)
+gst_kms_src_get_fb (GstKmsSrc * self, guint fb_id, struct kmssrc_fb *kmssrc_fb)
 {
   drmModeFBPtr fb;
 #ifdef HAS_DRM_MODE_FB2
@@ -602,20 +603,20 @@ gst_kms_src_get_fb (GstKmsSrc * self, guint fb_id, struct kmssrc_fb * kmssrc_fb)
   kmssrc_fb->pitches[0] = fb->pitch;
 
   switch (fb->bpp) {
-  case 32:
-    if (fb->depth == 32)
-      kmssrc_fb->fourcc = DRM_FORMAT_ARGB8888;
-    else
-      kmssrc_fb->fourcc = DRM_FORMAT_XRGB8888;
-    break;
-  case 16:
-    kmssrc_fb->fourcc = DRM_FORMAT_RGB565;
-    break;
-  default:
-    GST_ERROR_OBJECT (self, "FB format unsupported");
-    gst_kms_src_free_fb (self, kmssrc_fb);
-    drmModeFreeFB (fb);
-    return FALSE;
+    case 32:
+      if (fb->depth == 32)
+        kmssrc_fb->fourcc = DRM_FORMAT_ARGB8888;
+      else
+        kmssrc_fb->fourcc = DRM_FORMAT_XRGB8888;
+      break;
+    case 16:
+      kmssrc_fb->fourcc = DRM_FORMAT_RGB565;
+      break;
+    default:
+      GST_ERROR_OBJECT (self, "FB format unsupported");
+      gst_kms_src_free_fb (self, kmssrc_fb);
+      drmModeFreeFB (fb);
+      return FALSE;
   }
 
   kmssrc_fb->width = fb->width;
@@ -656,7 +657,7 @@ gst_kms_src_import_drm_fb (GstKmsSrc * self, guint fb_id)
         fb.handles[i], i, fb.pitches[i], fb.height);
 
     if (drmPrimeHandleToFD (self->fd, fb.handles[i], DRM_CLOEXEC | DRM_RDWR,
-          &dmafd[i]) < 0) {
+            &dmafd[i]) < 0) {
       GST_ERROR_OBJECT (self, "could not import DRM handle %d", fb.handles[i]);
       goto err;
     }
@@ -678,7 +679,7 @@ gst_kms_src_import_drm_fb (GstKmsSrc * self, guint fb_id)
     }
 
     mem = gst_fd_allocator_alloc (self->allocator, dmafd[i], st[i].st_size,
-              GST_FD_MEMORY_FLAG_NONE);
+        GST_FD_MEMORY_FLAG_NONE);
     if (!mem) {
       close (dmafd[i]);
       goto err;
@@ -808,7 +809,7 @@ gst_kms_src_get_caps (GstBaseSrc * basesrc, GstCaps * filter)
     GstCaps *intersection;
 
     intersection =
-      gst_caps_intersect_full (filter, caps, GST_CAPS_INTERSECT_FIRST);
+        gst_caps_intersect_full (filter, caps, GST_CAPS_INTERSECT_FIRST);
     gst_caps_unref (caps);
     caps = intersection;
   }
@@ -974,42 +975,37 @@ gst_kms_src_class_init (GstKmsSrcClass * klass)
 
   g_object_class_install_property (gobject_class, PROP_DRIVER_NAME,
       g_param_spec_string ("driver-name",
-      "device name", "DRM device driver name", NULL,
-      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT));
+          "device name", "DRM device driver name", NULL,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT));
 
   g_object_class_install_property (gobject_class, PROP_BUS_ID,
       g_param_spec_string ("bus-id", "Bus ID", "DRM bus ID", NULL,
-      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT));
 
   g_object_class_install_property (gobject_class, PROP_CRTC_ID,
       g_param_spec_uint ("crtc-id", "DRM crtc ID",
           "DRM crtc ID (0 = unspecified)",
-          0, G_MAXINT, 0,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          0, G_MAXINT, 0, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_ENCODER_ID,
       g_param_spec_uint ("encoder-id", "DRM plane ID",
           "DRM encoder ID (0 = unspecified)",
-          0, G_MAXINT, 0,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          0, G_MAXINT, 0, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_CONNECTOR_ID,
       g_param_spec_uint ("connector-id", "DRM connector ID",
           "DRM connector ID (0 = unspecified)",
-          0, G_MAXINT, 0,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          0, G_MAXINT, 0, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_PLANE_ID,
       g_param_spec_uint ("plane-id", "DRM plane ID",
           "DRM plane ID (0 = unspecified)",
-          0, G_MAXINT, 0,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          0, G_MAXINT, 0, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_FB_ID,
       g_param_spec_uint ("fb-id", "DRM FB ID",
           "DRM FB ID (0 = unspecified)",
-          0, G_MAXINT, 0,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          0, G_MAXINT, 0, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   env = g_getenv ("GST_KMSSRC_DMA_FEATURE");
   if (env && !strcmp (env, "1"))
@@ -1039,8 +1035,7 @@ gst_kms_src_class_init (GstKmsSrcClass * klass)
   gst_element_class_set_static_metadata (gstelement_class,
       "KMS Video Source",
       "Source/Video",
-      "KMS Video Source",
-      "Jeffy Chen <jeffy.chen@rock-chips.com>");
+      "KMS Video Source", "Jeffy Chen <jeffy.chen@rock-chips.com>");
 
   gst_element_class_add_static_pad_template (gstelement_class, &srctemplate);
 
