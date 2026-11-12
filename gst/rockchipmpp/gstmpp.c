@@ -141,12 +141,12 @@ gst_mpp_frame_is_fbc (MppFrame mframe)
   return !!MPP_FRAME_FMT_IS_FBC (mpp_frame_get_fmt (mframe));
 }
 
+/* The frame format flag tells the compression apart: AFBC and RKFBC
+ * are mutually exclusive bits MPP picks per hardware capability, so
+ * the flag is the only honest check. */
 gboolean
 gst_mpp_frame_is_rfbc (MppFrame mframe)
 {
-  if (gst_mpp_frame_is_fbc (mframe) && g_getenv ("GST_MPP_DEC_FBC_IS_RFBC"))
-    return TRUE;
-
 #ifdef MPP_FRAME_FMT_IS_RKFBC
   return !!MPP_FRAME_FMT_IS_RKFBC (mpp_frame_get_fmt (mframe));
 #else
