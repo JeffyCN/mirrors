@@ -68,8 +68,6 @@ struct _GstMppDec
 
   gboolean fbc;
 
-  gboolean dma_feature;
-
   gboolean ignore_error;
 
   gboolean fast_mode;

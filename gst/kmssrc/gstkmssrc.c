@@ -50,8 +50,6 @@
  * static screen keeps streaming instead of blocking forever. */
 #define KMS_SRC_STATIC_GRACE (250 * GST_MSECOND)
 
-static gboolean DEFAULT_PROP_DMA_FEATURE = FALSE;
-
 #define GST_TYPE_KMS_SRC (gst_kms_src_get_type())
 G_DECLARE_FINAL_TYPE (GstKmsSrc, gst_kms_src, GST, KMS_SRC, GstPushSrc);
 
@@ -73,7 +71,6 @@ struct _GstKmsSrc
   guint plane_id;
   guint fb_id;
 
-  gboolean dma_feature;
 
   guint framerate_limit;
   guint fps_n;
@@ -125,7 +122,6 @@ enum
   PROP_CONNECTOR_ID,
   PROP_PLANE_ID,
   PROP_FB_ID,
-  PROP_DMA_FEATURE,
   PROP_FRAMERATE_LIMIT,
   PROP_SYNC_FB,
   PROP_SYNC_VBLANK,
@@ -172,9 +168,6 @@ gst_kms_src_set_property (GObject * object, guint prop_id,
     case PROP_FB_ID:
       self->fb_id = g_value_get_uint (value);
       break;
-    case PROP_DMA_FEATURE:
-      self->dma_feature = g_value_get_boolean (value);
-      break;
     case PROP_FRAMERATE_LIMIT:
       self->framerate_limit = g_value_get_uint (value);
       break;
@@ -217,9 +210,6 @@ gst_kms_src_get_property (GObject * object, guint prop_id, GValue * value,
       break;
     case PROP_FB_ID:
       g_value_set_uint (value, self->fb_id);
-      break;
-    case PROP_DMA_FEATURE:
-      g_value_set_boolean (value, self->dma_feature);
       break;
     case PROP_FRAMERATE_LIMIT:
       g_value_set_uint (value, self->framerate_limit);
@@ -963,7 +953,7 @@ static GstCaps *
 gst_kms_src_get_caps (GstBaseSrc * basesrc, GstCaps * filter)
 {
   GstKmsSrc *self = GST_KMS_SRC (basesrc);
-  GstCaps *caps, *raw_caps;
+  GstCaps *caps, *raw_caps, *drm_caps, *dma_caps;
   struct kmssrc_fb fb;
   guint fb_id, i;
 
@@ -985,33 +975,28 @@ gst_kms_src_get_caps (GstBaseSrc * basesrc, GstCaps * filter)
 
   caps = gst_caps_new_empty ();
 
-  if (self->dma_feature) {
-    GstCaps *drm_caps = gst_kms_src_build_dma_drm_caps (self, self->fb_fourcc);
+  /* Offer the scanout FB as dma-drm caps first: DRM-aware consumers
+   * (kmssink) then import it zero-copy. */
+  drm_caps = gst_kms_src_build_dma_drm_caps (self, self->fb_fourcc);
+  if (drm_caps) {
+    /* gst_caps_set_features() consumes the features reference */
+    gst_caps_set_features (drm_caps, 0,
+        gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
 
-    /* Offer the scanout FB as dma-drm caps first: DRM-aware consumers
-     * (kmssink) then import it zero-copy. */
-    if (drm_caps) {
-      /* gst_caps_set_features() consumes the features reference */
-      gst_caps_set_features (drm_caps, 0,
-          gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
-
-      caps = gst_caps_merge (caps, drm_caps);
-    }
+    caps = gst_caps_merge (caps, drm_caps);
   }
 
   raw_caps = gst_video_info_to_caps (&self->info);
 
-  if (self->dma_feature) {
-    /* The exported memories are dma-bufs either way, so also allow the
-     * plain-format dmabuf caps expected by waylandsink and glupload. */
-    GstCaps *dma_caps = gst_caps_copy (raw_caps);
+  /* The exported memories are dma-bufs either way, so also allow the
+   * plain-format dmabuf caps expected by waylandsink and glupload. */
+  dma_caps = gst_caps_copy (raw_caps);
 
-    /* gst_caps_set_features() consumes the features reference */
-    gst_caps_set_features (dma_caps, 0,
-        gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
+  /* gst_caps_set_features() consumes the features reference */
+  gst_caps_set_features (dma_caps, 0,
+      gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
 
-    caps = gst_caps_merge (caps, dma_caps);
-  }
+  caps = gst_caps_merge (caps, dma_caps);
 
   /* System-memory caps last: the dma-buf memories are mmap-able, so
    * CPU consumers keep working through the generic memory API. */
@@ -1184,7 +1169,6 @@ gst_kms_src_class_init (GstKmsSrcClass * klass)
   GstElementClass *gstelement_class;
   GstBaseSrcClass *gstbase_src_class;
   GstPushSrcClass *gstpush_src_class;
-  const gchar *env;
 
   gobject_class = G_OBJECT_CLASS (klass);
   gstelement_class = GST_ELEMENT_CLASS (klass);
@@ -1229,14 +1213,6 @@ gst_kms_src_class_init (GstKmsSrcClass * klass)
           "DRM FB ID (0 = unspecified)",
           0, G_MAXINT, 0, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  env = g_getenv ("GST_KMSSRC_DMA_FEATURE");
-  if (env && !strcmp (env, "1"))
-    DEFAULT_PROP_DMA_FEATURE = TRUE;
-
-  g_object_class_install_property (gobject_class, PROP_DMA_FEATURE,
-      g_param_spec_boolean ("dma-feature", "DMA feature",
-          "Enable GST DMA feature", DEFAULT_PROP_DMA_FEATURE,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_FRAMERATE_LIMIT,
       g_param_spec_uint ("framerate-limit", "Limited framerate",
