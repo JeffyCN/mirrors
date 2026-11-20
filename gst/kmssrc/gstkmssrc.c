@@ -91,6 +91,11 @@ struct _GstKmsSrc
   guint32 fb_fourcc;
   guint32 caps_fourcc;
 
+  /* Layout modifier of the current FB (LINEAR when the driver reports
+   * none) and the one the caps were negotiated with */
+  guint64 fb_modifier;
+  guint64 neg_modifier;
+
   /* Caps geometry currently negotiated downstream */
   GstVideoFormat neg_format;
   gint neg_width, neg_height;
@@ -136,6 +141,9 @@ struct kmssrc_fb
   guint width;
   guint height;
   guint fourcc;
+  /* Layout modifier as reported by GETFB2 (LINEAR when the driver
+   * has no fb modifiers); the caps must describe the captured layout. */
+  guint64 modifier;
 };
 
 static void
@@ -540,19 +548,15 @@ gst_kms_src_free_fb (GstKmsSrc * self, struct kmssrc_fb *fb)
   }
 }
 
-static gboolean
-gst_kms_src_update_info (GstKmsSrc * self, struct kmssrc_fb *fb)
+static GstVideoFormat
+gst_kms_src_fourcc_to_format (guint32 fourcc)
 {
-  GstVideoInfo *info = &self->info;
   GstVideoFormat format;
-  guint i;
-
-  self->fb_fourcc = fb->fourcc;
 
 #define KMSSRC_CASE_FOURCC(fourcc, gst) \
   case DRM_FORMAT_ ## fourcc: format = GST_VIDEO_FORMAT_ ## gst; break;
 
-  switch (fb->fourcc) {
+  switch (fourcc) {
       KMSSRC_CASE_FOURCC (ARGB8888, BGRA);
       KMSSRC_CASE_FOURCC (XRGB8888, BGRx);
       KMSSRC_CASE_FOURCC (ABGR8888, RGBA);
@@ -576,8 +580,26 @@ gst_kms_src_update_info (GstKmsSrc * self, struct kmssrc_fb *fb)
       KMSSRC_CASE_FOURCC (NV12_10, NV12_10LE40);
 #endif
     default:
-      GST_ERROR_OBJECT (self, "format not supported %x", fb->fourcc);
-      return FALSE;
+      return GST_VIDEO_FORMAT_UNKNOWN;
+  }
+
+  return format;
+}
+
+static gboolean
+gst_kms_src_update_info (GstKmsSrc * self, struct kmssrc_fb *fb)
+{
+  GstVideoInfo *info = &self->info;
+  GstVideoFormat format;
+  guint i;
+
+  self->fb_fourcc = fb->fourcc;
+  self->fb_modifier = fb->modifier;
+
+  format = gst_kms_src_fourcc_to_format (fb->fourcc);
+  if (format == GST_VIDEO_FORMAT_UNKNOWN) {
+    GST_ERROR_OBJECT (self, "format not supported %x", fb->fourcc);
+    return FALSE;
   }
 
   gst_video_info_set_format (info, format, fb->width, fb->height);
@@ -620,6 +642,16 @@ gst_kms_src_get_fb (GstKmsSrc * self, guint fb_id, struct kmssrc_fb *kmssrc_fb)
     kmssrc_fb->fourcc = fb2->pixel_format;
     kmssrc_fb->width = fb2->width;
     kmssrc_fb->height = fb2->height;
+
+    /* GETFB2 reports the real layout modifier when the driver supports
+     * fb modifiers; normalize INVALID the same way everywhere so the
+     * caps build and the set_caps comparison see identical values. */
+    if ((fb2->flags & DRM_MODE_FB_MODIFIERS) &&
+        fb2->modifier != DRM_FORMAT_MOD_INVALID)
+      kmssrc_fb->modifier = fb2->modifier;
+    else
+      kmssrc_fb->modifier = DRM_FORMAT_MOD_LINEAR;
+
     drmModeFreeFB2 (fb2);
     return TRUE;
   }
@@ -767,7 +799,8 @@ gst_kms_src_create (GstPushSrc * src, GstBuffer ** ret)
    * that contradict the caps. */
   if (GST_VIDEO_INFO_FORMAT (&self->info) != self->neg_format ||
       GST_VIDEO_INFO_WIDTH (&self->info) != self->neg_width ||
-      GST_VIDEO_INFO_HEIGHT (&self->info) != self->neg_height) {
+      GST_VIDEO_INFO_HEIGHT (&self->info) != self->neg_height ||
+      self->fb_modifier != self->neg_modifier) {
     GstCaps *new_caps;
 
     GST_DEBUG_OBJECT (self, "FB changed to %s %dx%d, renegotiating",
@@ -812,6 +845,7 @@ gst_kms_src_create (GstPushSrc * src, GstBuffer ** ret)
 
     self->neg_format = GST_VIDEO_INFO_FORMAT (&self->info);
     self->neg_width = GST_VIDEO_INFO_WIDTH (&self->info);
+    self->neg_modifier = self->fb_modifier;
     self->neg_height = GST_VIDEO_INFO_HEIGHT (&self->info);
     if (self->caps_fourcc)
       self->caps_fourcc = self->fb_fourcc;
@@ -865,9 +899,10 @@ gst_kms_src_set_caps (GstBaseSrc * basesrc, GstCaps * caps)
     if (drm_format)
       fourcc = gst_video_dma_drm_fourcc_from_string (drm_format, &modifier);
 
-    if (!fourcc || modifier != DRM_FORMAT_MOD_LINEAR) {
-      GST_ERROR_OBJECT (self, "unsupported dma-drm caps %" GST_PTR_FORMAT,
-          caps);
+    if (!fourcc || modifier != self->fb_modifier) {
+      GST_ERROR_OBJECT (self, "caps modifier 0x%012" G_GINT64_MODIFIER
+          "x doesn't match the FB modifier 0x%012" G_GINT64_MODIFIER "x",
+          (guint64) modifier, self->fb_modifier);
       return FALSE;
     }
 
@@ -908,6 +943,7 @@ gst_kms_src_set_caps (GstBaseSrc * basesrc, GstCaps * caps)
   self->neg_format = GST_VIDEO_INFO_FORMAT (info);
   self->neg_width = GST_VIDEO_INFO_WIDTH (info);
   self->neg_height = GST_VIDEO_INFO_HEIGHT (info);
+  self->neg_modifier = self->fb_modifier;
   self->neg_dmabuf =
       gst_caps_features_contains (gst_caps_get_features (caps, 0),
       GST_CAPS_FEATURE_MEMORY_DMABUF);
@@ -933,8 +969,11 @@ gst_kms_src_build_dma_drm_caps (GstKmsSrc * self, guint32 fourcc)
   GstCaps *caps;
   gchar *drm_str;
 
-  /* The legacy uAPI has no FB modifiers, the FB is linear. */
-  drm_str = gst_video_dma_drm_fourcc_to_string (fourcc, DRM_FORMAT_MOD_LINEAR);
+  /* GETFB2 gives the FB's real modifier (LINEAR when the driver has
+   * no fb modifiers); the caps must describe what is captured. */
+  drm_str = gst_video_dma_drm_fourcc_to_string (fourcc,
+      self->fb_modifier == DRM_FORMAT_MOD_INVALID ?
+      DRM_FORMAT_MOD_LINEAR : self->fb_modifier);
   if (!drm_str)
     return NULL;
 
@@ -1040,6 +1079,151 @@ gst_kms_src_stop (GstBaseSrc * basesrc)
   return TRUE;
 }
 
+/* TRUE when the plane's current FB uses a raw format this element can
+ * describe in caps (compressed pseudo-fourccs like YU08 cannot be
+ * consumed downstream and must not win auto-discovery). */
+static gboolean
+gst_kms_src_plane_capturable (GstKmsSrc * self, drmModePlane * plane)
+{
+#ifdef HAS_DRM_MODE_FB2
+  drmModeFB2Ptr fb2 = drmModeGetFB2 (self->fd, plane->fb_id);
+  gboolean ok;
+
+  if (!fb2)
+    return FALSE;
+
+  ok = gst_kms_src_fourcc_to_format (fb2->pixel_format) !=
+      GST_VIDEO_FORMAT_UNKNOWN;
+  drmModeFreeFB2 (fb2);
+  return ok;
+#else
+  /* No FB2 metadata on old libdrm: do not filter here and let
+   * update_info reject what it cannot describe (legacy behaviour). */
+  (void) self;
+  (void) plane;
+  return TRUE;
+#endif
+}
+
+/* TRUE when any plane scanning out on crtc_id carries a capturable
+ * raw-format FB (see gst_kms_src_plane_capturable). */
+static gboolean
+gst_kms_src_crtc_capturable (GstKmsSrc * self, guint32 crtc_id)
+{
+  drmModePlaneRes *pres = drmModeGetPlaneResources (self->fd);
+  gboolean ok = FALSE;
+  guint i;
+
+  if (!pres)
+    return FALSE;
+
+  for (i = 0; i < pres->count_planes && !ok; i++) {
+    drmModePlanePtr plane = drmModeGetPlane (self->fd, pres->planes[i]);
+
+    if (!plane)
+      continue;
+    if (plane->crtc_id == crtc_id && plane->fb_id &&
+        gst_kms_src_plane_capturable (self, plane))
+      ok = TRUE;
+    drmModeFreePlane (plane);
+  }
+  drmModeFreePlaneResources (pres);
+  return ok;
+}
+
+/* Auto-discover the plane currently scanning out on crtc_id.  The
+ * immutable "type" property breaks the tie when several planes hold a
+ * FB on the same CRTC (video overlay, software cursor): primary beats
+ * overlay beats cursor; compressed pseudo-format FBs are skipped for
+ * the pick but listed in the warning so the user can pin plane-id. */
+static guint32
+gst_kms_src_find_scanout_plane (GstKmsSrc * self, guint32 crtc_id)
+{
+  drmModePlaneRes *pres = drmModeGetPlaneResources (self->fd);
+  guint32 primary = 0, overlay = 0, cursor = 0;
+  GString *candidates = NULL;
+  guint i, j, hits = 0;
+
+  if (!pres)
+    return 0;
+
+  for (i = 0; i < pres->count_planes; i++) {
+    drmModePlanePtr plane = drmModeGetPlane (self->fd, pres->planes[i]);
+    drmModeObjectPropertiesPtr props;
+    guint64 type = DRM_PLANE_TYPE_OVERLAY;
+
+    if (!plane)
+      continue;
+
+    if (plane->crtc_id != crtc_id || !plane->fb_id) {
+      drmModeFreePlane (plane);
+      continue;
+    }
+    hits++;
+
+    if (!gst_kms_src_plane_capturable (self, plane)) {
+      if (!candidates)
+        candidates = g_string_new ("");
+      else
+        g_string_append (candidates, ", ");
+      g_string_append_printf (candidates, "%u(skipped-compressed)",
+          plane->plane_id);
+      drmModeFreePlane (plane);
+      continue;
+    }
+
+    props = drmModeObjectGetProperties (self->fd, plane->plane_id,
+        DRM_MODE_OBJECT_PLANE);
+    if (props) {
+      for (j = 0; j < props->count_props; j++) {
+        drmModePropertyPtr prop =
+            drmModeGetProperty (self->fd, props->props[j]);
+
+        if (prop) {
+          if (!g_strcmp0 (prop->name, "type"))
+            type = props->prop_values[j];
+          drmModeFreeProperty (prop);
+        }
+      }
+      drmModeFreeObjectProperties (props);
+    }
+
+    if (type == DRM_PLANE_TYPE_PRIMARY) {
+      if (!primary)
+        primary = plane->plane_id;
+    } else if (type == DRM_PLANE_TYPE_CURSOR) {
+      if (!cursor)
+        cursor = plane->plane_id;
+    } else if (!overlay) {
+      overlay = plane->plane_id;
+    }
+
+    if (!candidates)
+      candidates = g_string_new ("");
+    else
+      g_string_append (candidates, ", ");
+    g_string_append_printf (candidates, "%u(%s)", plane->plane_id,
+        type == DRM_PLANE_TYPE_PRIMARY ? "primary" :
+        type == DRM_PLANE_TYPE_CURSOR ? "cursor" : "overlay");
+
+    drmModeFreePlane (plane);
+  }
+  drmModeFreePlaneResources (pres);
+
+  if (candidates && hits > 1) {
+    guint32 pick = primary ? primary : (overlay ? overlay : cursor);
+
+    GST_WARNING_OBJECT (self, "%u planes hold a FB on crtc %u [%s]; "
+        "capturing plane %u (set plane-id to override)", hits, crtc_id,
+        candidates->str, pick);
+    g_string_free (candidates, TRUE);
+  } else if (candidates) {
+    g_string_free (candidates, TRUE);
+  }
+
+  return primary ? primary : (overlay ? overlay : cursor);
+}
+
 static guint
 gst_kms_src_find_best_crtc (GstKmsSrc * self)
 {
@@ -1056,10 +1240,19 @@ gst_kms_src_find_best_crtc (GstKmsSrc * self)
     crtc = drmModeGetCrtc (self->fd, res->crtcs[i]);
     if (crtc && crtc->mode_valid) {
       drmModeFreeCrtc (crtc);
-      crtc_id = res->crtcs[i];
-      break;
+      /* Prefer a CRTC whose scanout plane carries a capturable raw
+       * FB: with several outputs the first-valid pick would
+       * otherwise land on a compressed video plane this element
+       * cannot describe. */
+      gboolean capturable = gst_kms_src_crtc_capturable (self,
+          res->crtcs[i]);
+      if (!crtc_id || capturable)
+        crtc_id = res->crtcs[i];
+      if (capturable && crtc_id == res->crtcs[i])
+        break;
+    } else {
+      drmModeFreeCrtc (crtc);
     }
-    drmModeFreeCrtc (crtc);
   }
   drmModeFreeResources (res);
 
@@ -1092,6 +1285,14 @@ gst_kms_src_start (GstBaseSrc * basesrc)
     return FALSE;
   }
 
+  /* Without universal planes the kernel hides the primary planes
+   * (Esmart on VOP2) and the scanout discovery below only ever sees
+   * overlay-class planes with crtc_id 0, so it could never match.
+   * Ancient kernels reject the cap; keep the legacy CRTC anchor
+   * and skip plane discovery in that case. */
+  gboolean has_universal_planes =
+      (drmSetClientCap (self->fd, DRM_CLIENT_CAP_UNIVERSAL_PLANES, 1) == 0);
+
   if (!self->fb_id && !self->plane_id && !self->connector_id &&
       !self->encoder_id && !self->crtc_id) {
     self->crtc_id = gst_kms_src_find_best_crtc (self);
@@ -1102,13 +1303,41 @@ gst_kms_src_start (GstBaseSrc * basesrc)
     }
   }
 
+  /* Atomic compositors keep the CRTC's legacy fb_id at 0, so the
+   * plane is the only reliable capture anchor there: discover the
+   * plane currently scanning out on the CRTC (primary beats overlay
+   * beats cursor) unless the user pinned one. */
+  if (has_universal_planes && self->crtc_id && !self->plane_id &&
+      !self->fb_id) {
+    guint32 plane_id = gst_kms_src_find_scanout_plane (self,
+        self->crtc_id);
+
+    if (plane_id) {
+      self->plane_id = plane_id;
+    } else {
+      /* Every plane on this CRTC carries a compressed or unusable
+       * FB.  The legacy CRTC anchor would fetch the very same
+       * compressed FB and die in update_info with an indirect
+       * "format not supported" - fail here with the real cause. */
+      GST_ELEMENT_ERROR (self, RESOURCE, NOT_FOUND,
+          ("no capturable scanout plane on crtc %u "
+              "(compressed or unsupported formats only)", self->crtc_id),
+          ("set plane-id to an uncompressed plane, or point crtc-id "
+              "at another output"));
+      gst_kms_src_stop (basesrc);
+      return FALSE;
+    }
+  }
+
   self->last_fb_id = 0;
   self->last_frame_time = gst_util_get_timestamp ();
   self->static_since = 0;
   self->fb_fourcc = 0;
+  self->fb_modifier = DRM_FORMAT_MOD_LINEAR;
   self->caps_fourcc = 0;
   self->neg_format = GST_VIDEO_FORMAT_UNKNOWN;
   self->neg_width = 0;
+  self->neg_modifier = DRM_FORMAT_MOD_LINEAR;
   self->neg_height = 0;
   self->neg_dmabuf = FALSE;
   self->start_time = gst_util_get_timestamp ();
