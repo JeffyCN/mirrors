@@ -76,6 +76,12 @@ guint32 gst_kms_memory_get_fb_id (GstMemory *mem);
 
 GstAllocator* gst_kms_allocator_new (gint fd);
 
+/* Set the AFBC layout modifier negotiated with the producer; 0 keeps
+ * the legacy constant. The scanout fb must carry what the producer
+ * actually emits or the display decodes garbage. */
+void           gst_kms_allocator_set_afbc_modifier (GstAllocator *allocator,
+					       guint64 modifier);
+
 GstMemory*    gst_kms_allocator_bo_alloc (GstAllocator *allocator,
 					  GstVideoInfo *vinfo);
 

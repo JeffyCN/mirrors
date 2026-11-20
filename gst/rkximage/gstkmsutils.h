@@ -61,6 +61,10 @@ G_BEGIN_DECLS
 #define AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 (1ULL)
 #endif
 
+#ifndef AFBC_FORMAT_MOD_BLOCK_SIZE_32x8
+#define AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 (2ULL)
+#endif
+
 #ifndef AFBC_FORMAT_MOD_SPARSE
 #define AFBC_FORMAT_MOD_SPARSE (((__u64)1) << 6)
 #endif
@@ -68,6 +72,15 @@ G_BEGIN_DECLS
 #define DRM_AFBC_MODIFIER \
   (DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_SPARSE) | \
    DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16))
+
+#define DRM_AFBC_MODIFIER_32x8 \
+  (DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_SPARSE) | \
+   DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8))
+
+/* TRUE for the plain ARM AFBC superblock|SPARSE geometries the
+ * Rockchip decoders emit: 16x16|SPARSE on RK3588, 32x8|SPARSE on
+ * RK3572, where a single hardcoded constant silently disabled AFBC */
+gboolean       gst_kms_utils_is_afbc_modifier (guint64 modifier);
 
 #ifndef GST_VIDEO_FLAG_ARM_AFBC
 #define GST_VIDEO_FLAG_ARM_AFBC (1UL << 31)

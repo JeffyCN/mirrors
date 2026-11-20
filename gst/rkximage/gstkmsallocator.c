@@ -66,6 +66,10 @@ struct _GstKMSAllocatorPrivate
   /* protected by GstKMSAllocator object lock */
   GList *mem_cache;
   GstAllocator *dmabuf_alloc;
+  /* AFBC layout modifier negotiated with the producer (0 = legacy
+   * 16x16|SPARSE constant); the scanout fb must carry what the
+   * producer actually emits or the display decodes garbage. */
+  guint64 afbc_modifier;
 };
 
 #define parent_class gst_kms_allocator_parent_class
@@ -436,6 +440,12 @@ gst_kms_allocator_new (int fd)
   return alloc;
 }
 
+void
+gst_kms_allocator_set_afbc_modifier (GstAllocator *alloc, guint64 modifier)
+{
+  GST_KMS_ALLOCATOR (alloc)->priv->afbc_modifier = modifier;
+}
+
 /* The mem_offsets are relative to the GstMemory start, unlike the vinfo->offset
  * which are relative to the GstBuffer start. */
 static gboolean
@@ -470,10 +480,20 @@ gst_kms_allocator_add_fb (GstKMSAllocator * alloc, GstKMSMemory * kmsmem,
 
   if (GST_VIDEO_INFO_IS_AFBC (vinfo) || GST_VIDEO_INFO_IS_RFBC (vinfo)) {
     guint64 modifiers[4] = { 0 };
+    guint64 afbc_mod = alloc->priv->afbc_modifier;
+
+    if (GST_VIDEO_INFO_IS_AFBC (vinfo) && !afbc_mod) {
+      /* No negotiated modifier recorded: keep the legacy constant for
+       * RK3588 compatibility and warn - the sink should always
+       * forward the negotiated layout. */
+      GST_WARNING_OBJECT (alloc, "AFBC fb without a negotiated modifier, "
+          "assuming 16x16|SPARSE");
+      afbc_mod = DRM_AFBC_MODIFIER;
+    }
 
     for (i = 0; i < num_planes; i++)
       modifiers[i] =
-        GST_VIDEO_INFO_IS_AFBC (vinfo) ? DRM_AFBC_MODIFIER : DRM_RFBC_MODIFIER;
+        GST_VIDEO_INFO_IS_AFBC (vinfo) ? afbc_mod : DRM_RFBC_MODIFIER;
 
     if (fmt == DRM_FORMAT_NV12 || fmt == DRM_FORMAT_NV12_10 ||
         fmt == DRM_FORMAT_NV16) {

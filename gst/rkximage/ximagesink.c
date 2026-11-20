@@ -26,6 +26,11 @@
 #include "config.h"
 #endif
 
+/* libdrm must precede GStreamer video headers: video-info-dma.h
+ * guards its AFBC macros with #ifndef while libdrm defines them
+ * unconditionally, so the opposite order emits redefinitions. */
+#include <drm_fourcc.h>
+
 /* Our interfaces */
 #include <gst/video/video.h>
 #include <gst/allocators/gstdmabuf.h>
@@ -43,7 +48,6 @@
 #include <drm.h>
 #include <xf86drm.h>
 #include <xf86drmMode.h>
-#include <drm_fourcc.h>
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
@@ -98,6 +102,8 @@ GST_STATIC_PAD_TEMPLATE ("sink",
         "drm-format = (string) { "
         "YU08:0x0800000000000041, YU10:0x0800000000000041, "
         "YUYV:0x0800000000000041, NV20:0x0800000000000041, "
+        "YU08:0x0800000000000042, YU10:0x0800000000000042, "
+        "YUYV:0x0800000000000042, NV20:0x0800000000000042, "
         "NV12:0x0b10000000000001, NV15:0x0b10000000000001, "
         "NV16:0x0b10000000000001, NV20:0x0b10000000000001 }, "
         "framerate = (fraction) [ 0, MAX ], "
@@ -386,7 +392,8 @@ drm_get_caps (GstRkXImageSink * self)
 
 static void
 check_fbc (GstRkXImageSink * self, drmModePlane * plane, guint32 drmfmt,
-    gboolean * linear, gboolean * afbc, gboolean * rfbc)
+    gboolean * linear, gboolean * afbc, gboolean * rfbc,
+    guint64 * afbc_modifier, guint64 * rfbc_modifier)
 {
   drmModeObjectPropertiesPtr props;
   drmModePropertyBlobPtr blob;
@@ -399,6 +406,10 @@ check_fbc (GstRkXImageSink * self, drmModePlane * plane, guint32 drmfmt,
   gint i, j;
 
   *linear = *afbc = *rfbc = FALSE;
+  if (afbc_modifier)
+    *afbc_modifier = 0;
+  if (rfbc_modifier)
+    *rfbc_modifier = 0;
 
   res = drmModeGetResources (self->fd);
   if (!res)
@@ -452,11 +463,15 @@ check_fbc (GstRkXImageSink * self, drmModePlane * plane, guint32 drmfmt,
       if (!(mod->formats & (1 << (i - mod->offset))))
         continue;
 
-      if (mod->modifier == DRM_AFBC_MODIFIER)
+      if (gst_kms_utils_is_afbc_modifier (mod->modifier)) {
         *afbc = TRUE;
-      else if (mod->modifier == DRM_RFBC_MODIFIER)
+        if (afbc_modifier && !*afbc_modifier)
+          *afbc_modifier = mod->modifier;
+      } else if (mod->modifier == DRM_RFBC_MODIFIER) {
         *rfbc = TRUE;
-      else if (mod->modifier == DRM_FORMAT_MOD_LINEAR)
+        if (rfbc_modifier)
+          *rfbc_modifier = mod->modifier;
+      } else if (mod->modifier == DRM_FORMAT_MOD_LINEAR)
         *linear = TRUE;
     }
   }
@@ -482,8 +497,10 @@ drm_ensure_allowed_caps (GstRkXImageSink * self, drmModePlane * plane,
 
   for (i = 0; i < plane->count_formats; i++) {
     gboolean linear = FALSE, afbc = FALSE, rfbc = FALSE;
+    guint64 afbc_mod = 0, rfbc_mod = 0;
 
-    check_fbc (self, plane, plane->formats[i], &linear, &afbc, &rfbc);
+    check_fbc (self, plane, plane->formats[i], &linear, &afbc, &rfbc,
+        &afbc_mod, &rfbc_mod);
 
     if (plane->formats[i] == DRM_FORMAT_YUV420_8BIT)
       fmt = GST_VIDEO_FORMAT_NV12;
@@ -508,9 +525,45 @@ drm_ensure_allowed_caps (GstRkXImageSink * self, drmModePlane * plane,
     if (!caps)
       continue;
 
-    /* Compressed buffers are only described by the standard dma-drm
-     * caps built from the plane's modifiers. */
     out_caps = gst_caps_merge (out_caps, caps);
+
+    /* The dma-drm offering is built from what the plane actually
+     * advertises (kmssink's get_all_formats_and_modifiers pattern):
+     * the AFBC entry carries the probed layout modifier, RFBC the
+     * Rockchip constant - no hardcoded geometry list. */
+    if (afbc && afbc_mod) {
+      gchar *drm_str = g_strdup_printf ("%.4s:0x%016" G_GINT64_MODIFIER "x",
+          (gchar *) &plane->formats[i], afbc_mod);
+
+      caps = gst_caps_new_simple ("video/x-raw", "format", G_TYPE_STRING,
+          "DMA_DRM", "drm-format", G_TYPE_STRING, drm_str,
+          "width", GST_TYPE_INT_RANGE, res->min_width, res->max_width,
+          "height", GST_TYPE_INT_RANGE, res->min_height, res->max_height,
+          "framerate", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT, 1, NULL);
+      if (caps) {
+        gst_caps_set_features (caps, 0,
+            gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
+        out_caps = gst_caps_merge (out_caps, caps);
+      }
+      g_free (drm_str);
+    }
+
+    if (rfbc && rfbc_mod) {
+      gchar *drm_str = g_strdup_printf ("%.4s:0x%016" G_GINT64_MODIFIER "x",
+          (gchar *) &plane->formats[i], rfbc_mod);
+
+      caps = gst_caps_new_simple ("video/x-raw", "format", G_TYPE_STRING,
+          "DMA_DRM", "drm-format", G_TYPE_STRING, drm_str,
+          "width", GST_TYPE_INT_RANGE, res->min_width, res->max_width,
+          "height", GST_TYPE_INT_RANGE, res->min_height, res->max_height,
+          "framerate", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT, 1, NULL);
+      if (caps) {
+        gst_caps_set_features (caps, 0,
+            gst_caps_features_new (GST_CAPS_FEATURE_MEMORY_DMABUF, NULL));
+        out_caps = gst_caps_merge (out_caps, caps);
+      }
+      g_free (drm_str);
+    }
   }
 
   self->allowed_caps = gst_caps_simplify (out_caps);
@@ -602,6 +655,8 @@ ensure_kms_allocator (GstRkXImageSink * self)
   if (self->allocator)
     return;
   self->allocator = gst_kms_allocator_new (self->fd);
+  gst_kms_allocator_set_afbc_modifier (self->allocator,
+      self->neg_afbc_modifier);
 }
 
 static GstBufferPool *
@@ -668,7 +723,7 @@ gst_kms_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
     if (!gst_video_info_dma_drm_from_caps (&drm_info, caps))
       goto invalid_caps;
 
-    if (drm_info.drm_modifier == DRM_AFBC_MODIFIER) {
+    if (gst_kms_utils_is_afbc_modifier (drm_info.drm_modifier)) {
       switch (drm_info.drm_fourcc) {
         case DRM_FORMAT_YUV420_8BIT:
           video_format = GST_VIDEO_FORMAT_NV12;
@@ -754,6 +809,12 @@ gst_kms_sink_import_dmabuf (GstRkXImageSink * self, GstBuffer * inbuf,
     GstBuffer ** outbuf)
 {
   gint prime_fds[GST_VIDEO_MAX_PLANES] = { 0, };
+
+  /* dma-drm caps never build a buffer pool (create_pool is the only
+   * other allocator creator), so the import path must ensure it here
+   * or gst_kms_allocator_dmabuf_import dereferences NULL. */
+  ensure_kms_allocator (self);
+
   GstVideoMeta *meta;
   guint i, n_mem, n_planes;
   GstKMSMemory *kmsmem;
@@ -2035,7 +2096,7 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
     if (!gst_video_info_dma_drm_from_caps (&drm_info, caps))
       goto invalid_format;
 
-    if (drm_info.drm_modifier == DRM_AFBC_MODIFIER) {
+    if (gst_kms_utils_is_afbc_modifier (drm_info.drm_modifier)) {
       switch (drm_info.drm_fourcc) {
         case DRM_FORMAT_YUV420_8BIT:
           video_format = GST_VIDEO_FORMAT_NV12;
@@ -2076,10 +2137,17 @@ gst_x_image_sink_setcaps (GstBaseSink * bsink, GstCaps * caps)
       info.offset[i] = tmp.offset[i];
     info.size = tmp.size;
 
-    if (drm_info.drm_modifier == DRM_AFBC_MODIFIER)
+    if (gst_kms_utils_is_afbc_modifier (drm_info.drm_modifier)) {
       GST_VIDEO_INFO_SET_AFBC (&info);
-    else if (drm_info.drm_modifier == DRM_RFBC_MODIFIER)
+      /* remember the negotiated layout so the allocator tags the
+       * scanout fb with the modifier the producer actually uses */
+      ximagesink->neg_afbc_modifier = drm_info.drm_modifier;
+      if (ximagesink->allocator)
+        gst_kms_allocator_set_afbc_modifier (ximagesink->allocator,
+            drm_info.drm_modifier);
+    } else if (drm_info.drm_modifier == DRM_RFBC_MODIFIER) {
       GST_VIDEO_INFO_SET_RFBC (&info);
+    }
   } else if (!gst_video_info_from_caps (&info, caps)) {
     goto invalid_format;
   }

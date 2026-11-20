@@ -242,3 +242,10 @@ gst_video_calculate_device_ratio (guint dev_width, guint dev_height,
   if (dpy_par_d)
     *dpy_par_d = device_par_map[index][windex ^ 1];
 }
+
+gboolean
+gst_kms_utils_is_afbc_modifier (guint64 modifier)
+{
+  return modifier == DRM_AFBC_MODIFIER
+      || modifier == DRM_AFBC_MODIFIER_32x8;
+}

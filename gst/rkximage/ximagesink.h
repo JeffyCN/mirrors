@@ -210,6 +210,11 @@ struct _GstRkXImageSink
   guint32 last_fb_id;
   GstVideoRectangle render_rect;
   gboolean paused;
+  /* Negotiated AFBC layout modifier (0 = none); forwarded to the KMS
+   * allocator so the scanout fb is tagged with what the producer
+   * actually emits instead of a per-SoC-wrong constant. */
+  guint64 neg_afbc_modifier;
+
 };
 
 struct _GstRkXImageSinkClass
