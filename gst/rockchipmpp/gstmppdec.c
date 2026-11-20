@@ -644,11 +644,34 @@ gst_mpp_dec_update_video_info (GstVideoDecoder * decoder, GstVideoFormat format,
     /* The compressed output is only described by the standard dma-drm
      * caps built from the single-planar fourcc and the ARM AFBC
      * modifier that the display drivers advertise for scanout. */
+    /* Describe whatever MPP actually delivers (for 10-bit streams
+     * MPP outputs NV12_10LE40|FBC even though startup asks for the
+     * 8-bit fast format); the display tiers decide serviceability
+     * themselves - VOP2 cluster planes advertise YU10:16x16|SPARSE
+     * in IN_FORMATS, the GPU tier applies its own NV12 gate. */
     fourcc = gst_mpp_dec_afbc_drm_fourcc (format);
     if (fourcc) {
       GstStructure *s;
-      gchar *drm_str = gst_video_dma_drm_fourcc_to_string (fourcc,
-          GST_MPP_AFBC_MODIFIER);
+      gchar *drm_str;
+      guint64 afbc_modifier;
+
+      /* Tag with the modifier the display stack advertises for this
+       * format (plane IN_FORMATS), never a compile-time constant: the
+       * AFBC superblock geometry differs per SoC and a wrongly-tagged
+       * compressed buffer imports as garbage downstream. */
+      /* Ask MPP what it actually provides: the frame carries the
+       * layout MPP derived from the per-SoC capability table
+       * (mpp_dec_check_data_layout -> mpp_frame_get_fmt_layout).  No
+       * probing of the display stack or the GPU on the producer side. */
+      if (!gst_mpp_afbc_layout_to_modifier (self->afbc_layout, &afbc_modifier)) {
+        GST_ERROR_OBJECT (self, "unknown AFBC layout %d: cannot describe "
+            "the compressed output", (gint) self->afbc_layout);
+        gst_video_codec_state_unref (output_state);
+        return FALSE;
+      }
+      self->neg_afbc_modifier = afbc_modifier;
+
+      drm_str = gst_video_dma_drm_fourcc_to_string (fourcc, afbc_modifier);
 
       /* Keep the fields gst_video_info_to_caps() derived from the
        * output state (pixel-aspect-ratio, interlace-mode, colorimetry)
@@ -877,6 +900,15 @@ gst_mpp_dec_apply_info_change (GstVideoDecoder * decoder, MppFrame mframe)
 
   afbc = gst_mpp_frame_is_afbc (mframe);
   rfbc = gst_mpp_frame_is_rfbc (mframe);
+  /* Layout fact straight from MPP (per-SoC capability table); it is
+   * only meaningful for afbc frames.  Store the derived modifier
+   * right here: the GPU tier needs it on the CONVERT path too, where
+   * update_video_info runs with (FALSE, FALSE) and never touches the
+   * caps-tagging branch below. */
+  self->afbc_layout = mpp_frame_get_fmt_layout (mframe);
+  if (afbc)
+    gst_mpp_afbc_layout_to_modifier (self->afbc_layout,
+        &self->neg_afbc_modifier);
   mpp_format = mpp_frame_get_fmt (mframe);
   src_format = gst_mpp_mpp_format_to_gst_format (mpp_format);
 
@@ -1187,7 +1219,7 @@ gst_mpp_dec_convert (GstVideoDecoder * decoder, MppFrame mframe,
 #ifdef HAVE_GPU
     if (gst_mpp_use_gpu ()) {
       ret = gst_mpp_gpu_convert_from_mpp_frame (mframe, mem, info,
-          self->rotation, bt709);
+          self->rotation, bt709, self->neg_afbc_modifier);
       GST_DEBUG_OBJECT (decoder, "convert tier=AFBC-GPU ret=%d", ret);
     } else
 #endif
@@ -1231,7 +1263,7 @@ gst_mpp_dec_convert (GstVideoDecoder * decoder, MppFrame mframe,
      * tier only rotates via its zero-copy path */
     if (!ret && gst_mpp_use_gpu ())
       ret = gst_mpp_gpu_convert_from_mpp_frame (mframe, mem, info,
-          self->rotation, bt709);
+          self->rotation, bt709, self->neg_afbc_modifier);
   }
 
   if (ret)

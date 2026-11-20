@@ -44,7 +44,8 @@
 
 /* GPU tier not built: keep the entry points so the decoder and the
  * output-format property wiring compile unchanged, and report the tier
- * as unavailable. */
+ * as unavailable.  The AFBC layout lookup needs a GPU (the query lives
+ * on the EGL display), so no-GPU builds keep the output linear. */
 gboolean
 gst_mpp_use_gpu (void)
 {
@@ -53,13 +54,15 @@ gst_mpp_use_gpu (void)
 
 gboolean
 gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
-    GstVideoInfo * dst_vinfo, gint rotation, gboolean bt709)
+    GstVideoInfo * dst_vinfo, gint rotation, gboolean bt709,
+    guint64 afbc_modifier)
 {
   (void) mframe;
   (void) out_mem;
   (void) dst_vinfo;
   (void) rotation;
   (void) bt709;
+  (void) afbc_modifier;
 
   return FALSE;
 }
@@ -1013,14 +1016,14 @@ gst_mpp_gpu_bind_src_oes (gint src_fd, guint hor_stride, guint ver_stride)
  * preserved flag and the YUV hints. */
 static gboolean
 gst_mpp_gpu_bind_src_afbc (gint src_fd, guint width, guint image_height,
-    guint y_stride, gboolean bt709)
+    guint y_stride, gboolean bt709, guint64 modifier)
 {
   PFNGLEGLIMAGETARGETTEXTURE2DOESPROC image_target;
   PFNEGLCREATEIMAGEKHRPROC create_image;
   PFNEGLDESTROYIMAGEKHRPROC destroy_image;
   EGLDisplay dpy = gctx.display;
   EGLImageKHR img;
-  guint64 mod = (guint64) GST_MPP_AFBC_MODIFIER;
+  guint64 mod = modifier;
   EGLint attrs[] = {
     EGL_WIDTH, (EGLint) width,
     EGL_HEIGHT, (EGLint) image_height,
@@ -1904,7 +1907,8 @@ out:
 
 gboolean
 gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
-    GstVideoInfo * dst_vinfo, gint rotation, gboolean bt709)
+    GstVideoInfo * dst_vinfo, gint rotation, gboolean bt709,
+    guint64 afbc_modifier)
 {
   MppFrameFormat src_fmt = mpp_frame_get_fmt (mframe) & MPP_FRAME_FMT_MASK;
   GstVideoFormat dst_fmt = GST_VIDEO_INFO_FORMAT (dst_vinfo);
@@ -1970,6 +1974,19 @@ gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
   /* The compact 10-bit format goes through a whole-frame NV15 import
    * with the hardware sampler doing unpack + CSC; the 8-bit formats go
    * through the plane-based shader */
+  if (afbc_src && src_fmt != MPP_FMT_YUV420SP) {
+    /* No negotiation gate exists for this today: refuse loudly rather
+     * than import a non-NV12 compressed body with the NV12 AFBC
+     * layout (10-bit or 4:2:2 bodies sampled as 8-bit NV12 corrupt
+     * the picture). */
+    GST_WARNING ("AFBC GPU tier only handles NV12 sources (fmt 0x%x), "
+        "refusing", (guint) src_fmt);
+    gctx.unavailable_src_fmt = src_fmt;
+    gctx.unavailable_dst_fmt = dst_fmt;
+    gctx.unavailable_src_afbc = TRUE;
+    goto out_unmake;
+  }
+
   if (afbc_src) {
     /* ARM AFBC NV12: import the compressed body with the AFBC
        modifier using the compositor-proven attr layout; the OES
@@ -1985,9 +2002,18 @@ gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe, GstMemory * out_mem,
     else
       src_y_stride = src_width;
 
+    if (!afbc_modifier) {
+      GST_DEBUG ("no AFBC modifier negotiated; "
+          "GPU tier unavailable for compressed frames");
+      gctx.unavailable_src_fmt = src_fmt;
+      gctx.unavailable_dst_fmt = dst_fmt;
+      gctx.unavailable_src_afbc = TRUE;
+      goto out_unmake;
+    }
+
     if (!gst_mpp_gpu_bind_src_afbc (src_fd,
             gst_mpp_gpu_afbc_width (src_width), src_height + src_off_y,
-            src_y_stride, bt709)) {
+            src_y_stride, bt709, afbc_modifier)) {
       gctx.unavailable_src_fmt = src_fmt;
       gctx.unavailable_dst_fmt = dst_fmt;
       gctx.unavailable_src_afbc = TRUE;

@@ -27,6 +27,7 @@
 #endif
 
 #include "gstmppvideodec.h"
+#include <drm_fourcc.h>
 
 #define GST_MPP_VIDEO_DEC(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), \
     GST_TYPE_MPP_VIDEO_DEC, GstMppVideoDec))
@@ -228,6 +229,10 @@ gst_mpp_video_dec_startup (GstVideoDecoder * decoder)
       MppFrameFormat mpp_format = MPP_FMT_YUV420SP | MPP_FRAME_FBC_AFBC_V2;
       gint mpp_ret = (gint) mppdec->mpi->control (mppdec->mpp_ctx,
           MPP_DEC_SET_OUTPUT_FORMAT, &mpp_format);
+      /* MPP's own capability check silently degrades the output to
+       * linear on SoCs without AFBC (mpp_dec_check_fbc_cap), and the
+       * frame's data layout (mpp_frame_get_fmt_layout) carries the
+       * actual geometry for the caps tagging. */
       GST_DEBUG_OBJECT (decoder, "fbc output format requested (ret %d)",
           mpp_ret);
     } else {

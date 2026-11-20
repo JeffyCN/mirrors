@@ -22,10 +22,10 @@
 #ifndef  __GST_MPP_H__
 #define  __GST_MPP_H__
 
+#include <drm_fourcc.h>
+
 #include <gst/video/video.h>
 #include <gst/allocators/gstdmabuf.h>
-
-#include <drm_fourcc.h>
 
 #ifndef AFBC_FORMAT_MOD_BLOCK_SIZE_16x16
 #define AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 (1ULL)
@@ -35,10 +35,19 @@
 #define AFBC_FORMAT_MOD_SPARSE (((__u64)1) << 6)
 #endif
 
-/* The modifier MPP uses for AFBC input and output */
-#define GST_MPP_AFBC_MODIFIER \
-  (DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_SPARSE) | \
-   DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_16x16))
+/* The two AFBC geometries Rockchip decoders emit, as DRM modifiers.
+ * The block size comes from MPP itself (mpp_frame_get_fmt_layout,
+ * backed by the per-SoC capability table in osal/mpp_soc.c); the
+ * SPARSE bit is proven on both SoCs (RK3588 emits 16x16|SPARSE,
+ * RK3572 32x8|SPARSE).  MPP also reserves mpp_frame_get_fbc_sparse()
+ * but nothing fills it today - when MPP wires it up the caller
+ * should honor it instead of the constant. */
+#define GST_MPP_AFBC_MODIFIER_16x16 \
+  DRM_FORMAT_MOD_ARM_AFBC (AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 | \
+                           AFBC_FORMAT_MOD_SPARSE)
+#define GST_MPP_AFBC_MODIFIER_32x8 \
+  DRM_FORMAT_MOD_ARM_AFBC (AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 | \
+                           AFBC_FORMAT_MOD_SPARSE)
 
 /* The modifier the Rockchip decoder and display drivers use for RFBC
  * buffers (vendor 64x4 block) */
@@ -66,6 +75,21 @@
 #endif
 
 #include <rockchip/rk_mpi.h>
+
+static inline gboolean
+gst_mpp_afbc_layout_to_modifier (guint layout, guint64 * modifier)
+{
+  switch (layout) {
+    case MPP_FMT_AFBC16X16:
+      *modifier = GST_MPP_AFBC_MODIFIER_16x16;
+      return TRUE;
+    case MPP_FMT_AFBC32X8:
+      *modifier = GST_MPP_AFBC_MODIFIER_32x8;
+      return TRUE;
+    default:
+      return FALSE;
+  }
+}
 
 G_BEGIN_DECLS;
 
@@ -173,7 +197,7 @@ gboolean gst_mpp_frame_is_afbc (MppFrame mframe);
 
 gboolean gst_mpp_gpu_convert_from_mpp_frame (MppFrame mframe,
     GstMemory * out_mem, GstVideoInfo * dst_vinfo, gint rotation,
-    gboolean bt709);
+    gboolean bt709, guint64 afbc_modifier);
 
 /* TRUE when the GPU tier converts a compressed frame into that target */
 gboolean gst_mpp_gpu_can_convert_compressed (GstVideoFormat dst_fmt);

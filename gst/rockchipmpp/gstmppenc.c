@@ -703,7 +703,11 @@ gst_mpp_enc_set_format (GstVideoEncoder * encoder, GstVideoCodecState * state)
     if (!gst_video_info_dma_drm_from_caps (&drm_info, state->caps))
       return FALSE;
 
-    if (drm_info.drm_modifier != GST_MPP_AFBC_MODIFIER) {
+    /* The input modifier must be one of the layouts Rockchip
+     * decoders emit (negotiated upstream); no device probing on the
+     * encoder side. */
+    if (drm_info.drm_modifier != GST_MPP_AFBC_MODIFIER_16x16 &&
+        drm_info.drm_modifier != GST_MPP_AFBC_MODIFIER_32x8) {
       GST_ERROR_OBJECT (self, "unsupported drm modifier");
       return FALSE;
     }
@@ -871,7 +875,8 @@ gst_mpp_enc_propose_allocation (GstVideoEncoder * encoder, GstQuery * query)
 
     if (!gst_video_info_dma_drm_from_caps (&drm_info, caps))
       return FALSE;
-    if (drm_info.drm_modifier != GST_MPP_AFBC_MODIFIER)
+    if (drm_info.drm_modifier != GST_MPP_AFBC_MODIFIER_16x16 &&
+        drm_info.drm_modifier != GST_MPP_AFBC_MODIFIER_32x8)
       return FALSE;
     video_format =
         gst_mpp_enc_video_format_from_afbc_fourcc (drm_info.drm_fourcc);

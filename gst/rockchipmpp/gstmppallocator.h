@@ -22,6 +22,8 @@
 #ifndef  __GST_MPP_ALLOCATOR_H__
 #define  __GST_MPP_ALLOCATOR_H__
 
+#include <drm_fourcc.h>
+
 #include <gst/video/video.h>
 
 #include <rockchip/rk_mpi.h>

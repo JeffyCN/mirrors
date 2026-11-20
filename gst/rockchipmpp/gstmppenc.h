@@ -25,9 +25,9 @@
 #ifndef  __GST_MPP_ENC_H__
 #define  __GST_MPP_ENC_H__
 
-#include <gst/video/gstvideoencoder.h>
-
 #include "gstmpp.h"
+
+#include <gst/video/gstvideoencoder.h>
 
 G_BEGIN_DECLS;
 
@@ -120,12 +120,13 @@ struct _GstMppEnc
 #endif
 
 /* Standard dma-drm form of the AFBC input; the modifier literal must
- * stay in sync with GST_MPP_AFBC_MODIFIER and the fourccs with
+ * stay in sync with GST_MPP_AFBC_MODIFIER_16x16/32x8 and the fourccs with
  * gst_mpp_enc_video_format_from_afbc_fourcc(). */
 #define MPP_ENC_CAPS_DMA_DRM_AFBC \
     "video/x-raw(memory:DMABuf), format = (string) DMA_DRM, " \
     "drm-format = (string) { " \
-    "YU08:0x0800000000000041, YUYV:0x0800000000000041 }, " \
+    "YU08:0x0800000000000041, YUYV:0x0800000000000041, " \
+    "YU08:0x0800000000000042, YUYV:0x0800000000000042 }, " \
     "width = (int) [ 1, MAX ], height = (int) [ 1, MAX ], " \
     "framerate = (fraction) [ 0/1, MAX ]"
 

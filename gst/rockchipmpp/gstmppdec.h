@@ -22,9 +22,9 @@
 #ifndef  __GST_MPP_DEC_H__
 #define  __GST_MPP_DEC_H__
 
-#include <gst/video/gstvideodecoder.h>
-
 #include "gstmpp.h"
+
+#include <gst/video/gstvideodecoder.h>
 
 /* Give up on an MPP context that keeps rejecting input for this long.
  * A wedged decoder pipeline (e.g. an unparseable stream) never errors
@@ -67,6 +67,13 @@ struct _GstMppDec
   guint crop_x, crop_y, crop_w, crop_h;
 
   gboolean fbc;
+
+  /* AFBC data layout of the decoded output as reported by MPP
+   * (MppFmtLayout; MPP_FMT_BUTT = not AFBC / not reported yet) */
+  guint afbc_layout;
+
+  /* DRM modifier derived from afbc_layout, carried to the GPU tier */
+  guint64 neg_afbc_modifier;
 
   gboolean ignore_error;
 
@@ -130,14 +137,19 @@ GType gst_mpp_dec_get_type (void);
     GST_VIDEO_CAPS_MAKE (fmts) ";" \
     GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_DMABUF, fmts)
 
-/* Standard dma-drm form of the AFBC output; the modifier literal must
- * stay in sync with GST_MPP_AFBC_MODIFIER and the fourccs with
- * gst_mpp_dec_afbc_drm_fourcc(). */
+/* Standard dma-drm form of the AFBC output.  The template lists both
+ * plain geometries the Rockchip decoders emit (16x16|SPARSE on
+ * RK3588 = 0x...41, 32x8|SPARSE on RK3572 = 0x...42); the actual
+ * negotiated caps event carries the runtime value from
+ * mpp_frame_get_fmt_layout() - the template only answers pad
+ * queries and link-time intersections. */
 #define MPP_DEC_CAPS_MAKE_DMA_DRM_AFBC \
     "video/x-raw(memory:DMABuf), format = (string) DMA_DRM, " \
     "drm-format = (string) { " \
     "YU08:0x0800000000000041, YU10:0x0800000000000041, " \
-    "YUYV:0x0800000000000041, NV20:0x0800000000000041 }, " \
+    "YUYV:0x0800000000000041, NV20:0x0800000000000041, " \
+    "YU08:0x0800000000000042, YU10:0x0800000000000042, " \
+    "YUYV:0x0800000000000042, NV20:0x0800000000000042 }, " \
     "width = (int) [ 1, MAX ], height = (int) [ 1, MAX ], " \
     "framerate = (fraction) [ 0/1, MAX ]"
 
